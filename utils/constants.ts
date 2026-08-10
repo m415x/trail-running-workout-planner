@@ -133,3 +133,36 @@ export const navItems = [
   { icon: BarChart2, label: 'Stats' },
   { icon: User, label: 'Perfil' },
 ]
+
+export const ZONE_STYLES: Record<string, { bg: string; border: string; text: string; textMuted: string }> = {
+  Z1: {
+    bg: 'bg-hr-z1/10',
+    border: 'border-hr-z1/20',
+    text: 'text-hr-z1',
+    textMuted: 'text-hr-z1/60',
+  },
+  Z2: {
+    bg: 'bg-hr-z2/10',
+    border: 'border-hr-z2/20',
+    text: 'text-hr-z2',
+    textMuted: 'text-hr-z2/60',
+  },
+  Z3: {
+    bg: 'bg-hr-z3/10',
+    border: 'border-hr-z3/20',
+    text: 'text-hr-z3',
+    textMuted: 'text-hr-z3/60',
+  },
+  Z4: {
+    bg: 'bg-hr-z4/10',
+    border: 'border-hr-z4/20',
+    text: 'text-hr-z4',
+    textMuted: 'text-hr-z4/60',
+  },
+  Z5: {
+    bg: 'bg-hr-z5/10',
+    border: 'border-hr-z5/20',
+    text: 'text-hr-z5',
+    textMuted: 'text-hr-z5/60',
+  },
+}

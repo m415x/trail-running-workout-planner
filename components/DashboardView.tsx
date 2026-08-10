@@ -4,12 +4,18 @@ import { useState, useMemo } from 'react'
 import { Bell, CheckCircle2 } from 'lucide-react'
 import { colors, weekDays, workouts, elevationProfiles, navItems } from '@/utils/constants'
 import { ElevationChartProps } from '@/utils/interfaces'
+import { WeeklyCalendarCard } from '@/components/WeeklyCalendarCard'
 import { TodayWorkoutCard } from '@/components/TodayWorkoutCard'
 import { ElevationProfileCard } from '@/components/ElevationProfileCard'
 
 export default function DashboardView() {
   const [activeNav, setActiveNav] = useState<number>(0)
-  const [selectedDay, setSelectedDay] = useState<number>(1)
+  const [selectedDay, setSelectedDay] = useState<number>(1) // Martes seleccionado por defecto (índice 1)
+
+  // Calcular los km completados dinámicamente según los días marcados con done: true
+  const currentKm = useMemo(() => {
+    return weekDays.reduce((total, day) => (day.done ? total + day.km : total), 0)
+  }, [])
 
   const elevationChartData: ElevationChartProps = useMemo(() => {
     const workout = workouts[selectedDay] ?? workouts[1]
@@ -27,7 +33,6 @@ export default function DashboardView() {
       yDomain,
     }
   }, [selectedDay])
-  // }, [selectedDay, workouts, elevationProfiles])
 
   return (
     <div className='min-h-screen bg-[#070B11] flex items-start justify-center'>
@@ -64,115 +69,23 @@ export default function DashboardView() {
         {/* Scrollable content */}
         <div className='flex-1 overflow-y-auto px-4 pb-28 space-y-3' style={{ scrollbarWidth: 'none' }}>
           {/* ── Weekly Calendar Card ── */}
-          <div className='bg-card rounded-3xl p-4 border border-border'>
-            <div className='flex items-center justify-between mb-3'>
-              <div>
-                <h2
-                  className='text-foreground text-[19px] font-bold leading-tight'
-                  style={{ fontFamily: "'Barlow Condensed', sans-serif" }}
-                >
-                  Microciclo #32
-                </h2>
-                <p className='text-muted-foreground text-[11px] mt-0.5' style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                  Fase Choque · objetivo 45 km
-                </p>
-              </div>
-              <span
-                className='text-[11px] font-semibold px-3 py-1.5 rounded-full'
-                style={{
-                  color: colors.ORANGE,
-                  background: `${colors.ORANGE}18`,
-                  fontFamily: "'DM Sans', sans-serif",
-                }}
-              >
-                Ago 10–16
-              </span>
-            </div>
+          <WeeklyCalendarCard
+            title='Microciclo #32'
+            phase='Choque'
+            targetKm={45}
+            currentKm={currentKm}
+            dateRange='Ago 10–16'
+            weekDays={weekDays}
+            selectedDay={selectedDay}
+            onSelectDay={setSelectedDay}
+          />
 
-            {/* Day columns */}
-            <div className='grid grid-cols-7 gap-1'>
-              {weekDays.map((d, i) => {
-                const isSelected = selectedDay === i
-                const hasWorkout = !d.isRest
-                return (
-                  <button
-                    key={i}
-                    onClick={() => hasWorkout && setSelectedDay(i)}
-                    disabled={d.isRest}
-                    className='flex flex-col items-center rounded-[18px] py-2.5 px-1 transition-all duration-200'
-                    style={{
-                      background: isSelected
-                        ? colors.ORANGE
-                        : d.isToday && !isSelected
-                          ? 'rgba(255,90,26,0.12)'
-                          : 'transparent',
-                      boxShadow: isSelected ? `0 6px 20px ${colors.ORANGE}40` : 'none',
-                    }}
-                  >
-                    <span
-                      className='text-[10px] font-semibold mb-1.5'
-                      style={{
-                        color: isSelected ? 'white' : 'var(--muted-foreground)',
-                        fontFamily: "'DM Sans', sans-serif",
-                      }}
-                    >
-                      {d.day}
-                    </span>
-                    <span
-                      className='text-[15px] font-bold'
-                      style={{
-                        color: isSelected ? 'white' : d.isToday ? 'var(--foreground)' : 'rgba(240,244,248,0.6)',
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                      }}
-                    >
-                      {d.date}
-                    </span>
-                    <div className='mt-1.5 h-2 flex items-center justify-center'>
-                      {d.done ? (
-                        <CheckCircle2 size={9} color={colors.EMERALD} />
-                      ) : hasWorkout ? (
-                        <span
-                          className='w-1.5 h-1.5 rounded-full'
-                          style={{
-                            background: isSelected
-                              ? 'rgba(255,255,255,0.7)'
-                              : d.type === 'Long'
-                                ? `${colors.ORANGE}80`
-                                : 'rgba(255,255,255,0.2)',
-                          }}
-                        />
-                      ) : (
-                        <span className='w-1.5 h-1.5' />
-                      )}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            {/* Weekly progress */}
-            <div className='mt-4'>
-              <div className='flex justify-between text-[11px] mb-2' style={{ fontFamily: "'DM Sans', sans-serif" }}>
-                <span className='text-muted-foreground'>Progreso semanal</span>
-                <span className='text-foreground font-semibold'>
-                  8 km <span className='text-muted-foreground font-normal'>/ 45 km</span>
-                </span>
-              </div>
-              <div className='h-1.5 rounded-full overflow-hidden' style={{ background: 'rgba(255,255,255,0.07)' }}>
-                <div
-                  className='h-full rounded-full transition-all duration-500'
-                  style={{
-                    width: '17.8%',
-                    background: `linear-gradient(90deg, ${colors.ORANGE}, #FF8C42)`,
-                  }}
-                />
-              </div>
-            </div>
-          </div>
           {/* ── Today's Workout Card ── */}
           <TodayWorkoutCard workout={elevationChartData.workout} onViewMap={() => console.log('Abrir mapa')} />
+
           {/* ── Elevation Profile Card ── */}
           <ElevationProfileCard {...elevationChartData} />
+
           {/* ── Objectives Banner ── */}
           <div
             className='rounded-3xl p-4 flex items-center justify-between'

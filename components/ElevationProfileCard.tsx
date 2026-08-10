@@ -22,24 +22,20 @@ function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
 export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
   return (
     <CustomCard>
-      <CardHeader
-        title='Perfil de Elevación'
-        icon={Mountain}
-        action={
-          <div className='flex justify-center gap-3 text-[11px]'>
-            <span className='text-muted-foreground'>
-              Máx <span className='text-foreground font-semibold'>{elevMax.toLocaleString()} m</span>
-            </span>
-            <span className='text-muted-foreground'>
-              Mín <span className='text-foreground font-semibold'>{elevMin.toLocaleString()} m</span>
-            </span>
-          </div>
-        }
-      />
+      <CardHeader title='Perfil de Elevación' icon={Mountain}>
+        <div className='flex justify-center gap-3 text-[11px]'>
+          <span className='text-muted-foreground'>
+            Máx <span className='text-foreground font-semibold'>{elevMax.toLocaleString()} m</span>
+          </span>
+          <span className='text-muted-foreground'>
+            Mín <span className='text-foreground font-semibold'>{elevMin.toLocaleString()} m</span>
+          </span>
+        </div>
+      </CardHeader>
 
       <div className='h-36'>
         <ResponsiveContainer width='100%' height='100%'>
-          <AreaChart data={elevData} margin={{ top: 8, right: 4, left: -28, bottom: 0 }}>
+          <AreaChart data={elevData} margin={{ top: 8, right: 4, left: -30, bottom: 0 }}>
             <defs>
               <linearGradient id='elevGrad' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='0%' stopColor={colors.ORANGE} stopOpacity={0.45} />

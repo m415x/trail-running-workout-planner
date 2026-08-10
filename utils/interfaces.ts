@@ -1,10 +1,34 @@
+import { ReactNode } from 'react'
 import { LucideIcon } from 'lucide-react'
 
-export interface SectionHeaderProps {
+export type WorkoutType = 'Base' | 'Long' | 'Intervals' | 'Z2' | 'Trail' | 'Speed' | string
+
+export interface WeekDay {
+  day: string // 'L', 'M', 'X', 'J', 'V', 'S', 'D'
+  date: number // 10, 11, 12...
+  isToday?: boolean
+  isRest?: boolean
+  done?: boolean
+  type?: WorkoutType
+}
+
+export interface WeeklyCalendarCardProps {
+  title?: string
+  phase?: string
+  targetKm?: number
+  currentKm?: number
+  dateRange?: string
+  weekDays: WeekDay[]
+  selectedDay: number
+  onSelectDay: (index: number) => void
+}
+
+export interface CardHeaderProps {
   title: string
+  subtitle?: string
   icon?: LucideIcon
   iconColorClass?: string
-  action?: React.ReactNode
+  children?: ReactNode
 }
 
 export interface WorkoutProps {
@@ -36,4 +60,11 @@ export interface ElevationChartProps {
 export interface TodayWorkoutCardProps {
   workout: WorkoutProps
   onViewMap?: () => void
+}
+
+export interface StatPillProps {
+  icon: LucideIcon
+  label: string
+  value: number | string
+  unit: string
 }

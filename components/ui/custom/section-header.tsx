@@ -1,13 +1,22 @@
-import { SectionHeaderProps } from '@/utils/interfaces'
+import { CardHeaderProps } from '@/utils/interfaces'
 
-export function CardHeader({ title, icon: Icon, iconColorClass = 'text-orange-500', action }: SectionHeaderProps) {
+export function CardHeader({
+  title,
+  subtitle,
+  icon: Icon,
+  iconColorClass = 'text-orange-500',
+  children,
+}: CardHeaderProps) {
   return (
     <div className='flex items-center justify-between mb-3'>
-      <div className='flex items-center gap-2'>
-        {Icon && <Icon size={16} className={iconColorClass} />}
-        <h3 className='font-barlow font-bold text-[17px] text-foreground'>{title}</h3>
+      <div className='flex flex-col items-start'>
+        <div className='flex items-center gap-2'>
+          {Icon && <Icon size={16} className={iconColorClass} />}
+          <h3 className='font-barlow font-bold text-[17px] text-foreground'>{title}</h3>
+        </div>
+        {subtitle && <p className='text-muted-foreground text-[11px] mt-0.5'>{subtitle}</p>}
       </div>
-      {action && <>{action}</>}
+      {children && <>{children}</>}
     </div>
   )
 }

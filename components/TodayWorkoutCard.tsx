@@ -6,6 +6,7 @@ import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { Button } from '@/components/ui/button'
 import { ZonePill } from '@/components/ZonePill'
+import { StatPill } from '@/components/StatPill'
 
 export function TodayWorkoutCard({ workout, onViewMap }: TodayWorkoutCardProps) {
   const stats = [
@@ -16,25 +17,20 @@ export function TodayWorkoutCard({ workout, onViewMap }: TodayWorkoutCardProps) 
 
   return (
     <CustomCard>
-      <CardHeader
-        title='Entrenamiento del Día'
-        icon={SportShoe}
-        action={
-          <Button
-            className='p-0 flex items-center gap-1 text-[11px] font-medium text-orange-500 hover:text-orange-400 transition-colors'
-            variant='link'
-            onClick={onViewMap}
-          >
-            Ver mapa
-            <ChevronRight />
-          </Button>
-        }
-      />
+      {/* Header */}
+      <CardHeader title='Entrenamiento del Día' icon={SportShoe}>
+        <Button
+          className='p-0 flex items-center gap-1 text-[11px] font-medium hover:no-underline cursor-pointer text-orange-500 hover:text-orange-400 transition-colors'
+          variant='link'
+          onClick={onViewMap}
+        >
+          Ver mapa
+          <ChevronRight />
+        </Button>
+      </CardHeader>
 
       {/* Main stat row */}
-
       <CustomCard className='rounded-2xl p-4 mb-3 flex items-center gap-3 bg-secondary/50 border border-border/40'>
-        {/* <div className='rounded-2xl p-4 mb-3 flex items-center gap-3 bg-secondary/50 border border-border/40'> */}
         <div className='flex-1'>
           <div className='flex items-baseline gap-1.5'>
             <span className='font-barlow font-black text-foreground leading-none text-5xl tracking-tight'>
@@ -51,28 +47,18 @@ export function TodayWorkoutCard({ workout, onViewMap }: TodayWorkoutCardProps) 
       </CustomCard>
 
       {/* Stats row */}
-
       <div className='grid grid-cols-3 gap-2 mb-3'>
         {stats.map(({ icon: Icon, label, value, unit }) => (
-          <div key={label} className='font-barlow rounded-2xl p-3 bg-secondary/50 border border-border/40'>
-            <Icon size={13} className='text-muted-foreground mb-1.5' />
-            <p className='text-foreground font-bold leading-none text-base'>
-              {value}
-              <span className='text-muted-foreground font-normal text-[12px] ml-0.5'>{unit}</span>
-            </p>
-
-            <p className='text-muted-foreground text-[10px] mt-1'>{label}</p>
-          </div>
+          <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
         ))}
       </div>
 
       {/* Coach note */}
-
-      <div className='rounded-2xl p-3 bg-orange-500/10 border border-orange-500/20'>
+      <CustomCard className='rounded-2xl p-3 bg-orange-500/10 border border-orange-500/20'>
         <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-orange-500'>Nota del Entrenador</p>
 
         <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
-      </div>
+      </CustomCard>
     </CustomCard>
   )
 }
