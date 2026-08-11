@@ -21,6 +21,7 @@ export interface WeeklyCalendarCardProps {
   weekDays: WeekDay[]
   selectedDay: number
   onSelectDay: (index: number) => void
+  onViewCalendar?: () => void
 }
 
 export interface CardHeaderProps {

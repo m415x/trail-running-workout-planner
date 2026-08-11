@@ -2,7 +2,6 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { Mountain } from 'lucide-react'
-
 import { colors } from '@/utils/constants'
 import { ElevTooltipProps, ElevationChartProps } from '@/utils/interfaces'
 import { CustomCard } from '@/components/ui/custom/card-containers'
@@ -22,6 +21,7 @@ function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
 export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
   return (
     <CustomCard>
+      {/* Header row */}
       <CardHeader title='Perfil de Elevación' icon={Mountain}>
         <div className='flex justify-center gap-3 text-[11px]'>
           <span className='text-muted-foreground'>
@@ -60,14 +60,9 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
       </div>
 
       {/* Gain / km density bar */}
-      <div className='flex items-center gap-2 mt-1.5'>
+      <div className='flex items-center gap-2'>
         <span className='text-muted-foreground text-[10px]'>0 km</span>
-        <div
-          className='flex-1 h-px rounded-full'
-          style={{
-            background: `linear-gradient(90deg, ${colors.EMERALD}50, ${colors.ORANGE}50, #EF444450)`,
-          }}
-        />
+        <div className='flex-1 h-px rounded-full bg-linear-to-r from-green-500/50 via-yellow-500/50 to-red-500/50' />
         <span className='text-muted-foreground text-[10px]'>{workout.km} km</span>
       </div>
     </CustomCard>

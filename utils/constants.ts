@@ -17,7 +17,7 @@ export const workouts: Record<number, WorkoutProps> = {
   0: {
     title: 'Rodaje Base',
     km: 8,
-    zone: 'Z2',
+    zone: 'Z1',
     zonePct: '70–80%',
     time: '56',
     gain: '+320',
@@ -37,7 +37,7 @@ export const workouts: Record<number, WorkoutProps> = {
   2: {
     title: 'Fondo Z2',
     km: 9,
-    zone: 'Z2',
+    zone: 'Z3',
     zonePct: '70–80%',
     time: '63',
     gain: '+380',
@@ -57,7 +57,7 @@ export const workouts: Record<number, WorkoutProps> = {
   5: {
     title: 'Parkinson 16k',
     km: 16,
-    zone: 'Z2',
+    zone: 'Z5',
     zonePct: '70–80%',
     time: '130',
     gain: '+820',
@@ -136,33 +136,33 @@ export const navItems = [
 
 export const ZONE_STYLES: Record<string, { bg: string; border: string; text: string; textMuted: string }> = {
   Z1: {
-    bg: 'bg-hr-z1/10',
+    bg: 'bg-hr-z1/5',
     border: 'border-hr-z1/20',
     text: 'text-hr-z1',
-    textMuted: 'text-hr-z1/60',
+    textMuted: 'text-hr-z1/70',
   },
   Z2: {
-    bg: 'bg-hr-z2/10',
+    bg: 'bg-hr-z2/5',
     border: 'border-hr-z2/20',
     text: 'text-hr-z2',
-    textMuted: 'text-hr-z2/60',
+    textMuted: 'text-hr-z2/70',
   },
   Z3: {
-    bg: 'bg-hr-z3/10',
+    bg: 'bg-hr-z3/5',
     border: 'border-hr-z3/20',
     text: 'text-hr-z3',
-    textMuted: 'text-hr-z3/60',
+    textMuted: 'text-hr-z3/70',
   },
   Z4: {
-    bg: 'bg-hr-z4/10',
+    bg: 'bg-hr-z4/5',
     border: 'border-hr-z4/20',
     text: 'text-hr-z4',
-    textMuted: 'text-hr-z4/60',
+    textMuted: 'text-hr-z4/70',
   },
   Z5: {
-    bg: 'bg-hr-z5/10',
+    bg: 'bg-hr-z5/5',
     border: 'border-hr-z5/20',
     text: 'text-hr-z5',
-    textMuted: 'text-hr-z5/60',
+    textMuted: 'text-hr-z5/70',
   },
 }

@@ -2,7 +2,7 @@
 
 import { CheckCircle2, RefreshCcwDot } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
-import { Button } from '@/components/ui/button'
+import { DefaultButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { cn } from '@/lib/utils'
@@ -17,6 +17,7 @@ export function WeeklyCalendarCard({
   weekDays = [],
   selectedDay,
   onSelectDay,
+  onViewCalendar,
 }: WeeklyCalendarCardProps) {
   // Cálculo automático del porcentaje de progreso
   const progressPercentage = targetKm > 0 ? Math.min(Math.round((currentKm / targetKm) * 100), 100) : 0
@@ -27,9 +28,7 @@ export function WeeklyCalendarCard({
     <CustomCard>
       {/* Header */}
       <CardHeader title={title} subtitle={subtitleWeeklyCalendar} icon={RefreshCcwDot}>
-        <span className='text-[11px] font-semibold px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-500 border border-orange-500/20'>
-          {dateRange}
-        </span>
+        <DefaultButton onClick={onViewCalendar}>{dateRange}</DefaultButton>
       </CardHeader>
 
       {/* Day columns */}
@@ -46,8 +45,8 @@ export function WeeklyCalendarCard({
               disabled={d.isRest}
               className={cn(
                 'flex flex-col items-center rounded-[18px] py-2.5 px-1 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
-                isSelected && 'bg-orange-500 text-white shadow-lg shadow-orange-500/30 scale-105',
-                !isSelected && d.isToday && 'bg-orange-500/15 border border-orange-500/30',
+                isSelected && 'bg-primary text-white border border-primary shadow-lg shadow-primary/30',
+                !isSelected && d.isToday && 'bg-primary/15 border border-primary/30',
                 !isSelected && !d.isToday && 'bg-transparent hover:bg-secondary/40',
               )}
             >
@@ -71,13 +70,13 @@ export function WeeklyCalendarCard({
               {/* Indicador inferior (Check / Dot) */}
               <div className='mt-1.5 h-2 flex items-center justify-center'>
                 {d.done ? (
-                  <CheckCircle2 size={11} className={isSelected ? 'text-white' : 'text-emerald-500'} />
+                  <CheckCircle2 size={12} className={isSelected ? 'text-white' : 'text-hr-z3'} />
                 ) : hasWorkout ? (
                   <span
                     className={cn(
                       'w-1.5 h-1.5 rounded-full',
                       isSelected && 'bg-white/80',
-                      !isSelected && d.type === 'Long' && 'bg-orange-500',
+                      !isSelected && d.type === 'Long' && 'bg-secondary',
                       !isSelected && d.type !== 'Long' && 'bg-muted-foreground/40',
                     )}
                   />

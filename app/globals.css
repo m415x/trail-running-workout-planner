@@ -54,84 +54,148 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --hr-z1: oklch(55.978% 0.00988 248.155);
-  --hr-z2: oklch(57.371% 0.19468 257.874);
-  --hr-z3: oklch(56.849% 0.15224 148);
-  --hr-z4: oklch(75.666% 0.16072 71.571);
-  --hr-z5: oklch(56.938% 0.2045 29.661);
+@layer base {
+  :root {
+    /* --- TEMA CLARO --- */
+    --background: oklch(0.99 0.003 240);
+    --foreground: oklch(0.23 0.035 242);
+    /* Gris antracita base */
+
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.23 0.035 242);
+
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.23 0.035 242);
+
+    /* Energía: El Naranja del logo */
+    --primary: oklch(0.68 0.198 42);
+    --primary-foreground: oklch(0.99 0.003 240);
+
+    /* Identidad: El Violeta Oscuro de la montaña */
+    --secondary: oklch(0.31 0.155 315);
+    --secondary-foreground: oklch(0.99 0.003 240);
+
+    /* Interacciones y mutados suaves */
+    --muted: oklch(0.95 0.015 315);
+    /* Fondo lila muy pálido */
+    --muted-foreground: oklch(0.45 0.03 242);
+
+    --accent: oklch(0.68 0.12 315);
+    /* El Rosa/Lila del logo para hovers */
+    --accent-foreground: oklch(0.23 0.035 242);
+
+    --destructive: oklch(0.55 0.22 25);
+    --destructive-foreground: oklch(0.99 0.003 240);
+
+    --border: oklch(0.92 0.01 242);
+    --input: oklch(0.92 0.01 242);
+    --ring: oklch(0.68 0.198 42);
+
+    /* Sidebar (Tema Claro) */
+    --sidebar: oklch(0.97 0.005 242);
+    --sidebar-foreground: oklch(0.23 0.035 242);
+    --sidebar-primary: oklch(0.68 0.198 42);
+    --sidebar-primary-foreground: oklch(0.99 0.003 240);
+    --sidebar-accent: oklch(0.95 0.015 315);
+    --sidebar-accent-foreground: oklch(0.31 0.155 315);
+    --sidebar-border: oklch(0.92 0.01 242);
+    --sidebar-ring: oklch(0.68 0.198 42);
+
+    /* Gráficos / Charts (Derivados armónicos del logo) */
+    --chart-1: oklch(0.68 0.198 42);
+    /* Naranja */
+    --chart-2: oklch(0.31 0.155 315);
+    /* Violeta Oscuro */
+    --chart-3: oklch(0.68 0.12 315);
+    /* Rosa/Lila */
+    --chart-4: oklch(0.45 0.18 200);
+    /* Cyan trail (Contraste deportivo) */
+    --chart-5: oklch(0.82 0.16 85);
+    /* Amarillo montaña */
+
+    /* Zonas de Ritmo Cardíaco (Z1-Z5 de menor a mayor intensidad) */
+    --hr-z1: oklch(0.45 0.03 256.802);
+    /* Gris neutro - Descanso/Calentamiento */
+    --hr-z2: oklch(0.59 0.158 241.966);
+    /* Turquesa/Azul deportivo - Aeróbica ligera */
+    --hr-z3: oklch(0.63 0.194 149.214);
+    /* Verde equilibrado - Ritmo/Aeróbica alta */
+    --hr-z4: oklch(0.68 0.162 75.834);
+    /* Amarillo visible - Umbral anaeróbico */
+    --hr-z5: oklch(0.58 0.245 27.325);
+    /* Rojo intenso - Esfuerzo máximo */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* --- TEMA OSCURO --- */
+    --background: oklch(0.18 0.028 242);
+    /* El fondo oscuro de la base del logo */
+    --foreground: oklch(0.97 0.01 240);
+
+    --card: oklch(0.22 0.028 242);
+    /* Elevación sutil sobre el fondo */
+    --card-foreground: oklch(0.97 0.01 240);
+
+    --popover: oklch(0.18 0.028 242);
+    --popover-foreground: oklch(0.97 0.01 240);
+
+    --primary: oklch(0.68 0.198 42);
+    /* Mantenemos el Naranja corporativo */
+    --primary-foreground: oklch(0.12 0.02 242);
+    /* Contraste oscuro para legibilidad */
+
+    --secondary: oklch(0.31 0.155 315);
+    /* El Violeta Oscuro como contenedor secundario */
+    --secondary-foreground: oklch(0.97 0.01 240);
+
+    --muted: oklch(0.24 0.025 242);
+    --muted-foreground: oklch(0.72 0.04 315);
+    /* Texto secundario ligeramente tintado de lila */
+
+    --accent: oklch(0.38 0.13 315);
+    /* Variación del violeta para hovers en paneles oscuros */
+    --accent-foreground: oklch(0.97 0.01 240);
+
+    --destructive: oklch(0.38 0.16 25);
+    --destructive-foreground: oklch(0.97 0.01 240);
+
+    --border: oklch(0.26 0.025 242);
+    --input: oklch(0.26 0.025 242);
+    --ring: oklch(0.68 0.198 42);
+
+    /* Sidebar (Tema Oscuro) */
+    --sidebar: oklch(0.20 0.028 242);
+    --sidebar-foreground: oklch(0.97 0.01 240);
+    --sidebar-primary: oklch(0.68 0.198 42);
+    --sidebar-primary-foreground: oklch(0.12 0.02 242);
+    --sidebar-accent: oklch(0.26 0.025 242);
+    --sidebar-accent-foreground: oklch(0.97 0.01 240);
+    --sidebar-border: oklch(0.26 0.025 242);
+    --sidebar-ring: oklch(0.68 0.198 42);
+
+    /* Gráficos / Charts (Ajustados para fondos oscuros) */
+    --chart-1: oklch(0.72 0.19 42);
+    --chart-2: oklch(0.42 0.16 315);
+    --chart-3: oklch(0.74 0.11 315);
+    --chart-4: oklch(0.55 0.16 200);
+    --chart-5: oklch(0.85 0.14 85);
+
+    /* Zonas de Ritmo Cardíaco (Mismos tonos, optimizados en visibilidad) */
+    --hr-z1: oklch(0.71 0.04 256.788);
+    /* Gris atenuado para no competir con el fondo */
+    --hr-z2: oklch(0.79 0.154 211.53);
+    /* Turquesa/Azul luminoso */
+    --hr-z3: oklch(0.84 0.238 128.85);
+    /* Verde brillante */
+    --hr-z4: oklch(0.85 0.199 91.936);
+    /* Amarillo de alta visibilidad */
+    --hr-z5: oklch(0.70 0.191 22.216);
+    /* Rojo encendido para destacar */
+  }
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --hr-z1: oklch(70.277% 0.01121 248.154);
-  --hr-z2: oklch(76.61% 0.1084 259.811);
-  --hr-z3: oklch(77.44% 0.10389 152.237);
-  --hr-z4: oklch(88.78% 0.13931 90.564);
-  --hr-z5: oklch(59.549% 0.20612 30.43);
-}
 
 @layer base {
   * {
