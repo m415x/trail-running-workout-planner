@@ -2,42 +2,42 @@
 
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { StatPillProps } from '@/utils/interfaces'
+import { hrZone, StatPillProps } from '@/utils/interfaces'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
-import { ZONE_STYLES } from '@/utils/constants'
+import { HR_ZONES } from '@/utils/constants'
 
-export function StatPill({ icon: Icon, label, value, unit }: StatPillProps) {
+export function StatPill({ icon: Icon, label, value, unit, className }: StatPillProps) {
   return (
-    <CustomCardInside key={label} className='font-barlow p-3 flex flex-col items-center'>
+    <CustomCardInside key={label} className={cn('p-3 flex flex-col items-center', className)}>
       <Icon size={14} className='text-primary/70 mb-1.5' />
 
-      <p className='text-foreground font-bold leading-none text-base'>
+      <p className='font-heading text-foreground font-bold leading-none text-base'>
         {value}
-        <span className='text-muted-foreground font-normal text-[14px] ml-0.5'>{unit}</span>
+        <span className='text-muted-foreground font-normal text-xs ml-1'>{unit}</span>
       </p>
 
-      <p className='text-muted-foreground text-[12px] mt-1'>{label}</p>
+      <p className='text-muted-foreground text-[10px] mt-1'>{label}</p>
     </CustomCardInside>
   )
 }
 
-export function ZonePill({ zone, pct }: { zone: string; pct: string }) {
+export function ZonePill({ zone }: { zone: hrZone }) {
   // Fallback a Z1 si la zona no coincide
-  const style = ZONE_STYLES[zone] ?? ZONE_STYLES.Z1
+  const zoneInfo = HR_ZONES[zone] ?? HR_ZONES.Z1
 
   return (
     <CustomCardInside
       className={cn(
         'flex flex-col items-center rounded-ml w-17 p-3 border shadow-none transition-colors',
-        style.bg,
-        style.border,
+        zoneInfo.styles.bg,
+        zoneInfo.styles.border,
       )}
     >
-      <Heart size={13} className={cn('mb-1', style.text)} />
+      <Heart size={13} className={cn('mb-1', zoneInfo.styles.text)} />
 
-      <span className={cn('font-barlow text-2xl font-black leading-none', style.text)}>{zone}</span>
+      <span className={cn('font-heading text-2xl font-black leading-none', zoneInfo.styles.text)}>{zone}</span>
 
-      <span className={cn('text-[9px] font-medium mt-0.5', style.textMuted)}>{pct}</span>
+      <span className={cn('text-[9px] font-medium mt-0.5', zoneInfo.styles.textMuted)}>{zoneInfo.pct}</span>
     </CustomCardInside>
   )
 }

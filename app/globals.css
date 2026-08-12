@@ -1,16 +1,24 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* --- FONTS --- */
+  --font-geist-mono: var(--font-geist-mono);
+  --font-dm-sans: var(--font-dm-sans), sans-serif;
+  --font-barlow: var(--font-barlow), sans-serif;
+  --font-outfit: var(--font-outfit), sans-serif;
+
+  --font-heading: var(--font-outfit);
+  --font-body: var(--font-dm-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* --- COLORS --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans), sans-serif;
-  --font-barlow: var(--font-barlow), sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -45,6 +53,8 @@
   --color-hr-z3: var(--hr-z3);
   --color-hr-z4: var(--hr-z4);
   --color-hr-z5: var(--hr-z5);
+
+  /* --- BORDER RADIUS --- */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -196,7 +206,6 @@
   }
 }
 
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -209,4 +218,8 @@
   html {
     @apply font-sans;
   }
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

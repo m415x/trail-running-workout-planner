@@ -50,7 +50,7 @@ export function NoteCard({ title, children, variant = 'orange', className, ...pr
       <p className={cn('font-bold uppercase tracking-wider mb-1 text-[10px]', variantStyles[variant].split(' ')[2])}>
         {title}
       </p>
-      <div className='text-foreground/80 text-xs leading-relaxed font-sans'>{children}</div>
+      <div className='text-foreground/80 text-xs leading-relaxed'>{children}</div>
     </div>
   )
 }

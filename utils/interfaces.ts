@@ -1,11 +1,24 @@
 import { ReactNode } from 'react'
 import { LucideIcon } from 'lucide-react'
 
-export type WorkoutType = 'Base' | 'Long' | 'Intervals' | 'Z2' | 'Trail' | 'Speed' | string
+export interface DayConfig {
+  index: number
+  short: string
+  medium: string
+  full: string
+}
+
+export interface MonthConfig {
+  index: number
+  short: string
+  full: string
+}
+// Para punto de color en WeeklyCalendarCard
+export type WorkoutType = 'Base' | 'Long' | 'Intervals' | 'Trail' | 'Speed' | string
 
 export interface WeekDay {
-  day: string // 'L', 'M', 'X', 'J', 'V', 'S', 'D'
-  date: number // 10, 11, 12...
+  day: string
+  date: number
   isToday?: boolean
   isRest?: boolean
   done?: boolean
@@ -32,15 +45,38 @@ export interface CardHeaderProps {
   children?: ReactNode
 }
 
+export type hrZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
+
+export interface HrZoneConfig {
+  name: string
+  pct: string
+  rpe: string
+  workType: string
+  description: string
+  styles: {
+    bg: string
+    border: string
+    text: string
+    textMuted: string
+  }
+}
+
 export interface WorkoutProps {
   title: string
   km: number
-  zone: string
-  zonePct: string
-  time: string
-  gain: string
-  pace: string
+  zone: hrZone
+  time: number
+  gain: number
+  pace: number
   notes: string
+}
+
+export interface StatPillProps {
+  icon: LucideIcon
+  label: string
+  value: number | string
+  unit: string
+  className?: string
 }
 
 export interface ElevTooltipProps {
@@ -60,12 +96,13 @@ export interface ElevationChartProps {
 
 export interface TodayWorkoutCardProps {
   workout: WorkoutProps
-  onViewMap?: () => void
+  dateLabel?: string
 }
 
-export interface StatPillProps {
-  icon: LucideIcon
-  label: string
-  value: number | string
-  unit: string
+export interface RouteMapCardProps {
+  title?: string
+  distanceKm?: number
+  gainMeters?: number
+  maxGradePct?: number
+  onUploadGpx?: () => void
 }

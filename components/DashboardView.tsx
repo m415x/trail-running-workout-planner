@@ -2,12 +2,14 @@
 
 import { useState, useMemo } from 'react'
 import { weekDays, workouts, elevationProfiles } from '@/utils/constants'
+import { formatShortDate } from '@/utils/date-helpers'
 import { ElevationChartProps } from '@/utils/interfaces'
 import { Header } from '@/components/blocks/Header'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { WeeklyCalendarCard } from '@/components/blocks/cards/WeeklyCalendarCard'
 import { TodayWorkoutCard } from '@/components/blocks/cards/TodayWorkoutCard'
 import { ElevationProfileCard } from '@/components/blocks/cards/ElevationProfileCard'
+import { RouteMapCard } from '@/components/blocks/cards/RouteMapCard'
 import { ObjectivesCard } from '@/components/blocks/cards/ObjectivesCard'
 import { BottomNavigationBar } from '@/components/blocks/BottomNavigationBar'
 
@@ -18,6 +20,11 @@ export default function DashboardView() {
   const currentKm = useMemo(() => {
     return weekDays.reduce((total, day) => (day.done ? total + day.km : total), 0)
   }, [])
+
+  const selectedDateLabel = useMemo(() => {
+    const dayData = weekDays[selectedDay]
+    return formatShortDate(selectedDay, dayData.date, 7) // 7 = Agosto
+  }, [selectedDay])
 
   const elevationChartData: ElevationChartProps = useMemo(() => {
     const workout = workouts[selectedDay] ?? workouts[1]
@@ -37,15 +44,15 @@ export default function DashboardView() {
   }, [selectedDay])
 
   return (
-    <div className='min-h-screen bg-[#070B11] flex items-start justify-center'>
+    <div className='min-h-screen bg-black flex items-start justify-center'>
       {/* Phone shell */}
       <div className='w-full max-w-97.5 min-h-screen flex flex-col relative overflow-hidden bg-background'>
         {/* Header */}
         <Header />
 
         {/* Scrollable content */}
-        <ScrollArea>
-          <div className='flex-1 overflow-y-auto px-4 pb-28 space-y-3'>
+        <ScrollArea className='flex-1 w-full'>
+          <div className='px-4 pt-1 pb-21.5 space-y-4'>
             {/* ── Weekly Calendar Card ── */}
             <WeeklyCalendarCard
               title='Microciclo #32'
@@ -59,10 +66,19 @@ export default function DashboardView() {
             />
 
             {/* ── Today's Workout Card ── */}
-            <TodayWorkoutCard workout={elevationChartData.workout} onViewMap={() => console.log('Abrir mapa')} />
+            <TodayWorkoutCard workout={elevationChartData.workout} dateLabel={selectedDateLabel} />
 
             {/* ── Elevation Profile Card ── */}
             <ElevationProfileCard {...elevationChartData} />
+
+            {/* ── Nueva Card de Track GPS / Mapa ── */}
+            <RouteMapCard
+              name='Ruta Antenas - San Juan'
+              distanceKm={elevationChartData.workout.km}
+              gainMeters={elevationChartData.workout.gain}
+              maxGradePct={14}
+              onUploadGpx={() => console.log('Abrir selector de archivos GPX')}
+            />
 
             {/* ── Objectives Card ── */}
             <ObjectivesCard />

@@ -1,44 +1,41 @@
 'use client'
 
-import { SportShoe, ChevronRight, Clock, TrendingUp, Zap } from 'lucide-react'
+import { SportShoe, Clock, Gauge, Zap } from 'lucide-react'
 import { TodayWorkoutCardProps } from '@/utils/interfaces'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
-import { LinkButton } from '@/components/ui/custom/buttons'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
+import { formatPace, paceToSpeed } from '@/utils/formatters'
 
-export function TodayWorkoutCard({ workout, onViewMap }: TodayWorkoutCardProps) {
+export function TodayWorkoutCard({ workout, dateLabel }: TodayWorkoutCardProps) {
   const stats = [
     { icon: Clock, label: 'Tiempo est.', value: workout.time, unit: 'min' },
-    { icon: TrendingUp, label: 'Desnivel+', value: workout.gain, unit: 'm' },
-    { icon: Zap, label: 'Ritmo obj.', value: workout.pace, unit: '/km' },
+    { icon: Zap, label: 'Ritmo medio', value: formatPace(workout.pace), unit: '/km' },
+    { icon: Gauge, label: 'Vel. media', value: paceToSpeed(workout.pace), unit: 'km/h' },
   ]
 
   return (
     <CustomCard>
       {/* Header row */}
       <CardHeader title='Entrenamiento del Día' icon={SportShoe}>
-        <LinkButton onClick={onViewMap}>
-          Ver mapa
-          <ChevronRight />
-        </LinkButton>
+        <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
       </CardHeader>
 
       {/* Main stat row */}
       <CustomCardInside className='flex items-center'>
         <div className='flex-1'>
           <div className='flex items-baseline gap-1.5'>
-            <span className='font-barlow font-black text-foreground leading-none text-5xl tracking-tight'>
+            <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
               {workout.km}
             </span>
 
-            <span className='font-barlow text-xl font-semibold text-muted-foreground'>km</span>
+            <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
           </div>
 
           <p className='text-muted-foreground text-xs mt-1'>{workout.title}</p>
         </div>
 
-        <ZonePill zone={workout.zone} pct={workout.zonePct} />
+        <ZonePill zone={workout.zone} />
       </CustomCardInside>
 
       {/* Stats row */}

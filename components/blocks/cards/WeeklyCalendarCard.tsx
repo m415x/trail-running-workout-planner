@@ -28,7 +28,9 @@ export function WeeklyCalendarCard({
     <CustomCard>
       {/* Header */}
       <CardHeader title={title} subtitle={subtitleWeeklyCalendar} icon={RefreshCcwDot}>
-        <DefaultButton onClick={onViewCalendar}>{dateRange}</DefaultButton>
+        <DefaultButton className='font-mono' onClick={onViewCalendar}>
+          {dateRange}
+        </DefaultButton>
       </CardHeader>
 
       {/* Day columns */}
@@ -60,7 +62,7 @@ export function WeeklyCalendarCard({
               {/* Número de fecha (10, 11, 12...) */}
               <span
                 className={cn(
-                  'font-barlow text-base font-bold leading-none',
+                  'font-heading text-base font-bold leading-none',
                   isSelected ? 'text-white' : d.isToday ? 'text-foreground' : 'text-foreground/70',
                 )}
               >
@@ -96,8 +98,7 @@ export function WeeklyCalendarCard({
           </span>
         </div>
 
-        {/* Usamos el Progress de Shadcn o la barra estilizada limpia */}
-        <Progress value={progressPercentage} className='bg-secondary' />
+        <Progress value={progressPercentage} className='rounded-full' />
       </div>
     </CustomCard>
   )

@@ -1,62 +1,60 @@
 'use client'
 
 import { useState } from 'react'
-import { colors, navItems } from '@/utils/constants'
+import { navItems } from '@/utils/constants'
+import { cn } from '@/lib/utils'
 
-export function BottomNavigationBar() {
-  const [activeNav, setActiveNav] = useState<number>(0)
+interface BottomNavigationBarProps {
+  activeNav?: number
+  onNavChange?: (index: number) => void
+  isFixed?: boolean // Permite alternar entre 'fixed' (pantalla completa) o 'absolute' (Phone Shell)
+}
+
+export function BottomNavigationBar({
+  activeNav: externalActiveNav,
+  onNavChange,
+  isFixed = true,
+}: BottomNavigationBarProps) {
+  const [internalActiveNav, setInternalActiveNav] = useState<number>(0)
+
+  // Soporta tanto estado interno como estado controlado desde el DashboardView
+  const activeNav = externalActiveNav ?? internalActiveNav
+
+  const handleSelect = (index: number) => {
+    setInternalActiveNav(index)
+    onNavChange?.(index)
+  }
+
   return (
-    <div
-      className='absolute bottom-0 left-0 right-0 border-t border-border px-2 pb-8 pt-3'
-      style={{ background: 'rgba(20,25,34,0.96)', backdropFilter: 'blur(20px)' }}
+    <nav
+      className={cn(
+        'w-full max-w-97.5 z-50 border-t border-border/80 bg-primary-foreground/80 backdrop-blur-lg px-2 py-3 transition-all',
+        isFixed ? 'fixed bottom-0' : 'absolute bottom-0',
+      )}
     >
-      <div className='flex items-center justify-around'>
+      <div className='max-w-md mx-auto flex items-center justify-around'>
         {navItems.map(({ icon: Icon, label }, i) => {
-          const isCenter = i === 2
           const isActive = activeNav === i
+
           return (
             <button
-              key={i}
-              onClick={() => setActiveNav(i)}
-              className='flex flex-col items-center gap-1 transition-all duration-200'
-              style={{
-                ...(isCenter
-                  ? {
-                      background: colors.ORANGE,
-                      borderRadius: '50%',
-                      width: 52,
-                      height: 52,
-                      marginTop: -22,
-                      boxShadow: `0 8px 24px ${colors.ORANGE}50`,
-                      justifyContent: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }
-                  : {}),
-              }}
-            >
-              <Icon
-                size={isCenter ? 22 : 20}
-                style={{
-                  color: isCenter ? 'white' : isActive ? colors.ORANGE : '#64748B',
-                }}
-              />
-              {!isCenter && (
-                <span
-                  className='font-medium'
-                  style={{
-                    fontSize: 9,
-                    color: isActive ? colors.ORANGE : '#64748B',
-                    fontFamily: "'DM Sans', sans-serif",
-                  }}
-                >
-                  {label}
-                </span>
+              key={label}
+              type='button'
+              onClick={() => handleSelect(i)}
+              className={cn(
+                'flex flex-col items-center gap-1 transition-all duration-200 cursor-pointer py-1 px-3 rounded-xl',
+                isActive
+                  ? 'text-primary hover:text-primary/80 font-semibold scale-105'
+                  : 'text-muted-foreground hover:text-foreground',
               )}
+            >
+              <Icon size={20} className='transition-transform duration-200' />
+
+              <span className='font-medium text-[9px] font-mono eading-none tracking-tight'>{label}</span>
             </button>
           )
         })}
       </div>
-    </div>
+    </nav>
   )
 }

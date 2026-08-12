@@ -1,7 +1,98 @@
-import { Home, Calendar, Play, BarChart2, User } from 'lucide-react'
-import { WorkoutProps } from '@/utils/interfaces'
+import { Home, Calendar, BarChart2, User } from 'lucide-react'
+import { WorkoutProps, DayConfig, MonthConfig, HrZoneConfig } from '@/utils/interfaces'
 
-export const colors: Record<string, string> = { ORANGE: '#FF5A1A', EMERALD: '#34D399' }
+export const DAYS_OF_WEEK: readonly DayConfig[] = [
+  { index: 0, short: 'L', medium: 'Lun', full: 'Lunes' },
+  { index: 1, short: 'M', medium: 'Mar', full: 'Martes' },
+  { index: 2, short: 'X', medium: 'Mié', full: 'Miércoles' },
+  { index: 3, short: 'J', medium: 'Jue', full: 'Jueves' },
+  { index: 4, short: 'V', medium: 'Vie', full: 'Viernes' },
+  { index: 5, short: 'S', medium: 'Sáb', full: 'Sábado' },
+  { index: 6, short: 'D', medium: 'Dom', full: 'Domingo' },
+] as const
+
+export const MONTHS_OF_YEAR: readonly MonthConfig[] = [
+  { index: 0, short: 'Ene', full: 'Enero' },
+  { index: 1, short: 'Feb', full: 'Febrero' },
+  { index: 2, short: 'Mar', full: 'Marzo' },
+  { index: 3, short: 'Abr', full: 'Abril' },
+  { index: 4, short: 'May', full: 'Mayo' },
+  { index: 5, short: 'Jun', full: 'Junio' },
+  { index: 6, short: 'Jul', full: 'Julio' },
+  { index: 7, short: 'Ago', full: 'Agosto' },
+  { index: 8, short: 'Sep', full: 'Septiembre' },
+  { index: 9, short: 'Oct', full: 'Octubre' },
+  { index: 10, short: 'Nov', full: 'Noviembre' },
+  { index: 11, short: 'Dic', full: 'Diciembre' },
+] as const
+
+export const HR_ZONES: Record<'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5', HrZoneConfig> = {
+  Z1: {
+    name: 'Zona 1',
+    pct: '50–60%',
+    rpe: '1–2/10',
+    workType: 'Recuperación Activa',
+    description: 'Ritmo suave de calentamiento, la conversación es fluida sin esfuerzo.',
+    styles: {
+      bg: 'bg-hr-z1/5',
+      border: 'border-hr-z1/20',
+      text: 'text-hr-z1',
+      textMuted: 'text-hr-z1/70',
+    },
+  },
+  Z2: {
+    name: 'Zona 2',
+    pct: '60–70%',
+    rpe: '3–4/10',
+    workType: 'Resistencia Básica',
+    description: 'Base aeróbica. Ritmo de rodaje sostenible para largas distancias.',
+    styles: {
+      bg: 'bg-hr-z2/5',
+      border: 'border-hr-z2/20',
+      text: 'text-hr-z2',
+      textMuted: 'text-hr-z2/70',
+    },
+  },
+  Z3: {
+    name: 'Zona 3',
+    pct: '70–80%',
+    rpe: '5–6/10',
+    workType: 'Capacidad Aeróbica',
+    description: 'Intensidad moderada. Mejora la eficiencia cardiovascular y el ritmo de carrera.',
+    styles: {
+      bg: 'bg-hr-z3/5',
+      border: 'border-hr-z3/20',
+      text: 'text-hr-z3',
+      textMuted: 'text-hr-z3/70',
+    },
+  },
+  Z4: {
+    name: 'Zona 4',
+    pct: '80–90%',
+    rpe: '7–8/10',
+    workType: 'Capacidad Anaeróbica',
+    description: 'Umbral de lactato / Fartlek. Esfuerzo duro y respiración agitada.',
+    styles: {
+      bg: 'bg-hr-z4/5',
+      border: 'border-hr-z4/20',
+      text: 'text-hr-z4',
+      textMuted: 'text-hr-z4/70',
+    },
+  },
+  Z5: {
+    name: 'Zona 5',
+    pct: '90–100%',
+    rpe: '9–10/10',
+    workType: 'Potencia Máxima (VO₂ máx)',
+    description: 'Velocidad pico e intervalos explosivos. Esfuerzo máximo de corta duración.',
+    styles: {
+      bg: 'bg-hr-z5/5',
+      border: 'border-hr-z5/20',
+      text: 'text-hr-z5',
+      textMuted: 'text-hr-z5/70',
+    },
+  },
+}
 
 export const weekDays = [
   { day: 'L', date: 10, km: 8, type: 'Z2', done: true, isRest: false, isToday: false },
@@ -18,50 +109,45 @@ export const workouts: Record<number, WorkoutProps> = {
     title: 'Rodaje Base',
     km: 8,
     zone: 'Z1',
-    zonePct: '70–80%',
-    time: '56',
-    gain: '+320',
-    pace: '7:00',
+    time: 56,
+    gain: 320,
+    pace: 420, // 7:00 min/km
     notes: 'Rodaje suave por camino llano. Mantener conversación fluida. Día de base aeróbica.',
   },
   1: {
     title: 'Ruta Antenas',
     km: 6,
     zone: 'Z2',
-    zonePct: '70–80%',
-    time: '42',
-    gain: '+490',
-    pace: '7:00',
-    notes: 'Subida por Antenas, mantener FC en Z2 (70–80% PAM). No exceder el ritmo — este es un día de base aeróbica.',
+    time: 42,
+    gain: 490,
+    pace: 420, // 7:00 min/km
+    notes: 'Subida por Antenas, mantener FC en Z2. No exceder el ritmo — este es un día de base aeróbica.',
   },
   2: {
-    title: 'Fondo Z2',
+    title: 'Fondo',
     km: 9,
     zone: 'Z3',
-    zonePct: '70–80%',
-    time: '63',
-    gain: '+380',
-    pace: '7:00',
+    time: 63,
+    gain: 380,
+    pace: 420, // 7:00 min/km
     notes: 'Volumen aeróbico controlado. Hidratación cada 20 min. Conservar energía para el jueves.',
   },
   3: {
-    title: 'EC + Farlek',
+    title: 'EC + Fartlek',
     km: 6,
     zone: 'Z4',
-    zonePct: '100–110%',
-    time: '38',
-    gain: '+140',
-    pace: '5:10',
-    notes: 'EC2k + 2k Farlek: series 200×200m. Recuperación activa 2k al final. Calidad sobre cantidad.',
+    time: 38,
+    gain: 140,
+    pace: 310, // 5:10 min/km
+    notes: 'EC2k + 2k Fartlek: series 200×200m. Recuperación activa 2k al final. Calidad sobre cantidad.',
   },
   5: {
-    title: 'Parkinson 16k',
+    title: 'Parkinson',
     km: 16,
     zone: 'Z5',
-    zonePct: '70–80%',
-    time: '130',
-    gain: '+820',
-    pace: '8:08',
+    time: 130,
+    gain: 820,
+    pace: 488, // 8:08 min/km
     notes: 'Tirada larga semanal por Parkinson. Ritmo muy conservador. Llevar gel y bidón extra.',
   },
 }
@@ -129,40 +215,6 @@ export const elevationProfiles: Record<number, { km: string; elev: number }[]> =
 export const navItems = [
   { icon: Home, label: 'Inicio' },
   { icon: Calendar, label: 'Plan' },
-  { icon: Play, label: '' },
   { icon: BarChart2, label: 'Stats' },
   { icon: User, label: 'Perfil' },
 ]
-
-export const ZONE_STYLES: Record<string, { bg: string; border: string; text: string; textMuted: string }> = {
-  Z1: {
-    bg: 'bg-hr-z1/5',
-    border: 'border-hr-z1/20',
-    text: 'text-hr-z1',
-    textMuted: 'text-hr-z1/70',
-  },
-  Z2: {
-    bg: 'bg-hr-z2/5',
-    border: 'border-hr-z2/20',
-    text: 'text-hr-z2',
-    textMuted: 'text-hr-z2/70',
-  },
-  Z3: {
-    bg: 'bg-hr-z3/5',
-    border: 'border-hr-z3/20',
-    text: 'text-hr-z3',
-    textMuted: 'text-hr-z3/70',
-  },
-  Z4: {
-    bg: 'bg-hr-z4/5',
-    border: 'border-hr-z4/20',
-    text: 'text-hr-z4',
-    textMuted: 'text-hr-z4/70',
-  },
-  Z5: {
-    bg: 'bg-hr-z5/5',
-    border: 'border-hr-z5/20',
-    text: 'text-hr-z5',
-    textMuted: 'text-hr-z5/70',
-  },
-}
