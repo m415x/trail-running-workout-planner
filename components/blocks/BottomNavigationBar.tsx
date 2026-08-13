@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { navItems } from '@/utils/constants'
+import { BOTTOM_NAV_ITEMS } from '@/utils/constants'
 import { cn } from '@/lib/utils'
 
 interface BottomNavigationBarProps {
@@ -33,7 +33,7 @@ export function BottomNavigationBar({
       )}
     >
       <div className='max-w-md mx-auto flex items-center justify-around'>
-        {navItems.map(({ icon: Icon, label }, i) => {
+        {BOTTOM_NAV_ITEMS.map(({ icon: Icon, label }, i) => {
           const isActive = activeNav === i
 
           return (

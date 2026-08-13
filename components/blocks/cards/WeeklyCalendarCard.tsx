@@ -1,28 +1,32 @@
 'use client'
 
-import { CheckCircle2, RefreshCcwDot } from 'lucide-react'
-import { Progress } from '@/components/ui/progress'
+import { useMemo } from 'react'
+import { RefreshCcwDot } from 'lucide-react'
 import { DefaultButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
-import { cn } from '@/lib/utils'
 import { WeeklyCalendarCardProps } from '@/utils/interfaces'
+import ProgressGradient from '@/components/ui/custom/progress-gradient'
+import { DaySelectorButton } from '@/components/blocks/DaySelectorButton'
+import { calculateProgressPercentage } from '@/utils/calculators'
 
 export function WeeklyCalendarCard({
   title = 'Microciclo',
-  phase = 'Choque',
-  targetKm = 45,
-  currentKm = 8,
+  phase = 'Base',
+  targetKm = 0,
+  currentKm = 0,
   dateRange = 'Ago 10–16',
   weekDays = [],
   selectedDay,
   onSelectDay,
   onViewCalendar,
 }: WeeklyCalendarCardProps) {
-  // Cálculo automático del porcentaje de progreso
-  const progressPercentage = targetKm > 0 ? Math.min(Math.round((currentKm / targetKm) * 100), 100) : 0
-
   const subtitleWeeklyCalendar = `Fase ${phase} · Objetivo ${targetKm} km`
+
+  // Porcentaje para la barra de progreso
+  const progressPercentage = useMemo(() => {
+    return calculateProgressPercentage(currentKm, targetKm)
+  }, [currentKm, targetKm])
 
   return (
     <CustomCard>
@@ -35,58 +39,9 @@ export function WeeklyCalendarCard({
 
       {/* Day columns */}
       <div className='grid grid-cols-7 gap-1'>
-        {weekDays.map((d, i) => {
-          const isSelected = selectedDay === i
-          const hasWorkout = !d.isRest
-
-          return (
-            <button
-              key={i}
-              type='button'
-              onClick={() => hasWorkout && onSelectDay(i)}
-              disabled={d.isRest}
-              className={cn(
-                'flex flex-col items-center rounded-[18px] py-2.5 px-1 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
-                isSelected && 'bg-primary text-white border border-primary shadow-lg shadow-primary/30',
-                !isSelected && d.isToday && 'bg-primary/15 border border-primary/30',
-                !isSelected && !d.isToday && 'bg-transparent hover:bg-secondary/40',
-              )}
-            >
-              {/* Día de la semana (LUN, MAR...) */}
-              <span
-                className={cn('text-[10px] font-semibold mb-1', isSelected ? 'text-white' : 'text-muted-foreground')}
-              >
-                {d.day}
-              </span>
-
-              {/* Número de fecha (10, 11, 12...) */}
-              <span
-                className={cn(
-                  'font-heading text-base font-bold leading-none',
-                  isSelected ? 'text-white' : d.isToday ? 'text-foreground' : 'text-foreground/70',
-                )}
-              >
-                {d.date}
-              </span>
-
-              {/* Indicador inferior (Check / Dot) */}
-              <div className='mt-1.5 h-2 flex items-center justify-center'>
-                {d.done ? (
-                  <CheckCircle2 size={12} className={isSelected ? 'text-white' : 'text-hr-z3'} />
-                ) : hasWorkout ? (
-                  <span
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full',
-                      isSelected && 'bg-white/80',
-                      !isSelected && d.type === 'Long' && 'bg-secondary',
-                      !isSelected && d.type !== 'Long' && 'bg-muted-foreground/40',
-                    )}
-                  />
-                ) : null}
-              </div>
-            </button>
-          )
-        })}
+        {weekDays.map((d, i) => (
+          <DaySelectorButton key={i} day={d} index={i} isSelected={selectedDay === i} onSelectDay={onSelectDay} />
+        ))}
       </div>
 
       {/* Weekly progress */}
@@ -98,7 +53,7 @@ export function WeeklyCalendarCard({
           </span>
         </div>
 
-        <Progress value={progressPercentage} className='rounded-full' />
+        <ProgressGradient value={progressPercentage} />
       </div>
     </CustomCard>
   )

@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { weekDays, workouts, elevationProfiles } from '@/utils/constants'
-import { formatShortDate } from '@/utils/date-helpers'
+import { weekDays, workouts, elevationProfiles } from '@/data/data'
 import { ElevationChartProps } from '@/utils/interfaces'
+import { formatShortDate } from '@/utils/date-helpers'
+import { calculateAccumulatedKm } from '@/utils/calculators'
 import { Header } from '@/components/blocks/Header'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { WeeklyCalendarCard } from '@/components/blocks/cards/WeeklyCalendarCard'
@@ -16,9 +17,9 @@ import { BottomNavigationBar } from '@/components/blocks/BottomNavigationBar'
 export default function DashboardView() {
   const [selectedDay, setSelectedDay] = useState<number>(1) // Martes seleccionado por defecto (índice 1)
 
-  // Calcular los km completados dinámicamente según los días marcados con done: true
+  // 1. Kilómetros reales acumulados (incluye parciales)
   const currentKm = useMemo(() => {
-    return weekDays.reduce((total, day) => (day.done ? total + day.km : total), 0)
+    return calculateAccumulatedKm(weekDays)
   }, [])
 
   const selectedDateLabel = useMemo(() => {

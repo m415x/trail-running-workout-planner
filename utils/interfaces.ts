@@ -13,15 +13,33 @@ export interface MonthConfig {
   short: string
   full: string
 }
-// Para punto de color en WeeklyCalendarCard
-export type WorkoutType = 'Base' | 'Long' | 'Intervals' | 'Trail' | 'Speed' | string
+
+export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
+
+export type WorkoutType =
+  | 'Base'
+  | 'Long'
+  | 'Intervals'
+  | 'Trail'
+  | 'Speed'
+  | 'Fartlek'
+  | 'Rest'
+  | 'PAM'
+  | 'Hills'
+  | 'Race'
+  | string
 
 export interface WeekDay {
   day: string
   date: number
+  km?: number
+  completedKm?: number
   isToday?: boolean
   isRest?: boolean
-  done?: boolean
+  isDone?: boolean
+  isPartial?: boolean
+  isMissed?: boolean
+  status?: DayStatus
   type?: WorkoutType
 }
 

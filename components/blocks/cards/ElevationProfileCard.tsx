@@ -13,7 +13,7 @@ function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
   return (
     <div className='rounded-xl border border-border/50 bg-popover/90 px-3 py-2 text-xs shadow-md backdrop-blur-md'>
       <p className='text-muted-foreground'>km {label}</p>
-      <p className='font-semibold primary'>{payload[0].value} m</p>
+      <p className='font-semibold text-primary'>{payload[0].value} m</p>
     </div>
   )
 }
