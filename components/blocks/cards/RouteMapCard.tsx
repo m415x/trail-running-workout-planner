@@ -2,9 +2,11 @@
 
 import dynamic from 'next/dynamic'
 import { Navigation, Route, TrendingUp, Upload } from 'lucide-react'
+import { RouteMapCardProps } from '@/utils/interfaces'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill } from '@/components/ui/custom/pills'
+import { DefaultButton } from '@/components/ui/custom/buttons'
 
 // Carga diferida del mapa omitiendo el Server-Side Rendering
 const MapInner = dynamic(() => import('@/components/blocks/maps/MapInner'), {
@@ -16,16 +18,6 @@ const MapInner = dynamic(() => import('@/components/blocks/maps/MapInner'), {
   ),
 })
 
-export interface RouteMapCardProps {
-  name?: string
-  distanceKm?: number
-  gainMeters?: number
-  maxGradePct?: number
-  lat?: number
-  lng?: number
-  onUploadGpx?: () => void
-}
-
 export function RouteMapCard({
   name = 'Ruta',
   distanceKm = 0,
@@ -33,25 +25,22 @@ export function RouteMapCard({
   maxGradePct = 0,
   lat = -31.48,
   lng = -68.65,
+  zoom = 9,
   onUploadGpx,
 }: RouteMapCardProps) {
   return (
     <CustomCard>
       {/* Header con botón para cargar GPX futuro */}
       <CardHeader title='Track GPS' icon={Route} subtitle={name}>
-        <button
-          type='button'
-          onClick={onUploadGpx}
-          className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer font-sans'
-        >
+        <DefaultButton onClick={onUploadGpx}>
           <Upload size={11} />
           <span>Cargar GPX</span>
-        </button>
+        </DefaultButton>
       </CardHeader>
 
       {/* Visor de Leaflet con estilo oscuro ajustado */}
-      <div className='relative h-48 w-full rounded-2xl border border-border/50 overflow-hidden my-2'>
-        <MapInner lat={lat} lng={lng} />
+      <div className='relative h-52 w-full rounded-2xl border border-border/50 overflow-hidden my-2'>
+        <MapInner lat={lat} lng={lng} zoom={zoom} />
       </div>
 
       {/* Métricas rápidas del Track usando StatPill */}

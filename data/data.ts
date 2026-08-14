@@ -1,13 +1,37 @@
-import { WorkoutProps, WeekDay } from '@/utils/interfaces'
+import { WorkoutProps, WeekDay, UserProps, WeeklyCycle } from '@/utils/interfaces'
 
-export const weekDays: WeekDay[] = [
-  { day: 'L', date: 10, km: 8, type: 'Base', completedKm: 8, isDone: true },
-  { day: 'M', date: 11, km: 6, type: 'Intervals', completedKm: 3.5, isPartial: true },
-  { day: 'X', date: 12, km: 9, type: 'Long', isMissed: true },
-  { day: 'J', date: 13, km: 6, type: 'Fartlek', isToday: true },
-  { day: 'V', date: 14, km: 0, isRest: true },
-  { day: 'S', date: 15, km: 16, type: 'Trail' },
-  { day: 'D', date: 16, km: 0, type: 'Race' },
+export const currentUser: UserProps = {
+  id: 'usr_1',
+  firstName: 'Cristian Daniel',
+  lastName: 'Lahoz Piantanida',
+  nickName: 'Cristian Lahoz',
+  dni: '38.123.456',
+  birthday: '1992-08-14',
+  phone: '+54 9 264 123-4567',
+  email: 'cristianlahoz@elparque.com.ar',
+  emergencyContact: 'María Lahoz (Hermana)',
+  emergencyPhone: '+54 9 264 987-6543',
+  avatar: '/avatars/cristian.png',
+  teamRole: 'El Parque Team Athlete',
+}
+
+export const weeklyCycle: WeeklyCycle = {
+  id: 'cycle_32',
+  title: 'Microciclo #32',
+  phase: 'Choque',
+  startDate: '2026-08-10',
+  endDate: '2026-08-16',
+  targetKm: 45,
+}
+
+export const weekDaysRaw: WeekDay[] = [
+  { date: '2026-08-10', km: 8, type: 'Base', completedKm: 8, isDone: true, workoutId: 0 },
+  { date: '2026-08-11', km: 6, type: 'Intervals', completedKm: 3.5, isPartial: true, workoutId: 1 },
+  { date: '2026-08-12', km: 9, type: 'Long', isMissed: true, workoutId: 2 },
+  { date: '2026-08-13', km: 6, type: 'Fartlek', workoutId: 3 },
+  { date: '2026-08-14', km: 0, isRest: true },
+  { date: '2026-08-15', km: 16, type: 'Trail', workoutId: 5 },
+  { date: '2026-08-16', km: 10, type: 'Race', workoutId: 6 },
 ]
 
 export const workouts: Record<number, WorkoutProps> = {
@@ -56,20 +80,19 @@ export const workouts: Record<number, WorkoutProps> = {
     pace: 488, // 8:08 min/km
     notes: 'Tirada larga semanal por Parkinson. Ritmo muy conservador. Llevar gel y bidón extra.',
   },
+  6: {
+    title: 'Tierra de Gigantes',
+    km: 20,
+    zone: 'Z5',
+    time: 180,
+    gain: 820,
+    pace: 540, // 8:08 min/km
+    notes:
+      'Salida progresiva. Administrar hidratación en el km 10 antes del ascenso principal. ¡A disfrutar la carrera!',
+  },
 }
 
 export const elevationProfiles: Record<number, { km: string; elev: number }[]> = {
-  0: [
-    { km: '0', elev: 720 },
-    { km: '1', elev: 740 },
-    { km: '2', elev: 755 },
-    { km: '3', elev: 750 },
-    { km: '4', elev: 745 },
-    { km: '5', elev: 738 },
-    { km: '6', elev: 730 },
-    { km: '7', elev: 725 },
-    { km: '8', elev: 720 },
-  ],
   1: [
     { km: '0', elev: 820 },
     { km: '0.5', elev: 870 },
@@ -85,27 +108,6 @@ export const elevationProfiles: Record<number, { km: string; elev: number }[]> =
     { km: '5.5', elev: 1040 },
     { km: '6', elev: 940 },
   ],
-  2: [
-    { km: '0', elev: 750 },
-    { km: '1', elev: 820 },
-    { km: '2', elev: 900 },
-    { km: '3', elev: 990 },
-    { km: '4', elev: 1050 },
-    { km: '5', elev: 980 },
-    { km: '6', elev: 910 },
-    { km: '7', elev: 840 },
-    { km: '8', elev: 790 },
-    { km: '9', elev: 750 },
-  ],
-  3: [
-    { km: '0', elev: 820 },
-    { km: '1', elev: 870 },
-    { km: '2', elev: 900 },
-    { km: '3', elev: 880 },
-    { km: '4', elev: 860 },
-    { km: '5', elev: 845 },
-    { km: '6', elev: 820 },
-  ],
   5: [
     { km: '0', elev: 900 },
     { km: '2', elev: 1020 },
@@ -116,5 +118,17 @@ export const elevationProfiles: Record<number, { km: string; elev: number }[]> =
     { km: '12', elev: 980 },
     { km: '14', elev: 870 },
     { km: '16', elev: 900 },
+  ],
+  6: [
+    { km: '0', elev: 750 },
+    { km: '1', elev: 820 },
+    { km: '2', elev: 900 },
+    { km: '3', elev: 990 },
+    { km: '4', elev: 1050 },
+    { km: '5', elev: 980 },
+    { km: '6', elev: 910 },
+    { km: '7', elev: 840 },
+    { km: '8', elev: 790 },
+    { km: '9', elev: 750 },
   ],
 }

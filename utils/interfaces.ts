@@ -30,8 +30,10 @@ export type WorkoutType =
   | string
 
 export interface WeekDay {
-  day: string
-  date: number
+  day?: string
+  date: string
+  fullDate?: string
+  type?: WorkoutType
   km?: number
   completedKm?: number
   isToday?: boolean
@@ -40,15 +42,22 @@ export interface WeekDay {
   isPartial?: boolean
   isMissed?: boolean
   status?: DayStatus
-  type?: WorkoutType
+  workoutId?: number
 }
 
+// Entidad estática de la base de datos
+export interface WeeklyCycle {
+  id: string
+  title: string
+  phase: string
+  startDate: string
+  endDate: string
+  targetKm: number
+}
+
+// Props del componente de UI
 export interface WeeklyCalendarCardProps {
-  title?: string
-  phase?: string
-  targetKm?: number
-  currentKm?: number
-  dateRange?: string
+  cycle: WeeklyCycle
   weekDays: WeekDay[]
   selectedDay: number
   onSelectDay: (index: number) => void
@@ -89,6 +98,11 @@ export interface WorkoutProps {
   notes: string
 }
 
+export interface TodayWorkoutCardProps {
+  workout: WorkoutProps
+  date?: string
+}
+
 export interface StatPillProps {
   icon: LucideIcon
   label: string
@@ -112,15 +126,36 @@ export interface ElevationChartProps {
   xDomain?: string[]
 }
 
-export interface TodayWorkoutCardProps {
-  workout: WorkoutProps
-  dateLabel?: string
-}
-
 export interface RouteMapCardProps {
   title?: string
   distanceKm?: number
   gainMeters?: number
   maxGradePct?: number
   onUploadGpx?: () => void
+}
+
+export interface RouteMapCardProps {
+  name?: string
+  distanceKm?: number
+  gainMeters?: number
+  maxGradePct?: number
+  lat?: number
+  lng?: number
+  zoom?: number
+  onUploadGpx?: () => void
+}
+
+export interface UserProps {
+  id: string
+  firstName: string
+  lastName: string
+  nickName?: string
+  dni: string
+  birthday?: string
+  email: string
+  phone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  avatar?: string
+  teamRole?: string
 }

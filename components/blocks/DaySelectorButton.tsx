@@ -14,21 +14,24 @@ export interface DaySelectorButtonProps {
 }
 
 export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySelectorButtonProps) {
-  const hasWorkout = !day.isRest
-
   // Obtenemos la referencia al icono
   const icon = getWorkoutIcon(day.type ?? (day.isRest ? 'Rest' : 'Base'))
 
   return (
     <button
       type='button'
-      onClick={() => hasWorkout && onSelectDay(index)}
-      disabled={day.isRest}
+      onClick={() => onSelectDay(index)}
       className={cn(
         'flex flex-col items-center rounded-[18px] py-2 px-1 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40',
+        // ── Estado Seleccionado (Aplica igual aunque sea Descanso) ──
         isSelected && 'bg-primary text-white border border-primary shadow-lg shadow-primary/30',
+
+        // ── Estados NO Seleccionados ──
         !isSelected && day.isToday && 'bg-primary/15 border border-primary/30',
         !isSelected && !day.isToday && 'bg-transparent hover:bg-secondary/40',
+
+        // ── Apariencia atenuada/muted para Días de Descanso no activos ──
+        !isSelected && day.isRest && 'opacity-60 hover:opacity-100',
       )}
     >
       {/* Ícono superior según el WorkoutType */}

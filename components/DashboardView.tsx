@@ -1,92 +1,79 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { weekDays, workouts, elevationProfiles } from '@/data/data'
-import { ElevationChartProps } from '@/utils/interfaces'
-import { formatShortDate } from '@/utils/date-helpers'
-import { calculateAccumulatedKm } from '@/utils/calculators'
-import { Header } from '@/components/blocks/Header'
+// Componentes de Bloques / UI
+import { HeaderNav } from '@/components/blocks/HeaderNav'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { WeeklyCalendarCard } from '@/components/blocks/cards/WeeklyCalendarCard'
-import { TodayWorkoutCard } from '@/components/blocks/cards/TodayWorkoutCard'
+import { TodayWorkoutCard, RaceCard } from '@/components/blocks/cards/WorkoutCard'
+import { CustomCard } from '@/components/ui/custom/card-containers'
 import { ElevationProfileCard } from '@/components/blocks/cards/ElevationProfileCard'
 import { RouteMapCard } from '@/components/blocks/cards/RouteMapCard'
-import { ObjectivesCard } from '@/components/blocks/cards/ObjectivesCard'
+// import { ObjectivesCard } from '@/components/blocks/cards/ObjectivesCard'
 import { BottomNavigationBar } from '@/components/blocks/BottomNavigationBar'
+import { Coffee } from 'lucide-react'
+import { useDashboard } from '@/hooks/useDashboard'
 
 export default function DashboardView() {
-  const [selectedDay, setSelectedDay] = useState<number>(1) // Martes seleccionado por defecto (índice 1)
-
-  // 1. Kilómetros reales acumulados (incluye parciales)
-  const currentKm = useMemo(() => {
-    return calculateAccumulatedKm(weekDays)
-  }, [])
-
-  const selectedDateLabel = useMemo(() => {
-    const dayData = weekDays[selectedDay]
-    return formatShortDate(selectedDay, dayData.date, 7) // 7 = Agosto
-  }, [selectedDay])
-
-  const elevationChartData: ElevationChartProps = useMemo(() => {
-    const workout = workouts[selectedDay] ?? workouts[1]
-    const elevData = elevationProfiles[selectedDay] ?? elevationProfiles[1]
-
-    const elevMin = Math.min(...elevData.map((d) => d.elev))
-    const elevMax = Math.max(...elevData.map((d) => d.elev))
-    const yDomain = [Math.floor(elevMin - 50), Math.ceil(elevMax + 50)]
-
-    return {
-      workout,
-      elevData,
-      elevMin,
-      elevMax,
-      yDomain,
-    }
-  }, [selectedDay])
+  const { user, weeklyCycle, weekDays, selectedDay, selectedWeekDay, currentWorkout, elevationChartData, onSelectDay } =
+    useDashboard()
 
   return (
     <div className='min-h-screen bg-black flex items-start justify-center'>
       {/* Phone shell */}
       <div className='w-full max-w-97.5 min-h-screen flex flex-col relative overflow-hidden bg-background'>
         {/* Header */}
-        <Header />
+        <HeaderNav user={user} />
 
         {/* Scrollable content */}
         <ScrollArea className='flex-1 w-full'>
           <div className='px-4 pt-1 pb-21.5 space-y-4'>
             {/* ── Weekly Calendar Card ── */}
             <WeeklyCalendarCard
-              title='Microciclo #32'
-              phase='Choque'
-              targetKm={45}
-              currentKm={currentKm}
-              dateRange='Ago 10–16'
+              cycle={weeklyCycle}
               weekDays={weekDays}
               selectedDay={selectedDay}
-              onSelectDay={setSelectedDay}
+              onSelectDay={onSelectDay}
             />
 
-            {/* ── Today's Workout Card ── */}
-            <TodayWorkoutCard workout={elevationChartData.workout} dateLabel={selectedDateLabel} />
+            {/* ── Tarjeta del Día Seleccionado ── */}
+            {selectedWeekDay?.type === 'Race' ? (
+              <RaceCard
+                date={selectedWeekDay.fullDate}
+                workout={currentWorkout} // Si la carrera tiene datos cargados
+              />
+            ) : currentWorkout ? (
+              <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate ?? '2026-08-13'} />
+            ) : (
+              /* Placeholder estilizado para días de descanso */
+              <CustomCard className='items-center'>
+                <Coffee className='text-muted-foreground' />
+                <p className='font-heading font-semibold text-foreground text-sm'>Día de Descanso</p>
+                <p className='text-xs text-muted-foreground mt-0.5 font-sans'>
+                  Sin rutina programada. Aprovecha para recuperar.
+                </p>
+              </CustomCard>
+            )}
 
-            {/* ── Elevation Profile Card ── */}
-            <ElevationProfileCard {...elevationChartData} />
+            {/* ── Perfil de Elevación (si hay datos de elevación disponibles) ── */}
+            {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
 
-            {/* ── Nueva Card de Track GPS / Mapa ── */}
-            <RouteMapCard
-              name='Ruta Antenas - San Juan'
-              distanceKm={elevationChartData.workout.km}
-              gainMeters={elevationChartData.workout.gain}
-              maxGradePct={14}
-              onUploadGpx={() => console.log('Abrir selector de archivos GPX')}
-            />
+            {/* ── Mapa Interactivo del Track GPS ── */}
+            {currentWorkout && elevationChartData && (
+              <RouteMapCard
+                title={currentWorkout.title}
+                distanceKm={currentWorkout.km}
+                gainMeters={currentWorkout.gain}
+                maxGradePct={14}
+                onUploadGpx={() => console.log('Subir GPX')}
+              />
+            )}
 
-            {/* ── Objectives Card ── */}
-            <ObjectivesCard />
+            {/* ── Objetivos del Microciclo ── */}
+            {/* <ObjectivesCard /> */}
           </div>
         </ScrollArea>
 
-        {/* ── Bottom Navigation ── */}
+        {/* ── Bottom Navigation Fixed ── */}
         <BottomNavigationBar />
       </div>
     </div>

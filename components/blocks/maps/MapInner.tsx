@@ -17,9 +17,9 @@ interface MapInnerProps {
   zoom?: number
 }
 
-export default function MapInner({ lat = -31.48, lng = -68.65, zoom = 14 }: MapInnerProps) {
+export default function MapInner({ lat = -31.48, lng = -68.65, zoom = 9 }: MapInnerProps) {
   return (
-    <MapContainer center={[lat, lng]} zoom={zoom} scrollWheelZoom={false} className='w-full h-full rounded-2xl z-0'>
+    <MapContainer center={[lat, lng]} zoom={zoom} scrollWheelZoom={false} className='w-full h-full rounded-xl z-0'>
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'

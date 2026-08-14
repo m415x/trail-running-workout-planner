@@ -1,21 +1,15 @@
 'use client'
 
 import { Bell } from 'lucide-react'
+import { UserProps } from '@/utils/interfaces'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { HeaderUser } from '@/components/blocks/HeaderUser'
 
-const CURRENT_USER = {
-  name: 'Cristian Lahoz',
-  teamRole: 'Trail Runner',
-  email: 'cristianlahoz@elparque.com.ar',
-  avatar: '/avatars/cristian.png',
-}
-
-export function Header() {
+export function HeaderNav({ user }: { user: UserProps }) {
   return (
     <div className='px-5 pt-12 pb-3 flex items-center justify-between'>
       {/* Nuevo componente de usuario desplegable */}
-      <HeaderUser user={CURRENT_USER} />
+      <HeaderUser user={user} />
 
       {/* Controles del lado derecho */}
       <div className='flex items-center gap-2'>

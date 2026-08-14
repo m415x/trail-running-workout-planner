@@ -9,7 +9,7 @@ export function DefaultButton({ className, ...props }: CustomButtonProps) {
   return (
     <Button
       className={cn(
-        'flex items-center gap-1 rounded-full text-[11px] font-semibold cursor-pointer text-primary transition-colors hover:text-background bg-primary/20 ',
+        'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 transition-all cursor-pointer',
         className,
       )}
       {...props}
