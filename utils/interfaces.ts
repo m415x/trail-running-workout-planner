@@ -96,6 +96,7 @@ export interface WorkoutProps {
   gain: number
   pace: number
   notes: string
+  gpxPath?: string
 }
 
 export interface TodayWorkoutCardProps {

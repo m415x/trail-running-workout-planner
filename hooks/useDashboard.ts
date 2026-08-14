@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 // Simulación de base de datos / API
-import { currentUser, weeklyCycle, weekDaysRaw, workouts, elevationProfiles } from '@/data/data'
+import { currentUser, weeklyCycle, weekDaysRaw, workouts } from '@/data/data'
 
 // Helpers y Tipos
 import { formatRawWeekDay } from '@/utils/date-helpers'
+import { parseGpxFromUrl, GpxData } from '@/utils/gpx-parser'
 import { ElevationChartProps } from '@/utils/interfaces'
 
 export function useDashboard() {
@@ -26,36 +27,66 @@ export function useDashboard() {
   const workoutId = selectedWeekDay?.workoutId
   const currentWorkout = workoutId !== undefined ? workouts[workoutId] : null
 
-  // 4. Datos calculados para el gráfico de altimetría
+  // 4. Estado para guardar los datos parseados del GPX activo
+  const [gpxData, setGpxData] = useState<GpxData | null>(null)
+
+  // 5. Cargar y parsear GPX dinámicamente cuando cambia la rutina
+  useEffect(() => {
+    let isMounted = true
+
+    const loadGpx = async () => {
+      if (!currentWorkout?.gpxPath) {
+        // 1. Diferimos la llamada para evitar el setState síncrono dentro del effect body
+        await Promise.resolve()
+        if (isMounted) setGpxData(null)
+        return
+      }
+
+      // 2. Parseo asíncrono normal del archivo GPX
+      const data = await parseGpxFromUrl(currentWorkout.gpxPath)
+      if (isMounted) {
+        setGpxData(data)
+      }
+    }
+
+    loadGpx()
+
+    return () => {
+      isMounted = false
+    }
+  }, [currentWorkout?.gpxPath])
+
+  // 6. Datos calculados para la altimetría derivados del GPX
   const elevationChartData: ElevationChartProps | null = useMemo(() => {
-    if (workoutId === undefined || !currentWorkout || !elevationProfiles[workoutId]) {
+    if (!currentWorkout || !gpxData || gpxData.elevationProfile.length === 0) {
       return null
     }
 
-    const elevData = elevationProfiles[workoutId]
-    const elevMin = Math.min(...elevData.map((d) => d.elev))
-    const elevMax = Math.max(...elevData.map((d) => d.elev))
-    const yDomain = [Math.floor(elevMin - 50), Math.ceil(elevMax + 50)]
+    const elevs = gpxData.elevationProfile.map((d) => d.elev)
+    const elevMin = Math.min(...elevs)
+    const elevMax = Math.max(...elevs)
 
     return {
-      workout: currentWorkout,
-      elevData,
+      workout: {
+        ...currentWorkout,
+        km: gpxData.distanceKm || currentWorkout.km,
+        gain: gpxData.gainMeters || currentWorkout.gain,
+      },
+      elevData: gpxData.elevationProfile,
       elevMin,
       elevMax,
-      yDomain,
+      yDomain: [Math.floor(elevMin - 30), Math.ceil(elevMax + 30)],
     }
-  }, [workoutId, currentWorkout])
+  }, [currentWorkout, gpxData])
 
   return {
-    // Entidades / Datos
     user: currentUser,
     weeklyCycle,
     weekDays,
     selectedWeekDay,
     currentWorkout,
     elevationChartData,
-
-    // Estado & Acciones
+    gpxData, // Expuesto para pasarlo al mapa Leaflet
     selectedDay,
     onSelectDay: setSelectedDay,
   }

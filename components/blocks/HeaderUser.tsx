@@ -1,7 +1,9 @@
 'use client'
 
+import { useMemo } from 'react'
 import { UserProps } from '@/utils/interfaces'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { formatFullDate } from '@/utils/date-helpers'
 
 export function HeaderUser({ user }: { user: UserProps }) {
   // Nombre completo compuesto
@@ -9,6 +11,11 @@ export function HeaderUser({ user }: { user: UserProps }) {
 
   // Iniciales exactas para el Fallback
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
+
+  // Calcula y formatea la fecha actual ("Jueves · 13 Agosto 2026")
+  const today = useMemo(() => {
+    return formatFullDate(new Date())
+  }, [])
 
   return (
     <button type='button' className='flex items-center gap-3 text-left outline-none cursor-pointer group'>
@@ -20,14 +27,14 @@ export function HeaderUser({ user }: { user: UserProps }) {
         </Avatar>
       </div>
 
-      {/* Info del Atleta */}
       <div className='flex flex-col justify-center'>
+        {/* Info del Atleta */}
         <h1 className='font-heading text-foreground text-xl font-bold leading-tight tracking-tight'>
-          {user.nickName ?? fullName}
+          Hola, {user.nickName ?? fullName}
         </h1>
-        <p className='text-muted-foreground text-xs font-normal font-sans'>
-          {user.teamRole ?? 'El Parque Team Athlete'}
-        </p>
+
+        {/* Fecha de hoy en formato largo */}
+        <p className='text-muted-foreground text-xs font-normal font-sans'>{today}</p>
       </div>
     </button>
   )

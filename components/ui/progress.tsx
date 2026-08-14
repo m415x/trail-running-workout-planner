@@ -8,10 +8,11 @@ interface ProgressProps extends ProgressPrimitive.Root.Props {
   indicatorClassName?: string
 }
 
-function Progress({ className, indicatorClassName, children, value, ...props }: ProgressProps) {
+function Progress({ className, indicatorClassName, children, value, getAriaValueText, ...props }: ProgressProps) {
   return (
     <ProgressPrimitive.Root
       value={value}
+      getAriaValueText={getAriaValueText ?? ((_, val) => `${val ?? 0}%`)}
       data-slot='progress'
       className={cn('flex flex-wrap gap-3', className)}
       {...props}

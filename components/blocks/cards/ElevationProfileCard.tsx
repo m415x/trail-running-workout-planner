@@ -50,6 +50,12 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
               tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }}
               tickLine={false}
               axisLine={false}
+              type='number'
+              domain={['dataMin', 'dataMax']}
+              tickCount={10}
+              tickFormatter={(value) => `${value} km`}
+              stroke='#888888'
+              fontSize={10}
             />
             <YAxis
               domain={yDomain}

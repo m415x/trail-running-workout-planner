@@ -14,8 +14,17 @@ import { Coffee } from 'lucide-react'
 import { useDashboard } from '@/hooks/useDashboard'
 
 export default function DashboardView() {
-  const { user, weeklyCycle, weekDays, selectedDay, selectedWeekDay, currentWorkout, elevationChartData, onSelectDay } =
-    useDashboard()
+  const {
+    user,
+    weeklyCycle,
+    weekDays,
+    selectedDay,
+    selectedWeekDay,
+    currentWorkout,
+    elevationChartData,
+    gpxData,
+    onSelectDay,
+  } = useDashboard()
 
   return (
     <div className='min-h-screen bg-black flex items-start justify-center'>
@@ -60,11 +69,12 @@ export default function DashboardView() {
             {/* ── Mapa Interactivo del Track GPS ── */}
             {currentWorkout && elevationChartData && (
               <RouteMapCard
+                mapKey={selectedWeekDay?.fullDate}
                 title={currentWorkout.title}
-                distanceKm={currentWorkout.km}
-                gainMeters={currentWorkout.gain}
-                maxGradePct={14}
-                onUploadGpx={() => console.log('Subir GPX')}
+                distanceKm={gpxData?.distanceKm ?? currentWorkout.km}
+                gainMeters={gpxData?.gainMeters ?? currentWorkout.gain}
+                maxGradePct={gpxData?.maxGradePct ?? 0}
+                positions={gpxData?.positions ?? []}
               />
             )}
 
