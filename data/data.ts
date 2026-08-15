@@ -1,4 +1,4 @@
-import { WorkoutProps, WeekDay, UserProps, WeeklyCycle } from '@/utils/interfaces'
+import { WorkoutProps, WeekDay, UserProps, WeeklyCycle } from '@/types/interfaces'
 
 export const currentUser: UserProps = {
   id: 'usr_1',

@@ -2,7 +2,7 @@
 
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { hrZone, StatPillProps } from '@/utils/interfaces'
+import { hrZone, StatPillProps } from '@/types/interfaces'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
 import { HR_ZONES } from '@/utils/constants'
 

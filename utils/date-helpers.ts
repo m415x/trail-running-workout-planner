@@ -1,5 +1,5 @@
 import { DAYS_OF_WEEK, MONTHS_OF_YEAR } from '@/utils/constants'
-import { WeekDay, DayStatus } from '@/utils/interfaces'
+import { WeekDay, DayStatus } from '@/types/interfaces'
 
 /**
  * Normaliza una cadena YYYY-MM-DD a un objeto Date local sin desfases por timezones (UTC vs Local)

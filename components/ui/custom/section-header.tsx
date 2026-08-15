@@ -1,4 +1,4 @@
-import { CardHeaderProps } from '@/utils/interfaces'
+import { CardHeaderProps } from '@/types/interfaces'
 
 export function CardHeader({
   title,

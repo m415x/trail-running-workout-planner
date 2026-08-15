@@ -1,5 +1,5 @@
 import { Activity, LucideIcon } from 'lucide-react'
-import { WorkoutType } from '@/utils/interfaces'
+import { WorkoutType } from '@/types/interfaces'
 import { WORKOUT_TYPE_ICONS } from '@/utils/constants'
 
 /**
