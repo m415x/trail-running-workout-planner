@@ -1,90 +1,50 @@
 'use client'
 
-// Componentes de Bloques / UI
-import { HeaderNav } from '@/components/blocks/HeaderNav'
+import { useState } from 'react'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { WeeklyCalendarCard } from '@/components/blocks/cards/WeeklyCalendarCard'
-import { TodayWorkoutCard, RaceCard } from '@/components/blocks/cards/WorkoutCard'
-import { CustomCard } from '@/components/ui/custom/card-containers'
-import { ElevationProfileCard } from '@/components/blocks/cards/ElevationProfileCard'
-import { RouteMapCard } from '@/components/blocks/cards/RouteMapCard'
-// import { ObjectivesCard } from '@/components/blocks/cards/ObjectivesCard'
 import { BottomNavigationBar } from '@/components/blocks/BottomNavigationBar'
-import { Coffee } from 'lucide-react'
-import { useDashboard } from '@/hooks/useDashboard'
+import { HomeTab } from '@/components/views/HomeTab'
+import { ProfileTab } from '@/components/views/ProfileTab'
 
 export default function DashboardView() {
-  const {
-    user,
-    weeklyCycle,
-    weekDays,
-    selectedDay,
-    selectedWeekDay,
-    currentWorkout,
-    elevationChartData,
-    gpxData,
-    onSelectDay,
-  } = useDashboard()
+  // 0 = Inicio / Dashboard, 1 = Plan / Calendario, 2 = Progreso / Stats, 3 = Perfil
+  const [activeNav, setActiveNav] = useState<number>(0)
 
   return (
     <div className='min-h-screen bg-black flex items-start justify-center'>
       {/* Phone shell */}
       <div className='w-full max-w-97.5 min-h-screen flex flex-col relative overflow-hidden bg-background'>
-        {/* Header */}
-        <HeaderNav user={user} />
-
         {/* Scrollable content */}
-        <ScrollArea className='flex-1 w-full'>
-          <div className='px-4 pt-1 pb-21.5 space-y-4'>
-            {/* ── Weekly Calendar Card ── */}
-            <WeeklyCalendarCard
-              cycle={weeklyCycle}
-              weekDays={weekDays}
-              selectedDay={selectedDay}
-              onSelectDay={onSelectDay}
-            />
+        <ScrollArea className='flex flex-1 w-full px-4 pb-21.5'>
+          {/* Pestaña 0: Inicio / Dashboard */}
+          {activeNav === 0 && <HomeTab />}
 
-            {/* ── Tarjeta del Día Seleccionado ── */}
-            {selectedWeekDay?.type === 'Race' ? (
-              <RaceCard
-                date={selectedWeekDay.fullDate}
-                workout={currentWorkout} // Si la carrera tiene datos cargados
-              />
-            ) : currentWorkout ? (
-              <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate ?? '2026-08-13'} />
-            ) : (
-              /* Placeholder estilizado para días de descanso */
-              <CustomCard className='items-center'>
-                <Coffee className='text-muted-foreground' />
-                <p className='font-heading font-semibold text-foreground text-sm'>Día de Descanso</p>
-                <p className='text-xs text-muted-foreground mt-0.5 font-sans'>
-                  Sin rutina programada. Aprovecha para recuperar.
-                </p>
-              </CustomCard>
-            )}
+          {/* Pestaña 1: Plan / Calendario */}
+          {activeNav === 1 && (
+            <div className='text-center py-12 text-muted-foreground text-sm font-sans'>
+              <p className='font-heading font-bold text-foreground text-base mb-1'>Plan Semanal</p>
+              Vista de Calendario y Microciclos en desarrollo.
+            </div>
+          )}
 
-            {/* ── Perfil de Elevación (si hay datos de elevación disponibles) ── */}
-            {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
+          {/* Pestaña 2: Estadísticas / Progreso */}
+          {activeNav === 2 && (
+            <div className='text-center py-12 text-muted-foreground text-sm font-sans'>
+              <p className='font-heading font-bold text-foreground text-base mb-1'>Progreso</p>
+              Gráficos y volumen mensual en desarrollo.
+            </div>
+          )}
 
-            {/* ── Mapa Interactivo del Track GPS ── */}
-            {currentWorkout && elevationChartData && (
-              <RouteMapCard
-                mapKey={selectedWeekDay?.fullDate}
-                title={currentWorkout.title}
-                distanceKm={gpxData?.distanceKm ?? currentWorkout.km}
-                gainMeters={gpxData?.gainMeters ?? currentWorkout.gain}
-                maxGradePct={gpxData?.maxGradePct ?? 0}
-                positions={gpxData?.positions ?? []}
-              />
-            )}
-
-            {/* ── Objetivos del Microciclo ── */}
-            {/* <ObjectivesCard /> */}
-          </div>
+          {/* Pestaña 3: Perfil de Usuario */}
+          {activeNav === 3 && <ProfileTab />}
         </ScrollArea>
 
-        {/* ── Bottom Navigation Fixed ── */}
-        <BottomNavigationBar />
+        {/* ── Bottom Navigation Fixed / Absolute al Shell ── */}
+        <BottomNavigationBar
+          activeNav={activeNav}
+          onNavChange={setActiveNav}
+          isFixed={false} // Se posiciona absolute dentro del marco max-w-97.5
+        />
       </div>
     </div>
   )

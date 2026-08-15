@@ -1,8 +1,4 @@
 import {
-  Home,
-  CalendarRange,
-  BarChart2,
-  User,
   Activity,
   Coffee,
   Gauge,
@@ -16,13 +12,6 @@ import {
   LucideIcon,
 } from 'lucide-react'
 import { DayConfig, MonthConfig, HrZoneConfig } from '@/utils/interfaces'
-
-export const BOTTOM_NAV_ITEMS = [
-  { icon: Home, label: 'Inicio' },
-  { icon: CalendarRange, label: 'Plan' },
-  { icon: BarChart2, label: 'Stats' },
-  { icon: User, label: 'Perfil' },
-]
 
 export const DAYS_OF_WEEK: readonly DayConfig[] = [
   { index: 0, short: 'L', medium: 'Lun', full: 'Lunes' },

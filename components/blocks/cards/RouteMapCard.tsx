@@ -2,12 +2,10 @@
 
 import dynamic from 'next/dynamic'
 import { LatLngTuple } from 'leaflet'
-import { Navigation, Route, TrendingUp, Upload, MapPin, ArrowUpRight, Percent } from 'lucide-react'
-import { RouteMapCardProps } from '@/utils/interfaces'
-import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
+import { Navigation, Route, TrendingUp, Angle } from 'lucide-react'
+import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill } from '@/components/ui/custom/pills'
-import { DefaultButton } from '@/components/ui/custom/buttons'
 
 // Carga dinámica de Leaflet (solo en cliente / SSR disabled)
 const MapWithNoSSR = dynamic(() => import('@/components/blocks/maps/MapInner'), {
@@ -56,7 +54,7 @@ export function RouteMapCard({
       <div className='grid grid-cols-3 gap-2.5'>
         <StatPill icon={Navigation} label='Distancia' value={distanceKm} unit='km' />
         <StatPill icon={TrendingUp} label='Desnivel' value={`+${gainMeters}`} unit='m' />
-        <StatPill icon={Route} label='Pendiente Máx.' value={maxGradePct} unit='%' />
+        <StatPill icon={Angle} label='Pendiente Máx.' value={maxGradePct} unit='%' />
       </div>
     </CustomCard>
   )

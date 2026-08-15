@@ -45,7 +45,7 @@ export function WeeklyCalendarCard({
       </CardHeader>
 
       {/* Grid de 7 días */}
-      <div className='grid grid-cols-7 gap-1'>
+      <div className='grid grid-cols-7 items-start gap-1 mt-1'>
         {weekDays.map((d, i) => (
           <DaySelectorButton
             key={d.fullDate ?? i}
@@ -58,7 +58,7 @@ export function WeeklyCalendarCard({
       </div>
 
       {/* Progreso semanal */}
-      <div className='mt-4 space-y-1.5'>
+      <div className='mt-2 space-y-1.5'>
         <div className='flex justify-between text-[11px]'>
           <span className='text-muted-foreground'>Progreso semanal</span>
           <span className='text-foreground font-semibold'>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { BOTTOM_NAV_ITEMS } from '@/utils/constants'
+import { Home, CalendarRange, BarChart2, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface BottomNavigationBarProps {
@@ -16,6 +16,13 @@ export function BottomNavigationBar({
   isFixed = true,
 }: BottomNavigationBarProps) {
   const [internalActiveNav, setInternalActiveNav] = useState<number>(0)
+
+  const BOTTOM_NAV_ITEMS = [
+    { icon: Home, label: 'Inicio' },
+    { icon: CalendarRange, label: 'Plan' },
+    { icon: BarChart2, label: 'Stats' },
+    { icon: User, label: 'Perfil' },
+  ]
 
   // Soporta tanto estado interno como estado controlado desde el DashboardView
   const activeNav = externalActiveNav ?? internalActiveNav
@@ -50,7 +57,7 @@ export function BottomNavigationBar({
             >
               <Icon size={20} className='transition-transform duration-200' />
 
-              <span className='font-medium text-[9px] font-mono eading-none tracking-tight'>{label}</span>
+              <span className='font-medium text-[9px] font-mono leading-none tracking-tight'>{label}</span>
             </button>
           )
         })}

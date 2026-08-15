@@ -11,7 +11,7 @@ export const currentUser: UserProps = {
   email: 'cristianlahoz@elparque.com.ar',
   emergencyContact: 'María Lahoz (Hermana)',
   emergencyPhone: '+54 9 264 987-6543',
-  avatar: '/avatars/cristian.png',
+  avatar: '/avatars/logo-ept.png',
   teamRole: 'El Parque Team Athlete',
 }
 

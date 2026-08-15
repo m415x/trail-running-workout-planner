@@ -7,7 +7,7 @@ import { HeaderUser } from '@/components/blocks/HeaderUser'
 
 export function HeaderNav({ user }: { user: UserProps }) {
   return (
-    <div className='px-5 pt-12 pb-3 flex items-center justify-between'>
+    <div className='pl-1 pt-4 pb-4 flex items-center justify-between'>
       {/* Nuevo componente de usuario desplegable */}
       <HeaderUser user={user} />
 

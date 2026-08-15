@@ -21,7 +21,7 @@ export function HeaderUser({ user }: { user: UserProps }) {
     <button type='button' className='flex items-center gap-3 text-left outline-none cursor-pointer group'>
       {/* Avatar con borde activo primario */}
       <div className='rounded-full border-3 border-primary transition-transform group-hover:scale-105'>
-        <Avatar className='size-11'>
+        <Avatar className='size-12'>
           <AvatarImage src={user.avatar} alt={fullName} className='object-cover' />
           <AvatarFallback className='font-semibold bg-secondary text-foreground text-xs'>{initials}</AvatarFallback>
         </Avatar>
