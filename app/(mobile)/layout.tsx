@@ -5,7 +5,7 @@ export default function MobileLayout({ children }: { children: React.ReactNode }
   return (
     <div className='min-h-screen bg-black flex items-start justify-center'>
       {/* Phone Shell */}
-      <div className='w-full max-w-97.5 h-dvh max-h-dvh flex flex-col relative overflow-hidden bg-background'>
+      <div className='w-full sm:max-w-97.5 h-dvh max-h-dvh flex flex-col relative overflow-hidden bg-background sm:shadow-2xl sm:border-x sm:border-border/40'>
         {/* Scrollable content */}
         <ScrollArea className='flex-1 w-full min-h-0'>
           {/* Contenido dinámico según la ruta */}

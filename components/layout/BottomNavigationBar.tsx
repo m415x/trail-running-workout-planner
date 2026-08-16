@@ -16,7 +16,7 @@ export function BottomNavigationBar() {
   const pathname = usePathname()
 
   return (
-    <nav className='w-full max-w-97.5 absolute bottom-0 z-50 border-t border-border/80 bg-background/80 backdrop-blur-lg px-2 py-3 transition-all'>
+    <nav className='w-full sm:max-w-97.5 absolute bottom-0 z-50 border-t border-border/80 bg-background/80 backdrop-blur-lg px-2 py-3 transition-all'>
       <div className='max-w-md mx-auto flex items-center justify-around'>
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href
