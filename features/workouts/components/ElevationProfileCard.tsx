@@ -35,8 +35,8 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
         </div>
       </CardHeader>
 
-      <div className='h-36'>
-        <ResponsiveContainer width='100%' height='100%'>
+      <div className='w-full h-40 min-w-0 relative my-2 select-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 **:outline-none **:focus:outline-none'>
+        <ResponsiveContainer width='100%' height='100%' minWidth={0} minHeight={0}>
           <AreaChart data={elevData} className='mt-2 mr-1 mb-0' margin={{ left: -30 }}>
             <defs>
               <linearGradient id='elevGrad' x1='0' y1='0' x2='0' y2='1'>
@@ -44,7 +44,7 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
                 <stop offset='100%' stopColor={primaryColor} stopOpacity={0.01} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' strokeOpacity={1} vertical={true} />
+            {/* <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' strokeOpacity={1} vertical={true} /> */}
             <XAxis
               dataKey='km'
               tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }}
@@ -53,7 +53,7 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
               type='number'
               domain={['dataMin', 'dataMax']}
               tickCount={10}
-              tickFormatter={(value) => `${value} km`}
+              // tickFormatter={(value) => `${value} km`}
               stroke='#888888'
               fontSize={10}
             />

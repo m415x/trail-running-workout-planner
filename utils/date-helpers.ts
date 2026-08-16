@@ -112,3 +112,39 @@ export function formatRawWeekDay(rawDay: WeekDayRaw): WeekDay {
     isToday: rawDay.isToday ?? isToday,
   }
 }
+
+/**
+ * Obtiene el lunes de la semana para una fecha dada.
+ */
+export function getMondayOfWeek(d: Date): Date {
+  const date = new Date(d)
+  const day = date.getDay()
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // Lunes como primer día
+  date.setDate(diff)
+  date.setHours(0, 0, 0, 0)
+  return date
+}
+
+/**
+ * Genera la estructura de 7 días (Lunes a Domingo) para cualquier semana.
+ */
+export function generateWeekRange(baseDate: Date) {
+  const monday = getMondayOfWeek(baseDate)
+  const days: Date[] = []
+
+  for (let i = 0; i < 7; i++) {
+    const nextDay = new Date(monday)
+    nextDay.setDate(monday.getDate() + i)
+    days.push(nextDay)
+  }
+
+  const sunday = days[6]
+  const monthsShort = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic']
+
+  const label =
+    monday.getMonth() === sunday.getMonth()
+      ? `${monthsShort[monday.getMonth()]} ${monday.getDate()}–${sunday.getDate()}`
+      : `${monthsShort[monday.getMonth()]} ${monday.getDate()} – ${monthsShort[sunday.getMonth()]} ${sunday.getDate()}`
+
+  return { monday, sunday, days, label }
+}

@@ -69,6 +69,7 @@ export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySe
       {day.isToday && (
         <span className={cn('font-heading text-[10px] font-bold leading-none text-foreground/60')}>HOY</span>
       )}
+      {!day.isToday && <span className={cn('h-2.5')}></span>}
     </div>
   )
 }

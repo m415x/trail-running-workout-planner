@@ -3,6 +3,7 @@ export type NavigationTab = 'home' | 'plan' | 'stats' | 'profile'
 export interface DayConfig {
   index: number
   short: string
+  twoLetter: string
   medium: string
   full: string
 }

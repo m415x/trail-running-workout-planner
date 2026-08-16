@@ -1,15 +1,19 @@
 'use client'
 
-import { SportShoe, Clock, Gauge, Zap, Trophy } from 'lucide-react'
+import { useState } from 'react'
+import { SportShoe, Clock, Gauge, Zap, Trophy, CheckCircle, PlusCircle } from 'lucide-react'
 import { TodayWorkoutCardProps, WorkoutProps } from '@/features/workouts/types/workout.types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/date-helpers'
+import { Button } from '@/components/ui/button'
+import { LogWorkoutDialog } from './LogWorkoutDialog'
 
 export function TodayWorkoutCard({ workout, date }: TodayWorkoutCardProps) {
   const dateLabel = date ? formatShortDate(date) : ''
+  const [isLogOpen, setIsLogOpen] = useState(false)
 
   const stats = [
     { icon: Clock, label: 'Tiempo est.', value: workout.time, unit: 'min' },
@@ -18,43 +22,67 @@ export function TodayWorkoutCard({ workout, date }: TodayWorkoutCardProps) {
   ]
 
   return (
-    <CustomCard>
-      {/* Header row */}
-      <CardHeader title='Entrenamiento del Día' icon={SportShoe}>
-        <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
-      </CardHeader>
+    <>
+      <CustomCard>
+        {/* Header row */}
+        <CardHeader title='Entrenamiento del Día' icon={SportShoe}>
+          <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
+        </CardHeader>
 
-      {/* Main stat row */}
-      <CustomCardInside className='flex items-center'>
-        <div className='flex-1'>
-          <div className='flex items-baseline gap-1.5'>
-            <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
-              {workout.km}
-            </span>
+        {/* Main stat row */}
+        <CustomCardInside className='flex items-center'>
+          <div className='flex-1'>
+            <div className='flex items-baseline gap-1.5'>
+              <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
+                {workout.km}
+              </span>
 
-            <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
+              <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
+            </div>
+
+            <p className='text-muted-foreground text-xs mt-1'>{workout.title}</p>
           </div>
 
-          <p className='text-muted-foreground text-xs mt-1'>{workout.title}</p>
+          <ZonePill zone={workout.zone} />
+        </CustomCardInside>
+
+        {/* Stats row */}
+        <div className='grid grid-cols-3 gap-3'>
+          {stats.map(({ icon: Icon, label, value, unit }) => (
+            <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
+          ))}
         </div>
 
-        <ZonePill zone={workout.zone} />
-      </CustomCardInside>
+        {/* Coach note */}
+        <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
+          <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
 
-      {/* Stats row */}
-      <div className='grid grid-cols-3 gap-3'>
-        {stats.map(({ icon: Icon, label, value, unit }) => (
-          <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
-        ))}
-      </div>
+          <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
+        </CustomCardInside>
 
-      {/* Coach note */}
-      <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
-        <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
+        {/* ── Botón para Registrar Entrenamiento ── */}
+        <Button
+          type='button'
+          onClick={() => setIsLogOpen(true)}
+          className='w-full h-10 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-all active:scale-98 cursor-pointer gap-2 mt-1 shadow-xs'
+        >
+          <CheckCircle size={15} />
+          <span>Registrar entrenamiento realizado</span>
+        </Button>
+      </CustomCard>
 
-        <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
-      </CustomCardInside>
-    </CustomCard>
+      {/* Modal de Registro con RPE Strava */}
+      <LogWorkoutDialog
+        isOpen={isLogOpen}
+        onClose={() => setIsLogOpen(false)}
+        workout={workout}
+        dateStr={date}
+        onSave={(data) => {
+          console.log('Sesión registrada:', data)
+          // Aquí conectaremos con tu base de datos o estado global
+        }}
+      />
+    </>
   )
 }
 

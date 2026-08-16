@@ -88,8 +88,11 @@ export interface WeeklyCalendarCardProps {
   cycle: WeeklyCycle
   weekDays: WeekDay[]
   selectedDay: number
+  selectedDate: Date
   onSelectDay: (index: number) => void
-  onViewCalendar?: () => void
+  onPrevWeek: () => void
+  onNextWeek: () => void
+  onSelectDate: (date: Date | undefined) => void
 }
 
 export interface TodayWorkoutCardProps {
@@ -120,4 +123,30 @@ export interface RouteMapCardProps {
   positions?: LatLngTuple[]
   mapKey?: string
   onUploadGpx?: () => void
+}
+
+export interface WeekCalendarPickerProps {
+  selectedDate: Date
+  onSelectDate: (date: Date) => void
+  onClose?: () => void
+}
+
+export interface LoggedWorkoutPayload {
+  workoutId?: string
+  date?: string
+  distanceKm: number
+  durationMin: number
+  elevationGain: number
+  avgHr: number | null
+  rpe: number
+  athleteNotes: string
+  loggedAt: string
+}
+
+export interface LogWorkoutDialogProps {
+  isOpen: boolean
+  onClose: () => void
+  workout?: WorkoutProps | null
+  dateStr?: string
+  onSave?: (loggedData: LoggedWorkoutPayload) => void
 }

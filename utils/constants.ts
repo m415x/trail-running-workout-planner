@@ -15,13 +15,13 @@ import { DayConfig, MonthConfig } from '@/types/common.types'
 import { HrZoneConfig } from '@/features/workouts/types/workout.types'
 
 export const DAYS_OF_WEEK: readonly DayConfig[] = [
-  { index: 0, short: 'L', medium: 'Lun', full: 'Lunes' },
-  { index: 1, short: 'M', medium: 'Mar', full: 'Martes' },
-  { index: 2, short: 'X', medium: 'Mié', full: 'Miércoles' },
-  { index: 3, short: 'J', medium: 'Jue', full: 'Jueves' },
-  { index: 4, short: 'V', medium: 'Vie', full: 'Viernes' },
-  { index: 5, short: 'S', medium: 'Sáb', full: 'Sábado' },
-  { index: 6, short: 'D', medium: 'Dom', full: 'Domingo' },
+  { index: 0, short: 'L', twoLetter: 'Lu', medium: 'Lun', full: 'Lunes' },
+  { index: 1, short: 'M', twoLetter: 'Ma', medium: 'Mar', full: 'Martes' },
+  { index: 2, short: 'X', twoLetter: 'Mi', medium: 'Mié', full: 'Miércoles' },
+  { index: 3, short: 'J', twoLetter: 'Ju', medium: 'Jue', full: 'Jueves' },
+  { index: 4, short: 'V', twoLetter: 'Vi', medium: 'Vie', full: 'Viernes' },
+  { index: 5, short: 'S', twoLetter: 'Sá', medium: 'Sáb', full: 'Sábado' },
+  { index: 6, short: 'D', twoLetter: 'Do', medium: 'Dom', full: 'Domingo' },
 ] as const
 
 export const MONTHS_OF_YEAR: readonly MonthConfig[] = [
@@ -119,3 +119,92 @@ export const HR_ZONES: Record<'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5', HrZoneConfig> = 
     },
   },
 }
+
+export interface RpeLevel {
+  value: number
+  label: string
+  description: string
+  details: string[]
+  colorClass: string
+}
+
+export const RPE_LEVELS: readonly RpeLevel[] = [
+  {
+    value: 1,
+    label: 'Muy suave',
+    description: 'Esfuerzo mínimo',
+    details: ['Podías cantar o hablar sin pausa', 'Casi sin elevación cardíaca', 'Ideal para recuperación activa'],
+    colorClass: 'bg-hr-z1 text-foreground',
+  },
+  {
+    value: 2,
+    label: 'Suave',
+    description: 'Paseo ligero',
+    details: ['Conversación fluida', 'Ritmo de calentamiento o trote regenerativo'],
+    colorClass: 'bg-hr-z1 text-foreground',
+  },
+  {
+    value: 3,
+    label: 'Ligero',
+    description: 'Cómodo y sostenible',
+    details: ['Podías mantener una charla continua', 'Ritmo base aeróbica (Z2)', 'Sostenible durante horas'],
+    colorClass: 'bg-hr-z2 text-white',
+  },
+  {
+    value: 4,
+    label: 'Moderado bajo',
+    description: 'Controlado',
+    details: ['Respiración presente pero rítmica', 'Hablas en oraciones completas'],
+    colorClass: 'bg-hr-z2 text-white',
+  },
+  {
+    value: 5,
+    label: 'Moderado',
+    description: 'Meta moderada',
+    details: [
+      'Podías hablar en frases cortas',
+      'Respirabas con algo de dificultad',
+      'Dentro de tu zona de confort, pero esforzándote',
+    ],
+    colorClass: 'bg-hr-z3 text-white',
+  },
+  {
+    value: 6,
+    label: 'Vigoroso',
+    description: 'Ritmo vivo / Tempo',
+    details: ['Hablar cuesta más trabajo', 'Comienzo de acumulación de lactato', 'Exige concentración en subidas'],
+    colorClass: 'bg-hr-z3 text-white',
+  },
+  {
+    value: 7,
+    label: 'Duro',
+    description: 'Umbral anaeróbico',
+    details: [
+      'Solo puedes decir un par de palabras',
+      'Respiración forzada y continua',
+      'Sostenible por 20 a 40 minutos',
+    ],
+    colorClass: 'bg-hr-z4 text-white',
+  },
+  {
+    value: 8,
+    label: 'Muy duro',
+    description: 'Alta intensidad / Series',
+    details: ['No puedes hablar', 'Esfuerzo exigente en rampas pronunciadas', 'Sensación de ardor en piernas'],
+    colorClass: 'bg-hr-z4 text-white',
+  },
+  {
+    value: 9,
+    label: 'Casi máximo',
+    description: 'Esfuerzo extremo',
+    details: ['Apenas puedes mantener el ritmo unos minutos', 'Frecuencia cardíaca cercana a FC Máx'],
+    colorClass: 'bg-hr-z5 text-white',
+  },
+  {
+    value: 10,
+    label: 'Esfuerzo máximo',
+    description: 'Al límite / Sprint final',
+    details: ['Agotamiento total inmediato', 'Imposible mantener por más de 30-60 segundos', 'Esfuerzo de meta'],
+    colorClass: 'bg-hr-z5 text-white',
+  },
+] as const
