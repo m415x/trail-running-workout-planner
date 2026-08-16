@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo } from 'react'
-import { UserProps } from '@/types/interfaces'
+import { UserProps } from '@/types/user.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { formatFullDate } from '@/utils/date-helpers'
 

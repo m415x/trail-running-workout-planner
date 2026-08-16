@@ -1,4 +1,6 @@
-import { WorkoutProps, WeekDay, UserProps, WeeklyCycle } from '@/types/interfaces'
+import { UserProps } from '@/types/user.types'
+import { WorkoutProps, WeekDayRaw, WeeklyCycle } from '@/features/workouts/types/workout.types'
+import { ShoeItemProps } from '@/features/profile/types/profile.types'
 
 export const currentUser: UserProps = {
   id: 'usr_1',
@@ -24,7 +26,7 @@ export const weeklyCycle: WeeklyCycle = {
   targetKm: 45,
 }
 
-export const weekDaysRaw: WeekDay[] = [
+export const weekDaysRaw: WeekDayRaw[] = [
   { date: '2026-08-10', km: 8, type: 'Base', completedKm: 8, isDone: true, workoutId: 0 },
   { date: '2026-08-11', km: 6, type: 'Intervals', completedKm: 3.5, isPartial: true, workoutId: 1 },
   { date: '2026-08-12', km: 9, type: 'Long', isMissed: true, workoutId: 2 },
@@ -92,3 +94,20 @@ export const workouts: Record<number, WorkoutProps> = {
     gpxPath: '/tracks/tierra-de-gigantes-2026-10k.gpx',
   },
 }
+
+export const runningShoes: ShoeItemProps[] = [
+  {
+    name: 'Salomon S/Lab Genesis',
+    type: 'Competición / Terreno Técnico',
+    km: 248,
+    maxKm: 650,
+    status: 'Óptimo',
+  },
+  {
+    name: 'Hoka Speedgoat 5',
+    type: 'Rodajes Largos / Amortiguación',
+    km: 490,
+    maxKm: 700,
+    status: 'Desgaste medio',
+  },
+]

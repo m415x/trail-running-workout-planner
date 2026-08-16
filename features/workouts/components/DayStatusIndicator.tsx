@@ -1,7 +1,7 @@
 'use client'
 
 import { CircleCheckBig, CircleMinus, X } from 'lucide-react'
-import { WeekDay } from '@/types/interfaces'
+import { WeekDay } from '@/features/workouts/types/workout.types'
 import { getDayStatus } from '@/utils/date-helpers'
 import { cn } from '@/lib/utils'
 

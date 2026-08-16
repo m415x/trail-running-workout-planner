@@ -6,9 +6,9 @@ import { useState, useEffect, useMemo } from 'react'
 import { currentUser, weeklyCycle, weekDaysRaw, workouts } from '@/data/data'
 
 // Helpers y Tipos
+import { ElevationChartProps } from '@/features/workouts/types/workout.types'
 import { formatRawWeekDay } from '@/utils/date-helpers'
 import { parseGpxFromUrl, GpxData } from '@/lib/gpx/gpx-parser'
-import { ElevationChartProps } from '@/types/interfaces'
 
 export function useDashboard() {
   // 1. Mapeo dinámico de fechas ISO ('2026-08-10') a objetos WeekDay para la UI

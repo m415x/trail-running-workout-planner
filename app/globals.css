@@ -53,6 +53,10 @@
   --color-hr-z3: var(--hr-z3);
   --color-hr-z4: var(--hr-z4);
   --color-hr-z5: var(--hr-z5);
+  --color-glass-foreground: var(--glass-foreground);
+  --color-glass-border: var(--glass-border);
+  --color-glass-bg-hover: var(--glass-bg-hover);
+  --color-glass-bg: var(--glass-bg);
 
   /* --- BORDER RADIUS --- */
   --radius-sm: calc(var(--radius) * 0.6);
@@ -135,6 +139,12 @@
     --hr-z5: oklch(0.58 0.245 27.325);
     /* Rojo intenso - Esfuerzo máximo */
 
+    /* Glass / Overlay Tokens (Tema Claro) */
+    --glass-bg: oklch(0.15 0.02 242 / 0.35);
+    --glass-bg-hover: oklch(0.15 0.02 242 / 0.55);
+    --glass-border: oklch(1 0 0 / 0.25);
+    --glass-foreground: oklch(0.99 0.003 240);
+
     --radius: 0.5rem;
   }
 
@@ -156,7 +166,7 @@
     --primary-foreground: oklch(0.12 0.02 242);
     /* Contraste oscuro para legibilidad */
 
-    --secondary: oklch(0.31 0.155 315);
+    --secondary: oklch(0.38 0.145 315);
     /* El Violeta Oscuro como contenedor secundario */
     --secondary-foreground: oklch(0.97 0.01 240);
 
@@ -203,6 +213,14 @@
     /* Amarillo de alta visibilidad */
     --hr-z5: oklch(0.70 0.191 22.216);
     /* Rojo encendido para destacar */
+
+    /* Glass / Overlay Tokens (Tema Oscuro) */
+    --glass-bg: oklch(0.10 0.02 242 / 0.45);
+    --glass-bg-hover: oklch(0.10 0.02 242 / 0.65);
+    --glass-border: oklch(1 0 0 / 0.20);
+    --glass-foreground: oklch(0.99 0.003 240);
+
+    --radius: 0.5rem;
   }
 }
 
@@ -219,7 +237,9 @@
     @apply font-sans;
   }
 }
-  ::view-transition-old(root), ::view-transition-new(root) {
-    animation: none;
-    mix-blend-mode: normal;
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
 }

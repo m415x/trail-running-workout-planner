@@ -1,4 +1,4 @@
-import { WeekDay } from '@/types/interfaces'
+import { WeekDay } from '@/features/workouts/types/workout.types'
 
 /**
  * Calcula los kilómetros acumulados en la semana considerando días

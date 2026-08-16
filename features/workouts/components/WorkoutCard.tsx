@@ -1,7 +1,7 @@
 'use client'
 
 import { SportShoe, Clock, Gauge, Zap, Trophy } from 'lucide-react'
-import { TodayWorkoutCardProps, WorkoutProps } from '@/types/interfaces'
+import { TodayWorkoutCardProps, WorkoutProps } from '@/features/workouts/types/workout.types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'

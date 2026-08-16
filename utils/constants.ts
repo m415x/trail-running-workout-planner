@@ -11,7 +11,8 @@ import {
   Trophy,
   LucideIcon,
 } from 'lucide-react'
-import { DayConfig, MonthConfig, HrZoneConfig } from '@/types/interfaces'
+import { DayConfig, MonthConfig } from '@/types/common.types'
+import { HrZoneConfig } from '@/features/workouts/types/workout.types'
 
 export const DAYS_OF_WEEK: readonly DayConfig[] = [
   { index: 0, short: 'L', medium: 'Lun', full: 'Lunes' },

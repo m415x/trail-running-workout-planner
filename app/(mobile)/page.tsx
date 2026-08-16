@@ -1,4 +1,4 @@
-import { HomeTab } from '@/features/workouts/components/HomeTab'
+import { HomeTab } from '@/features/workouts/HomeTab'
 
 export default function HomePage() {
   return <HomeTab />

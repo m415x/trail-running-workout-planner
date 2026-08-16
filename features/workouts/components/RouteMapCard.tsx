@@ -39,10 +39,10 @@ export function RouteMapCard({
     <CustomCard>
       {/* Header con botón para cargar GPX futuro */}
       <CardHeader title='Track GPS' icon={Route} subtitle={title}>
-        {/* <DefaultButton onClick={onUploadGpx}>
+        {/* <PrimaryButton onClick={onUploadGpx}>
           <Upload size={11} />
           <span>Cargar GPX</span>
-        </DefaultButton> */}
+        </PrimaryButton> */}
       </CardHeader>
 
       {/* Contenedor del Mapa con Leaflet */}

@@ -1,13 +1,13 @@
 'use client'
 
 import { Bell } from 'lucide-react'
-import { UserProps } from '@/types/interfaces'
+import { UserProps } from '@/types/user.types'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { HeaderUser } from '@/features/workouts/components/HeaderUser'
 
 export function HomeHeaderNav({ user }: { user: UserProps }) {
   return (
-    <div className='pl-1 pt-4 pb-4 flex items-center justify-between'>
+    <div className='flex items-center justify-between'>
       {/* Nuevo componente de usuario desplegable */}
       <HeaderUser user={user} />
 

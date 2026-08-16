@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react'
 import { RefreshCcwDot } from 'lucide-react'
-import { DefaultButton } from '@/components/ui/custom/buttons'
+import { WeeklyCalendarCardProps } from '@/features/workouts/types/workout.types'
+import { PrimaryButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
-import { WeeklyCalendarCardProps } from '@/types/interfaces'
 import ProgressGradient from '@/components/ui/custom/progress-gradient'
 import { DaySelectorButton } from '@/features/workouts/components/DaySelectorButton'
 import { formatDateRange } from '@/utils/date-helpers'
@@ -39,9 +39,9 @@ export function WeeklyCalendarCard({
     <CustomCard>
       {/* Header */}
       <CardHeader title={cycle.title} subtitle={subtitleWeeklyCalendar} icon={RefreshCcwDot}>
-        <DefaultButton className='font-mono' onClick={onViewCalendar}>
+        <PrimaryButton className='font-mono' onClick={onViewCalendar}>
           {dateRange}
-        </DefaultButton>
+        </PrimaryButton>
       </CardHeader>
 
       {/* Grid de 7 días */}

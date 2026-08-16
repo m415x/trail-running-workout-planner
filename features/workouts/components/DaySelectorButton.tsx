@@ -1,7 +1,7 @@
 'use client'
 
 import { createElement } from 'react'
-import { WeekDay } from '@/types/interfaces'
+import { WeekDay } from '@/features/workouts/types/workout.types'
 import { getWorkoutIcon } from '@/utils/workout-helpers'
 import { DayStatusIndicator } from '@/features/workouts/components/DayStatusIndicator'
 import { cn } from '@/lib/utils'

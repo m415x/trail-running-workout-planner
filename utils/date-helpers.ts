@@ -1,5 +1,5 @@
+import { WeekDay, WeekDayRaw, DayStatus } from '@/features/workouts/types/workout.types'
 import { DAYS_OF_WEEK, MONTHS_OF_YEAR } from '@/utils/constants'
-import { WeekDay, DayStatus } from '@/types/interfaces'
 
 /**
  * Normaliza una cadena YYYY-MM-DD a un objeto Date local sin desfases por timezones (UTC vs Local)
@@ -93,18 +93,7 @@ export function formatDateRange(startDateStr: string, endDateStr: string): strin
 /**
  * Transforma los datos crudos de la BD a objetos WeekDay listos para consumir en la UI
  */
-export function formatRawWeekDay(rawDay: {
-  date: string
-  km?: number
-  type?: string
-  completedKm?: number
-  isToday?: boolean
-  isDone?: boolean
-  isPartial?: boolean
-  isMissed?: boolean
-  isRest?: boolean
-  workoutId?: number
-}): WeekDay {
+export function formatRawWeekDay(rawDay: WeekDayRaw): WeekDay {
   const dateObj = parseISODate(rawDay.date)
   const dayIdx = getNormalizedDayIndex(dateObj)
   const dayConfig = DAYS_OF_WEEK[dayIdx]
