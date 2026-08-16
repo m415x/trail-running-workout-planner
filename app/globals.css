@@ -243,3 +243,11 @@
   animation: none;
   mix-blend-mode: normal;
 }
+
+html,
+body {
+  height: 100%;
+  overscroll-behavior-y: none;
+  /* Desactiva el rebote elástico en móviles */
+  -webkit-overflow-scrolling: touch;
+}
