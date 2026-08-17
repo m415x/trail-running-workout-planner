@@ -1,19 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import { ChevronDown, ChevronUp, Info } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
-import { RPE_LEVELS } from '@/utils/constants'
 import { cn } from '@/lib/utils'
-
-interface RpeSelectorProps {
-  value: number
-  onChange: (val: number) => void
-}
+import { RpeSelectorProps } from '@/features/workouts/types/workout.types'
+import { useRpeSelector } from '@/features/workouts/hooks/useRpeSelector'
 
 export function RpeSelector({ value, onChange }: RpeSelectorProps) {
-  const [showDetails, setShowDetails] = useState(true)
-  const currentRpe = RPE_LEVELS.find((l) => l.value === value) ?? RPE_LEVELS[4]
+  const { showDetails, setShowDetails, currentRpe } = useRpeSelector(value)
 
   return (
     <div className='p-3.5 rounded-2xl bg-secondary/30 border border-border/50 space-y-3'>

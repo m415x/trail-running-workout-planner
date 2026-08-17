@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { LatLngTuple } from 'leaflet'
+import { ExtendedRouteMapCardProps } from '@/features/workouts/types/workout.types'
 import { Navigation, Route, TrendingUp, Angle } from 'lucide-react'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
@@ -16,16 +16,6 @@ const MapWithNoSSR = dynamic(() => import('@/components/maps/MapInner'), {
     </div>
   ),
 })
-
-export interface ExtendedRouteMapCardProps {
-  title: string
-  distanceKm: number
-  gainMeters: number
-  maxGradePct?: number
-  positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
-  mapKey?: string // <-- Prop personalizada opcional
-  onUploadGpx?: () => void
-}
 
 export function RouteMapCard({
   title,

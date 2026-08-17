@@ -1,38 +1,29 @@
 'use client'
 
-import { useState } from 'react'
 import { CheckCircle2, Flame, MapPin, Mountain, Timer, Heart, MessageSquare } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { LogWorkoutDialogProps, LoggedWorkoutPayload } from '@/features/workouts/types/workout.types'
+import { LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
 import { RpeSelector } from './RpeSelector'
+import { useLogWorkoutDialog } from '@/features/workouts/hooks/useLogWorkoutDialog'
 
 export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
-  // Valores iniciales basados en la planificación
-  const [distance, setDistance] = useState<string>(workout ? String(workout.km) : '')
-  const [timeMin, setTimeMin] = useState<string>(workout ? String(workout.time) : '')
-  const [gain, setGain] = useState<string>(workout ? String(workout.gain) : '0')
-  const [avgHr, setAvgHr] = useState<string>('')
-  const [rpe, setRpe] = useState<number>(5)
-  const [athleteNotes, setAthleteNotes] = useState<string>('')
-
-  const handleSave = () => {
-    const payload: LoggedWorkoutPayload = {
-      workoutId: workout?.title,
-      date: dateStr,
-      distanceKm: parseFloat(distance) || 0,
-      durationMin: parseInt(timeMin, 10) || 0,
-      elevationGain: parseInt(gain, 10) || 0,
-      avgHr: avgHr ? parseInt(avgHr, 10) : null,
-      rpe,
-      athleteNotes,
-      loggedAt: new Date().toISOString(),
-    }
-
-    onSave?.(payload)
-    onClose()
-  }
+  const {
+    distance,
+    timeMin,
+    gain,
+    avgHr,
+    rpe,
+    athleteNotes,
+    setDistance,
+    setTimeMin,
+    setGain,
+    setAvgHr,
+    setRpe,
+    setAthleteNotes,
+    handleSave,
+  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave })
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

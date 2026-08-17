@@ -252,6 +252,28 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+html {
+  /*
+    1. Escalar la tipografía base en móviles:
+       - 100% = 16px (por defecto)
+       - 112.5% = 18px (aumenta todos los rem un ~12.5%)
+       - 115% o 120% si quieres textos todavía más legibles en carrera/outdoor
+  */
+  font-size: 112.5%;
+
+  /* Evita que Safari/Chrome en iOS/Android reescale fuentes de forma arbitraria */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* En monitores de escritorio mantenemos el tamaño estándar para que no se vea gigante */
+@media (min-width: 640px) {
+  html {
+    font-size: 100%;
+    /* Vuelve a los 16px nativos cuando se ve en PC */
+  }
+}
+
 .recharts-surface,
 .recharts-wrapper {
   outline: none !important;

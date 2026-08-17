@@ -1,6 +1,6 @@
 'use client'
 
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Mountain } from 'lucide-react'
 import { ElevTooltipProps, ElevationChartProps } from '@/features/workouts/types/workout.types'
 import { CustomCard } from '@/components/ui/custom/card-containers'

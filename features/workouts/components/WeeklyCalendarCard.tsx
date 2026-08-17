@@ -1,6 +1,5 @@
 'use client'
 
-import { useMemo, useState } from 'react'
 import { RefreshCcwDot, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { WeeklyCalendarCardProps } from '@/features/workouts/types/workout.types'
 import { PrimaryButton } from '@/components/ui/custom/buttons'
@@ -10,8 +9,7 @@ import ProgressGradient from '@/components/ui/custom/progress-gradient'
 import { DaySelectorButton } from '@/features/workouts/components/DaySelectorButton'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { WeekCalendarPicker } from '@/features/workouts/components/WeekCalendarPicker'
-import { formatDateRange } from '@/utils/date-helpers'
-import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/gpx/calculators'
+import { useWeeklyCalendarCard } from '@/features/workouts/hooks/useWeeklyCalendarCard'
 
 export function WeeklyCalendarCard({
   cycle,
@@ -23,24 +21,12 @@ export function WeeklyCalendarCard({
   onNextWeek,
   onSelectDate,
 }: WeeklyCalendarCardProps) {
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-
   const subtitleWeeklyCalendar = `Fase ${cycle.phase} · Objetivo ${cycle.targetKm} km`
 
-  // Rango de fechas legible ("Ago 10–16")
-  const dateRange = useMemo(() => {
-    return formatDateRange(cycle.startDate, cycle.endDate)
-  }, [cycle.startDate, cycle.endDate])
-
-  // Kilómetros acumulados de la semana activa
-  const currentKm = useMemo(() => {
-    return calculateAccumulatedKm(weekDays)
-  }, [weekDays])
-
-  // Porcentaje de progreso
-  const progressPercentage = useMemo(() => {
-    return calculateProgressPercentage(currentKm, cycle.targetKm)
-  }, [currentKm, cycle.targetKm])
+  const { isPopoverOpen, setIsPopoverOpen, dateRange, currentKm, progressPercentage } = useWeeklyCalendarCard(
+    cycle,
+    weekDays,
+  )
 
   return (
     <CustomCard>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 
 // Simulación de base de datos / API
-import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts } from '@/data/data'
+import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
 
 // Helpers y Tipos
 import { ElevationChartProps, WeekDay, WeeklyCycle } from '@/features/workouts/types/workout.types'
@@ -44,7 +44,6 @@ export function useDashboard() {
       // Fallback seguro cuando la semana no tiene entrenamientos cargados
       return formatRawWeekDay({
         date: isoDate,
-        km: 0,
         isRest: true,
         type: 'Rest',
       })
@@ -160,6 +159,7 @@ export function useDashboard() {
   }, [])
 
   return {
+    team,
     user: currentUser,
     weeklyCycle,
     weekDays,

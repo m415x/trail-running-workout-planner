@@ -55,7 +55,6 @@ export interface WeeklyCycle {
 
 export interface WeekDayRaw {
   date: string
-  km?: number
   completedKm?: number
   type?: WorkoutType
   isToday?: boolean
@@ -149,4 +148,31 @@ export interface LogWorkoutDialogProps {
   workout?: WorkoutProps | null
   dateStr?: string
   onSave?: (loggedData: LoggedWorkoutPayload) => void
+}
+
+export interface DaySelectorButtonProps {
+  day: WeekDay
+  index: number
+  isSelected: boolean
+  onSelectDay: (index: number) => void
+}
+
+export interface DayStatusIndicatorProps {
+  day: WeekDay
+  isSelected?: boolean
+}
+
+export interface ExtendedRouteMapCardProps {
+  title: string
+  distanceKm: number
+  gainMeters: number
+  maxGradePct?: number
+  positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
+  mapKey?: string // <-- Prop personalizada opcional
+  onUploadGpx?: () => void
+}
+
+export interface RpeSelectorProps {
+  value: number
+  onChange: (val: number) => void
 }

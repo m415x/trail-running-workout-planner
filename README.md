@@ -37,7 +37,7 @@ Full-stack web application for trail running group management, workout planning,
 ├── features/
 │   ├── workouts/                           # Todo lo relativo a rutinas y calendario semanal
 │   │   ├── components/
-│   │   │   ├── HomeHeaderNav.tsx           # Header superior del atleta
+│   │   │   ├── HomeHeader.tsx           # Header superior del atleta
 │   │   │   ├── WeeklyCalendarCard.tsx
 │   │   │   ├── WorkoutCard.tsx             # (TodayWorkoutCard, RaceCard)
 │   │   │   ├── ElevationProfileCard.tsx

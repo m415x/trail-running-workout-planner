@@ -1,17 +1,10 @@
 'use client'
 
 import { createElement } from 'react'
-import { WeekDay } from '@/features/workouts/types/workout.types'
+import { DaySelectorButtonProps } from '@/features/workouts/types/workout.types'
 import { getWorkoutIcon } from '@/utils/workout-helpers'
 import { DayStatusIndicator } from '@/features/workouts/components/DayStatusIndicator'
 import { cn } from '@/lib/utils'
-
-export interface DaySelectorButtonProps {
-  day: WeekDay
-  index: number
-  isSelected: boolean
-  onSelectDay: (index: number) => void
-}
 
 export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySelectorButtonProps) {
   // Obtenemos la referencia al icono

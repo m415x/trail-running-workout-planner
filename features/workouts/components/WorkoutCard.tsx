@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { SportShoe, Clock, Gauge, Zap, Trophy, CheckCircle, PlusCircle } from 'lucide-react'
+import { SportShoe, Clock, Gauge, Zap, Trophy, CheckCircle, Coffee } from 'lucide-react'
 import { TodayWorkoutCardProps, WorkoutProps } from '@/features/workouts/types/workout.types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
@@ -147,4 +147,12 @@ export function RaceCard({ workout, date }: RaceCardProps) {
   )
 }
 
-export function RestCard() {}
+export function RestCard() {
+  return (
+    <CustomCard className='items-center py-6'>
+      <Coffee className='text-muted-foreground' size={22} />
+      <p className='font-heading font-semibold text-foreground text-sm mt-1'>Día de Descanso</p>
+      <p className='text-xs text-muted-foreground mt-0.5 font-sans'>Sin rutina programada. Aprovecha para recuperar.</p>
+    </CustomCard>
+  )
+}

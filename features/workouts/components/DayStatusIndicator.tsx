@@ -1,14 +1,9 @@
 'use client'
 
 import { CircleCheckBig, CircleMinus, X } from 'lucide-react'
-import { WeekDay } from '@/features/workouts/types/workout.types'
+import { DayStatusIndicatorProps } from '@/features/workouts/types/workout.types'
 import { getDayStatus } from '@/utils/date-helpers'
 import { cn } from '@/lib/utils'
-
-interface DayStatusIndicatorProps {
-  day: WeekDay
-  isSelected?: boolean
-}
 
 export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps) {
   const status = day.status ?? getDayStatus(day)
@@ -34,8 +29,7 @@ export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps)
         className={cn(
           'w-1.5 h-1.5 rounded-full transition-all',
           isSelected && 'bg-white/80',
-          !isSelected && day.type === 'Long' && 'bg-primary',
-          !isSelected && day.type !== 'Long' && 'bg-muted-foreground/40',
+          !isSelected && 'bg-muted-foreground/40',
         )}
       />
     )

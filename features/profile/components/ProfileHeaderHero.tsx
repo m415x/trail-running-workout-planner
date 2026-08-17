@@ -4,7 +4,7 @@ import { useState, useRef, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Camera, ChevronLeft, Pencil } from 'lucide-react'
-import { UserProps } from '@/types/user.types'
+import { UserProps } from '@/types/common.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { SecondaryButton, GlassButton } from '@/components/ui/custom/buttons'
 
