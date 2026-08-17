@@ -36,3 +36,9 @@ export interface TeamProps {
   avatar?: string
   members?: UserProps[]
 }
+
+export interface GeoLocation {
+  name: string
+  lat: number
+  lon: number
+}

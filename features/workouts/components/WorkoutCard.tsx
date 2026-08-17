@@ -2,6 +2,7 @@
 
 import { SportShoe, Clock, Gauge, Zap, Trophy, CheckCircle, Coffee } from 'lucide-react'
 import { WorkoutProps } from '@/features/workouts/types/workout.types'
+import { GpxData } from '@/lib/gpx/gpx-parser'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
@@ -14,11 +15,21 @@ import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
 export interface WorkoutCardProps {
   workout: WorkoutProps
   date?: string
+  gpxData?: GpxData | null
 }
 
-export function TodayWorkoutCard({ workout, date }: WorkoutCardProps) {
-  const { dateLabel, isLogOpen, weather, isLoadingWeather, stats, openLogDialog, closeLogDialog, handleSaveSession } =
-    useWorkoutCard({ workout, date })
+export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
+  const {
+    dateLabel,
+    isLogOpen,
+    weather,
+    isLoadingWeather,
+    isPast,
+    stats,
+    openLogDialog,
+    closeLogDialog,
+    handleSaveSession,
+  } = useWorkoutCard({ workout, date, gpxData })
 
   return (
     <>
@@ -44,7 +55,7 @@ export function TodayWorkoutCard({ workout, date }: WorkoutCardProps) {
         </CustomCardInside>
 
         {/* Barra meteorológica */}
-        <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />
+        {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
         {/* Stats row */}
         <div className='grid grid-cols-3 gap-3'>
@@ -83,7 +94,7 @@ export function TodayWorkoutCard({ workout, date }: WorkoutCardProps) {
 }
 
 export function RaceCard({ workout, date }: WorkoutCardProps) {
-  const { dateLabel, weather, isLoadingWeather } = useWorkoutCard({ workout, date })
+  const { dateLabel, weather, isLoadingWeather, isPast } = useWorkoutCard({ workout, date })
 
   const raceTitle = workout?.title ?? 'Día de Carrera'
   const raceKm = workout?.km ?? 0
@@ -118,7 +129,7 @@ export function RaceCard({ workout, date }: WorkoutCardProps) {
       </CustomCardInside>
 
       {/* Barra meteorológica */}
-      <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />
+      {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
       <div className='grid grid-cols-3 gap-3'>
         {stats.map(({ icon: Icon, label, value, unit }) => (

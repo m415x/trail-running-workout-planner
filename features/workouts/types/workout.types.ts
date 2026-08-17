@@ -32,7 +32,8 @@ export interface HrZoneConfig {
   }
 }
 
-// Entidades de Datos
+export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
+
 export interface WorkoutProps {
   title: string
   km: number
@@ -42,6 +43,7 @@ export interface WorkoutProps {
   pace: number
   notes: string
   gpxPath?: string
+  locationKey?: TrainingLocationKey
 }
 
 export interface WeeklyCycle {

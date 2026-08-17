@@ -46,7 +46,7 @@ export function HomeTab() {
       {selectedWeekDay?.type === 'Race' && currentWorkout ? (
         <RaceCard date={selectedWeekDay.fullDate} workout={currentWorkout} />
       ) : currentWorkout ? (
-        <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate} />
+        <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate} gpxData={gpxData} />
       ) : (
         <RestCard />
       )}
@@ -62,7 +62,7 @@ export function HomeTab() {
           distanceKm={gpxData?.distanceKm ?? currentWorkout.km}
           gainMeters={gpxData?.gainMeters ?? currentWorkout.gain}
           maxGradePct={gpxData?.maxGradePct ?? 0}
-          positions={gpxData?.positions ?? []}
+          positions={gpxData?.coordinates ?? []}
         />
       )}
     </div>

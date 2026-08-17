@@ -1,8 +1,11 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import { WorkoutProps, LoggedWorkoutPayload } from '@/features/workouts/types/workout.types'
+import { GpxData } from '@/lib/gpx/gpx-parser'
+import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/date-helpers'
 import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
@@ -10,9 +13,10 @@ import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
 interface UseWorkoutCardProps {
   workout: WorkoutProps
   date?: string
+  gpxData?: GpxData | null
 }
 
-export function useWorkoutCard({ workout, date }: UseWorkoutCardProps) {
+export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) {
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
@@ -20,15 +24,50 @@ export function useWorkoutCard({ workout, date }: UseWorkoutCardProps) {
   // 1. Etiqueta formateada de la fecha
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
 
-  // 2. Carga reactiva del clima sin ejecuciones síncronas en cascada
+  // 2. Determinar si la fecha es pasada
+  const isPast = useMemo(() => {
+    if (!date) return false
+    const workoutDay = startOfDay(parseISO(date))
+    const today = startOfDay(new Date())
+    return isBefore(workoutDay, today)
+  }, [date])
+
+  // 3. Resolución de Coordenadas por Prioridad
+  const targetCoordinates = useMemo(() => {
+    // Si hay GPX (montaña / carrera / circuito externo), usamos el punto de inicio
+    if (gpxData?.startCoordinates) {
+      return gpxData.startCoordinates
+    }
+
+    // Si el workout define una ubicación específica (pista en La Granja o cuestas en Ullum)
+    if (workout.locationKey && TRAINING_LOCATIONS[workout.locationKey]) {
+      return TRAINING_LOCATIONS[workout.locationKey]
+    }
+
+    // Fallback: Parque de Mayo (calle)
+    return DEFAULT_FALLBACK_LOCATION
+  }, [gpxData, workout.locationKey])
+
+  // 3. Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
   useEffect(() => {
     let isMounted = true
 
     const loadWeather = async () => {
       await Promise.resolve()
+
+      // Si es una fecha pasada, limpiamos estado y salimos
+      if (isPast || !date) {
+        if (isMounted) {
+          setWeather(null)
+          setIsLoadingWeather(false)
+        }
+        return
+      }
+
       if (isMounted) setIsLoadingWeather(true)
 
       try {
+        // Obtenemos clima solo para fechas futuras u hoy
         const data = await fetchDailyWeather(-31.5375, -68.5364, date)
         if (isMounted) setWeather(data)
       } catch (error) {
@@ -43,7 +82,7 @@ export function useWorkoutCard({ workout, date }: UseWorkoutCardProps) {
     return () => {
       isMounted = false
     }
-  }, [date])
+  }, [date, isPast, targetCoordinates.lat, targetCoordinates.lon])
 
   // 3. Formateo de estadísticas de la rutina
   const stats = useMemo(
@@ -68,6 +107,7 @@ export function useWorkoutCard({ workout, date }: UseWorkoutCardProps) {
     isLogOpen,
     weather,
     isLoadingWeather,
+    isPast,
     stats,
     openLogDialog,
     closeLogDialog,

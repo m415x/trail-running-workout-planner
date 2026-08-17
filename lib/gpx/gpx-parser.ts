@@ -1,11 +1,11 @@
-// utils/gpx-parser.ts
-
 export interface GpxData {
-  positions: [number, number][]
-  elevationProfile: { km: string; elev: number }[]
+  coordinates: [number, number][]
+  elevationProfile: { km: string; elev: number; grade?: number }[]
   distanceKm: number
   gainMeters: number
   maxGradePct: number
+  startCoordinates?: { lat: number; lon: number }
+  endCoordinates?: { lat: number; lon: number }
 }
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -60,7 +60,7 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
     const rawElevations = rawPoints.map((p) => p.ele)
     const smoothedElevations = smoothElevations(rawElevations, 7)
 
-    const positions: [number, number][] = []
+    const coordinates: [number, number][] = []
     const trackMetrics: { dist: number; ele: number }[] = []
 
     let totalDistMeters = 0
@@ -70,7 +70,7 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
     let prevLng = rawPoints[0].lng
     let prevEle = smoothedElevations[0]
 
-    positions.push([prevLat, prevLng])
+    coordinates.push([prevLat, prevLng])
     trackMetrics.push({ dist: 0, ele: Math.round(prevEle) })
 
     for (let i = 1; i < rawPoints.length; i++) {
@@ -84,7 +84,7 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
       }
 
       totalDistMeters += distStep
-      positions.push([lat, lng])
+      coordinates.push([lat, lng])
 
       const eleDiff = ele - prevEle
       if (eleDiff > 0.4) {
@@ -134,12 +134,16 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
       }
     })
 
+    // Extraemos las coordenadas del punto inicial
+    const firstPoint = coordinates[0]
+
     return {
-      positions,
+      coordinates: coordinates,
       elevationProfile,
       distanceKm: Number((totalDistMeters / 1000).toFixed(1)),
       gainMeters: Math.round(totalGainMeters),
       maxGradePct: Math.round(maxGrade),
+      startCoordinates: firstPoint ? { lat: firstPoint[0], lon: firstPoint[1] } : undefined,
     }
   } catch (error) {
     console.error('Error parseando archivo GPX:', error)

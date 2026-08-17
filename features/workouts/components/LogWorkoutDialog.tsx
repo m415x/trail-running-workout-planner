@@ -28,6 +28,9 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-md w-[92vw] sm:w-full rounded-3xl p-5 bg-card border-border/80 max-h-[90dvh] overflow-y-auto'>
+        {/* Elemento oculto que captura el foco inicial de Base UI para que no salte al input */}
+        <span tabIndex={0} aria-hidden='true' className='sr-only focus:outline-none' />
+
         <DialogHeader className='text-left space-y-1'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
             <CheckCircle2 size={20} className='text-primary' />

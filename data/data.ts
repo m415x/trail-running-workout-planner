@@ -1,6 +1,28 @@
 import { TeamProps, UserProps } from '@/types/common.types'
 import { WorkoutProps, WeekDayRaw, WeeklyCycle } from '@/features/workouts/types/workout.types'
 import { ShoeItemProps } from '@/features/profile/types/profile.types'
+import { GeoLocation } from '@/types/common.types'
+
+export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
+  parqueDeMayo: {
+    name: 'Parque de Mayo',
+    lat: -31.529822,
+    lon: -68.5440881,
+  },
+  laGranja: {
+    name: 'Pista La Granja',
+    lat: -31.5272365,
+    lon: -68.4914957,
+  },
+  diqueUllum: {
+    name: 'Dique de Ullum (Cuestas)',
+    lat: -31.487247,
+    lon: -68.6486688,
+  },
+} as const
+
+// Ubicación por defecto de la app
+export const DEFAULT_FALLBACK_LOCATION = TRAINING_LOCATIONS.parqueDeMayo
 
 export const team: TeamProps = {
   id: 'team_1',
@@ -134,14 +156,14 @@ export const workouts: Record<number, WorkoutProps> = {
     notes: 'Volumen aeróbico controlado. Hidratación cada 20 min. Conservar energía para el jueves.',
   },
   10: {
-    title: "EC2k + 6x200mx115%xMi2'3'' + 2k reg",
+    title: 'Intervalos',
     km: 5,
     zone: 'Z5',
     time: 38,
     gain: 140,
     pace: 310, // 5:10 min/km
     notes:
-      "EC2k + 6x200m al 115% con Micropausas de 2'3'' entre pasada. Recuperación activa 2k al final. Calidad sobre cantidad.",
+      "Entrada en calor 2k + 6x200m al 115% con Micropausas de 2'3'' entre pasada. Recuperación activa 2k al final. Calidad sobre cantidad.",
   },
   11: {
     title: 'Matagusanos',
@@ -151,6 +173,7 @@ export const workouts: Record<number, WorkoutProps> = {
     gain: 820,
     pace: 488, // 8:08 min/km
     notes: 'Tirada larga semanal por Matagusanos. Ritmo muy conservador. Llevar gel y bidón extra.',
+    gpxPath: '/tracks/matagusanos-12k.gpx',
   },
 }
 

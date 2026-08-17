@@ -1,4 +1,5 @@
 import { ShoeItemProps } from '@/features/profile/types/profile.types'
+import ProgressGradient from '@/components/ui/custom/progress-gradient'
 
 export function ShoeItem({ name, type, km, maxKm, status }: ShoeItemProps) {
   const percentage = Math.min(100, Math.round((km / maxKm) * 100))
@@ -17,10 +18,7 @@ export function ShoeItem({ name, type, km, maxKm, status }: ShoeItemProps) {
 
       <div className='space-y-1'>
         <div className='h-1.5 w-full bg-muted rounded-full overflow-hidden'>
-          <div
-            className={`h-full rounded-full ${percentage > 80 ? 'bg-amber-500' : 'bg-primary'}`}
-            style={{ width: `${percentage}%` }}
-          />
+          <ProgressGradient value={percentage} />
         </div>
         <div className='flex justify-between text-[9px] text-muted-foreground'>
           <span>{status}</span>
