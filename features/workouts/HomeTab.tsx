@@ -43,7 +43,7 @@ export function HomeTab() {
       />
 
       {/* Tarjeta del Día Seleccionado */}
-      {selectedWeekDay?.type === 'Race' ? (
+      {selectedWeekDay?.type === 'Race' && currentWorkout ? (
         <RaceCard date={selectedWeekDay.fullDate} workout={currentWorkout} />
       ) : currentWorkout ? (
         <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate} />
