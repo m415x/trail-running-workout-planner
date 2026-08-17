@@ -45,7 +45,7 @@ Full-stack web application for trail running group management, workout planning,
 │   │   │   ├── DaySelectorButton.tsx
 │   │   │   └── DayStatusIndicator.tsx
 │   │   └── hooks/
-│   │       └── useDashboard.ts
+│   │       └── useHomeTab.ts
 │   ├── profile/                            # Todo lo relativo al perfil y fisiología
 │   │   └── components/
 │   │       └── ProfileView.tsx

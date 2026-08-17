@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { RPE_LEVELS } from '@/utils/constants'
 
 export function useRpeSelector(value: number) {
-  const [showDetails, setShowDetails] = useState(true)
+  const [showDetails, setShowDetails] = useState(false)
   const currentRpe = RPE_LEVELS.find((l) => l.value === value) ?? RPE_LEVELS[4]
 
   return {

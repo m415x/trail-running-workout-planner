@@ -1,6 +1,6 @@
 'use client'
 
-import { useDashboard } from '@/features/workouts/hooks/useDashboard'
+import { useHomeTab } from '@/features/workouts/hooks/useHomeTab'
 import { HomeHeader } from '@/features/workouts/components/HomeHeader'
 import { WeeklyCalendarCard } from '@/features/workouts/components/WeeklyCalendarCard'
 import { TodayWorkoutCard, RaceCard, RestCard } from '@/features/workouts/components/WorkoutCard'
@@ -23,7 +23,7 @@ export function HomeTab() {
     onPrevWeek,
     onNextWeek,
     onSelectDate,
-  } = useDashboard()
+  } = useHomeTab()
 
   return (
     <div className='space-y-4'>

@@ -94,11 +94,6 @@ export interface WeeklyCalendarCardProps {
   onSelectDate: (date: Date | undefined) => void
 }
 
-export interface TodayWorkoutCardProps {
-  workout: WorkoutProps
-  date?: string
-}
-
 export interface ElevationChartProps {
   workout: WorkoutProps
   elevData: { km: string; elev: number }[]

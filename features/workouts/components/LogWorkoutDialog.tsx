@@ -117,7 +117,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
               placeholder='¿Cómo te sentiste? ¿Molestias, clima, sensaciones en subidas?'
               value={athleteNotes}
               onChange={(e) => setAthleteNotes(e.target.value)}
-              className='w-full p-2.5 rounded-xl bg-secondary/30 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none'
+              className='bg-background rounded-xl p-4 border border-border w-full text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none'
             />
           </div>
         </div>

@@ -5,12 +5,13 @@ import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
 import { RpeSelectorProps } from '@/features/workouts/types/workout.types'
 import { useRpeSelector } from '@/features/workouts/hooks/useRpeSelector'
+import { CustomCardInside } from '@/components/ui/custom/card-containers'
 
 export function RpeSelector({ value, onChange }: RpeSelectorProps) {
   const { showDetails, setShowDetails, currentRpe } = useRpeSelector(value)
 
   return (
-    <div className='p-3.5 rounded-2xl bg-secondary/30 border border-border/50 space-y-3'>
+    <CustomCardInside className='p-3.5 space-y-3'>
       {/* Cabecera del RPE */}
       <div className='flex items-center justify-between'>
         <div className='flex items-center gap-2'>
@@ -68,13 +69,13 @@ export function RpeSelector({ value, onChange }: RpeSelectorProps) {
             <Info size={12} className='text-primary' />
             ¿Qué se siente en nivel {currentRpe.value}?
           </p>
-          <ul className='space-y-1 text-muted-foreground text-[11px] pl-4 list-disc'>
+          <ul className='min-h-12 space-y-1 text-muted-foreground text-[11px] pl-4 list-disc'>
             {currentRpe.details.map((detail, idx) => (
               <li key={idx}>{detail}</li>
             ))}
           </ul>
         </div>
       )}
-    </div>
+    </CustomCardInside>
   )
 }

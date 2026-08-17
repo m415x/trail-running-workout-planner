@@ -134,14 +134,14 @@ export const RPE_LEVELS: readonly RpeLevel[] = [
     label: 'Muy suave',
     description: 'Esfuerzo mínimo',
     details: ['Podías cantar o hablar sin pausa', 'Casi sin elevación cardíaca', 'Ideal para recuperación activa'],
-    colorClass: 'bg-hr-z1 text-foreground',
+    colorClass: 'bg-hr-z1 text-white',
   },
   {
     value: 2,
     label: 'Suave',
     description: 'Paseo ligero',
     details: ['Conversación fluida', 'Ritmo de calentamiento o trote regenerativo'],
-    colorClass: 'bg-hr-z1 text-foreground',
+    colorClass: 'bg-hr-z1 text-white',
   },
   {
     value: 3,

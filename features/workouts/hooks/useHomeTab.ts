@@ -10,7 +10,7 @@ import { ElevationChartProps, WeekDay, WeeklyCycle } from '@/features/workouts/t
 import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
 import { parseGpxFromUrl, GpxData } from '@/lib/gpx/gpx-parser'
 
-export function useDashboard() {
+export function useHomeTab() {
   // 1. Fecha activa seleccionada (por defecto hoy / 16 de Agosto de 2026)
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date(2026, 7, 16))
 
