@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 
 // Simulación de base de datos / API
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
@@ -11,10 +11,46 @@ import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
 import { parseGpxFromUrl, GpxData } from '@/lib/gpx/gpx-parser'
 
 export function useHomeTab() {
-  // 1. Fecha activa seleccionada (por defecto hoy / 16 de Agosto de 2026)
-  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date(2026, 7, 16))
+  // 1. Inicializar con la fecha real actual
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
 
-  // 2. Calcular el lunes de la semana correspondiente a selectedDate
+  // Referencia para saber qué fecha estaba seleccionada sin recrear listeners
+  const selectedDateRef = useRef(selectedDate)
+  useEffect(() => {
+    selectedDateRef.current = selectedDate
+  }, [selectedDate])
+
+  // ── 2. Listener de Reactivación de la App (Móviles / Background) ──
+  useEffect(() => {
+    const handleAppResume = () => {
+      // Solo actuar cuando la app vuelve a estar visible en pantalla
+      if (document.visibilityState === 'visible') {
+        const now = new Date()
+        const current = selectedDateRef.current
+
+        // Si cambió el día del calendario, actualizamos automáticamente
+        const isDifferentDay =
+          now.getDate() !== current.getDate() ||
+          now.getMonth() !== current.getMonth() ||
+          now.getFullYear() !== current.getFullYear()
+
+        if (isDifferentDay) {
+          setSelectedDate(now)
+        }
+      }
+    }
+
+    // Escuchar cuando el usuario vuelve a la pestaña o desbloquea el teléfono
+    document.addEventListener('visibilitychange', handleAppResume)
+    window.addEventListener('focus', handleAppResume)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleAppResume)
+      window.removeEventListener('focus', handleAppResume)
+    }
+  }, [])
+
+  // 3. Calcular el lunes de la semana correspondiente a selectedDate
   const startOfWeek = useMemo(() => {
     const d = new Date(selectedDate)
     const day = d.getDay() // 0 = Domingo, 1 = Lunes...
@@ -24,7 +60,7 @@ export function useHomeTab() {
     return monday
   }, [selectedDate])
 
-  // 3. Generar dinámicamente los 7 días de la semana sincronizados con weekDaysRaw
+  // 4. Generar dinámicamente los 7 días de la semana sincronizados con weekDaysRaw
   const weekDays = useMemo<WeekDay[]>(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const current = new Date(startOfWeek)
@@ -50,7 +86,7 @@ export function useHomeTab() {
     })
   }, [startOfWeek])
 
-  // 4. Índice del día seleccionado dentro de la semana activa (0 a 6)
+  // 5. Índice del día seleccionado dentro de la semana activa (0 a 6)
   const selectedDay = useMemo(() => {
     const year = selectedDate.getFullYear()
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
@@ -61,7 +97,7 @@ export function useHomeTab() {
     return idx !== -1 ? idx : 0
   }, [selectedDate, weekDays])
 
-  // 5. Ciclo semanal con fechas dinámicas actualizadas
+  // 6. Ciclo semanal con fechas dinámicas actualizadas
   const weeklyCycle: WeeklyCycle = useMemo(() => {
     const mondayIso = weekDays[0]?.fullDate ?? defaultCycle.startDate
     const sundayIso = weekDays[6]?.fullDate ?? defaultCycle.endDate
@@ -73,12 +109,12 @@ export function useHomeTab() {
     }
   }, [weekDays])
 
-  // 6. Rutina activa asociada al día seleccionado
+  // 7. Rutina activa asociada al día seleccionado
   const selectedWeekDay = weekDays[selectedDay]
   const workoutId = selectedWeekDay?.workoutId
   const currentWorkout = workoutId !== undefined ? workouts[workoutId] : null
 
-  // 7. Estado y carga reactiva del track GPX
+  // 8. Estado y carga reactiva del track GPX
   const [gpxData, setGpxData] = useState<GpxData | null>(null)
 
   useEffect(() => {
@@ -104,7 +140,7 @@ export function useHomeTab() {
     }
   }, [currentWorkout?.gpxPath])
 
-  // 8. Datos calculados de altimetría
+  // 9. Datos calculados de altimetría
   const elevationChartData: ElevationChartProps | null = useMemo(() => {
     if (!currentWorkout || !gpxData || gpxData.elevationProfile.length === 0) {
       return null
@@ -127,7 +163,7 @@ export function useHomeTab() {
     }
   }, [currentWorkout, gpxData])
 
-  // 9. Funciones de navegación entre semanas y selección de fechas
+  // 10. Funciones de navegación entre semanas y selección de fechas
   const handlePrevWeek = useCallback(() => {
     setSelectedDate((prev) => {
       const next = new Date(prev)
