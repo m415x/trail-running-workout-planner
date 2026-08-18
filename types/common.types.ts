@@ -1,3 +1,5 @@
+import { AthleteGroupCode } from '@/types/athlete-groups.types'
+
 export type NavigationTab = 'home' | 'plan' | 'stats' | 'profile'
 
 export interface DayConfig {
@@ -26,7 +28,7 @@ export interface UserProps {
   emergencyContact?: string
   emergencyPhone?: string
   avatar?: string
-  teamRole?: string
+  group: AthleteGroupCode
 }
 
 export interface TeamProps {

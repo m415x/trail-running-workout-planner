@@ -259,7 +259,7 @@ html {
        - 112.5% = 18px (aumenta todos los rem un ~12.5%)
        - 115% o 120% si quieres textos todavía más legibles en carrera/outdoor
   */
-  font-size: 112.5%;
+  font-size: 120%;
 
   /* Evita que Safari/Chrome en iOS/Android reescale fuentes de forma arbitraria */
   -webkit-text-size-adjust: 100%;

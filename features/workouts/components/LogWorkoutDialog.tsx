@@ -1,9 +1,9 @@
 'use client'
 
-import { CheckCircle2, Flame, MapPin, Mountain, Timer, Heart, MessageSquare } from 'lucide-react'
+import { CheckCircle2, Flame, MapPin, Timer, MessageSquare } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PrimaryInput } from '@/components/ui/custom/inputs'
+import { PrimaryFilledButton, GlassOutlineButton } from '@/components/ui/custom/buttons'
 import { LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
 import { RpeSelector } from './RpeSelector'
 import { useLogWorkoutDialog } from '@/features/workouts/hooks/useLogWorkoutDialog'
@@ -12,14 +12,12 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
   const {
     distance,
     timeMin,
-    gain,
-    avgHr,
+    timeSec,
     rpe,
     athleteNotes,
     setDistance,
     setTimeMin,
-    setGain,
-    setAvgHr,
+    setTimeSec,
     setRpe,
     setAthleteNotes,
     handleSave,
@@ -44,68 +42,56 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
         <div className='space-y-4 my-2'>
           {/* Métricas Numéricas Principales */}
           <div className='grid grid-cols-2 gap-2.5'>
-            {/* Distancia */}
+            {/* ── Columna 1: Distancia ── */}
             <div className='space-y-1'>
               <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                 <MapPin size={11} /> Distancia (km)
               </label>
-              <Input
+              <PrimaryInput
                 type='number'
-                step='0.1'
-                placeholder='0.0'
+                step='0.01'
+                min='0'
+                placeholder='0.00'
                 value={distance}
                 onChange={(e) => setDistance(e.target.value)}
-                className='h-10 rounded-xl font-mono text-sm'
               />
             </div>
 
-            {/* Tiempo */}
+            {/* ── Columna 2: Tiempo (Minutos + Segundos) ── */}
             <div className='space-y-1'>
               <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                <Timer size={11} /> Tiempo (min)
+                <Timer size={11} /> Tiempo (min : seg)
               </label>
-              <Input
-                type='number'
-                placeholder='Minutos'
-                value={timeMin}
-                onChange={(e) => setTimeMin(e.target.value)}
-                className='h-10 rounded-xl font-mono text-sm'
-              />
-            </div>
 
-            {/* Desnivel Positivo */}
-            <div className='space-y-1'>
-              <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                <Mountain size={11} /> Desnivel + (m)
-              </label>
-              <Input
-                type='number'
-                placeholder='Metros'
-                value={gain}
-                onChange={(e) => setGain(e.target.value)}
-                className='h-10 rounded-xl font-mono text-sm'
-              />
-            </div>
+              <div className='grid grid-cols-2 gap-1.5'>
+                <PrimaryInput
+                  type='number'
+                  min='0'
+                  placeholder='Min'
+                  value={timeMin}
+                  onChange={(e) => setTimeMin(e.target.value)}
+                />
 
-            {/* Frecuencia Cardíaca Media */}
-            <div className='space-y-1'>
-              <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                <Heart size={11} /> FC Media (bpm)
-              </label>
-              <Input
-                type='number'
-                placeholder='155'
-                value={avgHr}
-                onChange={(e) => setAvgHr(e.target.value)}
-                className='h-10 rounded-xl font-mono text-sm'
-              />
+                <PrimaryInput
+                  type='number'
+                  min='0'
+                  max='59'
+                  placeholder='0'
+                  value={timeSec}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10)
+                    if (isNaN(val)) setTimeSec('')
+                    else if (val >= 0 && val <= 59) setTimeSec(e.target.value)
+                  }}
+                />
+              </div>
             </div>
           </div>
 
           {/* ── Selector de Esfuerzo Percibido (RPE) ── */}
           <div className='space-y-1.5'>
             <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-              <Flame size={12} className='text-primary' /> Esfuerzo Percibido (RPE 1-10)
+              <Flame size={12} /> Esfuerzo Percibido (RPE 1-10)
             </label>
             <RpeSelector value={rpe} onChange={setRpe} />
           </div>
@@ -126,21 +112,12 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
         </div>
 
         <DialogFooter className='flex flex-row gap-2 mt-2'>
-          <Button
-            type='button'
-            variant='outline'
-            onClick={onClose}
-            className='flex-1 rounded-xl h-10 text-xs font-semibold'
-          >
+          <GlassOutlineButton onClick={onClose} className='flex-1 h-10'>
             Cancelar
-          </Button>
-          <Button
-            type='button'
-            onClick={handleSave}
-            className='flex-1 rounded-xl h-10 text-xs font-semibold bg-primary hover:bg-primary/90 text-white shadow-md cursor-pointer'
-          >
+          </GlassOutlineButton>
+          <PrimaryFilledButton onClick={handleSave} className='flex-1 h-10'>
             Guardar Sesión
-          </Button>
+          </PrimaryFilledButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { Camera, ChevronLeft, Pencil } from 'lucide-react'
 import { UserProps } from '@/types/common.types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { SecondaryButton, GlassButton } from '@/components/ui/custom/buttons'
+import { SecondaryOutlineButton, GlassFilledButton, SecondaryFilledButton } from '@/components/ui/custom/buttons'
 
 export function ProfileHeaderHero({ user }: { user: UserProps }) {
   const router = useRouter()
@@ -45,19 +45,15 @@ export function ProfileHeaderHero({ user }: { user: UserProps }) {
         )}
 
         {/* Botón Volver (Estilo Pill / Glass) */}
-        <GlassButton
-          type='button'
-          onClick={() => router.back()}
-          className='absolute top-4 left-4 size-9 p-0 justify-center rounded-full'
-        >
+        <GlassFilledButton onClick={() => router.back()} className='absolute top-4 left-4 size-8 rounded-full'>
           <ChevronLeft size={18} />
-        </GlassButton>
+        </GlassFilledButton>
 
         {/* Botón Cambiar Portada */}
-        <GlassButton type='button' onClick={() => fileInputRef.current?.click()} className='absolute top-4 right-4'>
+        <GlassFilledButton onClick={() => fileInputRef.current?.click()} className='absolute top-4 right-4'>
           <Camera size={13} />
           <span>Cambiar fondo</span>
-        </GlassButton>
+        </GlassFilledButton>
       </div>
 
       {/* ── 2. Sección del Avatar Solapado y Datos ── */}
@@ -81,7 +77,7 @@ export function ProfileHeaderHero({ user }: { user: UserProps }) {
           </div>
 
           {/* Botón "Editar Perfil" */}
-          <SecondaryButton>Editar Perfil</SecondaryButton>
+          <SecondaryOutlineButton>Editar Perfil</SecondaryOutlineButton>
         </div>
 
         {/* Nombre y datos del atleta */}

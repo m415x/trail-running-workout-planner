@@ -2,7 +2,7 @@
 
 import { RefreshCcwDot, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
 import { WeeklyCalendarCardProps } from '@/features/workouts/types/workout.types'
-import { PrimaryButton } from '@/components/ui/custom/buttons'
+import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import ProgressGradient from '@/components/ui/custom/progress-gradient'
@@ -35,10 +35,10 @@ export function WeeklyCalendarCard({
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger
             render={
-              <PrimaryButton className='font-mono text-xs gap-1.5 cursor-pointer'>
+              <PrimaryOutlineButton className='rounded-full font-mono'>
                 <CalendarIcon size={10} className='opacity-80' />
                 <span>{dateRange}</span>
-              </PrimaryButton>
+              </PrimaryOutlineButton>
             }
           />
           <PopoverContent className='w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>

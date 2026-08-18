@@ -6,7 +6,7 @@ import { GpxData } from '@/lib/gpx/gpx-parser'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
-import { Button } from '@/components/ui/button'
+import { PrimaryFilledButton } from '@/components/ui/custom/buttons'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialog'
 import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
@@ -65,20 +65,16 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
         </div>
 
         {/* Coach note */}
-        <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
-          <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
+        <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
+          <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>Nota del Entrenador</p>
           <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
         </CustomCardInside>
 
         {/* Botón para Registrar */}
-        <Button
-          type='button'
-          onClick={openLogDialog}
-          className='w-full h-10 rounded-xl text-xs font-semibold bg-primary/15 hover:bg-primary/25 text-primary border border-primary/30 transition-all active:scale-98 cursor-pointer gap-2 mt-1 shadow-xs'
-        >
+        <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
           <CheckCircle size={15} />
           <span>Registrar entrenamiento realizado</span>
-        </Button>
+        </PrimaryFilledButton>
       </CustomCard>
 
       {/* Modal de Registro */}

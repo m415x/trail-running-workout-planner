@@ -1,4 +1,5 @@
 import { LatLngTuple } from 'leaflet'
+import { AthleteGroupCode } from '@/types/athlete-groups.types'
 
 // Estados y Tipos de rutina
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
@@ -35,6 +36,7 @@ export interface HrZoneConfig {
 export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
 
 export interface WorkoutProps {
+  id?: number
   title: string
   km: number
   zone: hrZone
@@ -42,6 +44,7 @@ export interface WorkoutProps {
   gain: number
   pace: number
   notes: string
+  targetGroups?: AthleteGroupCode[]
   gpxPath?: string
   locationKey?: TrainingLocationKey
 }

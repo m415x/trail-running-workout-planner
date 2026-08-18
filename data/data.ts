@@ -42,7 +42,9 @@ export const currentUser: UserProps = {
   emergencyContact: 'María Lahoz (Hermana)',
   emergencyPhone: '+54 9 264 987-6543',
   avatar: '/avatars/cristian.png',
-  teamRole: 'El Parque Team Athlete',
+  group: 'S2',
+  // apto fisico con vencimiento de 1 año, subir a la app
+  // baja logica
 }
 
 export const weeklyCycle: WeeklyCycle = {
