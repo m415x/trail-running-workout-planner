@@ -91,6 +91,15 @@ export interface WorkoutLog extends BaseEntity, LoggedWorkoutPayload {
 }
 
 /**
+ * Punto individual de un track GPX con coordenadas y elevación.
+ */
+export interface GpxPoint {
+  lat: number
+  lon: number
+  ele: number
+}
+
+/**
  * Datos parseados del archivo GPX
  */
 export interface GpxData {

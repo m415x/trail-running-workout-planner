@@ -36,7 +36,7 @@ export function RouteMapCard({
       </CardHeader>
 
       {/* Contenedor del Mapa con Leaflet */}
-      <div className='relative h-52 w-full rounded-2xl border border-border/50 overflow-hidden my-2'>
+      <div className='relative h-60 w-full rounded-2xl border border-border/50 overflow-hidden my-2'>
         <MapWithNoSSR key={mapKey ?? `${title}-${positions.length}`} positions={positions} />
       </div>
 
