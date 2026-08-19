@@ -1,0 +1,50 @@
+{
+  "Common": {
+    "today": "Today",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "km": "km",
+    "min": "min",
+    "paceUnit": "/km",
+    "speedUnit": "km/h"
+  },
+  "Workouts": {
+    "types": {
+      "Base": "Base Run",
+      "Long": "Long Run",
+      "Intervals": "Intervals / Track",
+      "Trail": "Trail Training",
+      "Speed": "Speed Work",
+      "Fartlek": "Fartlek",
+      "PAM": "MAP Test / 1000m",
+      "Hills": "Hill Repeats",
+      "Race": "Race Day",
+      "Rest": "Rest Day"
+    },
+    "card": {
+      "coachNote": "Coach's Note",
+      "logWorkoutButton": "Log completed workout",
+      "estimatedTime": "Est. Time",
+      "avgPace": "Avg. Pace",
+      "avgSpeed": "Avg. Speed",
+      "restMessage": "No session scheduled. Time to recover."
+    },
+    "dialog": {
+      "title": "Log Workout",
+      "distance": "Distance (km)",
+      "time": "Duration (min : sec)",
+      "elevation": "Elevation Gain (+m)",
+      "heartRate": "Avg HR (bpm)",
+      "rpe": "Rate of Perceived Exertion (RPE)",
+      "notes": "Athlete Notes",
+      "notesPlaceholder": "How did it feel? Terrain, weather, fatigue..."
+    }
+  },
+  "Weather": {
+    "loading": "Checking weather conditions...",
+    "wind": "Wind",
+    "rainProb": "Rain Prob.",
+    "snowAccum": "Snow"
+  }
+}

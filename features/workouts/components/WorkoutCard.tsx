@@ -10,6 +10,7 @@ import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialog'
 import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
 import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
+import { useTranslations } from 'next-intl'
 
 export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
   const {
@@ -137,11 +138,13 @@ export function RaceCard({ workout, date }: WorkoutCardProps) {
 }
 
 export function RestCard() {
+  const t = useTranslations('Workouts')
+
   return (
     <CustomCard className='items-center py-6'>
       <Coffee className='text-muted-foreground' size={22} />
-      <p className='font-heading font-semibold text-foreground text-sm mt-1'>Día de Descanso</p>
-      <p className='text-xs text-muted-foreground mt-0.5 font-sans'>Sin rutina programada. Aprovecha para recuperar.</p>
+      <p className='font-heading font-semibold text-foreground text-sm mt-1'>{t('types.Rest')}</p>
+      <p className='text-xs text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
     </CustomCard>
   )
 }

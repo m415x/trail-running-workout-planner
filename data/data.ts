@@ -1,7 +1,8 @@
 import { Team, User, WorkoutProps, WeekDayRaw, WeeklyCycle, GeoLocation } from '@/types'
 import { ShoeItemProps } from '@/features/profile/types/profile.types'
+import { TrainingLocationKey } from '@/types'
 
-export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
+export const TRAINING_LOCATIONS: Record<TrainingLocationKey, GeoLocation> = {
   parqueDeMayo: {
     name: 'Parque de Mayo',
     lat: -31.529822,

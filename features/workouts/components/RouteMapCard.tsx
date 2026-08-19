@@ -41,7 +41,7 @@ export function RouteMapCard({
       </div>
 
       {/* Resumen de Métricas del GPX */}
-      <div className='grid grid-cols-3 gap-2.5'>
+      <div className='grid grid-cols-3 gap-3'>
         <StatPill icon={Navigation} label='Distancia' value={distanceKm} unit='km' />
         <StatPill icon={TrendingUp} label='Desnivel' value={`+${gainMeters}`} unit='m' />
         <StatPill icon={Angle} label='Pendiente Máx.' value={maxGradePct} unit='%' />

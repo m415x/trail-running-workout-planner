@@ -1,0 +1,50 @@
+{
+  "Common": {
+    "today": "Hoy",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "km": "km",
+    "min": "min",
+    "paceUnit": "/km",
+    "speedUnit": "km/h"
+  },
+  "Workouts": {
+    "types": {
+      "Base": "Rodaje Base",
+      "Long": "Fondo / Tirada Larga",
+      "Intervals": "Series / Intervalos",
+      "Trail": "Entrenamiento Trail",
+      "Speed": "Velocidad / Calidad",
+      "Fartlek": "Fartlek",
+      "PAM": "Test PAM / 1000m",
+      "Hills": "Cuestas y Desnivel",
+      "Race": "Día de Carrera",
+      "Rest": "Día de Descanso"
+    },
+    "card": {
+      "coachNote": "Nota del Entrenador",
+      "logWorkoutButton": "Registrar entrenamiento realizado",
+      "estimatedTime": "Tiempo est.",
+      "avgPace": "Ritmo medio",
+      "avgSpeed": "Vel. media",
+      "restMessage": "Sin rutina programada. Aprovecha para recuperar."
+    },
+    "dialog": {
+      "title": "Registrar Entrenamiento",
+      "distance": "Distancia (km)",
+      "time": "Tiempo (min : seg)",
+      "elevation": "Desnivel positivo (+m)",
+      "heartRate": "FC Media (bpm)",
+      "rpe": "Sensación de Esfuerzo (RPE)",
+      "notes": "Comentarios o sensaciones",
+      "notesPlaceholder": "¿Cómo te sentiste? Terreno, clima, molestias..."
+    }
+  },
+  "Weather": {
+    "loading": "Consultando condiciones meteorológicas...",
+    "wind": "Viento",
+    "rainProb": "Prob. Lluvia",
+    "snowAccum": "Nieve"
+  }
+}
