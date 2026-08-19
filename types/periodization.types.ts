@@ -3,15 +3,17 @@
  */
 import { BaseEntity, AthleteGroupCode } from '@/types'
 
-export type MicrocycleType = 'base' | 'development' | 'shock' | 'deload' | 'tapering' | 'race'
+/** Tipos de microciclo con volumen predefinido en la matriz de periodización. */
+export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
+
+/** Unión de todos los tipos de microciclos posibles. */
+export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
+
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 
 export interface GroupVolumeProgression {
-  range: {
-    min: number
-    max: number
-  }
-  volumes: Record<Extract<MicrocycleType, 'base' | 'development' | 'shock' | 'deload'>, number>
+  range: { min: number; max: number }
+  volumes: Record<VolumeMatrixMicrocycleType, number>
 }
 
 export interface Microcycle extends BaseEntity {
