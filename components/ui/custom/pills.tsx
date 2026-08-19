@@ -2,8 +2,7 @@
 
 import { Heart } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { hrZone } from '@/features/workouts/types/workout.types'
-import { StatPillProps } from '@/types/ui.types'
+import { IntensityZone, StatPillProps } from '@/types'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
 import { HR_ZONES } from '@/utils/constants'
 
@@ -22,7 +21,7 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
   )
 }
 
-export function ZonePill({ zone }: { zone: hrZone }) {
+export function ZonePill({ zone }: { zone: IntensityZone }) {
   // Fallback a Z1 si la zona no coincide
   const zoneInfo = HR_ZONES[zone] ?? HR_ZONES.Z1
 

@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { ExtendedRouteMapCardProps } from '@/features/workouts/types/workout.types'
+import { RouteMapCardProps } from '@/features/workouts/types/workout.types'
 import { Navigation, Route, TrendingUp, Angle } from 'lucide-react'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
@@ -24,7 +24,7 @@ export function RouteMapCard({
   maxGradePct = 0,
   positions = [],
   mapKey,
-}: ExtendedRouteMapCardProps) {
+}: RouteMapCardProps) {
   return (
     <CustomCard>
       {/* Header con botón para cargar GPX futuro */}

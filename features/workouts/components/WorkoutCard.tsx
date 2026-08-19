@@ -1,8 +1,7 @@
 'use client'
 
-import { SportShoe, Clock, Gauge, Zap, Trophy, CheckCircle, Coffee } from 'lucide-react'
-import { WorkoutProps } from '@/features/workouts/types/workout.types'
-import { GpxData } from '@/lib/gpx/gpx-parser'
+import { Clock, Gauge, Zap, Trophy, CheckCircle, Coffee } from 'lucide-react'
+import { WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
@@ -12,14 +11,10 @@ import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialo
 import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
 import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
 
-export interface WorkoutCardProps {
-  workout: WorkoutProps
-  date?: string
-  gpxData?: GpxData | null
-}
-
 export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
   const {
+    WorkoutIcon,
+    headerTitle,
     dateLabel,
     isLogOpen,
     weather,
@@ -35,7 +30,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     <>
       <CustomCard>
         {/* Header row */}
-        <CardHeader title='Entrenamiento del Día' icon={SportShoe}>
+        <CardHeader title={headerTitle} icon={WorkoutIcon}>
           <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
         </CardHeader>
 

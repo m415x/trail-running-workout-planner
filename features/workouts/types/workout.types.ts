@@ -1,91 +1,5 @@
 import { LatLngTuple } from 'leaflet'
-import { AthleteGroupCode } from '@/types/athlete-groups.types'
-
-// Estados y Tipos de rutina
-export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
-
-export type WorkoutType =
-  | 'Base'
-  | 'Long'
-  | 'Intervals'
-  | 'Trail'
-  | 'Speed'
-  | 'Fartlek'
-  | 'Rest'
-  | 'PAM'
-  | 'Hills'
-  | 'Race'
-  | string
-
-export type hrZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
-
-export interface HrZoneConfig {
-  name: string
-  pct: string
-  rpe: string
-  workType: string
-  description: string
-  styles: {
-    bg: string
-    border: string
-    text: string
-    textMuted: string
-  }
-}
-
-export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
-
-export interface WorkoutProps {
-  id?: number
-  title: string
-  km: number
-  zone: hrZone
-  time: number
-  gain: number
-  pace: number
-  notes: string
-  targetGroups?: AthleteGroupCode[]
-  gpxPath?: string
-  locationKey?: TrainingLocationKey
-}
-
-export interface WeeklyCycle {
-  id: string
-  title: string
-  phase: string
-  startDate: string
-  endDate: string
-  targetKm: number
-}
-
-export interface WeekDayRaw {
-  date: string
-  completedKm?: number
-  type?: WorkoutType
-  isToday?: boolean
-  isRest?: boolean
-  isDone?: boolean
-  isPartial?: boolean
-  isMissed?: boolean
-  status?: DayStatus
-  workoutId?: number
-}
-
-export interface WeekDay {
-  day?: string
-  date: string | number
-  fullDate?: string
-  type?: WorkoutType
-  km?: number
-  completedKm?: number
-  isToday?: boolean
-  isRest?: boolean
-  isDone?: boolean
-  isPartial?: boolean
-  isMissed?: boolean
-  status?: DayStatus
-  workoutId?: number
-}
+import { WeeklyCycle, WeekDay, WorkoutProps, LoggedWorkoutPayload } from '@/types'
 
 // Props de Componentes del Dominio Workouts
 export interface WeeklyCalendarCardProps {
@@ -119,8 +33,8 @@ export interface RouteMapCardProps {
   distanceKm?: number
   gainMeters?: number
   maxGradePct?: number
-  positions?: LatLngTuple[]
-  mapKey?: string
+  positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
+  mapKey?: string // <-- Prop personalizada opcional
   onUploadGpx?: () => void
 }
 
@@ -130,20 +44,8 @@ export interface WeekCalendarPickerProps {
   onClose?: () => void
 }
 
-export interface LoggedWorkoutPayload {
-  workoutId?: string
-  date?: string
-  distanceKm: number
-  durationMin: number
-  elevationGain: number
-  avgHr: number | null
-  rpe: number
-  athleteNotes: string
-  loggedAt: string
-}
-
 export interface LogWorkoutDialogProps {
-  isOpen: boolean
+  isOpen?: boolean
   onClose: () => void
   workout?: WorkoutProps | null
   dateStr?: string
@@ -160,16 +62,6 @@ export interface DaySelectorButtonProps {
 export interface DayStatusIndicatorProps {
   day: WeekDay
   isSelected?: boolean
-}
-
-export interface ExtendedRouteMapCardProps {
-  title: string
-  distanceKm: number
-  gainMeters: number
-  maxGradePct?: number
-  positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
-  mapKey?: string // <-- Prop personalizada opcional
-  onUploadGpx?: () => void
 }
 
 export interface RpeSelectorProps {

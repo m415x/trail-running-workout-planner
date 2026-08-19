@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { LoggedWorkoutPayload, LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
+import { LoggedWorkoutPayload } from '@/types'
+import { LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
 
-export function useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
+export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
   // Valores iniciales basados en la planificación
   const [distance, setDistance] = useState<string>(workout ? String(workout.km) : '')
   const [timeMin, setTimeMin] = useState<string>(workout ? String(workout.time) : '')

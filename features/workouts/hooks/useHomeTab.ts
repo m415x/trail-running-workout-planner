@@ -6,9 +6,10 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
 
 // Helpers y Tipos
-import { ElevationChartProps, WeekDay, WeeklyCycle } from '@/features/workouts/types/workout.types'
+import { WeekDay, WeeklyCycle, GpxData } from '@/types'
+import { ElevationChartProps } from '@/features/workouts/types/workout.types'
 import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
-import { parseGpxFromUrl, GpxData } from '@/lib/gpx/gpx-parser'
+import { parseGpxFromUrl } from '@/lib/gpx/gpx-parser'
 
 export function useHomeTab() {
   // 1. Inicializar con la fecha real actual
@@ -146,7 +147,7 @@ export function useHomeTab() {
       return null
     }
 
-    const elevs = gpxData.elevationProfile.map((d) => d.elev)
+    const elevs = gpxData.elevationProfile.map((d: { elev: number }) => d.elev)
     const elevMin = Math.min(...elevs)
     const elevMax = Math.max(...elevs)
 

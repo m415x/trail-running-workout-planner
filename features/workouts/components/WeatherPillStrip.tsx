@@ -38,11 +38,12 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
   if (!weather) return null
 
   const { iconType, label } = interpretWmoCode(weather.weatherCode)
+  const isSnowCondition = iconType === 'snow' || weather.snowfallSum > 0
 
   return (
-    <CustomCardInside className='flex items-center justify-around px-1 py-1.5 rounded-xl'>
+    <CustomCardInside className='flex justify-center rounded-xl px-0 py-0.5 gap-3'>
       {/* Estado del Tiempo + Temperaturas Max/Min */}
-      <div className='flex items-center gap-1.5'>
+      <div className='flex flex-1 items-center justify-center gap-1.5'>
         <WeatherIcon iconType={iconType} />
         <span className='font-heading font-bold text-foreground text-[11px]'>
           {weather.tempMax}°<span className='font-normal text-muted-foreground ml-0.5'>/ {weather.tempMin}°</span>
@@ -51,10 +52,11 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
       </div>
 
       {/* Viento y Dirección */}
-      <div className='flex items-center gap-1 text-[11px] text-foreground/90 font-mono'>
+      <div className='flex flex-1 items-center justify-center gap-1.5 text-foreground/90 font-mono'>
         <Wind size={12} className='text-muted-foreground' />
-        <span>
-          {weather.windSpeed} <span className='text-[10px]'>km/h</span>
+        <span className='font-heading font-bold text-foreground text-[11px]'>
+          {weather.windSpeed}
+          <span className='text-[10px] font-semibold pl-1'>km/h</span>
         </span>
 
         {/* Flecha de brújula rotando según los grados */}
@@ -68,12 +70,22 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
         <span className='text-[9px] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
       </div>
 
-      {/* Probabilidad de Lluvia si supera el 10% */}
-      {weather.precipitationProb > 10 && (
-        <div className='flex items-center gap-0.5 text-[10px] text-blue-500 font-mono'>
-          <Droplets size={11} />
-          <span>{weather.precipitationProb}%</span>
+      {/* Alerta de Nieve (Si hay acumulación o código de nieve) */}
+      {isSnowCondition ? (
+        <div className='flex flex-1 items-center justify-center gap-1.5 text-cyan-500 font-mono'>
+          <Snowflake size={12} />
+          <span className='font-heading font-semibold text-[11px]'>
+            {weather.snowfallSum > 0 ? `${weather.snowfallSum} cm` : `${weather.precipitationProb}%`}
+          </span>
         </div>
+      ) : (
+        /* Probabilidad de Lluvia si supera el 10% */
+        weather.precipitationProb > 10 && (
+          <div className='flex flex-1 items-center justify-center gap-1.5 text-blue-500 font-mono'>
+            <Droplets size={12} />
+            <span className='font-heading font-semibold text-[11px]'>{weather.precipitationProb}%</span>
+          </div>
+        )
       )}
     </CustomCardInside>
   )

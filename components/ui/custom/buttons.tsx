@@ -9,7 +9,7 @@ export function CustomButton({ className, ...props }: CustomButtonProps) {
   return (
     <Button
       className={cn(
-        'flex items-center gap-2 px-2.5 py-1 rounded-xl text-xs font-semibold',
+        'flex items-center gap-2 px-2.5 rounded-xl text-xs font-semibold h-10',
         'border transition-all cursor-pointer shadow-md hover:scale-102 active:scale-98',
         className,
       )}

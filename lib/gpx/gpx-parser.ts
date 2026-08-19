@@ -1,12 +1,4 @@
-export interface GpxData {
-  coordinates: [number, number][]
-  elevationProfile: { km: string; elev: number; grade?: number }[]
-  distanceKm: number
-  gainMeters: number
-  maxGradePct: number
-  startCoordinates?: { lat: number; lon: number }
-  endCoordinates?: { lat: number; lon: number }
-}
+import { GpxData } from '@/types'
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000
@@ -47,13 +39,13 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
     if (trkpts.length === 0) return null
 
     // 1. Extraer coordenadas y elevación
-    const rawPoints: { lat: number; lng: number; ele: number }[] = []
+    const rawPoints: { lat: number; lon: number; ele: number }[] = []
     trkpts.forEach((pt) => {
       const lat = parseFloat(pt.getAttribute('lat') || '0')
-      const lng = parseFloat(pt.getAttribute('lon') || '0')
+      const lon = parseFloat(pt.getAttribute('lon') || '0')
       const eleEl = pt.querySelector('ele')
       const ele = eleEl ? parseFloat(eleEl.textContent || '0') : 0
-      rawPoints.push({ lat, lng, ele })
+      rawPoints.push({ lat, lon, ele })
     })
 
     // 2. Suavizar perfil de altitud
@@ -67,24 +59,24 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
     let totalGainMeters = 0
 
     let prevLat = rawPoints[0].lat
-    let prevLng = rawPoints[0].lng
+    let prevLng = rawPoints[0].lon
     let prevEle = smoothedElevations[0]
 
     coordinates.push([prevLat, prevLng])
     trackMetrics.push({ dist: 0, ele: Math.round(prevEle) })
 
     for (let i = 1; i < rawPoints.length; i++) {
-      const { lat, lng } = rawPoints[i]
+      const { lat, lon } = rawPoints[i]
       const ele = smoothedElevations[i]
 
-      const distStep = haversineDistance(prevLat, prevLng, lat, lng)
+      const distStep = haversineDistance(prevLat, prevLng, lat, lon)
 
       if (distStep < 1.0 && i !== rawPoints.length - 1) {
         continue
       }
 
       totalDistMeters += distStep
-      coordinates.push([lat, lng])
+      coordinates.push([lat, lon])
 
       const eleDiff = ele - prevEle
       if (eleDiff > 0.4) {
@@ -94,7 +86,7 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
       trackMetrics.push({ dist: totalDistMeters, ele: Math.round(ele) })
 
       prevLat = lat
-      prevLng = lng
+      prevLng = lon
       prevEle = ele
     }
 

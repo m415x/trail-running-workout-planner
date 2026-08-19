@@ -29,17 +29,17 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
         {/* Elemento oculto que captura el foco inicial de Base UI para que no salte al input */}
         <span tabIndex={0} aria-hidden='true' className='sr-only focus:outline-none' />
 
-        <DialogHeader className='text-left space-y-1'>
+        <DialogHeader className='text-left'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
             <CheckCircle2 size={20} className='text-primary' />
             Registrar Entrenamiento
           </DialogTitle>
-          <p className='text-xs text-muted-foreground'>
-            {workout?.title ?? 'Sesión completada'} · {dateStr ?? 'Hoy'}
+          <p className='text-xs text-muted-foreground p-0'>
+            {workout?.title ?? 'Sesión completada'} <br /> {dateStr ?? 'Hoy'}
           </p>
         </DialogHeader>
 
-        <div className='space-y-4 my-2'>
+        <div className='space-y-4 my-1'>
           {/* Métricas Numéricas Principales */}
           <div className='grid grid-cols-2 gap-2.5'>
             {/* ── Columna 1: Distancia ── */}
@@ -111,11 +111,11 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
           </div>
         </div>
 
-        <DialogFooter className='flex flex-row gap-2 mt-2'>
-          <GlassOutlineButton onClick={onClose} className='flex-1 h-10'>
+        <DialogFooter className='flex flex-row gap-2 mt-2 bg-card'>
+          <GlassOutlineButton onClick={onClose} className='flex-1'>
             Cancelar
           </GlassOutlineButton>
-          <PrimaryFilledButton onClick={handleSave} className='flex-1 h-10'>
+          <PrimaryFilledButton onClick={handleSave} className='flex-1'>
             Guardar Sesión
           </PrimaryFilledButton>
         </DialogFooter>

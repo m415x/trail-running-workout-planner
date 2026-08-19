@@ -1,12 +1,12 @@
 'use client'
 
-import { TeamProps, UserProps } from '@/types/common.types'
+import { Team, User } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Bell } from 'lucide-react'
 import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
 import { useHomeHeader } from '@/features/workouts/hooks/useHomeHeader'
 
-export function HomeHeader({ team, user }: { team: TeamProps; user: UserProps }) {
+export function HomeHeader({ team, user }: { team: Team; user: User }) {
   const { today, fullName, initials } = useHomeHeader()
 
   return (

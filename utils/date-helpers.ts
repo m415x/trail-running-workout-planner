@@ -1,4 +1,4 @@
-import { WeekDay, WeekDayRaw, DayStatus } from '@/features/workouts/types/workout.types'
+import { WeekDay, WeekDayRaw, DayStatus } from '@/types'
 import { DAYS_OF_WEEK, MONTHS_OF_YEAR } from '@/utils/constants'
 
 /**
@@ -106,9 +106,10 @@ export function formatRawWeekDay(rawDay: WeekDayRaw): WeekDay {
 
   return {
     ...rawDay,
-    day: dayConfig.short,
-    date: dateObj.getDate(),
-    fullDate: rawDay.date,
+    day: dayConfig?.short ?? '',
+    dayName: dayConfig?.medium ?? '',
+    dayNumber: dateObj.getDate(), // ✅ Asignado a dayNumber (number)
+    fullDate: rawDay.date, // ✅ 'YYYY-MM-DD'
     isToday: rawDay.isToday ?? isToday,
   }
 }

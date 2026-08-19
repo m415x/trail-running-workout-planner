@@ -5,16 +5,26 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-
 import L, { LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
-// Componente helper para centrar y hacer zoom automático al recorrido
-function AutoFitBounds({ positions }: { positions: LatLngTuple[] }) {
+// ── Controlador unificado para mover/ajustar la cámara sin desmontar el mapa ──
+function MapViewController({
+  positions,
+  fallbackCenter,
+  zoom,
+}: {
+  positions: LatLngTuple[]
+  fallbackCenter: LatLngTuple
+  zoom: number
+}) {
   const map = useMap()
 
   useEffect(() => {
-    if (positions && positions.length > 0) {
+    if (positions.length > 0) {
       const bounds = L.latLngBounds(positions)
-      map.fitBounds(bounds, { padding: [30, 30] })
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
+    } else {
+      map.setView(fallbackCenter, zoom)
     }
-  }, [positions, map])
+  }, [positions, fallbackCenter, zoom, map])
 
   return null
 }
@@ -28,21 +38,17 @@ const customIcon = L.divIcon({
 
 interface MapInnerProps {
   lat?: number
-  lng?: number
+  lon?: number
   zoom?: number
-  positions?: LatLngTuple[] // Usamos LatLngTuple ([number, number])
+  positions?: LatLngTuple[]
 }
 
-export default function MapInner({ lat = -31.48, lng = -68.65, zoom = 14, positions = [] }: MapInnerProps) {
-  // Aseguramos que startPosition sea estrictamente una LatLngTuple de 2 elementos
-  const startPosition: LatLngTuple = positions.length > 0 ? positions[0] : [lat, lng]
-
-  // Generamos una clave única basada en las coordenadas iniciales
-  const mapKey = positions.length > 0 ? `${positions[0][0]}-${positions[0][1]}` : 'default-map'
+export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 14, positions = [] }: MapInnerProps) {
+  const defaultCenter: LatLngTuple = [lat, lon]
+  const startPosition: LatLngTuple = positions.length > 0 ? positions[0] : defaultCenter
 
   return (
     <MapContainer
-      key={mapKey}
       center={startPosition}
       zoom={zoom}
       scrollWheelZoom={false}
@@ -53,15 +59,13 @@ export default function MapInner({ lat = -31.48, lng = -68.65, zoom = 14, positi
         url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
       />
 
-      {/* Trazada GPS de la carrera */}
-      {positions.length > 0 && (
-        <>
-          <Polyline positions={positions} color='#161af9' weight={2} opacity={0.7} />
-          <AutoFitBounds positions={positions} />
-        </>
-      )}
+      {/* Controlador de cámara reactivo (sustituye el key re-mount) */}
+      <MapViewController positions={positions} fallbackCenter={defaultCenter} zoom={zoom} />
 
-      {/* Marcador en la largada */}
+      {/* Trazada GPS del track */}
+      {positions.length > 0 && <Polyline positions={positions} color='#161af9' weight={2} opacity={0.7} />}
+
+      {/* Marcador en el punto de largada */}
       <Marker position={startPosition} icon={customIcon}>
         <Popup className='font-sans text-xs'>Punto de largada</Popup>
       </Marker>

@@ -35,7 +35,7 @@ export function WeeklyCalendarCard({
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger
             render={
-              <PrimaryOutlineButton className='rounded-full font-mono'>
+              <PrimaryOutlineButton className='rounded-full font-mono h-0 py-3.5'>
                 <CalendarIcon size={10} className='opacity-80' />
                 <span>{dateRange}</span>
               </PrimaryOutlineButton>

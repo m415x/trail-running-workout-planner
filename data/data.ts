@@ -1,7 +1,5 @@
-import { TeamProps, UserProps } from '@/types/common.types'
-import { WorkoutProps, WeekDayRaw, WeeklyCycle } from '@/features/workouts/types/workout.types'
+import { Team, User, WorkoutProps, WeekDayRaw, WeeklyCycle, GeoLocation } from '@/types'
 import { ShoeItemProps } from '@/features/profile/types/profile.types'
-import { GeoLocation } from '@/types/common.types'
 
 export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
   parqueDeMayo: {
@@ -24,13 +22,13 @@ export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
 // Ubicación por defecto de la app
 export const DEFAULT_FALLBACK_LOCATION = TRAINING_LOCATIONS.parqueDeMayo
 
-export const team: TeamProps = {
+export const team: Team = {
   id: 'team_1',
   name: 'El Parque Team',
   avatar: '/avatars/logo-ept.png',
 }
 
-export const currentUser: UserProps = {
+export const currentUser: User = {
   id: 'usr_1',
   firstName: 'Cristian Daniel',
   lastName: 'Lahoz Piantanida',
@@ -43,8 +41,8 @@ export const currentUser: UserProps = {
   emergencyPhone: '+54 9 264 987-6543',
   avatar: '/avatars/cristian.png',
   group: 'S2',
+  role: 'athlete',
   // apto fisico con vencimiento de 1 año, subir a la app
-  // baja logica
 }
 
 export const weeklyCycle: WeeklyCycle = {
@@ -75,105 +73,116 @@ export const weekDaysRaw: WeekDayRaw[] = [
 
 export const workouts: Record<number, WorkoutProps> = {
   0: {
+    type: 'Base', // <--- Faltaba esto
     title: 'Rodaje Base',
     km: 8,
     zone: 'Z1',
     time: 56,
     gain: 320,
-    pace: 420, // 7:00 min/km
+    pace: 420,
     notes: 'Rodaje suave por camino llano. Mantener conversación fluida. Día de base aeróbica.',
   },
   1: {
+    type: 'Trail', // <--- Asignado a Trail por el desnivel
     title: 'Ruta Antenas',
     km: 6,
     zone: 'Z2',
     time: 42,
     gain: 490,
-    pace: 420, // 7:00 min/km
+    pace: 420,
     notes: 'Subida por Antenas, mantener FC en Z2. No exceder el ritmo — este es un día de base aeróbica.',
   },
   2: {
+    type: 'Long',
     title: 'Fondo',
     km: 9,
     zone: 'Z3',
     time: 63,
     gain: 380,
-    pace: 420, // 7:00 min/km
+    pace: 420,
     notes: 'Volumen aeróbico controlado. Hidratación cada 20 min. Conservar energía para el jueves.',
   },
   3: {
+    type: 'Fartlek',
     title: 'EC + Fartlek',
     km: 6,
     zone: 'Z4',
     time: 38,
     gain: 140,
-    pace: 310, // 5:10 min/km
+    pace: 310,
     notes: 'EC2k + 2k Fartlek: series 200×200m. Recuperación activa 2k al final. Calidad sobre cantidad.',
   },
   5: {
+    type: 'Trail',
     title: 'Parkinson',
     km: 16,
     zone: 'Z5',
     time: 130,
     gain: 820,
-    pace: 488, // 8:08 min/km
+    pace: 488,
     notes: 'Tirada larga semanal por Parkinson. Ritmo muy conservador. Llevar gel y bidón extra.',
   },
   6: {
+    type: 'Race',
     title: 'Tierra de Gigantes',
     km: 60,
     zone: 'Z5',
     time: 180,
     gain: 820,
-    pace: 540, // 8:08 min/km
+    pace: 540,
     notes:
       'Salida progresiva. Administrar hidratación en el km 42 antes del ascenso principal. ¡A disfrutar la carrera!',
     gpxPath: '/tracks/tierra-de-gigantes-2026-10k.gpx',
   },
   7: {
+    type: 'Base',
     title: 'Rodaje Base',
     km: 7,
     zone: 'Z2',
     time: 42,
     gain: 0,
-    pace: 360, // 6:00 min/km
+    pace: 360,
     notes: 'Rodaje suave por camino llano. Mantener conversación fluida. Día de base aeróbica.',
   },
   8: {
+    type: 'Trail',
     title: 'Panorámico por Pinar (desde faunístico)',
     km: 7,
     zone: 'Z2',
     time: 42,
     gain: 490,
-    pace: 420, // 7:00 min/km
+    pace: 420,
     notes: 'Mantener FC en Z2. No exceder el ritmo — este es un día de base aeróbica.',
   },
   9: {
+    type: 'Long',
     title: 'Fondo',
     km: 8,
     zone: 'Z2',
     time: 63,
     gain: 380,
-    pace: 420, // 7:00 min/km
+    pace: 420,
     notes: 'Volumen aeróbico controlado. Hidratación cada 20 min. Conservar energía para el jueves.',
   },
   10: {
+    type: 'Intervals',
     title: 'Intervalos',
     km: 5,
     zone: 'Z5',
     time: 38,
     gain: 140,
-    pace: 310, // 5:10 min/km
+    pace: 310,
     notes:
       "Entrada en calor 2k + 6x200m al 115% con Micropausas de 2'3'' entre pasada. Recuperación activa 2k al final. Calidad sobre cantidad.",
   },
   11: {
+    type: 'Trail',
     title: 'Matagusanos',
     km: 12,
     zone: 'Z3',
     time: 130,
     gain: 820,
-    pace: 488, // 8:08 min/km
+    pace: 488,
     notes: 'Tirada larga semanal por Matagusanos. Ritmo muy conservador. Llevar gel y bidón extra.',
     gpxPath: '/tracks/matagusanos-12k.gpx',
   },

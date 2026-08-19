@@ -3,23 +3,21 @@
 import { useState, useEffect, useMemo } from 'react'
 import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { Clock, Zap, Gauge } from 'lucide-react'
-import { WorkoutProps, LoggedWorkoutPayload } from '@/features/workouts/types/workout.types'
-import { GpxData } from '@/lib/gpx/gpx-parser'
+import { WorkoutCardProps, LoggedWorkoutPayload } from '@/types'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/date-helpers'
 import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
+import { getWorkoutIcon, getWorkoutTypeLabel } from '@/utils/workout-helpers'
 
-interface UseWorkoutCardProps {
-  workout: WorkoutProps
-  date?: string
-  gpxData?: GpxData | null
-}
-
-export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) {
+export function useWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
+
+  // Obtenemos dinámicamente el icono y el título
+  const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
+  const WorkoutIcon = getWorkoutIcon(workout.type)
 
   // 1. Etiqueta formateada de la fecha
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
@@ -48,7 +46,7 @@ export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) 
     return DEFAULT_FALLBACK_LOCATION
   }, [gpxData, workout.locationKey])
 
-  // 3. Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
+  // 4. Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
   useEffect(() => {
     let isMounted = true
 
@@ -68,7 +66,7 @@ export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) 
 
       try {
         // Obtenemos clima solo para fechas futuras u hoy
-        const data = await fetchDailyWeather(-31.5375, -68.5364, date)
+        const data = await fetchDailyWeather(-31.529822, -68.5440881, date)
         if (isMounted) setWeather(data)
       } catch (error) {
         console.error('Error cargando clima:', error)
@@ -84,7 +82,7 @@ export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) 
     }
   }, [date, isPast, targetCoordinates.lat, targetCoordinates.lon])
 
-  // 3. Formateo de estadísticas de la rutina
+  // 5. Formateo de estadísticas de la rutina
   const stats = useMemo(
     () => [
       { icon: Clock, label: 'Tiempo est.', value: workout.time, unit: 'min' },
@@ -94,7 +92,7 @@ export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) 
     [workout.time, workout.pace],
   )
 
-  // 4. Handlers del Modal
+  // 6. Handlers del Modal
   const openLogDialog = () => setIsLogOpen(true)
   const closeLogDialog = () => setIsLogOpen(false)
 
@@ -103,6 +101,8 @@ export function useWorkoutCard({ workout, date, gpxData }: UseWorkoutCardProps) 
   }
 
   return {
+    WorkoutIcon,
+    headerTitle,
     dateLabel,
     isLogOpen,
     weather,

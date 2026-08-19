@@ -1,4 +1,4 @@
-import { CardHeaderProps } from '@/types/ui.types'
+import { CardHeaderProps } from '@/types'
 
 export function CardHeader({
   title,

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { WeekDay, WeeklyCycle } from '@/features/workouts/types/workout.types'
+import { WeekDay, WeeklyCycle } from '@/types'
 import { formatDateRange } from '@/utils/date-helpers'
 import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/gpx/calculators'
 

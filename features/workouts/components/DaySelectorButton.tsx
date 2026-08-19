@@ -51,7 +51,7 @@ export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySe
             isSelected ? 'text-white' : day.isToday ? 'text-foreground' : 'text-foreground/70',
           )}
         >
-          {day.date}
+          {day.dayNumber}
         </span>
 
         {/* Indicador inferior de estado (Check / Minus / Dot / X) */}

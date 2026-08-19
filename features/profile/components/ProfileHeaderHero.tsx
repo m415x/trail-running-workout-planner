@@ -4,11 +4,11 @@ import { useState, useRef, ChangeEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { Camera, ChevronLeft, Pencil } from 'lucide-react'
-import { UserProps } from '@/types/common.types'
+import { User } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { SecondaryOutlineButton, GlassFilledButton, SecondaryFilledButton } from '@/components/ui/custom/buttons'
+import { SecondaryOutlineButton, GlassFilledButton } from '@/components/ui/custom/buttons'
 
-export function ProfileHeaderHero({ user }: { user: UserProps }) {
+export function ProfileHeaderHero({ user }: { user: User }) {
   const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
 

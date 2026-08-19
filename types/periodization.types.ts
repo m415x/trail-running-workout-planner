@@ -1,11 +1,21 @@
-import { AthleteGroupCode } from '@/types/athlete-groups.types'
+/**
+ * @file Estructuras temporales: Macrociclo, Mesociclo y Microciclo.
+ */
+import { BaseEntity, AthleteGroupCode } from '@/types'
 
-export type MicrocycleType = 'base' | 'desarrollo' | 'choque' | 'descarga' | 'tapering' | 'race'
+export type MicrocycleType = 'base' | 'development' | 'shock' | 'deload' | 'tapering' | 'race'
+export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 
-export type PeriodType = 'preparatorio_general' | 'preparatorio_especifico' | 'competitivo' | 'transicion'
+export interface GroupVolumeProgression {
+  range: {
+    min: number
+    max: number
+  }
+  volumes: Record<Extract<MicrocycleType, 'base' | 'development' | 'shock' | 'deload'>, number>
+}
 
-export interface Microcycle {
-  id: string
+export interface Microcycle extends BaseEntity {
+  mesocycleId: string
   weekNumber: number
   type: MicrocycleType
   startDate: string // 'YYYY-MM-DD'
@@ -14,22 +24,22 @@ export interface Microcycle {
   notes?: string
 }
 
-export interface Mesocycle {
-  id: string
-  title: string // ej: "Mesociclo 1: Acumulación de Fuerza y Resistencia"
+export interface Mesocycle extends BaseEntity {
+  macrocycleId: string
+  title: string
   number: number
   period: PeriodType
   objective: string
-  microcycles: Microcycle[] // Habitualmente 4 microciclos
+  microcycles?: Microcycle[]
 }
 
-export interface Macrocycle {
-  id: string
-  title: string // ej: "Preparación Maratón San Juan 2026"
-  targetRaceDate: string
+export interface Macrocycle extends BaseEntity {
+  teamId: string
+  title: string
   targetRaceName: string
+  targetRaceDate: string // 'YYYY-MM-DD'
   startDate: string
   endDate: string
   taperingWeeksCount: 2 | 3
-  mesocycles: Mesocycle[]
+  mesocycles?: Mesocycle[]
 }
