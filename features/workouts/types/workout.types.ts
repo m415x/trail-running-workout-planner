@@ -30,7 +30,7 @@ export interface ElevTooltipProps {
 
 export interface RouteMapCardProps {
   title?: string
-  distanceKm?: number
+  distanceKm: number
   gainMeters?: number
   maxGradePct?: number
   positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
