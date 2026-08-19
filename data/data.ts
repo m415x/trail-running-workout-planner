@@ -1,6 +1,5 @@
 import { Team, User, WorkoutProps, WeekDayRaw, WeeklyCycle, GeoLocation } from '@/types'
-import { ShoeItemProps } from '@/features/profile/types/profile.types'
-import { TrainingLocationKey } from '@/types'
+import { TrainingLocationKey, ShoeItemProps } from '@/types'
 
 export const TRAINING_LOCATIONS: Record<TrainingLocationKey, GeoLocation> = {
   parqueDeMayo: {

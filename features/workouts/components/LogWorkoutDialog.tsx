@@ -4,8 +4,8 @@ import { CheckCircle2, Flame, MapPin, Timer, MessageSquare } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { PrimaryInput } from '@/components/ui/custom/inputs'
 import { PrimaryFilledButton, GlassOutlineButton } from '@/components/ui/custom/buttons'
-import { LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
-import { RpeSelector } from './RpeSelector'
+import { LogWorkoutDialogProps } from '@/types'
+import { RpeSelector } from '@/features/workouts/components/RpeSelector'
 import { useLogWorkoutDialog } from '@/features/workouts/hooks/useLogWorkoutDialog'
 
 export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {

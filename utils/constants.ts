@@ -346,5 +346,5 @@ export const ATHLETE_CATEGORIES: Record<AthleteCategoryCode, CategoryMetadata> =
 export const ATHLETE_LEVELS: Record<AthleteLevelCode, LevelMetadata> = {
   1: { name: 'Advance', code: '1', description: 'Alto volumen y experiencia' },
   2: { name: 'Intermediate', code: '2', description: 'Volumen y carga moderada' },
-  3: { name: 'Novice', code: '3', description: 'Volumen controlado y progresión técnica' },
+  3: { name: 'Beginner', code: '3', description: 'Volumen controlado y progresión técnica' },
 }

@@ -1,4 +1,4 @@
-import { ZoneRowProps } from '@/features/profile/types/profile.types'
+import { ZoneRowProps } from '@/types'
 
 export function ZoneRow({ zone, name, range, color }: ZoneRowProps) {
   return (

@@ -1,4 +1,4 @@
-import { MetricBoxProps } from '@/features/profile/types/profile.types'
+import { MetricBoxProps } from '@/types'
 
 export function MetricBox({ label, value }: MetricBoxProps) {
   return (

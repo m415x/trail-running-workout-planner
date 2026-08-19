@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react'
 import { DAYS_OF_WEEK } from '@/utils/constants'
-import { WeekCalendarPickerProps } from '@/features/workouts/types/workout.types'
+import { WeekCalendarPickerProps } from '@/types'
 import { useWeekCalendarPicker } from '@/features/workouts/hooks/useWeekCalendarPicker'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'

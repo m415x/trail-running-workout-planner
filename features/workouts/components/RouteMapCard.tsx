@@ -1,8 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { RouteMapCardProps } from '@/features/workouts/types/workout.types'
 import { Navigation, Route, TrendingUp, Angle } from 'lucide-react'
+import { RouteMapCardProps } from '@/types'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill } from '@/components/ui/custom/pills'

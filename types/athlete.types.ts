@@ -1,7 +1,7 @@
 /**
  * @file Modelos de atletas, grupos y equipo deportivo.
  */
-import { BaseEntity } from './core.types'
+import { BaseEntity } from '@/types'
 
 export type AthleteCategoryCode = 'E' | 'U' | 'M' | 'H' | 'S' | 'B'
 export type AthleteLevelCode = '1' | '2' | '3'

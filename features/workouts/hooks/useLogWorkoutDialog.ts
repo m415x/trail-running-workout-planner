@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { LoggedWorkoutPayload } from '@/types'
-import { LogWorkoutDialogProps } from '@/features/workouts/types/workout.types'
+import { LoggedWorkoutPayload, LogWorkoutDialogProps } from '@/types'
 
 export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
   // Valores iniciales basados en la planificación

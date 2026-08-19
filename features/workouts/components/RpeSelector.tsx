@@ -3,7 +3,7 @@
 import { ChevronDown, ChevronUp, Info } from 'lucide-react'
 import { Slider } from '@/components/ui/slider'
 import { cn } from '@/lib/utils'
-import { RpeSelectorProps } from '@/features/workouts/types/workout.types'
+import { RpeSelectorProps } from '@/types'
 import { useRpeSelector } from '@/features/workouts/hooks/useRpeSelector'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
 

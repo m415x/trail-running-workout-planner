@@ -1,7 +1,7 @@
 'use client'
 
 import { RefreshCcwDot, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
-import { WeeklyCalendarCardProps } from '@/features/workouts/types/workout.types'
+import { WeeklyCalendarCardProps } from '@/types'
 import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'

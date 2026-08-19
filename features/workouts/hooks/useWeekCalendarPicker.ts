@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { MONTHS_OF_YEAR } from '@/utils/constants'
-import { WeekCalendarPickerProps } from '@/features/workouts/types/workout.types'
+import { WeekCalendarPickerProps } from '@/types'
 
 export function useWeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps) {
   // Mes visible en el calendario (por defecto el de la fecha seleccionada)

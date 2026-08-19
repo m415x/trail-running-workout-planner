@@ -1,7 +1,7 @@
 'use client'
 
 import { createElement } from 'react'
-import { DaySelectorButtonProps } from '@/features/workouts/types/workout.types'
+import { DaySelectorButtonProps } from '@/types'
 import { getWorkoutIcon } from '@/utils/workout-helpers'
 import { DayStatusIndicator } from '@/features/workouts/components/DayStatusIndicator'
 import { cn } from '@/lib/utils'

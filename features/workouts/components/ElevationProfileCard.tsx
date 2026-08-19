@@ -2,7 +2,7 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Mountain } from 'lucide-react'
-import { ElevTooltipProps, ElevationChartProps } from '@/features/workouts/types/workout.types'
+import { ElevTooltipProps, ElevationChartProps } from '@/types'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { formatNumber } from '@/utils/formatters'

@@ -6,8 +6,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
 
 // Helpers y Tipos
-import { WeekDay, WeeklyCycle, GpxData } from '@/types'
-import { ElevationChartProps } from '@/features/workouts/types/workout.types'
+import { WeekDay, WeeklyCycle, GpxData, ElevationChartProps } from '@/types'
 import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
 import { parseGpxFromUrl } from '@/lib/gpx/gpx-parser'
 

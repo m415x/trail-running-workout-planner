@@ -5,7 +5,7 @@ import { SectionCards } from '@/app/dashboardAdminParaMaquetarAFuturo/components
 import { SiteHeader } from '@/app/dashboardAdminParaMaquetarAFuturo/components/site-header'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 
-import data from './data.json'
+import data from '@/app/dashboardAdminParaMaquetarAFuturo/data.json'
 
 export default function Page() {
   return (

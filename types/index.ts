@@ -1,5 +1,6 @@
 export * from '@/types/core.types'
 export * from '@/types/athlete.types'
 export * from '@/types/periodization.types'
-export * from '@/types/workout.types'
 export * from '@/types/ui.types'
+export * from '@/types/workout.types'
+export * from '@/types/profile.types'
