@@ -9,7 +9,7 @@ import { SettingsTabContent } from '@/features/profile/components/SettingsTabCon
 
 export function ProfileTab() {
   return (
-    <div className='space-y-4 pb-4'>
+    <div className='space-y-4'>
       {/* Hero Header */}
       <ProfileHeaderHero user={currentUser} />
 

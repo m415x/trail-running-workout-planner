@@ -12,11 +12,13 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
   const {
     distance,
     timeMin,
+    timeHr,
     timeSec,
     rpe,
     athleteNotes,
     setDistance,
-    setTimeMin,
+    setTimeHr,
+    handleMinutesChange,
     setTimeSec,
     setRpe,
     setAthleteNotes,
@@ -59,17 +61,25 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
 
             {/* ── Columna 2: Tiempo (Minutos + Segundos) ── */}
             <div className='space-y-1'>
-              <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                <Timer size={11} /> Tiempo (min : seg)
+              <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1 pl-1'>
+                <Timer size={11} /> Tiempo (hr : min : seg)
               </label>
 
-              <div className='grid grid-cols-2 gap-1.5'>
+              <div className='grid grid-cols-3 gap-1.5'>
+                <PrimaryInput
+                  type='number'
+                  min='0'
+                  placeholder='0'
+                  value={timeHr}
+                  onChange={(e) => setTimeHr(e.target.value)}
+                />
+
                 <PrimaryInput
                   type='number'
                   min='0'
                   placeholder='Min'
                   value={timeMin}
-                  onChange={(e) => setTimeMin(e.target.value)}
+                  onChange={(e) => handleMinutesChange(e.target.value)}
                 />
 
                 <PrimaryInput
@@ -116,7 +126,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
             Cancelar
           </GlassOutlineButton>
           <PrimaryFilledButton onClick={handleSave} className='flex-1'>
-            Guardar Sesión
+            Guardar
           </PrimaryFilledButton>
         </DialogFooter>
       </DialogContent>

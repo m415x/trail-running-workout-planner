@@ -1,11 +1,11 @@
 'use client'
 
-import { Clock, Gauge, Zap, Trophy, CheckCircle, Coffee } from 'lucide-react'
+import { Clock, Gauge, Zap, Trophy, CheckCircle, Coffee, Edit } from 'lucide-react'
 import { WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
-import { PrimaryFilledButton } from '@/components/ui/custom/buttons'
+import { PrimaryFilledButton, GlassFilledButton } from '@/components/ui/custom/buttons'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialog'
 import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
@@ -21,6 +21,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     weather,
     isLoadingWeather,
     isPast,
+    isLogged,
     stats,
     openLogDialog,
     closeLogDialog,
@@ -67,14 +68,22 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
         </CustomCardInside>
 
         {/* Botón para Registrar */}
-        <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
-          <CheckCircle size={15} />
-          <span>Registrar entrenamiento realizado</span>
-        </PrimaryFilledButton>
+        {isLogged ? (
+          <GlassFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+            <Edit />
+            <span>Editar registro</span>
+          </GlassFilledButton>
+        ) : (
+          <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+            <CheckCircle />
+            <span>Registrar entrenamiento</span>
+          </PrimaryFilledButton>
+        )}
       </CustomCard>
 
       {/* Modal de Registro */}
       <LogWorkoutDialog
+        key={workout.id} // <-- ESTA ES LA SOLUCIÓN: Resetea el estado del modal cuando cambia el workout
         isOpen={isLogOpen}
         onClose={closeLogDialog}
         workout={workout}

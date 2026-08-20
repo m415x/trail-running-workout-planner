@@ -1,19 +1,33 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { isBefore, startOfDay, parseISO } from 'date-fns'
+import { isBefore, startOfDay, parseISO, format } from 'date-fns'
 import { Clock, Zap, Gauge } from 'lucide-react'
-import { WorkoutCardProps, LoggedWorkoutPayload } from '@/types'
+import { toast } from 'sonner'
+import { WorkoutCardProps, LoggedWorkoutPayload, GpxData } from '@/types'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { formatShortDate } from '@/utils/date-helpers'
 import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
 import { getWorkoutIcon, getWorkoutTypeLabel } from '@/utils/workout-helpers'
 
-export function useWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
+interface UseWorkoutCardParams {
+  workout: WorkoutCardProps['workout']
+  date?: string
+  gpxData?: GpxData | null
+  isCompleted?: boolean
+}
+
+export function useWorkoutCard({
+  workout,
+  date,
+  gpxData,
+  isCompleted: initialIsCompleted = false,
+}: UseWorkoutCardParams) {
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
+  const [isLogged, setIsLogged] = useState(initialIsCompleted)
 
   // Obtenemos dinámicamente el icono y el título
   const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
@@ -98,6 +112,8 @@ export function useWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
 
   const handleSaveSession = (data: LoggedWorkoutPayload) => {
     console.log('Sesión registrada:', data)
+    toast.success('Entrenamiento registrado con éxito', { description: format(new Date(), 'eeee, dd MMMM') })
+    setIsLogged(true)
   }
 
   return {
@@ -108,6 +124,7 @@ export function useWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     weather,
     isLoadingWeather,
     isPast,
+    isLogged,
     stats,
     openLogDialog,
     closeLogDialog,

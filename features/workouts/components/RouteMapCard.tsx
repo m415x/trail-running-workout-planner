@@ -1,11 +1,12 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { Navigation, Route, TrendingUp, Angle } from 'lucide-react'
+import { Navigation, Navigation2, Route, TrendingUp, Angle } from 'lucide-react'
 import { RouteMapCardProps } from '@/types'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill } from '@/components/ui/custom/pills'
+import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
 
 // Carga dinámica de Leaflet (solo en cliente / SSR disabled)
 const MapWithNoSSR = dynamic(() => import('@/components/maps/MapInner'), {
@@ -25,14 +26,29 @@ export function RouteMapCard({
   positions = [],
   mapKey,
 }: RouteMapCardProps) {
+  // Determinamos el punto de inicio del track o fallback
+  const startCoordinates = positions.length > 0 ? positions[0] : null
+  const navigationUrl = startCoordinates
+    ? `https://www.google.com/maps/dir/?api=1&destination=${startCoordinates[0]},${startCoordinates[1]}`
+    : null
+
   return (
     <CustomCard>
       {/* Header con botón para cargar GPX futuro */}
       <CardHeader title='Track GPS' icon={Route} subtitle={title}>
-        {/* <PrimaryOutlineButton onClick={onUploadGpx}>
-          <Upload size={11} />
-          <span>Cargar GPX</span>
-        </PrimaryOutlineButton> */}
+        {navigationUrl && (
+          <PrimaryOutlineButton
+            onClick={() => {
+              if (navigationUrl) {
+                window.open(navigationUrl, '_blank', 'noopener,noreferrer')
+              }
+            }}
+            className='rounded-full font-mono text-xs h-0 py-3.5'
+          >
+            <Navigation2 className='size-3! fill-primary' />
+            <span>Cómo llegar</span>
+          </PrimaryOutlineButton>
+        )}
       </CardHeader>
 
       {/* Contenedor del Mapa con Leaflet */}
