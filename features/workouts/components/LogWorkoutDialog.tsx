@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckCircle2, Flame, MapPin, Timer, MessageSquare } from 'lucide-react'
+import { CheckCircle2, Flame, MapPin, Timer, MessageSquare, RotateCcw } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { PrimaryInput } from '@/components/ui/custom/inputs'
 import { PrimaryFilledButton, GlassOutlineButton } from '@/components/ui/custom/buttons'
@@ -23,6 +23,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
     setRpe,
     setAthleteNotes,
     handleSave,
+    handleDelete,
   } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave })
 
   return (
@@ -122,10 +123,13 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
         </div>
 
         <DialogFooter className='flex flex-row gap-2 mt-2 bg-card'>
-          <GlassOutlineButton onClick={onClose} className='flex-1'>
+          <GlassOutlineButton variant='destructive' onClick={handleDelete} title='Eliminar registro' className='flex-1'>
+            <RotateCcw className='size-4' />
+          </GlassOutlineButton>
+          <GlassOutlineButton onClick={onClose} className='flex-4'>
             Cancelar
           </GlassOutlineButton>
-          <PrimaryFilledButton onClick={handleSave} className='flex-1'>
+          <PrimaryFilledButton onClick={handleSave} className='flex-6'>
             Guardar
           </PrimaryFilledButton>
         </DialogFooter>

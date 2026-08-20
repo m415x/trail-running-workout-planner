@@ -26,6 +26,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
+    handleDeleteSession,
   } = useWorkoutCard({ workout, date, gpxData })
 
   return (
@@ -83,12 +84,13 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
 
       {/* Modal de Registro */}
       <LogWorkoutDialog
-        key={workout.id} // <-- ESTA ES LA SOLUCIÓN: Resetea el estado del modal cuando cambia el workout
+        key={workout.id}
         isOpen={isLogOpen}
         onClose={closeLogDialog}
         workout={workout}
         dateStr={date}
         onSave={handleSaveSession}
+        onDelete={handleDeleteSession}
       />
     </>
   )

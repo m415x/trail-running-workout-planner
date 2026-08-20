@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { LoggedWorkoutPayload, LogWorkoutDialogProps } from '@/types'
 
-export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
+export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   // 1. Calcular valores iniciales basados en el workout planificado.
   const initialValues = useMemo(() => {
     const totalMinutes = workout?.time ?? 0
@@ -27,6 +27,18 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
   const [avgHr, setAvgHr] = useState('')
   const [rpe, setRpe] = useState(initialValues.rpe)
   const [athleteNotes, setAthleteNotes] = useState(initialValues.athleteNotes)
+
+  // 3. Función para resetear el estado a los valores iniciales.
+  const resetForm = useCallback(() => {
+    setDistance(initialValues.distance)
+    setGain(initialValues.gain)
+    setTimeHr(initialValues.timeHr)
+    setTimeMin(initialValues.timeMin)
+    setTimeSec(initialValues.timeSec)
+    setRpe(initialValues.rpe)
+    setAthleteNotes(initialValues.athleteNotes)
+    setAvgHr('') // Siempre se resetea
+  }, [initialValues])
 
   // Handler seguro para segundos (limita rango entre 0 y 59)
   const handleTimeSecChange = (value: string) => {
@@ -82,6 +94,11 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
     onSave?.(payload)
     onClose()
   }
+
+  const handleDelete = () => {
+    onDelete?.()
+    onClose()
+  }
   return {
     distance,
     timeMin,
@@ -101,5 +118,7 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
     setRpe,
     setAthleteNotes,
     handleSave,
+    handleDelete,
+    resetForm,
   }
 }

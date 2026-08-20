@@ -216,6 +216,7 @@ export interface LogWorkoutDialogProps {
   workout?: WorkoutProps | null
   dateStr?: string
   onSave?: (loggedData: LoggedWorkoutPayload) => void
+  onDelete?: () => void
 }
 
 export interface DaySelectorButtonProps {

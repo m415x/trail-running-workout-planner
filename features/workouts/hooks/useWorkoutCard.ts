@@ -116,6 +116,12 @@ export function useWorkoutCard({
     setIsLogged(true)
   }
 
+  const handleDeleteSession = () => {
+    console.log('Sesión eliminada')
+    toast.info('Registro de entrenamiento eliminado')
+    setIsLogged(false)
+  }
+
   return {
     WorkoutIcon,
     headerTitle,
@@ -129,5 +135,6 @@ export function useWorkoutCard({
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
+    handleDeleteSession,
   }
 }
