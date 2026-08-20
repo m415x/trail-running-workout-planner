@@ -10,7 +10,7 @@ export function ProfileHeaderHero({ user }: { user: User }) {
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
 
   return (
-    <CustomCard className='border-none p-1'>
+    <CustomCard className='border-none bg-transparent p-1'>
       {/* Sección del Avatar Solapado y Datos */}
       <div className='flex flex-row items-center gap-4'>
         {/* Avatar con borde circular blanco de corte */}

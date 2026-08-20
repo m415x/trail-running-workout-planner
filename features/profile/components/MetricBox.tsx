@@ -1,4 +1,7 @@
-import { MetricBoxProps } from '@/types'
+export interface MetricBoxProps {
+  label: string
+  value: string | number
+}
 
 export function MetricBox({ label, value }: MetricBoxProps) {
   return (

@@ -11,14 +11,7 @@ import {
   Trophy,
   LucideIcon,
 } from 'lucide-react'
-import {
-  IntensityZone,
-  AthleteCategoryCode,
-  AthleteLevelCode,
-  CategoryMetadata,
-  LevelMetadata,
-  WorkoutType,
-} from '@/types'
+import { IntensityZone, AthleteCategoryCode, AthleteLevelCode, WorkoutType } from '@/types'
 
 interface DayConfig {
   index: number
@@ -334,6 +327,12 @@ export const RPE_LEVELS: readonly RpeLevel[] = [
   },
 ] as const
 
+export interface CategoryMetadata {
+  name: string
+  code: AthleteCategoryCode
+  description: string
+}
+
 export const ATHLETE_CATEGORIES: Record<AthleteCategoryCode, CategoryMetadata> = {
   E: { name: 'Elite', code: 'E', description: 'Atletas de alto rendimiento y competencia' },
   U: { name: 'Ultra', code: 'U', description: 'Distancias superiores a 42k y ultras de montaña' },
@@ -341,6 +340,12 @@ export const ATHLETE_CATEGORIES: Record<AthleteCategoryCode, CategoryMetadata> =
   H: { name: 'Half-Marathon', code: 'H', description: 'Medio maratón (21k)' },
   S: { name: 'Short', code: 'S', description: 'Distancias cortas y explosivas (5k a 15k)' },
   B: { name: 'Base', code: 'B', description: 'Iniciación, adaptación y acondicionamiento' },
+}
+
+export interface LevelMetadata {
+  name: string
+  code: AthleteLevelCode
+  description: string
 }
 
 export const ATHLETE_LEVELS: Record<AthleteLevelCode, LevelMetadata> = {

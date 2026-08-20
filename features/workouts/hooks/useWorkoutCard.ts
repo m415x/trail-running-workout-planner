@@ -6,13 +6,25 @@ import { Clock, Zap, Gauge } from 'lucide-react'
 import { toast } from 'sonner'
 import { WorkoutCardProps, LoggedWorkoutPayload, GpxData } from '@/types'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
-import { formatPace, paceToSpeed } from '@/utils/formatters'
+import { HR_ZONES } from '@/utils/constants'
+import { HrZoneConfig } from '@/utils/constants'
 import { formatShortDate } from '@/utils/date-helpers'
-import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
 import { getWorkoutIcon, getWorkoutTypeLabel } from '@/utils/workout-helpers'
+import { formatPace, paceToSpeed } from '@/utils/formatters'
+import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
+import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
+
+export function calculateBpmRange(pct: string, maxHr: number): string {
+  const [minPct, maxPct] = pct.replace(/%/g, '').split('-').map(Number)
+  const minBpm = Math.round((minPct / 100) * maxHr)
+  const maxBpm = Math.round((maxPct / 100) * maxHr)
+  return `${minBpm} - ${maxBpm} bpm`
+}
 
 interface UseWorkoutCardParams {
   workout: WorkoutCardProps['workout']
+  maxHr?: number
+  restHr?: number
   date?: string
   gpxData?: GpxData | null
   isCompleted?: boolean
@@ -20,6 +32,8 @@ interface UseWorkoutCardParams {
 
 export function useWorkoutCard({
   workout,
+  maxHr = 190,
+  restHr = 50,
   date,
   gpxData,
   isCompleted: initialIsCompleted = false,
@@ -33,16 +47,32 @@ export function useWorkoutCard({
   const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
   const WorkoutIcon = getWorkoutIcon(workout.type)
 
-  // 1. Etiqueta formateada de la fecha
+  // Etiqueta formateada de la fecha
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
 
-  // 2. Determinar si la fecha es pasada
+  // Determinar si la fecha es pasada
   const isPast = useMemo(() => {
     if (!date) return false
     const workoutDay = startOfDay(parseISO(date))
     const today = startOfDay(new Date())
     return isBefore(workoutDay, today)
   }, [date])
+
+  // Resolución de zona con fallback
+  const zoneInfo: HrZoneConfig = useMemo(() => {
+    return HR_ZONES[workout.zone] ?? HR_ZONES.Z1
+  }, [workout.zone])
+
+  // Rango BPM formateado con el Método de Karvonen
+  const bpmRange = useMemo(() => {
+    const { label } = getZoneBpmRange(workout.zone, { maxHr, restHr })
+    return label
+  }, [workout.zone, maxHr, restHr])
+
+  // También puedes exponer los límites numéricos si los necesitas para gráficos
+  const bpmLimits = useMemo(() => {
+    return getZoneBpmRange(workout.zone, { maxHr, restHr })
+  }, [workout.zone, maxHr, restHr])
 
   // 3. Resolución de Coordenadas por Prioridad
   const targetCoordinates = useMemo(() => {
@@ -132,6 +162,10 @@ export function useWorkoutCard({
     isPast,
     isLogged,
     stats,
+    zoneInfo,
+    bpmRange, // "134 - 148 bpm"
+    minBpm: bpmLimits.minBpm,
+    maxBpm: bpmLimits.maxBpm,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,

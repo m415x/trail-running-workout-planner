@@ -42,7 +42,6 @@ export const currentUser: User = {
   avatar: '/avatars/cristian.png',
   group: 'S2',
   role: 'athlete',
-  // apto fisico con vencimiento de 1 año, subir a la app
 }
 
 export const weeklyCycle: WeeklyCycle = {

@@ -1,4 +1,5 @@
 import React from 'react'
+import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 
@@ -77,3 +78,38 @@ export function GlassFilledButton({ className, ...props }: CustomButtonProps) {
 export function GlassOutlineButton({ className, ...props }: CustomButtonProps) {
   return <CustomButton variant='outline' className={cn('', className)} {...props} />
 }
+
+export interface PillButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  icon?: LucideIcon
+  iconClassName?: string
+  value: string | number
+  valueClassName?: string
+  subtitle?: string
+  subtitleClassName?: string
+}
+
+export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
+  ({ icon: Icon, iconClassName, value, valueClassName, subtitle, subtitleClassName, className, ...props }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type='button'
+        className={cn(
+          'flex flex-col items-center justify-center rounded-xl w-17 p-3 border shadow-none transition-all cursor-pointer hover:scale-105 active:scale-98 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring select-none shrink-0',
+          className,
+        )}
+        {...props}
+      >
+        {Icon && <Icon size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
+        <span className={cn('font-heading text-2xl font-black leading-none tracking-tight', valueClassName)}>
+          {value}
+        </span>
+        {subtitle && (
+          <span className={cn('text-[9px] font-medium mt-0.5 tracking-tight', subtitleClassName)}>{subtitle}</span>
+        )}
+      </button>
+    )
+  },
+)
+
+PillButton.displayName = 'PillButton'

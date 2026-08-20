@@ -1,19 +1,21 @@
-export interface MetricBoxProps {
-  label: string
-  value: string | number
+import { User, AthletePhysiology } from './athlete.types'
+
+// Estado del formulario de edición en ProfileTab
+export interface EditProfileFormValues {
+  firstName: string
+  lastName: string
+  nickName?: string
+  phone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  group: User['group']
+  physiology: AthletePhysiology
 }
 
-export interface ZoneRowProps {
-  zone: string
-  name: string
-  range: string
-  color: string
-}
-
-export interface ShoeItemProps {
-  name: string
-  type: string
-  km: number
-  maxKm: number
-  status: string
+// Estadísticas acumuladas que se muestran en ProfileTab
+export interface ProfileStatsSummary {
+  totalDistanceKm: number
+  totalElevationGainM: number
+  totalWorkoutsCompleted: number
+  currentStreakDays: number
 }

@@ -22,6 +22,7 @@ export function SettingsTabContent() {
       >
         <Settings size={14} className='mr-1.5' />
         Preferencias de la Cuenta
+        {/* TODO Selector de idioma y metrico/imperial */}
       </Button>
     </div>
   )

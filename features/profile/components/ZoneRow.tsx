@@ -1,4 +1,9 @@
-import { ZoneRowProps } from '@/types'
+export interface ZoneRowProps {
+  zone: string
+  name: string
+  range: string
+  color: string
+}
 
 export function ZoneRow({ zone, name, range, color }: ZoneRowProps) {
   return (

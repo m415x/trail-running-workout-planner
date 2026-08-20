@@ -1,12 +1,11 @@
 'use client'
 
-import { Clock, Gauge, Zap, Trophy, CheckCircle, Coffee, Edit } from 'lucide-react'
+import { CheckCircle, Coffee, Edit } from 'lucide-react'
 import { WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill, ZonePill } from '@/components/ui/custom/pills'
 import { PrimaryFilledButton, GlassFilledButton } from '@/components/ui/custom/buttons'
-import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialog'
 import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
 import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
@@ -23,6 +22,8 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     isPast,
     isLogged,
     stats,
+    zoneInfo,
+    bpmRange,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
@@ -49,7 +50,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
             <p className='text-muted-foreground text-xs mt-1'>{workout.title}</p>
           </div>
 
-          <ZonePill zone={workout.zone} />
+          <ZonePill zoneInfo={zoneInfo} bpmRange={bpmRange} />
         </CustomCardInside>
 
         {/* Barra meteorológica */}
@@ -96,55 +97,86 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
   )
 }
 
-export function RaceCard({ workout, date }: WorkoutCardProps) {
-  const { dateLabel, weather, isLoadingWeather, isPast } = useWorkoutCard({ workout, date })
-
-  const raceTitle = workout?.title ?? 'Día de Carrera'
-  const raceKm = workout?.km ?? 0
-  const raceTime = workout?.time ?? 0
-  const racePace = workout?.pace ?? 0
-  const raceZone = workout?.zone ?? 'Z5'
-  const raceNotes = workout?.notes ?? 'Día del evento principal. ¡A darlo todo!'
-
-  const stats = [
-    { icon: Clock, label: 'Tiempo est.', value: raceTime, unit: 'min' },
-    { icon: Zap, label: 'Ritmo medio', value: formatPace(racePace), unit: '/km' },
-    { icon: Gauge, label: 'Vel. media', value: paceToSpeed(racePace), unit: 'km/h' },
-  ]
+export function RaceCard({ workout, date, gpxData }: WorkoutCardProps) {
+  const {
+    WorkoutIcon,
+    headerTitle,
+    dateLabel,
+    isLogOpen,
+    weather,
+    isLoadingWeather,
+    isPast,
+    isLogged,
+    stats,
+    zoneInfo,
+    bpmRange,
+    openLogDialog,
+    closeLogDialog,
+    handleSaveSession,
+    handleDeleteSession,
+  } = useWorkoutCard({ workout, date, gpxData })
 
   return (
-    <CustomCard className='bg-emerald-500/10 border-emerald-500/20'>
-      <CardHeader title={raceTitle} icon={Trophy}>
-        <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
-      </CardHeader>
+    <>
+      <CustomCard className='bg-emerald-500/10 border-emerald-500/20'>
+        <CardHeader title={headerTitle} icon={WorkoutIcon}>
+          <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
+        </CardHeader>
 
-      <CustomCardInside className='flex items-center'>
-        <div className='flex-1'>
-          <div className='flex items-baseline gap-1.5'>
-            <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
-              {raceKm}
-            </span>
-            <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
+        <CustomCardInside className='flex items-center'>
+          <div className='flex-1'>
+            <div className='flex items-baseline gap-1.5'>
+              <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
+                {workout.km}
+              </span>
+              <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
+            </div>
           </div>
+
+          <ZonePill zoneInfo={zoneInfo} bpmRange={bpmRange} />
+        </CustomCardInside>
+
+        {/* Barra meteorológica */}
+        {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
+
+        {/* Stats row */}
+        <div className='grid grid-cols-3 gap-3'>
+          {stats.map(({ icon: Icon, label, value, unit }) => (
+            <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
+          ))}
         </div>
 
-        <ZonePill zone={raceZone} />
-      </CustomCardInside>
+        {/* Coach note */}
+        <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
+          <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
+          <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
+        </CustomCardInside>
 
-      {/* Barra meteorológica */}
-      {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
+        {/* Botón para Registrar */}
+        {isLogged ? (
+          <GlassFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+            <Edit />
+            <span>Editar registro</span>
+          </GlassFilledButton>
+        ) : (
+          <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+            <CheckCircle />
+            <span>Registrar carrera</span>
+          </PrimaryFilledButton>
+        )}
+      </CustomCard>
 
-      <div className='grid grid-cols-3 gap-3'>
-        {stats.map(({ icon: Icon, label, value, unit }) => (
-          <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
-        ))}
-      </div>
-
-      <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
-        <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
-        <p className='text-foreground/80 text-xs leading-relaxed'>{raceNotes}</p>
-      </CustomCardInside>
-    </CustomCard>
+      {/* Modal de Registro */}
+      <LogWorkoutDialog
+        key={workout.id}
+        isOpen={isLogOpen}
+        onClose={closeLogDialog}
+        workout={workout}
+        dateStr={date}
+        onSave={handleSaveSession}
+        onDelete={handleDeleteSession}
+      />
+    </>
   )
 }
 

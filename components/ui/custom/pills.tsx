@@ -1,11 +1,13 @@
 'use client'
 
 import { Heart, Info } from 'lucide-react'
-import { cn } from '@/lib/utils'
 import { IntensityZone, StatPillProps } from '@/types'
+import { HR_ZONES, HrZoneConfig } from '@/utils/constants'
+import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
+import { cn } from '@/lib/utils'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
-import { HR_ZONES } from '@/utils/constants'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { PillButton } from '@/components/ui/custom/buttons'
 
 export function StatPill({ icon: Icon, label, value, unit, className }: StatPillProps) {
   return (
@@ -22,35 +24,26 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
   )
 }
 
-export function ZonePill({ zone, maxHr = 190 }: { zone: IntensityZone; maxHr?: number }) {
-  // Fallback a Z1 si la zona no coincide
-  const zoneInfo = HR_ZONES[zone] ?? HR_ZONES.Z1
+interface ZonePillProps {
+  zoneInfo: HrZoneConfig
+  bpmRange?: string
+}
 
-  const calculateBpmRange = (pct: string, maxHr: number) => {
-    const [minPct, maxPct] = pct.replace('%', '').split('-').map(Number)
-    const minBpm = Math.round((minPct / 100) * maxHr)
-    const maxBpm = Math.round((maxPct / 100) * maxHr)
-    return `${minBpm} - ${maxBpm} bpm`
-  }
-
-  const bpmRange = calculateBpmRange(zoneInfo.pct, maxHr)
-
+export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
   return (
     <Popover>
       <PopoverTrigger
         nativeButton={false}
         render={
-          <CustomCardInside
-            className={cn(
-              'flex flex-col items-center rounded-xl w-17 p-3 border shadow-none transition-all cursor-pointer hover:scale-105 active:scale-98',
-              zoneInfo.styles.bg,
-              zoneInfo.styles.border,
-            )}
-          >
-            <Heart size={13} className={cn('mb-1', zoneInfo.styles.text)} />
-            <span className={cn('font-heading text-2xl font-black leading-none', zoneInfo.styles.text)}>{zone}</span>
-            <span className={cn('text-[9px] font-medium mt-0.5', zoneInfo.styles.textMuted)}>{zoneInfo.pct}</span>
-          </CustomCardInside>
+          <PillButton
+            icon={Heart}
+            value={zoneInfo.code}
+            subtitle={zoneInfo.pct}
+            iconClassName={zoneInfo.styles.text}
+            valueClassName={zoneInfo.styles.text}
+            subtitleClassName={zoneInfo.styles.textMuted}
+            className={cn(zoneInfo.styles.bg, zoneInfo.styles.border)}
+          />
         }
       />
 
@@ -64,7 +57,7 @@ export function ZonePill({ zone, maxHr = 190 }: { zone: IntensityZone; maxHr?: n
                 'text-white',
               )}
             >
-              {zone}
+              {zoneInfo.code}
             </span>
             <div>
               <p className='font-heading font-bold text-xs text-foreground leading-tight'>{zoneInfo.name}</p>
