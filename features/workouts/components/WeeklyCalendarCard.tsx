@@ -1,15 +1,15 @@
 'use client'
 
-import { RefreshCcwDot, ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react'
+import { RefreshCcwDot, Calendar as CalendarIcon } from 'lucide-react'
 import { WeeklyCalendarCardProps } from '@/types'
 import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import ProgressGradient from '@/components/ui/custom/progress-gradient'
-import { DaySelectorButton } from '@/features/workouts/components/DaySelectorButton'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { WeekCalendarPicker } from '@/features/workouts/components/WeekCalendarPicker'
 import { useWeeklyCalendarCard } from '@/features/workouts/hooks/useWeeklyCalendarCard'
+import { WeeklyCarousel } from '@/features/workouts/components/WeeklyCarousel'
 
 export function WeeklyCalendarCard({
   cycle,
@@ -54,41 +54,14 @@ export function WeeklyCalendarCard({
         </Popover>
       </CardHeader>
 
-      {/* Slider semanal con Chevrons */}
-      <div className='relative flex items-center gap-1 mt-1 -mx-2'>
-        {/* Chevron Semana Anterior */}
-        <button
-          type='button'
-          onClick={onPrevWeek}
-          className='p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors active:scale-90 cursor-pointer'
-          title='Semana anterior'
-        >
-          <ChevronLeft size={16} />
-        </button>
-
-        {/* Grid de los 7 días */}
-        <div className='grid grid-cols-7 flex-1 items-start gap-1'>
-          {weekDays.map((d, i) => (
-            <DaySelectorButton
-              key={d.fullDate ?? i}
-              day={d}
-              index={i}
-              isSelected={selectedDay === i}
-              onSelectDay={onSelectDay}
-            />
-          ))}
-        </div>
-
-        {/* Chevron Semana Siguiente */}
-        <button
-          type='button'
-          onClick={onNextWeek}
-          className='p-1 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors active:scale-90 cursor-pointer'
-          title='Semana siguiente'
-        >
-          <ChevronRight size={16} />
-        </button>
-      </div>
+      {/* Carrusel semanal*/}
+      <WeeklyCarousel
+        weekDays={weekDays}
+        selectedDay={selectedDay}
+        onSelectDay={onSelectDay}
+        onPrevWeek={onPrevWeek}
+        onNextWeek={onNextWeek}
+      />
 
       {/* Barra de progreso de la semana */}
       <div className='mt-2 space-y-1.5'>

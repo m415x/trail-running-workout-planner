@@ -7,7 +7,12 @@ export function PrimaryInput({ className, type, ...props }: React.ComponentProps
     <Input
       type={type}
       data-slot='input'
-      className={cn('h-10 rounded-xl font-mono text-sm pl-4', className)}
+      onFocus={(event) => event.target.select()}
+      className={cn(
+        'h-10 rounded-xl font-mono text-sm text-right pr-2 [appearance:textfield]',
+        '[&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+        className,
+      )}
       {...props}
     />
   )

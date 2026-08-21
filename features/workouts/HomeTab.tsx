@@ -26,7 +26,7 @@ export function HomeTab() {
   } = useHomeTab()
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-2'>
       {/* Header Superior */}
       <HomeHeader team={team} user={user} />
 

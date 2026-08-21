@@ -38,7 +38,7 @@ export function useWorkoutCard({
   restHr = 50,
   date,
   gpxData,
-  athletePamSec = 240,
+  athletePamSec,
   isCompleted: initialIsCompleted = false,
 }: UseWorkoutCardParams) {
   const [isLogOpen, setIsLogOpen] = useState(false)

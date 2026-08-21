@@ -57,7 +57,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
         {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
         {/* Stats row */}
-        <div className='grid grid-cols-3 gap-3'>
+        <div className='grid grid-cols-3 gap-2'>
           {stats.map(({ icon: Icon, label, value, unit }) => (
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
@@ -85,7 +85,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
 
       {/* Modal de Registro */}
       <LogWorkoutDialog
-        key={workout.id}
+        key={workout?.id ?? date}
         isOpen={isLogOpen}
         onClose={closeLogDialog}
         workout={workout}
@@ -140,15 +140,15 @@ export function RaceCard({ workout, date, gpxData }: WorkoutCardProps) {
         {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
         {/* Stats row */}
-        <div className='grid grid-cols-3 gap-3'>
+        <div className='grid grid-cols-3 gap-2'>
           {stats.map(({ icon: Icon, label, value, unit }) => (
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
         </div>
 
         {/* Coach note */}
-        <CustomCardInside className='p-3 bg-primary/10 border-primary/20'>
-          <p className='font-bold uppercase tracking-wider mb-1.5 text-[10px] text-primary'>Nota del Entrenador</p>
+        <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
+          <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>Nota del Entrenador</p>
           <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
         </CustomCardInside>
 

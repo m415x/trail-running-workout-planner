@@ -2,7 +2,8 @@
  * @file Sesiones planificadas, tracks GPX, clima y logs de los atletas.
  */
 import { LatLngTuple } from 'leaflet'
-import { BaseEntity, IntensityZone, AthleteGroupCode } from '@/types'
+import { BaseEntity, IntensityZone } from '@/types/core.types'
+import { AthleteGroupCode } from '@/types/athlete.types'
 
 export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
 export type DayType = 'Workout' | 'Race' | 'Rest'
@@ -217,13 +218,6 @@ export interface LogWorkoutDialogProps {
   dateStr?: string
   onSave?: (loggedData: LoggedWorkoutPayload) => void
   onDelete?: () => void
-}
-
-export interface DaySelectorButtonProps {
-  day: WeekDay
-  index: number
-  isSelected: boolean
-  onSelectDay: (index: number) => void
 }
 
 export interface DayStatusIndicatorProps {

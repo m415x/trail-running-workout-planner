@@ -8,7 +8,7 @@ export type CustomCardProps = React.ComponentProps<typeof CardContent>
 export function CustomCard({ className, ...props }: CustomCardProps) {
   return (
     <CardContent
-      className={cn('bg-card rounded-3xl p-4 border border-border flex flex-col gap-3', className)}
+      className={cn('bg-card rounded-3xl p-4 border border-border flex flex-col gap-2', className)}
       {...props}
     />
   )

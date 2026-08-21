@@ -26,7 +26,7 @@ function MobileShellInner({ children }: { children: React.ReactNode }) {
         {/* Scrollable content */}
         <ScrollArea className='flex-1 w-full min-h-0'>
           {/* Contenido dinámico según la ruta */}
-          <main className='px-4 pt-4 pb-21'>{children}</main>
+          <main className='px-2 pt-2 pb-21'>{children}</main>
         </ScrollArea>
 
         {/* Barra inferior fija */}

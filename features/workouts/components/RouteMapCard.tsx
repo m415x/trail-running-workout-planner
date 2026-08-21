@@ -52,12 +52,12 @@ export function RouteMapCard({
       </CardHeader>
 
       {/* Contenedor del Mapa con Leaflet */}
-      <div className='relative h-60 w-full rounded-2xl border border-border/50 overflow-hidden my-2'>
+      <div className='relative h-60 w-full rounded-2xl border border-border/50 overflow-hidden'>
         <MapWithNoSSR key={mapKey ?? `${title}-${positions.length}`} positions={positions} />
       </div>
 
       {/* Resumen de Métricas del GPX */}
-      <div className='grid grid-cols-3 gap-3'>
+      <div className='grid grid-cols-3 gap-2'>
         <StatPill icon={Navigation} label='Distancia' value={distanceKm} unit='km' />
         <StatPill icon={TrendingUp} label='Desnivel' value={`+${gainMeters}`} unit='m' />
         <StatPill icon={Angle} label='Pendiente Máx.' value={maxGradePct} unit='%' />

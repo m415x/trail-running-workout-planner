@@ -44,3 +44,9 @@ next-env.d.ts
 
 # Assets
 # /public
+
+# Agents
+opencode.json
+AGENTS_TEMPLATE.md
+AGENTS.md
+GEMINI.md

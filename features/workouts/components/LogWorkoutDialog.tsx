@@ -8,7 +8,7 @@ import { LogWorkoutDialogProps } from '@/types'
 import { RpeSelector } from '@/features/workouts/components/RpeSelector'
 import { useLogWorkoutDialog } from '@/features/workouts/hooks/useLogWorkoutDialog'
 
-export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
+export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   const {
     distance,
     timeMin,
@@ -24,7 +24,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
     setAthleteNotes,
     handleSave,
     handleDelete,
-  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave })
+  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete })
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -78,7 +78,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
                 <PrimaryInput
                   type='number'
                   min='0'
-                  placeholder='Min'
+                  placeholder='0'
                   value={timeMin}
                   onChange={(e) => handleMinutesChange(e.target.value)}
                 />

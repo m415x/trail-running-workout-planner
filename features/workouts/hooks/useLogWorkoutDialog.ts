@@ -97,8 +97,10 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
 
   const handleDelete = () => {
     onDelete?.()
+    resetForm()
     onClose()
   }
+
   return {
     distance,
     timeMin,

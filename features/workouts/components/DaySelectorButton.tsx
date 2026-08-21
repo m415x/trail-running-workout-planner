@@ -1,12 +1,26 @@
 'use client'
 
 import { createElement } from 'react'
-import { DaySelectorButtonProps } from '@/types'
+import { WeekDay } from '@/types'
 import { getWorkoutIcon } from '@/utils/workout-helpers'
 import { DayStatusIndicator } from '@/features/workouts/components/DayStatusIndicator'
 import { cn } from '@/lib/utils'
 
-export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySelectorButtonProps) {
+export interface DaySelectorButtonProps {
+  day: WeekDay
+  index: number
+  isSelected: boolean
+  hideStatusIndicators?: boolean
+  onSelectDay: (index: number) => void
+}
+
+export function DaySelectorButton({
+  day,
+  index,
+  isSelected,
+  hideStatusIndicators = false,
+  onSelectDay,
+}: DaySelectorButtonProps) {
   // Obtenemos la referencia al icono
   const icon = getWorkoutIcon(day.type ?? (day.isRest ? 'Rest' : 'Base'))
 
@@ -30,13 +44,14 @@ export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySe
       >
         {/* Ícono superior según el WorkoutType */}
         <div className='mb-1 flex items-center justify-center h-3.5'>
-          {createElement(icon, {
-            size: 12,
-            className: cn(
-              'transition-colors',
-              isSelected ? 'text-white' : day.isToday ? 'text-primary' : 'text-muted-foreground/70',
-            ),
-          })}
+          {!hideStatusIndicators &&
+            createElement(icon, {
+              size: 12,
+              className: cn(
+                'transition-colors',
+                isSelected ? 'text-white' : day.isToday ? 'text-primary' : 'text-muted-foreground/70',
+              ),
+            })}
         </div>
 
         {/* Día de la semana (L, M, X...) */}
@@ -56,7 +71,7 @@ export function DaySelectorButton({ day, index, isSelected, onSelectDay }: DaySe
 
         {/* Indicador inferior de estado (Check / Minus / Dot / X) */}
         <div className='mt-1.5 h-2 flex items-center justify-center'>
-          <DayStatusIndicator day={day} isSelected={isSelected} />
+          {!hideStatusIndicators && <DayStatusIndicator day={day} isSelected={isSelected} />}
         </div>
       </button>
       {day.isToday && (

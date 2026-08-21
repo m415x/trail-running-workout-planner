@@ -15,7 +15,7 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
 
       <p className='font-heading text-foreground font-bold leading-none text-xs text-center'>
         {value}
-        <span className='text-muted-foreground font-normal text-xs ml-1'>{unit}</span>
+        <span className='text-muted-foreground font-normal text-xs ml-1 whitespace-pre-line'>{unit}</span>
       </p>
 
       <p className='text-muted-foreground text-[10px] mt-1'>{label}</p>
@@ -45,8 +45,11 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
         }
       />
 
-      <PopoverContent className='mr-11  w-64 sm:w-72 p-3 bg-popover/95 backdrop-blur-md border-border/50 rounded-2xl shadow-xl'>
-        <div className='space-y-2'>
+      <PopoverContent
+        className='w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-2xl shadow-xl'
+        align='end'
+      >
+        <div className='space-y-2 p-1'>
           <div className='flex items-start gap-2'>
             <span
               className={cn(

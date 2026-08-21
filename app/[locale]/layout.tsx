@@ -1,10 +1,9 @@
-// app/[locale]/layout.tsx
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono, Barlow_Condensed, DM_Sans, Outfit } from 'next/font/google'
 import { notFound } from 'next/navigation'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
-import { routing, type Locale } from '@/i18n/routing'
+import { routing } from '../../i18n/routing'
 import '../globals.css'
 
 const geistSans = Geist({
