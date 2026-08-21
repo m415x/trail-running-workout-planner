@@ -153,7 +153,7 @@ export function useHomeTab() {
     return {
       workout: {
         ...currentWorkout,
-        km: gpxData.distanceKm || currentWorkout.km,
+        km: gpxData.distanceKm || currentWorkout.distance,
         gain: gpxData.gainMeters || currentWorkout.gain,
       },
       elevData: gpxData.elevationProfile,

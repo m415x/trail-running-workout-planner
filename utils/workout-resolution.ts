@@ -25,7 +25,7 @@ export function resolveWorkoutForAthlete(session: WorkoutSession, athleteGroup: 
   return {
     id: Number(session.id) || 1,
     title: session.title,
-    km,
+    distance: km,
     time,
     pace,
     gain: 0,

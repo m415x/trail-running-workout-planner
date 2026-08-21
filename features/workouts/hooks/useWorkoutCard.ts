@@ -13,6 +13,7 @@ import { getWorkoutIcon, getWorkoutTypeLabel } from '@/utils/workout-helpers'
 import { formatPace, paceToSpeed } from '@/utils/formatters'
 import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
 import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
+import { getZonePaceRangeFromPam } from '@/lib/physiology/pam'
 
 export function calculateBpmRange(pct: string, maxHr: number): string {
   const [minPct, maxPct] = pct.replace(/%/g, '').split('-').map(Number)
@@ -27,6 +28,7 @@ interface UseWorkoutCardParams {
   restHr?: number
   date?: string
   gpxData?: GpxData | null
+  athletePamSec?: number
   isCompleted?: boolean
 }
 
@@ -36,6 +38,7 @@ export function useWorkoutCard({
   restHr = 50,
   date,
   gpxData,
+  athletePamSec = 240,
   isCompleted: initialIsCompleted = false,
 }: UseWorkoutCardParams) {
   const [isLogOpen, setIsLogOpen] = useState(false)
@@ -74,7 +77,7 @@ export function useWorkoutCard({
     return getZoneBpmRange(workout.zone, { maxHr, restHr })
   }, [workout.zone, maxHr, restHr])
 
-  // 3. Resolución de Coordenadas por Prioridad
+  // Resolución de Coordenadas por Prioridad
   const targetCoordinates = useMemo(() => {
     // Si hay GPX (montaña / carrera / circuito externo), usamos el punto de inicio
     if (gpxData?.startCoordinates) {
@@ -90,7 +93,7 @@ export function useWorkoutCard({
     return DEFAULT_FALLBACK_LOCATION
   }, [gpxData, workout.locationKey])
 
-  // 4. Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
+  // Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
   useEffect(() => {
     let isMounted = true
 
@@ -126,17 +129,37 @@ export function useWorkoutCard({
     }
   }, [date, isPast, targetCoordinates.lat, targetCoordinates.lon])
 
-  // 5. Formateo de estadísticas de la rutina
+  // Calculamos los rangos de ritmo, velocidad y tiempo basados en PAM
+  const pamRange = useMemo(() => {
+    return getZonePaceRangeFromPam(workout.zone, athletePamSec, workout.distance)
+  }, [workout.zone, athletePamSec, workout.distance])
+
+  // Valores dinámicos si existe PAM, con fallback a los valores estáticos
+  const timeDisplay = pamRange?.timeRangeLabel ?? workout.time
+  const paceDisplay = pamRange?.paceRangeLabel ?? formatPace(workout.pace)
+  const speedDisplay = pamRange?.speedRangeLabel ?? paceToSpeed(workout.pace)
+
+  // Formateo de estadísticas de la rutina
   const stats = useMemo(
     () => [
-      { icon: Clock, label: 'Tiempo est.', value: workout.time, unit: 'min' },
-      { icon: Zap, label: 'Ritmo medio', value: formatPace(workout.pace), unit: '/km' },
-      { icon: Gauge, label: 'Vel. media', value: paceToSpeed(workout.pace), unit: 'km/h' },
+      {
+        icon: Clock,
+        label: 'Tiempo est.',
+        value: timeDisplay,
+        unit: pamRange ? '\nmin' : 'min',
+      },
+      { icon: Zap, label: 'Ritmo medio', value: paceDisplay, unit: pamRange ? '\nmin/km' : '/km' },
+      {
+        icon: Gauge,
+        label: 'Vel. media',
+        value: speedDisplay,
+        unit: pamRange ? '\nkm/h' : 'km/h',
+      },
     ],
-    [workout.time, workout.pace],
+    [timeDisplay, paceDisplay, speedDisplay, pamRange],
   )
 
-  // 6. Handlers del Modal
+  // Handlers del Modal
   const openLogDialog = () => setIsLogOpen(true)
   const closeLogDialog = () => setIsLogOpen(false)
 
@@ -164,6 +187,7 @@ export function useWorkoutCard({
     stats,
     zoneInfo,
     bpmRange, // "134 - 148 bpm"
+    pamRange,
     minBpm: bpmLimits.minBpm,
     maxBpm: bpmLimits.maxBpm,
     openLogDialog,

@@ -74,7 +74,7 @@ export const workouts: Record<number, WorkoutProps> = {
   0: {
     type: 'Base', // <--- Faltaba esto
     title: 'Rodaje Base',
-    km: 8,
+    distance: 8,
     zone: 'Z1',
     time: 56,
     gain: 320,
@@ -84,7 +84,7 @@ export const workouts: Record<number, WorkoutProps> = {
   1: {
     type: 'Trail', // <--- Asignado a Trail por el desnivel
     title: 'Ruta Antenas',
-    km: 6,
+    distance: 6,
     zone: 'Z2',
     time: 42,
     gain: 490,
@@ -94,7 +94,7 @@ export const workouts: Record<number, WorkoutProps> = {
   2: {
     type: 'Long',
     title: 'Fondo',
-    km: 9,
+    distance: 9,
     zone: 'Z3',
     time: 63,
     gain: 380,
@@ -104,7 +104,7 @@ export const workouts: Record<number, WorkoutProps> = {
   3: {
     type: 'Fartlek',
     title: 'EC + Fartlek',
-    km: 6,
+    distance: 6,
     zone: 'Z4',
     time: 38,
     gain: 140,
@@ -114,7 +114,7 @@ export const workouts: Record<number, WorkoutProps> = {
   5: {
     type: 'Trail',
     title: 'Parkinson',
-    km: 16,
+    distance: 16,
     zone: 'Z5',
     time: 130,
     gain: 820,
@@ -124,7 +124,7 @@ export const workouts: Record<number, WorkoutProps> = {
   6: {
     type: 'Race',
     title: 'Tierra de Gigantes',
-    km: 60,
+    distance: 60,
     zone: 'Z5',
     time: 180,
     gain: 820,
@@ -136,7 +136,7 @@ export const workouts: Record<number, WorkoutProps> = {
   7: {
     type: 'Base',
     title: 'Rodaje Base',
-    km: 7,
+    distance: 7,
     zone: 'Z2',
     time: 42,
     gain: 0,
@@ -146,7 +146,7 @@ export const workouts: Record<number, WorkoutProps> = {
   8: {
     type: 'Trail',
     title: 'Panorámico por Pinar (desde faunístico)',
-    km: 7,
+    distance: 7,
     zone: 'Z2',
     time: 42,
     gain: 490,
@@ -156,7 +156,7 @@ export const workouts: Record<number, WorkoutProps> = {
   9: {
     type: 'Long',
     title: 'Fondo',
-    km: 8,
+    distance: 8,
     zone: 'Z2',
     time: 63,
     gain: 380,
@@ -166,7 +166,7 @@ export const workouts: Record<number, WorkoutProps> = {
   10: {
     type: 'Intervals',
     title: 'Intervalos',
-    km: 5,
+    distance: 5,
     zone: 'Z5',
     time: 38,
     gain: 140,
@@ -177,7 +177,7 @@ export const workouts: Record<number, WorkoutProps> = {
   11: {
     type: 'Trail',
     title: 'Matagusanos',
-    km: 12,
+    distance: 12,
     zone: 'Z3',
     time: 130,
     gain: 820,

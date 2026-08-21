@@ -8,7 +8,7 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     const hours = Math.floor(totalMinutes / 60)
     const minutes = totalMinutes % 60
     return {
-      distance: workout?.km?.toString() ?? '',
+      distance: workout?.distance?.toString() ?? '',
       gain: workout?.gain?.toString() ?? '0',
       timeHr: hours > 0 ? hours.toString() : '',
       timeMin: minutes > 0 ? minutes.toString() : '0',

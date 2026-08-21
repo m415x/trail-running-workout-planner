@@ -59,7 +59,7 @@ export function HomeTab() {
         <RouteMapCard
           mapKey={selectedWeekDay?.fullDate}
           title={currentWorkout.title}
-          distanceKm={gpxData?.distanceKm ?? currentWorkout.km}
+          distanceKm={gpxData?.distanceKm ?? currentWorkout.distance}
           gainMeters={gpxData?.gainMeters ?? currentWorkout.gain}
           maxGradePct={gpxData?.maxGradePct ?? 0}
           positions={gpxData?.coordinates ?? []}

@@ -1,9 +1,8 @@
 'use client'
 
 import { Heart, Info } from 'lucide-react'
-import { IntensityZone, StatPillProps } from '@/types'
-import { HR_ZONES, HrZoneConfig } from '@/utils/constants'
-import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
+import { StatPillProps } from '@/types'
+import { HrZoneConfig } from '@/utils/constants'
 import { cn } from '@/lib/utils'
 import { CustomCardInside } from '@/components/ui/custom/card-containers'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -14,7 +13,7 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
     <CustomCardInside key={label} className={cn('p-3 flex flex-col items-center', className)}>
       <Icon size={14} className='text-primary/70 mb-1.5' />
 
-      <p className='font-heading text-foreground font-bold leading-none text-base'>
+      <p className='font-heading text-foreground font-bold leading-none text-xs text-center'>
         {value}
         <span className='text-muted-foreground font-normal text-xs ml-1'>{unit}</span>
       </p>
@@ -33,7 +32,6 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
   return (
     <Popover>
       <PopoverTrigger
-        nativeButton={false}
         render={
           <PillButton
             icon={Heart}

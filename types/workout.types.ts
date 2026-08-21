@@ -59,7 +59,7 @@ export interface WorkoutProps {
   id?: number | string
   title: string
   type?: WorkoutType
-  km: number
+  distance: number
   zone: IntensityZone
   time: number
   gain: number

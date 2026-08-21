@@ -81,7 +81,7 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
       <div className='flex items-center gap-2'>
         <span className='text-muted-foreground text-[10px]'>0 km</span>
         <div className='flex-1 h-px rounded-full bg-linear-to-r from-green-500/50 via-yellow-500/50 to-red-500/50' />
-        <span className='text-muted-foreground text-[10px]'>{workout.km} km</span>
+        <span className='text-muted-foreground text-[10px]'>{workout.distance} km</span>
       </div>
     </CustomCard>
   )

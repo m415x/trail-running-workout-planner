@@ -353,3 +353,14 @@ export const ATHLETE_LEVELS: Record<AthleteLevelCode, LevelMetadata> = {
   2: { name: 'Intermediate', code: '2', description: 'Volumen y carga moderada' },
   3: { name: 'Beginner', code: '3', description: 'Volumen controlado y progresión técnica' },
 }
+
+/**
+ * Tabla de correlación: Rango de % PAM para cada Zona Cardíaca
+ */
+export const ZONE_PAM_PERCENTAGES: Record<IntensityZone, { minPct: number; maxPct: number }> = {
+  Z1: { minPct: 0.5, maxPct: 0.6 }, // < 60% PAM (Recuperación)
+  Z2: { minPct: 0.6, maxPct: 0.75 }, // 60% - 75% PAM (Base aeróbica / Maratón)
+  Z3: { minPct: 0.75, maxPct: 0.85 }, // 75% - 85% PAM (Tempo / Sub-umbral 21k)
+  Z4: { minPct: 0.85, maxPct: 0.95 }, // 85% - 95% PAM (Umbral anaeróbico / 10k)
+  Z5: { minPct: 0.95, maxPct: 1.05 }, // 95% - 100%+ PAM (VO2 Máx / Intervalos)
+}

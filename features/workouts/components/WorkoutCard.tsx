@@ -43,7 +43,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
           <div className='flex-1'>
             <div className='flex items-baseline gap-1.5'>
               <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
-                {workout.km}
+                {workout.distance}
               </span>
               <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
             </div>
@@ -127,7 +127,7 @@ export function RaceCard({ workout, date, gpxData }: WorkoutCardProps) {
           <div className='flex-1'>
             <div className='flex items-baseline gap-1.5'>
               <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
-                {workout.km}
+                {workout.distance}
               </span>
               <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
             </div>
