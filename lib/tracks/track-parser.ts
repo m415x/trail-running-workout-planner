@@ -1,4 +1,4 @@
-import { GpxData, GpxPoint } from '@/types'
+import { TrackData, TrackPoint } from '@/types'
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371000
@@ -33,7 +33,7 @@ function smoothElevations(rawEles: number[], windowSize = 7): number[] {
  * @param epsilon - Distancia máxima de un punto a la línea para ser descartado (en metros).
  * Un valor entre 1.0 y 2.0 es bueno para tracks de GPS.
  */
-function ramerDouglasPeucker(points: GpxPoint[], epsilon: number): GpxPoint[] {
+function ramerDouglasPeucker(points: TrackPoint[], epsilon: number): TrackPoint[] {
   if (points.length < 3) return points
 
   let dMax = 0
@@ -70,7 +70,7 @@ function ramerDouglasPeucker(points: GpxPoint[], epsilon: number): GpxPoint[] {
   }
 }
 
-function perpendicularDistance(pt: GpxPoint, lineStart: GpxPoint, lineEnd: GpxPoint): number {
+function perpendicularDistance(pt: TrackPoint, lineStart: TrackPoint, lineEnd: TrackPoint): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const R = 6371000 // Radio de la Tierra en metros
 
@@ -90,9 +90,42 @@ function bearing(lat1: number, lon1: number, lat2: number, lon2: number): number
   return (Math.atan2(y, x) * 180) / Math.PI
 }
 
-export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> {
+function calculateMaxGrade(points: TrackPoint[], windowSizeMeters = 100): number {
+  let maxGrade = 0
+  let endIndex = 1
+
+  for (let startIndex = 0; startIndex < points.length; startIndex++) {
+    const start = points[startIndex]
+
+    while (endIndex < points.length && points[endIndex].distance < start.distance + windowSizeMeters) {
+      endIndex++
+    }
+
+    if (endIndex >= points.length) {
+      break
+    }
+
+    const end = points[endIndex]
+    const deltaDistance = end.distance - start.distance
+
+    if (deltaDistance <= 0) {
+      continue
+    }
+
+    const deltaElevation = end.ele - start.ele
+    const grade = (deltaElevation / deltaDistance) * 100
+
+    if (grade > maxGrade && grade <= 150) {
+      maxGrade = grade
+    }
+  }
+
+  return maxGrade
+}
+
+export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | null> {
   try {
-    const response = await fetch(gpxPath)
+    const response = await fetch(trackPath)
     if (!response.ok) return null
 
     const xmlText = await response.text()
@@ -102,83 +135,88 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
 
     if (trkpts.length === 0) return null
 
-    // 1. Extraer coordenadas y elevación
-    const rawPoints: GpxPoint[] = []
+    // 1. Extraer coordenadas iniciales (calculando la distancia acumulada de manera provisional)
+    const rawPoints: TrackPoint[] = []
+    let cumulativeDist = 0
+    let prevLat: number | null = null
+    let prevLon: number | null = null
+
     trkpts.forEach((pt) => {
       const lat = parseFloat(pt.getAttribute('lat') || '0')
       const lon = parseFloat(pt.getAttribute('lon') || '0')
       const eleEl = pt.querySelector('ele')
       const ele = eleEl ? parseFloat(eleEl.textContent || '0') : 0
-      rawPoints.push({ lat, lon, ele })
+
+      if (prevLat !== null && prevLon !== null) {
+        cumulativeDist += haversineDistance(prevLat, prevLon, lat, lon)
+      }
+
+      rawPoints.push({ lat, lon, ele, distance: cumulativeDist })
+      prevLat = lat
+      prevLon = lon
     })
 
-    // 2. Suavizar el perfil de altitud ANTES de simplificar para no perder la forma general
+    // 2. Suavizar altitud y simplificar
     const rawElevations = rawPoints.map((p) => p.ele)
-    const preSmoothedElevations = smoothElevations(rawElevations, 5) // Ventana pequeña
+    const preSmoothedElevations = smoothElevations(rawElevations, 5)
     const pointsWithSmoothedEle = rawPoints.map((p, i) => ({ ...p, ele: preSmoothedElevations[i] }))
 
-    // 3. Simplificar la ruta para eliminar "micro-saltos" del GPS
-    // Un epsilon de 1.5m es un buen compromiso para tracks de trail.
     const simplifiedPoints = ramerDouglasPeucker(pointsWithSmoothedEle, 1.5)
 
     const coordinates: [number, number][] = []
     const trackMetrics: { dist: number; ele: number }[] = []
+    const finalTrackPoints: TrackPoint[] = []
 
     let totalDistMeters = 0
     let totalGainMeters = 0
-    let prevLat = simplifiedPoints[0]?.lat
-    let prevLng = simplifiedPoints[0]?.lon
-    let prevEle = simplifiedPoints[0]?.ele
+    let totalLossMeters = 0
+    let minEle = Infinity
+    let maxEle = -Infinity
 
-    coordinates.push([prevLat, prevLng])
-    trackMetrics.push({ dist: 0, ele: Math.round(prevEle) })
+    let pLat = simplifiedPoints[0]?.lat
+    let pLng = simplifiedPoints[0]?.lon
+    let pEle = simplifiedPoints[0]?.ele
+
+    coordinates.push([pLat, pLng])
+    trackMetrics.push({ dist: 0, ele: Math.round(pEle) })
+    finalTrackPoints.push({ lat: pLat, lon: pLng, ele: pEle, distance: 0 })
+
+    minEle = Math.min(minEle, pEle)
+    maxEle = Math.max(maxEle, pEle)
 
     for (let i = 1; i < simplifiedPoints.length; i++) {
       const { lat, lon } = simplifiedPoints[i]
       const ele = simplifiedPoints[i].ele
 
-      const distStep = haversineDistance(prevLat, prevLng, lat, lon)
-
+      const distStep = haversineDistance(pLat, pLng, lat, lon)
       totalDistMeters += distStep
       coordinates.push([lat, lon])
 
-      const eleDiff = ele - prevEle
+      const eleDiff = ele - pEle
       if (eleDiff > 0.4) {
         totalGainMeters += eleDiff
+      } else if (eleDiff < -0.4) {
+        totalLossMeters += Math.abs(eleDiff)
       }
+
+      minEle = Math.min(minEle, ele)
+      maxEle = Math.max(maxEle, ele)
 
       trackMetrics.push({ dist: totalDistMeters, ele: Math.round(ele) })
+      finalTrackPoints.push({ lat, lon, ele, distance: totalDistMeters })
 
-      prevLat = lat
-      prevLng = lon
-      prevEle = ele
+      pLat = lat
+      pLng = lon
+      pEle = ele
     }
 
-    // 4. PENDIENTE MÁXIMA: Ventana sostenida de 100 metros (Estándar Google Earth / Strava)
-    let maxGrade = 0
-    const windowSizeMeters = 100
+    // 3. Pendiente máxima
+    const maxGrade = calculateMaxGrade(rawPoints)
 
-    for (let i = 0; i < trackMetrics.length; i++) {
-      const startNode = trackMetrics[i]
-      // Buscar el punto a ~100 metros por delante
-      const endNode = trackMetrics.find((m) => m.dist >= startNode.dist + windowSizeMeters)
-
-      if (endNode) {
-        const deltaDist = endNode.dist - startNode.dist
-        const deltaEle = endNode.ele - startNode.ele
-        const grade = (deltaEle / deltaDist) * 100
-
-        // Se busca la pendiente máxima, evitando picos irreales por errores de GPS (>150%)
-        if (grade > maxGrade && grade <= 150) {
-          maxGrade = grade
-        }
-      }
-    }
-
-    // 5. PERFIL DE ELEVACIÓN SIMÉTRICO: Muestreo uniforme por distancia (ej. cada 0.5 km)
+    // 4. Perfil de elevación
     const elevationProfile: { km: string; elev: number }[] = []
     const totalKm = totalDistMeters / 1000
-    const stepKm = totalKm > 30 ? 1.0 : 0.5 // Puntos equidistantes cada 0.5k o 1k
+    const stepKm = totalKm > 30 ? 1.0 : 0.5
 
     let currentTargetDist = 0
     trackMetrics.forEach((pt) => {
@@ -191,16 +229,21 @@ export async function parseGpxFromUrl(gpxPath: string): Promise<GpxData | null> 
       }
     })
 
-    // Extraemos las coordenadas del punto inicial
     const firstPoint = coordinates[0]
+    const lastPoint = coordinates[coordinates.length - 1]
 
     return {
-      coordinates: coordinates,
+      trackPoints: finalTrackPoints,
+      coordinates,
       elevationProfile,
       distanceKm: Number((totalDistMeters / 1000).toFixed(1)),
       gainMeters: Math.round(totalGainMeters),
+      lossMeters: Math.round(totalLossMeters),
       maxGradePct: Math.round(maxGrade),
+      minElevation: Math.round(minEle === Infinity ? 0 : minEle),
+      maxElevation: Math.round(maxEle === -Infinity ? 0 : maxEle),
       startCoordinates: firstPoint ? { lat: firstPoint[0], lon: firstPoint[1] } : undefined,
+      endCoordinates: lastPoint ? { lat: lastPoint[0], lon: lastPoint[1] } : undefined,
     }
   } catch (error) {
     console.error('Error parseando archivo GPX:', error)

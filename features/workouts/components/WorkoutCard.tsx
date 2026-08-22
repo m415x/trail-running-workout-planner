@@ -11,7 +11,7 @@ import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStri
 import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
 import { useTranslations } from 'next-intl'
 
-export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
+export function TodayWorkoutCard({ workout, date, TrackData }: WorkoutCardProps) {
   const {
     WorkoutIcon,
     headerTitle,
@@ -28,7 +28,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
     closeLogDialog,
     handleSaveSession,
     handleDeleteSession,
-  } = useWorkoutCard({ workout, date, gpxData })
+  } = useWorkoutCard({ workout, date, TrackData })
 
   return (
     <>
@@ -97,7 +97,7 @@ export function TodayWorkoutCard({ workout, date, gpxData }: WorkoutCardProps) {
   )
 }
 
-export function RaceCard({ workout, date, gpxData }: WorkoutCardProps) {
+export function RaceCard({ workout, date, TrackData }: WorkoutCardProps) {
   const {
     WorkoutIcon,
     headerTitle,
@@ -114,7 +114,7 @@ export function RaceCard({ workout, date, gpxData }: WorkoutCardProps) {
     closeLogDialog,
     handleSaveSession,
     handleDeleteSession,
-  } = useWorkoutCard({ workout, date, gpxData })
+  } = useWorkoutCard({ workout, date, TrackData })
 
   return (
     <>

@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { isBefore, startOfDay, parseISO, format } from 'date-fns'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import { toast } from 'sonner'
-import { WorkoutCardProps, LoggedWorkoutPayload, GpxData } from '@/types'
+import { WorkoutCardProps, LoggedWorkoutPayload, TrackData } from '@/types'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { HR_ZONES } from '@/utils/constants'
 import { HrZoneConfig } from '@/utils/constants'
@@ -27,7 +27,7 @@ interface UseWorkoutCardParams {
   maxHr?: number
   restHr?: number
   date?: string
-  gpxData?: GpxData | null
+  TrackData?: TrackData | null
   athletePamSec?: number
   isCompleted?: boolean
 }
@@ -37,7 +37,7 @@ export function useWorkoutCard({
   maxHr = 190,
   restHr = 50,
   date,
-  gpxData,
+  TrackData,
   athletePamSec,
   isCompleted: initialIsCompleted = false,
 }: UseWorkoutCardParams) {
@@ -80,8 +80,8 @@ export function useWorkoutCard({
   // Resolución de Coordenadas por Prioridad
   const targetCoordinates = useMemo(() => {
     // Si hay GPX (montaña / carrera / circuito externo), usamos el punto de inicio
-    if (gpxData?.startCoordinates) {
-      return gpxData.startCoordinates
+    if (TrackData?.startCoordinates) {
+      return TrackData.startCoordinates
     }
 
     // Si el workout define una ubicación específica (pista en La Granja o cuestas en Ullum)
@@ -91,7 +91,7 @@ export function useWorkoutCard({
 
     // Fallback: Parque de Mayo (calle)
     return DEFAULT_FALLBACK_LOCATION
-  }, [gpxData, workout.locationKey])
+  }, [TrackData, workout.locationKey])
 
   // Carga reactiva del clima sin ejecuciones síncronas en cascada (solo si NO es pasado)
   useEffect(() => {

@@ -131,7 +131,7 @@ export const workouts: Record<number, WorkoutProps> = {
     pace: 540,
     notes:
       'Salida progresiva. Administrar hidratación en el km 42 antes del ascenso principal. ¡A disfrutar la carrera!',
-    gpxPath: '/tracks/tierra-de-gigantes-2026-10k.gpx',
+    trackPath: '/tracks/tierra-de-gigantes-2026-10k.gpx',
   },
   7: {
     type: 'Base',
@@ -183,7 +183,7 @@ export const workouts: Record<number, WorkoutProps> = {
     gain: 820,
     pace: 488,
     notes: 'Tirada larga semanal por Matagusanos. Ritmo muy conservador. Llevar gel y bidón extra.',
-    gpxPath: '/tracks/matagusanos-12k.gpx',
+    trackPath: '/tracks/matagusanos-12k.gpx',
   },
 }
 

@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, LayersControl } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet'
 import L, { LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import GradientTrack from '@/components/maps/GradientTrackLayer'
 import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
 
 // Controlador para mover/ajustar la cámara sin desmontar el mapa
@@ -49,9 +50,16 @@ interface MapInnerProps {
   lon?: number
   zoom?: number
   positions?: LatLngTuple[]
+  elevations?: number[]
 }
 
-export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 14, positions = [] }: MapInnerProps) {
+export default function MapInner({
+  lat = -31.529822,
+  lon = -68.5440881,
+  zoom = 14,
+  positions = [],
+  elevations = [],
+}: MapInnerProps) {
   const defaultCenter: LatLngTuple = [lat, lon]
   const startPosition: LatLngTuple = positions.length > 0 ? positions[0] : defaultCenter
   const endPosition: LatLngTuple = positions.length > 0 ? positions[positions.length - 1] : defaultCenter
@@ -105,7 +113,15 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
       <MapViewController positions={positions} fallbackCenter={defaultCenter} zoom={zoom} />
 
       {/* Trazada GPS de la ruta en color contrastante */}
-      {positions.length > 0 && <Polyline positions={positions} color='#e11d48' weight={3.5} opacity={0.85} />}
+      {positions.length > 0 && (
+        <GradientTrack
+          positions={positions}
+          elevations={elevations}
+          weight={4}
+          opacity={0.92}
+          simplifyTolerance={1.2}
+        />
+      )}
 
       {/* Marcador en el punto de largada */}
       <Marker position={startPosition} icon={startIcon}>

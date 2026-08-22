@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { WeekDay, WeeklyCycle } from '@/types'
 import { formatDateRange } from '@/utils/date-helpers'
-import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/gpx/calculators'
+import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/tracks/calculators'
 
 export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[]) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)

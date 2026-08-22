@@ -1,7 +1,6 @@
 /**
  * @file Sesiones planificadas, tracks GPX, clima y logs de los atletas.
  */
-import { LatLngTuple } from 'leaflet'
 import { BaseEntity, IntensityZone } from '@/types/core.types'
 import { AthleteGroupCode } from '@/types/athlete.types'
 
@@ -39,7 +38,7 @@ export interface WorkoutSession extends BaseEntity {
   type: DayType
   zone: IntensityZone
   locationKey?: TrainingLocationKey
-  gpxPath?: string
+  trackPath?: string
   structure?: {
     warmup: string
     mainBlock: string
@@ -67,7 +66,7 @@ export interface WorkoutProps {
   pace: number
   notes: string
   targetGroups?: AthleteGroupCode[]
-  gpxPath?: string
+  trackPath?: string
   locationKey?: TrainingLocationKey
 }
 
@@ -92,31 +91,59 @@ export interface WorkoutLog extends BaseEntity, LoggedWorkoutPayload {
 }
 
 /**
- * Punto individual de un track GPX con coordenadas y elevación.
+ * Punto individual de un track con coordenadas y elevación.
  */
-export interface GpxPoint {
+export interface TrackPoint {
   lat: number
   lon: number
   ele: number
+  distance: number
+
+  time?: number
+  speed?: number
+  grade?: number
+  heartRate?: number
+  cadence?: number
+  power?: number
 }
 
 /**
- * Datos parseados del archivo GPX
+ * Datos parseados del track
  */
-export interface GpxData {
+export interface TrackData {
+  trackPoints: TrackPoint[]
+
   coordinates: [number, number][]
-  elevationProfile: { km: string; elev: number; grade?: number }[]
+
+  elevationProfile: {
+    km: string
+    elev: number
+    grade?: number
+  }[]
+
   distanceKm: number
   gainMeters: number
+  lossMeters: number
   maxGradePct: number
-  startCoordinates?: { lat: number; lon: number }
-  endCoordinates?: { lat: number; lon: number }
+
+  minElevation: number
+  maxElevation: number
+
+  startCoordinates?: {
+    lat: number
+    lon: number
+  }
+
+  endCoordinates?: {
+    lat: number
+    lon: number
+  }
 }
 
 export interface WorkoutCardProps {
   workout: WorkoutProps
   date?: string
-  gpxData?: GpxData | null
+  TrackData?: TrackData | null
 }
 
 /**
@@ -193,16 +220,6 @@ export interface ElevTooltipProps {
   active?: boolean
   payload?: { value: number }[]
   label?: string
-}
-
-export interface RouteMapCardProps {
-  title?: string
-  distanceKm: number
-  gainMeters?: number
-  maxGradePct?: number
-  positions?: LatLngTuple[] // <-- Trazada GPS para Leaflet
-  mapKey?: string // <-- Prop personalizada opcional
-  onUploadGpx?: () => void
 }
 
 export interface WeekCalendarPickerProps {

@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { Navigation, Navigation2, Route, TrendingUp, Angle } from 'lucide-react'
-import { RouteMapCardProps } from '@/types'
+import { TrackPoint } from '@/types'
 import { CustomCard } from '@/components/ui/custom/card-containers'
 import { CardHeader } from '@/components/ui/custom/section-header'
 import { StatPill } from '@/components/ui/custom/pills'
@@ -18,15 +18,30 @@ const MapWithNoSSR = dynamic(() => import('@/components/maps/MapInner'), {
   ),
 })
 
+export interface RouteMapCardProps {
+  title?: string
+  distanceKm: number
+  gainMeters?: number
+  maxGradePct?: number
+
+  trackPoints?: TrackPoint[]
+
+  mapKey?: string
+  onUploadGpx?: () => void
+}
+
 export function RouteMapCard({
   title,
   distanceKm,
   gainMeters,
   maxGradePct = 0,
-  positions = [],
+  trackPoints = [],
   mapKey,
 }: RouteMapCardProps) {
-  // Determinamos el punto de inicio del track o fallback
+  // 1. Transformamos los TrackPoints a un array de tuplas [lat, lon] que Leaflet entiende
+  const positions: [number, number][] = trackPoints.map((tp) => [tp.lat, tp.lon])
+
+  // 2. Determinamos el punto de inicio para el botón de Google Maps
   const startCoordinates = positions.length > 0 ? positions[0] : null
   const navigationUrl = startCoordinates
     ? `https://www.google.com/maps/dir/?api=1&destination=${startCoordinates[0]},${startCoordinates[1]}`

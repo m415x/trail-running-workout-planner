@@ -31,7 +31,7 @@ export function resolveWorkoutForAthlete(session: WorkoutSession, athleteGroup: 
     gain: 0,
     zone: session.zone,
     notes: specificNotes,
-    gpxPath: session.gpxPath,
+    trackPath: session.trackPath,
     locationKey: session.locationKey,
   }
 }

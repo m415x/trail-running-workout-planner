@@ -6,9 +6,9 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
 
 // Helpers y Tipos
-import { WeekDay, WeeklyCycle, GpxData, ElevationChartProps } from '@/types'
+import { WeekDay, WeeklyCycle, TrackData, ElevationChartProps } from '@/types'
 import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
-import { parseGpxFromUrl } from '@/lib/gpx/gpx-parser'
+import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 
 export function useHomeTab() {
   // 1. Inicializar con la fecha real actual
@@ -115,21 +115,21 @@ export function useHomeTab() {
   const currentWorkout = workoutId !== undefined ? workouts[workoutId] : null
 
   // 8. Estado y carga reactiva del track GPX
-  const [gpxData, setGpxData] = useState<GpxData | null>(null)
+  const [TrackData, setTrackData] = useState<TrackData | null>(null)
 
   useEffect(() => {
     let isMounted = true
 
     const loadGpx = async () => {
-      if (!currentWorkout?.gpxPath) {
+      if (!currentWorkout?.trackPath) {
         await Promise.resolve()
-        if (isMounted) setGpxData(null)
+        if (isMounted) setTrackData(null)
         return
       }
 
-      const data = await parseGpxFromUrl(currentWorkout.gpxPath)
+      const data = await parseTrackFromUrl(currentWorkout.trackPath)
       if (isMounted) {
-        setGpxData(data)
+        setTrackData(data)
       }
     }
 
@@ -138,30 +138,30 @@ export function useHomeTab() {
     return () => {
       isMounted = false
     }
-  }, [currentWorkout?.gpxPath])
+  }, [currentWorkout?.trackPath])
 
   // 9. Datos calculados de altimetría
   const elevationChartData: ElevationChartProps | null = useMemo(() => {
-    if (!currentWorkout || !gpxData || gpxData.elevationProfile.length === 0) {
+    if (!currentWorkout || !TrackData || TrackData.elevationProfile.length === 0) {
       return null
     }
 
-    const elevs = gpxData.elevationProfile.map((d: { elev: number }) => d.elev)
+    const elevs = TrackData.elevationProfile.map((d: { elev: number }) => d.elev)
     const elevMin = Math.min(...elevs)
     const elevMax = Math.max(...elevs)
 
     return {
       workout: {
         ...currentWorkout,
-        km: gpxData.distanceKm || currentWorkout.distance,
-        gain: gpxData.gainMeters || currentWorkout.gain,
+        km: TrackData.distanceKm || currentWorkout.distance,
+        gain: TrackData.gainMeters || currentWorkout.gain,
       },
-      elevData: gpxData.elevationProfile,
+      elevData: TrackData.elevationProfile,
       elevMin,
       elevMax,
       yDomain: [Math.floor(elevMin - 30), Math.ceil(elevMax + 30)],
     }
-  }, [currentWorkout, gpxData])
+  }, [currentWorkout, TrackData])
 
   // 10. Funciones de navegación entre semanas y selección de fechas
   const handlePrevWeek = useCallback(() => {
@@ -204,7 +204,7 @@ export function useHomeTab() {
     selectedWeekDay,
     currentWorkout,
     elevationChartData,
-    gpxData,
+    TrackData,
     onSelectDay: handleSelectDay,
     onPrevWeek: handlePrevWeek,
     onNextWeek: handleNextWeek,
