@@ -68,7 +68,7 @@ export function RouteMapCard({
 
       {/* Contenedor del Mapa con Leaflet */}
       <div className='relative h-60 w-full rounded-2xl border border-border/50 overflow-hidden'>
-        <MapWithNoSSR key={mapKey ?? `${title}-${positions.length}`} positions={positions} />
+        <MapWithNoSSR key={mapKey ?? `${title}-${trackPoints.length}`} trackPoints={trackPoints} />
       </div>
 
       {/* Resumen de Métricas del GPX */}

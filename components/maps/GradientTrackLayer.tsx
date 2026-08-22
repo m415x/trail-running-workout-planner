@@ -141,7 +141,9 @@ class GradientTrackLayer extends L.Layer {
   private elevationRange?: [number, number]
 
   constructor(options: GradientTrackProps) {
-    super()
+    super({
+      pane: 'gradientTrackPane',
+    })
 
     this.positions = options.positions
     this.elevations = options.elevations
@@ -153,15 +155,20 @@ class GradientTrackLayer extends L.Layer {
     this.elevationRange = options.elevationRange
   }
 
-  onAdd(map: L.Map) {
-    const container = map.getContainer()
+  onAdd(map: L.Map): this {
+    let pane = map.getPane('gradientTrackPane')
 
-    this.canvas = L.DomUtil.create('canvas', 'leaflet-gradient-track', container)
+    if (!pane) {
+      pane = map.createPane('gradientTrackPane')
+      pane.style.zIndex = '450'
+    }
+
+    this.canvas = L.DomUtil.create('canvas', 'leaflet-gradient-track', pane)
 
     this.canvas.style.position = 'absolute'
-    this.canvas.style.inset = '0'
+    this.canvas.style.left = '0'
+    this.canvas.style.top = '0'
     this.canvas.style.pointerEvents = 'none'
-    this.canvas.style.zIndex = '450'
 
     this.ctx = this.canvas.getContext('2d') ?? undefined
 
@@ -170,23 +177,32 @@ class GradientTrackLayer extends L.Layer {
     map.on('move zoom resize', this.scheduleDraw, this)
 
     this.scheduleDraw()
+
+    return this
   }
 
-  onRemove(map: L.Map) {
+  onRemove(map: L.Map): this {
     map.off('move zoom resize', this.scheduleDraw, this)
 
-    if (this.frameId) {
+    if (this.frameId !== undefined) {
       cancelAnimationFrame(this.frameId)
+      this.frameId = undefined
     }
 
     this.canvas?.remove()
 
     this.canvas = undefined
     this.ctx = undefined
+
+    return this
   }
 
-  private resizeCanvas(map: L.Map) {
-    if (!this.canvas) {
+  private canvasWidth = 0
+  private canvasHeight = 0
+  private devicePixelRatio = 1
+
+  private resizeCanvas(map: L.Map): void {
+    if (!this.canvas || !this.ctx) {
       return
     }
 
@@ -194,13 +210,24 @@ class GradientTrackLayer extends L.Layer {
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2)
 
-    this.canvas.width = Math.round(size.x * dpr)
-    this.canvas.height = Math.round(size.y * dpr)
+    const width = Math.round(size.x * dpr)
+    const height = Math.round(size.y * dpr)
+
+    if (width === this.canvas.width && height === this.canvas.height && dpr === this.devicePixelRatio) {
+      return
+    }
+
+    this.canvas.width = width
+    this.canvas.height = height
 
     this.canvas.style.width = `${size.x}px`
     this.canvas.style.height = `${size.y}px`
 
-    this.ctx?.setTransform(dpr, 0, 0, dpr, 0, 0)
+    this.canvasWidth = size.x
+    this.canvasHeight = size.y
+    this.devicePixelRatio = dpr
+
+    this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
   private scheduleDraw = () => {
@@ -214,6 +241,17 @@ class GradientTrackLayer extends L.Layer {
     })
   }
 
+  private handleResize = () => {
+    const map = this._map
+
+    if (!map) {
+      return
+    }
+
+    this.resizeCanvas(map)
+    this.scheduleDraw()
+  }
+
   private draw() {
     const map = this._map
 
@@ -221,12 +259,9 @@ class GradientTrackLayer extends L.Layer {
       return
     }
 
-    this.resizeCanvas(map)
-
     const ctx = this.ctx
-    const size = map.getSize()
 
-    ctx.clearRect(0, 0, size.x, size.y)
+    ctx.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
 
     const validElevations = this.elevations.filter((value) => Number.isFinite(value))
 
@@ -252,7 +287,7 @@ class GradientTrackLayer extends L.Layer {
      * a píxeles de pantalla.
      */
     const projected: IndexedPoint[] = this.positions.map(([lat, lng], index) => {
-      const point = map.latLngToContainerPoint([lat, lng]) as IndexedPoint
+      const point = map.latLngToLayerPoint([lat, lng]) as IndexedPoint
 
       point._trackIndex = index
 

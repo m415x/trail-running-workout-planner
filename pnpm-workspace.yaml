@@ -7,3 +7,11 @@ ignoredBuiltDependencies:
   - unrs-resolver
 onlyBuiltDependencies:
   - unrs-cli
+
+packages:
+  - '.'
+
+overrides:
+  glob: '^13.0.6'
+  inflight: 'npm:lru-cache@^11.5.2'
+  sourcemap-codec: 'npm:@jridgewell/sourcemap-codec@^1.5.5'

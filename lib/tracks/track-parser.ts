@@ -210,6 +210,11 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
       pEle = ele
     }
 
+    const lowestPoint = finalTrackPoints.reduce(
+      (lowest, point) => (point.ele < lowest.ele ? point : lowest),
+      finalTrackPoints[0],
+    )
+
     // 3. Pendiente máxima
     const maxGrade = calculateMaxGrade(rawPoints)
 
@@ -244,6 +249,14 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
       maxElevation: Math.round(maxEle === -Infinity ? 0 : maxEle),
       startCoordinates: firstPoint ? { lat: firstPoint[0], lon: firstPoint[1] } : undefined,
       endCoordinates: lastPoint ? { lat: lastPoint[0], lon: lastPoint[1] } : undefined,
+      lowestPoint: lowestPoint
+        ? {
+            lat: lowestPoint.lat,
+            lon: lowestPoint.lon,
+            elevation: lowestPoint.ele,
+            distance: lowestPoint.distance,
+          }
+        : undefined,
     }
   } catch (error) {
     console.error('Error parseando archivo GPX:', error)

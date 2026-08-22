@@ -6,6 +6,7 @@ import L, { LatLngTuple } from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import GradientTrack from '@/components/maps/GradientTrackLayer'
 import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
+import { TrackPoint } from '@/types'
 
 // Controlador para mover/ajustar la cámara sin desmontar el mapa
 function MapViewController({
@@ -49,20 +50,18 @@ interface MapInnerProps {
   lat?: number
   lon?: number
   zoom?: number
-  positions?: LatLngTuple[]
-  elevations?: number[]
+  trackPoints?: TrackPoint[]
 }
 
-export default function MapInner({
-  lat = -31.529822,
-  lon = -68.5440881,
-  zoom = 14,
-  positions = [],
-  elevations = [],
-}: MapInnerProps) {
+export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 14, trackPoints = [] }: MapInnerProps) {
   const defaultCenter: LatLngTuple = [lat, lon]
+  const positions = trackPoints.map(({ lat, lon }) => [lat, lon] as LatLngTuple)
+  const elevations = trackPoints.map(({ ele }) => ele)
+
   const startPosition: LatLngTuple = positions.length > 0 ? positions[0] : defaultCenter
   const endPosition: LatLngTuple = positions.length > 0 ? positions[positions.length - 1] : defaultCenter
+
+  const lowestPosition: L.LatLngTuple | null = lowestPoint ? ([lowestPoint.lat, lowestPoint.lon] as LatLngTuple) : null
 
   // Determinamos el punto de inicio y fin del track o fallback
   const navigationStartUrl = startPosition

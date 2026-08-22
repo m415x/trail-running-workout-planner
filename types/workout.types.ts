@@ -138,6 +138,13 @@ export interface TrackData {
     lat: number
     lon: number
   }
+
+  lowestPoint?: {
+    lat: number
+    lon: number
+    elevation: number
+    distance: number
+  }
 }
 
 export interface WorkoutCardProps {
