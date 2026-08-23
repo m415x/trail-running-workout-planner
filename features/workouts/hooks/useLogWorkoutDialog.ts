@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { LoggedWorkoutPayload, LogWorkoutDialogProps } from '@/types'
+import { SelfAssessmentValues } from '@/features/workouts/components/SelfAssessment'
 
 export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   // 1. Calcular valores iniciales basados en el workout planificado.
@@ -7,13 +8,17 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     const totalMinutes = workout?.time ?? 0
     const hours = Math.floor(totalMinutes / 60)
     const minutes = totalMinutes % 60
+
     return {
       distance: workout?.distance?.toString() ?? '',
       gain: workout?.gain?.toString() ?? '0',
       timeHr: hours > 0 ? hours.toString() : '',
       timeMin: minutes > 0 ? minutes.toString() : '0',
       timeSec: '0',
-      rpe: 5,
+      assessment: {
+        feeling: null,
+        rpe: 0,
+      } as SelfAssessmentValues,
       athleteNotes: '',
     }
   }, [workout])
@@ -25,7 +30,7 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
   const [timeSec, setTimeSec] = useState(initialValues.timeSec)
   const [gain, setGain] = useState(initialValues.gain)
   const [avgHr, setAvgHr] = useState('')
-  const [rpe, setRpe] = useState(initialValues.rpe)
+  const [assessment, setAssessment] = useState<SelfAssessmentValues>(initialValues.assessment)
   const [athleteNotes, setAthleteNotes] = useState(initialValues.athleteNotes)
 
   // 3. Función para resetear el estado a los valores iniciales.
@@ -35,9 +40,9 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     setTimeHr(initialValues.timeHr)
     setTimeMin(initialValues.timeMin)
     setTimeSec(initialValues.timeSec)
-    setRpe(initialValues.rpe)
+    setAssessment(initialValues.assessment)
     setAthleteNotes(initialValues.athleteNotes)
-    setAvgHr('') // Siempre se resetea
+    setAvgHr('')
   }, [initialValues])
 
   // Handler seguro para segundos (limita rango entre 0 y 59)
@@ -86,7 +91,8 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
       durationMin: totalDurationMin,
       elevationGain: parseInt(gain, 10) || 0,
       avgHr: avgHr ? parseInt(avgHr, 10) : null,
-      rpe,
+      rpe: assessment.rpe ?? 0,
+      feeling: assessment.feeling ?? undefined,
       athleteNotes,
       loggedAt: new Date().toISOString(),
     }
@@ -108,7 +114,7 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     timeSec,
     gain,
     avgHr,
-    rpe,
+    assessment,
     athleteNotes,
     setDistance,
     setTimeHr,
@@ -117,7 +123,7 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     setTimeSec: handleTimeSecChange,
     setGain,
     setAvgHr,
-    setRpe,
+    setAssessment,
     setAthleteNotes,
     handleSave,
     handleDelete,

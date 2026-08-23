@@ -1,50 +1,83 @@
 'use client'
 
-import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, useMap, LayersControl } from 'react-leaflet'
-import L, { LatLngTuple } from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import GradientTrack from '@/components/maps/GradientTrackLayer'
-import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
+import { useEffect, useRef, useState } from 'react'
+import * as maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import type { Feature, LineString } from 'geojson'
+import { getMapLibreOklchGradientExpression } from '@/utils/trackColors'
 import { TrackPoint } from '@/types'
 
-// Controlador para mover/ajustar la cámara sin desmontar el mapa
-function MapViewController({
-  positions,
-  fallbackCenter,
-  zoom,
-}: {
-  positions: LatLngTuple[]
-  fallbackCenter: LatLngTuple
-  zoom: number
-}) {
-  const map = useMap()
-
-  useEffect(() => {
-    if (positions.length > 0) {
-      const bounds = L.latLngBounds(positions)
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 16 })
-    } else {
-      map.setView(fallbackCenter, zoom)
-    }
-  }, [positions, fallbackCenter, zoom, map])
-
-  return null
+const BASE_STYLES = {
+  standard: {
+    name: '🗺️ Estándar',
+    style: {
+      version: 8 as const,
+      sources: {
+        'osm-tiles': {
+          type: 'raster' as const,
+          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; OpenStreetMap Contributors',
+        },
+      },
+      layers: [
+        {
+          id: 'osm-tiles-layer',
+          type: 'raster' as const,
+          source: 'osm-tiles',
+          minzoom: 0,
+          maxzoom: 19,
+        },
+      ],
+    },
+  },
+  topo: {
+    name: '⛰️ Topográfico',
+    style: {
+      version: 8 as const,
+      sources: {
+        'opentopo-tiles': {
+          type: 'raster' as const,
+          tiles: ['https://a.tile.opentopomap.org/{z}/{x}/{y}.png'],
+          tileSize: 256,
+          attribution: '&copy; OpenTopoMap',
+        },
+      },
+      layers: [
+        {
+          id: 'opentopo-tiles-layer',
+          type: 'raster' as const,
+          source: 'opentopo-tiles',
+          minzoom: 0,
+          maxzoom: 17,
+        },
+      ],
+    },
+  },
+  satellite: {
+    name: '🛰️ Satelital',
+    style: {
+      version: 8 as const,
+      sources: {
+        'esri-tiles': {
+          type: 'raster' as const,
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+          tileSize: 256,
+          attribution: '&copy; Esri, Maxar, Earthstar Geographics',
+        },
+      },
+      layers: [
+        {
+          id: 'esri-tiles-layer',
+          type: 'raster' as const,
+          source: 'esri-tiles',
+          minzoom: 0,
+          maxzoom: 18,
+        },
+      ],
+    },
+  },
 }
-
-const startIcon = L.divIcon({
-  className: 'custom-map-pin',
-  html: `<div class="w-4 h-4 bg-green-500 border-2 border-background rounded-full shadow-lg"></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-})
-
-const endIcon = L.divIcon({
-  className: 'custom-map-pin',
-  html: `<div class="w-4 h-4 bg-red-500 border-2 border-background rounded-full shadow-lg"></div>`,
-  iconSize: [16, 16],
-  iconAnchor: [8, 8],
-})
 
 interface MapInnerProps {
   lat?: number
@@ -53,118 +86,174 @@ interface MapInnerProps {
   trackPoints?: TrackPoint[]
 }
 
-export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 14, trackPoints = [] }: MapInnerProps) {
-  const defaultCenter: LatLngTuple = [lat, lon]
-  const positions = trackPoints.map(({ lat, lon }) => [lat, lon] as LatLngTuple)
-  const elevations = trackPoints.map(({ ele }) => ele)
+export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 13, trackPoints = [] }: MapInnerProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<maplibregl.Marker[]>([])
+  const [selectedLayer, setSelectedLayer] = useState<keyof typeof BASE_STYLES>('standard')
 
-  const startPosition: LatLngTuple = positions.length > 0 ? positions[0] : defaultCenter
-  const endPosition: LatLngTuple = positions.length > 0 ? positions[positions.length - 1] : defaultCenter
+  // MapLibre REQUIERE [Longitud, Latitud]
+  const validCoordinates: [number, number][] = trackPoints
+    .filter((pt) => Number.isFinite(pt.lon) && Number.isFinite(pt.lat))
+    .map((pt) => [pt.lon, pt.lat])
 
-  const lowestPosition: L.LatLngTuple | null = lowestPoint ? ([lowestPoint.lat, lowestPoint.lon] as LatLngTuple) : null
+  const initialCenter: [number, number] = validCoordinates.length > 0 ? validCoordinates[0] : [lon, lat]
 
-  // Determinamos el punto de inicio y fin del track o fallback
-  const navigationStartUrl = startPosition
-    ? `https://www.google.com/maps/dir/?api=1&destination=${startPosition[0]},${startPosition[1]}`
-    : null
+  // Función principal para renderizar la ruta y los pines
+  const renderTrackAndMarkers = (map: maplibregl.Map) => {
+    // 1. Limpiar marcadores previos
+    markersRef.current.forEach((m) => m.remove())
+    markersRef.current = []
 
-  const navigationEndUrl = endPosition
-    ? `https://www.google.com/maps/dir/?api=1&destination=${endPosition[0]},${endPosition[1]}`
-    : null
+    if (validCoordinates.length === 0) return
+
+    const geojsonData: Feature<LineString> = {
+      type: 'Feature',
+      properties: {},
+      geometry: {
+        type: 'LineString',
+        coordinates: validCoordinates,
+      },
+    }
+
+    // 2. Limpieza y reconstrucción de la capa para asegurar que lineMetrics tome efecto
+    if (map.getLayer('trail-track-layer')) {
+      map.removeLayer('trail-track-layer')
+    }
+    if (map.getSource('trail-track')) {
+      map.removeSource('trail-track')
+    }
+
+    map.addSource('trail-track', {
+      type: 'geojson',
+      data: geojsonData,
+      lineMetrics: true,
+    })
+
+    map.addLayer({
+      id: 'trail-track-layer',
+      type: 'line',
+      source: 'trail-track',
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
+      paint: {
+        'line-width': 5,
+        'line-opacity': 0.95,
+        'line-gradient': getMapLibreOklchGradientExpression(16),
+      },
+    })
+
+    // 3. Marcadores
+    const startCoord = validCoordinates[0]
+    const endCoord = validCoordinates[validCoordinates.length - 1]
+
+    // Pin Inicio
+    const startEl = document.createElement('div')
+    startEl.className = 'w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-md cursor-pointer'
+    const startPopup = new maplibregl.Popup({ offset: 10 }).setHTML(
+      `<div class="p-1 text-center font-sans text-xs">
+        <b>Punto de Largada</b><br/>
+        <span class="text-[10px] text-gray-500">${startCoord[1].toFixed(5)}, ${startCoord[0].toFixed(5)}</span>
+      </div>`,
+    )
+    const startMarker = new maplibregl.Marker({ element: startEl })
+      .setLngLat(startCoord)
+      .setPopup(startPopup)
+      .addTo(map)
+    markersRef.current.push(startMarker)
+
+    // Pin Llegada
+    if (validCoordinates.length > 1) {
+      const endEl = document.createElement('div')
+      endEl.className = 'w-4 h-4 bg-red-500 border-2 border-white rounded-full shadow-md cursor-pointer'
+      const endPopup = new maplibregl.Popup({ offset: 10 }).setHTML(
+        `<div class="p-1 text-center font-sans text-xs">
+          <b>Punto de Llegada</b><br/>
+          <span class="text-[10px] text-gray-500">${endCoord[1].toFixed(5)}, ${endCoord[0].toFixed(5)}</span>
+        </div>`,
+      )
+      const endMarker = new maplibregl.Marker({ element: endEl }).setLngLat(endCoord).setPopup(endPopup).addTo(map)
+      markersRef.current.push(endMarker)
+    }
+
+    // 4. Centrar y encuadrar la cámara al track
+    const bounds = validCoordinates.reduce(
+      (b, coord) => b.extend(coord),
+      new maplibregl.LngLatBounds(startCoord, startCoord),
+    )
+
+    map.fitBounds(bounds, { padding: 40, maxZoom: 16, animate: false })
+  }
+
+  // Inicializar Mapa
+  useEffect(() => {
+    if (!mapContainerRef.current) return
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: BASE_STYLES[selectedLayer].style,
+      center: initialCenter,
+      zoom: zoom,
+      scrollZoom: false,
+    })
+
+    mapRef.current = map
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+    map.addControl(new maplibregl.ScaleControl({ maxWidth: 80, unit: 'metric' }), 'bottom-left')
+
+    map.on('load', () => {
+      renderTrackAndMarkers(map)
+    })
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
+
+  // Cambio de capa base
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    map.setStyle(BASE_STYLES[selectedLayer].style)
+    map.once('style.load', () => {
+      renderTrackAndMarkers(map)
+    })
+  }, [selectedLayer])
+
+  // Actualización cuando cambian las props del track
+  useEffect(() => {
+    const map = mapRef.current
+    if (map && map.isStyleLoaded()) {
+      renderTrackAndMarkers(map)
+    }
+  }, [trackPoints])
 
   return (
-    <MapContainer
-      center={startPosition}
-      zoom={zoom}
-      scrollWheelZoom={false}
-      className='w-full h-full rounded-2xl z-0 overflow-hidden'
-    >
-      <LayersControl position='topright'>
-        {/* 1. Capa Estándar (OpenStreetMap) */}
-        <LayersControl.BaseLayer checked name='🗺️ Estándar'>
-          <TileLayer
-            // attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-            maxZoom={19}
-          />
-        </LayersControl.BaseLayer>
+    <div className='relative w-full h-full rounded-2xl overflow-hidden'>
+      <div ref={mapContainerRef} className='w-full h-full' />
 
-        {/* 2. Capa Topográfica con Curvas de Nivel (OpenTopoMap) */}
-        <LayersControl.BaseLayer name='⛰️ Topográfico'>
-          <TileLayer
-            // attribution='Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>'
-            url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
-            maxZoom={17}
-          />
-        </LayersControl.BaseLayer>
-
-        {/* 3. Capa Satélite (ESRI World Imagery) */}
-        <LayersControl.BaseLayer name='🛰️ Satélite'>
-          <TileLayer
-            // attribution='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-            url='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-            maxZoom={18}
-          />
-        </LayersControl.BaseLayer>
-      </LayersControl>
-
-      {/* Controlador de cámara reactivo */}
-      <MapViewController positions={positions} fallbackCenter={defaultCenter} zoom={zoom} />
-
-      {/* Trazada GPS de la ruta en color contrastante */}
-      {positions.length > 0 && (
-        <GradientTrack
-          positions={positions}
-          elevations={elevations}
-          weight={4}
-          opacity={0.92}
-          simplifyTolerance={1.2}
-        />
-      )}
-
-      {/* Marcador en el punto de largada */}
-      <Marker position={startPosition} icon={startIcon}>
-        <Popup className='font-sans text-xs'>
-          <div className='flex flex-col align-center gap-1.5 p-0.5'>
-            <span className='font-bold text-foreground text-center'>Punto de Largada</span>
-            <span className='text-[10px] text-muted-foreground text-center'>
-              {startPosition[0].toFixed(5)}, {startPosition[1].toFixed(5)}
-            </span>
-            <PrimaryOutlineButton
-              onClick={() => {
-                if (navigationStartUrl) {
-                  window.open(navigationStartUrl, '_blank', 'noopener,noreferrer')
-                }
-              }}
-              className='rounded-full font-mono font-[10px] h-0 py-2.5'
-            >
-              <span>Cómo llegar</span>
-            </PrimaryOutlineButton>
-          </div>
-        </Popup>
-      </Marker>
-
-      {/* Marcador en el punto de llegada */}
-      <Marker position={endPosition} icon={endIcon}>
-        <Popup className='font-sans text-xs'>
-          <div className='flex flex-col align-center gap-1.5 p-0.5'>
-            <span className='font-bold text-foreground text-center'>Punto de Llegada</span>
-            <span className='text-[10px] text-muted-foreground text-center'>
-              {endPosition[0].toFixed(5)}, {endPosition[1].toFixed(5)}
-            </span>
-            <PrimaryOutlineButton
-              onClick={() => {
-                if (navigationEndUrl) {
-                  window.open(navigationEndUrl, '_blank', 'noopener,noreferrer')
-                }
-              }}
-              className='rounded-full font-mono font-[10px] h-0 py-2.5'
-            >
-              <span>Cómo llegar</span>
-            </PrimaryOutlineButton>
-          </div>
-        </Popup>
-      </Marker>
-    </MapContainer>
+      {/* Selector de capas */}
+      <div className='absolute top-3 right-3 bg-white/95 dark:bg-gray-900/95 p-1.5 rounded-xl shadow-lg flex flex-col gap-1 z-10 text-xs border border-border/50'>
+        {(Object.keys(BASE_STYLES) as Array<keyof typeof BASE_STYLES>).map((key) => (
+          <button
+            key={key}
+            type='button'
+            onClick={() => setSelectedLayer(key)}
+            className={`px-3 py-1.5 rounded-lg text-left transition-all ${
+              selectedLayer === key
+                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
+                : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
+            }`}
+          >
+            {BASE_STYLES[key].name}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }

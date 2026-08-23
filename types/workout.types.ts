@@ -3,6 +3,7 @@
  */
 import { BaseEntity, IntensityZone } from '@/types/core.types'
 import { AthleteGroupCode } from '@/types/athlete.types'
+import { FeelingValue } from '@/features/workouts/components/FeelingSelector'
 
 export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
 export type DayType = 'Workout' | 'Race' | 'Rest'
@@ -80,7 +81,8 @@ export interface LoggedWorkoutPayload {
   durationMin: number
   elevationGain: number
   avgHr?: number | null
-  rpe: number // 1 al 10
+  feeling?: FeelingValue
+  rpe: number // 0 al 10
   athleteNotes?: string
   loggedAt: string
 }
@@ -247,9 +249,4 @@ export interface LogWorkoutDialogProps {
 export interface DayStatusIndicatorProps {
   day: WeekDay
   isSelected?: boolean
-}
-
-export interface RpeSelectorProps {
-  value: number
-  onChange: (val: number) => void
 }

@@ -248,6 +248,13 @@ interface RpeLevel {
 
 export const RPE_LEVELS: readonly RpeLevel[] = [
   {
+    value: 0,
+    label: 'Ninguno',
+    description: '',
+    details: [],
+    colorClass: 'bg-muted text-white',
+  },
+  {
     value: 1,
     label: 'Muy suave',
     description: 'Esfuerzo mínimo',

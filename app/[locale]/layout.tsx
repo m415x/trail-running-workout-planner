@@ -5,6 +5,7 @@ import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { routing } from '../../i18n/routing'
 import '../globals.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
