@@ -16,29 +16,56 @@ const OKLCH_STOPS: OklchStop[] = [
   { position: 1.0, l: 0.5, c: 0.22, h: 30 },
 ]
 
+/**
+ * OKLCH -> sRGB
+ *
+ * Conversión:
+ *
+ * OKLCH
+ *   ↓
+ * OKLab
+ *   ↓
+ * LMS
+ *   ↓
+ * linear sRGB
+ *   ↓
+ * sRGB
+ */
 function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
-  const angle = (h * Math.PI) / 180
+  const hue = (h * Math.PI) / 180
 
-  const a = c * Math.cos(angle)
-  const b = c * Math.sin(angle)
+  const a = c * Math.cos(hue)
+  const b = c * Math.sin(hue)
 
+  // OKLab -> LMS
   const l_ = l + 0.3963377774 * a + 0.2158037573 * b
+
   const m_ = l - 0.1055613458 * a - 0.0638541728 * b
+
   const s_ = l - 0.0894841775 * a - 1.291485548 * b
 
+  // LMS -> linear RGB
   const l3 = l_ * l_ * l_
   const m3 = m_ * m_ * m_
   const s3 = s_ * s_ * s_
 
   let r = 4.0767416621 * l3 - 3.3077115913 * m3 + 0.2309699292 * s3
+
   let g = -1.2684380046 * l3 + 2.6097574011 * m3 - 0.3413193965 * s3
+
   let b2 = -0.0041960863 * l3 - 0.7034186147 * m3 + 1.707614701 * s3
 
+  /**
+   * linear sRGB -> sRGB
+   */
   const gamma = (value: number) => {
-    if (value <= 0.0031308) {
-      return 12.92 * value
+    const v = Math.max(0, value)
+
+    if (v <= 0.0031308) {
+      return 12.92 * v
     }
-    return 1.055 * Math.pow(Math.max(value, 0), 1 / 2.4) - 0.055
+
+    return 1.055 * Math.pow(v, 1 / 2.4) - 0.055
   }
 
   r = gamma(r)
@@ -50,9 +77,14 @@ function oklchToRgb(l: number, c: number, h: number): [number, number, number] {
 
 function rgbToCss(rgb: [number, number, number]): string {
   const [r, g, b] = rgb.map((value) => Math.round(value * 255))
+
   return `rgb(${r}, ${g}, ${b})`
 }
 
+/**
+ * Devuelve el color correspondiente a un valor
+ * normalizado entre 0 y 1.
+ */
 export function colorForNormalizedValue(value: number): string {
   const t = Math.max(0, Math.min(1, value))
 
@@ -70,25 +102,49 @@ export function colorForNormalizedValue(value: number): string {
     }
   }
 
-  const localT = (t - start.position) / (end.position - start.position)
+  const range = end.position - start.position
+
+  const localT = range === 0 ? 0 : (t - start.position) / range
+
   const l = start.l + (end.l - start.l) * localT
+
   const c = start.c + (end.c - start.c) * localT
+
+  /**
+   * Por ahora interpolamos hue linealmente.
+   *
+   * Más adelante podemos hacer interpolación
+   * circular del hue para evitar saltos si
+   * ampliamos la paleta.
+   */
   const h = start.h + (end.h - start.h) * localT
 
   return rgbToCss(oklchToRgb(l, c, h))
 }
 
 /**
- * Genera la expresión de gradiente compatible con MapLibre GL
- * calculando paradas normalizadas con la paleta OKLCH a lo largo de la ruta.
+ * Gradiente actualmente basado en line-progress.
+ *
+ * IMPORTANTE:
+ *
+ * Esto NO representa elevación.
+ *
+ * 0   = comienzo del track
+ * 1   = final del track
+ *
+ * Lo mantendremos temporalmente como renderer
+ * estable antes de pasar a elevación real.
  */
-export function getMapLibreOklchGradientExpression(steps = 12): ExpressionSpecification {
+export function getMapLibreOklchGradientExpression(steps = 16): ExpressionSpecification {
+  const safeSteps = Math.max(2, Math.floor(steps))
+
   const stops: (number | string)[] = []
 
-  for (let i = 0; i <= steps; i++) {
-    const progress = i / steps
+  for (let i = 0; i <= safeSteps; i++) {
+    const progress = i / safeSteps
+
     stops.push(progress, colorForNormalizedValue(progress))
   }
 
-  return ['interpolate', ['linear'], ['line-progress'], ...stops] as unknown as ExpressionSpecification
+  return ['interpolate', ['linear'], ['line-progress'], ...stops] as ExpressionSpecification
 }

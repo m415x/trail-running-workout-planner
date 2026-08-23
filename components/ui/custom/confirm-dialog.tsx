@@ -58,12 +58,12 @@ export function ConfirmActionDialog({
 
       <AlertDialog open={open} onOpenChange={setOpen}>
         <AlertDialogContent className='max-w-sm rounded-3xl p-5 border-border bg-card shadow-2xl'>
-          <AlertDialogHeader className='text-left space-y-2'>
-            <AlertDialogTitle className='flex items-center gap-2 text-base font-heading font-bold text-foreground'>
+          <AlertDialogHeader className='flex flex-col items-start text-left sm:text-left space-y-2 w-full'>
+            <AlertDialogTitle className='flex items-center justify-start gap-2 text-base font-heading font-bold text-foreground text-left w-full'>
               {Icon && <Icon className={cn('size-5 shrink-0', isDestructive ? 'text-destructive' : 'text-primary')} />}
               <span>{title}</span>
             </AlertDialogTitle>
-            <AlertDialogDescription className='text-xs text-muted-foreground leading-relaxed'>
+            <AlertDialogDescription className='text-xs text-muted-foreground leading-relaxed text-left'>
               {description}
             </AlertDialogDescription>
           </AlertDialogHeader>
