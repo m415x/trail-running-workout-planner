@@ -2,8 +2,8 @@
 
 import { Pencil } from 'lucide-react'
 import { User } from '@/types'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { CustomCard } from '@/components/ui/custom/card-containers'
+import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
+import { CustomCard } from '@ui/custom/card-containers'
 
 export function ProfileHeaderHero({ user }: { user: User }) {
   const fullName = `${user.firstName} ${user.lastName}`

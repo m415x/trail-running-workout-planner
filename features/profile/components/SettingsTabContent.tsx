@@ -1,8 +1,8 @@
 import { ShieldAlert, Settings } from 'lucide-react'
-import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
-import { Button } from '@/components/ui/button'
-import { MetricBox } from '@/features/profile/components/MetricBox'
+import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
+import { Button } from '@ui/button'
+import { MetricBox } from '@profile/components/MetricBox'
 
 export function SettingsTabContent() {
   return (

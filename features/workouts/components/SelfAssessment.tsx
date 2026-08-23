@@ -1,10 +1,10 @@
 'use client'
 
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { Smile } from 'lucide-react'
-import { FeelingSelector } from '@/features/workouts/components/FeelingSelector'
-import { RpeSelector } from '@/features/workouts/components/RpeSelector'
-import { useSelfAssessment, SelfAssessmentValues } from '@/features/workouts/hooks/useSelfAssessment'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
+import { FeelingSelector } from '@workouts/components/FeelingSelector'
+import { RpeSelector } from '@workouts/components/RpeSelector'
+import { useSelfAssessment, SelfAssessmentValues } from '@workouts/hooks/useSelfAssessment'
 
 export type { SelfAssessmentValues }
 

@@ -3,8 +3,8 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Mountain } from 'lucide-react'
 import { ElevTooltipProps, ElevationChartProps } from '@/types'
-import { CustomCard } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
+import { CustomCard } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
 import { formatNumber } from '@/utils/formatters'
 
 function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
@@ -37,7 +37,7 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
 
       <div className='w-full h-40 min-w-0 relative my-2 select-none outline-none focus:outline-none focus-visible:outline-none focus:ring-0 **:outline-none **:focus:outline-none'>
         <ResponsiveContainer width='100%' height='100%' minWidth={0} minHeight={0}>
-          <AreaChart data={elevData} className='mt-2 mr-1 mb-0' margin={{ left: -30 }}>
+          <AreaChart data={elevData} className='mt-2 mr-1 mb-0 p-1' margin={{ left: -30 }}>
             <defs>
               <linearGradient id='elevGrad' x1='0' y1='0' x2='0' y2='1'>
                 <stop offset='0%' stopColor={primaryColor} stopOpacity={0.45} />
@@ -53,15 +53,18 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
               type='number'
               domain={['dataMin', 'dataMax']}
               tickCount={10}
-              // tickFormatter={(value) => `${value} km`}
+              unit='k'
               stroke='#888888'
               fontSize={10}
+              fontFamily={'var(--font-mono)'}
             />
             <YAxis
               domain={yDomain}
               tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }}
               tickLine={false}
               axisLine={false}
+              unit='m'
+              fontFamily={'var(--font-mono)'}
             />
             <Tooltip content={<ElevTooltip />} />
             <Area
@@ -78,11 +81,11 @@ export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDom
       </div>
 
       {/* Gain / km density bar */}
-      <div className='flex items-center gap-2'>
+      {/* <div className='flex items-center gap-2'>
         <span className='text-muted-foreground text-[10px]'>0 km</span>
         <div className='flex-1 h-px rounded-full bg-linear-to-r from-green-500/50 via-yellow-500/50 to-red-500/50' />
         <span className='text-muted-foreground text-[10px]'>{workout.distance} km</span>
-      </div>
+      </div> */}
     </CustomCard>
   )
 }

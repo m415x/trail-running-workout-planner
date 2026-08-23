@@ -1,10 +1,10 @@
 'use client'
 
 import { Info } from 'lucide-react'
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
-import { Slider } from '@/components/ui/slider'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
+import { Slider } from '@ui/slider'
 import { cn } from '@/lib/utils'
-import { CustomCardInside } from '@/components/ui/custom/card-containers'
+import { CustomCardInside } from '@ui/custom/card-containers'
 import { RPE_LEVELS } from '@/utils/constants'
 
 export interface RpeSelectorProps {

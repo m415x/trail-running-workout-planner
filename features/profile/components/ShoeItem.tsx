@@ -1,5 +1,5 @@
 import { ShoeItemProps } from '@/types/'
-import ProgressGradient from '@/components/ui/custom/progress-gradient'
+import ProgressGradient from '@ui/custom/progress-gradient'
 
 export function ShoeItem({ name, type, km, maxKm, status }: ShoeItemProps) {
   const percentage = Math.min(100, Math.round((km / maxKm) * 100))

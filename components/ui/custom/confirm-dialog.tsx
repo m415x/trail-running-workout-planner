@@ -10,7 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+} from '@ui/alert-dialog'
 import { AlertTriangle, LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 

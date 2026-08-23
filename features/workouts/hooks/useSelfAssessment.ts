@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FeelingValue } from '@/features/workouts/components/FeelingSelector'
+import { FeelingValue } from '@workouts/components/FeelingSelector'
 
 export interface SelfAssessmentValues {
   feeling?: FeelingValue | null

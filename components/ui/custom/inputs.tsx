@@ -1,5 +1,5 @@
 import React from 'react'
-import { Input } from '@/components/ui/input'
+import { Input } from '@ui/input'
 import { cn } from '@/lib/utils'
 
 export function PrimaryInput({ className, type, ...props }: React.ComponentProps<'input'>) {

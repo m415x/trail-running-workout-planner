@@ -1,11 +1,11 @@
 'use client'
 
-import { useHomeTab } from '@/features/workouts/hooks/useHomeTab'
-import { HomeHeader } from '@/features/workouts/components/HomeHeader'
-import { WeeklyCalendarCard } from '@/features/workouts/components/WeeklyCalendarCard'
-import { TodayWorkoutCard, RaceCard, RestCard } from '@/features/workouts/components/WorkoutCard'
-import { ElevationProfileCard } from '@/features/workouts/components/ElevationProfileCard'
-import { RouteMapCard } from '@/features/workouts/components/RouteMapCard'
+import { useHomeTab } from '@workouts/hooks/useHomeTab'
+import { HomeHeader } from '@workouts/components/HomeHeader'
+import { WeeklyCalendarCard } from '@workouts/components/WeeklyCalendarCard'
+import { TodayWorkoutCard, RaceCard, RestCard } from '@workouts/components/WorkoutCard'
+import { ElevationProfileCard } from '@workouts/components/ElevationProfileCard'
+// import { RouteMapCard } from '@workouts/components/RouteMapCard'
 
 export function HomeTab() {
   const {
@@ -55,7 +55,7 @@ export function HomeTab() {
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
 
       {/* Mapa Interactivo del Track GPS */}
-      {currentWorkout && elevationChartData && (
+      {/* currentWorkout && elevationChartData && (
         <RouteMapCard
           mapKey={selectedWeekDay?.fullDate}
           title={currentWorkout.title}
@@ -64,7 +64,7 @@ export function HomeTab() {
           maxGradePct={TrackData?.maxGradePct ?? 0}
           trackPoints={TrackData?.trackPoints ?? []}
         />
-      )}
+      )*/}
     </div>
   )
 }

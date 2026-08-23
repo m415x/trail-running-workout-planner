@@ -2,7 +2,7 @@
 
 import { Sun, CloudSun, Cloud, CloudRain, CloudLightning, Snowflake, Wind, Droplets } from 'lucide-react'
 import { WeatherData, interpretWmoCode } from '@/lib/weather/open-meteo'
-import { CustomCardInside } from '@/components/ui/custom/card-containers'
+import { CustomCardInside } from '@ui/custom/card-containers'
 
 interface WeatherPillStripProps {
   weather: WeatherData | null

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Progress } from '@/components/ui/progress'
+import { Progress } from '@ui/progress'
 
 export default function ProgressGradient({ value }: { value: number }) {
   const [progress, setProgress] = useState(0)

@@ -2,14 +2,14 @@
 
 import { RefreshCcwDot, Calendar as CalendarIcon } from 'lucide-react'
 import { WeeklyCalendarCardProps } from '@/types'
-import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
-import { CustomCard } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
-import ProgressGradient from '@/components/ui/custom/progress-gradient'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { WeekCalendarPicker } from '@/features/workouts/components/WeekCalendarPicker'
-import { useWeeklyCalendarCard } from '@/features/workouts/hooks/useWeeklyCalendarCard'
-import { WeeklyCarousel } from '@/features/workouts/components/WeeklyCarousel'
+import { PrimaryOutlineButton } from '@ui/custom/buttons'
+import { CustomCard } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
+import ProgressGradient from '@ui/custom/progress-gradient'
+import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
+import { WeekCalendarPicker } from '@workouts/components/WeekCalendarPicker'
+import { useWeeklyCalendarCard } from '@workouts/hooks/useWeeklyCalendarCard'
+import { WeeklyCarousel } from '@workouts/components/WeeklyCarousel'
 
 export function WeeklyCalendarCard({
   cycle,

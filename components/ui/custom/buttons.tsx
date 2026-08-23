@@ -1,7 +1,7 @@
 import React from 'react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
+import { Button } from '@ui/button'
 
 // Card Principal (Reemplaza los contenedores externos con bordes rounded-3xl)
 export type CustomButtonProps = React.ComponentProps<typeof Button>

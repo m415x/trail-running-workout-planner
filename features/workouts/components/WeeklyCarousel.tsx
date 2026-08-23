@@ -1,10 +1,9 @@
-// features/workouts/components/WeeklyCarousel.tsx
 'use client'
 
 import * as React from 'react'
 import { addDays, format, parseISO } from 'date-fns'
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel'
-import { DaySelectorButton } from './DaySelectorButton'
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@ui/carousel'
+import { DaySelectorButton } from '@workouts/components/DaySelectorButton'
 import { WeekDay } from '@/types'
 
 interface WeeklyCarouselProps {

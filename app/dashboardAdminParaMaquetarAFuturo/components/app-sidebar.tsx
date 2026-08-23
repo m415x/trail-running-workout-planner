@@ -6,7 +6,7 @@ import { NavMain } from '@/app/dashboardAdminParaMaquetarAFuturo/components/nav-
 import { NavProjects } from '@/app/dashboardAdminParaMaquetarAFuturo/components/nav-projects'
 import { NavUser } from '@/app/dashboardAdminParaMaquetarAFuturo/components/nav-user'
 import { TeamSwitcher } from '@/app/dashboardAdminParaMaquetarAFuturo/components/team-switcher'
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@/components/ui/sidebar'
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from '@ui/sidebar'
 import {
   GalleryVerticalEndIcon,
   AudioLinesIcon,
@@ -19,7 +19,7 @@ import {
   PieChartIcon,
   MapIcon,
 } from 'lucide-react'
-import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
+import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
 
 // This is sample data.
 const data = {

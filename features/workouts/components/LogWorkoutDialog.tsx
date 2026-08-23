@@ -1,14 +1,14 @@
 'use client'
 
 import { CheckCircle2, MapPin, Timer, MessageSquare, RotateCcw } from 'lucide-react'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { PrimaryInput } from '@/components/ui/custom/inputs'
+import { ScrollArea } from '@ui/scroll-area'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog'
+import { PrimaryInput } from '@ui/custom/inputs'
 import { LogWorkoutDialogProps } from '@/types'
-import { PrimaryFilledButton, GlassOutlineButton } from '@/components/ui/custom/buttons'
-import { SelfAssessment } from '@/features/workouts/components/SelfAssessment'
-import { useLogWorkoutDialog } from '@/features/workouts/hooks/useLogWorkoutDialog'
-import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
+import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
+import { ConfirmActionDialog } from '@ui/custom/confirm-dialog'
+import { SelfAssessment } from '@workouts/components/SelfAssessment'
+import { useLogWorkoutDialog } from '@workouts/hooks/useLogWorkoutDialog'
 
 export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   const {
@@ -41,7 +41,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
             Registrar Entrenamiento
           </DialogTitle>
           <p className='text-xs text-muted-foreground p-0'>
-            {workout?.title ?? 'Sesión completada'} &bull; {dateStr ?? 'Hoy'}
+            {dateStr ?? 'Hoy'} &bull; {workout?.title ?? 'Sesión completada'}
           </p>
         </DialogHeader>
 

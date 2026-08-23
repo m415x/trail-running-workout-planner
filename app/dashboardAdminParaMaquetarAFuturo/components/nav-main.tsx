@@ -1,10 +1,6 @@
-"use client"
+'use client'
 
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@ui/collapsible'
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -14,8 +10,8 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
-import { ChevronRightIcon } from "lucide-react"
+} from '@ui/sidebar'
+import { ChevronRightIcon } from 'lucide-react'
 
 export function NavMain({
   items,
@@ -39,15 +35,13 @@ export function NavMain({
           <Collapsible
             key={item.title}
             defaultOpen={item.isActive}
-            className="group/collapsible"
+            className='group/collapsible'
             render={<SidebarMenuItem />}
           >
-            <CollapsibleTrigger
-              render={<SidebarMenuButton tooltip={item.title} />}
-            >
+            <CollapsibleTrigger render={<SidebarMenuButton tooltip={item.title} />}>
               {item.icon}
               <span>{item.title}</span>
-              <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90" />
+              <ChevronRightIcon className='ml-auto transition-transform duration-200 group-data-open/collapsible:rotate-90' />
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SidebarMenuSub>

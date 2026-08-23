@@ -20,7 +20,12 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@ui/*": ["./components/ui/*"],
+      "@workouts/*": ["./features/workouts/*"],
+      "@plan/*": ["./features/plan/*"],
+      "@stats/*": ["./features/stats/*"],
+      "@profile/*": ["./features/profile/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],

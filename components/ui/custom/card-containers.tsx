@@ -1,6 +1,6 @@
 import React from 'react'
 import { cn } from '@/lib/utils'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@ui/card'
 
 // Card Principal (Reemplaza los contenedores externos con bordes rounded-3xl)
 export type CustomCardProps = React.ComponentProps<typeof CardContent>

@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react'
 import { LoggedWorkoutPayload, LogWorkoutDialogProps } from '@/types'
-import { SelfAssessmentValues } from '@/features/workouts/components/SelfAssessment'
+import { SelfAssessmentValues } from '@workouts/components/SelfAssessment'
 
 export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   // 1. Calcular valores iniciales basados en el workout planificado.

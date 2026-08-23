@@ -3,8 +3,8 @@
 import { ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react'
 import { DAYS_OF_WEEK } from '@/utils/constants'
 import { WeekCalendarPickerProps } from '@/types'
-import { useWeekCalendarPicker } from '@/features/workouts/hooks/useWeekCalendarPicker'
-import { Button } from '@/components/ui/button'
+import { useWeekCalendarPicker } from '@workouts/hooks/useWeekCalendarPicker'
+import { Button } from '@ui/button'
 import { cn } from '@/lib/utils'
 
 export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps) {

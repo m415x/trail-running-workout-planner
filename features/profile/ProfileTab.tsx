@@ -1,11 +1,11 @@
 'use client'
 
 import { currentUser } from '@/data/data'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { ProfileHeaderHero } from '@/features/profile/components/ProfileHeaderHero'
-import { AthleteTabContent } from '@/features/profile/components/AthleteTabContent'
-import { GearTabContent } from '@/features/profile/components/GearTabContent'
-import { SettingsTabContent } from '@/features/profile/components/SettingsTabContent'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
+import { ProfileHeaderHero } from '@profile/components/ProfileHeaderHero'
+import { AthleteTabContent } from '@profile/components/AthleteTabContent'
+import { GearTabContent } from '@profile/components/GearTabContent'
+import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
 export function ProfileTab() {
   return (

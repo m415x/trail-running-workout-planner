@@ -1,10 +1,10 @@
 'use client'
 
 import { Team, User } from '@/types'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
-import { AnimatedThemeToggler } from '@/components/ui/animated-theme-toggler'
-import { useHomeHeader } from '@/features/workouts/hooks/useHomeHeader'
+import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
+import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
 
 export function HomeHeader({ team, user }: { team: Team; user: User }) {
   const { today, fullName, initials } = useHomeHeader()

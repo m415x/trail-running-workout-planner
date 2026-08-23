@@ -3,10 +3,10 @@
 import dynamic from 'next/dynamic'
 import { Navigation, Navigation2, Route, TrendingUp, Mountain } from 'lucide-react'
 import { TrackPoint } from '@/types'
-import { CustomCard } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
-import { StatPill } from '@/components/ui/custom/pills'
-import { PrimaryOutlineButton } from '@/components/ui/custom/buttons'
+import { CustomCard } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
+import { StatPill } from '@ui/custom/pills'
+import { PrimaryOutlineButton } from '@ui/custom/buttons'
 
 // Carga dinámica de MapLibre (solo en cliente / SSR disabled para WebGL)
 const MapWithNoSSR = dynamic(() => import('@/components/maps/MapInner'), {

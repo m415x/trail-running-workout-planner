@@ -1,8 +1,8 @@
 import { Footprints, Watch } from 'lucide-react'
-import { CustomCard } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
-import { Button } from '@/components/ui/button'
-import { ShoeItem } from '@/features/profile/components/ShoeItem'
+import { CustomCard } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
+import { Button } from '@ui/button'
+import { ShoeItem } from '@profile/components/ShoeItem'
 import { runningShoes } from '@/data/data'
 
 export function GearTabContent() {

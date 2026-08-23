@@ -2,13 +2,13 @@
 
 import { CheckCircle, Coffee, Edit } from 'lucide-react'
 import { WorkoutCardProps } from '@/types'
-import { CustomCard, CustomCardInside } from '@/components/ui/custom/card-containers'
-import { CardHeader } from '@/components/ui/custom/section-header'
-import { StatPill, ZonePill } from '@/components/ui/custom/pills'
-import { PrimaryFilledButton, GlassFilledButton } from '@/components/ui/custom/buttons'
-import { LogWorkoutDialog } from '@/features/workouts/components/LogWorkoutDialog'
-import { WeatherPillStrip } from '@/features/workouts/components/WeatherPillStrip'
-import { useWorkoutCard } from '@/features/workouts/hooks/useWorkoutCard'
+import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
+import { CardHeader } from '@ui/custom/section-header'
+import { StatPill, ZonePill } from '@ui/custom/pills'
+import { PrimaryFilledButton, GlassFilledButton } from '@ui/custom/buttons'
+import { LogWorkoutDialog } from '@workouts/components/LogWorkoutDialog'
+import { WeatherPillStrip } from '@workouts/components/WeatherPillStrip'
+import { useWorkoutCard } from '@workouts/hooks/useWorkoutCard'
 import { useTranslations } from 'next-intl'
 
 export function TodayWorkoutCard({ workout, date, TrackData }: WorkoutCardProps) {

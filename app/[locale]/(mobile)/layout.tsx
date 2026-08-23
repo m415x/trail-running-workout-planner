@@ -1,7 +1,7 @@
 'use client'
 
 import { BottomNavigationBar } from '@/components/layout/BottomNavigationBar'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { ScrollArea } from '@ui/scroll-area'
 import { MobileShellProvider, useMobileShell } from '@/context/MobileShellContext'
 import { cn } from '@/lib/utils'
 

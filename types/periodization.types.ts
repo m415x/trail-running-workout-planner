@@ -1,7 +1,8 @@
 /**
  * @file Estructuras temporales: Macrociclo, Mesociclo y Microciclo.
  */
-import { BaseEntity, AthleteGroupCode } from '@/types'
+import { AthleteGroupCode } from '@/types/athlete.types'
+import { BaseEntity } from '@/types/core.types'
 
 /** Tipos de microciclo con volumen predefinido en la matriz de periodización. */
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'

@@ -1,4 +1,3 @@
-// lib/physiology/heart-rate.ts
 import { IntensityZone } from '@/types'
 import { HR_ZONES } from '@/utils/constants'
 

@@ -3,7 +3,7 @@
  */
 import { BaseEntity, IntensityZone } from '@/types/core.types'
 import { AthleteGroupCode } from '@/types/athlete.types'
-import { FeelingValue } from '@/features/workouts/components/FeelingSelector'
+import { FeelingValue } from '@workouts/components/FeelingSelector'
 
 export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
 export type DayType = 'Workout' | 'Race' | 'Rest'

@@ -4,9 +4,9 @@ import { Heart, Info } from 'lucide-react'
 import { StatPillProps } from '@/types'
 import { HrZoneConfig } from '@/utils/constants'
 import { cn } from '@/lib/utils'
-import { CustomCardInside } from '@/components/ui/custom/card-containers'
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
-import { PillButton } from '@/components/ui/custom/buttons'
+import { CustomCardInside } from '@ui/custom/card-containers'
+import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
+import { PillButton } from '@ui/custom/buttons'
 
 export function StatPill({ icon: Icon, label, value, unit, className }: StatPillProps) {
   return (

@@ -1,6 +1,6 @@
 'use client'
 
-import { CustomCard } from '@/components/ui/custom/card-containers'
+import { CustomCard } from '@ui/custom/card-containers'
 
 export function ObjectivesCard() {
   return (

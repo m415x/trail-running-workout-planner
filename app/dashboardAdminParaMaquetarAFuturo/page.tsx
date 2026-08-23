@@ -3,7 +3,7 @@ import { ChartAreaInteractive } from '@/app/dashboardAdminParaMaquetarAFuturo/co
 import { DataTable } from '@/app/dashboardAdminParaMaquetarAFuturo/components/data-table'
 import { SectionCards } from '@/app/dashboardAdminParaMaquetarAFuturo/components/section-cards'
 import { SiteHeader } from '@/app/dashboardAdminParaMaquetarAFuturo/components/site-header'
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
+import { SidebarInset, SidebarProvider } from '@ui/sidebar'
 
 import data from '@/app/dashboardAdminParaMaquetarAFuturo/data.json'
 

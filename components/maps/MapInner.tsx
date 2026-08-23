@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-
 import type { TrackPoint } from '@/types'
 
 const TRAIL_SOURCE_ID = 'trail-track'
@@ -313,6 +312,13 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
     }
 
     console.log('[GradientTrack] Layer creada:', !!map.getLayer(TRAIL_LAYER_ID))
+    const debugLayer = map.getLayer(TRAIL_LAYER_ID)
+    const debugSource = map.getSource(TRAIL_SOURCE_ID)
+
+    console.log('[GradientTrack] DEBUG layer:', debugLayer)
+    console.log('[GradientTrack] DEBUG source:', debugSource)
+    console.log('[GradientTrack] DEBUG center:', map.getCenter())
+    console.log('[GradientTrack] DEBUG zoom:', map.getZoom())
   }
 
   /**

@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { useMobileShell } from '@/context/MobileShellContext'
-import { HomeTab } from '@/features/workouts/HomeTab'
+import { HomeTab } from '@workouts/HomeTab'
 
 export default function HomePage() {
   const { setShellBgColor } = useMobileShell()
