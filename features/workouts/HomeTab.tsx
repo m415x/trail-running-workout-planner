@@ -5,7 +5,7 @@ import { HomeHeader } from '@workouts/components/HomeHeader'
 import { WeeklyCalendarCard } from '@workouts/components/WeeklyCalendarCard'
 import { TodayWorkoutCard, RaceCard, RestCard } from '@workouts/components/WorkoutCard'
 import { ElevationProfileCard } from '@workouts/components/ElevationProfileCard'
-// import { RouteMapCard } from '@workouts/components/RouteMapCard'
+import { RouteMapCard } from '@workouts/components/RouteMapCard'
 
 export function HomeTab() {
   const {
@@ -29,7 +29,6 @@ export function HomeTab() {
     <div className='space-y-2'>
       {/* Header Superior */}
       <HomeHeader team={team} user={user} />
-
       {/* Tarjeta de Calendario Semanal con Slider & Popover DatePicker */}
       <WeeklyCalendarCard
         cycle={weeklyCycle}
@@ -41,7 +40,6 @@ export function HomeTab() {
         onNextWeek={onNextWeek}
         onSelectDate={onSelectDate}
       />
-
       {/* Tarjeta del Día Seleccionado */}
       {selectedWeekDay?.type === 'Race' && currentWorkout ? (
         <RaceCard date={selectedWeekDay.fullDate} workout={currentWorkout} />
@@ -50,21 +48,18 @@ export function HomeTab() {
       ) : (
         <RestCard />
       )}
-
       {/* Perfil de Elevación */}
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
-
       {/* Mapa Interactivo del Track GPS */}
-      {/* currentWorkout && elevationChartData && (
+      {currentWorkout && elevationChartData && (
         <RouteMapCard
-          mapKey={selectedWeekDay?.fullDate}
           title={currentWorkout.title}
           distanceKm={TrackData?.distanceKm ?? currentWorkout.distance}
           gainMeters={TrackData?.gainMeters ?? currentWorkout.gain}
           maxGradePct={TrackData?.maxGradePct ?? 0}
           trackPoints={TrackData?.trackPoints ?? []}
         />
-      )*/}
+      )}
     </div>
   )
 }

@@ -135,16 +135,12 @@ export function colorForNormalizedValue(value: number): string {
  * Lo mantendremos temporalmente como renderer
  * estable antes de pasar a elevación real.
  */
-export function getMapLibreOklchGradientExpression(steps = 16): ExpressionSpecification {
-  const safeSteps = Math.max(2, Math.floor(steps))
-
+export function getMapLibreAltitudeColorExpression(): ExpressionSpecification {
   const stops: (number | string)[] = []
 
-  for (let i = 0; i <= safeSteps; i++) {
-    const progress = i / safeSteps
-
-    stops.push(progress, colorForNormalizedValue(progress))
+  for (const stop of OKLCH_STOPS) {
+    stops.push(stop.position, colorForNormalizedValue(stop.position))
   }
 
-  return ['interpolate', ['linear'], ['line-progress'], ...stops] as ExpressionSpecification
+  return ['interpolate', ['linear'], ['get', 'altitudePercent'], ...stops] as ExpressionSpecification
 }

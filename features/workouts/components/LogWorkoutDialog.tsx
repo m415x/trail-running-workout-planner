@@ -47,7 +47,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
 
         {/* ── 2. ScrollArea Central (Única área con scroll) ── */}
         <ScrollArea className='flex-1 min-h-0 w-full'>
-          <div className='space-y-4 pt-4'>
+          <div className='space-y-4 pt-4 pb-1 px-0.5'>
             {/* Métricas Numéricas Principales */}
             <div className='grid grid-cols-2 gap-2.5'>
               {/* Columna 1: Distancia */}

@@ -1,26 +1,27 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
+import type { Feature, FeatureCollection, LineString } from 'geojson'
 import type { StyleSpecification } from 'maplibre-gl'
+
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { TrackPoint } from '@/types'
 
-const TRAIL_SOURCE_ID = 'trail-track'
-const TRAIL_LAYER_ID = 'trail-track-layer'
+import { getMapLibreAltitudeColorExpression } from '@/utils/trackColors'
 
-type BaseStyleKey = 'standard' | 'topo' | 'satellite'
+import { TrackPoint } from '@/types'
 
-interface BaseStyle {
-  name: string
-  style: StyleSpecification
-}
+/* -------------------------------------------------------------------------- */
+/* BASE MAP STYLES                                                            */
+/* -------------------------------------------------------------------------- */
 
-const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
+const BASE_STYLES = {
   standard: {
     name: '🗺️ Estándar',
+
     style: {
       version: 8,
+
       sources: {
         'osm-tiles': {
           type: 'raster',
@@ -29,6 +30,7 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           attribution: '&copy; OpenStreetMap Contributors',
         },
       },
+
       layers: [
         {
           id: 'osm-tiles-layer',
@@ -38,13 +40,15 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           maxzoom: 19,
         },
       ],
-    },
+    } satisfies StyleSpecification,
   },
 
   topo: {
     name: '⛰️ Topográfico',
+
     style: {
       version: 8,
+
       sources: {
         'opentopo-tiles': {
           type: 'raster',
@@ -53,6 +57,7 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           attribution: '&copy; OpenTopoMap',
         },
       },
+
       layers: [
         {
           id: 'opentopo-tiles-layer',
@@ -62,13 +67,15 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           maxzoom: 17,
         },
       ],
-    },
+    } satisfies StyleSpecification,
   },
 
   satellite: {
     name: '🛰️ Satelital',
+
     style: {
       version: 8,
+
       sources: {
         'esri-tiles': {
           type: 'raster',
@@ -77,6 +84,7 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           attribution: '&copy; Esri, Maxar, Earthstar Geographics',
         },
       },
+
       layers: [
         {
           id: 'esri-tiles-layer',
@@ -86,9 +94,150 @@ const BASE_STYLES: Record<BaseStyleKey, BaseStyle> = {
           maxzoom: 18,
         },
       ],
-    },
+    } satisfies StyleSpecification,
   },
+} as const
+
+type BaseStyleKey = keyof typeof BASE_STYLES
+
+/* -------------------------------------------------------------------------- */
+/* TRACK CONSTANTS                                                            */
+/* -------------------------------------------------------------------------- */
+
+const TRAIL_SOURCE_ID = 'trail-track'
+const TRAIL_LAYER_ID = 'trail-track-layer'
+
+/* -------------------------------------------------------------------------- */
+/* GEOJSON TYPES                                                              */
+/* -------------------------------------------------------------------------- */
+
+type AltitudeSegmentProperties = {
+  altitudePercent: number
+  elevation: number
 }
+
+type AltitudeSegment = Feature<LineString, AltitudeSegmentProperties>
+
+type AltitudeFeatureCollection = FeatureCollection<LineString, AltitudeSegmentProperties>
+
+/* -------------------------------------------------------------------------- */
+/* HELPERS                                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Devuelve solamente los puntos que tienen coordenadas y elevación válidas.
+ */
+function getValidTrackPoints(points: TrackPoint[]): TrackPoint[] {
+  return points.filter(
+    (point) => Number.isFinite(point.lat) && Number.isFinite(point.lon) && Number.isFinite(point.ele),
+  )
+}
+
+/**
+ * Convierte el track en pequeños segmentos GeoJSON.
+ *
+ * Cada segmento recibe un altitudePercent entre 0 y 1.
+ *
+ * 0 = punto más bajo del track
+ * 1 = punto más alto del track
+ *
+ * Importante:
+ * no utilizamos line-progress.
+ */
+function buildAltitudeSegments(points: TrackPoint[]): {
+  geojson: AltitudeFeatureCollection
+  minElevation: number
+  maxElevation: number
+} {
+  const validPoints = getValidTrackPoints(points)
+
+  if (validPoints.length < 2) {
+    return {
+      geojson: {
+        type: 'FeatureCollection',
+        features: [],
+      },
+      minElevation: validPoints.length === 1 ? validPoints[0].ele : 0,
+      maxElevation: validPoints.length === 1 ? validPoints[0].ele : 0,
+    }
+  }
+
+  const elevations = validPoints.map((point) => point.ele)
+
+  const minElevation = Math.min(...elevations)
+  const maxElevation = Math.max(...elevations)
+
+  const elevationRange = maxElevation - minElevation || 1
+
+  const features: AltitudeSegment[] = []
+
+  for (let index = 1; index < validPoints.length; index++) {
+    const previous = validPoints[index - 1]
+    const current = validPoints[index]
+
+    /*
+     * Usamos la elevación media del segmento.
+     *
+     * Esto evita que un segmento largo tenga un color
+     * completamente determinado por uno solo de sus extremos.
+     */
+    const averageElevation = (previous.ele + current.ele) / 2
+
+    const altitudePercent = (averageElevation - minElevation) / elevationRange
+
+    features.push({
+      type: 'Feature',
+
+      properties: {
+        elevation: averageElevation,
+
+        altitudePercent: Math.max(0, Math.min(1, altitudePercent)),
+      },
+
+      geometry: {
+        type: 'LineString',
+
+        coordinates: [
+          [previous.lon, previous.lat],
+          [current.lon, current.lat],
+        ],
+      },
+    })
+  }
+
+  return {
+    geojson: {
+      type: 'FeatureCollection',
+      features,
+    },
+
+    minElevation,
+    maxElevation,
+  }
+}
+
+/**
+ * Obtiene los bounds del track.
+ */
+function getTrackBounds(coordinates: [number, number][]): maplibregl.LngLatBounds | null {
+  if (coordinates.length === 0) {
+    return null
+  }
+
+  const first = coordinates[0]
+
+  const bounds = new maplibregl.LngLatBounds(first, first)
+
+  for (let index = 1; index < coordinates.length; index++) {
+    bounds.extend(coordinates[index])
+  }
+
+  return bounds
+}
+
+/* -------------------------------------------------------------------------- */
+/* PROPS                                                                      */
+/* -------------------------------------------------------------------------- */
 
 interface MapInnerProps {
   lat?: number
@@ -97,281 +246,352 @@ interface MapInnerProps {
   trackPoints?: TrackPoint[]
 }
 
+/* -------------------------------------------------------------------------- */
+/* COMPONENT                                                                  */
+/* -------------------------------------------------------------------------- */
+
 export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 13, trackPoints = [] }: MapInnerProps) {
-  const containerRef = useRef<HTMLDivElement>(null)
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+
   const mapRef = useRef<maplibregl.Map | null>(null)
 
   const markersRef = useRef<maplibregl.Marker[]>([])
 
-  const initializedRef = useRef(false)
-
   const [selectedLayer, setSelectedLayer] = useState<BaseStyleKey>('standard')
 
-  /**
-   * Filtramos coordenadas inválidas.
+  /*
+   * Coordenadas válidas para MapLibre.
+   *
+   * MapLibre utiliza [longitude, latitude].
    */
-  const validTrackPoints = useMemo(
-    () => trackPoints.filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)),
-    [trackPoints],
-  )
+  const validPoints = useMemo(() => getValidTrackPoints(trackPoints), [trackPoints])
 
-  /**
-   * MapLibre = [longitude, latitude]
-   */
   const coordinates = useMemo<[number, number][]>(
-    () => validTrackPoints.map((point) => [point.lon, point.lat]),
-    [validTrackPoints],
+    () => validPoints.map((point) => [point.lon, point.lat]),
+    [validPoints],
   )
 
-  const center = useMemo<[number, number]>(
+  const initialCenter = useMemo<[number, number]>(
     () => (coordinates.length > 0 ? coordinates[0] : [lon, lat]),
     [coordinates, lon, lat],
   )
 
-  /**
-   * Identificador del track.
-   *
-   * Sirve para no hacer fitBounds continuamente.
-   */
-  const trackKey = useMemo(() => {
-    if (validTrackPoints.length === 0) {
-      return 'empty'
-    }
+  /* ---------------------------------------------------------------------- */
+  /* MARKERS                                                                */
+  /* ---------------------------------------------------------------------- */
 
-    const first = validTrackPoints[0]
-    const last = validTrackPoints[validTrackPoints.length - 1]
-
-    return [validTrackPoints.length, first.lat, first.lon, last.lat, last.lon].join('|')
-  }, [validTrackPoints])
-
-  /**
-   * GeoJSON.
-   */
-  const geojson = useMemo(
-    () => ({
-      type: 'Feature' as const,
-      properties: {},
-      geometry: {
-        type: 'LineString' as const,
-        coordinates,
-      },
-    }),
-    [coordinates],
-  )
-
-  /**
-   * Elimina markers.
-   */
-  const clearMarkers = () => {
+  const clearMarkers = useCallback(() => {
     markersRef.current.forEach((marker) => marker.remove())
 
     markersRef.current = []
-  }
+  }, [])
 
-  /**
-   * Crea markers de inicio y fin.
-   */
-  const renderMarkers = (map: maplibregl.Map) => {
-    clearMarkers()
+  const renderMarkers = useCallback(
+    (map: maplibregl.Map) => {
+      clearMarkers()
 
-    if (coordinates.length === 0) {
-      return
-    }
+      if (coordinates.length === 0) {
+        return
+      }
 
-    const start = coordinates[0]
+      const startCoord = coordinates[0]
 
-    const startElement = document.createElement('div')
+      const startElement = document.createElement('div')
 
-    startElement.className = 'w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-md'
+      startElement.className = 'w-4 h-4 bg-green-500 border-2 border-white rounded-full shadow-md cursor-pointer'
 
-    const startMarker = new maplibregl.Marker({
-      element: startElement,
-    })
-      .setLngLat(start)
-      .setPopup(
-        new maplibregl.Popup({
+      const startPopup = new maplibregl.Popup({
+        offset: 10,
+      }).setHTML(`
+          <div class="p-1 text-center font-sans text-xs">
+            <b>Punto de Largada</b>
+            <br/>
+            <span class="text-[10px] text-gray-500">
+              ${startCoord[1].toFixed(5)},
+              ${startCoord[0].toFixed(5)}
+            </span>
+          </div>
+        `)
+
+      const startMarker = new maplibregl.Marker({
+        element: startElement,
+      })
+        .setLngLat(startCoord)
+        .setPopup(startPopup)
+        .addTo(map)
+
+      markersRef.current.push(startMarker)
+
+      /* ------------------------------ */
+      /* END MARKER                     */
+      /* ------------------------------ */
+
+      if (coordinates.length > 1) {
+        const endCoord = coordinates[coordinates.length - 1]
+
+        const endElement = document.createElement('div')
+
+        endElement.className = 'w-4 h-4 bg-red-500 border-2 border-white rounded-full shadow-md cursor-pointer'
+
+        const endPopup = new maplibregl.Popup({
           offset: 10,
         }).setHTML(`
             <div class="p-1 text-center font-sans text-xs">
-              <strong>Punto de Largada</strong>
-              <br />
+              <b>Punto de Llegada</b>
+              <br/>
               <span class="text-[10px] text-gray-500">
-                ${start[1].toFixed(5)},
-                ${start[0].toFixed(5)}
+                ${endCoord[1].toFixed(5)},
+                ${endCoord[0].toFixed(5)}
               </span>
             </div>
-          `),
-      )
-      .addTo(map)
+          `)
 
-    markersRef.current.push(startMarker)
+        const endMarker = new maplibregl.Marker({
+          element: endElement,
+        })
+          .setLngLat(endCoord)
+          .setPopup(endPopup)
+          .addTo(map)
 
-    if (coordinates.length > 1) {
-      const end = coordinates[coordinates.length - 1]
+        markersRef.current.push(endMarker)
+      }
+    },
+    [clearMarkers, coordinates],
+  )
 
-      const endElement = document.createElement('div')
+  /* ---------------------------------------------------------------------- */
+  /* TRACK SOURCE + LAYER                                                   */
+  /* ---------------------------------------------------------------------- */
 
-      endElement.className = 'w-4 h-4 bg-red-500 border-2 border-white rounded-full shadow-md'
+  //! Define un flag arriba o dentro del componente
+  const USE_SOLID_COLOR = true
 
-      const endMarker = new maplibregl.Marker({
-        element: endElement,
-      })
-        .setLngLat(end)
-        .setPopup(
-          new maplibregl.Popup({
-            offset: 10,
-          }).setHTML(`
-              <div class="p-1 text-center font-sans text-xs">
-                <strong>Punto de Llegada</strong>
-                <br />
-                <span class="text-[10px] text-gray-500">
-                  ${end[1].toFixed(5)},
-                  ${end[0].toFixed(5)}
-                </span>
-              </div>
-            `),
+  const ensureTrackLayer = useCallback(
+    (map: maplibregl.Map) => {
+      if (!map.isStyleLoaded()) {
+        return
+      }
+
+      /*
+       * Si no hay track, eliminamos cualquier source/layer existente.
+       */
+      if (coordinates.length < 2) {
+        if (map.getLayer(TRAIL_LAYER_ID)) {
+          map.removeLayer(TRAIL_LAYER_ID)
+        }
+
+        if (map.getSource(TRAIL_SOURCE_ID)) {
+          map.removeSource(TRAIL_SOURCE_ID)
+        }
+
+        return
+      }
+
+      const { geojson, minElevation, maxElevation } = buildAltitudeSegments(validPoints)
+
+      if (geojson.features.length === 0) {
+        return
+      }
+      console.log('[GEOJSON]', geojson) //! Prueba
+
+      /*
+       * --------------------------------------------------------------------
+       * SOURCE
+       * --------------------------------------------------------------------
+       *
+       * Si el source ya existe, NO lo eliminamos.
+       *
+       * Esto es importante para evitar parpadeos y problemas durante
+       * actualizaciones del mapa.
+       */
+      const existingSource = map.getSource(TRAIL_SOURCE_ID)
+
+      if (existingSource) {
+        const geojsonSource = existingSource as maplibregl.GeoJSONSource
+
+        geojsonSource.setData(geojson)
+      } else {
+        map.addSource(TRAIL_SOURCE_ID, {
+          type: 'geojson',
+          data: geojson,
+        })
+      }
+
+      /*
+       * --------------------------------------------------------------------
+       * LAYER
+       * --------------------------------------------------------------------
+       */
+
+      if (!map.getLayer(TRAIL_LAYER_ID)) {
+        map.addLayer({
+          id: TRAIL_LAYER_ID,
+
+          type: 'line',
+
+          source: TRAIL_SOURCE_ID,
+
+          layout: {
+            'line-cap': 'round',
+            'line-join': 'round',
+            visibility: 'visible',
+          },
+
+          paint: {
+            /*
+             * Una única capa.
+             *
+             * El color se calcula usando altitudePercent,
+             * NO line-progress.
+             */
+            // 'line-color': getMapLibreAltitudeColorExpression(),
+            'line-color': USE_SOLID_COLOR //! PRUEBA
+              ? '#2563eb' // Color sólido visible (azul)
+              : (getMapLibreAltitudeColorExpression() as any),
+
+            'line-width': 5,
+
+            'line-opacity': 0.95,
+          },
+        })
+      } else {
+        //! PRUEBA
+        // Asegura que si la capa ya existía, tome el color actual
+        map.setPaintProperty(
+          TRAIL_LAYER_ID,
+          'line-color',
+          USE_SOLID_COLOR ? '#2563eb' : getMapLibreAltitudeColorExpression(),
         )
-        .addTo(map)
+      }
 
-      markersRef.current.push(endMarker)
-    }
-  }
+      //! Forzar que quede al frente
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.moveLayer(TRAIL_LAYER_ID)
+      }
 
-  /**
-   * Crea el source + layer del track.
-   *
-   * IMPORTANTE:
-   * Esta función se ejecuta DESPUÉS de que el estilo
-   * esté completamente cargado.
-   */
-  const ensureTrackLayer = (map: maplibregl.Map) => {
-    console.log('[GradientTrack] ensureTrackLayer', {
-      coordinates: coordinates.length,
-      styleLoaded: map.isStyleLoaded(),
-    })
+      /*
+       * Nos aseguramos de que el track quede por encima
+       * de las capas raster.
+       */
+      if (map.getLayer(TRAIL_LAYER_ID)) {
+        map.moveLayer(TRAIL_LAYER_ID)
+      }
 
-    /**
-     * Si no hay track, no hacemos nada.
-     */
-    if (coordinates.length < 2) {
-      console.warn('[GradientTrack] No hay suficientes coordenadas')
+      /*
+       * Debug útil durante esta etapa.
+       */
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[GradientTrack] Track actualizado', {
+          points: validPoints.length,
+          segments: geojson.features.length,
+          minElevation,
+          maxElevation,
+        })
+      }
+    },
+    [coordinates.length, validPoints],
+  )
 
-      return
-    }
+  /* ---------------------------------------------------------------------- */
+  /* FIT BOUNDS                                                              */
+  /* ---------------------------------------------------------------------- */
 
-    /**
-     * SOURCE
-     */
-    let source = map.getSource(TRAIL_SOURCE_ID) as maplibregl.GeoJSONSource | undefined
+  const fitTrack = useCallback(
+    (map: maplibregl.Map) => {
+      if (coordinates.length === 0) {
+        map.setCenter(initialCenter)
+        map.setZoom(zoom)
+        return
+      }
 
-    if (!source) {
-      console.log('[GradientTrack] Creando source')
+      const bounds = getTrackBounds(coordinates)
 
-      map.addSource(TRAIL_SOURCE_ID, {
-        type: 'geojson',
-        data: geojson,
-        lineMetrics: true,
+      if (!bounds) {
+        return
+      }
+
+      /*
+       * Si solo hay un punto, fitBounds no es necesario.
+       */
+      if (coordinates.length === 1) {
+        map.setCenter(coordinates[0])
+        map.setZoom(zoom)
+        return
+      }
+
+      map.fitBounds(bounds, {
+        padding: 40,
+        maxZoom: 16,
+        animate: false,
       })
+    },
+    [coordinates, initialCenter, zoom],
+  )
 
-      source = map.getSource(TRAIL_SOURCE_ID) as maplibregl.GeoJSONSource
-    } else {
-      console.log('[GradientTrack] Actualizando source')
+  /* ---------------------------------------------------------------------- */
+  /* RENDER TRACK                                                            */
+  /* ---------------------------------------------------------------------- */
 
-      source.setData(geojson)
-    }
+  const renderTrack = useCallback(
+    (map: maplibregl.Map, fit = false) => {
+      if (!map.isStyleLoaded()) {
+        return
+      }
 
-    /**
-     * LAYER
-     */
-    if (!map.getLayer(TRAIL_LAYER_ID)) {
-      console.log('[GradientTrack] Creando layer')
+      ensureTrackLayer(map)
+      renderMarkers(map)
 
-      map.addLayer({
-        id: TRAIL_LAYER_ID,
-        type: 'line',
-        source: TRAIL_SOURCE_ID,
+      /*
+       * Solamente hacemos fitBounds cuando realmente corresponde.
+       *
+       * Pan y zoom NO llaman esta función.
+       */
+      if (fit) {
+        fitTrack(map)
+      }
+    },
+    [ensureTrackLayer, renderMarkers, fitTrack],
+  )
 
-        layout: {
-          'line-cap': 'round',
-          'line-join': 'round',
-        },
+  /* ---------------------------------------------------------------------- */
+  /* INITIALIZE MAP                                                          */
+  /* ---------------------------------------------------------------------- */
 
-        paint: {
-          /**
-           * COLOR FIJO TEMPORAL.
-           *
-           * No estamos usando todavía OKLCH.
-           */
-          'line-color': '#ff006e',
-
-          'line-width': 6,
-
-          'line-opacity': 1,
-        },
-      })
-    }
-
-    console.log('[GradientTrack] Layer creada:', !!map.getLayer(TRAIL_LAYER_ID))
-    const debugLayer = map.getLayer(TRAIL_LAYER_ID)
-    const debugSource = map.getSource(TRAIL_SOURCE_ID)
-
-    console.log('[GradientTrack] DEBUG layer:', debugLayer)
-    console.log('[GradientTrack] DEBUG source:', debugSource)
-    console.log('[GradientTrack] DEBUG center:', map.getCenter())
-    console.log('[GradientTrack] DEBUG zoom:', map.getZoom())
-  }
-
-  /**
-   * Ajusta cámara.
-   */
-  const fitTrack = (map: maplibregl.Map) => {
-    if (coordinates.length === 0) {
-      return
-    }
-
-    const first = coordinates[0]
-
-    const bounds = coordinates.reduce(
-      (bounds, coordinate) => bounds.extend(coordinate),
-      new maplibregl.LngLatBounds(first, first),
-    )
-
-    map.fitBounds(bounds, {
-      padding: 50,
-      maxZoom: 16,
-      animate: false,
-    })
-  }
-
-  /**
-   * INICIALIZACIÓN DEL MAPA
-   */
   useEffect(() => {
-    if (!containerRef.current) {
+    if (!mapContainerRef.current) {
       return
     }
 
-    if (initializedRef.current) {
+    /*
+     * Evitar crear dos instancias en caso de HMR / React StrictMode.
+     */
+    if (mapRef.current) {
       return
     }
-
-    initializedRef.current = true
 
     console.log('[GradientTrack] Inicializando mapa')
 
     const map = new maplibregl.Map({
-      container: containerRef.current,
+      container: mapContainerRef.current,
 
       style: BASE_STYLES[selectedLayer].style,
 
-      center,
+      center: initialCenter,
 
       zoom,
 
+      /*
+       * Conservamos el comportamiento que tenías:
+       * el scroll del mouse no hace zoom.
+       */
       scrollZoom: false,
     })
 
     mapRef.current = map
+
+    /* -------------------------------------------------------------------- */
+    /* CONTROLS                                                             */
+    /* -------------------------------------------------------------------- */
 
     map.addControl(
       new maplibregl.NavigationControl({
@@ -388,49 +608,46 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
       'bottom-left',
     )
 
-    /**
-     * CARGA INICIAL
-     */
-    map.once('load', () => {
+    /* -------------------------------------------------------------------- */
+    /* LOAD                                                                 */
+    /* -------------------------------------------------------------------- */
+
+    const handleLoad = () => {
       console.log('[GradientTrack] MAP LOAD')
 
-      console.log('[GradientTrack] puntos:', coordinates.length)
+      console.log('[GradientTrack] puntos:', validPoints.length)
 
       console.log('[GradientTrack] coordenadas:', coordinates.slice(0, 3))
 
-      ensureTrackLayer(map)
+      renderTrack(map, true)
+    }
 
-      renderMarkers(map)
+    map.on('load', handleLoad)
 
-      if (coordinates.length > 0) {
-        fitTrack(map)
-      }
-    })
-
-    /**
-     * Errores de MapLibre.
-     */
-    map.on('error', (event) => {
-      console.error('[GradientTrack] MapLibre error:', event.error)
-    })
+    /* -------------------------------------------------------------------- */
+    /* CLEANUP                                                              */
+    /* -------------------------------------------------------------------- */
 
     return () => {
       clearMarkers()
+
+      map.off('load', handleLoad)
 
       map.remove()
 
       mapRef.current = null
-
-      initializedRef.current = false
     }
 
-    // Inicialización deliberadamente única.
+    /*
+     * La inicialización del mapa debe ocurrir una sola vez.
+     */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  /**
-   * ACTUALIZACIÓN DEL TRACK
-   */
+  /* ---------------------------------------------------------------------- */
+  /* UPDATE TRACK                                                            */
+  /* ---------------------------------------------------------------------- */
+
   useEffect(() => {
     const map = mapRef.current
 
@@ -442,68 +659,63 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
       return
     }
 
-    if (coordinates.length < 2) {
-      clearMarkers()
-      return
-    }
-
-    console.log('[GradientTrack] Actualizando track', {
-      points: coordinates.length,
-      trackKey,
-    })
-
-    ensureTrackLayer(map)
-
-    renderMarkers(map)
-  }, [trackKey, coordinates, geojson])
-
-  /**
-   * CAMBIO DE MAPA BASE
-   */
-  useEffect(() => {
-    const map = mapRef.current
-
-    if (!map) {
-      return
-    }
-
-    /**
-     * Durante la creación inicial no hacemos
-     * setStyle().
+    /*
+     * Actualizamos source/layer y markers.
+     *
+     * Aquí hacemos fitBounds porque cambió el track.
+     *
+     * Esto NO ocurre cuando el usuario hace pan/zoom.
      */
-    if (!map.isStyleLoaded()) {
+    renderTrack(map, true)
+  }, [trackPoints, renderTrack])
+
+  /* ---------------------------------------------------------------------- */
+  /* CHANGE BASE MAP                                                         */
+  /* ---------------------------------------------------------------------- */
+
+  useEffect(() => {
+    const map = mapRef.current
+
+    if (!map) {
       return
     }
 
-    console.log('[GradientTrack] Cambiando estilo:', selectedLayer)
+    const nextStyle = BASE_STYLES[selectedLayer].style
+
+    /*
+     * setStyle elimina los sources/layers personalizados.
+     *
+     * Por eso los recreamos después de style.load.
+     */
+    map.setStyle(nextStyle)
 
     const handleStyleLoad = () => {
-      console.log('[GradientTrack] Nuevo estilo cargado')
+      console.log('[GradientTrack] STYLE LOAD:', selectedLayer)
 
-      /**
-       * setStyle elimina los sources/layers
-       * del estilo anterior.
-       *
-       * Por eso los volvemos a crear.
+      /*
+       * Volvemos a crear nuestro source/layer
+       * después de que MapLibre haya terminado
+       * de cargar el nuevo estilo.
        */
-      ensureTrackLayer(map)
-
-      renderMarkers(map)
+      renderTrack(map, false)
     }
 
     map.once('style.load', handleStyleLoad)
 
-    map.setStyle(BASE_STYLES[selectedLayer].style)
-
     return () => {
       map.off('style.load', handleStyleLoad)
     }
-  }, [selectedLayer])
+  }, [selectedLayer, renderTrack])
+
+  /* ---------------------------------------------------------------------- */
+  /* UI                                                                      */
+  /* ---------------------------------------------------------------------- */
 
   return (
     <div className='relative w-full h-full rounded-2xl overflow-hidden'>
-      <div ref={containerRef} className='w-full h-full' />
+      <div ref={mapContainerRef} className='w-full h-full' />
 
+      {/* Selector de mapas */}
       <div className='absolute top-3 right-3 bg-white/95 dark:bg-gray-900/95 p-1.5 rounded-xl shadow-lg flex flex-col gap-1 z-10 text-xs border border-border/50'>
         {(Object.keys(BASE_STYLES) as BaseStyleKey[]).map((key) => (
           <button

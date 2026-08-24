@@ -29,15 +29,15 @@ export interface RouteMapCardProps {
 }
 
 export function RouteMapCard({
-  title,
-  distanceKm,
+  title = 'Track',
+  distanceKm = 0,
   gainMeters = 0,
   maxGradePct = 0,
   trackPoints = [],
   mapKey,
 }: RouteMapCardProps) {
   // Punto de largada para el botón externo de Google Maps
-  const firstPoint = trackPoints.length > 0 ? trackPoints[0] : null
+  const firstPoint = trackPoints.find((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)) ?? null
   const navigationUrl = firstPoint
     ? `https://www.google.com/maps/dir/?api=1&destination=${firstPoint.lat},${firstPoint.lon}`
     : null
@@ -61,7 +61,7 @@ export function RouteMapCard({
 
       {/* Contenedor del Mapa MapLibre GL */}
       <div className='relative h-60 w-full rounded-2xl border border-border/50 overflow-hidden'>
-        <MapWithNoSSR key={mapKey ?? `${title}-${trackPoints.length}`} trackPoints={trackPoints} />
+        <MapWithNoSSR trackPoints={trackPoints} />
       </div>
 
       {/* Resumen de Métricas del GPX */}

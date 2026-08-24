@@ -113,35 +113,59 @@ export interface TrackPoint {
  * Datos parseados del track
  */
 export interface TrackData {
+  /** Puntos GPS originales del track */
   trackPoints: TrackPoint[]
 
+  /** Coordenadas en formato [lon, lat] o el formato definido por el consumidor */
   coordinates: [number, number][]
 
+  /** Perfil de elevación para gráficos */
   elevationProfile: {
     km: string
     elev: number
     grade?: number
   }[]
 
+  /** Distancia total recorrida */
   distanceKm: number
+
+  /** Desnivel positivo acumulado */
   gainMeters: number
+
+  /** Desnivel negativo acumulado */
   lossMeters: number
+
+  /** Pendiente máxima */
   maxGradePct: number
 
+  /** Elevación mínima del track */
   minElevation: number
+
+  /** Elevación máxima del track */
   maxElevation: number
 
+  /** Punto de inicio del track */
   startCoordinates?: {
     lat: number
     lon: number
   }
 
+  /** Punto final del track */
   endCoordinates?: {
     lat: number
     lon: number
   }
 
+  /** Punto de menor elevación del track */
   lowestPoint?: {
+    lat: number
+    lon: number
+    elevation: number
+    distance: number
+  }
+
+  /** Punto de mayor elevación del track */
+  highestPoint?: {
     lat: number
     lon: number
     elevation: number
