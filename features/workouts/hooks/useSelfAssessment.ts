@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { FeelingValue } from '@workouts/components/FeelingSelector'
+import { FEELING_OPTIONS, FeelingValue } from '@workouts/components/FeelingSelector'
 
 export interface SelfAssessmentValues {
   feeling?: FeelingValue | null
@@ -31,6 +31,10 @@ export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = 
 
   const feeling = value?.feeling !== undefined ? value.feeling : internalFeeling
   const rpe = value?.rpe !== undefined ? (value.rpe ?? 0) : internalRpe
+  const hasData = Boolean(feeling || rpe > 0)
+
+  const selectedFeelingOption = FEELING_OPTIONS.find((opt) => opt.value === feeling)
+  const FeelingIcon = selectedFeelingOption?.icon
 
   const handleFeelingChange = (newFeeling: FeelingValue | null) => {
     setInternalFeeling(newFeeling)
@@ -42,12 +46,12 @@ export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = 
     onChange?.({ feeling, rpe: newRpe })
   }
 
-  const hasData = Boolean(feeling || rpe > 0)
-
   return {
     feeling,
     rpe,
     hasData,
+    selectedFeelingOption,
+    FeelingIcon,
     handleFeelingChange,
     handleRpeChange,
   }

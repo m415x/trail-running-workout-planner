@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 
 // Simulación de base de datos / API
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
@@ -11,46 +11,10 @@ import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 
 export function useHomeTab() {
-  // 1. Inicializar con la fecha real actual
+  // 1. Inicializar con la fecha actual
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
 
-  // Referencia para saber qué fecha estaba seleccionada sin recrear listeners
-  const selectedDateRef = useRef(selectedDate)
-  useEffect(() => {
-    selectedDateRef.current = selectedDate
-  }, [selectedDate])
-
-  // ── 2. Listener de Reactivación de la App (Móviles / Background) ──
-  useEffect(() => {
-    const handleAppResume = () => {
-      // Solo actuar cuando la app vuelve a estar visible en pantalla
-      if (document.visibilityState === 'visible') {
-        const now = new Date()
-        const current = selectedDateRef.current
-
-        // Si cambió el día del calendario, actualizamos automáticamente
-        const isDifferentDay =
-          now.getDate() !== current.getDate() ||
-          now.getMonth() !== current.getMonth() ||
-          now.getFullYear() !== current.getFullYear()
-
-        if (isDifferentDay) {
-          setSelectedDate(now)
-        }
-      }
-    }
-
-    // Escuchar cuando el usuario vuelve a la pestaña o desbloquea el teléfono
-    document.addEventListener('visibilitychange', handleAppResume)
-    window.addEventListener('focus', handleAppResume)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleAppResume)
-      window.removeEventListener('focus', handleAppResume)
-    }
-  }, [])
-
-  // 3. Calcular el lunes de la semana correspondiente a selectedDate
+  // 2. Calcular el lunes de la semana correspondiente a selectedDate
   const startOfWeek = useMemo(() => {
     const d = new Date(selectedDate)
     const day = d.getDay() // 0 = Domingo, 1 = Lunes...
@@ -60,7 +24,7 @@ export function useHomeTab() {
     return monday
   }, [selectedDate])
 
-  // 4. Generar dinámicamente los 7 días de la semana sincronizados con weekDaysRaw
+  // 3. Generar dinámicamente los 7 días de la semana sincronizados con weekDaysRaw
   const weekDays = useMemo<WeekDay[]>(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const current = new Date(startOfWeek)
@@ -86,7 +50,7 @@ export function useHomeTab() {
     })
   }, [startOfWeek])
 
-  // 5. Índice del día seleccionado dentro de la semana activa (0 a 6)
+  // 4. Índice del día seleccionado dentro de la semana activa (0 a 6)
   const selectedDay = useMemo(() => {
     const year = selectedDate.getFullYear()
     const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
@@ -97,7 +61,7 @@ export function useHomeTab() {
     return idx !== -1 ? idx : 0
   }, [selectedDate, weekDays])
 
-  // 6. Ciclo semanal con fechas dinámicas actualizadas
+  // 5. Ciclo semanal con fechas dinámicas actualizadas
   const weeklyCycle: WeeklyCycle = useMemo(() => {
     const mondayIso = weekDays[0]?.fullDate ?? defaultCycle.startDate
     const sundayIso = weekDays[6]?.fullDate ?? defaultCycle.endDate
@@ -109,20 +73,19 @@ export function useHomeTab() {
     }
   }, [weekDays])
 
-  // 7. Rutina activa asociada al día seleccionado
+  // 6. Rutina activa asociada al día seleccionado
   const selectedWeekDay = weekDays[selectedDay]
   const workoutId = selectedWeekDay?.workoutId
   const currentWorkout = workoutId !== undefined ? workouts[workoutId] : null
 
-  // 8. Estado y carga reactiva del track GPX
-  const [TrackData, setTrackData] = useState<TrackData | null>(null)
+  // 7. Estado y carga reactiva del track GPX
+  const [trackData, setTrackData] = useState<TrackData | null>(null)
 
   useEffect(() => {
     let isMounted = true
 
     const loadGpx = async () => {
       if (!currentWorkout?.trackPath) {
-        await Promise.resolve()
         if (isMounted) setTrackData(null)
         return
       }
@@ -140,30 +103,30 @@ export function useHomeTab() {
     }
   }, [currentWorkout?.trackPath])
 
-  // 9. Datos calculados de altimetría
+  // 8. Datos calculados de altimetría
   const elevationChartData: ElevationChartProps | null = useMemo(() => {
-    if (!currentWorkout || !TrackData || TrackData.elevationProfile.length === 0) {
+    if (!currentWorkout || !trackData || trackData.elevationProfile.length === 0) {
       return null
     }
 
-    const elevs = TrackData.elevationProfile.map((d: { elev: number }) => d.elev)
+    const elevs = trackData.elevationProfile.map((d: { elev: number }) => d.elev)
     const elevMin = Math.min(...elevs)
     const elevMax = Math.max(...elevs)
 
     return {
       workout: {
         ...currentWorkout,
-        km: TrackData.distanceKm || currentWorkout.distance,
-        gain: TrackData.gainMeters || currentWorkout.gain,
+        km: trackData.distanceKm || currentWorkout.distance,
+        gain: trackData.gainMeters || currentWorkout.gain,
       },
-      elevData: TrackData.elevationProfile,
+      elevData: trackData.elevationProfile,
       elevMin,
       elevMax,
       yDomain: [Math.floor(elevMin - 30), Math.ceil(elevMax + 30)],
     }
-  }, [currentWorkout, TrackData])
+  }, [currentWorkout, trackData])
 
-  // 10. Funciones de navegación entre semanas y selección de fechas
+  // 9. Funciones de navegación entre semanas y selección de fechas
   const handlePrevWeek = useCallback(() => {
     setSelectedDate((prev) => {
       const next = new Date(prev)
@@ -204,7 +167,7 @@ export function useHomeTab() {
     selectedWeekDay,
     currentWorkout,
     elevationChartData,
-    TrackData,
+    TrackData: trackData,
     onSelectDay: handleSelectDay,
     onPrevWeek: handlePrevWeek,
     onNextWeek: handleNextWeek,

@@ -2,10 +2,16 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarRange, BarChart2, User } from 'lucide-react'
+import { Home, CalendarRange, BarChart2, User, LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-const NAV_ITEMS = [
+export interface NavItemsProps {
+  href: string
+  label: string
+  icon: LucideIcon
+}
+
+const NAV_ITEMS: NavItemsProps[] = [
   { href: '/', label: 'Inicio', icon: Home },
   { href: '/plan', label: 'Plan', icon: CalendarRange },
   { href: '/stats', label: 'Stats', icon: BarChart2 },

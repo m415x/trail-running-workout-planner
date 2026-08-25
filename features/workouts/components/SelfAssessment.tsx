@@ -1,8 +1,7 @@
 'use client'
 
-import { Smile } from 'lucide-react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
-import { FeelingSelector } from '@workouts/components/FeelingSelector'
+import { FEELING_OPTIONS, FeelingSelector } from '@workouts/components/FeelingSelector'
 import { RpeSelector } from '@workouts/components/RpeSelector'
 import { useSelfAssessment, SelfAssessmentValues } from '@workouts/hooks/useSelfAssessment'
 
@@ -15,10 +14,11 @@ export interface SelfAssessmentProps {
 }
 
 export function SelfAssessment({ value, onChange, defaultOpen = false }: SelfAssessmentProps) {
-  const { feeling, rpe, hasData, handleFeelingChange, handleRpeChange } = useSelfAssessment({
-    value,
-    onChange,
-  })
+  const { feeling, rpe, hasData, selectedFeelingOption, FeelingIcon, handleFeelingChange, handleRpeChange } =
+    useSelfAssessment({
+      value,
+      onChange,
+    })
 
   return (
     <Accordion className='w-full rounded-2xl border border-border/60 bg-card/50 transition-colors'>
@@ -31,7 +31,7 @@ export function SelfAssessment({ value, onChange, defaultOpen = false }: SelfAss
             {hasData && (
               <span className='ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary'>
                 {rpe !== null && rpe !== undefined && `RPE ${rpe}`}
-                {feeling && <Smile className='size-3' />}
+                {FeelingIcon && <FeelingIcon className={`size-3 ${selectedFeelingOption?.iconClassName ?? ''}`} />}
               </span>
             )}
           </div>

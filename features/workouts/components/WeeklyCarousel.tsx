@@ -92,7 +92,7 @@ export function WeeklyCarousel({ weekDays, selectedDay, onSelectDay, onPrevWeek,
       <CarouselContent className='-ml-2'>
         {/* Slide 0: Semana Anterior sin iconos ni dots */}
         <CarouselItem className='pl-2 basis-full'>
-          <div className='grid grid-cols-7 items-start gap-1 py-1 opacity-70'>
+          <div className='grid grid-cols-7 items-start gap-1 px-1.5 py-1.5 opacity-70'>
             {prevWeekDays.map((d, i) => (
               <DaySelectorButton
                 key={`prev-${d.date}`}
@@ -108,7 +108,7 @@ export function WeeklyCarousel({ weekDays, selectedDay, onSelectDay, onPrevWeek,
 
         {/* Slide 1: Semana Actual (con iconos y estados completos) */}
         <CarouselItem className='pl-2 basis-full'>
-          <div className='grid grid-cols-7 items-start gap-1 py-1'>
+          <div className='grid grid-cols-7 items-start gap-1 px-1.5 py-1.5'>
             {weekDays.map((d, i) => (
               <DaySelectorButton
                 key={`curr-${d.date || d.fullDate || i}`}
@@ -124,7 +124,7 @@ export function WeeklyCarousel({ weekDays, selectedDay, onSelectDay, onPrevWeek,
 
         {/* Slide 2: Semana Siguiente sin iconos ni dots */}
         <CarouselItem className='pl-2 basis-full'>
-          <div className='grid grid-cols-7 items-start gap-1 py-1 opacity-70'>
+          <div className='grid grid-cols-7 items-start gap-1 px-1.5 py-1.5 opacity-70'>
             {nextWeekDays.map((d, i) => (
               <DaySelectorButton
                 key={`next-${d.date}`}

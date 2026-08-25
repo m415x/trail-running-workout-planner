@@ -255,9 +255,13 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
 
   const mapRef = useRef<maplibregl.Map | null>(null)
 
+  const activeStyleRef = useRef<BaseStyleKey | null>(null)
+
   const markersRef = useRef<maplibregl.Marker[]>([])
 
   const [selectedLayer, setSelectedLayer] = useState<BaseStyleKey>('standard')
+
+  const [mapReady, setMapReady] = useState(false)
 
   /*
    * Coordenadas válidas para MapLibre.
@@ -363,9 +367,6 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
   /* TRACK SOURCE + LAYER                                                   */
   /* ---------------------------------------------------------------------- */
 
-  //! Define un flag arriba o dentro del componente
-  const USE_SOLID_COLOR = true
-
   const ensureTrackLayer = useCallback(
     (map: maplibregl.Map) => {
       if (!map.isStyleLoaded()) {
@@ -387,13 +388,11 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
         return
       }
 
-      const { geojson, minElevation, maxElevation } = buildAltitudeSegments(validPoints)
+      const { geojson } = buildAltitudeSegments(validPoints)
 
       if (geojson.features.length === 0) {
         return
       }
-      console.log('[GEOJSON]', geojson) //! Prueba
-
       /*
        * --------------------------------------------------------------------
        * SOURCE
@@ -444,10 +443,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
              * El color se calcula usando altitudePercent,
              * NO line-progress.
              */
-            // 'line-color': getMapLibreAltitudeColorExpression(),
-            'line-color': USE_SOLID_COLOR //! PRUEBA
-              ? '#2563eb' // Color sólido visible (azul)
-              : (getMapLibreAltitudeColorExpression() as any),
+            'line-color': getMapLibreAltitudeColorExpression(),
 
             'line-width': 5,
 
@@ -455,18 +451,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
           },
         })
       } else {
-        //! PRUEBA
-        // Asegura que si la capa ya existía, tome el color actual
-        map.setPaintProperty(
-          TRAIL_LAYER_ID,
-          'line-color',
-          USE_SOLID_COLOR ? '#2563eb' : getMapLibreAltitudeColorExpression(),
-        )
-      }
-
-      //! Forzar que quede al frente
-      if (map.getLayer(TRAIL_LAYER_ID)) {
-        map.moveLayer(TRAIL_LAYER_ID)
+        map.setPaintProperty(TRAIL_LAYER_ID, 'line-color', getMapLibreAltitudeColorExpression())
       }
 
       /*
@@ -475,18 +460,6 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
        */
       if (map.getLayer(TRAIL_LAYER_ID)) {
         map.moveLayer(TRAIL_LAYER_ID)
-      }
-
-      /*
-       * Debug útil durante esta etapa.
-       */
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[GradientTrack] Track actualizado', {
-          points: validPoints.length,
-          segments: geojson.features.length,
-          minElevation,
-          maxElevation,
-        })
       }
     },
     [coordinates.length, validPoints],
@@ -553,6 +526,12 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
     [ensureTrackLayer, renderMarkers, fitTrack],
   )
 
+  const renderTrackRef = useRef(renderTrack)
+
+  useEffect(() => {
+    renderTrackRef.current = renderTrack
+  }, [renderTrack])
+
   /* ---------------------------------------------------------------------- */
   /* INITIALIZE MAP                                                          */
   /* ---------------------------------------------------------------------- */
@@ -568,8 +547,6 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
     if (mapRef.current) {
       return
     }
-
-    console.log('[GradientTrack] Inicializando mapa')
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
@@ -588,6 +565,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
     })
 
     mapRef.current = map
+    activeStyleRef.current = selectedLayer
 
     /* -------------------------------------------------------------------- */
     /* CONTROLS                                                             */
@@ -612,15 +590,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
     /* LOAD                                                                 */
     /* -------------------------------------------------------------------- */
 
-    const handleLoad = () => {
-      console.log('[GradientTrack] MAP LOAD')
-
-      console.log('[GradientTrack] puntos:', validPoints.length)
-
-      console.log('[GradientTrack] coordenadas:', coordinates.slice(0, 3))
-
-      renderTrack(map, true)
-    }
+    const handleLoad = () => setMapReady(true)
 
     map.on('load', handleLoad)
 
@@ -636,6 +606,8 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
       map.remove()
 
       mapRef.current = null
+      activeStyleRef.current = null
+      setMapReady(false)
     }
 
     /*
@@ -651,7 +623,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
   useEffect(() => {
     const map = mapRef.current
 
-    if (!map) {
+    if (!mapReady || !map) {
       return
     }
 
@@ -667,7 +639,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
      * Esto NO ocurre cuando el usuario hace pan/zoom.
      */
     renderTrack(map, true)
-  }, [trackPoints, renderTrack])
+  }, [mapReady, renderTrack])
 
   /* ---------------------------------------------------------------------- */
   /* CHANGE BASE MAP                                                         */
@@ -676,7 +648,7 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
   useEffect(() => {
     const map = mapRef.current
 
-    if (!map) {
+    if (!mapReady || !map || activeStyleRef.current === selectedLayer) {
       return
     }
 
@@ -687,25 +659,23 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
      *
      * Por eso los recreamos después de style.load.
      */
-    map.setStyle(nextStyle)
-
     const handleStyleLoad = () => {
-      console.log('[GradientTrack] STYLE LOAD:', selectedLayer)
-
       /*
        * Volvemos a crear nuestro source/layer
        * después de que MapLibre haya terminado
        * de cargar el nuevo estilo.
        */
-      renderTrack(map, false)
+      renderTrackRef.current(map, false)
     }
 
     map.once('style.load', handleStyleLoad)
+    activeStyleRef.current = selectedLayer
+    map.setStyle(nextStyle)
 
     return () => {
       map.off('style.load', handleStyleLoad)
     }
-  }, [selectedLayer, renderTrack])
+  }, [mapReady, selectedLayer])
 
   /* ---------------------------------------------------------------------- */
   /* UI                                                                      */
