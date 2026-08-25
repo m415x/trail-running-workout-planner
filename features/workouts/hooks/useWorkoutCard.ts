@@ -139,7 +139,7 @@ export function useWorkoutCard({
   const paceDisplay = pamRange?.paceRangeLabel ?? formatPace(workout.pace)
   const speedDisplay = pamRange?.speedRangeLabel ?? paceToSpeed(workout.pace)
 
-  // Formateo de estadísticas de la rutina
+  //TODO Formateo de estadísticas de la rutina (segun entrenamiento o carrera)
   const stats = useMemo(
     () => [
       {
@@ -159,21 +159,24 @@ export function useWorkoutCard({
     [timeDisplay, paceDisplay, speedDisplay, pamRange],
   )
 
+  // Determinar si la fecha es futura (posterior a hoy)
+  const todayStr = useMemo(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }, [])
+
+  // Si `date` es mayor al string de hoy, es un día futuro
+  const isFuture = date ? date > todayStr : false
+
   // Handlers del Modal
   const openLogDialog = () => setIsLogOpen(true)
   const closeLogDialog = () => setIsLogOpen(false)
 
-  const handleSaveSession = (data: LoggedWorkoutPayload) => {
-    console.log('Sesión registrada:', data)
-    toast.success('Entrenamiento registrado con éxito', { description: format(new Date(), 'eeee, dd MMMM') })
-    setIsLogged(true)
-  }
-
-  const handleDeleteSession = () => {
-    console.log('Sesión eliminada')
-    toast.info('Registro de entrenamiento eliminado')
-    setIsLogged(false)
-  }
+  const handleSaveSession = (data: LoggedWorkoutPayload) => setIsLogged(true)
+  const handleDeleteSession = () => setIsLogged(false)
 
   return {
     WorkoutIcon,
@@ -183,6 +186,7 @@ export function useWorkoutCard({
     weather,
     isLoadingWeather,
     isPast,
+    isFuture,
     isLogged,
     stats,
     zoneInfo,
