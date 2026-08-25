@@ -276,7 +276,7 @@ html {
 .recharts-surface,
 .recharts-wrapper {
   outline: none !important;
-  user-select: none !important;
   -webkit-user-select: none !important;
+  user-select: none !important;
   -webkit-touch-callout: none !important;
 }

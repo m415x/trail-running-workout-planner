@@ -21,12 +21,8 @@ export function WeeklyCalendarCard({
   onNextWeek,
   onSelectDate,
 }: WeeklyCalendarCardProps) {
-  const subtitleWeeklyCalendar = `Fase ${cycle.phase} · Objetivo ${cycle.targetKm} km`
-
-  const { isPopoverOpen, setIsPopoverOpen, dateRange, currentKm, progressPercentage } = useWeeklyCalendarCard(
-    cycle,
-    weekDays,
-  )
+  const { subtitleWeeklyCalendar, isPopoverOpen, setIsPopoverOpen, dateRange, currentKm, progressPercentage } =
+    useWeeklyCalendarCard(cycle, weekDays)
 
   return (
     <CustomCard>

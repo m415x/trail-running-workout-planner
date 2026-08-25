@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
 import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
+import { cn } from '@/lib/utils'
 
 export function HomeHeader({ team, user }: { team: Team; user: User }) {
   const { today, fullName, initials } = useHomeHeader()
@@ -14,16 +15,33 @@ export function HomeHeader({ team, user }: { team: Team; user: User }) {
       <div className='flex items-center gap-4 text-left outline-none'>
         {/* Avatar con borde activo primario */}
         <div className='relative'>
-          <Avatar className='size-14 rounded-full border-3 border-primary shadow-lg ring-1 ring-border/20'>
-            <AvatarImage src={team.avatar} alt={team.name} className='object-cover' />
-            <AvatarFallback className='font-semibold bg-secondary text-foreground text-xs'>{initials}</AvatarFallback>
+          <Avatar className='size-14 rounded-full border-3 border-primary shadow-lg'>
+            {/* <AvatarImage src={team.avatar} alt={team.name} className='object-cover' /> */}
+            {/* Imagen para modo claro */}
+            <AvatarImage
+              src={team.avatarLight}
+              alt={team.name}
+              className='border-image-light object-cover dark:hidden scale-105'
+            />
+
+            {/* Imagen para modo oscuro */}
+            <AvatarImage
+              src={team.avatarDark}
+              alt={team.name}
+              className='border-image-dark object-cover hidden dark:block scale-105'
+            />
+            <AvatarFallback className='font-semibold text-foreground text-xs'>{initials}</AvatarFallback>
           </Avatar>
           <button
             type='button'
-            className='font-mono text-[10px] absolute bottom-0 right-0 p-1 rounded-full bg-background text-foreground hover:bg-primary/90 transition-transform active:scale-95 shadow-md cursor-pointer border-2 border-background'
+            className={cn(
+              'font-mono text-[10px] font-bold absolute bottom-0 right-0 size-5 flex items-center',
+              'justify-center rounded-full bg-background text-foreground hover:bg-primary/90 transition-transform',
+              'hover:text-background active:scale-95 shadow-md cursor-pointer border border-background',
+            )}
             title='Ver team'
           >
-            H3
+            {user.group}
           </button>
         </div>
 

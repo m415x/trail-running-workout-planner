@@ -25,7 +25,8 @@ export const DEFAULT_FALLBACK_LOCATION = TRAINING_LOCATIONS.parqueDeMayo
 export const team: Team = {
   id: 'team_1',
   name: 'El Parque Team',
-  avatar: '/avatars/logo-ept.png',
+  avatarLight: '/avatars/logo-ept.png',
+  avatarDark: '/avatars/logo-ept-dark.png',
 }
 
 export const currentUser: User = {

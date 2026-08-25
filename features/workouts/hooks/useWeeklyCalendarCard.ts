@@ -21,7 +21,10 @@ export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[]) {
     return calculateProgressPercentage(currentKm, cycle.targetKm)
   }, [currentKm, cycle.targetKm])
 
+  const subtitleWeeklyCalendar = `Fase ${cycle.phase} · Objetivo ${cycle.targetKm} km`
+
   return {
+    subtitleWeeklyCalendar,
     isPopoverOpen,
     setIsPopoverOpen,
     dateRange,
