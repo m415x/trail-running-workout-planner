@@ -2,7 +2,7 @@
 
 import { currentUser } from '@/data/data'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
-import { ProfileHeaderHero } from '@profile/components/ProfileHeaderHero'
+import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
 import { AthleteTabContent } from '@profile/components/AthleteTabContent'
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
@@ -11,7 +11,7 @@ export function ProfileTab() {
   return (
     <div className='space-y-4'>
       {/* Hero Header */}
-      <ProfileHeaderHero user={currentUser} />
+      <ProfileHeader user={currentUser} />
 
       {/* Profile Tabs */}
       <Tabs defaultValue='athlete' className='w-full'>

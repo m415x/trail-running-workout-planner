@@ -54,7 +54,7 @@ export function RouteMapCard({
             className='rounded-full font-mono text-xs h-0 py-3.5'
           >
             <Navigation2 className='size-3 fill-primary' />
-            <span>Cómo llegar</span>
+            <span>Punto de encuentro</span>
           </PrimaryOutlineButton>
         )}
       </CardHeader>

@@ -11,13 +11,20 @@ export function HomeHeader({ team, user }: { team: Team; user: User }) {
 
   return (
     <div className='flex items-center justify-between'>
-      <div className='flex items-center gap-3 text-left outline-none'>
+      <div className='flex items-center gap-4 text-left outline-none'>
         {/* Avatar con borde activo primario */}
-        <div className='rounded-full border-3 border-primary'>
-          <Avatar className='size-12'>
+        <div className='relative'>
+          <Avatar className='size-14 rounded-full border-3 border-primary shadow-lg ring-1 ring-border/20'>
             <AvatarImage src={team.avatar} alt={team.name} className='object-cover' />
             <AvatarFallback className='font-semibold bg-secondary text-foreground text-xs'>{initials}</AvatarFallback>
           </Avatar>
+          <button
+            type='button'
+            className='font-mono text-[10px] absolute bottom-0 right-0 p-1 rounded-full bg-background text-foreground hover:bg-primary/90 transition-transform active:scale-95 shadow-md cursor-pointer border-2 border-background'
+            title='Ver team'
+          >
+            H3
+          </button>
         </div>
 
         <div className='flex flex-col justify-center'>

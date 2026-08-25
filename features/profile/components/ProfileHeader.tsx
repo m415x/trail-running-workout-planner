@@ -5,7 +5,7 @@ import { User } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { CustomCard } from '@ui/custom/card-containers'
 
-export function ProfileHeaderHero({ user }: { user: User }) {
+export function ProfileHeader({ user }: { user: User }) {
   const fullName = `${user.firstName} ${user.lastName}`
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
 
