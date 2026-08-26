@@ -39,7 +39,7 @@ export const teams = sqliteTable('teams', {
 })
 
 export const trainingLocations = sqliteTable('training_locations', {
-  key: text('key').primaryKey().$type<TrainingLocationKey>(), // 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
+  key: text('key').primaryKey().$type<string>(),
   name: text('name').notNull(),
   lat: real('lat').notNull(),
   lon: real('lon').notNull(),
@@ -181,7 +181,7 @@ export const workouts = sqliteTable('workouts', {
   notes: text('notes'),
   trackPath: text('track_path'),
   locationKey: text('location_key')
-    .$type<TrainingLocationKey>()
+    .$type<string>()
     .references(() => trainingLocations.key),
 
   // Estructuras avanzadas opcionales
