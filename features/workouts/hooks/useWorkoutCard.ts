@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { isBefore, startOfDay, parseISO, format } from 'date-fns'
+import { useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import { WorkoutCardProps, LoggedWorkoutPayload, TrackData } from '@/types'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
@@ -13,13 +14,6 @@ import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather, WeatherData } from '@/lib/weather/open-meteo'
 import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
 import { getZonePaceRangeFromPam } from '@/lib/physiology/pam'
-
-export function calculateBpmRange(pct: string, maxHr: number): string {
-  const [minPct, maxPct] = pct.replace(/%/g, '').split('-').map(Number)
-  const minBpm = Math.round((minPct / 100) * maxHr)
-  const maxBpm = Math.round((maxPct / 100) * maxHr)
-  return `${minBpm} - ${maxBpm} bpm`
-}
 
 interface UseWorkoutCardParams {
   workout: WorkoutCardProps['workout']
@@ -40,6 +34,8 @@ export function useWorkoutCard({
   athletePamSec,
   isCompleted: initialIsCompleted = false,
 }: UseWorkoutCardParams) {
+  const t = useTranslations('Workouts')
+
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
@@ -67,14 +63,15 @@ export function useWorkoutCard({
 
   // Rango BPM formateado con el Método de Karvonen
   const bpmRange = useMemo(() => {
-    const { label } = getZoneBpmRange(workout.zone, { maxHr, restHr })
-    return label
-  }, [workout.zone, maxHr, restHr])
+    if (!workout?.zone) return ''
+    const res = getZoneBpmRange(workout.zone, { maxHr: 190, restHr: 50 })
+    return `${res.minBpm}-${res.maxBpm} ${t('dialog.bpm')}`
+  }, [workout?.zone, t])
 
   // También puedes exponer los límites numéricos si los necesitas para gráficos
   const bpmLimits = useMemo(() => {
     return getZoneBpmRange(workout.zone, { maxHr, restHr })
-  }, [workout.zone, maxHr, restHr])
+  }, [workout.zone, maxHr, restHr, t])
 
   // Resolución de Coordenadas por Prioridad
   const targetCoordinates = useMemo(() => {

@@ -35,7 +35,8 @@
       "distance": "Distancia (km)",
       "time": "Tiempo (min : seg)",
       "elevation": "Desnivel positivo (+m)",
-      "heartRate": "FC Media (bpm)",
+      "bpm": "ppm",
+      "heartRate": "FC Media (ppm)",
       "rpe": "Sensación de Esfuerzo (RPE)",
       "notes": "Comentarios o sensaciones",
       "notesPlaceholder": "¿Cómo te sentiste? Terreno, clima, molestias..."

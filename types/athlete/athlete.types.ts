@@ -6,7 +6,8 @@ import { BaseEntity } from '@/types/core/core.types'
 export type AthleteCategoryCode = 'E' | 'U' | 'M' | 'H' | 'S' | 'B'
 export type AthleteLevelCode = '1' | '2' | '3'
 export type AthleteGroupCode = `${AthleteCategoryCode}${AthleteLevelCode}`
-export type userRole = 'athlete' | 'coach' | 'admin'
+export type TestType = '1000m_track' | 'ramp_test' | 'cooper' | 'field_trial'
+export type UserRole = 'athlete' | 'coach' | 'admin'
 
 /**
  * 1. Registro histórico de evaluaciones y biometría (Snapshots periódicos)
@@ -30,7 +31,7 @@ export interface PhysiologyRecord extends BaseEntity {
   heightCm?: number // Altura en cm (ej: 175)
 
   // Notas del entrenador o test
-  testType?: '1000m_track' | 'ramp_test' | 'cooper' | 'field_trial'
+  testType?: TestType
   notes?: string // Ej: "Test en pista de atletismo, condiciones ideales"
 }
 
@@ -74,7 +75,7 @@ export interface MedicalRecord {
  * 5. Entidad Principal de Usuario / Atleta
  */
 export interface User extends BaseEntity {
-  role: userRole
+  role: UserRole
   teamId?: string
   email: string
   firstName: string

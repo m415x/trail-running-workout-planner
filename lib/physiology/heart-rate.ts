@@ -28,7 +28,7 @@ export function calculateKarvonenBpm(
 export function getZoneBpmRange(
   zone: IntensityZone,
   { maxHr = 190, restHr = 50 }: AthleteHeartRateParams,
-): { minBpm: number; maxBpm: number; label: string } {
+): { minBpm: number; maxBpm: number } {
   const zoneInfo = HR_ZONES[zone] ?? HR_ZONES.Z1
   const [minPctStr, maxPctStr] = zoneInfo.pct.replace(/%/g, '').split('-')
 
@@ -41,6 +41,5 @@ export function getZoneBpmRange(
   return {
     minBpm,
     maxBpm,
-    label: `${minBpm} - ${maxBpm} bpm`,
   }
 }

@@ -35,6 +35,7 @@
       "distance": "Distance (km)",
       "time": "Duration (min : sec)",
       "elevation": "Elevation Gain (+m)",
+      "bpm": "bpm",
       "heartRate": "Avg HR (bpm)",
       "rpe": "Rate of Perceived Exertion (RPE)",
       "notes": "Athlete Notes",
