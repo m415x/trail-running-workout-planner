@@ -28,7 +28,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
   const isSnowCondition = condition === 'snow' || weather.snowfallSum > 0
 
   return (
-    <CustomCardInside className='flex justify-center rounded-xl px-0 py-0.5 gap-3'>
+    <CustomCardInside className='flex justify-center rounded-xl px-0 py-2 gap-3'>
       {/* Estado del tiempo + temperaturas */}
       <div className='flex flex-1 items-center justify-center gap-1'>
         <WeatherIcon iconType={condition} />
