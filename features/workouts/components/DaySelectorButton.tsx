@@ -2,7 +2,7 @@
 
 import { createElement } from 'react'
 import { WeekDay } from '@/types'
-import { getWorkoutIcon } from '@/utils/workout-helpers'
+import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { DayStatusIndicator } from '@workouts/components/DayStatusIndicator'
 import { cn } from '@/lib/utils'
 

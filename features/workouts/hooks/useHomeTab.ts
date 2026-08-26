@@ -7,7 +7,7 @@ import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team }
 
 // Helpers y Tipos
 import { WeekDay, WeeklyCycle, TrackData, ElevationChartProps } from '@/types'
-import { formatRawWeekDay, parseISODate } from '@/utils/date-helpers'
+import { formatRawWeekDay, parseISODate } from '@/lib/date-helpers'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 
 export function useHomeTab() {

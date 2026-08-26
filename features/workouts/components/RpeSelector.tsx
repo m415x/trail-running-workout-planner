@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@u
 import { Slider } from '@ui/slider'
 import { cn } from '@/lib/utils'
 import { CustomCardInside } from '@ui/custom/card-containers'
-import { RPE_LEVELS } from '@/utils/constants'
+import { RPE_LEVELS } from '@/lib/constants'
 
 export interface RpeSelectorProps {
   value?: number

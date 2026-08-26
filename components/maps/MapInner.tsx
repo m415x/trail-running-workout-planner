@@ -7,7 +7,7 @@ import type { StyleSpecification } from 'maplibre-gl'
 
 import 'maplibre-gl/dist/maplibre-gl.css'
 
-import { getMapLibreAltitudeColorExpression } from '@/utils/trackColors'
+import { getMapLibreAltitudeColorExpression } from '@/lib/trackColors'
 
 import { TrackPoint } from '@/types'
 

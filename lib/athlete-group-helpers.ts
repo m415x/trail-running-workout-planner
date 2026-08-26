@@ -1,5 +1,5 @@
 import { AthleteCategoryCode, AthleteGroupCode, AthleteLevelCode } from '@/types'
-import { ATHLETE_CATEGORIES, ATHLETE_LEVELS } from '@/utils/constants'
+import { ATHLETE_CATEGORIES, ATHLETE_LEVELS } from '@/lib/constants'
 
 export function parseAthleteGroup(groupCode: AthleteGroupCode) {
   const catCode = groupCode[0] as AthleteCategoryCode

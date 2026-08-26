@@ -1,7 +1,7 @@
 'use client'
 
 import { RefreshCcwDot, Calendar as CalendarIcon } from 'lucide-react'
-import { WeeklyCalendarCardProps } from '@/types'
+import { WeeklyCycle, WeekDay } from '@/types'
 import { PrimaryOutlineButton } from '@ui/custom/buttons'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
@@ -10,6 +10,17 @@ import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
 import { WeekCalendarPicker } from '@workouts/components/WeekCalendarPicker'
 import { useWeeklyCalendarCard } from '@workouts/hooks/useWeeklyCalendarCard'
 import { WeeklyCarousel } from '@workouts/components/WeeklyCarousel'
+
+export interface WeeklyCalendarCardProps {
+  cycle: WeeklyCycle
+  weekDays: WeekDay[]
+  selectedDay: number
+  selectedDate: Date
+  onSelectDay: (index: number) => void
+  onPrevWeek: () => void
+  onNextWeek: () => void
+  onSelectDate: (date: Date | undefined) => void
+}
 
 export function WeeklyCalendarCard({
   cycle,

@@ -1,5 +1,5 @@
 import { IntensityZone } from '@/types'
-import { ZONE_PAM_PERCENTAGES } from '@/utils/constants'
+import { ZONE_PAM_PERCENTAGES } from '@/lib/constants'
 
 /**
  * Convierte segundos a formato min:seg (ej: 340 -> "5:40")

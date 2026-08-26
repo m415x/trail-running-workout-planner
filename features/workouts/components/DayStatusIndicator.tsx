@@ -2,7 +2,7 @@
 
 import { CircleCheckBig, CircleMinus, X } from 'lucide-react'
 import { DayStatusIndicatorProps } from '@/types'
-import { getDayStatus } from '@/utils/date-helpers'
+import { getDayStatus } from '@/lib/date-helpers'
 import { cn } from '@/lib/utils'
 
 export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps) {

@@ -5,7 +5,7 @@ import { Mountain } from 'lucide-react'
 import { ElevTooltipProps, ElevationChartProps } from '@/types'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
-import { formatNumber } from '@/utils/formatters'
+import { formatNumber } from '@/lib/formatters'
 
 function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
   if (!active || !payload?.length) return null

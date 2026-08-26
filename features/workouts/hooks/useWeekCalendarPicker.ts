@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { MONTHS_OF_YEAR } from '@/utils/constants'
+import { MONTHS_OF_YEAR } from '@/lib/constants'
 import { WeekCalendarPickerProps } from '@/types'
 
 export function useWeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps) {

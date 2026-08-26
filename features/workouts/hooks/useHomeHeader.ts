@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { currentUser as user } from '@/data/data'
-import { formatFullDate } from '@/utils/date-helpers'
+import { formatFullDate } from '@/lib/date-helpers'
 
 export function useHomeHeader() {
   // Nombre completo compuesto

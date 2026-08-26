@@ -1,5 +1,5 @@
 import { IntensityZone } from '@/types'
-import { HR_ZONES } from '@/utils/constants'
+import { HR_ZONES } from '@/lib/constants'
 
 export interface AthleteHeartRateParams {
   maxHr: number // Frecuencia Cardíaca Máxima (ej: 185 bpm)

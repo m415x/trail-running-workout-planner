@@ -1,4 +1,4 @@
-import { BaseEntity } from '@/types/core.types'
+import { BaseEntity } from '@/types/core/core.types'
 
 export interface Team extends BaseEntity {
   name: string

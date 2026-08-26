@@ -1,11 +1,11 @@
-import { AthleteGroupCode, WorkoutSession, WorkoutProps } from '@/types'
+import { AthleteGroupCode, Session, WorkoutProps } from '@/types'
 
-export function resolveWorkoutForAthlete(session: WorkoutSession, athleteGroup: AthleteGroupCode): WorkoutProps {
+export function resolveWorkoutForAthlete(session: Session, athleteGroup: AthleteGroupCode): WorkoutProps {
   // 1. Acceso seguro con optional chaining
   const override = session.groupOverrides?.[athleteGroup]
 
-  const km = override?.km ?? session.defaultVolume.km
-  const time = override?.timeMin ?? session.defaultVolume.timeMin
+  const km = override?.distanceKm ?? session.defaultVolume.km
+  const time = override?.durationMin ?? session.defaultVolume.timeMin
   const pace = time > 0 && km > 0 ? (time * 60) / km : 0
 
   // 2. Resolución segura de las notas y estructura de la sesión

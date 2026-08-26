@@ -1,0 +1,688 @@
+=== ÁRBOL DE DIRECTORIOS ===
+
+.
+
+=== CONTENIDO DE ARCHIVOS ===
+
+/* ============================================================== */
+/* athlete.types.ts */
+/* ============================================================== */
+/**
+ * @file Modelos de atletas, grupos y equipo deportivo.
+ */
+import { BaseEntity } from '@/types/core.types'
+
+export type AthleteCategoryCode = 'E' | 'U' | 'M' | 'H' | 'S' | 'B'
+export type AthleteLevelCode = '1' | '2' | '3'
+
+// Genera 'E1' | 'E2' | ... | 'B3'
+export type AthleteGroupCode = `${AthleteCategoryCode}${AthleteLevelCode}`
+
+/**
+ * 1. Registro histórico de evaluaciones y biometría (Snapshots periódicos)
+ */
+export interface PhysiologyRecord extends BaseEntity {
+  userId: string
+  date: string // 'YYYY-MM-DD'
+
+  // Test PAM / 1000m
+  pamTimeSec: number // Tiempo en segundos (ej: 215 = 3:35 min)
+  pamPaceFormatted: string // '3:35/km'
+  pamSpeedKmh?: number // Calculado: 16.74 km/h
+
+  // Métricas Cardíacas
+  maxHr: number // FC Máxima registrada en el test (bpm)
+  restHr: number // FC Basal/reposo actual (bpm)
+  thresholdHr?: number // FC Umbral (bpm)
+
+  // Composición corporal
+  weightKg?: number // Peso en kg (ej: 68.5)
+  heightCm?: number // Altura en cm (ej: 175)
+
+  // Notas del entrenador o test
+  testType?: '1000m_track' | 'ramp_test' | 'cooper' | 'field_trial'
+  notes?: string // Ej: "Test en pista de atletismo, condiciones ideales"
+}
+
+/**
+ * 2. Registro histórico de transiciones de grupo dentro del equipo
+ */
+export interface GroupHistoryRecord extends BaseEntity {
+  userId: string
+  date: string // Fecha del cambio 'YYYY-MM-DD'
+  previousGroup?: AthleteGroupCode
+  newGroup: AthleteGroupCode
+  promotedByUserId?: string // ID del entrenador que autorizó el cambio
+  reason?: string // Ej: "Mejora sustancial en test PAM de junio y volumen asimilado"
+}
+
+/**
+ * 3. Fisiología Actual (Valores vigentes calculados del último snapshot)
+ */
+export interface AthletePhysiology {
+  maxHr: number
+  restHr: number
+  thresholdHr?: number
+  currentPamTimeSec: number
+  currentPamPace: string
+  weightKg?: number
+  lastEvaluationDate: string
+}
+
+/**
+ * 4. Datos Médicos y Administrativos
+ */
+export interface MedicalRecord {
+  certificateUrl?: string
+  issuanceDate?: string
+  expirationDate?: string
+  bloodType?: string
+  observations?: string
+}
+
+/**
+ * 5. Entidad Principal de Usuario / Atleta
+ */
+export interface User extends BaseEntity {
+  role: 'athlete' | 'coach' | 'admin'
+  teamId?: string
+  email: string
+  firstName: string
+  lastName: string
+  nickName?: string
+  dni: string
+  birthday?: string
+  avatar?: string
+
+  phone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+
+  // Estado Actual Vigente
+  group: AthleteGroupCode
+  physiology?: AthletePhysiology
+  medical?: MedicalRecord
+
+  // Históricos (Colecciones embebidas o referenciadas)
+  physiologyHistory?: PhysiologyRecord[]
+  groupHistory?: GroupHistoryRecord[]
+}
+
+
+/* ============================================================== */
+/* core.types.ts */
+/* ============================================================== */
+/**
+ * @file Contiene la base de persistencia y primitivos compartidos en toda la aplicación.
+ */
+
+export interface BaseEntity {
+  id: string
+  createdAt?: string // ISO 8601 string
+  updatedAt?: string // ISO 8601 string
+  isDeleted?: boolean
+}
+
+export interface GeoLocation {
+  name: string
+  lat: number
+  lon: number
+}
+
+export type IntensityZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
+
+export type NavigationTab = 'home' | 'plan' | 'stats' | 'profile'
+
+
+/* ============================================================== */
+/* fitness-fatigue.types.ts */
+/* ============================================================== */
+import { MicrocycleType } from '@/types/periodization.types'
+
+/**
+ * Rangos teóricos de TSB esperados según la fase del microciclo
+ */
+export interface TsbRangeTarget {
+  min: number
+  max: number
+  description: string
+}
+
+export const TSB_TARGETS_BY_MICROCYCLE: Record<MicrocycleType, TsbRangeTarget> = {
+  base: { min: -10, max: 5, description: 'Zona de adaptación y base aeróbica' },
+  development: { min: -25, max: -10, description: 'Zona de entrenamiento óptimo' },
+  shock: { min: -40, max: -25, description: 'Sobrecarga funcional controlada' },
+  deload: { min: 5, max: 15, description: 'Asimilación y supercompensación' },
+  tapering: { min: 15, max: 25, description: 'Zona de frescura para competir' },
+  race: { min: 10, max: 25, description: 'Pico de rendimiento' },
+}
+
+/**
+ * Parámetros para el cálculo del TSS (Training Stress Score) diario.
+ */
+export interface CalculateDailyTssParams {
+  durationMin: number
+  rpe: number // 1 a 10
+  elevationGainM?: number
+}
+
+/**
+ * Snapshot de carga diaria o semanal calculada (Banister / Coggan)
+ */
+export interface DailyStressMetrics {
+  date: string // 'YYYY-MM-DD'
+  tss: number // Training Stress Score diario
+  ctl: number // Chronic Training Load (Forma - EMA 42 días)
+  atl: number // Acute Training Load (Fatiga - EMA 7 días)
+  tsb: number // Training Stress Balance (CTL - ATL)
+}
+
+/**
+ * Métricas de volumen y desnivel calculadas para un microciclo
+ */
+export interface MicrocycleVolumeTarget {
+  volumeKm: number
+  elevationGainM: number // Desnivel positivo D+ acumulado
+  loadPercentage: number // % de la carga pico (ej: 0.70 a 1.00)
+  projectedTsb: TsbRangeTarget
+}
+
+
+/* ============================================================== */
+/* gear.types.ts */
+/* ============================================================== */
+import { BaseEntity } from '@/types/core.types'
+
+export type ShoeStatus = 'active' | 'warning' | 'retired'
+
+export interface Shoe extends BaseEntity {
+  userId: string
+  name: string // Ej: "Hoka Speedgoat 5"
+  type: string // Ej: "Trail / Competición"
+  currentKm: number
+  maxKm: number // Ej: 800 km
+  isActive?: boolean
+  isDefault?: boolean
+}
+
+// Props para el componente visual en ProfileTab o GearTab
+export interface ShoeItemProps {
+  name: string
+  type: string
+  km: number
+  maxKm: number
+  status: ShoeStatus
+}
+
+
+/* ============================================================== */
+/* index.ts */
+/* ============================================================== */
+export * from '@/types/athlete.types'
+export * from '@/types/core.types'
+export * from '@/types/fitness-fatigue.types'
+export * from '@/types/gear.types'
+export * from '@/types/periodization.types'
+export * from '@/types/profile.types'
+export * from '@/types/team.types'
+export * from '@/types/ui.types'
+export * from '@/types/workout.types'
+
+
+/* ============================================================== */
+/* mapear_proyecto.sh */
+/* ============================================================== */
+#!/bin/bash
+
+# Verificar si se proporcionó un directorio
+if [ $# -eq 0 ]; then
+    DIRECTORIO="."
+else
+    DIRECTORIO="$1"
+fi
+
+# Verificar si el directorio existe
+if [ ! -d "$DIRECTORIO" ]; then
+    echo "Error: El directorio '$DIRECTORIO' no existe."
+    exit 1
+fi
+
+# Nombre del archivo de salida
+ARCHIVO_SALIDA="mapeo_proyecto.txt"
+
+# Función para generar árbol de directorios
+generar_arbol() {
+    echo "=== ÁRBOL DE DIRECTORIOS ==="
+    echo ""
+    find "$DIRECTORIO" -type d | sed -e "s|[^/]*/|- |g" -e "s|-[^/]*/|  |g" -e "s|- |├── |"
+    echo ""
+}
+
+# Función para listar archivos y su contenido
+listar_archivos() {
+    echo "=== CONTENIDO DE ARCHIVOS ==="
+    echo ""
+    
+    # Encontrar todos los archivos (excluyendo el archivo de salida y directorios .git)
+    find "$DIRECTORIO" -type f ! -name "$ARCHIVO_SALIDA" ! -path "*/\.git/*" | while read -r archivo; do
+        # Obtener la ruta relativa
+        ruta_relativa="${archivo#$DIRECTORIO/}"
+        
+        # Mostrar el encabezado del archivo
+        echo "/* ============================================================== */"
+        echo "/* $ruta_relativa */"
+        echo "/* ============================================================== */"
+        
+        # Mostrar el contenido del archivo
+        cat "$archivo"
+        
+        # Agregar una línea en blanco entre archivos
+        echo ""
+        echo ""
+    done
+}
+
+# Ejecutar las funciones y guardar en el archivo
+{
+    generar_arbol
+    listar_archivos
+} > "$ARCHIVO_SALIDA"
+
+echo "Mapeo completado. Resultado guardado en: $ARCHIVO_SALIDA"
+
+/* ============================================================== */
+/* periodization.types.ts */
+/* ============================================================== */
+/**
+ * @file Estructuras temporales: Macrociclo, Mesociclo y Microciclo.
+ */
+import { AthleteGroupCode } from '@/types/athlete.types'
+import { BaseEntity } from '@/types/core.types'
+
+/** Tipos de microciclo con volumen predefinido en la matriz de periodización. */
+export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
+
+/** Unión de todos los tipos de microciclos posibles. */
+export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
+
+export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
+
+export interface GroupVolumeProgression {
+  range: { min: number; max: number }
+  volumes: Record<VolumeMatrixMicrocycleType, number>
+}
+
+export interface Microcycle extends BaseEntity {
+  mesocycleId: string
+  weekNumber: number
+  type: MicrocycleType
+  startDate: string // 'YYYY-MM-DD'
+  endDate: string // 'YYYY-MM-DD'
+  targetVolumeKmByGroup: Partial<Record<AthleteGroupCode, number>>
+  notes?: string
+}
+
+export interface Mesocycle extends BaseEntity {
+  macrocycleId: string
+  title: string
+  number: number
+  period: PeriodType
+  objective: string
+  microcycles?: Microcycle[]
+}
+
+export interface Macrocycle extends BaseEntity {
+  teamId: string
+  title: string
+  targetRaceName: string
+  targetRaceDate: string // 'YYYY-MM-DD'
+  startDate: string
+  endDate: string
+  taperingWeeksCount: 2 | 3
+  mesocycles?: Mesocycle[]
+}
+
+
+/* ============================================================== */
+/* profile.types.ts */
+/* ============================================================== */
+import { User, AthletePhysiology } from '@/types/athlete.types'
+
+// Estado del formulario de edición en ProfileTab
+export interface EditProfileFormValues {
+  firstName: string
+  lastName: string
+  nickName?: string
+  phone?: string
+  emergencyContact?: string
+  emergencyPhone?: string
+  group: User['group']
+  physiology: AthletePhysiology
+}
+
+// Estadísticas acumuladas que se muestran en ProfileTab
+export interface ProfileStatsSummary {
+  totalDistanceKm: number
+  totalElevationGainM: number
+  totalWorkoutsCompleted: number
+  currentStreakDays: number
+}
+
+
+/* ============================================================== */
+/* team.types.ts */
+/* ============================================================== */
+import { BaseEntity } from '@/types/core.types'
+
+export interface Team extends BaseEntity {
+  name: string
+  description?: string
+  avatarLight?: string
+  avatarDark?: string
+}
+
+
+/* ============================================================== */
+/* ui.types.ts */
+/* ============================================================== */
+import { ReactNode } from 'react'
+import { LucideIcon } from 'lucide-react'
+
+export interface CardHeaderProps {
+  title: string
+  subtitle?: string
+  icon?: LucideIcon
+  iconColorClass?: string
+  children?: ReactNode
+}
+
+export interface StatPillProps {
+  icon: LucideIcon
+  label: string
+  value: number | string
+  unit: string
+  className?: string
+}
+
+
+/* ============================================================== */
+/* workout.types.ts */
+/* ============================================================== */
+/**
+ * @file Sesiones planificadas, tracks GPX, clima y logs de los atletas.
+ */
+import { BaseEntity, IntensityZone } from '@/types/core.types'
+import { AthleteGroupCode } from '@/types/athlete.types'
+import { FeelingValue } from '@workouts/components/FeelingSelector'
+
+export type TrainingLocationKey = 'parqueDeMayo' | 'laGranja' | 'diqueUllum'
+export type DayType = 'Workout' | 'Race' | 'Rest'
+export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
+
+export type WorkoutType =
+  | 'Base'
+  | 'Long'
+  | 'Intervals'
+  | 'Trail'
+  | 'Speed'
+  | 'Fartlek'
+  | 'Rest'
+  | 'PAM'
+  | 'Hills'
+  | 'Race'
+  | string
+
+export interface GroupVolumeOverride {
+  km: number
+  timeMin?: number
+  intervals?: string // ej: "8x800m"
+  notes?: string
+}
+
+/**
+ * Sesión creada por el entrenador (Base de datos)
+ */
+export interface Session extends BaseEntity {
+  microcycleId?: string
+  date: string // 'YYYY-MM-DD'
+  title: string
+  type: DayType
+  zone: IntensityZone
+  locationKey?: TrainingLocationKey
+  trackPath?: string
+  structure?: {
+    warmup: string
+    mainBlock: string
+    cooldown: string
+  }
+  defaultVolume: {
+    km: number
+    timeMin: number
+  }
+  groupOverrides?: Partial<Record<AthleteGroupCode, GroupVolumeOverride>>
+  notes?: string
+}
+
+/**
+ * Vista resuelta para la UI del atleta autenticado
+ */
+export interface WorkoutProps {
+  id?: number | string
+  title: string
+  type?: WorkoutType
+  distance: number
+  zone: IntensityZone
+  time: number
+  gain: number
+  pace: number
+  notes: string
+  targetGroups?: AthleteGroupCode[]
+  trackPath?: string
+  locationKey?: TrainingLocationKey
+}
+
+/**
+ * Registro de entrenamiento realizado (Strava-like + RPE)
+ */
+export interface LoggedWorkoutPayload {
+  workoutId?: string
+  date?: string // 'YYYY-MM-DD'
+  distanceKm: number
+  durationMin: number
+  elevationGain: number
+  avgHr?: number | null
+  feeling?: FeelingValue
+  rpe: number // 0 al 10
+  athleteNotes?: string
+  loggedAt: string
+}
+
+export interface WorkoutLog extends BaseEntity, LoggedWorkoutPayload {
+  userId: string
+  workoutSessionId?: string
+}
+
+/**
+ * Punto individual de un track con coordenadas y elevación.
+ */
+export interface TrackPoint {
+  lat: number
+  lon: number
+  ele: number
+  distance: number
+
+  time?: number
+  speed?: number
+  grade?: number
+  heartRate?: number
+  cadence?: number
+  power?: number
+}
+
+/**
+ * Datos parseados del track
+ */
+export interface TrackData {
+  /** Puntos GPS originales del track */
+  trackPoints: TrackPoint[]
+
+  /** Coordenadas en formato [lon, lat] o el formato definido por el consumidor */
+  coordinates: [number, number][]
+
+  /** Perfil de elevación para gráficos */
+  elevationProfile: {
+    km: string
+    elev: number
+    grade?: number
+  }[]
+
+  /** Distancia total recorrida */
+  distanceKm: number
+
+  /** Desnivel positivo acumulado */
+  gainMeters: number
+
+  /** Desnivel negativo acumulado */
+  lossMeters: number
+
+  /** Pendiente máxima */
+  maxGradePct: number
+
+  /** Elevación mínima del track */
+  minElevation: number
+
+  /** Elevación máxima del track */
+  maxElevation: number
+
+  /** Punto de inicio del track */
+  startCoordinates?: {
+    lat: number
+    lon: number
+  }
+
+  /** Punto final del track */
+  endCoordinates?: {
+    lat: number
+    lon: number
+  }
+
+  /** Punto de menor elevación del track */
+  lowestPoint?: {
+    lat: number
+    lon: number
+    elevation: number
+    distance: number
+  }
+
+  /** Punto de mayor elevación del track */
+  highestPoint?: {
+    lat: number
+    lon: number
+    elevation: number
+    distance: number
+  }
+}
+
+export interface WorkoutCardProps {
+  workout: WorkoutProps
+  date?: string
+  TrackData?: TrackData | null
+}
+
+/**
+ * Datos meteorológicos de Open-Meteo
+ */
+export interface WeatherData {
+  tempMax: number
+  tempMin: number
+  currentTemp?: number
+  windSpeed: number
+  windDirectionDeg: number
+  windDirectionCardinal: string
+  precipitationProb: number
+  weatherCode: number
+  conditionLabel?: string
+  isFavorableForRunning?: boolean
+}
+
+/**
+ * Estructuras de navegación del calendario semanal
+ */
+export interface WeeklyCycle {
+  id: string
+  title: string
+  phase: string
+  startDate: string
+  endDate: string
+  targetKm: number
+}
+
+export interface WeekDayRaw {
+  date: string
+  completedKm?: number
+  type?: WorkoutType
+  isToday?: boolean
+  isRest?: boolean
+  isDone?: boolean
+  isPartial?: boolean
+  isMissed?: boolean
+  status?: DayStatus
+  workoutId?: number
+}
+
+export interface WeekDay extends WeekDayRaw {
+  day?: string
+  dayName?: string
+  dayNumber?: number
+  fullDate?: string
+  km?: number
+}
+
+// Props de Componentes del Dominio Workouts
+export interface WeeklyCalendarCardProps {
+  cycle: WeeklyCycle
+  weekDays: WeekDay[]
+  selectedDay: number
+  selectedDate: Date
+  onSelectDay: (index: number) => void
+  onPrevWeek: () => void
+  onNextWeek: () => void
+  onSelectDate: (date: Date | undefined) => void
+}
+
+export interface ElevationChartProps {
+  workout: WorkoutProps
+  elevData: { km: string; elev: number }[]
+  elevMin: number
+  elevMax: number
+  yDomain: number[]
+  xDomain?: string[]
+}
+
+export interface ElevTooltipProps {
+  active?: boolean
+  payload?: { value: number }[]
+  label?: string
+}
+
+export interface WeekCalendarPickerProps {
+  selectedDate: Date
+  onSelectDate: (date: Date) => void
+  onClose?: () => void
+}
+
+export interface LogWorkoutDialogProps {
+  isOpen?: boolean
+  onClose: () => void
+  workout?: WorkoutProps | null
+  dateStr?: string
+  onSave?: (loggedData: LoggedWorkoutPayload) => void
+  onDelete?: () => void
+}
+
+export interface DayStatusIndicatorProps {
+  day: WeekDay
+  isSelected?: boolean
+}
+
+

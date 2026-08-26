@@ -1,4 +1,4 @@
-import { MicrocycleType } from '@/types/periodization.types'
+import { MicrocycleType } from '@/types/training/periodization.types'
 
 /**
  * Rangos teóricos de TSB esperados según la fase del microciclo

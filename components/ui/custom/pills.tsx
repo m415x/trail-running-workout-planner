@@ -2,7 +2,7 @@
 
 import { Heart, Info } from 'lucide-react'
 import { StatPillProps } from '@/types'
-import { HrZoneConfig } from '@/utils/constants'
+import { HrZoneConfig } from '@/lib/constants'
 import { cn } from '@/lib/utils'
 import { CustomCardInside } from '@ui/custom/card-containers'
 import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'

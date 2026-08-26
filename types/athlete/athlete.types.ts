@@ -1,13 +1,12 @@
 /**
  * @file Modelos de atletas, grupos y equipo deportivo.
  */
-import { BaseEntity } from '@/types/core.types'
+import { BaseEntity } from '@/types/core/core.types'
 
 export type AthleteCategoryCode = 'E' | 'U' | 'M' | 'H' | 'S' | 'B'
 export type AthleteLevelCode = '1' | '2' | '3'
-
-// Genera 'E1' | 'E2' | ... | 'B3'
 export type AthleteGroupCode = `${AthleteCategoryCode}${AthleteLevelCode}`
+export type userRole = 'athlete' | 'coach' | 'admin'
 
 /**
  * 1. Registro histórico de evaluaciones y biometría (Snapshots periódicos)
@@ -75,7 +74,7 @@ export interface MedicalRecord {
  * 5. Entidad Principal de Usuario / Atleta
  */
 export interface User extends BaseEntity {
-  role: 'athlete' | 'coach' | 'admin'
+  role: userRole
   teamId?: string
   email: string
   firstName: string

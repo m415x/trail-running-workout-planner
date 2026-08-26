@@ -1,6 +1,6 @@
 import { Activity, LucideIcon } from 'lucide-react'
 import { WorkoutType } from '@/types'
-import { WORKOUT_TYPES_CONFIG, WorkoutTypeConfig } from '@/utils/constants'
+import { WORKOUT_TYPES_CONFIG, WorkoutTypeConfig } from '@/lib/constants'
 
 /**
  * Retorna el ícono configurado para el tipo de rutina (o Activity por defecto).

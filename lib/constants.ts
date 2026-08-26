@@ -75,7 +75,7 @@ export const WORKOUT_TYPES_CONFIG: Record<WorkoutType, WorkoutTypeConfig> = {
     description: 'Fraccionados y pasadas de alta intensidad con recuperación',
   },
   Trail: {
-    label: 'Entrenamiento Trail',
+    label: 'Entrenamiento Montaña',
     icon: Mountain,
     description: 'Terreno técnico, montaña y senderos naturales',
   },

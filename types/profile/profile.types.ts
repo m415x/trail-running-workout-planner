@@ -1,4 +1,4 @@
-import { User, AthletePhysiology } from '@/types/athlete.types'
+import { User, AthletePhysiology } from '@/types/athlete/athlete.types'
 
 // Estado del formulario de edición en ProfileTab
 export interface EditProfileFormValues {

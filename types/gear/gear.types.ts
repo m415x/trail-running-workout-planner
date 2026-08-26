@@ -1,4 +1,4 @@
-import { BaseEntity } from '@/types/core.types'
+import { BaseEntity } from '@/types/core/core.types'
 
 export type ShoeStatus = 'active' | 'warning' | 'retired'
 
@@ -8,6 +8,7 @@ export interface Shoe extends BaseEntity {
   type: string // Ej: "Trail / Competición"
   currentKm: number
   maxKm: number // Ej: 800 km
+  isActive?: boolean
   isDefault?: boolean
 }
 
@@ -17,5 +18,5 @@ export interface ShoeItemProps {
   type: string
   km: number
   maxKm: number
-  status: ShoeStatus | string
+  status: ShoeStatus
 }

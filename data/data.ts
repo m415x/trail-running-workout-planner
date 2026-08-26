@@ -1,8 +1,8 @@
 import { Team, User, WorkoutProps, WeekDayRaw, WeeklyCycle, GeoLocation } from '@/types'
-import { TrainingLocationKey, ShoeItemProps } from '@/types'
+import { ShoeItemProps } from '@/types'
 
-export const TRAINING_LOCATIONS: Record<TrainingLocationKey, GeoLocation> = {
-  parqueDeMayo: {
+export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
+  elParque: {
     name: 'Parque de Mayo',
     lat: -31.529822,
     lon: -68.5440881,
@@ -20,7 +20,7 @@ export const TRAINING_LOCATIONS: Record<TrainingLocationKey, GeoLocation> = {
 } as const
 
 // Ubicación por defecto de la app
-export const DEFAULT_FALLBACK_LOCATION = TRAINING_LOCATIONS.parqueDeMayo
+export const DEFAULT_FALLBACK_LOCATION = TRAINING_LOCATIONS.elParque
 
 export const team: Team = {
   id: 'team_1',
@@ -46,11 +46,11 @@ export const currentUser: User = {
 }
 
 export const weeklyCycle: WeeklyCycle = {
-  id: 'cycle_33',
-  title: 'Microciclo #33',
+  id: 'cycle_35',
+  title: 'Microciclo #35',
   phase: 'Desarrollo',
-  startDate: '2026-08-17',
-  endDate: '2026-08-23',
+  startDate: '2026-08-24',
+  endDate: '2026-08-30',
   targetKm: 39,
 }
 
@@ -312,13 +312,13 @@ export const runningShoes: ShoeItemProps[] = [
     type: 'Competición / Terreno Técnico',
     km: 248,
     maxKm: 650,
-    status: 'Óptimo',
+    status: 'active',
   },
   {
     name: 'Hoka Speedgoat 5',
     type: 'Rodajes Largos / Amortiguación',
     km: 490,
     maxKm: 700,
-    status: 'Desgaste medio',
+    status: 'warning',
   },
 ]

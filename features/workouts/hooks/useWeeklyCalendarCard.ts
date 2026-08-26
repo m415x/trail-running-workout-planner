@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { WeekDay, WeeklyCycle } from '@/types'
-import { formatDateRange } from '@/utils/date-helpers'
+import { formatDateRange } from '@/lib/date-helpers'
 import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/tracks/calculators'
 
 export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[]) {

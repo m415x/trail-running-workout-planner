@@ -21,14 +21,14 @@ export function HomeHeader({ team, user }: { team: Team; user: User }) {
             <AvatarImage
               src={team.avatarLight}
               alt={team.name}
-              className='border-image-light object-cover dark:hidden scale-105'
+              className='border-image-light object-cover dark:hidden'
             />
 
             {/* Imagen para modo oscuro */}
             <AvatarImage
               src={team.avatarDark}
               alt={team.name}
-              className='border-image-dark object-cover hidden dark:block scale-105'
+              className='border-image-dark object-cover hidden dark:block'
             />
             <AvatarFallback className='font-semibold text-foreground text-xs'>{initials}</AvatarFallback>
           </Avatar>
