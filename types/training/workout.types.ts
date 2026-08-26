@@ -66,22 +66,6 @@ export interface WorkoutCardProps {
 }
 
 /**
- * Datos meteorológicos de Open-Meteo
- */
-export interface WeatherData {
-  tempMax: number
-  tempMin: number
-  currentTemp?: number
-  windSpeed: number
-  windDirectionDeg: number
-  windDirectionCardinal: string
-  precipitationProb: number
-  weatherCode: number
-  conditionLabel?: string
-  isFavorableForRunning?: boolean
-}
-
-/**
  * Estructuras de navegación del calendario semanal
  */
 export interface WeeklyCycle {

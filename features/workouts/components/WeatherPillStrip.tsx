@@ -1,7 +1,8 @@
 'use client'
 
 import { SnowflakeIcon, DropIcon } from '@phosphor-icons/react'
-import { WeatherData, interpretWmoCode } from '@/lib/weather/open-meteo'
+import { WeatherData } from '@/types'
+import { interpretWmoCode } from '@/service/weather/open-meteo'
 import { WeatherIcon, WindIcon, GustIcon } from '@icons/'
 import { CustomCardInside } from '@ui/custom/card-containers'
 
@@ -21,15 +22,15 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
   if (!weather) return null
 
-  const { iconType, label } = interpretWmoCode(weather.weatherCode)
+  const { condition, label } = interpretWmoCode(weather.weatherCode)
 
-  const isSnowCondition = iconType === 'snow' || weather.snowfallSum > 0
+  const isSnowCondition = condition === 'snow' || weather.snowfallSum > 0
 
   return (
     <CustomCardInside className='flex justify-center rounded-xl px-0 py-0.5 gap-3'>
       {/* Estado del tiempo + temperaturas */}
       <div className='flex flex-1 items-center justify-center gap-1.5'>
-        <WeatherIcon iconType={iconType} />
+        <WeatherIcon iconType={condition} />
 
         <span className='font-heading font-bold text-foreground text-[11px]'>
           {weather.tempMax}°<span className='font-normal text-muted-foreground ml-0.5'>/ {weather.tempMin}°</span>

@@ -19,6 +19,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@ducanh2912/next-pwa": "^10.2.9",
     "@phosphor-icons/react": "^2.1.10",
+    "@tabler/icons-react": "^3.46.0",
     "@tanstack/react-table": "^9.1.2",
     "better-sqlite3": "^13.0.3",
     "class-variance-authority": "^0.7.1",

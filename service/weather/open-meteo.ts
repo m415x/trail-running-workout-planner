@@ -1,37 +1,4 @@
-//TODO Configurar SAT con SMN
-export type AlertLevel = 'green' | 'yellow' | 'orange' | 'red'
-export type AlertPhenomenon = 'wind' | 'zonda' | 'storm' | 'rain' | 'snow' | 'heat' | 'cold'
-
-export interface WeatherAlert {
-  level: AlertLevel
-  phenomenon: AlertPhenomenon
-  title: string
-  description?: string
-  source: 'smn' | 'estimated'
-  validFrom?: string
-  validTo?: string
-}
-
-export interface WeatherData {
-  tempMax: number
-  tempMin: number
-  currentTemp?: number
-
-  windSpeed: number
-  windGusts: number
-  windDirectionDeg: number
-  windDirectionCardinal: string
-
-  precipitationProb: number
-  snowfallSum: number
-
-  weatherCode: number
-  conditionLabel: string
-
-  isFavorableForRunning: boolean
-
-  alerts?: WeatherAlert[]
-}
+import type { WeatherCondition, WeatherData } from '@/types'
 
 // Convierte grados a puntos cardinales
 export function getWindCardinal(deg: number): string {
@@ -57,44 +24,87 @@ export function getWindCardinal(deg: number): string {
   return directions[index] ?? 'N'
 }
 
-// Interpreta el código WMO de la OMM (Organización Meteorológica Mundial)
-export function interpretWmoCode(code: number): {
+export interface WmoInterpretation {
+  condition: WeatherCondition
   label: string
-  iconType: 'sun' | 'cloud-sun' | 'cloud' | 'rain' | 'storm' | 'snow'
-} {
+}
+
+// Interpreta el código WMO de la OMM (Organización Meteorológica Mundial)
+export function interpretWmoCode(code: number): WmoInterpretation {
   switch (code) {
     case 0:
-      return { label: 'Despejado', iconType: 'sun' }
+      return {
+        condition: 'clear',
+        label: 'Despejado',
+      }
+
     case 1:
+      return {
+        condition: 'partly-cloudy',
+        label: 'Principalmente despejado',
+      }
+
     case 2:
-      return { label: 'Parcialmente nublado', iconType: 'cloud-sun' }
+      return {
+        condition: 'partly-cloudy',
+        label: 'Parcialmente nublado',
+      }
+
     case 3:
-      return { label: 'Nublado', iconType: 'cloud' }
+      return {
+        condition: 'cloudy',
+        label: 'Nublado',
+      }
+
     case 45:
     case 48:
-      return { label: 'Niebla / Neblina', iconType: 'cloud' }
+      return {
+        condition: 'fog',
+        label: 'Niebla / Neblina',
+      }
+
     case 51:
     case 53:
     case 55:
     case 61:
     case 63:
-    case 65:
     case 80:
     case 81:
+      return {
+        condition: 'rain',
+        label: 'Lluvia',
+      }
+
+    case 65:
     case 82:
-      return { label: 'Lluvia', iconType: 'rain' }
+      return {
+        condition: 'heavy-rain',
+        label: 'Lluvia intensa',
+      }
+
     case 71:
     case 73:
     case 75:
     case 85:
     case 86:
-      return { label: 'Nieve', iconType: 'snow' }
+      return {
+        condition: 'snow',
+        label: 'Nieve',
+      }
+
     case 95:
     case 96:
     case 99:
-      return { label: 'Tormenta eléctrica', iconType: 'storm' }
+      return {
+        condition: 'thunderstorm',
+        label: 'Tormenta eléctrica',
+      }
+
     default:
-      return { label: 'Soleado', iconType: 'sun' }
+      return {
+        condition: 'clear',
+        label: 'Desconocido',
+      }
   }
 }
 
@@ -113,11 +123,18 @@ export async function fetchDailyWeather(
         'weather_code',
         'temperature_2m_max',
         'temperature_2m_min',
+        'apparent_temperature_max',
+        'apparent_temperature_min',
+        'precipitation_sum',
+        'precipitation_probability_max',
+        'snowfall_sum',
         'wind_speed_10m_max',
         'wind_gusts_10m_max',
         'wind_direction_10m_dominant',
-        'precipitation_probability_max',
-        'snowfall_sum',
+        'relative_humidity_2m_mean',
+        'visibility_mean',
+        'sunrise',
+        'sunset',
       ].join(','),
 
       timezone: 'America/Argentina/San_Juan',
@@ -166,22 +183,74 @@ export async function fetchDailyWeather(
 
     const weatherCode = daily.weather_code[idx] ?? 0
 
-    const conditionLabel = interpretWmoCode(weatherCode).label
+    const interpretation = interpretWmoCode(weatherCode)
 
-    const isFavorableForRunning = windSpeed < 35 && windGusts < 50 && weatherCode < 60
+    const condition = interpretation.condition
+    const conditionLabel = interpretation.label
+
+    const apparentTempMax = Math.round(daily.apparent_temperature_max?.[idx] ?? tempMax)
+
+    const apparentTempMin = Math.round(daily.apparent_temperature_min?.[idx] ?? tempMin)
+
+    const precipitationSum = Number((daily.precipitation_sum?.[idx] ?? 0).toFixed(1))
+
+    const humidity =
+      daily.relative_humidity_2m_mean?.[idx] != null ? Math.round(daily.relative_humidity_2m_mean[idx]) : undefined
+
+    const visibility = daily.visibility_mean?.[idx] != null ? Math.round(daily.visibility_mean[idx]) : undefined
+
+    const sunrise = daily.sunrise?.[idx]
+    const sunset = daily.sunset?.[idx]
+
+    const isFoggy = condition === 'fog'
+    const isThunderstorm = condition === 'thunderstorm'
+    const isSnowing = condition === 'snow' || snowfallSum > 0
+
+    const isFavorableForRunning =
+      windSpeed < 35 &&
+      windGusts < 50 &&
+      !isThunderstorm &&
+      !isSnowing &&
+      condition !== 'heavy-rain' &&
+      precipitationProb < 70
 
     return {
       tempMax,
       tempMin,
+
+      apparentTempMax,
+      apparentTempMin,
+
       windSpeed,
       windGusts,
       windDirectionDeg,
       windDirectionCardinal,
+
+      precipitationSum,
       precipitationProb,
+
       snowfallSum,
+
+      humidity,
+      visibility,
+
       weatherCode,
+      condition,
       conditionLabel,
+
+      isFoggy,
+      isThunderstorm,
+      isSnowing,
+
       isFavorableForRunning,
+
+      sun:
+        sunrise && sunset
+          ? {
+              sunrise,
+              sunset,
+            }
+          : undefined,
     }
   } catch (error) {
     console.error('Error fetching weather from Open-Meteo:', error)
