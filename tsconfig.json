@@ -22,7 +22,7 @@
     "paths": {
       "@/*": ["./*"],
       "@ui/*": ["./components/ui/*"],
-      "@icons/*": ["./components/ui/icons/*"],
+      "@icons": ["./components/ui/icons"],
       "@workouts/*": ["./features/workouts/*"],
       "@plan/*": ["./features/plan/*"],
       "@stats/*": ["./features/stats/*"],

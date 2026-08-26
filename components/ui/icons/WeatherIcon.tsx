@@ -16,44 +16,44 @@ interface WeatherIconProps extends IconProps {
   iconType: WeatherCondition
 }
 
-export function WeatherIcon({ iconType, size = 16, weight = 'regular', ...props }: WeatherIconProps) {
+export function WeatherIcon({ iconType, size = 14, weight = 'regular', ...props }: WeatherIconProps) {
   const commonProps = {
     size,
     weight,
-    className: 'shrink-0',
+    className: 'shrink-0 animation-duration-[3s]',
     ...props,
   }
 
   switch (iconType) {
     case 'clear':
-      return <SunIcon {...commonProps} className='text-amber-500 animate-spin-slow' {...props} />
+      return <SunIcon {...commonProps} className='text-amber-500 animate-spin' {...props} />
 
     case 'partly-cloudy':
-      return <CloudSunIcon {...commonProps} className='text-amber-400' {...props} />
+      return <CloudSunIcon {...commonProps} className='text-amber-400 animate-pulse' {...props} />
 
     case 'cloudy':
-      return <CloudIcon {...commonProps} className='text-sky-400' {...props} />
+      return <CloudIcon {...commonProps} className='text-sky-400 animate-pulse' {...props} />
 
     case 'fog':
-      return <CloudFogIcon {...commonProps} className='text-slate-400' {...props} />
+      return <CloudFogIcon {...commonProps} className='text-slate-400 animate-pulse' {...props} />
 
     case 'rain':
-      return <CloudRainIcon {...commonProps} className='text-blue-400' {...props} />
+      return <CloudRainIcon {...commonProps} className='text-blue-400 animate-pulse' {...props} />
 
     case 'heavy-rain':
-      return <CloudRainIcon {...commonProps} weight={'fill'} className='text-blue-400' {...props} />
+      return <CloudRainIcon {...commonProps} weight={'fill'} className='text-blue-400 animate-pulse' {...props} />
 
     case 'snow':
-      return <SnowflakeIcon {...commonProps} className='text-cyan-300' {...props} />
+      return <SnowflakeIcon {...commonProps} className='text-cyan-300 animate-pulse' {...props} />
 
     case 'sleet':
-      return <CloudSnowIcon {...commonProps} className='text-cyan-300' {...props} />
+      return <CloudSnowIcon {...commonProps} className='text-cyan-300 animate-pulse' {...props} />
 
     case 'thunderstorm':
-      return <CloudLightningIcon {...commonProps} className='text-purple-400' {...props} />
+      return <CloudLightningIcon {...commonProps} className='text-purple-400 animate-pulse' {...props} />
 
     case 'windy':
-      return <WindIcon {...commonProps} className='text-slate-400' {...props} />
+      return <WindIcon {...commonProps} className='text-slate-400 animate-pulse' {...props} />
 
     default:
       return null

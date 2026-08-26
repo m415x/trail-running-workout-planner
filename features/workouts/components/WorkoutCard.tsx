@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { CheckCircle, Coffee, Edit } from 'lucide-react'
+import { CheckCircleIcon, CoffeeIcon, NotePencilIcon } from '@phosphor-icons/react'
 import { WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
@@ -90,12 +90,12 @@ export function BaseWorkoutCard({
           <>
             {isLogged ? (
               <GlassFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
-                <Edit />
+                <NotePencilIcon />
                 <span>Editar registro</span>
               </GlassFilledButton>
             ) : (
               <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
-                <CheckCircle />
+                <CheckCircleIcon />
                 <span>{actionButtonLabel}</span>
               </PrimaryFilledButton>
             )}
@@ -141,7 +141,7 @@ export function RestCard() {
 
   return (
     <CustomCard className='items-center py-6'>
-      <Coffee className='text-muted-foreground' size={22} />
+      <CoffeeIcon className='text-muted-foreground' size={22} />
       <p className='font-heading font-semibold text-foreground text-sm mt-1'>{t('types.Rest')}</p>
       <p className='text-xs text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
     </CustomCard>

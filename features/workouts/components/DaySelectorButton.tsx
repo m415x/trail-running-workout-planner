@@ -45,6 +45,7 @@ export function DaySelectorButton({
         {/* Ícono superior según el WorkoutType */}
         <div className='mb-1 flex items-center justify-center h-3.5'>
           {!hideStatusIndicators &&
+            !day.isRest &&
             createElement(icon, {
               size: 12,
               className: cn(

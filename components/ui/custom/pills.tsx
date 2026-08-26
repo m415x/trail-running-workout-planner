@@ -18,7 +18,7 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
         <span className='text-muted-foreground font-normal text-xs ml-1 whitespace-pre-line'>{unit}</span>
       </p>
 
-      <p className='text-muted-foreground text-[10px] mt-1'>{label}</p>
+      <p className='text-muted-foreground text-[10px] uppercase mt-1'>{label}</p>
     </CustomCardInside>
   )
 }

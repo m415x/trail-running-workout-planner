@@ -1,16 +1,16 @@
 import {
-  Activity,
-  Coffee,
-  Gauge,
-  Mountain,
-  Route,
-  Timer,
-  Zap,
-  Target,
-  TrendingUp,
-  Trophy,
-  LucideIcon,
-} from 'lucide-react'
+  PulseIcon as BaseIcon,
+  PathIcon as LongIcon,
+  TimerIcon as IntervalsIcon,
+  MountainsIcon as TrailIcon,
+  LightningIcon as SpeedIcon,
+  SpeedometerIcon as FartlekIcon,
+  CrosshairIcon as PamIcon,
+  TrendUpIcon as HillsIcon,
+  TrophyIcon as RaceIcon,
+  CoffeeIcon as RestIcon,
+  Icon,
+} from '@phosphor-icons/react'
 import { IntensityZone, AthleteCategoryCode, AthleteLevelCode, WorkoutType } from '@/types'
 
 interface DayConfig {
@@ -54,59 +54,59 @@ export const MONTHS_OF_YEAR: readonly MonthConfig[] = [
 
 export interface WorkoutTypeConfig {
   label: string
-  icon: LucideIcon
+  icon: Icon
   description?: string
 }
 
 export const WORKOUT_TYPES_CONFIG: Record<WorkoutType, WorkoutTypeConfig> = {
   Base: {
     label: 'Rodaje Base',
-    icon: Activity,
+    icon: BaseIcon,
     description: 'Rodaje aeróbico continuo a ritmo suave / conversacional',
   },
   Long: {
     label: 'Fondo / Tirada Larga',
-    icon: Route,
+    icon: LongIcon,
     description: 'Volumen aeróbico y resistencia muscular de larga duración',
   },
   Intervals: {
     label: 'Series / Intervalos',
-    icon: Timer,
+    icon: IntervalsIcon,
     description: 'Fraccionados y pasadas de alta intensidad con recuperación',
   },
   Trail: {
-    label: 'Entrenamiento Montaña',
-    icon: Mountain,
+    label: 'Montaña',
+    icon: TrailIcon,
     description: 'Terreno técnico, montaña y senderos naturales',
   },
   Speed: {
     label: 'Velocidad / Calidad',
-    icon: Zap,
+    icon: SpeedIcon,
     description: 'Ritmos rápidos, reactividad y potencia aeróbica',
   },
   Fartlek: {
     label: 'Fartlek',
-    icon: Gauge,
+    icon: FartlekIcon,
     description: 'Juegos continuos con variaciones libres o pautadas de ritmo',
   },
   PAM: {
     label: 'Test PAM / 1000m',
-    icon: Target,
+    icon: PamIcon,
     description: 'Evaluación y test de potencia aeróbica máxima',
   },
   Hills: {
     label: 'Cuestas y Desnivel',
-    icon: TrendingUp,
+    icon: HillsIcon,
     description: 'Fuerza específica y trabajo de subidas con pendiente',
   },
   Race: {
     label: 'Día de Carrera',
-    icon: Trophy,
+    icon: RaceIcon,
     description: 'Competición oficial o evento objetivo',
   },
   Rest: {
     label: 'Descanso',
-    icon: Coffee,
+    icon: RestIcon,
     description: 'Recuperación activa o descanso total',
   },
 } as const

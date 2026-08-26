@@ -2,27 +2,27 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, CalendarRange, BarChart2, User, LucideIcon } from 'lucide-react'
+import { HouseSimpleIcon, CalendarDotsIcon, ChartLineIcon, UserIcon, Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 export interface NavItemsProps {
   href: string
   label: string
-  icon: LucideIcon
+  icon: Icon
 }
 
 const NAV_ITEMS: NavItemsProps[] = [
-  { href: '/', label: 'Inicio', icon: Home },
-  { href: '/plan', label: 'Plan', icon: CalendarRange },
-  { href: '/stats', label: 'Stats', icon: BarChart2 },
-  { href: '/profile', label: 'Perfil', icon: User },
+  { href: '/', label: 'Inicio', icon: HouseSimpleIcon },
+  { href: '/plan', label: 'Plan', icon: CalendarDotsIcon },
+  { href: '/stats', label: 'Stats', icon: ChartLineIcon },
+  { href: '/profile', label: 'Perfil', icon: UserIcon },
 ]
 
 export function BottomNavigationBar() {
   const pathname = usePathname()
 
   return (
-    <nav className='w-full sm:max-w-97.5 absolute bottom-0 z-50 border-t border-border/80 bg-background/80 backdrop-blur-lg px-2 py-3 transition-all'>
+    <nav className='w-full sm:max-w-97.5 absolute bottom-0 z-50 border-t border-border/80 bg-background/80 backdrop-blur-lg p-2 transition-all'>
       <div className='max-w-md mx-auto flex items-center justify-around'>
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const isActive = pathname === href

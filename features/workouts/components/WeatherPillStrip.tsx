@@ -1,10 +1,11 @@
 'use client'
 
-import { SnowflakeIcon, DropIcon } from '@phosphor-icons/react'
+import { DropIcon, ArrowCircleDownIcon } from '@phosphor-icons/react'
+import { WeatherIcon, WindIcon, GustIcon } from '@icons'
 import { WeatherData } from '@/types'
 import { interpretWmoCode } from '@/service/weather/open-meteo'
-import { WeatherIcon, WindIcon, GustIcon } from '@icons/'
 import { CustomCardInside } from '@ui/custom/card-containers'
+import { IconBrandSnowflake } from '@tabler/icons-react'
 
 interface WeatherPillStripProps {
   weather: WeatherData | null
@@ -29,7 +30,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
   return (
     <CustomCardInside className='flex justify-center rounded-xl px-0 py-0.5 gap-3'>
       {/* Estado del tiempo + temperaturas */}
-      <div className='flex flex-1 items-center justify-center gap-1.5'>
+      <div className='flex flex-1 items-center justify-center gap-1'>
         <WeatherIcon iconType={condition} />
 
         <span className='font-heading font-bold text-foreground text-[11px]'>
@@ -40,8 +41,8 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
       </div>
 
       {/* Viento y dirección */}
-      <div className='flex flex-1 items-center justify-center gap-1.5 text-foreground/90 font-mono'>
-        <WindIcon />
+      <div className='flex flex-1 items-center justify-center gap-1 text-foreground/90 font-mono'>
+        <WindIcon className='animate-spin animation-duration-[5s]' />
 
         <span className='font-heading font-bold text-foreground text-[11px]'>
           {weather.windSpeed}
@@ -50,20 +51,20 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
         {/* Flecha de brújula */}
         <span
-          className='inline-flex items-center text-primary transition-transform duration-300 ml-0.5'
+          className='inline-flex items-center transition-transform duration-300 ml-0.5'
           style={{
             transform: `rotate(${weather.windDirectionDeg}deg)`,
           }}
           title={`Viento desde el ${weather.windDirectionCardinal} (${weather.windDirectionDeg}°)`}
         >
-          ↑
+          <ArrowCircleDownIcon size={14} />
         </span>
 
         <span className='text-[9px] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
       </div>
 
       {/* Ráfagas */}
-      <div className='flex flex-1 items-center justify-center gap-1.5 text-foreground/90 font-mono'>
+      <div className='flex flex-1 items-center justify-center gap-1 text-foreground/90 font-mono'>
         <GustIcon />
 
         <span className='font-heading font-bold text-foreground text-[11px]'>
@@ -74,8 +75,8 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
       {/* Nieve / precipitación */}
       {isSnowCondition ? (
-        <div className='flex flex-1 items-center justify-center gap-1.5 text-cyan-500 font-mono'>
-          <SnowflakeIcon size={12} />
+        <div className='flex flex-1 items-center justify-center gap-1 text-cyan-500 font-mono'>
+          <IconBrandSnowflake size={14} />
 
           <span className='font-heading font-semibold text-[11px]'>
             {weather.snowfallSum > 0 ? `${weather.snowfallSum} cm` : `${weather.precipitationProb}%`}
@@ -83,8 +84,8 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
         </div>
       ) : (
         weather.precipitationProb > 10 && (
-          <div className='flex flex-1 items-center justify-center gap-1.5 text-blue-500 font-mono'>
-            <DropIcon size={12} />
+          <div className='flex flex-1 items-center justify-center gap-1 text-blue-500 font-mono'>
+            <DropIcon size={14} />
 
             <span className='font-heading font-semibold text-[11px]'>{weather.precipitationProb}%</span>
           </div>

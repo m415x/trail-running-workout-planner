@@ -1,6 +1,6 @@
 'use client'
 
-import { CircleCheckBig, CircleMinus, X } from 'lucide-react'
+import { CheckIcon, MinusCircleIcon, XIcon } from '@phosphor-icons/react'
 import { DayStatusIndicatorProps } from '@/types'
 import { getDayStatus } from '@/lib/date-helpers'
 import { cn } from '@/lib/utils'
@@ -10,17 +10,17 @@ export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps)
 
   // Si está seleccionado, los íconos/puntos se pintan de blanco para dar contraste sobre el fondo naranja
   if (status === 'completed') {
-    return (
-      <CircleCheckBig size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-emerald-500')} />
-    )
+    return <CheckIcon size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-emerald-500')} />
   }
 
   if (status === 'partial') {
-    return <CircleMinus size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-amber-500')} />
+    return (
+      <MinusCircleIcon size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-amber-500')} />
+    )
   }
 
   if (status === 'missed') {
-    return <X size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-red-500')} />
+    return <XIcon size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-red-500')} />
   }
 
   if (status === 'pending') {

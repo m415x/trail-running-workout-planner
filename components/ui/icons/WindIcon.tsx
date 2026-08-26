@@ -4,6 +4,6 @@ interface WindIconProps extends IconProps {
   size?: number
 }
 
-export function WindIcon({ size = 12, ...props }: WindIconProps) {
+export function WindIcon({ size = 14, ...props }: WindIconProps) {
   return <IconWindmill size={size} className='text-muted-foreground' {...props} />
 }

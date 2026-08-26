@@ -1,13 +1,13 @@
-import { Activity, LucideIcon } from 'lucide-react'
+import { PulseIcon, Icon } from '@phosphor-icons/react'
 import { WorkoutType } from '@/types'
 import { WORKOUT_TYPES_CONFIG, WorkoutTypeConfig } from '@/lib/constants'
 
 /**
- * Retorna el ícono configurado para el tipo de rutina (o Activity por defecto).
+ * Retorna el ícono configurado para el tipo de rutina (o PulseIcon por defecto).
  */
-export function getWorkoutIcon(type?: WorkoutType): LucideIcon {
-  if (!type) return Activity
-  return WORKOUT_TYPES_CONFIG[type]?.icon ?? Activity
+export function getWorkoutIcon(type?: WorkoutType): Icon {
+  if (!type) return PulseIcon
+  return WORKOUT_TYPES_CONFIG[type]?.icon ?? PulseIcon
 }
 
 /**
@@ -24,7 +24,7 @@ export function getWorkoutTypeLabel(type?: WorkoutType, fallbackTitle?: string):
 export function getWorkoutTypeConfig(type?: WorkoutType): WorkoutTypeConfig {
   const fallback: WorkoutTypeConfig = {
     label: 'Entrenamiento',
-    icon: Activity,
+    icon: PulseIcon,
   }
   if (!type) return fallback
   return WORKOUT_TYPES_CONFIG[type] ?? fallback

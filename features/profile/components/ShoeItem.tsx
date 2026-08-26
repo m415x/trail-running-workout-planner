@@ -1,4 +1,4 @@
-import { ShoeItemProps } from '@/types/'
+import { ShoeItemProps } from '@/types'
 import ProgressGradient from '@ui/custom/progress-gradient'
 
 export function ShoeItem({ name, type, km, maxKm, status }: ShoeItemProps) {
