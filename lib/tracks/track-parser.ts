@@ -96,8 +96,11 @@ function calculateMaxGrade(points: TrackPoint[], windowSizeMeters = 100): number
 
   for (let startIndex = 0; startIndex < points.length; startIndex++) {
     const start = points[startIndex]
+    if (!start) continue
 
-    while (endIndex < points.length && points[endIndex].distance < start.distance + windowSizeMeters) {
+    const startDist = start.distance ?? 0
+
+    while (endIndex < points.length && (points[endIndex]?.distance ?? 0) < startDist + windowSizeMeters) {
       endIndex++
     }
 
@@ -106,7 +109,10 @@ function calculateMaxGrade(points: TrackPoint[], windowSizeMeters = 100): number
     }
 
     const end = points[endIndex]
-    const deltaDistance = end.distance - start.distance
+    if (!end) continue
+
+    const endDist = end.distance ?? 0
+    const deltaDistance = endDist - startDist
 
     if (deltaDistance <= 0) {
       continue
@@ -254,7 +260,7 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
             lat: lowestPoint.lat,
             lon: lowestPoint.lon,
             elevation: lowestPoint.ele,
-            distance: lowestPoint.distance,
+            distance: lowestPoint.distance ?? 0,
           }
         : undefined,
     }

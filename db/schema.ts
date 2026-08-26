@@ -7,9 +7,7 @@ import type {
   MedicalRecord,
   PeriodType,
   MicrocycleType,
-  DayType,
   IntensityZone,
-  TrainingLocationKey,
   GroupVolumeOverride,
 } from '@/types'
 

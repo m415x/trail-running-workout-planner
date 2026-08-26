@@ -146,7 +146,7 @@ export function generateFractalMacrocycle({
 
   return {
     id: 'macro-1',
-    teamId: 'team-el-parque',
+    group: 'S2',
     title,
     targetRaceName,
     targetRaceDate,

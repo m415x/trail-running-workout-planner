@@ -11,16 +11,16 @@ export function resolveWorkoutForAthlete(session: Session, athleteGroup: Athlete
   // 2. Resolución segura de las notas y estructura de la sesión
   let specificNotes = ''
 
-  if (override?.intervals) {
-    const baseBlock = override.notes ?? session.structure?.mainBlock ?? session.notes ?? ''
-    specificNotes = baseBlock ? `${override.intervals}. ${baseBlock}` : override.intervals
-  } else if (session.structure) {
-    specificNotes = [session.structure.warmup, session.structure.mainBlock, session.structure.cooldown]
-      .filter(Boolean)
-      .join(' | ')
-  } else {
-    specificNotes = session.notes ?? session.title
-  }
+  // if (override?.intervals) {
+  //   const baseBlock = override.notes ?? session.structure?.mainBlock ?? session.notes ?? ''
+  //   specificNotes = baseBlock ? `${override.intervals}. ${baseBlock}` : override.intervals
+  // } else if (session.structure) {
+  //   specificNotes = [session.structure.warmup, session.structure.mainBlock, session.structure.cooldown]
+  //     .filter(Boolean)
+  //     .join(' | ')
+  // } else {
+  //   specificNotes = session.notes ?? session.title
+  // }
 
   return {
     id: Number(session.id) || 1,
