@@ -1,7 +1,7 @@
 'use client'
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
-import { FEELING_OPTIONS, FeelingSelector } from '@workouts/components/FeelingSelector'
+import { FeelingSelector } from '@workouts/components/FeelingSelector'
 import { RpeSelector } from '@workouts/components/RpeSelector'
 import { useSelfAssessment, SelfAssessmentValues } from '@workouts/hooks/useSelfAssessment'
 
