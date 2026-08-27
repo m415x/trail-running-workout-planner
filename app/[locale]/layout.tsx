@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { routing } from '../../i18n/routing'
+import { ThemeProvider } from '@/components/theme-provider'
 import '../globals.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -55,9 +56,12 @@ export default async function LocaleLayout(props: LayoutProps<'/[locale]'>) {
     <html
       lang={locale}
       className={`${geistSans.variable} ${geistMono.variable} ${barlow.variable} ${dmSans.variable} ${outfit.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
       <body className='font-body bg-background text-foreground antialiased'>
-        <NextIntlClientProvider messages={messages}>{props.children}</NextIntlClientProvider>
+        <ThemeProvider attribute='class' defaultTheme='system' enableSystem disableTransitionOnChange>
+          <NextIntlClientProvider messages={messages}>{props.children}</NextIntlClientProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

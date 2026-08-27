@@ -6,6 +6,7 @@ import { Bell } from 'lucide-react'
 import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
 import { cn } from '@/lib/utils'
+import { ThemeToggleButton } from '@/components/ui/custom/buttons'
 
 export function HomeHeader({ team, user }: { team: Team; user: User }) {
   const { today, fullName, initials } = useHomeHeader()
@@ -58,7 +59,7 @@ export function HomeHeader({ team, user }: { team: Team; user: User }) {
 
       {/* Controles del lado derecho */}
       <div className='flex items-center gap-2'>
-        <AnimatedThemeToggler variant='star' fromCenter className='text-muted-foreground' />
+        <ThemeToggleButton className='text-muted-foreground' />
 
         <button
           type='button'

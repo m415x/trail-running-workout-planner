@@ -1,7 +1,9 @@
 import React from 'react'
+import { useTheme } from 'next-themes'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@ui/button'
+import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
 
 // Card Principal (Reemplaza los contenedores externos con bordes rounded-3xl)
 export type CustomButtonProps = React.ComponentProps<typeof Button>
@@ -111,5 +113,24 @@ export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
     )
   },
 )
-
 PillButton.displayName = 'PillButton'
+
+export interface ThemeToggleButtonProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  'children' | 'variant'
+> {}
+
+export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProps) {
+  const { theme, setTheme } = useTheme()
+
+  return (
+    <AnimatedThemeToggler
+      variant='star'
+      fromCenter
+      theme={theme === 'dark' ? 'dark' : 'light'}
+      onThemeChange={(newTheme) => setTheme(newTheme)}
+      className={cn(className)}
+      {...props}
+    />
+  )
+}
