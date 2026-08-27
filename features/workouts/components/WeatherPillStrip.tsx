@@ -3,11 +3,11 @@
 import { DropIcon, ArrowCircleDownIcon } from '@phosphor-icons/react'
 import { WeatherIcon, WindIcon, GustIcon } from '@icons'
 import { WeatherData } from '@/types'
-import { interpretWmoCode } from '@/service/weather/open-meteo'
+import { useWeatherPillStrip } from '@workouts/hooks/useWeatherPillStrip'
 import { CustomCardInside } from '@ui/custom/card-containers'
 import { IconBrandSnowflake } from '@tabler/icons-react'
 
-interface WeatherPillStripProps {
+export interface WeatherPillStripProps {
   weather: WeatherData | null
   isLoading?: boolean
 }
@@ -23,9 +23,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
   if (!weather) return null
 
-  const { condition, label } = interpretWmoCode(weather.weatherCode)
-
-  const isSnowCondition = condition === 'snow' || weather.snowfallSum > 0
+  const { condition, duration, isSnowCondition } = useWeatherPillStrip(weather)
 
   return (
     <CustomCardInside className='flex justify-center rounded-xl px-0 py-2 gap-3'>
@@ -42,7 +40,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
       {/* Viento y dirección */}
       <div className='flex flex-1 items-center justify-center gap-1 text-foreground/90 font-mono'>
-        <WindIcon className='animate-spin animation-duration-[5s]' />
+        <WindIcon className={duration > 0 ? 'animate-spin' : ''} style={{ animationDuration: `${duration}s` }} />
 
         <span className='font-heading font-bold text-foreground text-[11px]'>
           {weather.windSpeed}
@@ -60,7 +58,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
           <ArrowCircleDownIcon size={14} />
         </span>
 
-        <span className='text-[9px] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
+        <span className='text-[11px] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
       </div>
 
       {/* Ráfagas */}
