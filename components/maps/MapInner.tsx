@@ -4,11 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
 import type { Feature, FeatureCollection, LineString } from 'geojson'
 import type { StyleSpecification } from 'maplibre-gl'
-
 import 'maplibre-gl/dist/maplibre-gl.css'
-
-import { getMapLibreAltitudeColorExpression } from '@/lib/trackColors'
-
+import { getMapLibreAltitudeColorExpression } from '@/lib/tracks/track-colors'
 import { TrackPoint } from '@/types'
 
 /* -------------------------------------------------------------------------- */
@@ -240,8 +237,8 @@ function getTrackBounds(coordinates: [number, number][]): maplibregl.LngLatBound
 /* -------------------------------------------------------------------------- */
 
 interface MapInnerProps {
-  lat?: number
   lon?: number
+  lat?: number
   zoom?: number
   trackPoints?: TrackPoint[]
 }
@@ -250,7 +247,7 @@ interface MapInnerProps {
 /* COMPONENT                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 13, trackPoints = [] }: MapInnerProps) {
+export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 13, trackPoints = [] }: MapInnerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -369,9 +366,9 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
 
   const ensureTrackLayer = useCallback(
     (map: maplibregl.Map) => {
-      if (!map.isStyleLoaded()) {
-        return
-      }
+      // if (!map.isStyleLoaded()) {
+      //   return
+      // }
 
       /*
        * Si no hay track, eliminamos cualquier source/layer existente.
@@ -433,21 +430,16 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
           layout: {
             'line-cap': 'round',
             'line-join': 'round',
-            visibility: 'visible',
+            // visibility: 'visible',
           },
 
           paint: {
-            /*
-             * Una única capa.
-             *
-             * El color se calcula usando altitudePercent,
-             * NO line-progress.
-             */
-            'line-color': getMapLibreAltitudeColorExpression(),
+            // 'line-color': 'getMapLibreAltitudeColorExpression()',
+            'line-color': '#ff0000',
 
-            'line-width': 5,
+            'line-width': 8,
 
-            'line-opacity': 0.95,
+            'line-opacity': 1,
           },
         })
       } else {
@@ -507,9 +499,9 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
 
   const renderTrack = useCallback(
     (map: maplibregl.Map, fit = false) => {
-      if (!map.isStyleLoaded()) {
-        return
-      }
+      // if (!map.isStyleLoaded()) {
+      //   return
+      // }
 
       ensureTrackLayer(map)
       renderMarkers(map)
@@ -627,9 +619,9 @@ export default function MapInner({ lat = -31.529822, lon = -68.5440881, zoom = 1
       return
     }
 
-    if (!map.isStyleLoaded()) {
-      return
-    }
+    // if (!map.isStyleLoaded()) {
+    //   return
+    // }
 
     /*
      * Actualizamos source/layer y markers.

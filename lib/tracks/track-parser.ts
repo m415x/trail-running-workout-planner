@@ -1,9 +1,9 @@
 import { TrackData, TrackPoint } from '@/types'
 
-function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function haversineDistance(lon1: number, lat1: number, lon2: number, lat2: number): number {
   const R = 6371000
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
   const dLon = ((lon2 - lon1) * Math.PI) / 180
+  const dLat = ((lat2 - lat1) * Math.PI) / 180
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2)
@@ -29,7 +29,7 @@ function smoothElevations(rawEles: number[], windowSize = 7): number[] {
 /**
  * Algoritmo Ramer-Douglas-Peucker para simplificar una polilínea (track de GPS).
  * Reduce el número de puntos sin perder la forma esencial de la ruta.
- * @param points - Array de puntos { lat, lon, ele }.
+ * @param points - Array de puntos { lon, lat, ele }.
  * @param epsilon - Distancia máxima de un punto a la línea para ser descartado (en metros).
  * Un valor entre 1.0 y 2.0 es bueno para tracks de GPS.
  */
@@ -44,7 +44,7 @@ function ramerDouglasPeucker(points: TrackPoint[], epsilon: number): TrackPoint[
     // Si el inicio y el fin son el mismo punto, no se puede formar una línea.
     // Buscamos el punto más alejado del inicio.
     for (let i = 1; i < end; i++) {
-      const d = haversineDistance(points[0].lat, points[0].lon, points[i].lat, points[i].lon)
+      const d = haversineDistance(points[0].lon, points[0].lat, points[i].lon, points[i].lat)
       if (d > dMax) {
         index = i
         dMax = d
@@ -74,14 +74,14 @@ function perpendicularDistance(pt: TrackPoint, lineStart: TrackPoint, lineEnd: T
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const R = 6371000 // Radio de la Tierra en metros
 
-  const bearing13 = bearing(lineStart.lat, lineStart.lon, pt.lat, pt.lon)
-  const bearing12 = bearing(lineStart.lat, lineStart.lon, lineEnd.lat, lineEnd.lon)
-  const dist13 = haversineDistance(lineStart.lat, lineStart.lon, pt.lat, pt.lon)
+  const bearing13 = bearing(lineStart.lon, lineStart.lat, pt.lon, pt.lat)
+  const bearing12 = bearing(lineStart.lon, lineStart.lat, lineEnd.lon, lineEnd.lat)
+  const dist13 = haversineDistance(lineStart.lon, lineStart.lat, pt.lon, pt.lat)
 
   return Math.abs(Math.asin(Math.sin(dist13 / R) * Math.sin(toRad(bearing13) - toRad(bearing12))) * R)
 }
 
-function bearing(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function bearing(lon1: number, lat1: number, lon2: number, lat2: number): number {
   const toRad = (deg: number) => (deg * Math.PI) / 180
   const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2))
   const x =
@@ -144,22 +144,22 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
     // 1. Extraer coordenadas iniciales (calculando la distancia acumulada de manera provisional)
     const rawPoints: TrackPoint[] = []
     let cumulativeDist = 0
-    let prevLat: number | null = null
     let prevLon: number | null = null
+    let prevLat: number | null = null
 
     trkpts.forEach((pt) => {
-      const lat = parseFloat(pt.getAttribute('lat') || '0')
       const lon = parseFloat(pt.getAttribute('lon') || '0')
+      const lat = parseFloat(pt.getAttribute('lat') || '0')
       const eleEl = pt.querySelector('ele')
       const ele = eleEl ? parseFloat(eleEl.textContent || '0') : 0
 
       if (prevLat !== null && prevLon !== null) {
-        cumulativeDist += haversineDistance(prevLat, prevLon, lat, lon)
+        cumulativeDist += haversineDistance(prevLon, prevLat, lon, lat)
       }
 
-      rawPoints.push({ lat, lon, ele, distance: cumulativeDist })
-      prevLat = lat
+      rawPoints.push({ lon, lat, ele, distance: cumulativeDist })
       prevLon = lon
+      prevLat = lat
     })
 
     // 2. Suavizar altitud y simplificar
@@ -179,24 +179,24 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
     let minEle = Infinity
     let maxEle = -Infinity
 
-    let pLat = simplifiedPoints[0]?.lat
     let pLng = simplifiedPoints[0]?.lon
+    let pLat = simplifiedPoints[0]?.lat
     let pEle = simplifiedPoints[0]?.ele
 
-    coordinates.push([pLat, pLng])
+    coordinates.push([pLng, pLat])
     trackMetrics.push({ dist: 0, ele: Math.round(pEle) })
-    finalTrackPoints.push({ lat: pLat, lon: pLng, ele: pEle, distance: 0 })
+    finalTrackPoints.push({ lon: pLng, lat: pLat, ele: pEle, distance: 0 })
 
     minEle = Math.min(minEle, pEle)
     maxEle = Math.max(maxEle, pEle)
 
     for (let i = 1; i < simplifiedPoints.length; i++) {
-      const { lat, lon } = simplifiedPoints[i]
+      const { lon, lat } = simplifiedPoints[i]
       const ele = simplifiedPoints[i].ele
 
-      const distStep = haversineDistance(pLat, pLng, lat, lon)
+      const distStep = haversineDistance(pLng, pLat, lon, lat)
       totalDistMeters += distStep
-      coordinates.push([lat, lon])
+      coordinates.push([lon, lat])
 
       const eleDiff = ele - pEle
       if (eleDiff > 0.4) {
@@ -209,10 +209,10 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
       maxEle = Math.max(maxEle, ele)
 
       trackMetrics.push({ dist: totalDistMeters, ele: Math.round(ele) })
-      finalTrackPoints.push({ lat, lon, ele, distance: totalDistMeters })
+      finalTrackPoints.push({ lon, lat, ele, distance: totalDistMeters })
 
-      pLat = lat
       pLng = lon
+      pLat = lat
       pEle = ele
     }
 
@@ -253,12 +253,12 @@ export async function parseTrackFromUrl(trackPath: string): Promise<TrackData | 
       maxGradePct: Math.round(maxGrade),
       minElevation: Math.round(minEle === Infinity ? 0 : minEle),
       maxElevation: Math.round(maxEle === -Infinity ? 0 : maxEle),
-      startCoordinates: firstPoint ? { lat: firstPoint[0], lon: firstPoint[1] } : undefined,
-      endCoordinates: lastPoint ? { lat: lastPoint[0], lon: lastPoint[1] } : undefined,
+      startCoordinates: firstPoint ? { lon: firstPoint[1], lat: firstPoint[0] } : undefined,
+      endCoordinates: lastPoint ? { lon: lastPoint[1], lat: lastPoint[0] } : undefined,
       lowestPoint: lowestPoint
         ? {
-            lat: lowestPoint.lat,
             lon: lowestPoint.lon,
+            lat: lowestPoint.lat,
             elevation: lowestPoint.ele,
             distance: lowestPoint.distance ?? 0,
           }
