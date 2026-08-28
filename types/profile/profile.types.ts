@@ -2,6 +2,7 @@ import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { AthletePhysiology } from '@/types/athlete/physiology.types'
 
 export interface EditProfileFormValues {
+  email: string
   firstName: string
   lastName: string
   nickName?: string

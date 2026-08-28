@@ -1,18 +1,18 @@
 import { ReactNode } from 'react'
-import { LucideIcon } from 'lucide-react'
+import { Icon } from '@phosphor-icons/react'
 
 export type NavigationTab = 'home' | 'plan' | 'stats' | 'profile'
 
 export interface CardHeaderProps {
   title: string
   subtitle?: string
-  icon?: LucideIcon
+  icon?: Icon
   iconColorClass?: string
   children?: ReactNode
 }
 
 export interface StatPillProps {
-  icon: LucideIcon
+  icon: Icon
   label: string
   value: number | string
   unit: string

@@ -6,7 +6,8 @@ import { useState, useMemo, useCallback, useEffect } from 'react'
 import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
 
 // Helpers y Tipos
-import { WeekDay, WeeklyCycle, TrackData, ElevationChartProps } from '@/types'
+import { WeekDay, WeeklyCycle, TrackData } from '@/types'
+import { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 import { formatRawWeekDay, parseISODate } from '@/lib/date-helpers'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 

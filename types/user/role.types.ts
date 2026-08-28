@@ -1,1 +1,1 @@
-export type UserRole = 'athlete' | 'coach' | 'admin'
+export type UserRole = 'admin' | 'athlete' | 'coach'

@@ -1,9 +1,14 @@
 'use client'
 
 import { CheckIcon, MinusCircleIcon, XIcon } from '@phosphor-icons/react'
-import { DayStatusIndicatorProps } from '@/types'
+import { WeekDay } from '@/types'
 import { getDayStatus } from '@/lib/date-helpers'
 import { cn } from '@/lib/utils'
+
+export interface DayStatusIndicatorProps {
+  day: WeekDay
+  isSelected?: boolean
+}
 
 export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps) {
   const status = day.status ?? getDayStatus(day)

@@ -1,5 +1,5 @@
-import { AthleteGroupCode } from '../athlete/group.types'
-import { IntensityZone } from './intensity.types'
+import { AthleteGroupCode } from '@/types/athlete/group.types'
+import { IntensityZone } from '@/types/training/intensity.types'
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
 export type WorkoutType =
@@ -63,21 +63,4 @@ export interface WeekDay extends WeekDayRaw {
   dayNumber?: number
   fullDate?: string
   km?: number
-}
-
-export interface ElevTooltipProps {
-  active?: boolean
-  payload?: { value: number }[]
-  label?: string
-}
-
-export interface WeekCalendarPickerProps {
-  selectedDate: Date
-  onSelectDate: (date: Date) => void
-  onClose?: () => void
-}
-
-export interface DayStatusIndicatorProps {
-  day: WeekDay
-  isSelected?: boolean
 }

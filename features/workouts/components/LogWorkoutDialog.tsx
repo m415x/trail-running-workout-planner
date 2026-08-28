@@ -4,11 +4,20 @@ import { CheckCircle2, MapPin, Timer, MessageSquare, RotateCcw } from 'lucide-re
 import { ScrollArea } from '@ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog'
 import { PrimaryInput } from '@ui/custom/inputs'
-import { LogWorkoutDialogProps } from '@/types'
+import { WorkoutProps, LoggedWorkoutPayload } from '@/types'
 import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
 import { ConfirmActionDialog } from '@ui/custom/confirm-dialog'
 import { SelfAssessment } from '@workouts/components/SelfAssessment'
 import { useLogWorkoutDialog } from '@workouts/hooks/useLogWorkoutDialog'
+
+export interface LogWorkoutDialogProps {
+  isOpen?: boolean
+  onClose: () => void
+  workout?: WorkoutProps | null
+  dateStr?: string
+  onSave?: (loggedData: LoggedWorkoutPayload) => void
+  onDelete?: () => void
+}
 
 export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
   const {

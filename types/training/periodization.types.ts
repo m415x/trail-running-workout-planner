@@ -1,10 +1,11 @@
 /**
  * @file Estructuras temporales: Macrociclo, Mesociclo, Microciclo y Sesión.
  */
-import { AthleteGroupCode } from '@/types/athlete/athlete.types'
-import { BaseEntity, IntensityZone } from '@/types/core/base.types'
+import { BaseEntity } from '@/types/core/base.types'
+import { AthleteGroupCode } from '@/types/athlete/group.types'
+import { IntensityZone } from '@/types/training/intensity.types'
 
-export type DayType = 'Workout' | 'Race' | 'Rest'
+export type DayType = 'workout' | 'race' | 'rest'
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
@@ -25,6 +26,12 @@ export interface GroupVolumeProgression {
   volumes: Record<VolumeMatrixMicrocycleType, number>
 }
 
+export interface SessionStructure {
+  warmup: string
+  mainBlock: string
+  cooldown: string
+}
+
 export interface Session extends BaseEntity {
   microcycleId: string
   date: string // 'YYYY-MM-DD'
@@ -33,11 +40,7 @@ export interface Session extends BaseEntity {
   zone: IntensityZone
   locationKey?: string
   trackPath?: string
-  structure?: {
-    warmup: string
-    mainBlock: string
-    cooldown: string
-  }
+  structure?: SessionStructure
   defaultVolume: {
     km: number
     timeMin: number

@@ -2,10 +2,16 @@
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { Mountain } from 'lucide-react'
-import { ElevTooltipProps, ElevationChartProps } from '@/types'
+import { WorkoutProps } from '@/types'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { formatNumber } from '@/lib/formatters'
+
+export interface ElevTooltipProps {
+  active?: boolean
+  payload?: { value: number }[]
+  label?: string
+}
 
 function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
   if (!active || !payload?.length) return null
@@ -16,6 +22,15 @@ function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
       <p className='font-semibold text-primary'>{payload[0].value} m</p>
     </div>
   )
+}
+
+export interface ElevationChartProps {
+  workout: WorkoutProps
+  elevData: { km: string; elev: number }[]
+  elevMin: number
+  elevMax: number
+  yDomain: number[]
+  xDomain?: string[]
 }
 
 export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {

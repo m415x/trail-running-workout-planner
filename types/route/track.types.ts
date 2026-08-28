@@ -1,6 +1,6 @@
 export interface TrackPoint {
-  lat: number
   lon: number
+  lat: number
   ele: number
   distance?: number
   grade?: number
@@ -21,8 +21,8 @@ export interface ElevationProfilePoint {
 }
 
 export interface TrackCoordinate {
-  lat: number
   lon: number
+  lat: number
 }
 
 export interface TrackElevationPoint extends TrackCoordinate {
