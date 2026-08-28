@@ -20,40 +20,40 @@ export function WeatherIcon({ iconType, size = 14, weight = 'regular', ...props 
   const commonProps = {
     size,
     weight,
-    className: 'shrink-0 animation-duration-[3s]',
+    className: 'shrink-0 animate-pulse animation-duration-[3s]',
     ...props,
   }
 
   switch (iconType) {
     case 'clear':
-      return <SunIcon {...commonProps} className='text-amber-500 animate-spin' {...props} />
+      return <SunIcon {...commonProps} className='text-amber-500' {...props} />
 
     case 'partly-cloudy':
-      return <CloudSunIcon {...commonProps} className='text-amber-400 animate-pulse' {...props} />
+      return <CloudSunIcon {...commonProps} className='text-amber-400' {...props} />
 
     case 'cloudy':
-      return <CloudIcon {...commonProps} className='text-sky-400 animate-pulse' {...props} />
+      return <CloudIcon {...commonProps} className='text-sky-400' {...props} />
 
     case 'fog':
-      return <CloudFogIcon {...commonProps} className='text-slate-400 animate-pulse' {...props} />
+      return <CloudFogIcon {...commonProps} className='text-slate-400' {...props} />
 
     case 'rain':
-      return <CloudRainIcon {...commonProps} className='text-blue-400 animate-pulse' {...props} />
+      return <CloudRainIcon {...commonProps} className='text-blue-400' {...props} />
 
     case 'heavy-rain':
-      return <CloudRainIcon {...commonProps} weight={'fill'} className='text-blue-400 animate-pulse' {...props} />
+      return <CloudRainIcon {...commonProps} weight={'fill'} className='text-blue-400' {...props} />
 
     case 'snow':
-      return <SnowflakeIcon {...commonProps} className='text-cyan-300 animate-pulse' {...props} />
+      return <SnowflakeIcon {...commonProps} className='text-cyan-300' {...props} />
 
     case 'sleet':
-      return <CloudSnowIcon {...commonProps} className='text-cyan-300 animate-pulse' {...props} />
+      return <CloudSnowIcon {...commonProps} className='text-cyan-300' {...props} />
 
     case 'thunderstorm':
-      return <CloudLightningIcon {...commonProps} className='text-purple-400 animate-pulse' {...props} />
+      return <CloudLightningIcon {...commonProps} className='text-purple-400' {...props} />
 
     case 'windy':
-      return <WindIcon {...commonProps} className='text-slate-400 animate-pulse' {...props} />
+      return <WindIcon {...commonProps} className='text-slate-400' {...props} />
 
     default:
       return null

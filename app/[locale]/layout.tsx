@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { hasLocale, NextIntlClientProvider } from 'next-intl'
 import { getMessages, setRequestLocale } from 'next-intl/server'
 import { routing } from '../../i18n/routing'
-import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeProvider } from '../../components/theme-provider'
 import '../globals.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
