@@ -1,6 +1,6 @@
-import { User, AthletePhysiology } from '@/types/athlete/athlete.types'
+import { AthleteGroupCode } from '@/types/athlete/group.types'
+import { AthletePhysiology } from '@/types/athlete/physiology.types'
 
-// Estado del formulario de edición en ProfileTab
 export interface EditProfileFormValues {
   firstName: string
   lastName: string
@@ -8,7 +8,7 @@ export interface EditProfileFormValues {
   phone?: string
   emergencyContact?: string
   emergencyPhone?: string
-  group: User['group']
+  group: AthleteGroupCode
   physiology: AthletePhysiology
 }
 

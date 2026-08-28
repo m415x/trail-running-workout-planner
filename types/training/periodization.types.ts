@@ -2,7 +2,7 @@
  * @file Estructuras temporales: Macrociclo, Mesociclo, Microciclo y Sesión.
  */
 import { AthleteGroupCode } from '@/types/athlete/athlete.types'
-import { BaseEntity, IntensityZone } from '@/types/core/core.types'
+import { BaseEntity, IntensityZone } from '@/types/core/base.types'
 
 export type DayType = 'Workout' | 'Race' | 'Rest'
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'

@@ -115,10 +115,7 @@ export interface WeatherData {
   isFavorableForRunning?: boolean
 
   /** Amanecer y atardecer. */
-  sun?: {
-    sunrise: string
-    sunset: string
-  }
+  sun?: SunTimes
 
   /** Alertas meteorológicas. */
   alerts?: WeatherAlert[]

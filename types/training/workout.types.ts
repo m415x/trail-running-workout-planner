@@ -1,10 +1,5 @@
-/**
- * @file Sesiones planificadas, clima y logs de los atletas.
- */
-import { AthleteGroupCode } from '@/types/athlete/athlete.types'
-import { BaseEntity, IntensityZone } from '@/types/core/core.types'
-import { TrackData } from '@/types/route/track.types'
-import { FeelingValue } from '@workouts/components/FeelingSelector'
+import { AthleteGroupCode } from '../athlete/group.types'
+import { IntensityZone } from './intensity.types'
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
 export type WorkoutType =
@@ -18,7 +13,6 @@ export type WorkoutType =
   | 'PAM'
   | 'Hills'
   | 'Race'
-  | string
 
 /**
  * Vista resuelta para la UI del atleta autenticado
@@ -26,7 +20,7 @@ export type WorkoutType =
 export interface WorkoutProps {
   id?: number | string
   title: string
-  type?: WorkoutType
+  type: WorkoutType
   distance: number
   zone: IntensityZone
   time: number
@@ -36,33 +30,6 @@ export interface WorkoutProps {
   targetGroups?: AthleteGroupCode[]
   trackPath?: string
   locationKey?: string
-}
-
-/**
- * Registro de entrenamiento realizado (Strava-like + RPE)
- */
-export interface LoggedWorkoutPayload {
-  workoutId?: string
-  date?: string // 'YYYY-MM-DD'
-  distanceKm: number
-  durationMin: number
-  elevationGain: number
-  avgHr?: number | null
-  feeling?: FeelingValue
-  rpe: number // 0 al 10
-  athleteNotes?: string
-  loggedAt: string
-}
-
-export interface WorkoutLog extends BaseEntity, LoggedWorkoutPayload {
-  userId: string
-  workoutSessionId?: string
-}
-
-export interface WorkoutCardProps {
-  workout: WorkoutProps
-  date?: string
-  TrackData?: TrackData | null
 }
 
 /**
@@ -98,15 +65,6 @@ export interface WeekDay extends WeekDayRaw {
   km?: number
 }
 
-export interface ElevationChartProps {
-  workout: WorkoutProps
-  elevData: { km: string; elev: number }[]
-  elevMin: number
-  elevMax: number
-  yDomain: number[]
-  xDomain?: string[]
-}
-
 export interface ElevTooltipProps {
   active?: boolean
   payload?: { value: number }[]
@@ -117,15 +75,6 @@ export interface WeekCalendarPickerProps {
   selectedDate: Date
   onSelectDate: (date: Date) => void
   onClose?: () => void
-}
-
-export interface LogWorkoutDialogProps {
-  isOpen?: boolean
-  onClose: () => void
-  workout?: WorkoutProps | null
-  dateStr?: string
-  onSave?: (loggedData: LoggedWorkoutPayload) => void
-  onDelete?: () => void
 }
 
 export interface DayStatusIndicatorProps {

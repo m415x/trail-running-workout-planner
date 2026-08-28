@@ -1,9 +1,9 @@
-import { BaseEntity } from '@/types/core/core.types'
+import { BaseEntity } from '@/types/core/base.types'
 
 export type ShoeStatus = 'active' | 'warning' | 'retired'
 
 export interface Shoe extends BaseEntity {
-  userId: string
+  athleteId: string
   name: string // Ej: "Hoka Speedgoat 5"
   type: string // Ej: "Trail / Competición"
   currentKm: number
