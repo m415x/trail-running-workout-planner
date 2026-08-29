@@ -54,3 +54,6 @@ GEMINI.md
 public/sw.js
 public/workbox-*.js
 public/sweetalert2.js
+
+# sqlite
+sqlite.db

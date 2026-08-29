@@ -6,7 +6,7 @@ export type TestType = '1000m_track' | 'ramp_test' | 'cooper' | 'field_trial'
  * 1. Registro histórico de evaluaciones y biometría (Snapshots periódicos)
  */
 export interface PhysiologyRecord extends BaseEntity {
-  userId: string
+  athleteId: string
   date: string // 'YYYY-MM-DD'
 
   // Test PAM / 1000m

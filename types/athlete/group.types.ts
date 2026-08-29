@@ -5,7 +5,7 @@ export type AthleteLevelCode = '1' | '2' | '3'
 export type AthleteGroupCode = `${AthleteCategoryCode}${AthleteLevelCode}`
 
 export interface GroupHistoryRecord extends BaseEntity {
-  userId: string
+  athleteId: string
   date: string
   previousGroup?: AthleteGroupCode
   newGroup: AthleteGroupCode

@@ -18,6 +18,6 @@ export interface LoggedWorkoutPayload {
 }
 
 export interface WorkoutLog extends BaseEntity, LoggedWorkoutPayload {
-  userId: string
+  athleteId: string
   workoutSessionId?: string
 }

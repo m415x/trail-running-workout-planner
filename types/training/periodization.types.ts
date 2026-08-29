@@ -27,6 +27,7 @@ export interface GroupVolumeProgression {
 }
 
 export interface SessionStructure {
+  preliminaryExercises?: string
   warmup: string
   mainBlock: string
   cooldown: string
