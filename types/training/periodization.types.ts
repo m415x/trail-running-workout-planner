@@ -4,8 +4,8 @@
 import { BaseEntity } from '@/types/core/base.types'
 import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { IntensityZone } from '@/types/training/intensity.types'
+import { WorkoutType } from '@/types/training/workout.types'
 
-export type DayType = 'workout' | 'race' | 'rest'
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
@@ -37,7 +37,7 @@ export interface Session extends BaseEntity {
   microcycleId: string
   date: string // 'YYYY-MM-DD'
   title: string
-  type: DayType
+  type: WorkoutType
   zone: IntensityZone
   locationKey?: string
   trackPath?: string

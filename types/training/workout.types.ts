@@ -9,9 +9,9 @@ export type WorkoutType =
   | 'Trail'
   | 'Speed'
   | 'Fartlek'
-  | 'Rest'
   | 'PAM'
   | 'Hills'
+  | 'Rest'
   | 'Race'
 
 /**
