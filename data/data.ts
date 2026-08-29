@@ -1,4 +1,4 @@
-import { Team, WorkoutProps, WeekDayRaw, GeoLocation } from '@/types'
+import { Team, WorkoutProps, WeekDayRaw, GeoLocation, User, Athlete, AthleteProfile } from '@/types'
 
 export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
   elParque: {
@@ -29,7 +29,7 @@ export const team: Team = {
   avatarDark: '/avatars/logo-ept-dark.png',
 }
 
-export const currentUser = {
+export const currentUser: User = {
   id: 'user_1',
   role: 'athlete',
   userName: 'm415x',
@@ -37,7 +37,10 @@ export const currentUser = {
   firstName: 'Cristian Daniel',
   lastName: 'Lahoz Piantanida',
   avatar: '/avatars/cristian.png',
+}
 
+export const currentAthlete: AthleteProfile = {
+  userId: 'athlete_1',
   nickName: 'Cristian',
   dni: '38.123.456',
   birthday: '1992-08-14',
@@ -212,7 +215,7 @@ export const runningShoes = [
     model: 'S/Lab Genesis',
     name: 'Salomon S/Lab Genesis',
     type: 'Competición / Terreno Técnico',
-    km: 248,
+    currentKm: 248,
     maxKm: 650,
     status: 'active',
   },
@@ -221,7 +224,7 @@ export const runningShoes = [
     model: 'Speedgoat 5',
     name: 'Hoka Speedgoat 5',
     type: 'Rodajes Largos / Amortiguación',
-    km: 490,
+    currentKm: 490,
     maxKm: 700,
     status: 'warning',
   },

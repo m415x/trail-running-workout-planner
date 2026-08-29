@@ -11,6 +11,7 @@ export function HomeTab() {
   const {
     team,
     user,
+    athlete,
     weeklyCycle,
     weekDays,
     selectedDay,
@@ -28,7 +29,7 @@ export function HomeTab() {
   return (
     <div className='space-y-2'>
       {/* Header Superior */}
-      <HomeHeader team={team} user={user} />
+      <HomeHeader team={team} athlete={athlete} />
       {/* Tarjeta de Calendario Semanal con Slider & Popover DatePicker */}
       <WeeklyCalendarCard
         cycle={weeklyCycle}

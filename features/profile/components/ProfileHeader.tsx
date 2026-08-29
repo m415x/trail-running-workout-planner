@@ -34,7 +34,7 @@ export function ProfileHeader({ user }: { user: User }) {
         <div>
           <h1 className='font-heading font-bold text-foreground text-xl tracking-tight leading-tight'>{fullName}</h1>
           <p className='text-xs text-muted-foreground font-sans mt-0.5'>
-            Atleta desde 2024 · @{user.nickName?.toLowerCase() ?? 'runner'}
+            Atleta desde 2024 · @{user.userName?.toLowerCase() ?? 'runner'}
           </p>
         </div>
       </div>

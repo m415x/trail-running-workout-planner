@@ -1,14 +1,13 @@
 'use client'
 
-import { Team, User } from '@/types'
+import { AthleteProfile, Team } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
-import { AnimatedThemeToggler } from '@ui/animated-theme-toggler'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
 import { cn } from '@/lib/utils'
 import { ThemeToggleButton } from '@/components/ui/custom/buttons'
 
-export function HomeHeader({ team, user }: { team: Team; user: User }) {
+export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProfile }) {
   const { today, fullName, initials } = useHomeHeader()
 
   return (
@@ -42,14 +41,14 @@ export function HomeHeader({ team, user }: { team: Team; user: User }) {
             )}
             title='Ver team'
           >
-            {user.group}
+            {athlete.group}
           </button>
         </div>
 
         <div className='flex flex-col justify-center'>
           {/* Info del Atleta */}
           <h1 className='font-heading text-foreground text-xl font-bold leading-tight tracking-tight'>
-            Hola, {user.nickName ?? fullName}
+            Hola, {athlete.nickName ?? fullName}
           </h1>
 
           {/* Fecha de hoy en formato largo */}

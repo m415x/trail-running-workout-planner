@@ -15,7 +15,16 @@ import {
 
 // Asumimos que estos datos existen en tu data.ts.
 // Si faltan campos (como userName o brand), he añadido fallbacks seguros.
-import { team, currentUser, TRAINING_LOCATIONS, weeklyCycle, workouts, weekDaysRaw, runningShoes } from '@/data/data'
+import {
+  team,
+  currentUser,
+  TRAINING_LOCATIONS,
+  weeklyCycle,
+  workouts,
+  weekDaysRaw,
+  runningShoes,
+  currentAthlete,
+} from '@/data/data'
 
 async function seed() {
   console.log('🌱 Poblando base de datos SQLite con data.ts...')
@@ -78,13 +87,13 @@ async function seed() {
       id: athleteProfileId,
       userId: userId,
       teamId: team.id ? String(team.id) : null,
-      group: (currentUser.group || 'B3') as any,
-      nickName: currentUser.nickName || null,
-      dni: currentUser.dni || '12345678A',
-      birthday: currentUser.birthday || null,
-      phone: currentUser.phone || null,
-      emergencyContact: currentUser.emergencyContact || null,
-      emergencyPhone: currentUser.emergencyPhone || null,
+      group: (currentAthlete.group || 'B3') as any,
+      nickName: currentAthlete.nickName || null,
+      dni: currentAthlete.dni || '12345678A',
+      birthday: currentAthlete.birthday || null,
+      phone: currentAthlete.phone || null,
+      emergencyContact: currentAthlete.emergencyContact || null,
+      emergencyPhone: currentAthlete.emergencyPhone || null,
     })
     .onConflictDoNothing()
     .run()
@@ -96,7 +105,7 @@ async function seed() {
     .insert(macrocycles)
     .values({
       id: macroId,
-      group: (currentUser.group || 'B3') as any,
+      group: (currentAthlete.group || 'B3') as any,
       title: 'Planificación Anual 2024',
       targetRaceName: 'Carrera Objetivo',
       targetRaceDate: '2026-12-31',
@@ -129,7 +138,7 @@ async function seed() {
       type: (weeklyCycle.type || 'development') as any,
       startDate: weeklyCycle.startDate,
       endDate: weeklyCycle.endDate,
-      targetVolumeKmByGroup: { [currentUser.group || 'B3']: weeklyCycle.targetKm || 40 },
+      targetVolumeKmByGroup: { [currentAthlete.group || 'B3']: weeklyCycle.targetKm || 40 },
       notes: 'Ninguna Nota',
     })
     .onConflictDoNothing()
@@ -213,7 +222,7 @@ async function seed() {
     brand: s.brand || 'Marca Genérica', // Asegúrate de que 'brand' exista en data.ts
     model: s.model || 'Modelo Genérico',
     maxKm: s.maxKm || 800,
-    currentKm: s.km || 0,
+    currentKm: s.currentKm || 0,
     isActive: s.status === 'active', // Ajusta según cómo tengas 'status' en data.ts
     isDefault: index === 0,
   }))

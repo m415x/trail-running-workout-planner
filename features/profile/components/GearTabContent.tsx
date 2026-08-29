@@ -11,9 +11,9 @@ export function GearTabContent() {
       <CustomCard>
         <CardHeader title='Zapatillas en Rotación' icon={Footprints} />
         <div className='space-y-3'>
-          {runningShoes.map((shoe) => (
+          {/* {runningShoes.map((shoe) => (
             <ShoeItem key={shoe.name} {...shoe} />
-          ))}
+          ))} */}
         </div>
       </CustomCard>
 

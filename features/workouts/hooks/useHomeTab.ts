@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react'
 
 // Simulación de base de datos / API
-import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team } from '@/data/data'
+import { currentUser, weeklyCycle as defaultCycle, weekDaysRaw, workouts, team, currentAthlete } from '@/data/data'
 
 // Helpers y Tipos
 import { WeekDay, WeeklyCycle, TrackData } from '@/types'
@@ -161,6 +161,7 @@ export function useHomeTab() {
   return {
     team,
     user: currentUser,
+    athlete: currentAthlete,
     weeklyCycle,
     weekDays,
     selectedDay,

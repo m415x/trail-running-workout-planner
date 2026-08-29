@@ -24,6 +24,7 @@ export interface ShoeItemProps {
   type: string
   brand: string
   model: string
+  name: string
   maxKm: number
   currentKm: number
   status: ShoeStatus
