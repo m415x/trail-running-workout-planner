@@ -11,7 +11,6 @@ import type {
   IntensityZone,
   GroupVolumeOverride,
   WorkoutType,
-  DayType,
   DayStatus,
   TestType,
 } from '@/types'
@@ -244,7 +243,7 @@ export const sessions = sqliteTable('sessions', {
 
   date: text('date').notNull(),
   title: text('title').notNull(), // ✅ Agregado para coincidir con tu interfaz
-  type: text('type').$type<DayType>().notNull(),
+  type: text('type').$type<WorkoutType>().notNull(),
   zone: text('zone').$type<IntensityZone>().notNull().default('Z2'),
   locationKey: text('location_key')
     .$type<string>()
