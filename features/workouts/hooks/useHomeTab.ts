@@ -22,6 +22,8 @@ import { parseISODate } from '@/lib/date-helpers'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 import { resolveWorkoutForAthlete } from '@/lib/workout-resolver'
 
+const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const
+
 interface SessionWorkout {
   id: string
   title: string
@@ -190,6 +192,8 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
   // -----------------------------------------------------------------------
 
   const weekDays = useMemo<WeekDay[]>(() => {
+    const todayISO = formatLocalISODate(new Date())
+
     return Array.from({ length: 7 }, (_, index) => {
       const currentDate = new Date(startOfWeek)
 
@@ -203,11 +207,14 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
         date: isoDate,
         fullDate: isoDate,
 
+        day: DAY_LETTERS[index],
+
         dayName: currentDate.toLocaleDateString('es-ES', {
           weekday: 'short',
         }),
 
         dayNumber: currentDate.getDate(),
+        isToday: isoDate === todayISO,
       }
 
       /*

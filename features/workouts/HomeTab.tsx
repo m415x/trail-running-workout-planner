@@ -40,7 +40,7 @@ export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
     onWeekChange: handleWeekChange, // ✅ ¡Ahora sí está definido!
   })
 
-  if (isLoadingWeek) return <div className='p-4'>Cargando semana...</div>
+  // if (isLoadingWeek) return <div className='p-4'>Cargando semana...</div>
 
   const fallbackTeam: Team = {
     id: 'default',
