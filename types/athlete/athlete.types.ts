@@ -1,28 +1,55 @@
 import { User } from '@/types/user/user.types'
-import { AthleteGroupCode, GroupHistoryRecord } from '@/types/athlete/group.types'
+import { AthleteGroup, GroupHistoryRecord } from '@/types/athlete/group.types'
 import { AthletePhysiology, MedicalRecord, PhysiologyRecord } from '@/types/athlete/physiology.types'
 
+export type TrainingGoalType = 'race' | 'performance' | 'base' | 'maintenance' | 'custom'
+export type TrainingGoalStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+
+export interface TrainingGoal {
+  id: string
+  athleteId: string
+
+  type: TrainingGoalType
+  status: TrainingGoalStatus
+
+  title: string
+  description?: string | null
+  targetDate?: string | null
+
+  raceName?: string | null
+  raceDistanceKm?: number | null
+  raceElevationGain?: number | null
+
+  notes?: string | null
+}
+
 export interface AthleteProfile {
+  id: string
   userId: string
 
-  nickName?: string
+  teamId: string
+  groupId: string | null
+
+  nickName?: string | null
   dni: string
-  birthday?: string
+  birthday?: string | null
 
-  phone?: string
-  emergencyContact?: string
-  emergencyPhone?: string
+  phone?: string | null
+  emergencyContact?: string | null
+  emergencyPhone?: string | null
 
-  teamId?: string
-  group: AthleteGroupCode
+  physiology?: AthletePhysiology | null
+  medical?: MedicalRecord | null
+}
 
-  physiology?: AthletePhysiology
-  medical?: MedicalRecord
+export interface AthleteProfileWithRelations extends AthleteProfile {
+  group?: AthleteGroup | null
 
+  trainingGoals?: TrainingGoal[]
   physiologyHistory?: PhysiologyRecord[]
   groupHistory?: GroupHistoryRecord[]
 }
 
 export interface Athlete extends User {
-  athleteProfile: AthleteProfile
+  athleteProfile: AthleteProfileWithRelations
 }

@@ -40,14 +40,16 @@ export const currentUser: User = {
 }
 
 export const currentAthlete: AthleteProfile = {
-  userId: 'athlete_1',
+  id: 'profile_user_1',
+  userId: 'user_1',
+  teamId: 'team_1',
+  groupId: 'team_1_S2',
   nickName: 'Cristian',
   dni: '38.123.456',
   birthday: '1992-08-14',
   phone: '+54 9 264 123-4567',
   emergencyContact: 'María Lahoz (Hermana)',
   emergencyPhone: '+54 9 264 987-6543',
-  group: 'S2',
 }
 
 export const weeklyCycle = {

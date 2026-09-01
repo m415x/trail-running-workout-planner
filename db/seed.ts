@@ -1,75 +1,194 @@
 import { db } from '@/db/index'
 import {
-  teams,
-  trainingLocations,
-  users,
+  athleteGroups,
   athleteProfiles,
+  groupSessionPrescriptions,
   macrocycles,
   mesocycles,
   microcycles,
   sessions,
-  workouts as workoutsTable,
-  workoutLogs,
   shoes as shoesTable,
+  teams,
+  trainingGoals,
+  trainingLocations,
+  users,
+  workoutLogs,
+  workouts as workoutsTable,
 } from '@/db/schema'
 
-// Asumimos que estos datos existen en tu data.ts.
-// Si faltan campos (como userName o brand), he añadido fallbacks seguros.
 import {
-  team,
+  currentAthlete,
   currentUser,
+  runningShoes,
+  team,
   TRAINING_LOCATIONS,
+  weekDaysRaw,
   weeklyCycle,
   workouts,
-  weekDaysRaw,
-  runningShoes,
-  currentAthlete,
 } from '@/data/data'
+
+import type {
+  AthleteCategoryCode,
+  AthleteGroupCode,
+  AthleteLevelCode,
+  DayStatus,
+  MicrocycleType,
+  PeriodType,
+  TrainingGoalStatus,
+  TrainingGoalType,
+  UserRole,
+} from '@/types'
+
+interface SeededAthleteGroup {
+  id: string
+  teamId: string
+  categoryCode: AthleteCategoryCode
+  levelCode: AthleteLevelCode
+  description: string
+  isActive: boolean
+}
+
+function splitGroupCode(groupCode: AthleteGroupCode): {
+  categoryCode: AthleteCategoryCode
+  levelCode: AthleteLevelCode
+} {
+  return {
+    categoryCode: groupCode[0] as AthleteCategoryCode,
+    levelCode: groupCode[1] as AthleteLevelCode,
+  }
+}
+
+function getDayStatus(day: (typeof weekDaysRaw)[number]): DayStatus {
+  if (day.isRest) return 'rest'
+  if (day.isDone) return 'completed'
+  if (day.isPartial) return 'partial'
+  if (day.isMissed) return 'missed'
+
+  return 'pending'
+}
 
 async function seed() {
   console.log('🌱 Poblando base de datos SQLite con data.ts...')
 
+  const now = new Date().toISOString()
+
   const userId = String(currentUser.id || 'user_1')
+  const teamId = String(team.id || 'team_1')
   const athleteProfileId = `profile_${userId}`
-  const macroId = 'macro_1'
-  const mesoId = 'meso_1'
-  const microId = String(weeklyCycle.id || 'micro_1')
+
+  const trainingGoalId = `training_goal_${athleteProfileId}`
+  const macrocycleId = 'macro_1'
+  const mesocycleId = 'meso_1'
+  const microcycleId = String(weeklyCycle.id || 'micro_1')
+
+  const currentGroupCode: AthleteGroupCode = 'S2'
+
+  /*
+   * En el mock actual solamente necesitamos garantizar que exista
+   * el grupo del atleta. Si queremos mostrar todos los grupos en el
+   * dashboard, podemos ampliar este array.
+   */
+  const availableGroupCodes: AthleteGroupCode[] = [
+    'E1',
+    'E2',
+    'E3',
+    'U1',
+    'U2',
+    'U3',
+    'M1',
+    'M2',
+    'M3',
+    'H1',
+    'H2',
+    'H3',
+    'S1',
+    'S2',
+    'S3',
+    'B1',
+    'B2',
+    'B3',
+  ]
+
+  const athleteGroupRows: SeededAthleteGroup[] = availableGroupCodes.map((groupCode) => {
+    const { categoryCode, levelCode } = splitGroupCode(groupCode)
+
+    return {
+      id: `${teamId}_${groupCode}`,
+      teamId,
+      categoryCode,
+      levelCode,
+      description: `Grupo ${groupCode}`,
+      isActive: true,
+    }
+  })
+
+  const currentGroup = athleteGroupRows.find((group) => `${group.categoryCode}${group.levelCode}` === currentGroupCode)
+
+  if (!currentGroup) {
+    throw new Error(`No se encontró el grupo inicial ${currentGroupCode}`)
+  }
 
   // -----------------------------------------------------------------------
-  // 1. Ubicaciones de Entrenamiento
+  // 1. Ubicaciones de entrenamiento
   // -----------------------------------------------------------------------
-  const locationsData = Object.entries(TRAINING_LOCATIONS).map(([key, loc]) => ({
-    key: key as keyof typeof TRAINING_LOCATIONS,
-    name: loc.name,
-    lon: loc.lon,
-    lat: loc.lat,
+
+  const locationRows = Object.entries(TRAINING_LOCATIONS).map(([key, location]) => ({
+    key,
+    name: location.name,
+    lon: location.lon,
+    lat: location.lat,
   }))
-  await db.insert(trainingLocations).values(locationsData).onConflictDoNothing().run()
+
+  await db.insert(trainingLocations).values(locationRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
-  // 2. Equipo (Team)
+  // 2. Equipo
   // -----------------------------------------------------------------------
+
   await db
     .insert(teams)
     .values({
-      id: team.id,
+      id: teamId,
       name: team.name,
-      description: team.description,
-      avatarLight: team.avatarLight,
-      avatarDark: team.avatarDark,
+      description: team.description ?? null,
+      avatarLight: team.avatarLight ?? null,
+      avatarDark: team.avatarDark ?? null,
     })
     .onConflictDoNothing()
     .run()
 
   // -----------------------------------------------------------------------
-  // 3. Usuario Base (Solo datos de autenticación y perfil público)
+  // 3. Grupos del equipo
   // -----------------------------------------------------------------------
+
+  await db
+    .insert(athleteGroups)
+    .values(
+      athleteGroupRows.map((group) => ({
+        id: group.id,
+        teamId: group.teamId,
+        categoryCode: group.categoryCode,
+        levelCode: group.levelCode,
+        description: group.description,
+        isActive: group.isActive,
+      })),
+    )
+    .onConflictDoNothing()
+    .run()
+
+  // -----------------------------------------------------------------------
+  // 4. Usuario
+  // -----------------------------------------------------------------------
+
   await db
     .insert(users)
     .values({
       id: userId,
-      role: (currentUser.role || 'athlete') as 'athlete' | 'coach' | 'admin',
+
+      role: (currentUser.role || 'athlete') as UserRole,
+
       userName: currentUser.userName || `${currentUser.firstName.toLowerCase()}.${currentUser.lastName.toLowerCase()}`,
+
       email: currentUser.email,
       firstName: currentUser.firstName,
       lastName: currentUser.lastName,
@@ -79,18 +198,21 @@ async function seed() {
     .run()
 
   // -----------------------------------------------------------------------
-  // 4. Perfil de Atleta (Datos deportivos, fisiológicos y de equipo)
+  // 5. Perfil del atleta
   // -----------------------------------------------------------------------
+
   await db
     .insert(athleteProfiles)
     .values({
       id: athleteProfileId,
-      userId: userId,
-      teamId: team.id ? String(team.id) : null,
-      group: (currentAthlete.group || 'B3') as any,
+      userId,
+      teamId,
+      groupId: currentGroup.id,
+
       nickName: currentAthlete.nickName || null,
       dni: currentAthlete.dni || '12345678A',
       birthday: currentAthlete.birthday || null,
+
       phone: currentAthlete.phone || null,
       emergencyContact: currentAthlete.emergencyContact || null,
       emergencyPhone: currentAthlete.emergencyPhone || null,
@@ -99,19 +221,55 @@ async function seed() {
     .run()
 
   // -----------------------------------------------------------------------
-  // 5. Jerarquía de Periodización (Macro -> Meso -> Micro)
+  // 6. Objetivo individual del atleta
   // -----------------------------------------------------------------------
+
+  await db
+    .insert(trainingGoals)
+    .values({
+      id: trainingGoalId,
+      athleteId: athleteProfileId,
+
+      type: 'race' satisfies TrainingGoalType,
+      status: 'active' satisfies TrainingGoalStatus,
+
+      title: 'Carrera objetivo',
+      description: 'Objetivo inicial utilizado para poblar el entorno de desarrollo.',
+
+      targetDate: '2026-12-31',
+
+      raceName: 'Carrera objetivo',
+      raceDistanceKm: 42,
+      raceElevationGain: null,
+
+      notes: null,
+    })
+    .onConflictDoNothing()
+    .run()
+
+  // -----------------------------------------------------------------------
+  // 7. Jerarquía temporal actual
+  //
+  // Esta sección es transitoria. El schema todavía exige que el macrociclo
+  // dependa de TrainingGoal y AthleteGroup. Cuando se implemente
+  // GroupTrainingPlan, esta parte deberá adaptarse.
+  // -----------------------------------------------------------------------
+
   await db
     .insert(macrocycles)
     .values({
-      id: macroId,
-      group: (currentAthlete.group || 'B3') as any,
-      title: 'Planificación Anual 2024',
-      targetRaceName: 'Carrera Objetivo',
-      targetRaceDate: '2026-12-31',
+      id: macrocycleId,
+
+      title: 'Planificación anual 2026',
+
+      trainingGoalId,
+      planningGroupId: currentGroup.id,
+
       startDate: weeklyCycle.startDate,
       endDate: weeklyCycle.endDate,
+
       taperingWeeksCount: 2,
+      notes: null,
     })
     .onConflictDoNothing()
     .run()
@@ -119,12 +277,15 @@ async function seed() {
   await db
     .insert(mesocycles)
     .values({
-      id: mesoId,
-      macrocycleId: macroId,
-      title: 'Mesociclo de Desarrollo',
+      id: mesocycleId,
+      macrocycleId,
+
+      title: 'Mesociclo de desarrollo',
       number: 1,
-      period: 'specific_preparatory', // Coincide con PeriodType
-      objective: 'Aumentar volumen y fuerza específica',
+
+      period: 'specific_preparatory' satisfies PeriodType,
+
+      objective: 'Aumentar volumen y fuerza específica.',
     })
     .onConflictDoNothing()
     .run()
@@ -132,105 +293,188 @@ async function seed() {
   await db
     .insert(microcycles)
     .values({
-      id: microId,
-      mesocycleId: mesoId,
+      id: microcycleId,
+      mesocycleId,
+
       weekNumber: weeklyCycle.weekNumber || 1,
-      type: (weeklyCycle.type || 'development') as any,
+
+      type: (weeklyCycle.type || 'development') as MicrocycleType,
+
       startDate: weeklyCycle.startDate,
       endDate: weeklyCycle.endDate,
-      targetVolumeKmByGroup: { [currentAthlete.group || 'B3']: weeklyCycle.targetKm || 40 },
-      notes: 'Ninguna Nota',
+
+      targetVolumeKm: weeklyCycle.targetKm || 40,
+      targetElevationGain: null,
+      targetDurationMin: null,
+
+      notes: null,
     })
     .onConflictDoNothing()
     .run()
 
   // -----------------------------------------------------------------------
-  // 6. Catálogo de Workouts (Plantillas)
+  // 8. Catálogo de workouts
   // -----------------------------------------------------------------------
-  const workoutRows = Object.entries(workouts).map(([id, w]) => ({
+
+  const workoutRows = Object.entries(workouts).map(([id, workout]) => ({
     id: String(id),
-    type: (w.type || 'Base') as any,
-    title: w.title,
-    distance: Number(w.distance ?? 0),
-    zone: (w.zone || 'Z2') as any,
-    time: Number(w.time ?? 0),
-    gain: Number(w.gain ?? 0),
-    pace: Number(w.pace ?? 0),
-    notes: w.notes || null,
-    trackPath: w.trackPath || null,
+
+    title: workout.title,
+    type: workout.type,
+    zone: workout.zone || 'Z2',
+
+    distance: Number(workout.distance ?? 0),
+    time: Number(workout.time ?? 0),
+    gain: Number(workout.gain ?? 0),
+    pace: workout.pace != null ? Number(workout.pace) : null,
+
+    notes: workout.notes || null,
+    trackPath: workout.trackPath || null,
+
+    locationKey: 'locationKey' in workout ? workout.locationKey || null : null,
+
+    structure: null,
   }))
+
   await db.insert(workoutsTable).values(workoutRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
-  // 7. Sessions (Días específicos en el calendario del microciclo)
+  // 9. Sesiones compartidas del equipo
   // -----------------------------------------------------------------------
-  const sessionRows = weekDaysRaw.map((d, index) => {
-    const linkedWorkout = d.workoutId !== undefined ? workouts[d.workoutId] : null
-    return {
-      id: `session_${index}`,
-      microcycleId: microId,
-      workoutId: d.workoutId !== undefined ? String(d.workoutId) : null,
-      date: d.date,
-      title: d.isRest ? 'Descanso' : linkedWorkout?.title || 'Entrenamiento',
-      type: (d.isRest ? 'rest' : d.type || 'workout') as any,
-      zone: (linkedWorkout?.zone || 'Z2') as any,
-      defaultVolume: {
-        km: Number(linkedWorkout?.distance || d.completedKm || 0),
-        timeMin: Number(linkedWorkout?.time || 0),
-      },
-    }
-  })
-  await db.insert(sessions).values(sessionRows).onConflictDoNothing().run()
 
-  // -----------------------------------------------------------------------
-  // 8. Workout Logs (Registro de ejecución del atleta)
-  // -----------------------------------------------------------------------
-  // Función auxiliar para mapear los booleanos antiguos al nuevo DayStatus
-  const getStatus = (d: any) => {
-    if (d.isRest) return 'rest'
-    if (d.isDone) return 'completed'
-    if (d.isPartial) return 'partial'
-    if (d.isMissed) return 'missed'
-    return 'pending'
+  const sessionRows = weekDaysRaw
+    .filter((day) => !day.isRest)
+    .map((day, index) => {
+      const linkedWorkout = day.workoutId !== undefined ? workouts[day.workoutId] : null
+
+      return {
+        id: `session_${index}`,
+        teamId,
+
+        workoutId: day.workoutId !== undefined ? String(day.workoutId) : null,
+
+        date: day.date,
+
+        title: linkedWorkout?.title || 'Entrenamiento',
+
+        locationKey: linkedWorkout && 'locationKey' in linkedWorkout ? linkedWorkout.locationKey || null : null,
+
+        trackPath: linkedWorkout?.trackPath || null,
+
+        notes: linkedWorkout?.notes || null,
+      }
+    })
+
+  if (sessionRows.length > 0) {
+    await db.insert(sessions).values(sessionRows).onConflictDoNothing().run()
   }
 
-  const logRows = weekDaysRaw.map((d, index) => {
-    const linkedWorkout = d.workoutId !== undefined ? workouts[d.workoutId] : null
+  // -----------------------------------------------------------------------
+  // 10. Prescripciones del grupo para cada sesión
+  // -----------------------------------------------------------------------
+
+  const prescriptionRows = sessionRows.map((session) => {
+    const day = weekDaysRaw.find((candidate) => candidate.date === session.date)
+
+    const linkedWorkout = day?.workoutId !== undefined ? workouts[day.workoutId] : null
+
     return {
-      id: `log_${userId}_${d.date}`,
-      athleteId: athleteProfileId, // ✅ Ahora usa athleteId
-      sessionId: `session_${index}`,
-      workoutId: d.workoutId !== undefined ? String(d.workoutId) : null,
-      date: d.date,
-      status: getStatus(d) as any,
-      distanceKm: Number(d.completedKm ?? 0),
-      durationMin: Number(linkedWorkout?.time ?? 0),
-      elevationGain: Number(linkedWorkout?.gain ?? 0),
-      rpe: 0,
-      loggedAt: new Date().toISOString(),
+      id: `prescription_${session.id}_${currentGroup.id}`,
+
+      sessionId: session.id,
+      groupId: currentGroup.id,
+      microcycleId,
+
+      distanceKm: linkedWorkout?.distance != null ? Number(linkedWorkout.distance) : null,
+
+      durationMin: linkedWorkout?.time != null ? Number(linkedWorkout.time) : null,
+
+      elevationGain: linkedWorkout?.gain != null ? Number(linkedWorkout.gain) : null,
+
+      zone: linkedWorkout?.zone || null,
+      notes: linkedWorkout?.notes || null,
     }
   })
-  await db.insert(workoutLogs).values(logRows).onConflictDoNothing().run()
+
+  if (prescriptionRows.length > 0) {
+    await db.insert(groupSessionPrescriptions).values(prescriptionRows).onConflictDoNothing().run()
+  }
 
   // -----------------------------------------------------------------------
-  // 9. Zapatillas (Gear)
+  // 11. Registros de ejecución del atleta
   // -----------------------------------------------------------------------
-  const shoesRows = runningShoes.map((s, index) => ({
+
+  const workoutLogRows = sessionRows.map((session) => {
+    const day = weekDaysRaw.find((candidate) => candidate.date === session.date)
+
+    if (!day) {
+      throw new Error(`No se encontraron datos para ${session.date}`)
+    }
+
+    const linkedWorkout = day.workoutId !== undefined ? workouts[day.workoutId] : null
+
+    return {
+      id: `log_${userId}_${day.date}`,
+
+      athleteId: athleteProfileId,
+      sessionId: session.id,
+
+      workoutId: day.workoutId !== undefined ? String(day.workoutId) : null,
+
+      date: day.date,
+      status: getDayStatus(day),
+
+      distanceKm: Number(day.completedKm ?? 0),
+
+      durationMin: Number(linkedWorkout?.time ?? 0),
+
+      elevationGain: Number(linkedWorkout?.gain ?? 0),
+
+      avgHr: null,
+      feeling: null,
+      rpe: 0,
+      athleteNotes: null,
+
+      loggedAt: now,
+    }
+  })
+
+  if (workoutLogRows.length > 0) {
+    await db.insert(workoutLogs).values(workoutLogRows).onConflictDoNothing().run()
+  }
+
+  // -----------------------------------------------------------------------
+  // 12. Calzado
+  // -----------------------------------------------------------------------
+
+  const shoeRows = runningShoes.map((shoe, index) => ({
     id: `shoe_${index + 1}`,
-    athleteId: athleteProfileId, // ✅ AHORA USA athleteId
-    type: s.type || 'Trail',
-    brand: s.brand || 'Marca Genérica', // Asegúrate de que 'brand' exista en data.ts
-    model: s.model || 'Modelo Genérico',
-    maxKm: s.maxKm || 800,
-    currentKm: s.currentKm || 0,
-    isActive: s.status === 'active', // Ajusta según cómo tengas 'status' en data.ts
+    athleteId: athleteProfileId,
+
+    type: shoe.type || 'Trail',
+    brand: shoe.brand || 'Marca genérica',
+    model: shoe.model || 'Modelo genérico',
+
+    maxKm: Number(shoe.maxKm || 800),
+    currentKm: Number(shoe.currentKm || 0),
+
+    purchaseDate: null,
+    retiredAt: null,
+    notes: null,
+
+    isActive: shoe.status !== 'retired',
     isDefault: index === 0,
   }))
-  await db.insert(shoesTable).values(shoesRows).onConflictDoNothing().run()
 
-  console.log('✅ Base de datos SQLite inicializada y sincronizada con éxito.')
+  if (shoeRows.length > 0) {
+    await db.insert(shoesTable).values(shoeRows).onConflictDoNothing().run()
+  }
+
+  console.log('✅ Base de datos SQLite inicializada correctamente.')
 }
 
-seed().catch((err) => {
-  console.error('❌ Error ejecutando el seed:', err)
+seed().catch((error) => {
+  console.error('❌ Error al inicializar la base de datos:', error)
+
+  process.exitCode = 1
 })

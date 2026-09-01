@@ -1,14 +1,16 @@
 'use client'
 
-import { AthleteProfile, Team } from '@/types'
+import { AthleteProfileWithRelations, Team } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
 import { cn } from '@/lib/utils'
 import { ThemeToggleButton } from '@/components/ui/custom/buttons'
+import { buildAthleteGroupCode } from '@/lib/athlete-group-helpers'
 
-export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProfile }) {
+export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProfileWithRelations }) {
   const { today, fullName, initials } = useHomeHeader()
+  const groupCode = athlete.group ? buildAthleteGroupCode(athlete.group) : '--'
 
   return (
     <div className='flex items-center justify-between'>
@@ -16,7 +18,6 @@ export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProf
         {/* Avatar con borde activo primario */}
         <div className='relative'>
           <Avatar className='size-14 rounded-full border-3 border-primary shadow-lg'>
-            {/* <AvatarImage src={team.avatar} alt={team.name} className='object-cover' /> */}
             {/* Imagen para modo claro */}
             <AvatarImage
               src={team.avatarLight}
@@ -41,7 +42,7 @@ export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProf
             )}
             title='Ver team'
           >
-            {athlete.group}
+            {groupCode}
           </button>
         </div>
 
