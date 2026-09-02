@@ -1,6 +1,6 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
-import { GROUP_VOLUME_MATRIX } from '@/data/periodization-matrix'
+import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -207,7 +207,6 @@ export function generateTrainingMesocycles({
     throw new Error('El rango de fechas no alcanza para las semanas de entrenamiento indicadas.')
   }
 
-  const volumeProgression = GROUP_VOLUME_MATRIX[athleteGroup]
   const athleteCategory = athleteGroup.charAt(0) as AthleteCategoryCode
   const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
   const weekDistribution = distributeWeeksIntoMesocycles(trainingWeeksCount)
@@ -218,7 +217,7 @@ export function generateTrainingMesocycles({
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
     const targets = microcycleSequence.map((type): MicrocycleTarget => {
-      const targetVolumeKm = volumeProgression.volumes[type]
+      const targetVolumeKm = calculateTargetVolume({ athleteGroup, type })
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
 
       return {
@@ -281,7 +280,6 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     throw new Error('El período disponible no alcanza para incluir entrenamiento y tapering.')
   }
 
-  const volumeProgression = GROUP_VOLUME_MATRIX[params.athleteGroup]
   const athleteCategory = params.athleteGroup.charAt(0) as AthleteCategoryCode
   const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
   const mesocycles = generateTrainingMesocycles({
@@ -295,10 +293,13 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const numberOfTrainingMesocycles = mesocycles.length
 
   if (params.race) {
-    const peakVolume = volumeProgression.volumes.shock
     const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
     const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
-      const targetVolumeKm = Math.round(peakVolume * volumeFactor)
+      const targetVolumeKm = calculateTargetVolume({
+        athleteGroup: params.athleteGroup,
+        type: 'tapering',
+        volumeFactor,
+      })
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
 
       return {
@@ -309,7 +310,11 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       }
     })
 
-    const raceWeekVolumeKm = Math.max(params.race.distanceKm, Math.round(peakVolume * 0.35))
+    const raceWeekVolumeKm = calculateTargetVolume({
+      athleteGroup: params.athleteGroup,
+      type: 'race',
+      raceDistanceKm: params.race.distanceKm,
+    })
     const raceWeekElevationGain = params.race.elevationGain
       ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
     const taperingMicrocycles = generateMicrocycles({
