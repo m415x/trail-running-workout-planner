@@ -20,7 +20,7 @@ export default async function AthletesPage({ params }: AthletesPageProps) {
       <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
           <h2 className='text-3xl font-bold tracking-tight'>Atletas</h2>
-          <p className='text-muted-foreground'>Perfiles activos y grupo actual de cada integrante del equipo.</p>
+          <p className='text-muted-foreground'>Perfiles del equipo, estado operativo y grupo actual de cada atleta.</p>
         </div>
 
         <Link href={newAthletePath} className={buttonVariants()}>
