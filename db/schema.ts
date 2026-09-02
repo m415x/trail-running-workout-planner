@@ -16,6 +16,7 @@ import type {
   TrainingGoalType,
   TrainingGoalStatus,
   GroupTrainingPlanStatus,
+  PlanningModificationField,
 } from '@/types'
 
 /* -------------------------------------------------------------------------- */
@@ -271,6 +272,20 @@ export const microcycles = sqliteTable('microcycles', {
   notes: text('notes'),
 })
 
+export const planningModificationRecords = sqliteTable('planning_modification_records', {
+  ...baseColumns,
+
+  groupTrainingPlanId: text('group_training_plan_id')
+    .notNull()
+    .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+
+  microcycleId: text('microcycle_id').references(() => microcycles.id, { onDelete: 'set null' }),
+  field: text('field').$type<PlanningModificationField>().notNull(),
+  previousValue: text('previous_value'),
+  newValue: text('new_value'),
+  changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+})
+
 /* -------------------------------------------------------------------------- */
 /* 9. WORKOUTS (Catálogo / Plantillas Reutilizables)                          */
 /* -------------------------------------------------------------------------- */
@@ -445,6 +460,7 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [athleteProfiles.userId],
   }),
   groupChanges: many(groupHistoryRecords),
+  planningChanges: many(planningModificationRecords),
 }))
 
 export const athleteGroupsRelations = relations(athleteGroups, ({ one, many }) => ({
@@ -535,6 +551,7 @@ export const groupTrainingPlansRelations = relations(groupTrainingPlans, ({ one,
     references: [athleteGroups.id],
   }),
   macrocycles: many(macrocycles),
+  modifications: many(planningModificationRecords),
 }))
 
 export const macrocyclesRelations = relations(macrocycles, ({ one, many }) => ({
@@ -556,6 +573,22 @@ export const microcyclesRelations = relations(microcycles, ({ one, many }) => ({
     references: [mesocycles.id],
   }),
   sessionPrescriptions: many(groupSessionPrescriptions),
+  modifications: many(planningModificationRecords),
+}))
+
+export const planningModificationRecordsRelations = relations(planningModificationRecords, ({ one }) => ({
+  groupTrainingPlan: one(groupTrainingPlans, {
+    fields: [planningModificationRecords.groupTrainingPlanId],
+    references: [groupTrainingPlans.id],
+  }),
+  microcycle: one(microcycles, {
+    fields: [planningModificationRecords.microcycleId],
+    references: [microcycles.id],
+  }),
+  changedBy: one(users, {
+    fields: [planningModificationRecords.changedByUserId],
+    references: [users.id],
+  }),
 }))
 
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({

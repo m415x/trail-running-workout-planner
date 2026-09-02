@@ -11,6 +11,7 @@ export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'del
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+export type PlanningModificationField = 'target_volume_km' | 'date_range' | 'type' | 'notes'
 
 export interface GroupVolumeOverride {
   distanceKm: number
@@ -123,4 +124,13 @@ export interface GroupTrainingPlan extends BaseEntity {
   status: GroupTrainingPlanStatus
   notes?: string | null
   macrocycles?: Macrocycle[]
+}
+
+export interface PlanningModificationRecord extends BaseEntity {
+  groupTrainingPlanId: string
+  microcycleId: string | null
+  field: PlanningModificationField
+  previousValue?: string | null
+  newValue?: string | null
+  changedByUserId?: string | null
 }
