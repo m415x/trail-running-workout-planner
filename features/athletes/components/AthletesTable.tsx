@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Eye, Pencil, Power } from 'lucide-react'
+import { Eye, Pencil, Power, UsersRound } from 'lucide-react'
 
 import { setAthleteActiveState } from '@/app/actions/athlete-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
@@ -88,6 +88,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                 ? `/dashboard/athletes/${athlete.id}`
                 : `/${locale}/dashboard/athletes/${athlete.id}`
               const editPath = `${basePath}/edit`
+              const groupPath = `${basePath}/group`
               const isChangingState = isPending && pendingAthleteId === athlete.id
 
               return (
@@ -149,6 +150,15 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                       >
                         <Power />
                       </Button>
+
+                      <Link
+                        href={groupPath}
+                        aria-label={`${groupCode ? 'Cambiar grupo de' : 'Asignar a grupo a'} ${fullName}`}
+                        title={groupCode ? 'Cambiar grupo' : 'Asignar grupo'}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                      >
+                        <UsersRound />
+                      </Link>
 
                       <Link
                         href={editPath}

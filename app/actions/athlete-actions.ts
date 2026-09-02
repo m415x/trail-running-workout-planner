@@ -9,19 +9,16 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { athleteGroups, athleteProfiles, groupHistoryRecords, users } from '@/db/schema'
 
-interface ChangeAthleteGroupInput {
-  athleteId: string
-  newGroupId: string
-  changedByUserId: string
-  effectiveDate: string
-  reason?: string
-}
-
 export interface AthleteFormState {
   error?: string
 }
 
+export interface AthleteGroupFormState {
+  error?: string
+}
+
 const CURRENT_TEAM_ID = 'team_1'
+const locales = ['es', 'en'] as const
 
 const athleteFormSchema = z.object({
   firstName: z.string().trim().min(2, 'Ingresá el nombre del atleta'),
@@ -34,6 +31,14 @@ const athleteFormSchema = z.object({
   emergencyContact: z.string().trim().optional(),
   emergencyPhone: z.string().trim().optional(),
   locale: z.string().trim().default('es'),
+})
+
+const athleteGroupFormSchema = z.object({
+  athleteId: z.string().trim().min(1, 'No se pudo identificar al atleta'),
+  newGroupId: z.string().trim().min(1, 'Seleccioná un grupo'),
+  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
+  reason: z.string().trim().max(500, 'El motivo no puede superar los 500 caracteres').optional(),
+  locale: z.enum(locales).default('es'),
 })
 
 function nullable(value?: string) {
@@ -78,11 +83,26 @@ export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
 
 export async function getAthleteById(athleteId: string) {
   return db.query.athleteProfiles.findFirst({
-    where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
+    where: and(
+      eq(athleteProfiles.id, athleteId),
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.isDeleted, false),
+    ),
     with: {
       user: true,
       group: true,
     },
+  })
+}
+
+export async function getActiveAthleteGroups() {
+  return db.query.athleteGroups.findMany({
+    where: and(
+      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.isActive, true),
+      eq(athleteGroups.isDeleted, false),
+    ),
+    orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
 }
 
@@ -267,11 +287,26 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
   }
 }
 
-export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
+export async function assignAthleteToGroup(
+  _previousState: AthleteGroupFormState,
+  formData: FormData,
+): Promise<AthleteGroupFormState> {
+  const parsed = athleteGroupFormSchema.safeParse(Object.fromEntries(formData))
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+  }
+
+  const data = parsed.data
+
   try {
     db.transaction((tx) => {
       const athlete = tx.query.athleteProfiles.findFirst({
-        where: and(eq(athleteProfiles.id, input.athleteId), eq(athleteProfiles.isDeleted, false)),
+        where: and(
+          eq(athleteProfiles.id, data.athleteId),
+          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+          eq(athleteProfiles.isDeleted, false),
+        ),
       }).sync()
 
       if (!athlete) {
@@ -280,7 +315,8 @@ export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
 
       const newGroup = tx.query.athleteGroups.findFirst({
         where: and(
-          eq(athleteGroups.id, input.newGroupId),
+          eq(athleteGroups.id, data.newGroupId),
+          eq(athleteGroups.teamId, CURRENT_TEAM_ID),
           eq(athleteGroups.isActive, true),
           eq(athleteGroups.isDeleted, false),
         ),
@@ -290,12 +326,8 @@ export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
         throw new Error('Grupo no encontrado o inactivo')
       }
 
-      if (newGroup.teamId !== athlete.teamId) {
-        throw new Error('El grupo seleccionado pertenece a otro equipo')
-      }
-
       if (athlete.groupId === newGroup.id) {
-        return
+        throw new Error('El atleta ya pertenece al grupo seleccionado')
       }
 
       const now = new Date().toISOString()
@@ -314,21 +346,20 @@ export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
         athleteId: athlete.id,
         previousGroupId: athlete.groupId,
         newGroupId: newGroup.id,
-        changedByUserId: input.changedByUserId,
-        date: input.effectiveDate,
-        reason: input.reason ?? null,
+        changedByUserId: null,
+        date: data.effectiveDate,
+        reason: data.reason || null,
         createdAt: now,
         updatedAt: now,
       }).run()
     })
-
-    return { success: true }
   } catch (error) {
     console.error('Error changing athlete group:', error)
-
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'No se pudo cambiar el grupo',
-    }
+    return { error: error instanceof Error ? error.message : 'No se pudo cambiar el grupo' }
   }
+
+  const athleteDetailPath = `${athletesPath(data.locale)}/${data.athleteId}`
+  revalidatePath(athletesPath(data.locale))
+  revalidatePath(athleteDetailPath)
+  redirect(athleteDetailPath)
 }

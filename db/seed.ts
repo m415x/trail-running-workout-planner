@@ -88,26 +88,7 @@ async function seed() {
    * el grupo del atleta. Si queremos mostrar todos los grupos en el
    * dashboard, podemos ampliar este array.
    */
-  const availableGroupCodes: AthleteGroupCode[] = [
-    'E1',
-    'E2',
-    'E3',
-    'U1',
-    'U2',
-    'U3',
-    'M1',
-    'M2',
-    'M3',
-    'H1',
-    'H2',
-    'H3',
-    'S1',
-    'S2',
-    'S3',
-    'B1',
-    'B2',
-    'B3',
-  ]
+  const availableGroupCodes: AthleteGroupCode[] = ['M1', 'S2', 'B3']
 
   const athleteGroupRows: SeededAthleteGroup[] = availableGroupCodes.map((groupCode) => {
     const { categoryCode, levelCode } = splitGroupCode(groupCode)
@@ -129,9 +110,7 @@ async function seed() {
   }
 
   const getGroupId = (groupCode: AthleteGroupCode) => {
-    const group = athleteGroupRows.find(
-      (candidate) => `${candidate.categoryCode}${candidate.levelCode}` === groupCode,
-    )
+    const group = athleteGroupRows.find((candidate) => `${candidate.categoryCode}${candidate.levelCode}` === groupCode)
 
     if (!group) {
       throw new Error(`No se encontró el grupo ${groupCode}`)

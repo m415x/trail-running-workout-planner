@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Mountain, Users } from 'lucide-react'
+import { LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
 
 import { Link, usePathname } from '@/i18n/routing'
 import {
@@ -27,6 +27,11 @@ const navigationItems = [
     href: '/dashboard/athletes',
     icon: Users,
   },
+  {
+    label: 'Grupos',
+    href: '/dashboard/groups',
+    icon: UsersRound,
+  },
 ] as const
 
 export function AppSidebar() {
@@ -52,18 +57,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
-                const isActive =
-                  item.href === '/dashboard'
-                    ? pathname === item.href
-                    : pathname.startsWith(item.href)
+                const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      render={<Link href={item.href} />}
-                      isActive={isActive}
-                      tooltip={item.label}
-                    >
+                    <SidebarMenuButton render={<Link href={item.href} />} isActive={isActive} tooltip={item.label}>
                       <item.icon />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
@@ -76,7 +74,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <p className='px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>Fase 1 · Gestión de atletas</p>
+        <p className='px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>Fase 1 · Núcleo de planificación</p>
       </SidebarFooter>
     </Sidebar>
   )
