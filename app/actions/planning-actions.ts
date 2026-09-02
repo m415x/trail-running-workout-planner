@@ -39,6 +39,13 @@ const updateMicrocycleTypeSchema = z.object({
   locale: z.enum(locales).default('es'),
 })
 
+const updateMicrocycleNotesSchema = z.object({
+  microcycleId: z.string().trim().min(1, 'No se pudo identificar el microciclo'),
+  planId: z.string().trim().min(1, 'No se pudo identificar la planificación'),
+  notes: z.string().trim().max(2000, 'Las notas no pueden superar los 2000 caracteres'),
+  locale: z.enum(locales).default('es'),
+})
+
 export interface MicrocycleVolumeFormState {
   error?: string
 }
@@ -48,6 +55,10 @@ export interface MicrocycleDatesFormState {
 }
 
 export interface MicrocycleTypeFormState {
+  error?: string
+}
+
+export interface MicrocycleNotesFormState {
   error?: string
 }
 
@@ -358,6 +369,57 @@ export async function updateMicrocycleType(
   } catch (error) {
     console.error('Error updating microcycle type:', error)
     return { error: 'No se pudo actualizar el tipo de microciclo' }
+  }
+
+  const detailPath = planningPath(data.locale, `/${data.planId}`)
+  revalidatePath(planningPath(data.locale))
+  revalidatePath(detailPath)
+  redirect(detailPath)
+}
+
+export async function updateMicrocycleNotes(
+  _previousState: MicrocycleNotesFormState,
+  formData: FormData,
+): Promise<MicrocycleNotesFormState> {
+  const parsed = updateMicrocycleNotesSchema.safeParse(Object.fromEntries(formData))
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá las notas ingresadas' }
+  }
+
+  const data = parsed.data
+
+  try {
+    const microcycle = getEditableMicrocycle(data.microcycleId)
+    const plan = microcycle?.mesocycle.macrocycle.groupTrainingPlan
+
+    if (!microcycle || !plan || !belongsToEditablePlan(microcycle, data.planId)) {
+      return { error: 'Microciclo no encontrado' }
+    }
+
+    const nextNotes = data.notes || null
+
+    if (microcycle.notes !== nextNotes) {
+      const now = new Date().toISOString()
+
+      db.transaction((tx) => {
+        tx.update(microcycles)
+          .set({
+            notes: nextNotes,
+            updatedAt: now,
+          })
+          .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
+          .run()
+
+        tx.update(groupTrainingPlans)
+          .set({ updatedAt: now })
+          .where(eq(groupTrainingPlans.id, plan.id))
+          .run()
+      })
+    }
+  } catch (error) {
+    console.error('Error updating microcycle notes:', error)
+    return { error: 'No se pudieron actualizar las notas' }
   }
 
   const detailPath = planningPath(data.locale, `/${data.planId}`)

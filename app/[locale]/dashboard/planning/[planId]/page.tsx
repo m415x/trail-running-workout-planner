@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
+import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
 import { Badge } from '@ui/badge'
@@ -74,6 +75,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                         <TableHead>Tipo</TableHead>
                         <TableHead>Fechas</TableHead>
                         <TableHead>Desnivel</TableHead>
+                        <TableHead>Notas</TableHead>
                         <TableHead className='text-right'>Volumen objetivo</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -100,6 +102,14 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                           </TableCell>
                           <TableCell>
                             {microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}
+                          </TableCell>
+                          <TableCell>
+                            <MicrocycleNotesForm
+                              microcycleId={microcycle.id}
+                              planId={plan.id}
+                              locale={locale}
+                              currentNotes={microcycle.notes}
+                            />
                           </TableCell>
                           <TableCell>
                             <div className='flex justify-end'>
