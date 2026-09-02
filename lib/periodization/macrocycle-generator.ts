@@ -94,6 +94,104 @@ function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: numb
   return prefix ? `${prefix}. ${summary}` : summary
 }
 
+function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
+  const fullMesocycles = Math.floor(trainingWeeksCount / 4)
+  const remainingWeeks = trainingWeeksCount % 4
+  const distribution = Array.from({ length: fullMesocycles }, () => 4)
+
+  if (remainingWeeks === 0) return distribution
+
+  if (remainingWeeks === 1 && distribution.length > 0) {
+    distribution[distribution.length - 1] = 3
+    distribution.push(2)
+    return distribution
+  }
+
+  distribution.push(remainingWeeks)
+  return distribution
+}
+
+function getMicrocycleSequence(weeksInMesocycle: number): VolumeMatrixMicrocycleType[] {
+  if (weeksInMesocycle === 4) return STANDARD_MESOCYCLE_SEQUENCE
+
+  return [...STANDARD_MESOCYCLE_SEQUENCE.slice(0, weeksInMesocycle - 1), 'deload']
+}
+
+export interface TrainingMesocycleGeneratorParams {
+  startDate: string
+  endDate: string
+  trainingWeeksCount: number
+  athleteGroup: AthleteGroupCode
+}
+
+export function generateTrainingMesocycles({
+  startDate,
+  endDate,
+  trainingWeeksCount,
+  athleteGroup,
+}: TrainingMesocycleGeneratorParams): GeneratedMesocycleDraft[] {
+  if (!Number.isInteger(trainingWeeksCount) || trainingWeeksCount < 2) {
+    throw new Error('Se necesitan al menos 2 semanas de entrenamiento para generar mesociclos.')
+  }
+
+  const start = parseRequiredDate(startDate, 'startDate')
+  const end = parseRequiredDate(endDate, 'endDate')
+  const availableDays = differenceInCalendarDays(end, start) + 1
+
+  if (availableDays < (trainingWeeksCount - 1) * 7 + 1) {
+    throw new Error('El rango de fechas no alcanza para las semanas de entrenamiento indicadas.')
+  }
+
+  const volumeProgression = GROUP_VOLUME_MATRIX[athleteGroup]
+  const athleteCategory = athleteGroup.charAt(0) as AthleteCategoryCode
+  const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
+  const weekDistribution = distributeWeeksIntoMesocycles(trainingWeeksCount)
+  const mesocycles: GeneratedMesocycleDraft[] = []
+  let currentWeekStart = start
+  let globalWeekCounter = 1
+
+  weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
+    const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
+    const microcycles: GeneratedMicrocycleDraft[] = microcycleSequence.map((type) => {
+      const weekEnd = new Date(Math.min(addDays(currentWeekStart, 6).getTime(), end.getTime()))
+      const targetVolumeKm = volumeProgression.volumes[type]
+      const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
+      const microcycle: GeneratedMicrocycleDraft = {
+        weekNumber: globalWeekCounter,
+        type,
+        startDate: format(currentWeekStart, 'yyyy-MM-dd'),
+        endDate: format(weekEnd, 'yyyy-MM-dd'),
+        targetVolumeKm,
+        targetElevationGain,
+        notes: createNotes(type, targetVolumeKm, targetElevationGain),
+      }
+
+      currentWeekStart = addDays(currentWeekStart, 7)
+      globalWeekCounter++
+      return microcycle
+    })
+
+    const isFirstMesocycle = mesocycleIndex === 0
+    const isLastMesocycle = mesocycleIndex === weekDistribution.length - 1
+    const period = isFirstMesocycle ? 'general_preparatory' : 'specific_preparatory'
+    const focus = isFirstMesocycle
+      ? 'Adaptación y base'
+      : isLastMesocycle
+        ? 'Pico y especificidad'
+        : 'Desarrollo y carga'
+
+    mesocycles.push({
+      title: `Mesociclo ${mesocycleIndex + 1}: ${focus}`,
+      number: mesocycleIndex + 1,
+      period,
+      objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
+      microcycles,
+    })
+  })
+
+  return mesocycles
+}
+
 export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): GeneratedMacrocycleDraft {
   validateParams(params)
 
@@ -113,50 +211,22 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const taperingWeeksCount = getTaperingWeeksCount(params.athleteGroup, params.race)
   const trainingWeeksCount = totalWeeks - taperingWeeksCount
 
-  if (trainingWeeksCount < 1) {
+  if (trainingWeeksCount < 2) {
     throw new Error('El período disponible no alcanza para incluir entrenamiento y tapering.')
   }
 
   const volumeProgression = GROUP_VOLUME_MATRIX[params.athleteGroup]
   const athleteCategory = params.athleteGroup.charAt(0) as AthleteCategoryCode
   const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
-  const mesocycles: GeneratedMesocycleDraft[] = []
-  let currentWeekStart = start
-  let globalWeekCounter = 1
-  const numberOfTrainingMesocycles = Math.ceil(trainingWeeksCount / 4)
-
-  for (let mesocycleIndex = 0; mesocycleIndex < numberOfTrainingMesocycles; mesocycleIndex++) {
-    const weeksInMesocycle = Math.min(4, trainingWeeksCount - mesocycleIndex * 4)
-    const microcycles: GeneratedMicrocycleDraft[] = []
-
-    for (let microcycleIndex = 0; microcycleIndex < weeksInMesocycle; microcycleIndex++) {
-      const type = STANDARD_MESOCYCLE_SEQUENCE[microcycleIndex]
-      const weekEnd = new Date(Math.min(addDays(currentWeekStart, 6).getTime(), end.getTime()))
-      const targetVolumeKm = volumeProgression.volumes[type]
-      const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
-
-      microcycles.push({
-        weekNumber: globalWeekCounter,
-        type,
-        startDate: format(currentWeekStart, 'yyyy-MM-dd'),
-        endDate: format(weekEnd, 'yyyy-MM-dd'),
-        targetVolumeKm,
-        targetElevationGain,
-        notes: createNotes(type, targetVolumeKm, targetElevationGain),
-      })
-
-      currentWeekStart = addDays(currentWeekStart, 7)
-      globalWeekCounter++
-    }
-
-    mesocycles.push({
-      title: `Mesociclo ${mesocycleIndex + 1}: ${mesocycleIndex === numberOfTrainingMesocycles - 1 ? 'Pico y especificidad' : 'Desarrollo y carga'}`,
-      number: mesocycleIndex + 1,
-      period: mesocycleIndex === 0 ? 'general_preparatory' : 'specific_preparatory',
-      objective: `Bloque de ondulación fractal (${weeksInMesocycle} semanas)`,
-      microcycles,
-    })
-  }
+  const mesocycles = generateTrainingMesocycles({
+    startDate: params.startDate,
+    endDate: params.endDate,
+    trainingWeeksCount,
+    athleteGroup: params.athleteGroup,
+  })
+  let currentWeekStart = addDays(start, trainingWeeksCount * 7)
+  let globalWeekCounter = trainingWeeksCount + 1
+  const numberOfTrainingMesocycles = mesocycles.length
 
   if (params.race) {
     const taperingMicrocycles: GeneratedMicrocycleDraft[] = []
