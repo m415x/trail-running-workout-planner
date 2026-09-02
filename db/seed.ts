@@ -128,6 +128,18 @@ async function seed() {
     throw new Error(`No se encontró el grupo inicial ${currentGroupCode}`)
   }
 
+  const getGroupId = (groupCode: AthleteGroupCode) => {
+    const group = athleteGroupRows.find(
+      (candidate) => `${candidate.categoryCode}${candidate.levelCode}` === groupCode,
+    )
+
+    if (!group) {
+      throw new Error(`No se encontró el grupo ${groupCode}`)
+    }
+
+    return group.id
+  }
+
   // -----------------------------------------------------------------------
   // 1. Ubicaciones de entrenamiento
   // -----------------------------------------------------------------------
@@ -177,7 +189,7 @@ async function seed() {
     .run()
 
   // -----------------------------------------------------------------------
-  // 4. Usuario
+  // 4. Usuarios
   // -----------------------------------------------------------------------
 
   await db
@@ -197,8 +209,58 @@ async function seed() {
     .onConflictDoNothing()
     .run()
 
+  const testUserRows = [
+    {
+      id: 'user_2',
+      role: 'athlete' as const,
+      userName: 'ana.acosta',
+      email: 'ana.acosta@elparque.test',
+      firstName: 'Ana',
+      lastName: 'Acosta',
+      avatar: null,
+    },
+    {
+      id: 'user_3',
+      role: 'athlete' as const,
+      userName: 'bruno.benitez',
+      email: 'bruno.benitez@elparque.test',
+      firstName: 'Bruno',
+      lastName: 'Benítez',
+      avatar: '/avatars/avatar-2.png',
+    },
+    {
+      id: 'user_4',
+      role: 'athlete' as const,
+      userName: 'carla.diaz',
+      email: 'carla.diaz@elparque.test',
+      firstName: 'Carla',
+      lastName: 'Díaz',
+      avatar: '/avatars/avatar-3.png',
+    },
+    {
+      id: 'user_5',
+      role: 'athlete' as const,
+      userName: 'diego.fernandez',
+      email: 'diego.fernandez@elparque.test',
+      firstName: 'Diego',
+      lastName: 'Fernández',
+      avatar: null,
+    },
+    {
+      id: 'user_6',
+      role: 'athlete' as const,
+      userName: 'elena.gomez',
+      email: 'elena.gomez@elparque.test',
+      firstName: 'Elena',
+      lastName: 'Gómez',
+      avatar: '/avatars/avatar-4.png',
+    },
+  ]
+
+  await db.insert(users).values(testUserRows).onConflictDoNothing().run()
+
   // -----------------------------------------------------------------------
-  // 5. Perfil del atleta
+  // 5. Perfiles de atletas
   // -----------------------------------------------------------------------
 
   await db
@@ -219,6 +281,71 @@ async function seed() {
     })
     .onConflictDoNothing()
     .run()
+
+  const testAthleteRows = [
+    {
+      id: 'profile_user_2',
+      userId: 'user_2',
+      teamId,
+      groupId: getGroupId('S2'),
+      nickName: 'Ani',
+      dni: '30111222',
+      birthday: '1988-03-12',
+      phone: '+54 9 264 111-2202',
+      emergencyContact: null,
+      emergencyPhone: null,
+    },
+    {
+      id: 'profile_user_3',
+      userId: 'user_3',
+      teamId,
+      groupId: getGroupId('S2'),
+      nickName: null,
+      dni: '32333444',
+      birthday: '1990-07-21',
+      phone: '+54 9 264 111-2203',
+      emergencyContact: null,
+      emergencyPhone: null,
+    },
+    {
+      id: 'profile_user_4',
+      userId: 'user_4',
+      teamId,
+      groupId: getGroupId('M1'),
+      nickName: 'Car',
+      dni: '34555666',
+      birthday: '1994-11-05',
+      phone: null,
+      emergencyContact: null,
+      emergencyPhone: null,
+    },
+    {
+      id: 'profile_user_5',
+      userId: 'user_5',
+      teamId,
+      groupId: getGroupId('B3'),
+      nickName: null,
+      dni: '36777888',
+      birthday: '1997-01-18',
+      phone: '+54 9 264 111-2205',
+      emergencyContact: null,
+      emergencyPhone: null,
+    },
+    {
+      id: 'profile_user_6',
+      userId: 'user_6',
+      teamId,
+      groupId: null,
+      nickName: 'Ele',
+      dni: '38999000',
+      birthday: '1999-09-30',
+      phone: '+54 9 264 111-2206',
+      emergencyContact: null,
+      emergencyPhone: null,
+    },
+  ]
+
+  await db.insert(athleteProfiles).values(testAthleteRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
   // 6. Objetivo individual del atleta

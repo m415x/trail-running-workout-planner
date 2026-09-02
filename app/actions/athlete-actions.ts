@@ -14,6 +14,40 @@ interface ChangeAthleteGroupInput {
   reason?: string
 }
 
+const CURRENT_TEAM_ID = 'team_1'
+
+export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
+  try {
+    const athletes = await db.query.athleteProfiles.findMany({
+      where: and(eq(athleteProfiles.teamId, teamId), eq(athleteProfiles.isDeleted, false)),
+      with: {
+        user: true,
+        group: true,
+      },
+    })
+
+    athletes.sort((first, second) => {
+      const firstName = `${first.user.lastName} ${first.user.firstName}`
+      const secondName = `${second.user.lastName} ${second.user.firstName}`
+
+      return firstName.localeCompare(secondName, 'es')
+    })
+
+    return {
+      success: true as const,
+      data: athletes,
+    }
+  } catch (error) {
+    console.error('Error fetching athletes:', error)
+
+    return {
+      success: false as const,
+      data: [],
+      error: 'No se pudo cargar el listado de atletas',
+    }
+  }
+}
+
 export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
   try {
     await db.transaction(async (tx) => {
