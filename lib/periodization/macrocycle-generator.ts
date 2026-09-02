@@ -94,6 +94,71 @@ function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: numb
   return prefix ? `${prefix}. ${summary}` : summary
 }
 
+export interface MicrocycleTarget {
+  type: MicrocycleType
+  targetVolumeKm: number
+  targetElevationGain: number
+  notesPrefix?: string
+}
+
+export interface MicrocycleGeneratorParams {
+  startDate: string
+  endDate: string
+  startWeekNumber: number
+  targets: MicrocycleTarget[]
+}
+
+export function generateMicrocycles({
+  startDate,
+  endDate,
+  startWeekNumber,
+  targets,
+}: MicrocycleGeneratorParams): GeneratedMicrocycleDraft[] {
+  if (!Number.isInteger(startWeekNumber) || startWeekNumber < 1) {
+    throw new Error('startWeekNumber debe ser un entero mayor que cero.')
+  }
+
+  if (targets.length === 0) {
+    throw new Error('Se necesita al menos un objetivo semanal para generar microciclos.')
+  }
+
+  const start = parseRequiredDate(startDate, 'startDate')
+  const end = parseRequiredDate(endDate, 'endDate')
+  const availableDays = differenceInCalendarDays(end, start) + 1
+
+  if (availableDays < (targets.length - 1) * 7 + 1) {
+    throw new Error('El rango de fechas no alcanza para los microciclos indicados.')
+  }
+
+  return targets.map((target, index) => {
+    if (!Number.isFinite(target.targetVolumeKm) || target.targetVolumeKm < 0) {
+      throw new Error(`El volumen del microciclo ${startWeekNumber + index} debe ser un número no negativo.`)
+    }
+
+    if (!Number.isInteger(target.targetElevationGain) || target.targetElevationGain < 0) {
+      throw new Error(`El desnivel del microciclo ${startWeekNumber + index} debe ser un entero no negativo.`)
+    }
+
+    const weekStart = addDays(start, index * 7)
+    const weekEnd = new Date(Math.min(addDays(weekStart, 6).getTime(), end.getTime()))
+
+    return {
+      weekNumber: startWeekNumber + index,
+      type: target.type,
+      startDate: format(weekStart, 'yyyy-MM-dd'),
+      endDate: format(weekEnd, 'yyyy-MM-dd'),
+      targetVolumeKm: target.targetVolumeKm,
+      targetElevationGain: target.targetElevationGain,
+      notes: createNotes(
+        target.type,
+        target.targetVolumeKm,
+        target.targetElevationGain,
+        target.notesPrefix,
+      ),
+    }
+  })
+}
+
 function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
   const fullMesocycles = Math.floor(trainingWeeksCount / 4)
   const remainingWeeks = trainingWeeksCount % 4
@@ -152,24 +217,25 @@ export function generateTrainingMesocycles({
 
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
-    const microcycles: GeneratedMicrocycleDraft[] = microcycleSequence.map((type) => {
-      const weekEnd = new Date(Math.min(addDays(currentWeekStart, 6).getTime(), end.getTime()))
+    const targets = microcycleSequence.map((type): MicrocycleTarget => {
       const targetVolumeKm = volumeProgression.volumes[type]
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
-      const microcycle: GeneratedMicrocycleDraft = {
-        weekNumber: globalWeekCounter,
+
+      return {
         type,
-        startDate: format(currentWeekStart, 'yyyy-MM-dd'),
-        endDate: format(weekEnd, 'yyyy-MM-dd'),
         targetVolumeKm,
         targetElevationGain,
-        notes: createNotes(type, targetVolumeKm, targetElevationGain),
       }
-
-      currentWeekStart = addDays(currentWeekStart, 7)
-      globalWeekCounter++
-      return microcycle
     })
+    const microcycles = generateMicrocycles({
+      startDate: format(currentWeekStart, 'yyyy-MM-dd'),
+      endDate,
+      startWeekNumber: globalWeekCounter,
+      targets,
+    })
+
+    currentWeekStart = addDays(currentWeekStart, weeksInMesocycle * 7)
+    globalWeekCounter += weeksInMesocycle
 
     const isFirstMesocycle = mesocycleIndex === 0
     const isLastMesocycle = mesocycleIndex === weekDistribution.length - 1
@@ -224,47 +290,41 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     trainingWeeksCount,
     athleteGroup: params.athleteGroup,
   })
-  let currentWeekStart = addDays(start, trainingWeeksCount * 7)
-  let globalWeekCounter = trainingWeeksCount + 1
+  const currentWeekStart = addDays(start, trainingWeeksCount * 7)
+  const globalWeekCounter = trainingWeeksCount + 1
   const numberOfTrainingMesocycles = mesocycles.length
 
   if (params.race) {
-    const taperingMicrocycles: GeneratedMicrocycleDraft[] = []
     const peakVolume = volumeProgression.volumes.shock
     const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
-
-    taperingFactors.forEach((volumeFactor) => {
-      const weekEnd = new Date(Math.min(addDays(currentWeekStart, 6).getTime(), end.getTime()))
+    const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
       const targetVolumeKm = Math.round(peakVolume * volumeFactor)
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
 
-      taperingMicrocycles.push({
-        weekNumber: globalWeekCounter,
+      return {
         type: 'tapering',
-        startDate: format(currentWeekStart, 'yyyy-MM-dd'),
-        endDate: format(weekEnd, 'yyyy-MM-dd'),
         targetVolumeKm,
         targetElevationGain,
-        notes: createNotes('tapering', targetVolumeKm, targetElevationGain, `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`),
-      })
-
-      currentWeekStart = addDays(currentWeekStart, 7)
-      globalWeekCounter++
+        notesPrefix: `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`,
+      }
     })
 
-    const raceWeekEnd = new Date(Math.min(addDays(currentWeekStart, 6).getTime(), end.getTime()))
     const raceWeekVolumeKm = Math.max(params.race.distanceKm, Math.round(peakVolume * 0.35))
     const raceWeekElevationGain = params.race.elevationGain
       ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
-
-    taperingMicrocycles.push({
-      weekNumber: globalWeekCounter,
-      type: 'race',
+    const taperingMicrocycles = generateMicrocycles({
       startDate: format(currentWeekStart, 'yyyy-MM-dd'),
-      endDate: format(raceWeekEnd, 'yyyy-MM-dd'),
-      targetVolumeKm: raceWeekVolumeKm,
-      targetElevationGain: raceWeekElevationGain,
-      notes: createNotes('race', raceWeekVolumeKm, raceWeekElevationGain, `Competencia: ${params.race.name}`),
+      endDate: params.endDate,
+      startWeekNumber: globalWeekCounter,
+      targets: [
+        ...taperingTargets,
+        {
+          type: 'race',
+          targetVolumeKm: raceWeekVolumeKm,
+          targetElevationGain: raceWeekElevationGain,
+          notesPrefix: `Competencia: ${params.race.name}`,
+        },
+      ],
     })
 
     mesocycles.push({
