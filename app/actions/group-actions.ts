@@ -13,31 +13,34 @@ const CURRENT_TEAM_ID = 'team_1'
 
 const categoryCodes = ['E', 'U', 'M', 'H', 'S', 'B'] as const
 const levelCodes = ['1', '2', '3'] as const
+const locales = ['es', 'en'] as const
+
+type SupportedLocale = (typeof locales)[number]
 
 const createGroupSchema = z.object({
   categoryCode: z.enum(categoryCodes),
   levelCode: z.enum(levelCodes),
   description: z.string().trim().optional(),
-  locale: z.string().trim().default('es'),
+  locale: z.enum(locales).default('es'),
 })
 
 const updateGroupSchema = z.object({
   description: z.string().trim().optional(),
   isActive: z.enum(['true', 'false']).transform((value) => value === 'true'),
-  locale: z.string().trim().default('es'),
+  locale: z.enum(locales).default('es'),
 })
 
 export interface GroupFormState {
   error?: string
 }
 
-function groupsPath(locale: string) {
+function groupsPath(locale: SupportedLocale) {
   return locale === 'es' ? '/dashboard/groups' : `/${locale}/dashboard/groups`
 }
 
-export async function getGroupsByTeam(teamId: string = CURRENT_TEAM_ID) {
+export async function getGroupsByTeam() {
   return db.query.athleteGroups.findMany({
-    where: and(eq(athleteGroups.teamId, teamId), eq(athleteGroups.isDeleted, false)),
+    where: and(eq(athleteGroups.teamId, CURRENT_TEAM_ID), eq(athleteGroups.isDeleted, false)),
     orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
 }
@@ -88,7 +91,7 @@ export async function createGroup(_previousState: GroupFormState, formData: Form
     }).run()
   } catch (error) {
     console.error('Error creating group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo crear el grupo' }
+    return { error: 'No se pudo crear el grupo' }
   }
 
   const path = groupsPath(data.locale)
@@ -133,7 +136,7 @@ export async function updateGroup(_previousState: GroupFormState, formData: Form
       .run()
   } catch (error) {
     console.error('Error updating group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo actualizar el grupo' }
+    return { error: 'No se pudo actualizar el grupo' }
   }
 
   const path = groupsPath(data.locale)
