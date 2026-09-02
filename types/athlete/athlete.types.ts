@@ -29,6 +29,7 @@ export interface AthleteProfile {
 
   teamId: string
   groupId: string | null
+  isActive: boolean
 
   nickName?: string | null
   dni: string
