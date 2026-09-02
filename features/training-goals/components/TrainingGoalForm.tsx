@@ -34,6 +34,7 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
     ? `/dashboard/athletes/${athleteId}`
     : `/${locale}/dashboard/athletes/${athleteId}`
   const isRaceGoal = goalType === 'race'
+  const fieldError = (name: string) => state.fieldErrors?.[name]?.[0]
 
   return (
     <form action={formAction} className='space-y-6'>
@@ -56,18 +57,33 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
             name='type'
             value={goalType}
             onChange={(event) => setGoalType(event.target.value as TrainingGoalType)}
+            aria-invalid={Boolean(fieldError('type'))}
+            aria-describedby={fieldError('type') ? 'type-error' : undefined}
             className='h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
           >
             {goalTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
+          <FieldError id='type-error' message={fieldError('type')} />
         </div>
 
-        <Field label={isRaceGoal ? 'Fecha de la carrera' : 'Fecha objetivo'} name='targetDate' type='date' required={isRaceGoal} />
+        <Field
+          label={isRaceGoal ? 'Fecha de la carrera' : 'Fecha objetivo'}
+          name='targetDate'
+          type='date'
+          required={isRaceGoal}
+          error={fieldError('targetDate')}
+        />
       </div>
 
-      <Field label='Título' name='title' placeholder='Ej.: Preparar Patagonia Run 42K' required />
+      <Field
+        label='Título'
+        name='title'
+        placeholder={isRaceGoal ? 'Ej.: Preparar Patagonia Run 42K' : 'Ej.: Mejorar base aeróbica'}
+        required
+        error={fieldError('title')}
+      />
 
       <TextAreaField
         label='Descripción'
@@ -75,6 +91,7 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
         rows={3}
         maxLength={1000}
         placeholder='Describí el resultado que se espera alcanzar.'
+        error={fieldError('description')}
       />
 
       {isRaceGoal && (
@@ -84,9 +101,9 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
             <p className='text-sm text-muted-foreground'>Datos de la carrera que orienta este objetivo.</p>
           </div>
           <div className='grid gap-4 sm:grid-cols-2'>
-            <Field label='Nombre de la carrera' name='raceName' placeholder='Ej.: Patagonia Run' required />
-            <Field label='Distancia (km)' name='raceDistanceKm' type='number' min='0.1' step='0.1' required />
-            <Field label='Desnivel positivo (m)' name='raceElevationGain' type='number' min='0' step='1' />
+            <Field label='Nombre de la carrera' name='raceName' placeholder='Ej.: Patagonia Run' required error={fieldError('raceName')} />
+            <Field label='Distancia (km)' name='raceDistanceKm' type='number' min='0.1' step='0.1' required error={fieldError('raceDistanceKm')} />
+            <Field label='Desnivel positivo (m)' name='raceElevationGain' type='number' min='0' step='1' error={fieldError('raceElevationGain')} />
           </div>
         </fieldset>
       )}
@@ -97,6 +114,7 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
         rows={4}
         maxLength={2000}
         placeholder='Observaciones internas para el seguimiento del objetivo.'
+        error={fieldError('notes')}
       />
 
       <div className='rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground'>
@@ -121,15 +139,27 @@ interface FieldProps {
   required?: boolean
   min?: string
   step?: string
+  error?: string
 }
 
-function Field({ label, name, type = 'text', placeholder, required, min, step }: FieldProps) {
+function Field({ label, name, type = 'text', placeholder, required, min, step, error }: FieldProps) {
   return (
     <div className='space-y-1.5'>
       <label htmlFor={name} className='text-sm font-medium'>
         {label}{required && <span className='text-destructive'> *</span>}
       </label>
-      <Input id={name} name={name} type={type} placeholder={placeholder} required={required} min={min} step={step} />
+      <Input
+        id={name}
+        name={name}
+        type={type}
+        placeholder={placeholder}
+        required={required}
+        min={min}
+        step={step}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${name}-error` : undefined}
+      />
+      <FieldError id={`${name}-error`} message={error} />
     </div>
   )
 }
@@ -140,9 +170,10 @@ interface TextAreaFieldProps {
   rows: number
   maxLength: number
   placeholder: string
+  error?: string
 }
 
-function TextAreaField({ label, name, rows, maxLength, placeholder }: TextAreaFieldProps) {
+function TextAreaField({ label, name, rows, maxLength, placeholder, error }: TextAreaFieldProps) {
   return (
     <div className='space-y-1.5'>
       <label htmlFor={name} className='text-sm font-medium'>{label}</label>
@@ -152,8 +183,17 @@ function TextAreaField({ label, name, rows, maxLength, placeholder }: TextAreaFi
         rows={rows}
         maxLength={maxLength}
         placeholder={placeholder}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? `${name}-error` : undefined}
         className='w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
       />
+      <FieldError id={`${name}-error`} message={error} />
     </div>
   )
+}
+
+function FieldError({ id, message }: { id: string; message?: string }) {
+  if (!message) return null
+
+  return <p id={id} className='text-xs text-destructive'>{message}</p>
 }

@@ -13,6 +13,17 @@ const CURRENT_TEAM_ID = 'team_1'
 const goalTypes = ['race', 'performance', 'base', 'maintenance', 'custom'] as const
 const locales = ['es', 'en'] as const
 
+function isValidIsoDate(value: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
+
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+}
+
 const trainingGoalFormSchema = z.object({
   athleteId: z.string().trim().min(1, 'No se pudo identificar al atleta'),
   type: z.enum(goalTypes, 'Seleccioná un tipo de objetivo'),
@@ -25,7 +36,7 @@ const trainingGoalFormSchema = z.object({
   notes: z.string().trim().max(2000, 'Las notas no pueden superar los 2000 caracteres').optional(),
   locale: z.enum(locales).default('es'),
 }).superRefine((data, context) => {
-  if (data.targetDate && !/^\d{4}-\d{2}-\d{2}$/.test(data.targetDate)) {
+  if (data.targetDate && !isValidIsoDate(data.targetDate)) {
     context.addIssue({ code: 'custom', path: ['targetDate'], message: 'Ingresá una fecha válida' })
   }
 
@@ -54,6 +65,7 @@ const trainingGoalFormSchema = z.object({
 
 export interface TrainingGoalFormState {
   error?: string
+  fieldErrors?: Record<string, string[] | undefined>
 }
 
 function athleteDetailPath(locale: string, athleteId: string) {
@@ -68,7 +80,10 @@ export async function createTrainingGoal(
   const parsed = trainingGoalFormSchema.safeParse(Object.fromEntries(formData))
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+    return {
+      error: 'Revisá los campos marcados antes de continuar',
+      fieldErrors: z.flattenError(parsed.error).fieldErrors,
+    }
   }
 
   const data = parsed.data
