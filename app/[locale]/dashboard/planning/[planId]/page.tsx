@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
+import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -80,7 +81,14 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                       {mesocycle.microcycles.map((microcycle) => (
                         <TableRow key={microcycle.id}>
                           <TableCell className='font-medium'>{microcycle.weekNumber}</TableCell>
-                          <TableCell><Badge variant='outline'>{microcycle.type}</Badge></TableCell>
+                          <TableCell>
+                            <MicrocycleTypeForm
+                              microcycleId={microcycle.id}
+                              planId={plan.id}
+                              locale={locale}
+                              currentType={microcycle.type}
+                            />
+                          </TableCell>
                           <TableCell>
                             <MicrocycleDatesForm
                               microcycleId={microcycle.id}

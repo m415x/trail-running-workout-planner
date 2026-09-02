@@ -11,6 +11,7 @@ import { athleteGroups, groupTrainingPlans, macrocycles, microcycles } from '@/d
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
+const microcycleTypes = ['base', 'development', 'shock', 'deload', 'tapering', 'race'] as const
 
 const updateMicrocycleVolumeSchema = z.object({
   microcycleId: z.string().trim().min(1, 'No se pudo identificar el microciclo'),
@@ -31,11 +32,22 @@ const updateMicrocycleDatesSchema = z.object({
   locale: z.enum(locales).default('es'),
 })
 
+const updateMicrocycleTypeSchema = z.object({
+  microcycleId: z.string().trim().min(1, 'No se pudo identificar el microciclo'),
+  planId: z.string().trim().min(1, 'No se pudo identificar la planificación'),
+  type: z.enum(microcycleTypes, 'Seleccioná un tipo de microciclo'),
+  locale: z.enum(locales).default('es'),
+})
+
 export interface MicrocycleVolumeFormState {
   error?: string
 }
 
 export interface MicrocycleDatesFormState {
+  error?: string
+}
+
+export interface MicrocycleTypeFormState {
   error?: string
 }
 
@@ -297,6 +309,55 @@ export async function updateMicrocycleDates(
   } catch (error) {
     console.error('Error updating microcycle dates:', error)
     return { error: 'No se pudieron actualizar las fechas' }
+  }
+
+  const detailPath = planningPath(data.locale, `/${data.planId}`)
+  revalidatePath(planningPath(data.locale))
+  revalidatePath(detailPath)
+  redirect(detailPath)
+}
+
+export async function updateMicrocycleType(
+  _previousState: MicrocycleTypeFormState,
+  formData: FormData,
+): Promise<MicrocycleTypeFormState> {
+  const parsed = updateMicrocycleTypeSchema.safeParse(Object.fromEntries(formData))
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá el tipo seleccionado' }
+  }
+
+  const data = parsed.data
+
+  try {
+    const microcycle = getEditableMicrocycle(data.microcycleId)
+    const plan = microcycle?.mesocycle.macrocycle.groupTrainingPlan
+
+    if (!microcycle || !plan || !belongsToEditablePlan(microcycle, data.planId)) {
+      return { error: 'Microciclo no encontrado' }
+    }
+
+    if (microcycle.type !== data.type) {
+      const now = new Date().toISOString()
+
+      db.transaction((tx) => {
+        tx.update(microcycles)
+          .set({
+            type: data.type,
+            updatedAt: now,
+          })
+          .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
+          .run()
+
+        tx.update(groupTrainingPlans)
+          .set({ updatedAt: now })
+          .where(eq(groupTrainingPlans.id, plan.id))
+          .run()
+      })
+    }
+  } catch (error) {
+    console.error('Error updating microcycle type:', error)
+    return { error: 'No se pudo actualizar el tipo de microciclo' }
   }
 
   const detailPath = planningPath(data.locale, `/${data.planId}`)
