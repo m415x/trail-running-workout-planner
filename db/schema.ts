@@ -15,6 +15,7 @@ import type {
   TestType,
   TrainingGoalType,
   TrainingGoalStatus,
+  GroupTrainingPlanStatus,
 } from '@/types'
 
 /* -------------------------------------------------------------------------- */
@@ -214,17 +215,25 @@ export const trainingGoals = sqliteTable('training_goals', {
 /* 8. CICLOS                                                                  */
 /* -------------------------------------------------------------------------- */
 
+export const groupTrainingPlans = sqliteTable('group_training_plans', {
+  ...baseColumns,
+
+  groupId: text('group_id')
+    .notNull()
+    .references(() => athleteGroups.id, { onDelete: 'restrict' }),
+
+  title: text('title').notNull(),
+  status: text('status').$type<GroupTrainingPlanStatus>().notNull().default('draft'),
+  notes: text('notes'),
+})
+
 export const macrocycles = sqliteTable('macrocycles', {
   ...baseColumns,
 
   title: text('title').notNull(),
-  trainingGoalId: text('training_goal_id')
+  groupTrainingPlanId: text('group_training_plan_id')
     .notNull()
-    .references(() => trainingGoals.id, { onDelete: 'cascade' }),
-
-  planningGroupId: text('planning_group_id')
-    .notNull()
-    .references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
 
   startDate: text('start_date').notNull(),
   endDate: text('end_date').notNull(),
@@ -451,6 +460,7 @@ export const athleteGroupsRelations = relations(athleteGroups, ({ one, many }) =
     relationName: 'newGroup',
   }),
   sessionPrescriptions: many(groupSessionPrescriptions),
+  trainingPlans: many(groupTrainingPlans),
 }))
 
 export const athleteProfilesRelations = relations(athleteProfiles, ({ one, many }) => ({
@@ -519,14 +529,18 @@ export const trainingGoalsRelations = relations(trainingGoals, ({ one }) => ({
   }),
 }))
 
-export const macrocyclesRelations = relations(macrocycles, ({ one, many }) => ({
-  trainingGoal: one(trainingGoals, {
-    fields: [macrocycles.trainingGoalId],
-    references: [trainingGoals.id],
-  }),
-  planningGroup: one(athleteGroups, {
-    fields: [macrocycles.planningGroupId],
+export const groupTrainingPlansRelations = relations(groupTrainingPlans, ({ one, many }) => ({
+  group: one(athleteGroups, {
+    fields: [groupTrainingPlans.groupId],
     references: [athleteGroups.id],
+  }),
+  macrocycles: many(macrocycles),
+}))
+
+export const macrocyclesRelations = relations(macrocycles, ({ one, many }) => ({
+  groupTrainingPlan: one(groupTrainingPlans, {
+    fields: [macrocycles.groupTrainingPlanId],
+    references: [groupTrainingPlans.id],
   }),
   mesocycles: many(mesocycles),
 }))

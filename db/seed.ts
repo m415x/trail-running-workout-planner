@@ -3,6 +3,7 @@ import {
   athleteGroups,
   athleteProfiles,
   groupSessionPrescriptions,
+  groupTrainingPlans,
   macrocycles,
   mesocycles,
   microcycles,
@@ -77,6 +78,7 @@ async function seed() {
   const athleteProfileId = `profile_${userId}`
 
   const trainingGoalId = `training_goal_${athleteProfileId}`
+  const groupTrainingPlanId = 'group_plan_1'
   const macrocycleId = 'macro_1'
   const mesocycleId = 'meso_1'
   const microcycleId = String(weeklyCycle.id || 'micro_1')
@@ -354,12 +356,20 @@ async function seed() {
     .run()
 
   // -----------------------------------------------------------------------
-  // 7. Jerarquía temporal actual
-  //
-  // Esta sección es transitoria. El schema todavía exige que el macrociclo
-  // dependa de TrainingGoal y AthleteGroup. Cuando se implemente
-  // GroupTrainingPlan, esta parte deberá adaptarse.
+  // 7. Plan grupal y jerarquía temporal actual
   // -----------------------------------------------------------------------
+
+  await db
+    .insert(groupTrainingPlans)
+    .values({
+      id: groupTrainingPlanId,
+      groupId: currentGroup.id,
+      title: 'Planificación anual 2026',
+      status: 'active',
+      notes: null,
+    })
+    .onConflictDoNothing()
+    .run()
 
   await db
     .insert(macrocycles)
@@ -367,9 +377,7 @@ async function seed() {
       id: macrocycleId,
 
       title: 'Planificación anual 2026',
-
-      trainingGoalId,
-      planningGroupId: currentGroup.id,
+      groupTrainingPlanId,
 
       startDate: weeklyCycle.startDate,
       endDate: weeklyCycle.endDate,

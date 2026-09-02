@@ -3,12 +3,14 @@
  */
 import { BaseEntity } from '@/types/core/base.types'
 import { AthleteGroupCode } from '@/types/athlete/group.types'
+import { TrainingGoalType } from '@/types/athlete/athlete.types'
 import { IntensityZone } from '@/types/training/intensity.types'
 import { WorkoutType } from '@/types/training/workout.types'
 
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
+export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 
 export interface GroupVolumeOverride {
   distanceKm: number
@@ -24,6 +26,39 @@ export interface IntervalPrescription {
 export interface GroupVolumeProgression {
   range: { min: number; max: number }
   volumes: Record<VolumeMatrixMicrocycleType, number>
+}
+
+export interface GeneratedMicrocycleDraft {
+  weekNumber: number
+  type: MicrocycleType
+  startDate: string
+  endDate: string
+  targetVolumeKm: number
+  targetElevationGain: number
+  notes: string
+}
+
+export interface GeneratedMesocycleDraft {
+  title: string
+  number: number
+  period: PeriodType
+  objective: string
+  microcycles: GeneratedMicrocycleDraft[]
+}
+
+export interface GeneratedMacrocycleDraft {
+  title: string
+  goalType: TrainingGoalType
+  athleteGroup: AthleteGroupCode
+  startDate: string
+  endDate: string
+  taperingWeeksCount: 0 | 2 | 3
+  race: {
+    name: string
+    distanceKm: number
+    elevationGain?: number
+  } | null
+  mesocycles: GeneratedMesocycleDraft[]
 }
 
 export interface SessionStructure {
@@ -56,7 +91,9 @@ export interface Microcycle extends BaseEntity {
   type: MicrocycleType
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
-  targetVolumeKmByGroup: Partial<Record<AthleteGroupCode, number>>
+  targetVolumeKm?: number | null
+  targetElevationGain?: number | null
+  targetDurationMin?: number | null
   notes?: string
   sessions?: Session[]
 }
@@ -71,12 +108,19 @@ export interface Mesocycle extends BaseEntity {
 }
 
 export interface Macrocycle extends BaseEntity {
-  group: AthleteGroupCode
+  groupTrainingPlanId: string
   title: string
-  targetRaceName: string
-  targetRaceDate: string // 'YYYY-MM-DD'
   startDate: string
   endDate: string
-  taperingWeeksCount: 2 | 3
+  taperingWeeksCount?: 0 | 2 | 3 | null
+  notes?: string | null
   mesocycles?: Mesocycle[]
+}
+
+export interface GroupTrainingPlan extends BaseEntity {
+  groupId: string
+  title: string
+  status: GroupTrainingPlanStatus
+  notes?: string | null
+  macrocycles?: Macrocycle[]
 }
