@@ -1,6 +1,6 @@
 'use client'
 
-import { LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { CalendarRange, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
 
 import { Link, usePathname } from '@/i18n/routing'
 import {
@@ -31,6 +31,11 @@ const navigationItems = [
     label: 'Grupos',
     href: '/dashboard/groups',
     icon: UsersRound,
+  },
+  {
+    label: 'Planificación',
+    href: '/dashboard/planning',
+    icon: CalendarRange,
   },
 ] as const
 
