@@ -81,7 +81,10 @@ function validateParams(params: MacrocycleGeneratorParams) {
   }
 }
 
-function getTaperingWeeksCount(group: AthleteGroupCode, race: OptionalTargetRace | undefined): 0 | 2 | 3 {
+export function determineTaperingWeeksCount(
+  group: AthleteGroupCode,
+  race: OptionalTargetRace | undefined,
+): 0 | 2 | 3 {
   if (!race) return 0
 
   return race.distanceKm >= 42 || group.startsWith('E') || group.startsWith('U') ? 3 : 2
@@ -257,6 +260,79 @@ export function generateTrainingMesocycles({
   return mesocycles
 }
 
+export interface CompetitiveMesocycleGeneratorParams {
+  startDate: string
+  endDate: string
+  startWeekNumber: number
+  mesocycleNumber: number
+  athleteGroup: AthleteGroupCode
+  race: OptionalTargetRace
+  taperingWeeksCount: 2 | 3
+}
+
+export function generateCompetitiveMesocycle({
+  startDate,
+  endDate,
+  startWeekNumber,
+  mesocycleNumber,
+  athleteGroup,
+  race,
+  taperingWeeksCount,
+}: CompetitiveMesocycleGeneratorParams): GeneratedMesocycleDraft {
+  if (!Number.isInteger(mesocycleNumber) || mesocycleNumber < 1) {
+    throw new Error('mesocycleNumber debe ser un entero mayor que cero.')
+  }
+
+  const athleteCategory = athleteGroup.charAt(0) as AthleteCategoryCode
+  const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
+  const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
+  const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
+    const targetVolumeKm = calculateTargetVolume({
+      athleteGroup,
+      type: 'tapering',
+      volumeFactor,
+    })
+    const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
+
+    return {
+      type: 'tapering',
+      targetVolumeKm,
+      targetElevationGain,
+      notesPrefix: `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`,
+    }
+  })
+
+  const raceWeekVolumeKm = calculateTargetVolume({
+    athleteGroup,
+    type: 'race',
+    raceDistanceKm: race.distanceKm,
+  })
+  const raceWeekElevationGain = race.elevationGain
+    ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
+  const microcycles = generateMicrocycles({
+    startDate,
+    endDate,
+    startWeekNumber,
+    targets: [
+      ...taperingTargets,
+      {
+        type: 'race',
+        targetVolumeKm: raceWeekVolumeKm,
+        targetElevationGain: raceWeekElevationGain,
+        notesPrefix: `Competencia: ${race.name}`,
+      },
+    ],
+  })
+
+  return {
+    title: 'Mesociclo competitivo: tapering y carrera',
+    number: mesocycleNumber,
+    period: 'competitive',
+    objective: 'Afinamiento, supercompensación y pico de rendimiento',
+    microcycles,
+  }
+}
+
 export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): GeneratedMacrocycleDraft {
   validateParams(params)
 
@@ -273,15 +349,13 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     throw new Error('El macrociclo debe tener al menos 4 semanas de planificación.')
   }
 
-  const taperingWeeksCount = getTaperingWeeksCount(params.athleteGroup, params.race)
+  const taperingWeeksCount = determineTaperingWeeksCount(params.athleteGroup, params.race)
   const trainingWeeksCount = totalWeeks - taperingWeeksCount
 
   if (trainingWeeksCount < 2) {
     throw new Error('El período disponible no alcanza para incluir entrenamiento y tapering.')
   }
 
-  const athleteCategory = params.athleteGroup.charAt(0) as AthleteCategoryCode
-  const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
   const mesocycles = generateTrainingMesocycles({
     startDate: params.startDate,
     endDate: params.endDate,
@@ -293,52 +367,19 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const numberOfTrainingMesocycles = mesocycles.length
 
   if (params.race) {
-    const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
-    const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
-      const targetVolumeKm = calculateTargetVolume({
-        athleteGroup: params.athleteGroup,
-        type: 'tapering',
-        volumeFactor,
-      })
-      const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
+    if (taperingWeeksCount === 0) {
+      throw new Error('No se pudo determinar el tapering para la carrera.')
+    }
 
-      return {
-        type: 'tapering',
-        targetVolumeKm,
-        targetElevationGain,
-        notesPrefix: `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`,
-      }
-    })
-
-    const raceWeekVolumeKm = calculateTargetVolume({
-      athleteGroup: params.athleteGroup,
-      type: 'race',
-      raceDistanceKm: params.race.distanceKm,
-    })
-    const raceWeekElevationGain = params.race.elevationGain
-      ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
-    const taperingMicrocycles = generateMicrocycles({
+    mesocycles.push(generateCompetitiveMesocycle({
       startDate: format(currentWeekStart, 'yyyy-MM-dd'),
       endDate: params.endDate,
       startWeekNumber: globalWeekCounter,
-      targets: [
-        ...taperingTargets,
-        {
-          type: 'race',
-          targetVolumeKm: raceWeekVolumeKm,
-          targetElevationGain: raceWeekElevationGain,
-          notesPrefix: `Competencia: ${params.race.name}`,
-        },
-      ],
-    })
-
-    mesocycles.push({
-      title: 'Mesociclo competitivo: tapering y carrera',
-      number: numberOfTrainingMesocycles + 1,
-      period: 'competitive',
-      objective: 'Afinamiento, supercompensación y pico de rendimiento',
-      microcycles: taperingMicrocycles,
-    })
+      mesocycleNumber: numberOfTrainingMesocycles + 1,
+      athleteGroup: params.athleteGroup,
+      race: params.race,
+      taperingWeeksCount,
+    }))
   }
 
   return {
