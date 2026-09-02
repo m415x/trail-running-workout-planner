@@ -10,6 +10,7 @@ import { WorkoutType } from '@/types/training/workout.types'
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
+export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 
 export interface GroupVolumeOverride {
   distanceKm: number
@@ -90,7 +91,9 @@ export interface Microcycle extends BaseEntity {
   type: MicrocycleType
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
-  targetVolumeKmByGroup: Partial<Record<AthleteGroupCode, number>>
+  targetVolumeKm?: number | null
+  targetElevationGain?: number | null
+  targetDurationMin?: number | null
   notes?: string
   sessions?: Session[]
 }
@@ -105,12 +108,19 @@ export interface Mesocycle extends BaseEntity {
 }
 
 export interface Macrocycle extends BaseEntity {
-  group: AthleteGroupCode
+  groupTrainingPlanId: string
   title: string
-  targetRaceName: string
-  targetRaceDate: string // 'YYYY-MM-DD'
   startDate: string
   endDate: string
-  taperingWeeksCount: 2 | 3
+  taperingWeeksCount?: 0 | 2 | 3 | null
+  notes?: string | null
   mesocycles?: Mesocycle[]
+}
+
+export interface GroupTrainingPlan extends BaseEntity {
+  groupId: string
+  title: string
+  status: GroupTrainingPlanStatus
+  notes?: string | null
+  macrocycles?: Macrocycle[]
 }
