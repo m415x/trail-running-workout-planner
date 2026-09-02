@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
+import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -80,7 +81,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                         <TableRow key={microcycle.id}>
                           <TableCell className='font-medium'>{microcycle.weekNumber}</TableCell>
                           <TableCell><Badge variant='outline'>{microcycle.type}</Badge></TableCell>
-                          <TableCell>{formatDate(microcycle.startDate)} – {formatDate(microcycle.endDate)}</TableCell>
+                          <TableCell>
+                            <MicrocycleDatesForm
+                              microcycleId={microcycle.id}
+                              planId={plan.id}
+                              locale={locale}
+                              startDate={microcycle.startDate}
+                              endDate={microcycle.endDate}
+                            />
+                          </TableCell>
                           <TableCell>
                             {microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}
                           </TableCell>
