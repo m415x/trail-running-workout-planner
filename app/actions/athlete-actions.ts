@@ -133,6 +133,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         userId,
         teamId: CURRENT_TEAM_ID,
         groupId: null,
+        isActive: true,
         nickName: nullable(data.nickName),
         dni: data.dni,
         birthday: nullable(data.birthday),
@@ -233,6 +234,37 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   const path = athletesPath(data.locale)
   revalidatePath(path)
   redirect(path)
+}
+
+export async function setAthleteActiveState(athleteId: string, isActive: boolean, locale: string = 'es') {
+  try {
+    const athlete = db.query.athleteProfiles.findFirst({
+      where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
+    }).sync()
+
+    if (!athlete) {
+      return { success: false as const, error: 'Atleta no encontrado' }
+    }
+
+    db.update(athleteProfiles)
+      .set({
+        isActive,
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(athleteProfiles.id, athleteId))
+      .run()
+
+    revalidatePath(athletesPath(locale))
+
+    return { success: true as const }
+  } catch (error) {
+    console.error('Error updating athlete active state:', error)
+
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : 'No se pudo actualizar el estado del atleta',
+    }
+  }
 }
 
 export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
