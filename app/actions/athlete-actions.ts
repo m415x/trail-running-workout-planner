@@ -96,18 +96,18 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
   const data = parsed.data
 
   try {
-    await db.transaction(async (tx) => {
-      const existingUser = await tx.query.users.findFirst({
+    db.transaction((tx) => {
+      const existingUser = tx.query.users.findFirst({
         where: eq(users.email, data.email),
-      })
+      }).sync()
 
       if (existingUser) {
         throw new Error('Ya existe un usuario con ese email')
       }
 
-      const existingDni = await tx.query.athleteProfiles.findFirst({
+      const existingDni = tx.query.athleteProfiles.findFirst({
         where: and(eq(athleteProfiles.dni, data.dni), eq(athleteProfiles.isDeleted, false)),
-      })
+      }).sync()
 
       if (existingDni) {
         throw new Error('Ya existe un atleta con ese DNI')
@@ -117,7 +117,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
       const userId = randomUUID()
       const athleteId = randomUUID()
 
-      await tx.insert(users).values({
+      tx.insert(users).values({
         id: userId,
         role: 'athlete',
         userName: data.email,
@@ -126,9 +126,9 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         lastName: data.lastName,
         createdAt: now,
         updatedAt: now,
-      })
+      }).run()
 
-      await tx.insert(athleteProfiles).values({
+      tx.insert(athleteProfiles).values({
         id: athleteId,
         userId,
         teamId: CURRENT_TEAM_ID,
@@ -141,7 +141,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         emergencyPhone: nullable(data.emergencyPhone),
         createdAt: now,
         updatedAt: now,
-      })
+      }).run()
     })
   } catch (error) {
     console.error('Error creating athlete:', error)
@@ -168,30 +168,30 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   const data = parsed.data
 
   try {
-    await db.transaction(async (tx) => {
-      const athlete = await tx.query.athleteProfiles.findFirst({
+    db.transaction((tx) => {
+      const athlete = tx.query.athleteProfiles.findFirst({
         where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
-      })
+      }).sync()
 
       if (!athlete) {
         throw new Error('Atleta no encontrado')
       }
 
-      const duplicateEmail = await tx.query.users.findFirst({
+      const duplicateEmail = tx.query.users.findFirst({
         where: and(eq(users.email, data.email), ne(users.id, athlete.userId)),
-      })
+      }).sync()
 
       if (duplicateEmail) {
         throw new Error('Ya existe un usuario con ese email')
       }
 
-      const duplicateDni = await tx.query.athleteProfiles.findFirst({
+      const duplicateDni = tx.query.athleteProfiles.findFirst({
         where: and(
           eq(athleteProfiles.dni, data.dni),
           ne(athleteProfiles.id, athlete.id),
           eq(athleteProfiles.isDeleted, false),
         ),
-      })
+      }).sync()
 
       if (duplicateDni) {
         throw new Error('Ya existe un atleta con ese DNI')
@@ -199,7 +199,7 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
 
       const now = new Date().toISOString()
 
-      await tx
+      tx
         .update(users)
         .set({
           userName: data.email,
@@ -209,8 +209,9 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
           updatedAt: now,
         })
         .where(eq(users.id, athlete.userId))
+        .run()
 
-      await tx
+      tx
         .update(athleteProfiles)
         .set({
           nickName: nullable(data.nickName),
@@ -222,6 +223,7 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
           updatedAt: now,
         })
         .where(eq(athleteProfiles.id, athlete.id))
+        .run()
     })
   } catch (error) {
     console.error('Error updating athlete:', error)
@@ -235,22 +237,22 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
 
 export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
   try {
-    await db.transaction(async (tx) => {
-      const athlete = await tx.query.athleteProfiles.findFirst({
+    db.transaction((tx) => {
+      const athlete = tx.query.athleteProfiles.findFirst({
         where: and(eq(athleteProfiles.id, input.athleteId), eq(athleteProfiles.isDeleted, false)),
-      })
+      }).sync()
 
       if (!athlete) {
         throw new Error('Atleta no encontrado')
       }
 
-      const newGroup = await tx.query.athleteGroups.findFirst({
+      const newGroup = tx.query.athleteGroups.findFirst({
         where: and(
           eq(athleteGroups.id, input.newGroupId),
           eq(athleteGroups.isActive, true),
           eq(athleteGroups.isDeleted, false),
         ),
-      })
+      }).sync()
 
       if (!newGroup) {
         throw new Error('Grupo no encontrado o inactivo')
@@ -266,15 +268,16 @@ export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
 
       const now = new Date().toISOString()
 
-      await tx
+      tx
         .update(athleteProfiles)
         .set({
           groupId: newGroup.id,
           updatedAt: now,
         })
         .where(eq(athleteProfiles.id, athlete.id))
+        .run()
 
-      await tx.insert(groupHistoryRecords).values({
+      tx.insert(groupHistoryRecords).values({
         id: randomUUID(),
         athleteId: athlete.id,
         previousGroupId: athlete.groupId,
@@ -284,7 +287,7 @@ export async function changeAthleteGroup(input: ChangeAthleteGroupInput) {
         reason: input.reason ?? null,
         createdAt: now,
         updatedAt: now,
-      })
+      }).run()
     })
 
     return { success: true }
