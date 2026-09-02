@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Pencil, Power } from 'lucide-react'
+import { Eye, Pencil, Power } from 'lucide-react'
 
 import { setAthleteActiveState } from '@/app/actions/athlete-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
@@ -74,7 +74,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
               <TableHead>Contacto</TableHead>
               <TableHead>Grupo</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className='w-28'><span className='sr-only'>Acciones</span></TableHead>
+              <TableHead className='w-36'><span className='sr-only'>Acciones</span></TableHead>
             </TableRow>
           </TableHeader>
 
@@ -84,9 +84,10 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
               const groupCode = athlete.group
                 ? `${athlete.group.categoryCode}${athlete.group.levelCode}`
                 : null
-              const editPath = locale === 'es'
-                ? `/dashboard/athletes/${athlete.id}/edit`
-                : `/${locale}/dashboard/athletes/${athlete.id}/edit`
+              const basePath = locale === 'es'
+                ? `/dashboard/athletes/${athlete.id}`
+                : `/${locale}/dashboard/athletes/${athlete.id}`
+              const editPath = `${basePath}/edit`
               const isChangingState = isPending && pendingAthleteId === athlete.id
 
               return (
@@ -97,7 +98,9 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                         <AvatarImage src={athlete.user.avatar ?? undefined} alt={fullName} />
                         <AvatarFallback>{getInitials(athlete.user.firstName, athlete.user.lastName)}</AvatarFallback>
                       </Avatar>
-                      <span className='font-medium'>{fullName}</span>
+                      <Link href={basePath} className='font-medium hover:underline'>
+                        {fullName}
+                      </Link>
                     </div>
                   </TableCell>
 
@@ -126,6 +129,15 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
 
                   <TableCell>
                     <div className='flex justify-end gap-1'>
+                      <Link
+                        href={basePath}
+                        aria-label={`Ver detalle de ${fullName}`}
+                        title='Ver detalle'
+                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                      >
+                        <Eye />
+                      </Link>
+
                       <Button
                         type='button'
                         variant='ghost'
@@ -141,6 +153,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                       <Link
                         href={editPath}
                         aria-label={`Editar ${fullName}`}
+                        title='Editar atleta'
                         className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
                       >
                         <Pencil />
