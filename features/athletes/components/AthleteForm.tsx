@@ -11,12 +11,6 @@ import {
 import { buttonVariants, Button } from '@ui/button'
 import { Input } from '@ui/input'
 
-interface AthleteGroupOption {
-  id: string
-  categoryCode: string
-  levelCode: string
-}
-
 interface AthleteFormValues {
   id?: string
   firstName: string
@@ -28,18 +22,16 @@ interface AthleteFormValues {
   phone?: string | null
   emergencyContact?: string | null
   emergencyPhone?: string | null
-  groupId?: string | null
 }
 
 interface AthleteFormProps {
   locale: string
-  groups: AthleteGroupOption[]
   athlete?: AthleteFormValues
 }
 
 const initialState: AthleteFormState = {}
 
-export function AthleteForm({ locale, groups, athlete }: AthleteFormProps) {
+export function AthleteForm({ locale, athlete }: AthleteFormProps) {
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
@@ -63,23 +55,6 @@ export function AthleteForm({ locale, groups, athlete }: AthleteFormProps) {
         <Field label='Apodo' name='nickName' defaultValue={athlete?.nickName} />
         <Field label='Fecha de nacimiento' name='birthday' type='date' defaultValue={athlete?.birthday} />
         <Field label='Teléfono' name='phone' type='tel' defaultValue={athlete?.phone} />
-
-        <div className='space-y-1.5'>
-          <label htmlFor='groupId' className='text-sm font-medium'>Grupo</label>
-          <select
-            id='groupId'
-            name='groupId'
-            defaultValue={athlete?.groupId ?? ''}
-            className='h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
-          >
-            <option value=''>Sin grupo</option>
-            {groups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.categoryCode}{group.levelCode}
-              </option>
-            ))}
-          </select>
-        </div>
       </div>
 
       <div className='space-y-4 rounded-xl border p-4'>
