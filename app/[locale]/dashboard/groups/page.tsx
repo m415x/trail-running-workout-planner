@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Pencil, Plus } from 'lucide-react'
+import { Pencil, Plus, UsersRound } from 'lucide-react'
 
 import { getGroupsByTeam } from '@/app/actions/group-actions'
 import { Badge } from '@ui/badge'
@@ -45,7 +45,10 @@ export default async function GroupsPage({ params }: GroupsPageProps) {
                   </div>
                   <Badge variant={group.isActive ? 'default' : 'secondary'}>{group.isActive ? 'Activo' : 'Inactivo'}</Badge>
                 </CardHeader>
-                <CardContent className='flex justify-end'>
+                <CardContent className='flex flex-wrap justify-end gap-2'>
+                  <Link href={`${groupsPath}/${group.id}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <UsersRound /> Ver integrantes
+                  </Link>
                   <Link href={`${groupsPath}/${group.id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                     <Pencil /> Editar
                   </Link>
