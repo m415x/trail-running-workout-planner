@@ -33,7 +33,6 @@ const athleteFormSchema = z.object({
   phone: z.string().trim().optional(),
   emergencyContact: z.string().trim().optional(),
   emergencyPhone: z.string().trim().optional(),
-  groupId: z.string().trim().optional(),
   locale: z.string().trim().default('es'),
 })
 
@@ -87,16 +86,6 @@ export async function getAthleteById(athleteId: string) {
   })
 }
 
-export async function getActiveAthleteGroups(teamId: string = CURRENT_TEAM_ID) {
-  return db.query.athleteGroups.findMany({
-    where: and(
-      eq(athleteGroups.teamId, teamId),
-      eq(athleteGroups.isActive, true),
-      eq(athleteGroups.isDeleted, false),
-    ),
-  })
-}
-
 export async function createAthlete(_previousState: AthleteFormState, formData: FormData): Promise<AthleteFormState> {
   const parsed = athleteFormSchema.safeParse(Object.fromEntries(formData))
 
@@ -124,21 +113,6 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         throw new Error('Ya existe un atleta con ese DNI')
       }
 
-      if (data.groupId) {
-        const group = await tx.query.athleteGroups.findFirst({
-          where: and(
-            eq(athleteGroups.id, data.groupId),
-            eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-            eq(athleteGroups.isActive, true),
-            eq(athleteGroups.isDeleted, false),
-          ),
-        })
-
-        if (!group) {
-          throw new Error('El grupo seleccionado no está disponible')
-        }
-      }
-
       const now = new Date().toISOString()
       const userId = randomUUID()
       const athleteId = randomUUID()
@@ -158,7 +132,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         id: athleteId,
         userId,
         teamId: CURRENT_TEAM_ID,
-        groupId: nullable(data.groupId),
+        groupId: null,
         nickName: nullable(data.nickName),
         dni: data.dni,
         birthday: nullable(data.birthday),
@@ -223,21 +197,6 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
         throw new Error('Ya existe un atleta con ese DNI')
       }
 
-      if (data.groupId) {
-        const group = await tx.query.athleteGroups.findFirst({
-          where: and(
-            eq(athleteGroups.id, data.groupId),
-            eq(athleteGroups.teamId, athlete.teamId),
-            eq(athleteGroups.isActive, true),
-            eq(athleteGroups.isDeleted, false),
-          ),
-        })
-
-        if (!group) {
-          throw new Error('El grupo seleccionado no está disponible')
-        }
-      }
-
       const now = new Date().toISOString()
 
       await tx
@@ -254,7 +213,6 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
       await tx
         .update(athleteProfiles)
         .set({
-          groupId: nullable(data.groupId),
           nickName: nullable(data.nickName),
           dni: data.dni,
           birthday: nullable(data.birthday),
