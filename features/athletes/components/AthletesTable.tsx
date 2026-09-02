@@ -1,5 +1,9 @@
+import Link from 'next/link'
+import { Pencil } from 'lucide-react'
+
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
+import { buttonVariants } from '@ui/button'
 import { Card } from '@ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
 
@@ -22,13 +26,14 @@ export interface AthleteListItem {
 
 interface AthletesTableProps {
   athletes: AthleteListItem[]
+  locale: string
 }
 
 function getInitials(firstName: string, lastName: string) {
   return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
 
-export function AthletesTable({ athletes }: AthletesTableProps) {
+export function AthletesTable({ athletes, locale }: AthletesTableProps) {
   return (
     <Card className='overflow-hidden py-0'>
       <Table>
@@ -38,6 +43,7 @@ export function AthletesTable({ athletes }: AthletesTableProps) {
             <TableHead>Contacto</TableHead>
             <TableHead>Grupo</TableHead>
             <TableHead>Estado</TableHead>
+            <TableHead className='w-16'><span className='sr-only'>Acciones</span></TableHead>
           </TableRow>
         </TableHeader>
 
@@ -47,6 +53,9 @@ export function AthletesTable({ athletes }: AthletesTableProps) {
             const groupCode = athlete.group
               ? `${athlete.group.categoryCode}${athlete.group.levelCode}`
               : null
+            const editPath = locale === 'es'
+              ? `/dashboard/athletes/${athlete.id}/edit`
+              : `/${locale}/dashboard/athletes/${athlete.id}/edit`
 
             return (
               <TableRow key={athlete.id}>
@@ -75,6 +84,16 @@ export function AthletesTable({ athletes }: AthletesTableProps) {
                   <Badge variant='outline' className='border-emerald-500/40 text-emerald-700 dark:text-emerald-400'>
                     Activo
                   </Badge>
+                </TableCell>
+
+                <TableCell>
+                  <Link
+                    href={editPath}
+                    aria-label={`Editar ${fullName}`}
+                    className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                  >
+                    <Pencil />
+                  </Link>
                 </TableCell>
               </TableRow>
             )
