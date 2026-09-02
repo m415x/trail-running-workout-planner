@@ -44,6 +44,7 @@ export const currentAthlete: AthleteProfile = {
   userId: 'user_1',
   teamId: 'team_1',
   groupId: 'team_1_S2',
+  isActive: true,
   nickName: 'Cristian',
   dni: '38.123.456',
   birthday: '1992-08-14',

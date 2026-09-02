@@ -115,6 +115,8 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
 
   groupId: text('group_id').references(() => athleteGroups.id, { onDelete: 'set null' }),
 
+  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+
   nickName: text('nick_name'),
   dni: text('dni').notNull(),
   birthday: text('birthday'), // 'YYYY-MM-DD'
