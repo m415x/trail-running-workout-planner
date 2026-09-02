@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Mail, Pencil, Phone, ShieldAlert, UsersRound } from 'lucide-react'
+import { ArrowLeft, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
@@ -51,6 +51,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const listPath = athletePath(locale)
   const editPath = athletePath(locale, `/${athlete.id}/edit`)
   const groupPath = athletePath(locale, `/${athlete.id}/group`)
+  const newGoalPath = athletePath(locale, `/${athlete.id}/goals/new`)
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-6'>
@@ -83,6 +84,10 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         </div>
 
         <div className='flex flex-wrap gap-2'>
+          <Link href={newGoalPath} className={buttonVariants({ variant: 'outline' })}>
+            <Target />
+            Nuevo objetivo
+          </Link>
           <Link href={groupPath} className={buttonVariants({ variant: 'outline' })}>
             <UsersRound />
             {athlete.groupId ? 'Cambiar grupo' : 'Asignar grupo'}
