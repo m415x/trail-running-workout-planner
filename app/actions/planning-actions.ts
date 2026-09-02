@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
 import { differenceInCalendarDays, isValid, parseISO } from 'date-fns'
 import { revalidatePath } from 'next/cache'
@@ -7,7 +8,13 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, groupTrainingPlans, macrocycles, microcycles } from '@/db/schema'
+import {
+  athleteGroups,
+  groupTrainingPlans,
+  macrocycles,
+  microcycles,
+  planningModificationRecords,
+} from '@/db/schema'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
@@ -194,22 +201,36 @@ export async function updateMicrocycleVolume(
       return { error: 'Microciclo no encontrado' }
     }
 
-    const now = new Date().toISOString()
+    if (microcycle.targetVolumeKm !== data.targetVolumeKm) {
+      const now = new Date().toISOString()
 
-    db.transaction((tx) => {
-      tx.update(microcycles)
-        .set({
-          targetVolumeKm: data.targetVolumeKm,
+      db.transaction((tx) => {
+        tx.update(microcycles)
+          .set({
+            targetVolumeKm: data.targetVolumeKm,
+            updatedAt: now,
+          })
+          .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
+          .run()
+
+        tx.update(groupTrainingPlans)
+          .set({ updatedAt: now })
+          .where(eq(groupTrainingPlans.id, plan.id))
+          .run()
+
+        tx.insert(planningModificationRecords).values({
+          id: randomUUID(),
+          groupTrainingPlanId: plan.id,
+          microcycleId: microcycle.id,
+          field: 'target_volume_km',
+          previousValue: microcycle.targetVolumeKm?.toString() ?? null,
+          newValue: data.targetVolumeKm.toString(),
+          changedByUserId: null,
+          createdAt: now,
           updatedAt: now,
-        })
-        .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
-        .run()
-
-      tx.update(groupTrainingPlans)
-        .set({ updatedAt: now })
-        .where(eq(groupTrainingPlans.id, plan.id))
-        .run()
-    })
+        }).run()
+      })
+    }
   } catch (error) {
     console.error('Error updating microcycle volume:', error)
     return { error: 'No se pudo actualizar el volumen' }
@@ -291,32 +312,46 @@ export async function updateMicrocycleDates(
       return { error: 'No se pudieron calcular los límites del macrociclo' }
     }
 
-    const now = new Date().toISOString()
+    if (microcycle.startDate !== data.startDate || microcycle.endDate !== data.endDate) {
+      const now = new Date().toISOString()
 
-    db.transaction((tx) => {
-      tx.update(microcycles)
-        .set({
-          startDate: data.startDate,
-          endDate: data.endDate,
+      db.transaction((tx) => {
+        tx.update(microcycles)
+          .set({
+            startDate: data.startDate,
+            endDate: data.endDate,
+            updatedAt: now,
+          })
+          .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
+          .run()
+
+        tx.update(macrocycles)
+          .set({
+            startDate: macrocycleStartDate,
+            endDate: macrocycleEndDate,
+            updatedAt: now,
+          })
+          .where(eq(macrocycles.id, macrocycle.id))
+          .run()
+
+        tx.update(groupTrainingPlans)
+          .set({ updatedAt: now })
+          .where(eq(groupTrainingPlans.id, plan.id))
+          .run()
+
+        tx.insert(planningModificationRecords).values({
+          id: randomUUID(),
+          groupTrainingPlanId: plan.id,
+          microcycleId: microcycle.id,
+          field: 'date_range',
+          previousValue: JSON.stringify({ startDate: microcycle.startDate, endDate: microcycle.endDate }),
+          newValue: JSON.stringify({ startDate: data.startDate, endDate: data.endDate }),
+          changedByUserId: null,
+          createdAt: now,
           updatedAt: now,
-        })
-        .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
-        .run()
-
-      tx.update(macrocycles)
-        .set({
-          startDate: macrocycleStartDate,
-          endDate: macrocycleEndDate,
-          updatedAt: now,
-        })
-        .where(eq(macrocycles.id, macrocycle.id))
-        .run()
-
-      tx.update(groupTrainingPlans)
-        .set({ updatedAt: now })
-        .where(eq(groupTrainingPlans.id, plan.id))
-        .run()
-    })
+        }).run()
+      })
+    }
   } catch (error) {
     console.error('Error updating microcycle dates:', error)
     return { error: 'No se pudieron actualizar las fechas' }
@@ -364,6 +399,18 @@ export async function updateMicrocycleType(
           .set({ updatedAt: now })
           .where(eq(groupTrainingPlans.id, plan.id))
           .run()
+
+        tx.insert(planningModificationRecords).values({
+          id: randomUUID(),
+          groupTrainingPlanId: plan.id,
+          microcycleId: microcycle.id,
+          field: 'type',
+          previousValue: microcycle.type,
+          newValue: data.type,
+          changedByUserId: null,
+          createdAt: now,
+          updatedAt: now,
+        }).run()
       })
     }
   } catch (error) {
@@ -415,6 +462,18 @@ export async function updateMicrocycleNotes(
           .set({ updatedAt: now })
           .where(eq(groupTrainingPlans.id, plan.id))
           .run()
+
+        tx.insert(planningModificationRecords).values({
+          id: randomUUID(),
+          groupTrainingPlanId: plan.id,
+          microcycleId: microcycle.id,
+          field: 'notes',
+          previousValue: microcycle.notes,
+          newValue: nextNotes,
+          changedByUserId: null,
+          createdAt: now,
+          updatedAt: now,
+        }).run()
       })
     }
   } catch (error) {
