@@ -1,6 +1,30 @@
-import { AthleteGroupCode, Session, WorkoutProps } from '@/types'
+import type { AthleteGroupCode } from '@/types/athlete/group.types'
+import type { IntensityZone } from '@/types/training/intensity.types'
+import type { WorkoutProps, WorkoutType } from '@/types/training/workout.types'
 
-export function resolveWorkoutForAthlete(session: Session, athleteGroup: AthleteGroupCode): WorkoutProps {
+interface ResolvableSession {
+  id: string
+  title: string
+  type: WorkoutType
+  zone: IntensityZone
+  defaultVolume: {
+    km: number
+    timeMin: number
+  }
+  groupOverrides?: Partial<
+    Record<
+      AthleteGroupCode,
+      {
+        distanceKm: number
+        durationMin?: number
+      }
+    >
+  >
+  trackPath?: string | null
+  locationKey?: string | null
+}
+
+export function resolveWorkoutForAthlete(session: ResolvableSession, athleteGroup: AthleteGroupCode): WorkoutProps {
   // 1. Acceso seguro con optional chaining
   const override = session.groupOverrides?.[athleteGroup]
 
@@ -32,7 +56,7 @@ export function resolveWorkoutForAthlete(session: Session, athleteGroup: Athlete
     gain: 0,
     pace,
     notes: specificNotes,
-    trackPath: session.trackPath,
-    locationKey: session.locationKey,
+    trackPath: session.trackPath ?? undefined,
+    locationKey: session.locationKey ?? undefined,
   }
 }

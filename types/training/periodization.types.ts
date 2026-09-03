@@ -4,8 +4,7 @@
 import { BaseEntity } from '@/types/core/base.types'
 import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { TrainingGoalType } from '@/types/athlete/athlete.types'
-import { IntensityZone } from '@/types/training/intensity.types'
-import { WorkoutType } from '@/types/training/workout.types'
+import type { Session } from '@/types/training/session.types'
 
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
@@ -60,30 +59,6 @@ export interface GeneratedMacrocycleDraft {
     elevationGain?: number
   } | null
   mesocycles: GeneratedMesocycleDraft[]
-}
-
-export interface SessionStructure {
-  preliminaryExercises?: string
-  warmup: string
-  mainBlock: string
-  cooldown: string
-}
-
-export interface Session extends BaseEntity {
-  microcycleId: string
-  date: string // 'YYYY-MM-DD'
-  title: string
-  type: WorkoutType
-  zone: IntensityZone
-  locationKey?: string
-  trackPath?: string
-  structure?: SessionStructure
-  defaultVolume: {
-    km: number
-    timeMin: number
-  }
-  groupOverrides?: Partial<Record<AthleteGroupCode, GroupVolumeOverride>>
-  notes?: string
 }
 
 export interface Microcycle extends BaseEntity {
