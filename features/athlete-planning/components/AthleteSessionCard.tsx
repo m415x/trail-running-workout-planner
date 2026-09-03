@@ -37,13 +37,20 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
         </div>
       </CardHeader>
       <CardContent className='space-y-2 px-4 text-xs text-muted-foreground'>
-        <div className='flex flex-wrap gap-x-4 gap-y-2'>
-          {prescription.distanceKm != null && <Metric icon={Activity} value={`${prescription.distanceKm} km`} />}
-          {prescription.durationMin != null && <Metric icon={Timer} value={`${prescription.durationMin} min`} />}
-          {prescription.elevationGain != null && <Metric icon={Mountain} value={`${prescription.elevationGain} m+`} />}
-          {session.location && <Metric icon={MapPin} value={session.location.name} />}
+        <div className='rounded-lg bg-muted/40 p-2.5'>
+          <p className='mb-1.5 font-medium text-foreground'>Tu volumen</p>
+          {hasVolume ? (
+            <div className='flex flex-wrap gap-x-4 gap-y-2'>
+              {prescription.distanceKm != null && <Metric icon={Activity} value={`${prescription.distanceKm} km`} />}
+              {prescription.durationMin != null && <Metric icon={Timer} value={`${prescription.durationMin} min`} />}
+              {prescription.elevationGain != null && <Metric icon={Mountain} value={`${prescription.elevationGain} m+`} />}
+            </div>
+          ) : (
+            <p>Carga por definir</p>
+          )}
         </div>
-        {!hasVolume && <p>Carga por definir</p>}
+
+        {session.location && <Metric icon={MapPin} value={session.location.name} />}
         {intensity && <p className='font-medium text-foreground'>{intensity}</p>}
       </CardContent>
     </Card>
