@@ -33,6 +33,9 @@ function sessionsPath(locale: string) {
 export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
   return db.query.sessions.findMany({
     where: and(eq(sessions.teamId, teamId), eq(sessions.isDeleted, false)),
+    with: {
+      location: true,
+    },
     orderBy: (table, { asc }) => [asc(table.date), asc(table.title)],
   })
 }
