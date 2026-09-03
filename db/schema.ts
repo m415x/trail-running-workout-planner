@@ -18,6 +18,7 @@ import type {
   TrainingGoalStatus,
   GroupTrainingPlanStatus,
   PlanningModificationField,
+  SessionStructure,
 } from '@/types'
 
 export const baseColumns = {
@@ -196,6 +197,7 @@ export const sessions = sqliteTable('sessions', {
   type: text('type').$type<WorkoutType>(),
   locationKey: text('location_key').references(() => trainingLocations.key),
   trackPath: text('track_path'),
+  structure: text('structure', { mode: 'json' }).$type<SessionStructure>(),
   notes: text('notes'),
 })
 
