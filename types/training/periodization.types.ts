@@ -5,7 +5,6 @@ import { BaseEntity } from '@/types/core/base.types'
 import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { TrainingGoalType } from '@/types/athlete/athlete.types'
 import { IntensityZone } from '@/types/training/intensity.types'
-import type { SessionStructure } from '@/types/training/session.types'
 import { WorkoutType } from '@/types/training/workout.types'
 
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
@@ -61,6 +60,13 @@ export interface GeneratedMacrocycleDraft {
     elevationGain?: number
   } | null
   mesocycles: GeneratedMesocycleDraft[]
+}
+
+export interface SessionStructure {
+  preliminaryExercises?: string
+  warmup: string
+  mainBlock: string
+  cooldown: string
 }
 
 export interface Session extends BaseEntity {
