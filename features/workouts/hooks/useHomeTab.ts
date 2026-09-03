@@ -2,17 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type {
-  AthleteGroup,
-  AthleteProfile,
-  IntensityZone,
-  Team,
-  TrackData,
-  User,
-  WeekDay,
-  WeeklyCycle,
-  WorkoutType,
-} from '@/types'
+import type { IntensityZone, TrackData, WeekDay, WeeklyCycle, WorkoutType } from '@/types'
+import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
 
 import type { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 
@@ -71,17 +62,10 @@ export interface SessionWithWorkout {
   type: WorkoutType
 }
 
-export interface AthleteProfileWithDashboardRelations extends AthleteProfile {
-  team?: Team
-  group?: AthleteGroup | null
-}
-
-interface UseHomeTabProps {
+export interface UseHomeTabProps {
   initialSchedule: SessionWithWorkout[]
 
-  initialAthlete: User & {
-    athleteProfile: AthleteProfileWithDashboardRelations
-  }
+  initialAthlete: CurrentAthleteData
 
   onWeekChange: (startDateIso: string) => Promise<SessionWithWorkout[]>
 }

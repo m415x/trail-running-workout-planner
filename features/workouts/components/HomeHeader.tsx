@@ -1,6 +1,6 @@
 'use client'
 
-import { AthleteProfileWithRelations, Team } from '@/types'
+import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
@@ -8,7 +8,13 @@ import { cn } from '@/lib/utils'
 import { ThemeToggleButton } from '@/components/ui/custom/buttons'
 import { buildAthleteGroupCode } from '@/lib/athlete-group-helpers'
 
-export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProfileWithRelations }) {
+export function HomeHeader({
+  team,
+  athlete,
+}: {
+  team: NonNullable<CurrentAthleteData['athleteProfile']['team']>
+  athlete: CurrentAthleteData['athleteProfile']
+}) {
   const { today, fullName, initials } = useHomeHeader()
   const groupCode = athlete.group ? buildAthleteGroupCode(athlete.group) : '--'
 
@@ -20,14 +26,14 @@ export function HomeHeader({ team, athlete }: { team: Team; athlete: AthleteProf
           <Avatar className='size-14 rounded-full border-3 border-primary shadow-lg'>
             {/* Imagen para modo claro */}
             <AvatarImage
-              src={team.avatarLight}
+              src={team.avatarLight ?? undefined}
               alt={team.name}
               className='border-image-light object-cover dark:hidden'
             />
 
             {/* Imagen para modo oscuro */}
             <AvatarImage
-              src={team.avatarDark}
+              src={team.avatarDark ?? undefined}
               alt={team.name}
               className='border-image-dark object-cover hidden dark:block'
             />

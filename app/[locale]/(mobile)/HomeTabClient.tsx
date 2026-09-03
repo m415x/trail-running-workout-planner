@@ -3,12 +3,11 @@
 import { useEffect } from 'react'
 import { useMobileShell } from '@/context/MobileShellContext'
 import { HomeTab } from '@workouts/HomeTab'
-import { SessionWithWorkout } from '@workouts/hooks/useHomeTab'
-import { AthleteProfile } from '@/types'
+import { SessionWithWorkout, UseHomeTabProps } from '@workouts/hooks/useHomeTab'
 
 // Tipos simplificados basados en lo que devuelve tu Server Action
 interface HomeTabClientProps {
-  initialAthlete: AthleteProfile // Reemplaza 'any' con tu tipo User + AthleteProfile
+  initialAthlete: UseHomeTabProps['initialAthlete']
   initialSchedule: SessionWithWorkout[] // Reemplaza 'any' con SessionWithWorkout[]
   locale: string
 }

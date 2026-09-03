@@ -49,6 +49,8 @@ export async function getCurrentAthlete() {
   }
 }
 
+export type CurrentAthleteData = NonNullable<Awaited<ReturnType<typeof getCurrentAthlete>>['data']>
+
 export async function getWeeklySchedule(
   startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
 ) {
