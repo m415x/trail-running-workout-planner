@@ -10,12 +10,13 @@ import { db } from '@/db'
 import { sessions, trainingLocations, workouts } from '@/db/schema'
 
 const CURRENT_TEAM_ID = 'team_1'
-
+const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const optionalText = z.string().trim().transform((value) => value || null)
 
 const createSessionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
   title: z.string().trim().min(2, 'El título debe tener al menos 2 caracteres'),
+  type: z.enum(workoutTypes, { message: 'Seleccioná un tipo de entrenamiento' }),
   workoutId: optionalText,
   locationKey: optionalText,
   trackPath: optionalText,
@@ -23,9 +24,7 @@ const createSessionSchema = z.object({
   locale: z.string().trim().default('es'),
 })
 
-export interface SessionFormState {
-  error?: string
-}
+export interface SessionFormState { error?: string }
 
 function sessionsPath(locale: string) {
   return locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
@@ -43,21 +42,13 @@ export async function getSessionFormOptions() {
     where: eq(workouts.isDeleted, false),
     orderBy: (table, { asc }) => [asc(table.title)],
   }).sync()
-
   const locationOptions = db.select().from(trainingLocations).orderBy(trainingLocations.name).all()
-
   return { workouts: workoutOptions, locations: locationOptions }
 }
 
-export async function createSession(
-  _previousState: SessionFormState,
-  formData: FormData,
-): Promise<SessionFormState> {
+export async function createSession(_previousState: SessionFormState, formData: FormData): Promise<SessionFormState> {
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
-  }
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
 
   const data = parsed.data
 
@@ -66,31 +57,19 @@ export async function createSession(
       const workout = db.query.workouts.findFirst({
         where: and(eq(workouts.id, data.workoutId), eq(workouts.isDeleted, false)),
       }).sync()
-
       if (!workout) return { error: 'La plantilla de entrenamiento seleccionada no existe' }
     }
 
     if (data.locationKey) {
-      const location = db.query.trainingLocations.findFirst({
-        where: eq(trainingLocations.key, data.locationKey),
-      }).sync()
-
+      const location = db.query.trainingLocations.findFirst({ where: eq(trainingLocations.key, data.locationKey) }).sync()
       if (!location) return { error: 'La ubicación seleccionada no existe' }
     }
 
     const now = new Date().toISOString()
-
     db.insert(sessions).values({
-      id: randomUUID(),
-      teamId: CURRENT_TEAM_ID,
-      workoutId: data.workoutId,
-      date: data.date,
-      title: data.title,
-      locationKey: data.locationKey,
-      trackPath: data.trackPath,
-      notes: data.notes,
-      createdAt: now,
-      updatedAt: now,
+      id: randomUUID(), teamId: CURRENT_TEAM_ID, workoutId: data.workoutId,
+      date: data.date, title: data.title, type: data.type, locationKey: data.locationKey,
+      trackPath: data.trackPath, notes: data.notes, createdAt: now, updatedAt: now,
     }).run()
   } catch (error) {
     console.error('Error creating session:', error)
