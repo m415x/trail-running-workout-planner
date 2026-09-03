@@ -9,6 +9,7 @@ import type {
   MedicalRecord,
   PeriodType,
   MicrocycleType,
+  IntensityMethod,
   IntensityZone,
   WorkoutType,
   DayStatus,
@@ -17,6 +18,7 @@ import type {
   TrainingGoalStatus,
   GroupTrainingPlanStatus,
   PlanningModificationField,
+  SessionStructure,
 } from '@/types'
 
 /* -------------------------------------------------------------------------- */
@@ -327,10 +329,12 @@ export const sessions = sqliteTable('sessions', {
 
   date: text('date').notNull(),
   title: text('title').notNull(),
+  type: text('type').$type<WorkoutType>(),
 
   locationKey: text('location_key').references(() => trainingLocations.key),
 
   trackPath: text('track_path'),
+  structure: text('structure', { mode: 'json' }).$type<SessionStructure>(),
 
   notes: text('notes'),
 })
@@ -338,29 +342,37 @@ export const sessions = sqliteTable('sessions', {
 /* -------------------------------------------------------------------------- */
 /* 11. GROUP SESSION PRESCRIPTIONS (Indicaciones para sesiones grupales)      */
 /* -------------------------------------------------------------------------- */
-export const groupSessionPrescriptions = sqliteTable('group_session_prescriptions', {
-  ...baseColumns,
+export const groupSessionPrescriptions = sqliteTable(
+  'group_session_prescriptions',
+  {
+    ...baseColumns,
 
-  sessionId: text('session_id')
-    .notNull()
-    .references(() => sessions.id, { onDelete: 'cascade' }),
+    sessionId: text('session_id')
+      .notNull()
+      .references(() => sessions.id, { onDelete: 'cascade' }),
 
-  groupId: text('group_id')
-    .notNull()
-    .references(() => athleteGroups.id, { onDelete: 'cascade' }),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => athleteGroups.id, { onDelete: 'cascade' }),
 
-  microcycleId: text('microcycle_id')
-    .notNull()
-    .references(() => microcycles.id, { onDelete: 'cascade' }),
+    microcycleId: text('microcycle_id')
+      .notNull()
+      .references(() => microcycles.id, { onDelete: 'cascade' }),
 
-  distanceKm: real('distance_km'),
-  durationMin: integer('duration_min'),
-  elevationGain: integer('elevation_gain'),
+    distanceKm: real('distance_km'),
+    durationMin: integer('duration_min'),
+    elevationGain: integer('elevation_gain'),
 
-  zone: text('zone').$type<IntensityZone>(),
+    intensityMethod: text('intensity_method').$type<IntensityMethod>(),
+    zone: text('zone').$type<IntensityZone>(),
+    pamPercentage: real('pam_percentage'),
 
-  notes: text('notes'),
-})
+    notes: text('notes'),
+  },
+  (table) => [
+    uniqueIndex('group_session_prescriptions_session_group_unique').on(table.sessionId, table.groupId),
+  ],
+)
 
 /* -------------------------------------------------------------------------- */
 /* 12. WORKOUT LOGS (Registro de ejecución + Estado del día)                  */

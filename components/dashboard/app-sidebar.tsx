@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarRange, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarRange, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
 
 import { Link, usePathname } from '@/i18n/routing'
 import {
@@ -36,6 +36,11 @@ const navigationItems = [
     label: 'Planificación',
     href: '/dashboard/planning',
     icon: CalendarRange,
+  },
+  {
+    label: 'Sesiones',
+    href: '/dashboard/sessions',
+    icon: CalendarDays,
   },
 ] as const
 

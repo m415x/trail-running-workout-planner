@@ -470,10 +470,12 @@ async function seed() {
         date: day.date,
 
         title: linkedWorkout?.title || 'Entrenamiento',
+        type: linkedWorkout?.type ?? day.type ?? null,
 
         locationKey: linkedWorkout && 'locationKey' in linkedWorkout ? linkedWorkout.locationKey || null : null,
 
         trackPath: linkedWorkout?.trackPath || null,
+        structure: null,
 
         notes: linkedWorkout?.notes || null,
       }
