@@ -9,6 +9,7 @@ import type {
   MedicalRecord,
   PeriodType,
   MicrocycleType,
+  IntensityMethod,
   IntensityZone,
   WorkoutType,
   DayStatus,
@@ -208,7 +209,9 @@ export const groupSessionPrescriptions = sqliteTable(
     distanceKm: real('distance_km'),
     durationMin: integer('duration_min'),
     elevationGain: integer('elevation_gain'),
+    intensityMethod: text('intensity_method').$type<IntensityMethod>(),
     zone: text('zone').$type<IntensityZone>(),
+    pamPercentage: real('pam_percentage'),
     notes: text('notes'),
   },
   (table) => [
