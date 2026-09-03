@@ -39,6 +39,11 @@ export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
     where: and(eq(sessions.teamId, teamId), eq(sessions.isDeleted, false)),
     with: {
       location: true,
+      sessionPrescriptions: {
+        columns: {
+          groupId: true,
+        },
+      },
     },
     orderBy: (table, { asc }) => [asc(table.date), asc(table.title)],
   })

@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
 import { getSessionsByTeam } from '@/app/actions/session-actions'
+import { getGroupsByTeam } from '@/app/actions/group-actions'
+import { GroupCalendarFilter } from '@/features/sessions/components/GroupCalendarFilter'
 import { MonthlySessionCalendar } from '@/features/sessions/components/MonthlySessionCalendar'
 import { WeeklySessionCalendar } from '@/features/sessions/components/WeeklySessionCalendar'
 import { cn } from '@/lib/utils'
@@ -14,14 +16,21 @@ interface SessionsPageProps {
     month?: string | string[]
     view?: string | string[]
     date?: string | string[]
+    group?: string | string[]
   }>
 }
 
 export default async function SessionsPage({ params, searchParams }: SessionsPageProps) {
   const { locale } = await params
   const query = await searchParams
-  const sessions = await getSessionsByTeam()
+  const [sessions, groups] = await Promise.all([getSessionsByTeam(), getGroupsByTeam()])
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
+  const requestedGroupId = typeof query.group === 'string' ? query.group : ''
+  const selectedGroup = groups.find((group) => group.id === requestedGroupId)
+  const selectedGroupId = selectedGroup?.id ?? ''
+  const filteredSessions = selectedGroupId
+    ? sessions.filter((session) => session.sessionPrescriptions.some((prescription) => prescription.groupId === selectedGroupId))
+    : sessions
   const currentMonth = getCurrentMonthInArgentina()
   const view = query.view === 'week' ? 'week' : 'month'
   const selectedMonth = parseMonth(typeof query.month === 'string' ? query.month : undefined, currentMonth)
@@ -56,27 +65,40 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
         <Card><CardHeader><CardTitle>Todavía no hay sesiones</CardTitle><CardDescription>Programá la primera sesión para comenzar a construir el calendario de entrenamiento.</CardDescription></CardHeader></Card>
       )}
 
-      <div className='flex w-fit rounded-lg border bg-muted/40 p-1'>
-        <Link
-          href={`${sessionsPath}?month=${formatMonth(monthForViewToggle)}`}
-          className={cn(buttonVariants({ variant: view === 'month' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
-        >
-          <CalendarDays /> Mes
-        </Link>
-        <Link
-          href={`${sessionsPath}?view=week&date=${weekDateForViewToggle}`}
-          className={cn(buttonVariants({ variant: view === 'week' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
-        >
-          <CalendarRange /> Semana
-        </Link>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <div className='flex w-fit rounded-lg border bg-muted/40 p-1'>
+          <Link
+            href={buildCalendarHref(sessionsPath, { month: formatMonth(monthForViewToggle), group: selectedGroupId })}
+            className={cn(buttonVariants({ variant: view === 'month' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
+          >
+            <CalendarDays /> Mes
+          </Link>
+          <Link
+            href={buildCalendarHref(sessionsPath, { view: 'week', date: weekDateForViewToggle, group: selectedGroupId })}
+            className={cn(buttonVariants({ variant: view === 'week' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
+          >
+            <CalendarRange /> Semana
+          </Link>
+        </div>
+
+        <GroupCalendarFilter groups={groups} selectedGroupId={selectedGroupId} />
       </div>
+
+      {selectedGroup && filteredSessions.length === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Sin sesiones para el grupo {selectedGroup.categoryCode}{selectedGroup.levelCode}</CardTitle>
+            <CardDescription>Este grupo todavía no tiene sesiones asignadas en el calendario.</CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       <div className='space-y-4'>
         <div className='flex items-center justify-between gap-3'>
           <Link
             href={view === 'month'
-              ? `${sessionsPath}?month=${formatMonth(previousMonth)}`
-              : `${sessionsPath}?view=week&date=${previousWeek}`}
+              ? buildCalendarHref(sessionsPath, { month: formatMonth(previousMonth), group: selectedGroupId })
+              : buildCalendarHref(sessionsPath, { view: 'week', date: previousWeek, group: selectedGroupId })}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
             aria-label={view === 'month' ? 'Mes anterior' : 'Semana anterior'}
           >
@@ -85,8 +107,8 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
           <h3 className='text-center text-xl font-semibold capitalize'>{view === 'month' ? monthLabel : weekLabel}</h3>
           <Link
             href={view === 'month'
-              ? `${sessionsPath}?month=${formatMonth(nextMonth)}`
-              : `${sessionsPath}?view=week&date=${nextWeek}`}
+              ? buildCalendarHref(sessionsPath, { month: formatMonth(nextMonth), group: selectedGroupId })
+              : buildCalendarHref(sessionsPath, { view: 'week', date: nextWeek, group: selectedGroupId })}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
             aria-label={view === 'month' ? 'Mes siguiente' : 'Semana siguiente'}
           >
@@ -98,11 +120,11 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
           <MonthlySessionCalendar
             year={selectedMonth.year}
             month={selectedMonth.month}
-            sessions={sessions}
+            sessions={filteredSessions}
             today={currentMonth.today}
           />
         ) : (
-          <WeeklySessionCalendar startDate={weekStart} sessions={sessions} today={currentMonth.today} />
+          <WeeklySessionCalendar startDate={weekStart} sessions={filteredSessions} today={currentMonth.today} />
         )}
       </div>
     </div>
@@ -183,4 +205,13 @@ function formatISODate(date: Date) {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0')
   const day = String(date.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function buildCalendarHref(path: string, values: Record<string, string>) {
+  const params = new URLSearchParams()
+  for (const [key, value] of Object.entries(values)) {
+    if (value) params.set(key, value)
+  }
+  const query = params.toString()
+  return query ? `${path}?${query}` : path
 }
