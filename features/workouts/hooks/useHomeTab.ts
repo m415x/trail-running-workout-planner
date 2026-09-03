@@ -410,11 +410,14 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
     [weekDays],
   )
 
-  const handleSelectDate = useCallback((date: Date | undefined) => {
-    if (date) {
-      setSelectedDate(date)
-    }
-  }, [])
+  const handleSelectDate = useCallback(
+    async (date: Date | undefined) => {
+      if (date) {
+        await loadWeek(date)
+      }
+    },
+    [loadWeek],
+  )
 
   // -----------------------------------------------------------------------
   // API pública del hook
