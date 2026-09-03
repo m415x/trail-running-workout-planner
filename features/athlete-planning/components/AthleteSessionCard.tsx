@@ -11,6 +11,13 @@ interface AthleteSessionCardProps {
     title: string
     type: WorkoutType
     location: { name: string } | null
+    notes: string | null
+    structure: {
+      preliminaryExercises?: string | null
+      warmup?: string | null
+      mainBlock?: string | null
+      cooldown?: string | null
+    } | null
   }
   prescription: {
     distanceKm: number | null
@@ -19,6 +26,7 @@ interface AthleteSessionCardProps {
     intensityMethod: IntensityMethod | null
     zone: IntensityZone | null
     pamPercentage: number | null
+    notes: string | null
   }
 }
 
@@ -27,6 +35,14 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
   const hasVolume = prescription.distanceKm != null
     || prescription.durationMin != null
     || prescription.elevationGain != null
+  const structureBlocks = [
+    { label: 'Ejercicios preliminares', value: session.structure?.preliminaryExercises },
+    { label: 'Entrada en calor', value: session.structure?.warmup },
+    { label: 'Bloque principal', value: session.structure?.mainBlock },
+    { label: 'Vuelta a la calma', value: session.structure?.cooldown },
+  ].filter((block): block is { label: string; value: string } => Boolean(block.value))
+  const generalNotes = session.notes !== prescription.notes ? session.notes : null
+  const hasInstructions = Boolean(prescription.notes || generalNotes || structureBlocks.length > 0)
 
   return (
     <Card className='gap-3 py-4 shadow-none'>
@@ -52,6 +68,19 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
 
         {session.location && <Metric icon={MapPin} value={session.location.name} />}
         {intensity && <p className='font-medium text-foreground'>{intensity}</p>}
+
+        <div className='border-t pt-3'>
+          <p className='mb-2 font-medium text-foreground'>Instrucciones</p>
+          {hasInstructions ? (
+            <div className='space-y-2.5'>
+              {prescription.notes && <Instruction label='Para tu grupo' value={prescription.notes} />}
+              {structureBlocks.map((block) => <Instruction key={block.label} label={block.label} value={block.value} />)}
+              {generalNotes && <Instruction label='Indicaciones generales' value={generalNotes} />}
+            </div>
+          ) : (
+            <p>Sin instrucciones adicionales</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   )
@@ -59,6 +88,15 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
 
 function Metric({ icon: Icon, value }: { icon: typeof Activity; value: string }) {
   return <span className='flex items-center gap-1'><Icon className='size-3.5' /> {value}</span>
+}
+
+function Instruction({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className='font-medium text-foreground/80'>{label}</p>
+      <p className='mt-0.5 whitespace-pre-wrap leading-relaxed'>{value}</p>
+    </div>
+  )
 }
 
 function formatIntensity(prescription: AthleteSessionCardProps['prescription']) {
