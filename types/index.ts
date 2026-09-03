@@ -21,6 +21,7 @@ export * from '@/types/training/intensity.types'
 export * from '@/types/training/periodization.types'
 export * from '@/types/training/workout.types'
 export * from '@/types/training/session.types'
+export * from '@/types/training/volume.types'
 export * from '@/types/training/workout-log.types'
 export * from '@/types/training/fitness-fatigue.types'
 
