@@ -1,19 +1,8 @@
-import { MapPin } from 'lucide-react'
-
+import { SessionCalendarCard, type CalendarSession } from '@/features/sessions/components/SessionCalendarCard'
 import { cn } from '@/lib/utils'
-import type { WorkoutType } from '@/types/training/workout.types'
-import { Badge } from '@ui/badge'
 import { Card, CardContent } from '@ui/card'
 
 const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const
-
-interface CalendarSession {
-  id: string
-  date: string
-  title: string
-  type: WorkoutType
-  location: { name: string } | null
-}
 
 interface MonthlySessionCalendarProps {
   year: number
@@ -81,20 +70,7 @@ export function MonthlySessionCalendar({ year, month, sessions, today }: Monthly
 
                   <div className='space-y-1.5'>
                     {daySessions.map((session) => (
-                      <article key={session.id} className='space-y-1 rounded-md border bg-background p-2 shadow-xs'>
-                        <div className='flex items-start justify-between gap-2'>
-                          <p className='line-clamp-2 text-xs font-semibold leading-snug'>{session.title}</p>
-                          <Badge variant='secondary' className='shrink-0 px-1.5 py-0 text-[10px]'>
-                            {session.type}
-                          </Badge>
-                        </div>
-                        {session.location && (
-                          <p className='flex items-center gap-1 truncate text-[11px] text-muted-foreground'>
-                            <MapPin className='size-3 shrink-0' />
-                            <span className='truncate'>{session.location.name}</span>
-                          </p>
-                        )}
-                      </article>
+                      <SessionCalendarCard key={session.id} session={session} compact />
                     ))}
                   </div>
                 </div>
