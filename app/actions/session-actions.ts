@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import {
   athleteGroups,
   groupSessionPrescriptions,
@@ -22,10 +23,6 @@ import {
 const CURRENT_TEAM_ID = 'team_1'
 const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const optionalText = z.string().trim().transform((value) => value || null)
-const optionalNumber = z.preprocess(
-  (value) => value === '' || value == null ? null : Number(value),
-  z.number().finite().min(0, 'Los valores de volumen no pueden ser negativos').nullable(),
-)
 
 const createSessionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
@@ -40,27 +37,6 @@ const createSessionSchema = z.object({
   cooldown: optionalText,
   notes: optionalText,
   locale: z.string().trim().default('es'),
-})
-
-const prescriptionSchema = z.object({
-  groupId: z.string().trim().min(1),
-  microcycleId: z.string().trim().min(1, 'Seleccioná un microciclo para cada grupo'),
-  distanceKm: optionalNumber,
-  durationMin: optionalNumber,
-  elevationGain: optionalNumber,
-  intensityMethod: z.enum(['hr_zone', 'pam_percentage']).nullable(),
-  zone: z.enum(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']).nullable(),
-  pamPercentage: optionalNumber,
-  notes: z.string().trim().transform((value) => value || null),
-}).superRefine((data, context) => {
-  if (data.intensityMethod === 'hr_zone' && !data.zone) {
-    context.addIssue({ code: 'custom', path: ['zone'], message: 'Seleccioná una zona para la intensidad por FC' })
-  }
-  if (data.intensityMethod === 'pam_percentage') {
-    if (data.pamPercentage == null || data.pamPercentage <= 0 || data.pamPercentage > 200) {
-      context.addIssue({ code: 'custom', path: ['pamPercentage'], message: 'Ingresá un porcentaje PAM entre 0 y 200' })
-    }
-  }
 })
 
 export interface SessionFormState { error?: string }
@@ -154,7 +130,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
 
-  const prescriptions = parsePrescriptions(formData)
+  const prescriptions = parseSessionPrescriptions(formData)
   if (!prescriptions.success) return { error: prescriptions.error }
 
   const data = parsed.data
@@ -214,7 +190,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
 
-  const prescriptions = parsePrescriptions(formData)
+  const prescriptions = parseSessionPrescriptions(formData)
   if (!prescriptions.success) return { error: prescriptions.error }
   const data = parsed.data
 
@@ -272,35 +248,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   redirect(`${path}/${sessionId}`)
 }
 
-function parsePrescriptions(formData: FormData):
-  | { success: true; data: z.infer<typeof prescriptionSchema>[] }
-  | { success: false; error: string } {
-  const groupIds = [...new Set(formData.getAll('prescriptionGroupId').map((value) => value.toString()))]
-  if (groupIds.length === 0) return { success: false, error: 'Asigná la sesión al menos a un grupo' }
-
-  const rows: z.infer<typeof prescriptionSchema>[] = []
-  for (const groupId of groupIds) {
-    const intensityMethodValue = formData.get(`intensityMethod:${groupId}`)?.toString() || null
-    const parsed = prescriptionSchema.safeParse({
-      groupId,
-      microcycleId: formData.get(`microcycleId:${groupId}`)?.toString() || '',
-      distanceKm: formData.get(`distanceKm:${groupId}`)?.toString() || '',
-      durationMin: formData.get(`durationMin:${groupId}`)?.toString() || '',
-      elevationGain: formData.get(`elevationGain:${groupId}`)?.toString() || '',
-      intensityMethod: intensityMethodValue,
-      zone: intensityMethodValue === 'hr_zone' ? formData.get(`zone:${groupId}`)?.toString() || null : null,
-      pamPercentage: intensityMethodValue === 'pam_percentage' ? formData.get(`pamPercentage:${groupId}`)?.toString() || '' : '',
-      notes: formData.get(`prescriptionNotes:${groupId}`)?.toString() || '',
-    })
-    if (!parsed.success) {
-      return { success: false, error: parsed.error.issues[0]?.message ?? 'Revisá las prescripciones grupales' }
-    }
-    rows.push(parsed.data)
-  }
-  return { success: true, data: rows }
-}
-
-function validatePrescriptionReferences(prescriptions: z.infer<typeof prescriptionSchema>[]) {
+function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[]) {
   for (const prescription of prescriptions) {
     const group = db.query.athleteGroups.findFirst({
       where: and(
