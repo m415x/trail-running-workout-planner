@@ -20,6 +20,10 @@ const createSessionSchema = z.object({
   workoutId: optionalText,
   locationKey: optionalText,
   trackPath: optionalText,
+  preliminaryExercises: optionalText,
+  warmup: optionalText,
+  mainBlock: optionalText,
+  cooldown: optionalText,
   notes: optionalText,
   locale: z.string().trim().default('es'),
 })
@@ -68,11 +72,20 @@ export async function createSession(_previousState: SessionFormState, formData: 
       if (!location) return { error: 'La ubicación seleccionada no existe' }
     }
 
+    const structure = data.preliminaryExercises || data.warmup || data.mainBlock || data.cooldown
+      ? {
+          preliminaryExercises: data.preliminaryExercises,
+          warmup: data.warmup,
+          mainBlock: data.mainBlock,
+          cooldown: data.cooldown,
+        }
+      : null
+
     const now = new Date().toISOString()
     db.insert(sessions).values({
       id: randomUUID(), teamId: CURRENT_TEAM_ID, workoutId: data.workoutId,
       date: data.date, title: data.title, type: data.type, locationKey: data.locationKey,
-      trackPath: data.trackPath, notes: data.notes, createdAt: now, updatedAt: now,
+      trackPath: data.trackPath, structure, notes: data.notes, createdAt: now, updatedAt: now,
     }).run()
   } catch (error) {
     console.error('Error creating session:', error)
