@@ -49,6 +49,20 @@ export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
   })
 }
 
+export async function getSessionById(sessionId: string) {
+  return db.query.sessions.findFirst({
+    where: and(
+      eq(sessions.id, sessionId),
+      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.isDeleted, false),
+    ),
+    with: {
+      location: true,
+      workout: true,
+    },
+  })
+}
+
 export async function getSessionFormOptions() {
   const workoutOptions = db.query.workouts.findMany({
     where: eq(workouts.isDeleted, false),

@@ -9,6 +9,7 @@ interface MonthlySessionCalendarProps {
   month: number
   sessions: CalendarSession[]
   today: string
+  sessionsPath: string
 }
 
 interface CalendarDay {
@@ -17,7 +18,7 @@ interface CalendarDay {
   isCurrentMonth: boolean
 }
 
-export function MonthlySessionCalendar({ year, month, sessions, today }: MonthlySessionCalendarProps) {
+export function MonthlySessionCalendar({ year, month, sessions, today, sessionsPath }: MonthlySessionCalendarProps) {
   const days = buildCalendarDays(year, month)
   const sessionsByDate = new Map<string, CalendarSession[]>()
 
@@ -70,7 +71,7 @@ export function MonthlySessionCalendar({ year, month, sessions, today }: Monthly
 
                   <div className='space-y-1.5'>
                     {daySessions.map((session) => (
-                      <SessionCalendarCard key={session.id} session={session} compact />
+                      <SessionCalendarCard key={session.id} session={session} href={`${sessionsPath}/${session.id}`} compact />
                     ))}
                   </div>
                 </div>

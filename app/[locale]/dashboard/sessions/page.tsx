@@ -122,9 +122,15 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
             month={selectedMonth.month}
             sessions={filteredSessions}
             today={currentMonth.today}
+            sessionsPath={sessionsPath}
           />
         ) : (
-          <WeeklySessionCalendar startDate={weekStart} sessions={filteredSessions} today={currentMonth.today} />
+          <WeeklySessionCalendar
+            startDate={weekStart}
+            sessions={filteredSessions}
+            today={currentMonth.today}
+            sessionsPath={sessionsPath}
+          />
         )}
       </div>
     </div>

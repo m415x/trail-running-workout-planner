@@ -6,9 +6,10 @@ interface WeeklySessionCalendarProps {
   startDate: string
   sessions: CalendarSession[]
   today: string
+  sessionsPath: string
 }
 
-export function WeeklySessionCalendar({ startDate, sessions, today }: WeeklySessionCalendarProps) {
+export function WeeklySessionCalendar({ startDate, sessions, today, sessionsPath }: WeeklySessionCalendarProps) {
   const days = buildWeek(startDate)
   const sessionsByDate = new Map<string, CalendarSession[]>()
 
@@ -46,7 +47,7 @@ export function WeeklySessionCalendar({ startDate, sessions, today }: WeeklySess
                     <p className='py-6 text-center text-xs text-muted-foreground'>Sin sesiones</p>
                   ) : (
                     daySessions.map((session) => (
-                      <SessionCalendarCard key={session.id} session={session} />
+                      <SessionCalendarCard key={session.id} session={session} href={`${sessionsPath}/${session.id}`} />
                     ))
                   )}
                 </div>
