@@ -36,7 +36,7 @@ export const currentUser: User = {
   email: 'cristianlahoz@elparque.com.ar',
   firstName: 'Cristian Daniel',
   lastName: 'Lahoz Piantanida',
-  avatar: '/avatars/cristian.png',
+  avatar: '/avatars/runner.png',
 }
 
 export const currentAthlete: AthleteProfile = {
