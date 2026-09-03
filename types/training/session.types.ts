@@ -3,6 +3,13 @@ import type { IntensityMethod, IntensityZone } from '@/types/training/intensity.
 import type { TrainingVolume } from '@/types/training/volume.types'
 import type { WorkoutType } from '@/types/training/workout.types'
 
+export interface SessionStructure {
+  preliminaryExercises?: string | null
+  warmup?: string | null
+  mainBlock?: string | null
+  cooldown?: string | null
+}
+
 export interface Session extends BaseEntity {
   teamId: string
   workoutId?: string | null
@@ -11,6 +18,7 @@ export interface Session extends BaseEntity {
   type: WorkoutType
   locationKey?: string | null
   trackPath?: string | null
+  structure?: SessionStructure | null
   notes?: string | null
 }
 
