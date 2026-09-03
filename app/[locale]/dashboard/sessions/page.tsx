@@ -31,7 +31,7 @@ export default async function SessionsPage({ params }: SessionsPageProps) {
                 <CardDescription className='flex items-center gap-1.5'><CalendarDays className='size-4' /> {formatDate(session.date)}</CardDescription>
               </CardHeader>
               <CardContent className='space-y-2 text-sm'>
-                {session.locationKey && <p className='flex items-center gap-1.5 text-muted-foreground'><MapPin className='size-4' /> {session.locationKey}</p>}
+                {session.location && <p className='flex items-center gap-1.5 text-muted-foreground'><MapPin className='size-4' /> {session.location.name}</p>}
                 {session.notes && <p className='line-clamp-2 text-muted-foreground'>{session.notes}</p>}
               </CardContent>
             </Card>
