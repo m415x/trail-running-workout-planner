@@ -18,8 +18,8 @@ import type {
   TrainingGoalStatus,
   GroupTrainingPlanStatus,
   PlanningModificationField,
-  SessionStructure,
 } from '@/types'
+import type { SessionStructure } from '@/types/training/session.types'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -329,7 +329,7 @@ export const sessions = sqliteTable('sessions', {
 
   date: text('date').notNull(),
   title: text('title').notNull(),
-  type: text('type').$type<WorkoutType>(),
+  type: text('type').$type<WorkoutType>().notNull(),
 
   locationKey: text('location_key').references(() => trainingLocations.key),
 

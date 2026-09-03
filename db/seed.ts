@@ -470,7 +470,7 @@ async function seed() {
         date: day.date,
 
         title: linkedWorkout?.title || 'Entrenamiento',
-        type: linkedWorkout?.type ?? day.type ?? null,
+        type: linkedWorkout?.type ?? day.type ?? 'Base',
 
         locationKey: linkedWorkout && 'locationKey' in linkedWorkout ? linkedWorkout.locationKey || null : null,
 
