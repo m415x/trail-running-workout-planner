@@ -11,11 +11,11 @@ interface NewSessionPageProps {
 
 export default async function NewSessionPage({ params }: NewSessionPageProps) {
   const { locale } = await params
-  const { workouts, locations } = await getSessionFormOptions()
+  const { workouts, locations, groups } = await getSessionFormOptions()
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
 
   return (
-    <div className='mx-auto w-full max-w-2xl space-y-6'>
+    <div className='mx-auto w-full max-w-4xl space-y-6'>
       <div className='space-y-2'>
         <Link href={sessionsPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
           <ArrowLeft /> Volver a sesiones
@@ -26,7 +26,7 @@ export default async function NewSessionPage({ params }: NewSessionPageProps) {
         </div>
       </div>
 
-      <SessionForm locale={locale} workouts={workouts} locations={locations} />
+      <SessionForm locale={locale} workouts={workouts} locations={locations} groups={groups} />
     </div>
   )
 }
