@@ -66,7 +66,13 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
           )}
         </div>
 
-        {session.location && <Metric icon={MapPin} value={session.location.name} />}
+        <div className='rounded-lg border px-2.5 py-2'>
+          <p className='mb-1 font-medium text-foreground'>Lugar</p>
+          <p className='flex items-start gap-1.5'>
+            <MapPin className='mt-0.5 size-3.5 shrink-0' />
+            <span>{session.location?.name || 'Ubicación por confirmar'}</span>
+          </p>
+        </div>
         {intensity && <p className='font-medium text-foreground'>{intensity}</p>}
 
         <div className='border-t pt-3'>
