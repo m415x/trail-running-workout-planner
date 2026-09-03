@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type {
   AthleteGroup,
-  AthleteGroupCode,
   AthleteProfile,
   IntensityZone,
   Team,
@@ -17,10 +16,8 @@ import type {
 
 import type { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 
-import { buildAthleteGroupCode } from '@/lib/athlete-group-helpers'
 import { parseISODate } from '@/lib/date-helpers'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
-import { resolveWorkoutForAthlete } from '@/lib/workout-resolver'
 
 const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const
 
@@ -50,37 +47,28 @@ export interface SessionWithWorkout {
 
   workoutId?: string | null
   workout?: SessionWorkout | null
+  location?: { name: string } | null
+  structure?: {
+    preliminaryExercises?: string | null
+    warmup?: string | null
+    mainBlock?: string | null
+    cooldown?: string | null
+  } | null
+  sessionPrescriptions: Array<{
+    distanceKm: number | null
+    durationMin: number | null
+    elevationGain: number | null
+    intensityMethod: 'hr_zone' | 'pam_percentage' | null
+    zone: IntensityZone | null
+    pamPercentage: number | null
+    notes: string | null
+  }>
 
   locationKey?: string | null
   trackPath?: string | null
   notes?: string | null
 
-  /*
-   * Estos campos mantienen compatibilidad temporal con
-   * resolveWorkoutForAthlete(), que todavía trabaja con el
-   * modelo anterior de Session.
-   *
-   * Cuando el dashboard consulte GroupSessionPrescription,
-   * esta adaptación podrá eliminarse.
-   */
-  type?: WorkoutType
-  zone?: IntensityZone
-
-  defaultVolume?: {
-    km: number
-    timeMin: number
-  }
-
-  groupOverrides?: Partial<
-    Record<
-      AthleteGroupCode,
-      {
-        distanceKm: number
-        durationMin?: number
-        notes?: string
-      }
-    >
-  >
+  type: WorkoutType
 }
 
 export interface AthleteProfileWithDashboardRelations extends AthleteProfile {
@@ -120,41 +108,34 @@ function getMonday(date: Date): Date {
   return result
 }
 
-/**
- * Adaptación temporal entre el modelo nuevo de Session/Workout
- * y el resolver antiguo.
- *
- * Cuando resolveWorkoutForAthlete trabaje directamente con
- * GroupSessionPrescription, esta función ya no será necesaria.
- */
-function adaptSessionForLegacyResolver(session: SessionWithWorkout) {
-  const workout = session.workout
+/** Construye la vista del atleta desde la prescripción de su grupo. */
+function resolveGroupWorkout(session: SessionWithWorkout) {
+  const prescription = session.sessionPrescriptions[0]
+  if (!prescription) return null
 
-  const zone: IntensityZone = session.zone ?? workout?.zone ?? 'Z2'
+  const instructionBlocks = [
+    prescription.notes,
+    session.structure?.preliminaryExercises,
+    session.structure?.warmup,
+    session.structure?.mainBlock,
+    session.structure?.cooldown,
+    session.notes !== prescription.notes ? session.notes : null,
+  ].filter(Boolean)
+  const distance = prescription.distanceKm ?? 0
+  const time = prescription.durationMin ?? 0
 
   return {
     id: session.id,
-    microcycleId: '',
-
-    date: session.date,
     title: session.title,
-
-    type: session.type ?? workout?.type ?? ('Base' as WorkoutType),
-
-    zone,
-
-    locationKey: session.locationKey ?? workout?.locationKey ?? undefined,
-
-    trackPath: session.trackPath ?? workout?.trackPath ?? undefined,
-
-    defaultVolume: session.defaultVolume ?? {
-      km: workout?.distance ?? 0,
-      timeMin: workout?.time ?? 0,
-    },
-
-    groupOverrides: session.groupOverrides,
-
-    notes: session.notes ?? workout?.notes ?? undefined,
+    type: session.type,
+    distance,
+    zone: prescription.zone ?? session.workout?.zone ?? ('Z1' as IntensityZone),
+    time,
+    gain: prescription.elevationGain ?? 0,
+    pace: time > 0 && distance > 0 ? (time * 60) / distance : 0,
+    notes: instructionBlocks.join(' | '),
+    trackPath: session.trackPath ?? session.workout?.trackPath ?? undefined,
+    locationKey: session.locationKey ?? session.workout?.locationKey ?? undefined,
   }
 }
 
@@ -173,13 +154,6 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
   const athleteGroup = initialAthlete.athleteProfile.group ?? null
 
-  const athleteGroupCode = useMemo<AthleteGroupCode | null>(() => {
-    if (!athleteGroup) {
-      return null
-    }
-
-    return buildAthleteGroupCode(athleteGroup)
-  }, [athleteGroup])
 
   // -----------------------------------------------------------------------
   // Inicio de la semana seleccionada
@@ -201,7 +175,8 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
       const isoDate = formatLocalISODate(currentDate)
 
-      const session = schedule.find((candidate) => candidate.date === isoDate)
+      const daySessions = schedule.filter((candidate) => candidate.date === isoDate)
+      const session = daySessions[0]
 
       const baseDay = {
         date: isoDate,
@@ -221,7 +196,7 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
        * Si no hay una sesión para la fecha o el atleta todavía
        * no tiene grupo, mostramos el día como descanso.
        */
-      if (!session || !athleteGroupCode) {
+      if (!session || !athleteGroup) {
         return {
           ...baseDay,
 
@@ -230,9 +205,9 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
         } as WeekDay
       }
 
-      const legacySession = adaptSessionForLegacyResolver(session)
+      const resolvedWorkout = resolveGroupWorkout(session)
 
-      const resolvedWorkout = resolveWorkoutForAthlete(legacySession, athleteGroupCode)
+      if (!resolvedWorkout) return { ...baseDay, type: 'Rest', isRest: true } as WeekDay
 
       return {
         ...baseDay,
@@ -243,10 +218,13 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
         workoutId: session.workoutId ? Number(session.workoutId) : undefined,
 
-        km: resolvedWorkout.distance,
+        km: daySessions.reduce(
+          (total, candidate) => total + (candidate.sessionPrescriptions[0]?.distanceKm ?? 0),
+          0,
+        ),
       } as WeekDay
     })
-  }, [athleteGroupCode, schedule, startOfWeek])
+  }, [athleteGroup, schedule, startOfWeek])
 
   // -----------------------------------------------------------------------
   // Día actualmente seleccionado
@@ -271,7 +249,10 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
     const sundayISO = weekDays[6]?.fullDate ?? ''
 
-    const targetKm = weekDays.reduce((total, day) => total + Number(day.km ?? 0), 0)
+    const targetKm = schedule.reduce(
+      (total, session) => total + (session.sessionPrescriptions[0]?.distanceKm ?? 0),
+      0,
+    )
 
     return {
       id: 'current',
@@ -284,27 +265,22 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
       targetKm,
     }
-  }, [weekDays])
+  }, [schedule, weekDays])
 
   // -----------------------------------------------------------------------
   // Workout del día seleccionado
   // -----------------------------------------------------------------------
 
-  const currentWorkout = useMemo(() => {
-    if (!selectedWeekDay || !athleteGroupCode) {
-      return null
-    }
+  const currentWorkouts = useMemo(() => {
+    if (!selectedWeekDay || !athleteGroup) return []
 
-    const session = schedule.find((candidate) => candidate.date === selectedWeekDay.fullDate)
+    return schedule
+      .filter((candidate) => candidate.date === selectedWeekDay.fullDate)
+      .map(resolveGroupWorkout)
+      .filter((workout): workout is NonNullable<typeof workout> => workout !== null)
+  }, [athleteGroup, schedule, selectedWeekDay])
 
-    if (!session) {
-      return null
-    }
-
-    const legacySession = adaptSessionForLegacyResolver(session)
-
-    return resolveWorkoutForAthlete(legacySession, athleteGroupCode)
-  }, [athleteGroupCode, schedule, selectedWeekDay])
+  const currentWorkout = currentWorkouts[0] ?? null
 
   // -----------------------------------------------------------------------
   // Carga del archivo GPX
@@ -452,7 +428,6 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
     athlete: initialAthlete.athleteProfile,
 
     athleteGroup,
-    athleteGroupCode,
 
     weeklyCycle,
     weekDays,
@@ -462,6 +437,7 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
     selectedWeekDay,
 
     currentWorkout,
+    currentWorkouts,
     elevationChartData,
 
     TrackData: trackData,

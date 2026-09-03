@@ -27,6 +27,7 @@ export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
     selectedDate,
     selectedWeekDay,
     currentWorkout,
+    currentWorkouts,
     elevationChartData,
     TrackData,
     isLoadingWeek,
@@ -71,13 +72,20 @@ export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
       />
 
       {/* Tarjeta del Día Seleccionado */}
-      {selectedWeekDay?.type === 'Race' && currentWorkout ? (
-        <RaceCard date={selectedWeekDay.fullDate} workout={currentWorkout} />
-      ) : currentWorkout ? (
-        <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate} TrackData={TrackData} />
-      ) : (
-        <RestCard />
-      )}
+      {currentWorkouts.length > 0 ? (
+        <div className='space-y-2'>
+          {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
+            <RaceCard key={workout.id} date={selectedWeekDay?.fullDate} workout={workout} />
+          ) : (
+            <TodayWorkoutCard
+              key={workout.id}
+              workout={workout}
+              date={selectedWeekDay?.fullDate}
+              TrackData={index === 0 ? TrackData : null}
+            />
+          ))}
+        </div>
+      ) : <RestCard />}
 
       {/* Perfil de Elevación */}
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
