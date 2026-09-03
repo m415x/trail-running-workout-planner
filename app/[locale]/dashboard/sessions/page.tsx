@@ -1,14 +1,20 @@
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 
 import { getSessionsByTeam } from '@/app/actions/session-actions'
 import { MonthlySessionCalendar } from '@/features/sessions/components/MonthlySessionCalendar'
+import { WeeklySessionCalendar } from '@/features/sessions/components/WeeklySessionCalendar'
+import { cn } from '@/lib/utils'
 import { buttonVariants } from '@ui/button'
 import { Card, CardDescription, CardHeader, CardTitle } from '@ui/card'
 
 interface SessionsPageProps {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ month?: string | string[] }>
+  searchParams: Promise<{
+    month?: string | string[]
+    view?: string | string[]
+    date?: string | string[]
+  }>
 }
 
 export default async function SessionsPage({ params, searchParams }: SessionsPageProps) {
@@ -17,6 +23,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   const sessions = await getSessionsByTeam()
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
   const currentMonth = getCurrentMonthInArgentina()
+  const view = query.view === 'week' ? 'week' : 'month'
   const selectedMonth = parseMonth(typeof query.month === 'string' ? query.month : undefined, currentMonth)
   const previousMonth = shiftMonth(selectedMonth, -1)
   const nextMonth = shiftMonth(selectedMonth, 1)
@@ -25,6 +32,18 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
     year: 'numeric',
     timeZone: 'UTC',
   }).format(new Date(Date.UTC(selectedMonth.year, selectedMonth.month - 1, 1)))
+  const selectedDate = parseDate(typeof query.date === 'string' ? query.date : undefined, currentMonth.today)
+  const weekStart = getMonday(selectedDate)
+  const previousWeek = shiftDate(weekStart, -7)
+  const nextWeek = shiftDate(weekStart, 7)
+  const weekEnd = shiftDate(weekStart, 6)
+  const weekLabel = formatWeekRange(weekStart, weekEnd)
+  const monthForViewToggle = view === 'week'
+    ? { year: Number(selectedDate.slice(0, 4)), month: Number(selectedDate.slice(5, 7)) }
+    : selectedMonth
+  const weekDateForViewToggle = view === 'month' && formatMonth(selectedMonth) !== formatMonth(currentMonth)
+    ? `${formatMonth(selectedMonth)}-01`
+    : selectedDate
 
   return (
     <div className='space-y-6'>
@@ -37,31 +56,54 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
         <Card><CardHeader><CardTitle>Todavía no hay sesiones</CardTitle><CardDescription>Programá la primera sesión para comenzar a construir el calendario de entrenamiento.</CardDescription></CardHeader></Card>
       )}
 
+      <div className='flex w-fit rounded-lg border bg-muted/40 p-1'>
+        <Link
+          href={`${sessionsPath}?month=${formatMonth(monthForViewToggle)}`}
+          className={cn(buttonVariants({ variant: view === 'month' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
+        >
+          <CalendarDays /> Mes
+        </Link>
+        <Link
+          href={`${sessionsPath}?view=week&date=${weekDateForViewToggle}`}
+          className={cn(buttonVariants({ variant: view === 'week' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
+        >
+          <CalendarRange /> Semana
+        </Link>
+      </div>
+
       <div className='space-y-4'>
         <div className='flex items-center justify-between gap-3'>
           <Link
-            href={`${sessionsPath}?month=${formatMonth(previousMonth)}`}
+            href={view === 'month'
+              ? `${sessionsPath}?month=${formatMonth(previousMonth)}`
+              : `${sessionsPath}?view=week&date=${previousWeek}`}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
-            aria-label='Mes anterior'
+            aria-label={view === 'month' ? 'Mes anterior' : 'Semana anterior'}
           >
             <ChevronLeft />
           </Link>
-          <h3 className='text-xl font-semibold capitalize'>{monthLabel}</h3>
+          <h3 className='text-center text-xl font-semibold capitalize'>{view === 'month' ? monthLabel : weekLabel}</h3>
           <Link
-            href={`${sessionsPath}?month=${formatMonth(nextMonth)}`}
+            href={view === 'month'
+              ? `${sessionsPath}?month=${formatMonth(nextMonth)}`
+              : `${sessionsPath}?view=week&date=${nextWeek}`}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
-            aria-label='Mes siguiente'
+            aria-label={view === 'month' ? 'Mes siguiente' : 'Semana siguiente'}
           >
             <ChevronRight />
           </Link>
         </div>
 
-        <MonthlySessionCalendar
-          year={selectedMonth.year}
-          month={selectedMonth.month}
-          sessions={sessions}
-          today={currentMonth.today}
-        />
+        {view === 'month' ? (
+          <MonthlySessionCalendar
+            year={selectedMonth.year}
+            month={selectedMonth.month}
+            sessions={sessions}
+            today={currentMonth.today}
+          />
+        ) : (
+          <WeeklySessionCalendar startDate={weekStart} sessions={sessions} today={currentMonth.today} />
+        )}
       </div>
     </div>
   )
@@ -104,4 +146,41 @@ function shiftMonth(value: MonthValue, amount: number): MonthValue {
 
 function formatMonth(value: MonthValue) {
   return `${value.year}-${String(value.month).padStart(2, '0')}`
+}
+
+function parseDate(value: string | undefined, fallback: string) {
+  if (!value?.match(/^\d{4}-\d{2}-\d{2}$/)) return fallback
+
+  const date = new Date(`${value}T00:00:00Z`)
+  return !Number.isNaN(date.getTime()) && formatISODate(date) === value ? value : fallback
+}
+
+function getMonday(value: string) {
+  const date = new Date(`${value}T00:00:00Z`)
+  const offset = (date.getUTCDay() + 6) % 7
+  date.setUTCDate(date.getUTCDate() - offset)
+  return formatISODate(date)
+}
+
+function shiftDate(value: string, amount: number) {
+  const date = new Date(`${value}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + amount)
+  return formatISODate(date)
+}
+
+function formatWeekRange(start: string, end: string) {
+  const formatter = new Intl.DateTimeFormat('es-AR', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  })
+  return `${formatter.format(new Date(`${start}T00:00:00Z`))} – ${formatter.format(new Date(`${end}T00:00:00Z`))}`
+}
+
+function formatISODate(date: Date) {
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
