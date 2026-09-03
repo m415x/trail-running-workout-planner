@@ -39,8 +39,27 @@ export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
     where: and(eq(sessions.teamId, teamId), eq(sessions.isDeleted, false)),
     with: {
       location: true,
+      sessionPrescriptions: {
+        columns: {
+          groupId: true,
+        },
+      },
     },
     orderBy: (table, { asc }) => [asc(table.date), asc(table.title)],
+  })
+}
+
+export async function getSessionById(sessionId: string) {
+  return db.query.sessions.findFirst({
+    where: and(
+      eq(sessions.id, sessionId),
+      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.isDeleted, false),
+    ),
+    with: {
+      location: true,
+      workout: true,
+    },
   })
 }
 
