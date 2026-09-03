@@ -29,27 +29,23 @@ export const baseColumns = {
 export const teams = sqliteTable('teams', {
   ...baseColumns,
   name: text('name').notNull(),
-  description: text('description'),
-  avatarLight: text('avatar_light'),
-  avatarDark: text('avatar_dark'),
 })
 
 export const trainingLocations = sqliteTable('training_locations', {
-  key: text('key').primaryKey().$type<string>(),
+  key: text('key').primaryKey(),
   name: text('name').notNull(),
-  lon: real('lon').notNull(),
-  lat: real('lat').notNull(),
+  latitude: real('latitude').notNull(),
+  longitude: real('longitude').notNull(),
   description: text('description'),
 })
 
 export const users = sqliteTable('users', {
   ...baseColumns,
-  role: text('role').notNull().default('athlete').$type<UserRole>(),
-  userName: text('user_name').notNull().unique(),
+  name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  firstName: text('first_name').notNull(),
-  lastName: text('last_name').notNull(),
-  avatar: text('avatar'),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role').$type<UserRole>().notNull(),
+  avatarUrl: text('avatar_url'),
 })
 
 export const athleteGroups = sqliteTable(
@@ -62,7 +58,13 @@ export const athleteGroups = sqliteTable(
     description: text('description'),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   },
-  (table) => [uniqueIndex('athlete_groups_team_category_level_unique').on(table.teamId, table.categoryCode, table.levelCode)],
+  (table) => [
+    uniqueIndex('athlete_groups_team_category_level_unique').on(
+      table.teamId,
+      table.categoryCode,
+      table.levelCode,
+    ),
+  ],
 )
 
 export const athleteProfiles = sqliteTable('athlete_profiles', {
@@ -71,12 +73,10 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
   teamId: text('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
   groupId: text('group_id').references(() => athleteGroups.id, { onDelete: 'set null' }),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  nickName: text('nick_name'),
-  dni: text('dni').notNull(),
-  birthday: text('birthday'),
+  birthDate: text('birth_date'),
+  gender: text('gender', { enum: ['male', 'female', 'other'] }),
   phone: text('phone'),
   emergencyContact: text('emergency_contact'),
-  emergencyPhone: text('emergency_phone'),
   physiology: text('physiology', { mode: 'json' }).$type<AthletePhysiology>(),
   medical: text('medical', { mode: 'json' }).$type<MedicalRecord>(),
 })
@@ -198,17 +198,26 @@ export const sessions = sqliteTable('sessions', {
   notes: text('notes'),
 })
 
-export const groupSessionPrescriptions = sqliteTable('group_session_prescriptions', {
-  ...baseColumns,
-  sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
-  groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'cascade' }),
-  microcycleId: text('microcycle_id').notNull().references(() => microcycles.id, { onDelete: 'cascade' }),
-  distanceKm: real('distance_km'),
-  durationMin: integer('duration_min'),
-  elevationGain: integer('elevation_gain'),
-  zone: text('zone').$type<IntensityZone>(),
-  notes: text('notes'),
-})
+export const groupSessionPrescriptions = sqliteTable(
+  'group_session_prescriptions',
+  {
+    ...baseColumns,
+    sessionId: text('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
+    groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'cascade' }),
+    microcycleId: text('microcycle_id').notNull().references(() => microcycles.id, { onDelete: 'cascade' }),
+    distanceKm: real('distance_km'),
+    durationMin: integer('duration_min'),
+    elevationGain: integer('elevation_gain'),
+    zone: text('zone').$type<IntensityZone>(),
+    notes: text('notes'),
+  },
+  (table) => [
+    uniqueIndex('group_session_prescriptions_session_group_unique').on(
+      table.sessionId,
+      table.groupId,
+    ),
+  ],
+)
 
 export const workoutLogs = sqliteTable('workout_logs', {
   ...baseColumns,
@@ -269,5 +278,4 @@ export const microcyclesRelations = relations(microcycles, ({ one, many }) => ({
 export const planningModificationRecordsRelations = relations(planningModificationRecords, ({ one }) => ({ groupTrainingPlan: one(groupTrainingPlans, { fields: [planningModificationRecords.groupTrainingPlanId], references: [groupTrainingPlans.id] }), microcycle: one(microcycles, { fields: [planningModificationRecords.microcycleId], references: [microcycles.id] }), changedBy: one(users, { fields: [planningModificationRecords.changedByUserId], references: [users.id] }) }))
 export const sessionsRelations = relations(sessions, ({ one, many }) => ({ team: one(teams, { fields: [sessions.teamId], references: [teams.id] }), workout: one(workouts, { fields: [sessions.workoutId], references: [workouts.id] }), location: one(trainingLocations, { fields: [sessions.locationKey], references: [trainingLocations.key] }), sessionPrescriptions: many(groupSessionPrescriptions), workoutLogs: many(workoutLogs) }))
 export const groupSessionPrescriptionsRelations = relations(groupSessionPrescriptions, ({ one }) => ({ session: one(sessions, { fields: [groupSessionPrescriptions.sessionId], references: [sessions.id] }), group: one(athleteGroups, { fields: [groupSessionPrescriptions.groupId], references: [athleteGroups.id] }), microcycle: one(microcycles, { fields: [groupSessionPrescriptions.microcycleId], references: [microcycles.id] }) }))
-export const workoutsRelations = relations(workouts, ({ one, many }) => ({ location: one(trainingLocations, { fields: [workouts.locationKey], references: [trainingLocations.key] }), sessions: many(sessions), workoutLogs: many(workoutLogs) }))
 export const workoutLogsRelations = relations(workoutLogs, ({ one }) => ({ athlete: one(athleteProfiles, { fields: [workoutLogs.athleteId], references: [athleteProfiles.id] }), session: one(sessions, { fields: [workoutLogs.sessionId], references: [sessions.id] }), workout: one(workouts, { fields: [workoutLogs.workoutId], references: [workouts.id] }) }))
