@@ -14,6 +14,7 @@ import type {
   GeneratedMicrocycleDraft,
   LoadStrategyDraft,
   MicrocycleType,
+  ProgressionDurationProfile,
   TrainingGoalType,
   VolumeMatrixMicrocycleType,
 } from '@/types'
@@ -205,6 +206,18 @@ export interface TrainingMesocycleGeneratorParams {
   loadStrategy: LoadStrategyDraft
 }
 
+export function determineProgressionDurationProfile(
+  trainingWeeksCount: number,
+): ProgressionDurationProfile {
+  if (!Number.isInteger(trainingWeeksCount) || trainingWeeksCount < 2) {
+    throw new Error('La duración de entrenamiento debe ser un entero de al menos 2 semanas.')
+  }
+
+  if (trainingWeeksCount <= 7) return 'short'
+  if (trainingWeeksCount <= 16) return 'normal'
+  return 'long'
+}
+
 export function generateTrainingMesocycles({
   startDate,
   endDate,
@@ -390,6 +403,8 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     throw new Error('El período disponible no alcanza para incluir entrenamiento y tapering.')
   }
 
+  const progressionDurationProfile = determineProgressionDurationProfile(trainingWeeksCount)
+
   const mesocycles = generateTrainingMesocycles({
     startDate: params.startDate,
     endDate: params.endDate,
@@ -431,6 +446,8 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     startDate: params.startDate,
     endDate: params.endDate,
     taperingWeeksCount,
+    trainingWeeksCount,
+    progressionDurationProfile,
     race: params.race
       ? {
           name: params.race.name.trim(),

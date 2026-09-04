@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 
 import {
   determineTaperingWeeksCount,
+  determineProgressionDurationProfile,
   generateFractalMacrocycle,
 } from '@/lib/periodization/macrocycle-generator'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
@@ -24,6 +25,8 @@ describe('generación de planificación', () => {
     const weeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
     assert.equal(result.title, 'Base S2')
     assert.equal(result.taperingWeeksCount, 0)
+    assert.equal(result.trainingWeeksCount, 8)
+    assert.equal(result.progressionDurationProfile, 'normal')
     assert.equal(result.race, null)
     assert.deepEqual(result.generationWarnings, [])
     assert.equal(result.mesocycles.some((mesocycle) => mesocycle.period === 'competitive'), false)
@@ -55,6 +58,8 @@ describe('generación de planificación', () => {
     const competitive = result.mesocycles.at(-1)
     assert.equal(determineTaperingWeeksCount('S2', result.race ?? undefined), 3)
     assert.equal(result.taperingWeeksCount, 3)
+    assert.equal(result.trainingWeeksCount, 9)
+    assert.equal(result.progressionDurationProfile, 'normal')
     assert.equal(competitive?.period, 'competitive')
     assert.deepEqual(competitive?.microcycles.map((week) => week.type), ['tapering', 'tapering', 'race'])
     assert.equal(competitive?.microcycles.at(-1)?.targetElevationGain, 1200)
@@ -138,6 +143,42 @@ describe('generación de planificación', () => {
     assert.deepEqual(loadingVolumes, [20, 21, 22.1, 22.1, 23.2, 24.4])
     assert.equal(result.mesocycles.at(-1)?.targetPeakVolumeKm, 24.4)
     assert.match(result.generationWarnings[0], /por debajo del máximo configurado de 80 km/)
+  })
+
+  it('clasifica la progresión según las semanas de entrenamiento disponibles', () => {
+    assert.equal(determineProgressionDurationProfile(4), 'short')
+    assert.equal(determineProgressionDurationProfile(7), 'short')
+    assert.equal(determineProgressionDurationProfile(8), 'normal')
+    assert.equal(determineProgressionDurationProfile(16), 'normal')
+    assert.equal(determineProgressionDurationProfile(17), 'long')
+    assert.throws(() => determineProgressionDurationProfile(1), /al menos 2 semanas/)
+  })
+
+  it('adapta la cantidad de bloques a horizontes cortos, normales y extensos', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    const scenarios = [
+      { endDate: '2026-02-01', profile: 'short', weeks: 4, mesocycles: 1 },
+      { endDate: '2026-03-29', profile: 'normal', weeks: 12, mesocycles: 3 },
+      { endDate: '2026-06-21', profile: 'long', weeks: 24, mesocycles: 6 },
+    ] as const
+
+    for (const scenario of scenarios) {
+      const result = generateFractalMacrocycle({
+        title: `Plan ${scenario.profile}`,
+        goalType: 'base',
+        startDate: '2026-01-05',
+        endDate: scenario.endDate,
+        athleteGroup: 'S2',
+        loadStrategy,
+      })
+      const weeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
+
+      assert.equal(result.progressionDurationProfile, scenario.profile)
+      assert.equal(result.trainingWeeksCount, scenario.weeks)
+      assert.equal(result.mesocycles.length, scenario.mesocycles)
+      assert.equal(weeks.length, scenario.weeks)
+      assertConsecutiveWeeks(weeks)
+    }
   })
 })
 
