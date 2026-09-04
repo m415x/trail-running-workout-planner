@@ -42,7 +42,7 @@ describe('objetivos de carga por mesociclo', () => {
     assert.equal(target.targetPeakVolumeKm, 42)
   })
 
-  it('conserva una precisión decimal estable', () => {
+  it('redondea los objetivos generados a kilómetros enteros', () => {
     const targets = calculateMesocycleLoadTargets({
       initialWeeklyVolumeKm: 31.5,
       maximumWeeklyVolumeKm: 40,
@@ -51,7 +51,7 @@ describe('objetivos de carga por mesociclo', () => {
 
     assert.deepEqual(
       targets.map((target) => target.targetPeakVolumeKm),
-      [34.3, 37.2, 40],
+      [34, 37, 40],
     )
   })
 

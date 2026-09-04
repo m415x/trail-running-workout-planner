@@ -9,10 +9,6 @@ export interface MesocycleLoadTargetParams {
   mesocycleCount: number
 }
 
-function roundToOneDecimal(value: number) {
-  return Math.round((value + Number.EPSILON) * 10) / 10
-}
-
 export function calculateMesocycleLoadTargets({
   initialWeeklyVolumeKm,
   maximumWeeklyVolumeKm,
@@ -38,7 +34,7 @@ export function calculateMesocycleLoadTargets({
 
   return Array.from({ length: mesocycleCount }, (_, index) => ({
     mesocycleNumber: index + 1,
-    targetPeakVolumeKm: roundToOneDecimal(
+    targetPeakVolumeKm: Math.round(
       initialWeeklyVolumeKm + availableIncrease * ((index + 1) / mesocycleCount),
     ),
   }))

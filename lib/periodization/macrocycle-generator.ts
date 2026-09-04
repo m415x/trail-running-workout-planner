@@ -219,6 +219,17 @@ export function determineProgressionDurationProfile(
   return 'long'
 }
 
+export function getUnreachableMaximumWarning(
+  achievedPeakVolumeKm: number | undefined,
+  maximumWeeklyVolumeKm: number,
+) {
+  if (achievedPeakVolumeKm === undefined || achievedPeakVolumeKm >= maximumWeeklyVolumeKm) {
+    return null
+  }
+
+  return `El período disponible permite alcanzar ${achievedPeakVolumeKm} km semanales, por debajo del máximo configurado de ${maximumWeeklyVolumeKm} km.`
+}
+
 export function generateTrainingMesocycles({
   startDate,
   endDate,
@@ -417,12 +428,11 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const globalWeekCounter = trainingWeeksCount + 1
   const numberOfTrainingMesocycles = mesocycles.length
   const finalTrainingPeakVolumeKm = mesocycles.at(-1)?.targetPeakVolumeKm
-  const generationWarnings = finalTrainingPeakVolumeKm !== undefined
-    && finalTrainingPeakVolumeKm < params.loadStrategy.values.maximumWeeklyVolumeKm
-    ? [
-        `El período disponible permite alcanzar ${finalTrainingPeakVolumeKm} km semanales, por debajo del máximo configurado de ${params.loadStrategy.values.maximumWeeklyVolumeKm} km.`,
-      ]
-    : []
+  const maximumWarning = getUnreachableMaximumWarning(
+    finalTrainingPeakVolumeKm,
+    params.loadStrategy.values.maximumWeeklyVolumeKm,
+  )
+  const generationWarnings = maximumWarning ? [maximumWarning] : []
 
   if (params.race) {
     if (taperingWeeksCount === 0) {

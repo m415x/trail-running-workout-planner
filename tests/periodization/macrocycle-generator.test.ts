@@ -36,7 +36,7 @@ describe('generación de planificación', () => {
     )
     assert.deepEqual(
       weeks.map((week) => week.targetVolumeKm),
-      [35, 36, 37, 27.8, 37, 38, 39, 29.3],
+      [35, 36, 37, 30, 37, 38, 39, 31],
     )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
@@ -99,7 +99,7 @@ describe('generación de planificación', () => {
     })
 
     const volumes = result.mesocycles[0].microcycles.map((week) => week.targetVolumeKm)
-    assert.deepEqual(volumes, [20, 21.6, 23.3, 17.5])
+    assert.deepEqual(volumes, [20, 21, 22, 18])
   })
 
   it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {
@@ -141,8 +141,8 @@ describe('generación de planificación', () => {
       .filter((week) => week.type !== 'deload')
       .map((week) => week.targetVolumeKm)
 
-    assert.deepEqual(loadingVolumes, [20, 21, 22.1, 22.1, 23.2, 24.4])
-    assert.equal(result.mesocycles.at(-1)?.targetPeakVolumeKm, 24.4)
+    assert.deepEqual(loadingVolumes, [20, 21, 22, 22, 23, 24])
+    assert.equal(result.mesocycles.at(-1)?.targetPeakVolumeKm, 24)
     assert.match(result.generationWarnings[0], /por debajo del máximo configurado de 80 km/)
   })
 

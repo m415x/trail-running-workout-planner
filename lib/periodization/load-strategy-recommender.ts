@@ -23,31 +23,31 @@ const GOAL_LOAD_PROFILES: Record<TrainingGoalType, GoalLoadProfile> = {
     initialVolume: 'base',
     maximumVolume: 'shock',
     maximumWeeklyIncreasePercentage: 10,
-    deloadPercentage: 35,
+    deloadPercentage: 25,
   },
   performance: {
     initialVolume: 'base',
     maximumVolume: 'shock',
     maximumWeeklyIncreasePercentage: 10,
-    deloadPercentage: 30,
+    deloadPercentage: 25,
   },
   base: {
     initialVolume: 'range_min',
     maximumVolume: 'development',
     maximumWeeklyIncreasePercentage: 8,
-    deloadPercentage: 25,
+    deloadPercentage: 20,
   },
   maintenance: {
     initialVolume: 'range_min',
     maximumVolume: 'base',
     maximumWeeklyIncreasePercentage: 5,
-    deloadPercentage: 20,
+    deloadPercentage: 15,
   },
   custom: {
     initialVolume: 'range_min',
     maximumVolume: 'range_max',
     maximumWeeklyIncreasePercentage: 10,
-    deloadPercentage: 30,
+    deloadPercentage: 20,
   },
 }
 

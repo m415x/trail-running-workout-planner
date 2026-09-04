@@ -67,7 +67,7 @@ describe('modificaciones manuales de estrategia de carga', () => {
       },
       {
         field: 'load_deload_percentage',
-        previousValue: '35',
+        previousValue: '25',
         newValue: '30',
       },
     ])

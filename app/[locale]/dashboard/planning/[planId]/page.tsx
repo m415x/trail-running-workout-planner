@@ -7,6 +7,12 @@ import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDa
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
+import {
+  LoadProgressionPreview,
+  type LoadProgressionPoint,
+} from '@/features/planning/components/LoadProgressionPreview'
+import { buildLoadProgressionPreview } from '@/lib/periodization/load-progression-preview'
+import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -30,6 +36,54 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
 
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
+  const previewMacrocycle = plan.macrocycles[0]
+  const loadStrategy: LoadStrategyDraft | null = plan.loadStrategy
+    ? {
+        context: {
+          athleteGroup: groupCode as AthleteGroupCode,
+          goalType: plan.loadStrategy.goalType,
+        },
+        values: {
+          initialWeeklyVolumeKm: plan.loadStrategy.initialWeeklyVolumeKm,
+          maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
+          sessionsPerWeek: plan.loadStrategy.sessionsPerWeek,
+          maximumWeeklyIncreasePercentage: plan.loadStrategy.maximumWeeklyIncreasePercentage,
+          deloadPercentage: plan.loadStrategy.deloadPercentage,
+          initialWeeklyElevationGain: plan.loadStrategy.initialWeeklyElevationGain,
+          maximumWeeklyElevationGain: plan.loadStrategy.maximumWeeklyElevationGain,
+        },
+        fieldSources: plan.loadStrategy.fieldSources,
+      }
+    : null
+  const existingMicrocycles = plan.macrocycles.flatMap((macrocycle) =>
+    macrocycle.mesocycles.flatMap((mesocycle) =>
+      mesocycle.microcycles.map((microcycle) => ({
+        id: microcycle.id,
+        weekNumber: microcycle.weekNumber,
+        targetVolumeKm: microcycle.targetVolumeKm,
+        targetVolumeSource: microcycle.targetVolumeSource,
+      })),
+    ),
+  )
+  const preview = loadStrategy && previewMacrocycle
+    ? buildLoadProgressionPreview({
+        title: previewMacrocycle.title,
+        startDate: previewMacrocycle.startDate,
+        endDate: previewMacrocycle.endDate,
+        loadStrategy,
+        existingMicrocycles,
+      })
+    : null
+  const previewPoints: LoadProgressionPoint[] = preview
+    ? preview.planning.mesocycles.flatMap((mesocycle) =>
+        mesocycle.microcycles.map((microcycle) => ({
+          weekNumber: microcycle.weekNumber,
+          volumeKm: microcycle.targetVolumeKm,
+          type: microcycle.type,
+          source: microcycle.targetVolumeSource,
+        })),
+      )
+    : []
 
   return (
     <div className='space-y-6'>
@@ -49,6 +103,25 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           <p className='text-muted-foreground'>Editá el volumen objetivo de cada semana sin regenerar la planificación.</p>
         </div>
       </div>
+
+      {preview && loadStrategy ? (
+        <LoadProgressionPreview
+          points={previewPoints}
+          initialVolumeKm={loadStrategy.values.initialWeeklyVolumeKm}
+          maximumVolumeKm={loadStrategy.values.maximumWeeklyVolumeKm}
+          warnings={preview.planning.generationWarnings}
+          conflicts={preview.conflicts.map((conflict) => conflict.message)}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle>Vista previa no disponible</CardTitle>
+            <CardDescription>
+              Esta planificación fue creada antes de incorporar estrategias de carga.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
 
       {plan.macrocycles.map((macrocycle) => (
         <div key={macrocycle.id} className='space-y-4'>

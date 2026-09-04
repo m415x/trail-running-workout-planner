@@ -13,10 +13,6 @@ export interface MicrocycleLoadDistributionParams {
   maximumWeeklyIncreasePercentage: number
 }
 
-function roundToOneDecimal(value: number) {
-  return Math.round((value + Number.EPSILON) * 10) / 10
-}
-
 export function distributeMesocycleLoad({
   sequence,
   startingVolumeKm,
@@ -64,7 +60,7 @@ export function distributeMesocycleLoad({
     if (type === 'deload') {
       return {
         type,
-        targetVolumeKm: roundToOneDecimal(
+        targetVolumeKm: Math.round(
           lastToleratedVolumeKm * (1 - deloadPercentage / 100),
         ),
       }
@@ -73,10 +69,10 @@ export function distributeMesocycleLoad({
     const progress = loadingWeeksCount === 1
       ? 0
       : loadingWeekIndex / (loadingWeeksCount - 1)
-    const proposedVolumeKm = roundToOneDecimal(
+    const proposedVolumeKm = Math.round(
       startingVolumeKm + (targetPeakVolumeKm - startingVolumeKm) * progress,
     )
-    const maximumAllowedVolumeKm = roundToOneDecimal(
+    const maximumAllowedVolumeKm = Math.floor(
       lastToleratedVolumeKm * (1 + maximumWeeklyIncreasePercentage / 100),
     )
     const targetVolumeKm = loadingWeekIndex === 0

@@ -30,7 +30,7 @@ describe('distribución de carga entre microciclos', () => {
       maximumWeeklyIncreasePercentage: 20,
     })
 
-    assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 39, 42, 29.4])
+    assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 39, 42, 29])
   })
 
   it('adapta la distribución a un bloque de tres semanas', () => {
@@ -54,7 +54,7 @@ describe('distribución de carga entre microciclos', () => {
       maximumWeeklyIncreasePercentage: 20,
     })
 
-    assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 36, 36, 28.8])
+    assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 36, 36, 29])
   })
 
   it('rechaza secuencias vacías o picos inferiores al inicio', () => {
@@ -104,7 +104,7 @@ describe('distribución de carga entre microciclos', () => {
       maximumWeeklyIncreasePercentage: 10,
     })
 
-    assert.deepEqual(firstBlock.map((week) => week.targetVolumeKm), [30, 33, 36.3, 27.2])
-    assert.equal(secondBlock[0].targetVolumeKm, 36.3)
+    assert.deepEqual(firstBlock.map((week) => week.targetVolumeKm), [30, 33, 36, 27])
+    assert.equal(secondBlock[0].targetVolumeKm, 36)
   })
 })

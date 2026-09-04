@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { loadStrategies } from '@/db/load-strategy-schema'
 import {
   athleteGroups,
   groupTrainingPlans,
@@ -170,6 +171,13 @@ export async function getGroupTrainingPlanById(planId: string) {
     return null
   }
 
+  const loadStrategy = db.query.loadStrategies.findFirst({
+    where: and(
+      eq(loadStrategies.groupTrainingPlanId, plan.id),
+      eq(loadStrategies.isDeleted, false),
+    ),
+  }).sync()
+
   plan.macrocycles.sort((first, second) => first.startDate.localeCompare(second.startDate))
   plan.macrocycles.forEach((macrocycle) => {
     macrocycle.mesocycles.sort((first, second) => first.number - second.number)
@@ -178,7 +186,7 @@ export async function getGroupTrainingPlanById(planId: string) {
     })
   })
 
-  return plan
+  return { ...plan, loadStrategy: loadStrategy ?? null }
 }
 
 export async function updateMicrocycleVolume(
