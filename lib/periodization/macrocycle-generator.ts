@@ -1,10 +1,10 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
+import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
-  AthleteCategoryCode,
   AthleteGroupCode,
   GeneratedMacrocycleDraft,
   GeneratedMesocycleDraft,
@@ -15,15 +15,6 @@ import type {
 } from '@/types'
 
 const STANDARD_MESOCYCLE_SEQUENCE: VolumeMatrixMicrocycleType[] = ['base', 'development', 'shock', 'deload']
-
-const ELEVATION_RATIO_BY_GROUP_PREFIX: Record<AthleteCategoryCode, number> = {
-  E: 35,
-  U: 45,
-  M: 30,
-  H: 25,
-  S: 20,
-  B: 15,
-}
 
 export interface OptionalTargetRace {
   name: string
@@ -210,8 +201,8 @@ export function generateTrainingMesocycles({
     throw new Error('El rango de fechas no alcanza para las semanas de entrenamiento indicadas.')
   }
 
-  const athleteCategory = athleteGroup.charAt(0) as AthleteCategoryCode
-  const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
+  const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
+  const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const weekDistribution = distributeWeeksIntoMesocycles(trainingWeeksCount)
   const mesocycles: GeneratedMesocycleDraft[] = []
   let currentWeekStart = start
@@ -283,8 +274,8 @@ export function generateCompetitiveMesocycle({
     throw new Error('mesocycleNumber debe ser un entero mayor que cero.')
   }
 
-  const athleteCategory = athleteGroup.charAt(0) as AthleteCategoryCode
-  const elevationRatio = ELEVATION_RATIO_BY_GROUP_PREFIX[athleteCategory]
+  const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
+  const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
   const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
     const targetVolumeKm = calculateTargetVolume({
