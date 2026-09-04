@@ -25,6 +25,7 @@ describe('generación de planificación', () => {
     assert.equal(result.title, 'Base S2')
     assert.equal(result.taperingWeeksCount, 0)
     assert.equal(result.race, null)
+    assert.deepEqual(result.generationWarnings, [])
     assert.equal(result.mesocycles.some((mesocycle) => mesocycle.period === 'competitive'), false)
     assert.deepEqual(
       result.mesocycles.map((mesocycle) => mesocycle.targetPeakVolumeKm),
@@ -92,7 +93,7 @@ describe('generación de planificación', () => {
     })
 
     const volumes = result.mesocycles[0].microcycles.map((week) => week.targetVolumeKm)
-    assert.deepEqual(volumes, [20, 22.5, 25, 18.8])
+    assert.deepEqual(volumes, [20, 21.6, 23.3, 17.5])
   })
 
   it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {
@@ -113,6 +114,30 @@ describe('generación de planificación', () => {
       athleteGroup: 'S2',
       loadStrategy: suggestLoadStrategy('S2', 'race'),
     }), /pertenece a otro tipo de objetivo/)
+  })
+
+  it('limita incrementos bruscos y advierte cuando no alcanza el máximo', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'custom')
+    loadStrategy.values.initialWeeklyVolumeKm = 20
+    loadStrategy.values.maximumWeeklyVolumeKm = 80
+    loadStrategy.values.maximumWeeklyIncreasePercentage = 5
+
+    const result = generateFractalMacrocycle({
+      title: 'Progresión limitada',
+      goalType: 'custom',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+    const trainingWeeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
+    const loadingVolumes = trainingWeeks
+      .filter((week) => week.type !== 'deload')
+      .map((week) => week.targetVolumeKm)
+
+    assert.deepEqual(loadingVolumes, [20, 21, 22.1, 22.1, 23.2, 24.4])
+    assert.equal(result.mesocycles.at(-1)?.targetPeakVolumeKm, 24.4)
+    assert.match(result.generationWarnings[0], /por debajo del máximo configurado de 80 km/)
   })
 })
 

@@ -10,6 +10,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 30,
       targetPeakVolumeKm: 36,
       deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 20,
     })
 
     assert.deepEqual(result, [
@@ -26,6 +27,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 36,
       targetPeakVolumeKm: 42,
       deloadPercentage: 30,
+      maximumWeeklyIncreasePercentage: 20,
     })
 
     assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 39, 42, 29.4])
@@ -37,6 +39,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 32,
       targetPeakVolumeKm: 36,
       deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 20,
     })
 
     assert.deepEqual(result.map((week) => week.targetVolumeKm), [32, 36, 27])
@@ -48,6 +51,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 36,
       targetPeakVolumeKm: 36,
       deloadPercentage: 20,
+      maximumWeeklyIncreasePercentage: 20,
     })
 
     assert.deepEqual(result.map((week) => week.targetVolumeKm), [36, 36, 36, 28.8])
@@ -59,6 +63,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 30,
       targetPeakVolumeKm: 36,
       deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 20,
     }), /al menos un microciclo/)
 
     assert.throws(() => distributeMesocycleLoad({
@@ -66,6 +71,7 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 36,
       targetPeakVolumeKm: 30,
       deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 20,
     }), /igual o superior/)
   })
 
@@ -75,6 +81,30 @@ describe('distribución de carga entre microciclos', () => {
       startingVolumeKm: 30,
       targetPeakVolumeKm: 36,
       deloadPercentage: 100,
+      maximumWeeklyIncreasePercentage: 20,
     }), /menor que 100/)
+  })
+
+  it('limita aumentos nuevos pero permite recuperar el pico tras la descarga', () => {
+    const firstBlock = distributeMesocycleLoad({
+      sequence: ['base', 'development', 'shock', 'deload'],
+      startingVolumeKm: 30,
+      targetPeakVolumeKm: 45,
+      deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 10,
+    })
+    const achievedPeak = Math.max(
+      ...firstBlock.filter((week) => week.type !== 'deload').map((week) => week.targetVolumeKm),
+    )
+    const secondBlock = distributeMesocycleLoad({
+      sequence: ['base', 'development', 'shock', 'deload'],
+      startingVolumeKm: achievedPeak,
+      targetPeakVolumeKm: 45,
+      deloadPercentage: 25,
+      maximumWeeklyIncreasePercentage: 10,
+    })
+
+    assert.deepEqual(firstBlock.map((week) => week.targetVolumeKm), [30, 33, 36.3, 27.2])
+    assert.equal(secondBlock[0].targetVolumeKm, 36.3)
   })
 })

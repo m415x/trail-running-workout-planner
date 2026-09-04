@@ -70,6 +70,7 @@ export interface GeneratedMacrocycleDraft {
     distanceKm: number
     elevationGain?: number
   } | null
+  generationWarnings: string[]
   mesocycles: GeneratedMesocycleDraft[]
 }
 

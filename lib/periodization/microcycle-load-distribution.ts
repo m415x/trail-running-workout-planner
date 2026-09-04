@@ -10,6 +10,7 @@ export interface MicrocycleLoadDistributionParams {
   startingVolumeKm: number
   targetPeakVolumeKm: number
   deloadPercentage: number
+  maximumWeeklyIncreasePercentage: number
 }
 
 function roundToOneDecimal(value: number) {
@@ -21,6 +22,7 @@ export function distributeMesocycleLoad({
   startingVolumeKm,
   targetPeakVolumeKm,
   deloadPercentage,
+  maximumWeeklyIncreasePercentage,
 }: MicrocycleLoadDistributionParams): DistributedMicrocycleLoad[] {
   if (sequence.length === 0) {
     throw new Error('Se necesita al menos un microciclo para distribuir la carga.')
@@ -42,6 +44,13 @@ export function distributeMesocycleLoad({
     throw new Error('El porcentaje de descarga debe ser mayor que cero y menor que 100.')
   }
 
+  if (
+    !Number.isFinite(maximumWeeklyIncreasePercentage)
+    || maximumWeeklyIncreasePercentage <= 0
+  ) {
+    throw new Error('El incremento semanal máximo debe ser mayor que cero.')
+  }
+
   const loadingWeeksCount = sequence.filter((type) => type !== 'deload').length
 
   if (loadingWeeksCount === 0) {
@@ -49,24 +58,32 @@ export function distributeMesocycleLoad({
   }
 
   let loadingWeekIndex = 0
+  let lastToleratedVolumeKm = startingVolumeKm
 
   return sequence.map((type) => {
     if (type === 'deload') {
       return {
         type,
         targetVolumeKm: roundToOneDecimal(
-          targetPeakVolumeKm * (1 - deloadPercentage / 100),
+          lastToleratedVolumeKm * (1 - deloadPercentage / 100),
         ),
       }
     }
 
     const progress = loadingWeeksCount === 1
-      ? 1
+      ? 0
       : loadingWeekIndex / (loadingWeeksCount - 1)
-    const targetVolumeKm = roundToOneDecimal(
+    const proposedVolumeKm = roundToOneDecimal(
       startingVolumeKm + (targetPeakVolumeKm - startingVolumeKm) * progress,
     )
+    const maximumAllowedVolumeKm = roundToOneDecimal(
+      lastToleratedVolumeKm * (1 + maximumWeeklyIncreasePercentage / 100),
+    )
+    const targetVolumeKm = loadingWeekIndex === 0
+      ? startingVolumeKm
+      : Math.min(proposedVolumeKm, maximumAllowedVolumeKm, targetPeakVolumeKm)
     loadingWeekIndex += 1
+    lastToleratedVolumeKm = targetVolumeKm
 
     return { type, targetVolumeKm }
   })

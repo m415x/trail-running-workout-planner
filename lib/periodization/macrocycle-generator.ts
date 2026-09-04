@@ -235,19 +235,24 @@ export function generateTrainingMesocycles({
   const mesocycles: GeneratedMesocycleDraft[] = []
   let currentWeekStart = start
   let globalWeekCounter = 1
+  let lastToleratedPeakVolumeKm = loadStrategy.values.initialWeeklyVolumeKm
 
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
     const mesocycleLoadTarget = mesocycleLoadTargets[mesocycleIndex]
-    const startingVolumeKm = mesocycleIndex === 0
-      ? loadStrategy.values.initialWeeklyVolumeKm
-      : mesocycleLoadTargets[mesocycleIndex - 1].targetPeakVolumeKm
     const distributedLoads = distributeMesocycleLoad({
       sequence: microcycleSequence,
-      startingVolumeKm,
+      startingVolumeKm: lastToleratedPeakVolumeKm,
       targetPeakVolumeKm: mesocycleLoadTarget.targetPeakVolumeKm,
       deloadPercentage: loadStrategy.values.deloadPercentage,
+      maximumWeeklyIncreasePercentage: loadStrategy.values.maximumWeeklyIncreasePercentage,
     })
+    const achievedPeakVolumeKm = Math.max(
+      ...distributedLoads
+        .filter(({ type }) => type !== 'deload')
+        .map(({ targetVolumeKm }) => targetVolumeKm),
+    )
+    lastToleratedPeakVolumeKm = achievedPeakVolumeKm
     const targets = distributedLoads.map(({ type, targetVolumeKm }): MicrocycleTarget => {
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
 
@@ -281,7 +286,7 @@ export function generateTrainingMesocycles({
       number: mesocycleIndex + 1,
       period,
       objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
-      targetPeakVolumeKm: mesocycleLoadTarget.targetPeakVolumeKm,
+      targetPeakVolumeKm: achievedPeakVolumeKm,
       microcycles,
     })
   })
@@ -395,6 +400,13 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const currentWeekStart = addDays(start, trainingWeeksCount * 7)
   const globalWeekCounter = trainingWeeksCount + 1
   const numberOfTrainingMesocycles = mesocycles.length
+  const finalTrainingPeakVolumeKm = mesocycles.at(-1)?.targetPeakVolumeKm
+  const generationWarnings = finalTrainingPeakVolumeKm !== undefined
+    && finalTrainingPeakVolumeKm < params.loadStrategy.values.maximumWeeklyVolumeKm
+    ? [
+        `El período disponible permite alcanzar ${finalTrainingPeakVolumeKm} km semanales, por debajo del máximo configurado de ${params.loadStrategy.values.maximumWeeklyVolumeKm} km.`,
+      ]
+    : []
 
   if (params.race) {
     if (taperingWeeksCount === 0) {
@@ -426,6 +438,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
           elevationGain: params.race.elevationGain,
         }
       : null,
+    generationWarnings,
     mesocycles,
   }
 }
