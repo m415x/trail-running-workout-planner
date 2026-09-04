@@ -12,7 +12,6 @@ import type {
   AthleteGroupCode,
   LoadStrategyDraft,
   LoadStrategyField,
-  LoadStrategyValues,
   TrainingGoalType,
 } from '@/types'
 import { Badge } from '@ui/badge'
