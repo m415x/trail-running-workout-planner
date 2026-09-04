@@ -7,6 +7,7 @@ import {
   createGroupPlanWithLoadStrategy,
   type CreateGroupPlanWithLoadStrategyState,
 } from '@/app/actions/load-strategy-actions'
+import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import {
   validateLoadStrategy,
@@ -47,19 +48,21 @@ const initialActionState: CreateGroupPlanWithLoadStrategyState = {}
 export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
   const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
   const [goalType, setGoalType] = useState<TrainingGoalType>('race')
-  const initialSuggestion = useMemo(
+  const suggestion = useMemo(
     () => suggestLoadStrategy(groupCode, goalType),
-    // Only used to initialize the editable draft. Context changes reset it explicitly.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [groupCode, goalType],
   )
-  const [strategy, setStrategy] = useState<LoadStrategyDraft>(initialSuggestion)
+  const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
   const [actionState, formAction, isPending] = useActionState(
     createGroupPlanWithLoadStrategy,
     initialActionState,
   )
 
   const validation = useMemo(() => validateLoadStrategy(strategy), [strategy])
+  const isCustomized = useMemo(
+    () => getLoadStrategyModifications(suggestion.values, strategy.values).length > 0,
+    [strategy.values, suggestion.values],
+  )
   const selectedGroup = groups.find((group) => group.code === groupCode) ?? groups[0]
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
@@ -140,7 +143,9 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
                 Valores semanales sugeridos para {groupCode}. Podés ajustarlos antes de crear el plan.
               </CardDescription>
             </div>
-            <Badge variant='secondary'>Valores sugeridos</Badge>
+            <Badge variant={isCustomized ? 'outline' : 'secondary'}>
+              {isCustomized ? 'Valores personalizados' : 'Valores sugeridos'}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent className='space-y-6'>

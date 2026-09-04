@@ -21,6 +21,10 @@ const MAX_SESSIONS_PER_WEEK = 7
 const MAX_WEEKLY_INCREASE_PERCENTAGE = 20
 const RECOMMENDED_WEEKLY_INCREASE_PERCENTAGE = 10
 
+function isFiniteNumber(value: number) {
+  return Number.isFinite(value)
+}
+
 function issue(
   field: LoadStrategyField,
   severity: LoadStrategyValidationSeverity,
@@ -35,7 +39,7 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
   const issues: LoadStrategyValidationIssue[] = []
   const groupRange = GROUP_VOLUME_MATRIX[context.athleteGroup].range
 
-  if (values.initialWeeklyVolumeKm <= 0) {
+  if (!isFiniteNumber(values.initialWeeklyVolumeKm) || values.initialWeeklyVolumeKm <= 0) {
     issues.push(issue(
       'initialWeeklyVolumeKm',
       'error',
@@ -44,7 +48,7 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
     ))
   }
 
-  if (values.maximumWeeklyVolumeKm <= 0) {
+  if (!isFiniteNumber(values.maximumWeeklyVolumeKm) || values.maximumWeeklyVolumeKm <= 0) {
     issues.push(issue(
       'maximumWeeklyVolumeKm',
       'error',
@@ -86,7 +90,7 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
     ))
   }
 
-  if (!Number.isInteger(values.sessionsPerWeek)) {
+  if (!isFiniteNumber(values.sessionsPerWeek) || !Number.isInteger(values.sessionsPerWeek)) {
     issues.push(issue(
       'sessionsPerWeek',
       'error',
@@ -103,7 +107,8 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
   }
 
   if (
-    values.maximumWeeklyIncreasePercentage <= 0
+    !isFiniteNumber(values.maximumWeeklyIncreasePercentage)
+    || values.maximumWeeklyIncreasePercentage <= 0
     || values.maximumWeeklyIncreasePercentage > MAX_WEEKLY_INCREASE_PERCENTAGE
   ) {
     issues.push(issue(
@@ -121,7 +126,11 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
     ))
   }
 
-  if (values.deloadPercentage <= 0 || values.deloadPercentage >= 100) {
+  if (
+    !isFiniteNumber(values.deloadPercentage)
+    || values.deloadPercentage <= 0
+    || values.deloadPercentage >= 100
+  ) {
     issues.push(issue(
       'deloadPercentage',
       'error',
@@ -130,7 +139,10 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
     ))
   }
 
-  if (values.initialWeeklyElevationGain !== null && values.initialWeeklyElevationGain < 0) {
+  if (
+    values.initialWeeklyElevationGain !== null
+    && (!isFiniteNumber(values.initialWeeklyElevationGain) || values.initialWeeklyElevationGain < 0)
+  ) {
     issues.push(issue(
       'initialWeeklyElevationGain',
       'error',
@@ -139,12 +151,29 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
     ))
   }
 
-  if (values.maximumWeeklyElevationGain !== null && values.maximumWeeklyElevationGain < 0) {
+  if (
+    values.maximumWeeklyElevationGain !== null
+    && (!isFiniteNumber(values.maximumWeeklyElevationGain) || values.maximumWeeklyElevationGain < 0)
+  ) {
     issues.push(issue(
       'maximumWeeklyElevationGain',
       'error',
       'maximum-elevation-non-negative',
       'El desnivel máximo no puede ser negativo.',
+    ))
+  }
+
+  if (
+    (values.initialWeeklyElevationGain === null)
+    !== (values.maximumWeeklyElevationGain === null)
+  ) {
+    issues.push(issue(
+      values.initialWeeklyElevationGain === null
+        ? 'initialWeeklyElevationGain'
+        : 'maximumWeeklyElevationGain',
+      'error',
+      'incomplete-elevation-range',
+      'El desnivel inicial y máximo deben informarse juntos o dejarse ambos vacíos.',
     ))
   }
 

@@ -117,4 +117,36 @@ describe('validación de estrategia de carga', () => {
     assert.equal(validateLoadStrategy(negativeStrategy).isValid, false)
     assert.equal(validateLoadStrategy(invertedStrategy).isValid, false)
   })
+
+  it('rechaza valores numéricos no finitos', () => {
+    const invalidVolume = strategyForS2()
+    invalidVolume.values.initialWeeklyVolumeKm = Number.NaN
+
+    const invalidMaximum = strategyForS2()
+    invalidMaximum.values.maximumWeeklyVolumeKm = Number.POSITIVE_INFINITY
+
+    const invalidElevation = strategyForS2()
+    invalidElevation.values.maximumWeeklyElevationGain = Number.NaN
+
+    assert.equal(validateLoadStrategy(invalidVolume).isValid, false)
+    assert.equal(validateLoadStrategy(invalidMaximum).isValid, false)
+    assert.equal(validateLoadStrategy(invalidElevation).isValid, false)
+  })
+
+  it('exige informar ambos límites de desnivel o ninguno', () => {
+    const missingMaximum = strategyForS2()
+    missingMaximum.values.maximumWeeklyElevationGain = null
+
+    const omittedRange = strategyForS2()
+    omittedRange.values.initialWeeklyElevationGain = null
+    omittedRange.values.maximumWeeklyElevationGain = null
+
+    const missingMaximumResult = validateLoadStrategy(missingMaximum)
+
+    assert.equal(missingMaximumResult.isValid, false)
+    assert.ok(missingMaximumResult.errors.some(
+      (currentIssue) => currentIssue.code === 'incomplete-elevation-range',
+    ))
+    assert.equal(validateLoadStrategy(omittedRange).isValid, true)
+  })
 })

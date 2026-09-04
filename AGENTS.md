@@ -87,7 +87,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `SUPABASE_DIRECT_URL` is for migrations (direct connection or session pooler on port 5432).
 - `SUPABASE_DATABASE_URL` is for the Vercel/serverless runtime (transaction pooler on port 6543, prepared statements disabled).
 - Both variables are server-only secrets. Never prefix them with `NEXT_PUBLIC_`, commit `.env.local`, or print their values.
-- The initial Supabase migration creates 19 tables with RLS enabled. Policies and production authentication/authorization still need to be designed before exposing data through the Data API.
+- The current Supabase migrations create 20 tables with RLS enabled, including `load_strategies`. Policies and production authentication/authorization still need to be designed before exposing data through the Data API.
 - SQLite server actions currently use synchronous query APIs. Moving runtime access to PostgreSQL requires an intentional asynchronous repository/data-access migration; do not swap the driver mechanically.
 
 ## Known Transitional Constraints

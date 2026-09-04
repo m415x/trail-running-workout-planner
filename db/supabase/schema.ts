@@ -17,6 +17,7 @@ import type {
   TrainingGoalType,
   TrainingGoalStatus,
   GroupTrainingPlanStatus,
+  LoadStrategyFieldSources,
   PlanningModificationField,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
@@ -229,6 +230,32 @@ export const groupTrainingPlans = pgTable('group_training_plans', {
   status: text('status').$type<GroupTrainingPlanStatus>().notNull().default('draft'),
   notes: text('notes'),
 })
+
+export const loadStrategies = pgTable(
+  'load_strategies',
+  {
+    ...baseColumns,
+
+    groupTrainingPlanId: text('group_training_plan_id')
+      .notNull()
+      .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+
+    goalType: text('goal_type').$type<TrainingGoalType>().notNull(),
+
+    initialWeeklyVolumeKm: doublePrecision('initial_weekly_volume_km').notNull(),
+    maximumWeeklyVolumeKm: doublePrecision('maximum_weekly_volume_km').notNull(),
+    sessionsPerWeek: integer('sessions_per_week').notNull(),
+    maximumWeeklyIncreasePercentage: doublePrecision('maximum_weekly_increase_percentage').notNull(),
+    deloadPercentage: doublePrecision('deload_percentage').notNull(),
+    initialWeeklyElevationGain: integer('initial_weekly_elevation_gain'),
+    maximumWeeklyElevationGain: integer('maximum_weekly_elevation_gain'),
+
+    fieldSources: jsonb('field_sources').$type<LoadStrategyFieldSources>().notNull(),
+  },
+  (table) => [
+    uniqueIndex('load_strategies_group_training_plan_unique').on(table.groupTrainingPlanId),
+  ],
+)
 
 export const macrocycles = pgTable('macrocycles', {
   ...baseColumns,
@@ -564,6 +591,14 @@ export const groupTrainingPlansRelations = relations(groupTrainingPlans, ({ one,
   }),
   macrocycles: many(macrocycles),
   modifications: many(planningModificationRecords),
+  loadStrategy: one(loadStrategies),
+}))
+
+export const loadStrategiesRelations = relations(loadStrategies, ({ one }) => ({
+  groupTrainingPlan: one(groupTrainingPlans, {
+    fields: [loadStrategies.groupTrainingPlanId],
+    references: [groupTrainingPlans.id],
+  }),
 }))
 
 export const macrocyclesRelations = relations(macrocycles, ({ one, many }) => ({
