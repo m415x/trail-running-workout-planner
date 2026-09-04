@@ -8,6 +8,13 @@
       "when": 1788477155836,
       "tag": "0000_safe_bloodaxe",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788543772241,
+      "tag": "0001_overconfident_blindfold",
+      "breakpoints": true
     }
   ]
 }

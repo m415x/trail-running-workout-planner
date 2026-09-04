@@ -1,4 +1,17 @@
-import { AthleteGroupCode, GroupVolumeProgression } from '@/types'
+import type {
+  AthleteCategoryCode,
+  AthleteGroupCode,
+  GroupVolumeProgression,
+} from '@/types'
+
+export const GROUP_ELEVATION_METERS_PER_KM: Record<AthleteCategoryCode, number> = {
+  E: 35,
+  U: 45,
+  M: 30,
+  H: 25,
+  S: 20,
+  B: 15,
+}
 
 export const GROUP_VOLUME_MATRIX: Record<AthleteGroupCode, GroupVolumeProgression> = {
   // ── ELITE (E) ──

@@ -10,7 +10,18 @@ export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'del
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
-export type PlanningModificationField = 'target_volume_km' | 'date_range' | 'type' | 'notes'
+export type PlanningModificationField =
+  | 'target_volume_km'
+  | 'date_range'
+  | 'type'
+  | 'notes'
+  | 'load_initial_weekly_volume_km'
+  | 'load_maximum_weekly_volume_km'
+  | 'load_sessions_per_week'
+  | 'load_maximum_weekly_increase_percentage'
+  | 'load_deload_percentage'
+  | 'load_initial_weekly_elevation_gain'
+  | 'load_maximum_weekly_elevation_gain'
 
 export interface GroupVolumeOverride {
   distanceKm: number
