@@ -26,6 +26,10 @@ describe('generación de planificación', () => {
     assert.equal(result.taperingWeeksCount, 0)
     assert.equal(result.race, null)
     assert.equal(result.mesocycles.some((mesocycle) => mesocycle.period === 'competitive'), false)
+    assert.deepEqual(
+      result.mesocycles.map((mesocycle) => mesocycle.targetPeakVolumeKm),
+      [37, 39],
+    )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
     assertConsecutiveWeeks(weeks)

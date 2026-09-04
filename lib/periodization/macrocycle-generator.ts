@@ -3,6 +3,7 @@ import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'da
 import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
+import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -244,6 +245,11 @@ export function generateTrainingMesocycles({
   const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
   const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const weekDistribution = distributeWeeksIntoMesocycles(trainingWeeksCount)
+  const mesocycleLoadTargets = calculateMesocycleLoadTargets({
+    initialWeeklyVolumeKm: loadStrategy.values.initialWeeklyVolumeKm,
+    maximumWeeklyVolumeKm: loadStrategy.values.maximumWeeklyVolumeKm,
+    mesocycleCount: weekDistribution.length,
+  })
   const mesocycles: GeneratedMesocycleDraft[] = []
   let currentWeekStart = start
   let globalWeekCounter = 1
@@ -284,6 +290,7 @@ export function generateTrainingMesocycles({
       number: mesocycleIndex + 1,
       period,
       objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
+      targetPeakVolumeKm: mesocycleLoadTargets[mesocycleIndex].targetPeakVolumeKm,
       microcycles,
     })
   })

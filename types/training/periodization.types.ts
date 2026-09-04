@@ -54,6 +54,7 @@ export interface GeneratedMesocycleDraft {
   number: number
   period: PeriodType
   objective: string
+  targetPeakVolumeKm?: number
   microcycles: GeneratedMicrocycleDraft[]
 }
 
