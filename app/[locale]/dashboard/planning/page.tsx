@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, CalendarRange } from 'lucide-react'
+import { ArrowRight, CalendarRange, Plus } from 'lucide-react'
 
 import { getGroupTrainingPlans } from '@/app/actions/planning-actions'
 import { Badge } from '@ui/badge'
@@ -24,9 +24,14 @@ export default async function PlanningPage({ params }: PlanningPageProps) {
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h2 className='text-3xl font-bold tracking-tight'>Planificación</h2>
-        <p className='text-muted-foreground'>Planes grupales, bloques y volúmenes semanales del equipo.</p>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+        <div>
+          <h2 className='text-3xl font-bold tracking-tight'>Planificación</h2>
+          <p className='text-muted-foreground'>Planes grupales, bloques y volúmenes semanales del equipo.</p>
+        </div>
+        <Link href={`${planningPath}/new`} className={buttonVariants()}>
+          <Plus /> Nueva estrategia
+        </Link>
       </div>
 
       {plans.length === 0 ? (

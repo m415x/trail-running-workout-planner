@@ -1,0 +1,229 @@
+'use client'
+
+import { useMemo, useState } from 'react'
+import Link from 'next/link'
+
+import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
+import type { AthleteGroupCode, TrainingGoalType } from '@/types'
+import { Badge } from '@ui/badge'
+import { Button, buttonVariants } from '@ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import { Input } from '@ui/input'
+
+interface LoadStrategyGroupOption {
+  id: string
+  code: AthleteGroupCode
+  description: string | null
+}
+
+interface LoadStrategyFormProps {
+  groups: LoadStrategyGroupOption[]
+  locale: string
+}
+
+const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
+  { value: 'race', label: 'Preparar una carrera' },
+  { value: 'performance', label: 'Mejorar rendimiento' },
+  { value: 'base', label: 'Desarrollar base aeróbica' },
+  { value: 'maintenance', label: 'Mantener condición' },
+  { value: 'custom', label: 'Otro objetivo' },
+]
+
+export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
+  const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
+  const [goalType, setGoalType] = useState<TrainingGoalType>('race')
+  const suggestion = useMemo(
+    () => suggestLoadStrategy(groupCode, goalType),
+    [groupCode, goalType],
+  )
+  const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const formVersion = `${groupCode}-${goalType}`
+
+  return (
+    <form className='space-y-6'>
+      <Card>
+        <CardHeader>
+          <CardTitle>Contexto de la estrategia</CardTitle>
+          <CardDescription>
+            Elegí el grupo y el propósito general para obtener una propuesta inicial.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='grid gap-4 sm:grid-cols-2'>
+          <SelectField
+            label='Grupo'
+            name='groupCode'
+            value={groupCode}
+            onChange={(value) => setGroupCode(value as AthleteGroupCode)}
+          >
+            {groups.map((group) => (
+              <option key={group.id} value={group.code}>
+                {group.code}{group.description ? ` · ${group.description}` : ''}
+              </option>
+            ))}
+          </SelectField>
+
+          <SelectField
+            label='Objetivo'
+            name='goalType'
+            value={goalType}
+            onChange={(value) => setGoalType(value as TrainingGoalType)}
+          >
+            {goalTypeOptions.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
+            ))}
+          </SelectField>
+        </CardContent>
+      </Card>
+
+      <Card key={formVersion}>
+        <CardHeader>
+          <div className='flex flex-wrap items-start justify-between gap-3'>
+            <div>
+              <CardTitle>Parámetros de carga</CardTitle>
+              <CardDescription>
+                Valores semanales sugeridos para {groupCode}. Podés ajustarlos antes de crear el plan.
+              </CardDescription>
+            </div>
+            <Badge variant='secondary'>Valores sugeridos</Badge>
+          </div>
+        </CardHeader>
+        <CardContent className='space-y-6'>
+          <fieldset className='space-y-4'>
+            <legend className='font-medium'>Volumen y frecuencia</legend>
+            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+              <NumberField
+                label='Volumen inicial'
+                name='initialWeeklyVolumeKm'
+                defaultValue={suggestion.values.initialWeeklyVolumeKm}
+                suffix='km/semana'
+                step='0.1'
+              />
+              <NumberField
+                label='Volumen máximo'
+                name='maximumWeeklyVolumeKm'
+                defaultValue={suggestion.values.maximumWeeklyVolumeKm}
+                suffix='km/semana'
+                step='0.1'
+              />
+              <NumberField
+                label='Sesiones'
+                name='sessionsPerWeek'
+                defaultValue={suggestion.values.sessionsPerWeek}
+                suffix='por semana'
+                step='1'
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className='space-y-4'>
+            <legend className='font-medium'>Progresión</legend>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <NumberField
+                label='Incremento semanal máximo'
+                name='maximumWeeklyIncreasePercentage'
+                defaultValue={suggestion.values.maximumWeeklyIncreasePercentage}
+                suffix='%'
+                step='0.1'
+              />
+              <NumberField
+                label='Descarga'
+                name='deloadPercentage'
+                defaultValue={suggestion.values.deloadPercentage}
+                suffix='%'
+                step='0.1'
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className='space-y-4'>
+            <div>
+              <legend className='font-medium'>Desnivel</legend>
+              <p className='text-sm text-muted-foreground'>Podés dejar ambos valores vacíos para definirlos más adelante.</p>
+            </div>
+            <div className='grid gap-4 sm:grid-cols-2'>
+              <NumberField
+                label='Desnivel inicial'
+                name='initialWeeklyElevationGain'
+                defaultValue={suggestion.values.initialWeeklyElevationGain}
+                suffix='m+/semana'
+                step='1'
+              />
+              <NumberField
+                label='Desnivel máximo'
+                name='maximumWeeklyElevationGain'
+                defaultValue={suggestion.values.maximumWeeklyElevationGain}
+                suffix='m+/semana'
+                step='1'
+              />
+            </div>
+          </fieldset>
+        </CardContent>
+      </Card>
+
+      <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between'>
+        <p className='text-sm text-muted-foreground'>
+          El guardado se habilitará al asociar esta estrategia con un plan grupal.
+        </p>
+        <div className='flex justify-end gap-2'>
+          <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
+          <Button type='button' disabled>Continuar</Button>
+        </div>
+      </div>
+    </form>
+  )
+}
+
+interface SelectFieldProps {
+  label: string
+  name: string
+  value: string
+  onChange: (value: string) => void
+  children: React.ReactNode
+}
+
+function SelectField({ label, name, value, onChange, children }: SelectFieldProps) {
+  return (
+    <div className='space-y-1.5'>
+      <label htmlFor={name} className='text-sm font-medium'>{label}</label>
+      <select
+        id={name}
+        name={name}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'
+      >
+        {children}
+      </select>
+    </div>
+  )
+}
+
+interface NumberFieldProps {
+  label: string
+  name: string
+  defaultValue: number | null
+  suffix: string
+  step: string
+}
+
+function NumberField({ label, name, defaultValue, suffix, step }: NumberFieldProps) {
+  return (
+    <div className='space-y-1.5'>
+      <label htmlFor={name} className='text-sm font-medium'>{label}</label>
+      <div className='relative'>
+        <Input
+          id={name}
+          name={name}
+          type='number'
+          min='0'
+          step={step}
+          defaultValue={defaultValue ?? ''}
+          className='pr-24'
+        />
+        <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>
+          {suffix}
+        </span>
+      </div>
+    </div>
+  )
+}
