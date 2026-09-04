@@ -38,6 +38,33 @@ describe('validación de estrategia de carga', () => {
     assert.ok(result.warnings.some((currentIssue) => currentIssue.code === 'maximum-volume-outside-group-range'))
   })
 
+  it('acepta exactamente 10% de incremento semanal sin advertencias', () => {
+    const strategy = strategyForS2()
+    strategy.values.maximumWeeklyIncreasePercentage = 10
+
+    const result = validateLoadStrategy(strategy)
+
+    assert.equal(result.isValid, true)
+    assert.equal(
+      result.warnings.some((currentIssue) => currentIssue.code === 'weekly-increase-above-reference'),
+      false,
+    )
+  })
+
+  it('acepta exactamente 20% de incremento semanal con advertencia', () => {
+    const strategy = strategyForS2()
+    strategy.values.maximumWeeklyIncreasePercentage = 20
+
+    const result = validateLoadStrategy(strategy)
+
+    assert.equal(result.isValid, true)
+    assert.ok(result.warnings.some((currentIssue) => currentIssue.code === 'weekly-increase-above-reference'))
+    assert.equal(
+      result.errors.some((currentIssue) => currentIssue.code === 'weekly-increase-range'),
+      false,
+    )
+  })
+
   it('rechaza un incremento semanal superior al límite duro', () => {
     const strategy = strategyForS2()
     strategy.values.maximumWeeklyIncreasePercentage = 21
