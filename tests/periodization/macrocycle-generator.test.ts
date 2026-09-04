@@ -40,6 +40,7 @@ describe('generación de planificación', () => {
     )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
+    assert.equal(weeks.every((week) => week.targetVolumeSource === 'generated'), true)
     assertConsecutiveWeeks(weeks)
   })
 

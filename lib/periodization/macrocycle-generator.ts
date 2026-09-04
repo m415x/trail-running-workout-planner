@@ -164,6 +164,7 @@ export function generateMicrocycles({
       startDate: format(weekStart, 'yyyy-MM-dd'),
       endDate: format(weekEnd, 'yyyy-MM-dd'),
       targetVolumeKm: target.targetVolumeKm,
+      targetVolumeSource: 'generated',
       targetElevationGain: target.targetElevationGain,
       notes: createNotes(
         target.type,

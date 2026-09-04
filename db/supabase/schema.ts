@@ -19,6 +19,7 @@ import type {
   GroupTrainingPlanStatus,
   LoadStrategyFieldSources,
   PlanningModificationField,
+  TargetVolumeSource,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
 
@@ -296,6 +297,10 @@ export const microcycles = pgTable('microcycles', {
   endDate: text('end_date').notNull(),
 
   targetVolumeKm: doublePrecision('target_volume_km'),
+  targetVolumeSource: text('target_volume_source')
+    .$type<TargetVolumeSource>()
+    .notNull()
+    .default('generated'),
   targetElevationGain: integer('target_elevation_gain'),
   targetDurationMin: integer('target_duration_min'),
   notes: text('notes'),

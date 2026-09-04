@@ -11,6 +11,7 @@ export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
+export type TargetVolumeSource = 'generated' | 'manual'
 export type PlanningModificationField =
   | 'target_volume_km'
   | 'date_range'
@@ -46,6 +47,7 @@ export interface GeneratedMicrocycleDraft {
   startDate: string
   endDate: string
   targetVolumeKm: number
+  targetVolumeSource: TargetVolumeSource
   targetElevationGain: number
   notes: string
 }
@@ -84,6 +86,7 @@ export interface Microcycle extends BaseEntity {
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
   targetVolumeKm?: number | null
+  targetVolumeSource: TargetVolumeSource
   targetElevationGain?: number | null
   targetDurationMin?: number | null
   notes?: string

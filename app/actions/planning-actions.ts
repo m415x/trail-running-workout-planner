@@ -208,6 +208,7 @@ export async function updateMicrocycleVolume(
         tx.update(microcycles)
           .set({
             targetVolumeKm: data.targetVolumeKm,
+            targetVolumeSource: 'manual',
             updatedAt: now,
           })
           .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
