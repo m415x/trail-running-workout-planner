@@ -1,8 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useActionState, useMemo, useState } from 'react'
 import Link from 'next/link'
 
+import {
+  createGroupPlanWithLoadStrategy,
+  type CreateGroupPlanWithLoadStrategyState,
+} from '@/app/actions/load-strategy-actions'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import {
   validateLoadStrategy,
@@ -38,6 +42,8 @@ const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
   { value: 'custom', label: 'Otro objetivo' },
 ]
 
+const initialActionState: CreateGroupPlanWithLoadStrategyState = {}
+
 export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
   const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
   const [goalType, setGoalType] = useState<TrainingGoalType>('race')
@@ -48,8 +54,13 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
     [],
   )
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(initialSuggestion)
+  const [actionState, formAction, isPending] = useActionState(
+    createGroupPlanWithLoadStrategy,
+    initialActionState,
+  )
 
   const validation = useMemo(() => validateLoadStrategy(strategy), [strategy])
+  const selectedGroup = groups.find((group) => group.code === groupCode) ?? groups[0]
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
   function resetStrategy(nextGroupCode: AthleteGroupCode, nextGoalType: TrainingGoalType) {
@@ -85,7 +96,12 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
   }
 
   return (
-    <form className='space-y-6'>
+    <form action={formAction} className='space-y-6'>
+      <input type='hidden' name='groupId' value={selectedGroup.id} />
+      <input type='hidden' name='locale' value={locale} />
+      <input type='hidden' name='values' value={JSON.stringify(strategy.values)} />
+      <input type='hidden' name='fieldSources' value={JSON.stringify(strategy.fieldSources)} />
+
       <Card>
         <CardHeader>
           <CardTitle>Contexto de la estrategia</CardTitle>
@@ -226,14 +242,21 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
       </Card>
 
       <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between'>
-        <p className='text-sm text-muted-foreground'>
-          {validation.errors.length > 0
-            ? `Corregí ${validation.errors.length} error${validation.errors.length === 1 ? '' : 'es'} antes de continuar.`
-            : 'El guardado se habilitará al asociar esta estrategia con un plan grupal.'}
-        </p>
+        <div className='space-y-1'>
+          <p className='text-sm text-muted-foreground'>
+            {validation.errors.length > 0
+              ? `Corregí ${validation.errors.length} error${validation.errors.length === 1 ? '' : 'es'} antes de continuar.`
+              : 'Al continuar se creará un plan grupal en borrador con esta estrategia asociada.'}
+          </p>
+          {actionState.error && (
+            <p className='text-sm text-destructive' role='alert'>{actionState.error}</p>
+          )}
+        </div>
         <div className='flex justify-end gap-2'>
           <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
-          <Button type='button' disabled>Continuar</Button>
+          <Button type='submit' disabled={!validation.isValid || isPending}>
+            {isPending ? 'Creando…' : 'Crear plan'}
+          </Button>
         </div>
       </div>
     </form>
