@@ -246,6 +246,7 @@ export function generateTrainingMesocycles({
       sequence: microcycleSequence,
       startingVolumeKm,
       targetPeakVolumeKm: mesocycleLoadTarget.targetPeakVolumeKm,
+      deloadPercentage: loadStrategy.values.deloadPercentage,
     })
     const targets = distributedLoads.map(({ type, targetVolumeKm }): MicrocycleTarget => {
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)

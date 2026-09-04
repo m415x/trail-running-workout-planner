@@ -32,7 +32,7 @@ describe('generación de planificación', () => {
     )
     assert.deepEqual(
       weeks.map((week) => week.targetVolumeKm),
-      [35, 36, 37, 35, 37, 38, 39, 37],
+      [35, 36, 37, 27.8, 37, 38, 39, 29.3],
     )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
@@ -92,7 +92,7 @@ describe('generación de planificación', () => {
     })
 
     const volumes = result.mesocycles[0].microcycles.map((week) => week.targetVolumeKm)
-    assert.deepEqual(volumes, [20, 22.5, 25, 20])
+    assert.deepEqual(volumes, [20, 22.5, 25, 18.8])
   })
 
   it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {

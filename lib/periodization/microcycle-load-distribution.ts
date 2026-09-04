@@ -9,6 +9,7 @@ export interface MicrocycleLoadDistributionParams {
   sequence: VolumeMatrixMicrocycleType[]
   startingVolumeKm: number
   targetPeakVolumeKm: number
+  deloadPercentage: number
 }
 
 function roundToOneDecimal(value: number) {
@@ -19,6 +20,7 @@ export function distributeMesocycleLoad({
   sequence,
   startingVolumeKm,
   targetPeakVolumeKm,
+  deloadPercentage,
 }: MicrocycleLoadDistributionParams): DistributedMicrocycleLoad[] {
   if (sequence.length === 0) {
     throw new Error('Se necesita al menos un microciclo para distribuir la carga.')
@@ -32,6 +34,14 @@ export function distributeMesocycleLoad({
     throw new Error('El pico del mesociclo debe ser igual o superior al volumen inicial.')
   }
 
+  if (
+    !Number.isFinite(deloadPercentage)
+    || deloadPercentage <= 0
+    || deloadPercentage >= 100
+  ) {
+    throw new Error('El porcentaje de descarga debe ser mayor que cero y menor que 100.')
+  }
+
   const loadingWeeksCount = sequence.filter((type) => type !== 'deload').length
 
   if (loadingWeeksCount === 0) {
@@ -42,7 +52,12 @@ export function distributeMesocycleLoad({
 
   return sequence.map((type) => {
     if (type === 'deload') {
-      return { type, targetVolumeKm: startingVolumeKm }
+      return {
+        type,
+        targetVolumeKm: roundToOneDecimal(
+          targetPeakVolumeKm * (1 - deloadPercentage / 100),
+        ),
+      }
     }
 
     const progress = loadingWeeksCount === 1
