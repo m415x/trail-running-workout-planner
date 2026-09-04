@@ -1,4 +1,4 @@
-import { differenceInCalendarDays, parseISO } from 'date-fns'
+import { differenceInCalendarDays, format, parseISO, subDays } from 'date-fns'
 
 import {
   determineProgressionDurationProfile,
@@ -17,6 +17,17 @@ export interface LoadProgressionPreviewParams {
   endDate: string
   loadStrategy: LoadStrategyDraft
   existingMicrocycles?: ExistingMicrocycleVolume[]
+}
+
+export function determineTrainingProgressionEndDate(
+  macrocycleEndDate: string,
+  protectedBlockStartDates: string[],
+) {
+  const firstProtectedStartDate = [...protectedBlockStartDates].sort()[0]
+
+  return firstProtectedStartDate
+    ? format(subDays(parseISO(firstProtectedStartDate), 1), 'yyyy-MM-dd')
+    : macrocycleEndDate
 }
 
 export function buildLoadProgressionPreview({

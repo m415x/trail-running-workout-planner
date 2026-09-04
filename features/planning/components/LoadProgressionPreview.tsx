@@ -1,18 +1,23 @@
 'use client'
 
+import { useActionState } from 'react'
 import {
   CartesianGrid,
   Line,
   LineChart,
   ReferenceLine,
-  Scatter,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts'
 
 import type { MicrocycleType, TargetVolumeSource } from '@/types'
+import {
+  saveLoadProgression,
+  type PersistProgressionFormState,
+} from '@/app/actions/planning-actions'
 import { Badge } from '@ui/badge'
+import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 import { ChartContainer } from '@ui/chart'
 
@@ -29,7 +34,12 @@ interface LoadProgressionPreviewProps {
   maximumVolumeKm: number
   warnings: string[]
   conflicts: string[]
+  planId: string
+  macrocycleId: string
+  locale: string
 }
+
+const initialActionState: PersistProgressionFormState = {}
 
 const microcycleLabels: Record<MicrocycleType, string> = {
   base: 'Base',
@@ -46,8 +56,15 @@ export function LoadProgressionPreview({
   maximumVolumeKm,
   warnings,
   conflicts,
+  planId,
+  macrocycleId,
+  locale,
 }: LoadProgressionPreviewProps) {
   const manualPoints = points.filter((point) => point.source === 'manual')
+  const [actionState, formAction, isPending] = useActionState(
+    saveLoadProgression,
+    initialActionState,
+  )
 
   return (
     <Card>
@@ -82,14 +99,10 @@ export function LoadProgressionPreview({
               domain={['dataMin - 5', 'dataMax + 5']}
             />
             <Tooltip
-              content={({ active, payload }) => {
-                const point = payload
-                  ?.find((entry) => (
-                    entry.payload
-                    && typeof entry.payload === 'object'
-                    && 'weekNumber' in entry.payload
-                  ))
-                  ?.payload as LoadProgressionPoint | undefined
+              content={({ active, label }) => {
+                const point = points.find((candidate) => (
+                  candidate.weekNumber === Number(label)
+                ))
 
                 if (!active || !point) return null
 
@@ -111,12 +124,22 @@ export function LoadProgressionPreview({
               dataKey='volumeKm'
               stroke='var(--color-volume)'
               strokeWidth={2}
-              dot={{ r: 3, fill: 'var(--color-volume)' }}
+              dot={(props) => {
+                const point = props.payload as LoadProgressionPoint
+
+                return (
+                  <circle
+                    cx={props.cx}
+                    cy={props.cy}
+                    r={point.source === 'manual' ? 5 : 3}
+                    fill={point.source === 'manual' ? 'var(--chart-4)' : 'var(--color-volume)'}
+                    stroke={point.source === 'manual' ? 'var(--background)' : 'none'}
+                    strokeWidth={point.source === 'manual' ? 2 : 0}
+                  />
+                )
+              }}
               activeDot={{ r: 5 }}
             />
-            {manualPoints.length > 0 && (
-              <Scatter data={manualPoints} dataKey='volumeKm' fill='var(--chart-4)' />
-            )}
           </LineChart>
         </ChartContainer>
 
@@ -137,6 +160,24 @@ export function LoadProgressionPreview({
             {conflicts.map((conflict) => <p key={conflict}>{conflict}</p>)}
           </div>
         )}
+
+        <form action={formAction} className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+          <input type='hidden' name='planId' value={planId} />
+          <input type='hidden' name='macrocycleId' value={macrocycleId} />
+          <input type='hidden' name='locale' value={locale} />
+          <div className='text-sm text-muted-foreground'>
+            {actionState.error ? (
+              <p className='text-destructive' role='alert'>{actionState.error}</p>
+            ) : conflicts.length > 0 ? (
+              <p>Resolvé los conflictos antes de guardar la propuesta.</p>
+            ) : (
+              <p>El guardado conservará los volúmenes marcados como manuales.</p>
+            )}
+          </div>
+          <Button type='submit' disabled={isPending || conflicts.length > 0}>
+            {isPending ? 'Guardando…' : 'Guardar progresión'}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   )

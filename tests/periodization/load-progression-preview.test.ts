@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { buildLoadProgressionPreview } from '@/lib/periodization/load-progression-preview'
+import {
+  buildLoadProgressionPreview,
+  determineTrainingProgressionEndDate,
+} from '@/lib/periodization/load-progression-preview'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
 describe('vista previa de progresión', () => {
@@ -34,5 +37,19 @@ describe('vista previa de progresión', () => {
     assert.equal(week.targetVolumeKm, 45)
     assert.equal(week.targetVolumeSource, 'manual')
     assert.equal(preview.conflicts[0].code, 'manual_volume_above_maximum')
+  })
+
+  it('termina la progresión antes de un bloque competitivo existente', () => {
+    const protectedStarts = ['2026-03-16', '2026-03-09']
+
+    assert.equal(
+      determineTrainingProgressionEndDate('2026-03-22', protectedStarts),
+      '2026-03-08',
+    )
+    assert.deepEqual(protectedStarts, ['2026-03-16', '2026-03-09'])
+    assert.equal(
+      determineTrainingProgressionEndDate('2026-03-22', []),
+      '2026-03-22',
+    )
   })
 })

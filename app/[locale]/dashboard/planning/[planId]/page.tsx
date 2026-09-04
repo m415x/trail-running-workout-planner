@@ -11,7 +11,10 @@ import {
   LoadProgressionPreview,
   type LoadProgressionPoint,
 } from '@/features/planning/components/LoadProgressionPreview'
-import { buildLoadProgressionPreview } from '@/lib/periodization/load-progression-preview'
+import {
+  buildLoadProgressionPreview,
+  determineTrainingProgressionEndDate,
+} from '@/lib/periodization/load-progression-preview'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -55,21 +58,34 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         fieldSources: plan.loadStrategy.fieldSources,
       }
     : null
-  const existingMicrocycles = plan.macrocycles.flatMap((macrocycle) =>
-    macrocycle.mesocycles.flatMap((mesocycle) =>
+  const protectedMesocycles = previewMacrocycle?.mesocycles.filter((mesocycle) => (
+    mesocycle.period === 'competitive' || mesocycle.period === 'transition'
+  )) ?? []
+  const trainingEndDate = previewMacrocycle
+    ? determineTrainingProgressionEndDate(
+        previewMacrocycle.endDate,
+        protectedMesocycles.flatMap((mesocycle) => (
+          mesocycle.microcycles.map((microcycle) => microcycle.startDate)
+        )),
+      )
+    : null
+  const existingMicrocycles = previewMacrocycle
+    ? previewMacrocycle.mesocycles
+      .filter((mesocycle) => !protectedMesocycles.includes(mesocycle))
+      .flatMap((mesocycle) =>
       mesocycle.microcycles.map((microcycle) => ({
         id: microcycle.id,
         weekNumber: microcycle.weekNumber,
         targetVolumeKm: microcycle.targetVolumeKm,
         targetVolumeSource: microcycle.targetVolumeSource,
       })),
-    ),
-  )
-  const preview = loadStrategy && previewMacrocycle
+    )
+    : []
+  const preview = loadStrategy && previewMacrocycle && trainingEndDate
     ? buildLoadProgressionPreview({
         title: previewMacrocycle.title,
         startDate: previewMacrocycle.startDate,
-        endDate: previewMacrocycle.endDate,
+        endDate: trainingEndDate,
         loadStrategy,
         existingMicrocycles,
       })
@@ -111,6 +127,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           maximumVolumeKm={loadStrategy.values.maximumWeeklyVolumeKm}
           warnings={preview.planning.generationWarnings}
           conflicts={preview.conflicts.map((conflict) => conflict.message)}
+          planId={plan.id}
+          macrocycleId={previewMacrocycle.id}
+          locale={locale}
         />
       ) : (
         <Card>
