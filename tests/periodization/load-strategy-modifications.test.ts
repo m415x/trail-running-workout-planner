@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
+import {
+  deriveLoadStrategyFieldSources,
+  getLoadStrategyModifications,
+} from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
 describe('modificaciones manuales de estrategia de carga', () => {
@@ -10,6 +13,39 @@ describe('modificaciones manuales de estrategia de carga', () => {
 
     const modifications = getLoadStrategyModifications(suggested.values, { ...suggested.values })
 
+    assert.deepEqual(modifications, [])
+  })
+
+  it('deriva la procedencia desde los valores efectivos', () => {
+    const suggested = suggestLoadStrategy('S2', 'race')
+    const actual = {
+      ...suggested.values,
+      initialWeeklyVolumeKm: 38,
+      deloadPercentage: 30,
+    }
+
+    const sources = deriveLoadStrategyFieldSources(suggested.values, actual)
+
+    assert.equal(sources.initialWeeklyVolumeKm, 'manual')
+    assert.equal(sources.deloadPercentage, 'manual')
+    assert.equal(sources.maximumWeeklyVolumeKm, 'suggested')
+    assert.equal(sources.sessionsPerWeek, 'suggested')
+    assert.equal(sources.maximumWeeklyIncreasePercentage, 'suggested')
+    assert.equal(sources.initialWeeklyElevationGain, 'suggested')
+    assert.equal(sources.maximumWeeklyElevationGain, 'suggested')
+  })
+
+  it('vuelve a sugerido cuando el valor final coincide con la recomendación', () => {
+    const suggested = suggestLoadStrategy('S2', 'race')
+    const actual = {
+      ...suggested.values,
+      initialWeeklyVolumeKm: suggested.values.initialWeeklyVolumeKm,
+    }
+
+    const sources = deriveLoadStrategyFieldSources(suggested.values, actual)
+    const modifications = getLoadStrategyModifications(suggested.values, actual)
+
+    assert.equal(sources.initialWeeklyVolumeKm, 'suggested')
     assert.deepEqual(modifications, [])
   })
 
