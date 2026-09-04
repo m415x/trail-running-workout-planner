@@ -95,6 +95,7 @@ export async function createGroupPlanWithLoadStrategy(
   }
 
   const data = parsed.data
+  let planId: string
 
   try {
     const group = db.query.athleteGroups.findFirst({
@@ -131,7 +132,7 @@ export async function createGroupPlanWithLoadStrategy(
       return { error: validation.errors[0]?.message ?? 'La estrategia contiene valores inválidos' }
     }
 
-    const planId = randomUUID()
+    planId = randomUUID()
     const strategyId = randomUUID()
     const now = new Date().toISOString()
     const title = `Plan ${resolvedGroupCode} · ${goalLabels[data.goalType]}`
@@ -163,12 +164,12 @@ export async function createGroupPlanWithLoadStrategy(
         updatedAt: now,
       }).run()
     })
-
-    const detailPath = planningPath(data.locale, `/${planId}`)
-    revalidatePath(planningPath(data.locale))
-    redirect(detailPath)
   } catch (error) {
     console.error('Error creating group plan with load strategy:', error)
     return { error: 'No se pudo crear el plan grupal con su estrategia de carga' }
   }
+
+  const detailPath = planningPath(data.locale, `/${planId}`)
+  revalidatePath(planningPath(data.locale))
+  redirect(detailPath)
 }
