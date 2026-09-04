@@ -8,7 +8,13 @@ import { z } from 'zod'
 
 import { db } from '@/db'
 import { loadStrategies } from '@/db/load-strategy-schema'
-import { athleteGroups, groupTrainingPlans, planningModificationRecords } from '@/db/schema'
+import {
+  athleteGroups,
+  groupTrainingPlans,
+  macrocycles,
+  planningModificationRecords,
+} from '@/db/schema'
+import { validateMacrocycleHorizon } from '@/lib/periodization/macrocycle-horizon'
 import {
   deriveLoadStrategyFieldSources,
   getLoadStrategyModifications,
@@ -39,6 +45,8 @@ const createGroupPlanWithLoadStrategySchema = z.object({
   groupId: z.string().trim().min(1),
   groupCode: z.string().trim().min(2),
   goalType: z.enum(goalTypes),
+  startDate: z.string(),
+  endDate: z.string(),
   locale: z.enum(locales).default('es'),
   values: loadStrategyValuesSchema,
 })
@@ -76,6 +84,8 @@ export async function createGroupPlanWithLoadStrategy(
     groupId: formData.get('groupId'),
     groupCode: formData.get('groupCode'),
     goalType: formData.get('goalType'),
+    startDate: formData.get('startDate'),
+    endDate: formData.get('endDate'),
     locale: formData.get('locale'),
     values: rawValues,
   })
@@ -85,6 +95,15 @@ export async function createGroupPlanWithLoadStrategy(
   }
 
   const data = parsed.data
+  const horizonValidation = validateMacrocycleHorizon({
+    startDate: data.startDate,
+    endDate: data.endDate,
+  })
+
+  if (!horizonValidation.isValid) {
+    return { error: horizonValidation.error }
+  }
+
   let planId: string
 
   try {
@@ -128,6 +147,7 @@ export async function createGroupPlanWithLoadStrategy(
 
     planId = randomUUID()
     const strategyId = randomUUID()
+    const macrocycleId = randomUUID()
     const now = new Date().toISOString()
     const title = `Plan ${resolvedGroupCode} · ${goalLabels[data.goalType]}`
 
@@ -154,6 +174,18 @@ export async function createGroupPlanWithLoadStrategy(
         initialWeeklyElevationGain: data.values.initialWeeklyElevationGain,
         maximumWeeklyElevationGain: data.values.maximumWeeklyElevationGain,
         fieldSources,
+        createdAt: now,
+        updatedAt: now,
+      }).run()
+
+      tx.insert(macrocycles).values({
+        id: macrocycleId,
+        groupTrainingPlanId: planId,
+        title,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        taperingWeeksCount: null,
+        notes: null,
         createdAt: now,
         updatedAt: now,
       }).run()

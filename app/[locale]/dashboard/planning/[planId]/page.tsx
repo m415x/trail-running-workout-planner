@@ -129,6 +129,17 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
               </CardContent>
             </Card>
           ))}
+
+          {macrocycle.mesocycles.length === 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Horizonte configurado</CardTitle>
+                <CardDescription>
+                  La estrategia y las fechas están guardadas. La progresión semanal se generará en el siguiente paso.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
         </div>
       ))}
     </div>
