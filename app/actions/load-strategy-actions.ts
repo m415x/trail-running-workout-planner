@@ -9,13 +9,15 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import { athleteGroups, groupTrainingPlans, planningModificationRecords } from '@/db/schema'
-import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
+import {
+  deriveLoadStrategyFieldSources,
+  getLoadStrategyModifications,
+} from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
-  LoadStrategyFieldSources,
   TrainingGoalType,
 } from '@/types'
 
@@ -33,23 +35,12 @@ const loadStrategyValuesSchema = z.object({
   maximumWeeklyElevationGain: z.number().nullable(),
 })
 
-const loadStrategyFieldSourcesSchema = z.object({
-  initialWeeklyVolumeKm: z.enum(['suggested', 'manual']),
-  maximumWeeklyVolumeKm: z.enum(['suggested', 'manual']),
-  sessionsPerWeek: z.enum(['suggested', 'manual']),
-  maximumWeeklyIncreasePercentage: z.enum(['suggested', 'manual']),
-  deloadPercentage: z.enum(['suggested', 'manual']),
-  initialWeeklyElevationGain: z.enum(['suggested', 'manual']),
-  maximumWeeklyElevationGain: z.enum(['suggested', 'manual']),
-})
-
 const createGroupPlanWithLoadStrategySchema = z.object({
   groupId: z.string().trim().min(1),
   groupCode: z.string().trim().min(2),
   goalType: z.enum(goalTypes),
   locale: z.enum(locales).default('es'),
   values: loadStrategyValuesSchema,
-  fieldSources: loadStrategyFieldSourcesSchema,
 })
 
 export interface CreateGroupPlanWithLoadStrategyState {
@@ -74,11 +65,9 @@ export async function createGroupPlanWithLoadStrategy(
   formData: FormData,
 ): Promise<CreateGroupPlanWithLoadStrategyState> {
   let rawValues: unknown
-  let rawFieldSources: unknown
 
   try {
     rawValues = JSON.parse(String(formData.get('values') ?? ''))
-    rawFieldSources = JSON.parse(String(formData.get('fieldSources') ?? ''))
   } catch {
     return { error: 'No se pudieron interpretar los parámetros de carga' }
   }
@@ -89,7 +78,6 @@ export async function createGroupPlanWithLoadStrategy(
     goalType: formData.get('goalType'),
     locale: formData.get('locale'),
     values: rawValues,
-    fieldSources: rawFieldSources,
   })
 
   if (!parsed.success) {
@@ -119,13 +107,15 @@ export async function createGroupPlanWithLoadStrategy(
       return { error: 'El grupo seleccionado no coincide con la estrategia configurada' }
     }
 
+    const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
+    const fieldSources = deriveLoadStrategyFieldSources(suggestedStrategy.values, data.values)
     const strategy: LoadStrategyDraft = {
       context: {
         athleteGroup: resolvedGroupCode,
         goalType: data.goalType,
       },
       values: data.values,
-      fieldSources: data.fieldSources as LoadStrategyFieldSources,
+      fieldSources,
     }
 
     const validation = validateLoadStrategy(strategy)
@@ -134,7 +124,6 @@ export async function createGroupPlanWithLoadStrategy(
       return { error: validation.errors[0]?.message ?? 'La estrategia contiene valores inválidos' }
     }
 
-    const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
     const modifications = getLoadStrategyModifications(suggestedStrategy.values, data.values)
 
     planId = randomUUID()
@@ -164,7 +153,7 @@ export async function createGroupPlanWithLoadStrategy(
         deloadPercentage: data.values.deloadPercentage,
         initialWeeklyElevationGain: data.values.initialWeeklyElevationGain,
         maximumWeeklyElevationGain: data.values.maximumWeeklyElevationGain,
-        fieldSources: data.fieldSources,
+        fieldSources,
         createdAt: now,
         updatedAt: now,
       }).run()
