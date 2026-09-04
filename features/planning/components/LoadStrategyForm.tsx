@@ -84,10 +84,6 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
         ...current.values,
         [field]: value,
       },
-      fieldSources: {
-        ...current.fieldSources,
-        [field]: 'manual',
-      },
     }))
   }
 
@@ -100,7 +96,6 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
       <input type='hidden' name='groupId' value={selectedGroup.id} />
       <input type='hidden' name='locale' value={locale} />
       <input type='hidden' name='values' value={JSON.stringify(strategy.values)} />
-      <input type='hidden' name='fieldSources' value={JSON.stringify(strategy.fieldSources)} />
 
       <Card>
         <CardHeader>
