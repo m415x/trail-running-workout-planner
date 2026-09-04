@@ -33,7 +33,7 @@ export function resolveWorkoutForAthlete(session: ResolvableSession, athleteGrou
   const pace = time > 0 && km > 0 ? (time * 60) / km : 0
 
   // 2. Resolución segura de las notas y estructura de la sesión
-  let specificNotes = ''
+  const specificNotes = ''
 
   // if (override?.intervals) {
   //   const baseBlock = override.notes ?? session.structure?.mainBlock ?? session.notes ?? ''

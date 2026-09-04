@@ -17,6 +17,6 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
 
   // 2. Pasamos los datos iniciales como props al componente cliente
   return (
-    <HomeTabClient initialAthlete={athleteRes.data as any} initialSchedule={scheduleRes.data as any} locale={locale} />
+    <HomeTabClient initialAthlete={athleteRes.data} initialSchedule={scheduleRes.data} locale={locale} />
   )
 }

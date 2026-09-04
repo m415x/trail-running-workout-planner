@@ -115,10 +115,10 @@ export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
 )
 PillButton.displayName = 'PillButton'
 
-export interface ThemeToggleButtonProps extends Omit<
+export type ThemeToggleButtonProps = Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   'children' | 'variant'
-> {}
+>
 
 export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProps) {
   const { theme, setTheme } = useTheme()

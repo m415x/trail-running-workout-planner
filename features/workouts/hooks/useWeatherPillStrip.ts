@@ -1,7 +1,7 @@
 import { WeatherData } from '@/types'
 import { interpretWmoCode } from '@/service/weather/open-meteo'
 
-export function useWeatherPillStrip(weather: WeatherData) {
+export function getWeatherPillStripData(weather: WeatherData) {
   const { condition, label } = interpretWmoCode(weather.weatherCode)
 
   const windSpeed = weather.windSpeed

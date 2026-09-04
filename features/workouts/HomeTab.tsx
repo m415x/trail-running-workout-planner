@@ -1,6 +1,6 @@
 'use client'
 
-import { useHomeTab } from '@workouts/hooks/useHomeTab'
+import { SessionWithWorkout, useHomeTab, UseHomeTabProps } from '@workouts/hooks/useHomeTab'
 import { HomeHeader } from '@workouts/components/HomeHeader'
 import { WeeklyCalendarCard } from '@workouts/components/WeeklyCalendarCard'
 import { TodayWorkoutCard, RaceCard, RestCard } from '@workouts/components/WorkoutCard'
@@ -9,7 +9,13 @@ import { RouteMapCard } from '@workouts/components/RouteMapCard'
 import { getWeeklySchedule } from '@/app/actions/dashboard-actions'
 import { Team } from '@/types'
 
-export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
+interface HomeTabProps {
+  initialAthlete: UseHomeTabProps['initialAthlete']
+  initialSchedule: SessionWithWorkout[]
+  locale: string
+}
+
+export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
   // 1. Definimos la función que se ejecutará al cambiar de semana
   const handleWeekChange = async (startDateIso: string) => {
     const res = await getWeeklySchedule(startDateIso)
@@ -27,6 +33,7 @@ export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
     selectedDate,
     selectedWeekDay,
     currentWorkout,
+    currentWorkouts,
     elevationChartData,
     TrackData,
     isLoadingWeek,
@@ -71,13 +78,20 @@ export function HomeTab({ initialAthlete, initialSchedule, locale }: any) {
       />
 
       {/* Tarjeta del Día Seleccionado */}
-      {selectedWeekDay?.type === 'Race' && currentWorkout ? (
-        <RaceCard date={selectedWeekDay.fullDate} workout={currentWorkout} />
-      ) : currentWorkout ? (
-        <TodayWorkoutCard workout={currentWorkout} date={selectedWeekDay?.fullDate} TrackData={TrackData} />
-      ) : (
-        <RestCard />
-      )}
+      {currentWorkouts.length > 0 ? (
+        <div className='space-y-2'>
+          {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
+            <RaceCard key={workout.id} date={selectedWeekDay?.fullDate} workout={workout} />
+          ) : (
+            <TodayWorkoutCard
+              key={workout.id}
+              workout={workout}
+              date={selectedWeekDay?.fullDate}
+              TrackData={index === 0 ? TrackData : null}
+            />
+          ))}
+        </div>
+      ) : <RestCard />}
 
       {/* Perfil de Elevación */}
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}

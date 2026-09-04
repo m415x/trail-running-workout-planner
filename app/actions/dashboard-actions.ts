@@ -16,17 +16,6 @@ function formatISODate(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function getCurrentMonday() {
-  const date = new Date()
-  const day = date.getDay()
-  const difference = date.getDate() - day + (day === 0 ? -6 : 1)
-
-  date.setDate(difference)
-  date.setHours(0, 0, 0, 0)
-
-  return formatISODate(date)
-}
-
 export async function getCurrentAthlete() {
   try {
     const user = await db.query.users.findFirst({
@@ -60,13 +49,26 @@ export async function getCurrentAthlete() {
   }
 }
 
-export async function getWeeklySchedule(startDateIso: string = getCurrentMonday()) {
+export type CurrentAthleteData = NonNullable<Awaited<ReturnType<typeof getCurrentAthlete>>['data']>
+
+export async function getWeeklySchedule(
+  startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
+) {
   try {
+    const athlete = await db.query.athleteProfiles.findFirst({
+      where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
+    })
+
+    if (!athlete?.groupId) {
+      return { success: true, data: [] }
+    }
+
     const endDate = new Date(`${startDateIso}T00:00:00`)
     endDate.setDate(endDate.getDate() + 6)
 
     const schedule = await db.query.sessions.findMany({
       where: and(
+        eq(sessions.teamId, athlete.teamId),
         gte(sessions.date, startDateIso),
         lte(sessions.date, formatISODate(endDate)),
         eq(sessions.isDeleted, false),
@@ -74,12 +76,19 @@ export async function getWeeklySchedule(startDateIso: string = getCurrentMonday(
       orderBy: asc(sessions.date),
       with: {
         workout: true,
+        location: true,
+        sessionPrescriptions: {
+          where: and(
+            eq(groupSessionPrescriptions.groupId, athlete.groupId),
+            eq(groupSessionPrescriptions.isDeleted, false),
+          ),
+        },
       },
     })
 
     return {
       success: true,
-      data: schedule,
+      data: schedule.filter((session) => session.sessionPrescriptions.length > 0),
     }
   } catch (error) {
     console.error('Error fetching weekly schedule:', error)

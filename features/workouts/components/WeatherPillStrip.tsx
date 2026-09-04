@@ -3,7 +3,7 @@
 import { DropIcon, ArrowCircleDownIcon } from '@phosphor-icons/react'
 import { WeatherIcon, WindIcon, GustIcon } from '@icons'
 import { WeatherData } from '@/types'
-import { useWeatherPillStrip } from '@workouts/hooks/useWeatherPillStrip'
+import { getWeatherPillStripData } from '@workouts/hooks/useWeatherPillStrip'
 import { CustomCardInside } from '@ui/custom/card-containers'
 import { IconBrandSnowflake } from '@tabler/icons-react'
 
@@ -13,6 +13,8 @@ export interface WeatherPillStripProps {
 }
 
 export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) {
+  const weatherData = weather ? getWeatherPillStripData(weather) : null
+
   if (isLoading) {
     return (
       <CustomCardInside className='px-3 py-1.5 rounded-xl animate-pulse flex items-center justify-center text-[10px] text-muted-foreground'>
@@ -23,7 +25,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
   if (!weather) return null
 
-  const { condition, duration, isSnowCondition } = useWeatherPillStrip(weather)
+  const { condition, duration, isSnowCondition } = weatherData!
 
   return (
     <CustomCardInside className='flex justify-center rounded-xl px-0 py-2 gap-3'>

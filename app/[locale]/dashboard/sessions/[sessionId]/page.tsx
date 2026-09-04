@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, CalendarDays, MapPin, Mountain, Route } from 'lucide-react'
+import { ArrowLeft, CalendarDays, MapPin, Mountain, Pencil, Route } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
 import { getSessionById } from '@/app/actions/session-actions'
@@ -38,7 +38,12 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
             <CalendarDays className='size-4' /> {formatDate(session.date)}
           </p>
         </div>
-        <Badge className='w-fit'>{session.type}</Badge>
+        <div className='flex items-center gap-2'>
+          <Badge className='w-fit'>{session.type}</Badge>
+          <Link href={`${sessionsPath}/${session.id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Pencil /> Editar
+          </Link>
+        </div>
       </div>
 
       <div className='grid gap-4 md:grid-cols-2'>

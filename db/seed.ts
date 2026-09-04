@@ -68,10 +68,48 @@ function getDayStatus(day: (typeof weekDaysRaw)[number]): DayStatus {
   return 'pending'
 }
 
+function formatISODate(date: Date) {
+  const year = date.getUTCFullYear()
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0')
+  const day = String(date.getUTCDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function shiftISODate(value: string, days: number) {
+  const date = new Date(`${value}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() + days)
+  return formatISODate(date)
+}
+
+function getCurrentDateInArgentina() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
+function getMondayFromISODate(value: string) {
+  const date = new Date(`${value}T00:00:00Z`)
+  const offset = (date.getUTCDay() + 6) % 7
+  date.setUTCDate(date.getUTCDate() - offset)
+  return formatISODate(date)
+}
+
 async function seed() {
   console.log('🌱 Poblando base de datos SQLite con data.ts...')
 
   const now = new Date().toISOString()
+  const currentWeekStart = getMondayFromISODate(getCurrentDateInArgentina())
+  const relativeWeekDays = weekDaysRaw.map((day, index) => ({
+    ...day,
+    date: shiftISODate(currentWeekStart, index),
+  }))
+  const seededWeeksCount = Math.ceil(relativeWeekDays.length / 7)
+  const planningEndDate = shiftISODate(currentWeekStart, seededWeeksCount * 7 - 1)
 
   const userId = String(currentUser.id || 'user_1')
   const teamId = String(team.id || 'team_1')
@@ -81,8 +119,6 @@ async function seed() {
   const groupTrainingPlanId = 'group_plan_1'
   const macrocycleId = 'macro_1'
   const mesocycleId = 'meso_1'
-  const microcycleId = String(weeklyCycle.id || 'micro_1')
-
   const currentGroupCode: AthleteGroupCode = 'S2'
 
   /*
@@ -344,7 +380,7 @@ async function seed() {
       title: 'Carrera objetivo',
       description: 'Objetivo inicial utilizado para poblar el entorno de desarrollo.',
 
-      targetDate: '2026-12-31',
+      targetDate: shiftISODate(currentWeekStart, 16 * 7),
 
       raceName: 'Carrera objetivo',
       raceDistanceKm: 42,
@@ -364,7 +400,7 @@ async function seed() {
     .values({
       id: groupTrainingPlanId,
       groupId: currentGroup.id,
-      title: 'Planificación anual 2026',
+      title: 'Planificación de prueba',
       status: 'active',
       notes: null,
     })
@@ -376,11 +412,11 @@ async function seed() {
     .values({
       id: macrocycleId,
 
-      title: 'Planificación anual 2026',
+      title: 'Planificación de prueba',
       groupTrainingPlanId,
 
-      startDate: weeklyCycle.startDate,
-      endDate: weeklyCycle.endDate,
+      startDate: currentWeekStart,
+      endDate: planningEndDate,
 
       taperingWeeksCount: 2,
       notes: null,
@@ -404,27 +440,20 @@ async function seed() {
     .onConflictDoNothing()
     .run()
 
-  await db
-    .insert(microcycles)
-    .values({
-      id: microcycleId,
-      mesocycleId,
+  const microcycleRows = Array.from({ length: seededWeeksCount }, (_, index) => ({
+    id: index === 0 ? String(weeklyCycle.id || 'micro_1') : `micro_${index + 1}`,
+    mesocycleId,
+    weekNumber: index + 1,
+    type: (weeklyCycle.type || 'development') as MicrocycleType,
+    startDate: shiftISODate(currentWeekStart, index * 7),
+    endDate: shiftISODate(currentWeekStart, index * 7 + 6),
+    targetVolumeKm: weeklyCycle.targetKm || 40,
+    targetElevationGain: null,
+    targetDurationMin: null,
+    notes: null,
+  }))
 
-      weekNumber: weeklyCycle.weekNumber || 1,
-
-      type: (weeklyCycle.type || 'development') as MicrocycleType,
-
-      startDate: weeklyCycle.startDate,
-      endDate: weeklyCycle.endDate,
-
-      targetVolumeKm: weeklyCycle.targetKm || 40,
-      targetElevationGain: null,
-      targetDurationMin: null,
-
-      notes: null,
-    })
-    .onConflictDoNothing()
-    .run()
+  await db.insert(microcycles).values(microcycleRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
   // 8. Catálogo de workouts
@@ -456,7 +485,7 @@ async function seed() {
   // 9. Sesiones compartidas del equipo
   // -----------------------------------------------------------------------
 
-  const sessionRows = weekDaysRaw
+  const sessionRows = relativeWeekDays
     .filter((day) => !day.isRest)
     .map((day, index) => {
       const linkedWorkout = day.workoutId !== undefined ? workouts[day.workoutId] : null
@@ -490,7 +519,7 @@ async function seed() {
   // -----------------------------------------------------------------------
 
   const prescriptionRows = sessionRows.map((session) => {
-    const day = weekDaysRaw.find((candidate) => candidate.date === session.date)
+    const day = relativeWeekDays.find((candidate) => candidate.date === session.date)
 
     const linkedWorkout = day?.workoutId !== undefined ? workouts[day.workoutId] : null
 
@@ -499,7 +528,9 @@ async function seed() {
 
       sessionId: session.id,
       groupId: currentGroup.id,
-      microcycleId,
+      microcycleId: microcycleRows.find(
+        (microcycle) => session.date >= microcycle.startDate && session.date <= microcycle.endDate,
+      )?.id ?? microcycleRows[0].id,
 
       distanceKm: linkedWorkout?.distance != null ? Number(linkedWorkout.distance) : null,
 
@@ -521,7 +552,7 @@ async function seed() {
   // -----------------------------------------------------------------------
 
   const workoutLogRows = sessionRows.map((session) => {
-    const day = weekDaysRaw.find((candidate) => candidate.date === session.date)
+    const day = relativeWeekDays.find((candidate) => candidate.date === session.date)
 
     if (!day) {
       throw new Error(`No se encontraron datos para ${session.date}`)
