@@ -5,6 +5,10 @@ import {
   determineTaperingWeeksCount,
   generateFractalMacrocycle,
 } from '@/lib/periodization/macrocycle-generator'
+import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
+
+const s2BaseStrategy = suggestLoadStrategy('S2', 'base')
+const s2RaceStrategy = suggestLoadStrategy('S2', 'race')
 
 describe('generación de planificación', () => {
   it('genera un objetivo sin carrera sin tapering ni bloque competitivo', () => {
@@ -14,6 +18,7 @@ describe('generación de planificación', () => {
       startDate: '2026-01-05',
       endDate: '2026-03-01',
       athleteGroup: 'S2',
+      loadStrategy: s2BaseStrategy,
     })
 
     const weeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
@@ -33,6 +38,7 @@ describe('generación de planificación', () => {
       startDate: '2026-01-05',
       endDate: '2026-03-29',
       athleteGroup: 'S2',
+      loadStrategy: s2RaceStrategy,
       race: { name: 'Maratón de prueba', distanceKm: 42, elevationGain: 1200 },
     })
 
@@ -59,7 +65,46 @@ describe('generación de planificación', () => {
       startDate: '2026-01-05',
       endDate: '2026-03-01',
       athleteGroup: 'S2',
+      loadStrategy: s2RaceStrategy,
     }), /requiere los datos de la carrera/)
+  })
+
+  it('usa los valores efectivos de la estrategia en lugar de la matriz del grupo', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    loadStrategy.values.initialWeeklyVolumeKm = 20
+    loadStrategy.values.maximumWeeklyVolumeKm = 30
+
+    const result = generateFractalMacrocycle({
+      title: 'Base manual S2',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+
+    const volumes = result.mesocycles[0].microcycles.map((week) => week.targetVolumeKm)
+    assert.deepEqual(volumes, [20, 25, 30, 20])
+  })
+
+  it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {
+    assert.throws(() => generateFractalMacrocycle({
+      title: 'Estrategia incorrecta',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy: suggestLoadStrategy('S1', 'base'),
+    }), /pertenece a otro grupo/)
+
+    assert.throws(() => generateFractalMacrocycle({
+      title: 'Estrategia incorrecta',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+    }), /pertenece a otro tipo de objetivo/)
   })
 })
 

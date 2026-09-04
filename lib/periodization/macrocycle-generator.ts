@@ -2,6 +2,7 @@ import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'da
 
 import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
+import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -9,6 +10,7 @@ import type {
   GeneratedMacrocycleDraft,
   GeneratedMesocycleDraft,
   GeneratedMicrocycleDraft,
+  LoadStrategyDraft,
   MicrocycleType,
   TrainingGoalType,
   VolumeMatrixMicrocycleType,
@@ -28,6 +30,7 @@ export interface MacrocycleGeneratorParams {
   startDate: string
   endDate: string
   athleteGroup: AthleteGroupCode
+  loadStrategy: LoadStrategyDraft
   race?: OptionalTargetRace
 }
 
@@ -44,6 +47,22 @@ function parseRequiredDate(value: string, fieldName: string) {
 function validateParams(params: MacrocycleGeneratorParams) {
   if (!params.title.trim()) {
     throw new Error('El macrociclo debe tener un título.')
+  }
+
+  if (params.loadStrategy.context.athleteGroup !== params.athleteGroup) {
+    throw new Error('La estrategia de carga pertenece a otro grupo.')
+  }
+
+  if (params.loadStrategy.context.goalType !== params.goalType) {
+    throw new Error('La estrategia de carga pertenece a otro tipo de objetivo.')
+  }
+
+  const strategyValidation = validateLoadStrategy(params.loadStrategy)
+
+  if (!strategyValidation.isValid) {
+    throw new Error(
+      strategyValidation.errors[0]?.message ?? 'La estrategia de carga no es válida.',
+    )
   }
 
   if (params.goalType === 'race' && !params.race) {
@@ -181,6 +200,26 @@ export interface TrainingMesocycleGeneratorParams {
   endDate: string
   trainingWeeksCount: number
   athleteGroup: AthleteGroupCode
+  loadStrategy: LoadStrategyDraft
+}
+
+function calculateStrategyTargetVolume(
+  strategy: LoadStrategyDraft,
+  type: VolumeMatrixMicrocycleType,
+) {
+  const { initialWeeklyVolumeKm, maximumWeeklyVolumeKm } = strategy.values
+
+  switch (type) {
+    case 'base':
+      return initialWeeklyVolumeKm
+    case 'development':
+      return Math.round((initialWeeklyVolumeKm + maximumWeeklyVolumeKm) / 2)
+    case 'shock':
+      return maximumWeeklyVolumeKm
+    case 'deload':
+      // The exact deload rule and its placement are refined in a later task.
+      return initialWeeklyVolumeKm
+  }
 }
 
 export function generateTrainingMesocycles({
@@ -188,6 +227,7 @@ export function generateTrainingMesocycles({
   endDate,
   trainingWeeksCount,
   athleteGroup,
+  loadStrategy,
 }: TrainingMesocycleGeneratorParams): GeneratedMesocycleDraft[] {
   if (!Number.isInteger(trainingWeeksCount) || trainingWeeksCount < 2) {
     throw new Error('Se necesitan al menos 2 semanas de entrenamiento para generar mesociclos.')
@@ -211,7 +251,7 @@ export function generateTrainingMesocycles({
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
     const targets = microcycleSequence.map((type): MicrocycleTarget => {
-      const targetVolumeKm = calculateTargetVolume({ athleteGroup, type })
+      const targetVolumeKm = calculateStrategyTargetVolume(loadStrategy, type)
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
 
       return {
@@ -352,6 +392,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     endDate: params.endDate,
     trainingWeeksCount,
     athleteGroup: params.athleteGroup,
+    loadStrategy: params.loadStrategy,
   })
   const currentWeekStart = addDays(start, trainingWeeksCount * 7)
   const globalWeekCounter = trainingWeeksCount + 1
