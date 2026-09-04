@@ -1,5 +1,6 @@
 import type {
   LoadStrategyField,
+  LoadStrategyFieldSources,
   LoadStrategyValues,
   PlanningModificationField,
 } from '@/types'
@@ -24,6 +25,18 @@ const loadStrategyFields = Object.keys(modificationFields) as LoadStrategyField[
 
 function serializeModificationValue(value: number | null) {
   return value === null ? null : String(value)
+}
+
+export function deriveLoadStrategyFieldSources(
+  suggestedValues: LoadStrategyValues,
+  actualValues: LoadStrategyValues,
+): LoadStrategyFieldSources {
+  return Object.fromEntries(
+    loadStrategyFields.map((field) => [
+      field,
+      suggestedValues[field] === actualValues[field] ? 'suggested' : 'manual',
+    ]),
+  ) as LoadStrategyFieldSources
 }
 
 export function getLoadStrategyModifications(
