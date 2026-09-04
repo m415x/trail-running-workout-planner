@@ -4,6 +4,7 @@ import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
+import { distributeMesocycleLoad } from '@/lib/periodization/microcycle-load-distribution'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -204,25 +205,6 @@ export interface TrainingMesocycleGeneratorParams {
   loadStrategy: LoadStrategyDraft
 }
 
-function calculateStrategyTargetVolume(
-  strategy: LoadStrategyDraft,
-  type: VolumeMatrixMicrocycleType,
-) {
-  const { initialWeeklyVolumeKm, maximumWeeklyVolumeKm } = strategy.values
-
-  switch (type) {
-    case 'base':
-      return initialWeeklyVolumeKm
-    case 'development':
-      return Math.round((initialWeeklyVolumeKm + maximumWeeklyVolumeKm) / 2)
-    case 'shock':
-      return maximumWeeklyVolumeKm
-    case 'deload':
-      // The exact deload rule and its placement are refined in a later task.
-      return initialWeeklyVolumeKm
-  }
-}
-
 export function generateTrainingMesocycles({
   startDate,
   endDate,
@@ -256,8 +238,16 @@ export function generateTrainingMesocycles({
 
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
-    const targets = microcycleSequence.map((type): MicrocycleTarget => {
-      const targetVolumeKm = calculateStrategyTargetVolume(loadStrategy, type)
+    const mesocycleLoadTarget = mesocycleLoadTargets[mesocycleIndex]
+    const startingVolumeKm = mesocycleIndex === 0
+      ? loadStrategy.values.initialWeeklyVolumeKm
+      : mesocycleLoadTargets[mesocycleIndex - 1].targetPeakVolumeKm
+    const distributedLoads = distributeMesocycleLoad({
+      sequence: microcycleSequence,
+      startingVolumeKm,
+      targetPeakVolumeKm: mesocycleLoadTarget.targetPeakVolumeKm,
+    })
+    const targets = distributedLoads.map(({ type, targetVolumeKm }): MicrocycleTarget => {
       const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
 
       return {
@@ -290,7 +280,7 @@ export function generateTrainingMesocycles({
       number: mesocycleIndex + 1,
       period,
       objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
-      targetPeakVolumeKm: mesocycleLoadTargets[mesocycleIndex].targetPeakVolumeKm,
+      targetPeakVolumeKm: mesocycleLoadTarget.targetPeakVolumeKm,
       microcycles,
     })
   })
