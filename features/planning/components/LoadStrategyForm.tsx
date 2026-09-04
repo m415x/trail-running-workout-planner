@@ -4,7 +4,17 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
-import type { AthleteGroupCode, TrainingGoalType } from '@/types'
+import {
+  validateLoadStrategy,
+  type LoadStrategyValidationIssue,
+} from '@/lib/periodization/load-strategy-validator'
+import type {
+  AthleteGroupCode,
+  LoadStrategyDraft,
+  LoadStrategyField,
+  LoadStrategyValues,
+  TrainingGoalType,
+} from '@/types'
 import { Badge } from '@ui/badge'
 import { Button, buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -32,12 +42,48 @@ const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
 export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
   const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
   const [goalType, setGoalType] = useState<TrainingGoalType>('race')
-  const suggestion = useMemo(
+  const initialSuggestion = useMemo(
     () => suggestLoadStrategy(groupCode, goalType),
-    [groupCode, goalType],
+    // Only used to initialize the editable draft. Context changes reset it explicitly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
   )
+  const [strategy, setStrategy] = useState<LoadStrategyDraft>(initialSuggestion)
+
+  const validation = useMemo(() => validateLoadStrategy(strategy), [strategy])
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
-  const formVersion = `${groupCode}-${goalType}`
+
+  function resetStrategy(nextGroupCode: AthleteGroupCode, nextGoalType: TrainingGoalType) {
+    setStrategy(suggestLoadStrategy(nextGroupCode, nextGoalType))
+  }
+
+  function handleGroupChange(nextGroupCode: AthleteGroupCode) {
+    setGroupCode(nextGroupCode)
+    resetStrategy(nextGroupCode, goalType)
+  }
+
+  function handleGoalTypeChange(nextGoalType: TrainingGoalType) {
+    setGoalType(nextGoalType)
+    resetStrategy(groupCode, nextGoalType)
+  }
+
+  function handleValueChange(field: LoadStrategyField, value: number | null) {
+    setStrategy((current) => ({
+      ...current,
+      values: {
+        ...current.values,
+        [field]: value,
+      },
+      fieldSources: {
+        ...current.fieldSources,
+        [field]: 'manual',
+      },
+    }))
+  }
+
+  function issuesFor(field: LoadStrategyField) {
+    return [...validation.errors, ...validation.warnings].filter((issue) => issue.field === field)
+  }
 
   return (
     <form className='space-y-6'>
@@ -53,7 +99,7 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
             label='Grupo'
             name='groupCode'
             value={groupCode}
-            onChange={(value) => setGroupCode(value as AthleteGroupCode)}
+            onChange={(value) => handleGroupChange(value as AthleteGroupCode)}
           >
             {groups.map((group) => (
               <option key={group.id} value={group.code}>
@@ -66,7 +112,7 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
             label='Objetivo'
             name='goalType'
             value={goalType}
-            onChange={(value) => setGoalType(value as TrainingGoalType)}
+            onChange={(value) => handleGoalTypeChange(value as TrainingGoalType)}
           >
             {goalTypeOptions.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -75,7 +121,7 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
         </CardContent>
       </Card>
 
-      <Card key={formVersion}>
+      <Card>
         <CardHeader>
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div>
@@ -94,23 +140,29 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
               <NumberField
                 label='Volumen inicial'
                 name='initialWeeklyVolumeKm'
-                defaultValue={suggestion.values.initialWeeklyVolumeKm}
+                value={strategy.values.initialWeeklyVolumeKm}
                 suffix='km/semana'
                 step='0.1'
+                issues={issuesFor('initialWeeklyVolumeKm')}
+                onChange={(value) => handleValueChange('initialWeeklyVolumeKm', value ?? 0)}
               />
               <NumberField
                 label='Volumen máximo'
                 name='maximumWeeklyVolumeKm'
-                defaultValue={suggestion.values.maximumWeeklyVolumeKm}
+                value={strategy.values.maximumWeeklyVolumeKm}
                 suffix='km/semana'
                 step='0.1'
+                issues={issuesFor('maximumWeeklyVolumeKm')}
+                onChange={(value) => handleValueChange('maximumWeeklyVolumeKm', value ?? 0)}
               />
               <NumberField
                 label='Sesiones'
                 name='sessionsPerWeek'
-                defaultValue={suggestion.values.sessionsPerWeek}
+                value={strategy.values.sessionsPerWeek}
                 suffix='por semana'
                 step='1'
+                issues={issuesFor('sessionsPerWeek')}
+                onChange={(value) => handleValueChange('sessionsPerWeek', value ?? 0)}
               />
             </div>
           </fieldset>
@@ -121,16 +173,20 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
               <NumberField
                 label='Incremento semanal máximo'
                 name='maximumWeeklyIncreasePercentage'
-                defaultValue={suggestion.values.maximumWeeklyIncreasePercentage}
+                value={strategy.values.maximumWeeklyIncreasePercentage}
                 suffix='%'
                 step='0.1'
+                issues={issuesFor('maximumWeeklyIncreasePercentage')}
+                onChange={(value) => handleValueChange('maximumWeeklyIncreasePercentage', value ?? 0)}
               />
               <NumberField
                 label='Descarga'
                 name='deloadPercentage'
-                defaultValue={suggestion.values.deloadPercentage}
+                value={strategy.values.deloadPercentage}
                 suffix='%'
                 step='0.1'
+                issues={issuesFor('deloadPercentage')}
+                onChange={(value) => handleValueChange('deloadPercentage', value ?? 0)}
               />
             </div>
           </fieldset>
@@ -144,25 +200,37 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
               <NumberField
                 label='Desnivel inicial'
                 name='initialWeeklyElevationGain'
-                defaultValue={suggestion.values.initialWeeklyElevationGain}
+                value={strategy.values.initialWeeklyElevationGain}
                 suffix='m+/semana'
                 step='1'
+                issues={issuesFor('initialWeeklyElevationGain')}
+                onChange={(value) => handleValueChange('initialWeeklyElevationGain', value)}
               />
               <NumberField
                 label='Desnivel máximo'
                 name='maximumWeeklyElevationGain'
-                defaultValue={suggestion.values.maximumWeeklyElevationGain}
+                value={strategy.values.maximumWeeklyElevationGain}
                 suffix='m+/semana'
                 step='1'
+                issues={issuesFor('maximumWeeklyElevationGain')}
+                onChange={(value) => handleValueChange('maximumWeeklyElevationGain', value)}
               />
             </div>
           </fieldset>
+
+          {validation.warnings.length > 0 && validation.errors.length === 0 && (
+            <p className='text-sm text-muted-foreground'>
+              Hay {validation.warnings.length} advertencia{validation.warnings.length === 1 ? '' : 's'} metodológica{validation.warnings.length === 1 ? '' : 's'}. Podés continuar con esos valores si responden a una decisión planificada.
+            </p>
+          )}
         </CardContent>
       </Card>
 
       <div className='flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between'>
         <p className='text-sm text-muted-foreground'>
-          El guardado se habilitará al asociar esta estrategia con un plan grupal.
+          {validation.errors.length > 0
+            ? `Corregí ${validation.errors.length} error${validation.errors.length === 1 ? '' : 'es'} antes de continuar.`
+            : 'El guardado se habilitará al asociar esta estrategia con un plan grupal.'}
         </p>
         <div className='flex justify-end gap-2'>
           <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
@@ -201,12 +269,16 @@ function SelectField({ label, name, value, onChange, children }: SelectFieldProp
 interface NumberFieldProps {
   label: string
   name: string
-  defaultValue: number | null
+  value: number | null
   suffix: string
   step: string
+  issues: LoadStrategyValidationIssue[]
+  onChange: (value: number | null) => void
 }
 
-function NumberField({ label, name, defaultValue, suffix, step }: NumberFieldProps) {
+function NumberField({ label, name, value, suffix, step, issues, onChange }: NumberFieldProps) {
+  const hasError = issues.some((issue) => issue.severity === 'error')
+
   return (
     <div className='space-y-1.5'>
       <label htmlFor={name} className='text-sm font-medium'>{label}</label>
@@ -217,13 +289,31 @@ function NumberField({ label, name, defaultValue, suffix, step }: NumberFieldPro
           type='number'
           min='0'
           step={step}
-          defaultValue={defaultValue ?? ''}
+          value={value ?? ''}
+          aria-invalid={hasError}
+          aria-describedby={issues.length > 0 ? `${name}-feedback` : undefined}
+          onChange={(event) => {
+            const nextValue = event.target.value
+            onChange(nextValue === '' ? null : Number(nextValue))
+          }}
           className='pr-24'
         />
         <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>
           {suffix}
         </span>
       </div>
+      {issues.length > 0 && (
+        <div id={`${name}-feedback`} className='space-y-1 text-xs'>
+          {issues.map((issue) => (
+            <p
+              key={issue.code}
+              className={issue.severity === 'error' ? 'text-destructive' : 'text-muted-foreground'}
+            >
+              {issue.severity === 'warning' ? 'Advertencia: ' : ''}{issue.message}
+            </p>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
