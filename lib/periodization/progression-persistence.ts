@@ -16,6 +16,7 @@ export interface PersistProgressionParams {
   groupTrainingPlanId: string
   macrocycleId: string
   planning: GeneratedMacrocycleDraft
+  database?: typeof db
 }
 
 export interface PersistProgressionResult {
@@ -30,8 +31,9 @@ export function persistProgression({
   groupTrainingPlanId,
   macrocycleId,
   planning,
+  database = db,
 }: PersistProgressionParams): PersistProgressionResult {
-  const macrocycle = db.query.macrocycles.findFirst({
+  const macrocycle = database.query.macrocycles.findFirst({
     where: and(eq(macrocycles.id, macrocycleId), eq(macrocycles.isDeleted, false)),
     with: {
       groupTrainingPlan: true,
@@ -95,7 +97,7 @@ export function persistProgression({
   }
   const now = new Date().toISOString()
 
-  db.transaction((tx) => {
+  database.transaction((tx) => {
     for (const proposedMesocycle of planning.mesocycles) {
       const existingMesocycle = existingMesocyclesByNumber.get(proposedMesocycle.number)
       const mesocycleId = existingMesocycle?.id ?? randomUUID()
