@@ -9,15 +9,13 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import { athleteGroups, groupTrainingPlans, planningModificationRecords } from '@/db/schema'
+import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
-  LoadStrategyField,
   LoadStrategyFieldSources,
-  LoadStrategyValues,
-  PlanningModificationField,
   TrainingGoalType,
 } from '@/types'
 
@@ -58,12 +56,6 @@ export interface CreateGroupPlanWithLoadStrategyState {
   error?: string
 }
 
-interface LoadStrategyModification {
-  field: PlanningModificationField
-  previousValue: string | null
-  newValue: string | null
-}
-
 const goalLabels: Record<TrainingGoalType, string> = {
   race: 'Carrera',
   performance: 'Rendimiento',
@@ -72,45 +64,9 @@ const goalLabels: Record<TrainingGoalType, string> = {
   custom: 'Objetivo personalizado',
 }
 
-const modificationFields: Record<LoadStrategyField, PlanningModificationField> = {
-  initialWeeklyVolumeKm: 'load_initial_weekly_volume_km',
-  maximumWeeklyVolumeKm: 'load_maximum_weekly_volume_km',
-  sessionsPerWeek: 'load_sessions_per_week',
-  maximumWeeklyIncreasePercentage: 'load_maximum_weekly_increase_percentage',
-  deloadPercentage: 'load_deload_percentage',
-  initialWeeklyElevationGain: 'load_initial_weekly_elevation_gain',
-  maximumWeeklyElevationGain: 'load_maximum_weekly_elevation_gain',
-}
-
-const loadStrategyFields = Object.keys(modificationFields) as LoadStrategyField[]
-
 function planningPath(locale: string, suffix = '') {
   const base = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   return `${base}${suffix}`
-}
-
-function serializeModificationValue(value: number | null) {
-  return value === null ? null : String(value)
-}
-
-export function getLoadStrategyModifications(
-  suggestedValues: LoadStrategyValues,
-  actualValues: LoadStrategyValues,
-): LoadStrategyModification[] {
-  return loadStrategyFields.flatMap((field) => {
-    const previousValue = suggestedValues[field]
-    const newValue = actualValues[field]
-
-    if (previousValue === newValue) {
-      return []
-    }
-
-    return [{
-      field: modificationFields[field],
-      previousValue: serializeModificationValue(previousValue),
-      newValue: serializeModificationValue(newValue),
-    }]
-  })
 }
 
 export async function createGroupPlanWithLoadStrategy(
