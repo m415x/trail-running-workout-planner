@@ -18,7 +18,7 @@ describe('recomendaciones de estrategia de carga', () => {
       maximumWeeklyVolumeKm: 42,
       sessionsPerWeek: 4,
       maximumWeeklyIncreasePercentage: 10,
-      deloadPercentage: 35,
+      deloadPercentage: 25,
       initialWeeklyElevationGain: 720,
       maximumWeeklyElevationGain: 840,
     })
@@ -30,7 +30,7 @@ describe('recomendaciones de estrategia de carga', () => {
     assert.equal(strategy.values.initialWeeklyVolumeKm, 35)
     assert.equal(strategy.values.maximumWeeklyVolumeKm, 36)
     assert.equal(strategy.values.maximumWeeklyIncreasePercentage, 5)
-    assert.equal(strategy.values.deloadPercentage, 20)
+    assert.equal(strategy.values.deloadPercentage, 15)
   })
 
   it('marca todos los valores iniciales como sugeridos', () => {
@@ -52,7 +52,7 @@ describe('recomendaciones de estrategia de carga', () => {
         assert.ok(values.initialWeeklyVolumeKm <= values.maximumWeeklyVolumeKm)
         assert.ok(values.sessionsPerWeek >= 3 && values.sessionsPerWeek <= 6)
         assert.ok(values.maximumWeeklyIncreasePercentage > 0)
-        assert.ok(values.deloadPercentage > 0 && values.deloadPercentage < 100)
+        assert.ok(values.deloadPercentage >= 15 && values.deloadPercentage <= 25)
         assert.ok((values.initialWeeklyElevationGain ?? 0) >= 0)
         assert.ok(
           (values.maximumWeeklyElevationGain ?? 0)

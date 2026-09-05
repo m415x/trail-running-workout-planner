@@ -8,6 +8,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { loadStrategies } from '@/db/load-strategy-schema'
 import {
   athleteGroups,
   groupTrainingPlans,
@@ -15,10 +16,22 @@ import {
   microcycles,
   planningModificationRecords,
 } from '@/db/schema'
+import {
+  buildLoadProgressionPreview,
+  determineTrainingProgressionEndDate,
+} from '@/lib/periodization/load-progression-preview'
+import { persistProgression } from '@/lib/periodization/progression-persistence'
+import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 const microcycleTypes = ['base', 'development', 'shock', 'deload', 'tapering', 'race'] as const
+
+const persistProgressionSchema = z.object({
+  planId: z.string().trim().min(1, 'No se pudo identificar la planificación'),
+  macrocycleId: z.string().trim().min(1, 'No se pudo identificar el macrociclo'),
+  locale: z.enum(locales).default('es'),
+})
 
 const updateMicrocycleVolumeSchema = z.object({
   microcycleId: z.string().trim().min(1, 'No se pudo identificar el microciclo'),
@@ -66,6 +79,10 @@ export interface MicrocycleTypeFormState {
 }
 
 export interface MicrocycleNotesFormState {
+  error?: string
+}
+
+export interface PersistProgressionFormState {
   error?: string
 }
 
@@ -170,15 +187,107 @@ export async function getGroupTrainingPlanById(planId: string) {
     return null
   }
 
+  const loadStrategy = db.query.loadStrategies.findFirst({
+    where: and(
+      eq(loadStrategies.groupTrainingPlanId, plan.id),
+      eq(loadStrategies.isDeleted, false),
+    ),
+  }).sync()
+
   plan.macrocycles.sort((first, second) => first.startDate.localeCompare(second.startDate))
+  plan.macrocycles = plan.macrocycles.filter((macrocycle) => !macrocycle.isDeleted)
   plan.macrocycles.forEach((macrocycle) => {
+    macrocycle.mesocycles = macrocycle.mesocycles.filter((mesocycle) => !mesocycle.isDeleted)
     macrocycle.mesocycles.sort((first, second) => first.number - second.number)
     macrocycle.mesocycles.forEach((mesocycle) => {
+      mesocycle.microcycles = mesocycle.microcycles.filter((microcycle) => !microcycle.isDeleted)
       mesocycle.microcycles.sort((first, second) => first.weekNumber - second.weekNumber)
     })
   })
 
-  return plan
+  return { ...plan, loadStrategy: loadStrategy ?? null }
+}
+
+export async function saveLoadProgression(
+  _previousState: PersistProgressionFormState,
+  formData: FormData,
+): Promise<PersistProgressionFormState> {
+  const parsed = persistProgressionSchema.safeParse(Object.fromEntries(formData))
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'No se pudo guardar la progresión' }
+  }
+
+  const data = parsed.data
+
+  try {
+    const plan = await getGroupTrainingPlanById(data.planId)
+    const macrocycle = plan?.macrocycles.find((candidate) => candidate.id === data.macrocycleId)
+
+    if (!plan || !macrocycle || !plan.loadStrategy) {
+      return { error: 'El plan no tiene una estrategia y un macrociclo válidos' }
+    }
+
+    const athleteGroup = `${plan.group.categoryCode}${plan.group.levelCode}` as AthleteGroupCode
+    const loadStrategy: LoadStrategyDraft = {
+      context: {
+        athleteGroup,
+        goalType: plan.loadStrategy.goalType,
+      },
+      values: {
+        initialWeeklyVolumeKm: plan.loadStrategy.initialWeeklyVolumeKm,
+        maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
+        sessionsPerWeek: plan.loadStrategy.sessionsPerWeek,
+        maximumWeeklyIncreasePercentage: plan.loadStrategy.maximumWeeklyIncreasePercentage,
+        deloadPercentage: plan.loadStrategy.deloadPercentage,
+        initialWeeklyElevationGain: plan.loadStrategy.initialWeeklyElevationGain,
+        maximumWeeklyElevationGain: plan.loadStrategy.maximumWeeklyElevationGain,
+      },
+      fieldSources: plan.loadStrategy.fieldSources,
+    }
+    const protectedMesocycles = macrocycle.mesocycles.filter((mesocycle) => (
+      mesocycle.period === 'competitive' || mesocycle.period === 'transition'
+    ))
+    const trainingEndDate = determineTrainingProgressionEndDate(
+      macrocycle.endDate,
+      protectedMesocycles.flatMap((mesocycle) => (
+        mesocycle.microcycles.map((microcycle) => microcycle.startDate)
+      )),
+    )
+    const existingMicrocycles = macrocycle.mesocycles
+      .filter((mesocycle) => !protectedMesocycles.includes(mesocycle))
+      .flatMap((mesocycle) => mesocycle.microcycles.map((microcycle) => ({
+        id: microcycle.id,
+        weekNumber: microcycle.weekNumber,
+        targetVolumeKm: microcycle.targetVolumeKm,
+        targetVolumeSource: microcycle.targetVolumeSource,
+      })))
+    const preview = buildLoadProgressionPreview({
+      title: macrocycle.title,
+      startDate: macrocycle.startDate,
+      endDate: trainingEndDate,
+      loadStrategy,
+      existingMicrocycles,
+    })
+
+    if (preview.conflicts.length > 0) {
+      return { error: preview.conflicts[0].message }
+    }
+
+    persistProgression({
+      groupTrainingPlanId: plan.id,
+      macrocycleId: macrocycle.id,
+      planning: preview.planning,
+    })
+  } catch (error) {
+    console.error('Error saving load progression:', error)
+    return { error: error instanceof Error ? error.message : 'No se pudo guardar la progresión' }
+  }
+
+  const detailPath = planningPath(data.locale, `/${data.planId}`)
+  revalidatePath(planningPath(data.locale))
+  revalidatePath(detailPath)
+  redirect(detailPath)
 }
 
 export async function updateMicrocycleVolume(
@@ -208,6 +317,7 @@ export async function updateMicrocycleVolume(
         tx.update(microcycles)
           .set({
             targetVolumeKm: data.targetVolumeKm,
+            targetVolumeSource: 'manual',
             updatedAt: now,
           })
           .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))

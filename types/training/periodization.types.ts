@@ -10,6 +10,8 @@ export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'del
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
+export type TargetVolumeSource = 'generated' | 'manual'
 export type PlanningModificationField =
   | 'target_volume_km'
   | 'date_range'
@@ -45,6 +47,7 @@ export interface GeneratedMicrocycleDraft {
   startDate: string
   endDate: string
   targetVolumeKm: number
+  targetVolumeSource: TargetVolumeSource
   targetElevationGain: number
   notes: string
 }
@@ -54,6 +57,7 @@ export interface GeneratedMesocycleDraft {
   number: number
   period: PeriodType
   objective: string
+  targetPeakVolumeKm?: number
   microcycles: GeneratedMicrocycleDraft[]
 }
 
@@ -64,11 +68,14 @@ export interface GeneratedMacrocycleDraft {
   startDate: string
   endDate: string
   taperingWeeksCount: 0 | 2 | 3
+  trainingWeeksCount: number
+  progressionDurationProfile: ProgressionDurationProfile
   race: {
     name: string
     distanceKm: number
     elevationGain?: number
   } | null
+  generationWarnings: string[]
   mesocycles: GeneratedMesocycleDraft[]
 }
 
@@ -79,6 +86,7 @@ export interface Microcycle extends BaseEntity {
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
   targetVolumeKm?: number | null
+  targetVolumeSource: TargetVolumeSource
   targetElevationGain?: number | null
   targetDurationMin?: number | null
   notes?: string

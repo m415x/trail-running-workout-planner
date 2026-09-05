@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/load-strategy-actions'
 import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
+import { validateMacrocycleHorizon } from '@/lib/periodization/macrocycle-horizon'
 import {
   validateLoadStrategy,
   type LoadStrategyValidationIssue,
@@ -33,6 +34,8 @@ interface LoadStrategyGroupOption {
 interface LoadStrategyFormProps {
   groups: LoadStrategyGroupOption[]
   locale: string
+  defaultStartDate: string
+  defaultEndDate: string
 }
 
 const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
@@ -45,7 +48,12 @@ const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
 
 const initialActionState: CreateGroupPlanWithLoadStrategyState = {}
 
-export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
+export function LoadStrategyForm({
+  groups,
+  locale,
+  defaultStartDate,
+  defaultEndDate,
+}: LoadStrategyFormProps) {
   const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
   const [goalType, setGoalType] = useState<TrainingGoalType>('race')
   const suggestion = useMemo(
@@ -53,12 +61,18 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
     [groupCode, goalType],
   )
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
+  const [startDate, setStartDate] = useState(defaultStartDate)
+  const [endDate, setEndDate] = useState(defaultEndDate)
   const [actionState, formAction, isPending] = useActionState(
     createGroupPlanWithLoadStrategy,
     initialActionState,
   )
 
   const validation = useMemo(() => validateLoadStrategy(strategy), [strategy])
+  const horizonValidation = useMemo(
+    () => validateMacrocycleHorizon({ startDate, endDate }),
+    [startDate, endDate],
+  )
   const isCustomized = useMemo(
     () => getLoadStrategyModifications(suggestion.values, strategy.values).length > 0,
     [strategy.values, suggestion.values],
@@ -131,6 +145,40 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
               <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </SelectField>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Horizonte del macrociclo</CardTitle>
+          <CardDescription>
+            Definí el período que tendrá disponible el motor para distribuir la carga.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className='space-y-3'>
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <DateField
+              label='Fecha inicial'
+              name='startDate'
+              value={startDate}
+              onChange={setStartDate}
+            />
+            <DateField
+              label='Fecha final'
+              name='endDate'
+              value={endDate}
+              min={startDate}
+              onChange={setEndDate}
+            />
+          </div>
+          <p
+            className={horizonValidation.isValid ? 'text-sm text-muted-foreground' : 'text-sm text-destructive'}
+            role={horizonValidation.isValid ? undefined : 'alert'}
+          >
+            {horizonValidation.isValid
+              ? `${horizonValidation.durationWeeks} semanas · ${horizonValidation.durationDays} días de planificación.`
+              : horizonValidation.error}
+          </p>
         </CardContent>
       </Card>
 
@@ -254,12 +302,37 @@ export function LoadStrategyForm({ groups, locale }: LoadStrategyFormProps) {
         </div>
         <div className='flex justify-end gap-2'>
           <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
-          <Button type='submit' disabled={!validation.isValid || isPending}>
+          <Button type='submit' disabled={!validation.isValid || !horizonValidation.isValid || isPending}>
             {isPending ? 'Creando…' : 'Crear plan'}
           </Button>
         </div>
       </div>
     </form>
+  )
+}
+
+interface DateFieldProps {
+  label: string
+  name: string
+  value: string
+  min?: string
+  onChange: (value: string) => void
+}
+
+function DateField({ label, name, value, min, onChange }: DateFieldProps) {
+  return (
+    <div className='space-y-1.5'>
+      <label htmlFor={name} className='text-sm font-medium'>{label}</label>
+      <Input
+        id={name}
+        name={name}
+        type='date'
+        value={value}
+        min={min}
+        required
+        onChange={(event) => onChange(event.target.value)}
+      />
+    </div>
   )
 }
 

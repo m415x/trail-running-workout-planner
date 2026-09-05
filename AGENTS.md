@@ -107,6 +107,16 @@ The current implementation is an authenticated-product prototype: user/team cont
 - **Date handling:** Store domain dates as ISO date strings where the schema expects them and avoid accidental UTC shifts in calendar views.
 - **Scope:** Do not implement work assigned to a future epic as an incidental refactor. Record it under known constraints instead.
 
+## Documentation Standard
+
+- Apply JSDoc incrementally to new code and to existing code that receives a substantial modification. Do not pause feature work to document unrelated legacy code.
+- Document exported domain functions, important domain interfaces and types, and operations with persistence or other side effects when their contract is not fully evident from the signature.
+- State units and ranges for training values such as kilometers, elevation meters, minutes, and percentages.
+- Record relevant invariants, expected errors, and preservation rules, especially for load limits, deloads, manual coach changes, regeneration, and protected planning blocks.
+- Explain domain intent and non-obvious decisions. Do not add comments that merely restate the implementation, document trivial accessors, or duplicate information already expressed clearly by names and types.
+- Keep documentation synchronized in the same task when a documented contract changes.
+- TypeDoc and Storybook adoption, along with retrospective documentation of existing code, belongs to the dedicated documentation story in Epic 7.
+
 ## Delivery Workflow
 
 - Work in a story branch and keep commits aligned with the current task.

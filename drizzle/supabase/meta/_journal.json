@@ -15,6 +15,13 @@
       "when": 1788543772241,
       "tag": "0001_overconfident_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788560669356,
+      "tag": "0002_omniscient_baron_zemo",
+      "breakpoints": true
     }
   ]
 }

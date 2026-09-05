@@ -448,6 +448,7 @@ async function seed() {
     startDate: shiftISODate(currentWeekStart, index * 7),
     endDate: shiftISODate(currentWeekStart, index * 7 + 6),
     targetVolumeKm: weeklyCycle.targetKm || 40,
+    targetVolumeSource: 'generated' as const,
     targetElevationGain: null,
     targetDurationMin: null,
     notes: null,

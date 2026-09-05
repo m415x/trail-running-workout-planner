@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { addDays, format, parseISO } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
 
 import { getActiveAthleteGroups } from '@/app/actions/athlete-actions'
@@ -11,10 +12,24 @@ interface NewPlanningPageProps {
   params: Promise<{ locale: string }>
 }
 
+function todayInBuenosAires() {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+
+  return `${values.year}-${values.month}-${values.day}`
+}
+
 export default async function NewPlanningPage({ params }: NewPlanningPageProps) {
   const { locale } = await params
   const groups = await getActiveAthleteGroups()
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const defaultStartDate = parseISO(todayInBuenosAires())
+  const defaultEndDate = addDays(defaultStartDate, 83)
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-6'>
@@ -38,6 +53,8 @@ export default async function NewPlanningPage({ params }: NewPlanningPageProps) 
       ) : (
         <LoadStrategyForm
           locale={locale}
+          defaultStartDate={format(defaultStartDate, 'yyyy-MM-dd')}
+          defaultEndDate={format(defaultEndDate, 'yyyy-MM-dd')}
           groups={groups.map((group) => ({
             id: group.id,
             code: `${group.categoryCode}${group.levelCode}` as AthleteGroupCode,
