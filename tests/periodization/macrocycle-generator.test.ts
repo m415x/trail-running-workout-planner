@@ -61,6 +61,8 @@ describe('generación de planificación', () => {
 
     const weeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
     const competitive = result.mesocycles.at(-1)
+    const finalTrainingMicrocycle = result.mesocycles.at(-2)?.microcycles.at(-1)
+    const finalTrainingPeakVolume = result.mesocycles.at(-2)?.targetPeakVolumeKm
     const finalTrainingPeakElevation = result.mesocycles.at(-2)?.targetPeakElevationGain
     assert.equal(typeof finalTrainingPeakElevation, 'number')
     assert.equal(determineTaperingWeeksCount('S2', result.race ?? undefined), 3)
@@ -68,7 +70,16 @@ describe('generación de planificación', () => {
     assert.equal(result.trainingWeeksCount, 9)
     assert.equal(result.progressionDurationProfile, 'normal')
     assert.equal(competitive?.period, 'competitive')
+    assert.equal(finalTrainingMicrocycle?.type, 'shock')
     assert.deepEqual(competitive?.microcycles.map((week) => week.type), ['tapering', 'tapering', 'race'])
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetVolumeKm),
+      [
+        Math.round((finalTrainingPeakVolume ?? 0) * 0.6),
+        Math.round((finalTrainingPeakVolume ?? 0) * 0.4),
+        42,
+      ],
+    )
     assert.deepEqual(
       competitive?.microcycles.map((week) => week.targetElevationGain),
       [
@@ -85,6 +96,46 @@ describe('generación de planificación', () => {
 
   it('usa dos semanas competitivas para una carrera corta', () => {
     assert.equal(determineTaperingWeeksCount('S2', { name: '10K', distanceKm: 10 }), 2)
+
+    const result = generateFractalMacrocycle({
+      title: '10K',
+      goalType: 'race',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy: s2RaceStrategy,
+      race: { name: '10K', distanceKm: 10 },
+    })
+    const trainingWeeks = result.mesocycles.slice(0, -1)
+      .flatMap((mesocycle) => mesocycle.microcycles)
+
+    assert.equal(trainingWeeks.at(-1)?.type, 'shock')
+    assert.notEqual(trainingWeeks.at(-1)?.type, 'deload')
+  })
+
+  it('reemplaza la descarga final por carga específica antes del taper en horizontes residuales', () => {
+    for (const totalWeeks of [9, 10, 13, 14, 33, 34]) {
+      const startDate = new Date('2026-01-05T00:00:00Z')
+      const endDate = new Date(startDate)
+      endDate.setUTCDate(endDate.getUTCDate() + totalWeeks * 7 - 1)
+      const result = generateFractalMacrocycle({
+        title: `Carrera a ${totalWeeks} semanas`,
+        goalType: 'race',
+        startDate: '2026-01-05',
+        endDate: endDate.toISOString().slice(0, 10),
+        athleteGroup: 'S2',
+        loadStrategy: s2RaceStrategy,
+        race: { name: 'Trail', distanceKm: 21, elevationGain: 900 },
+      })
+      const trainingWeeks = result.mesocycles.slice(0, -1)
+        .flatMap((mesocycle) => mesocycle.microcycles)
+
+      assert.equal(trainingWeeks.at(-1)?.type, 'shock', `${totalWeeks} semanas`)
+      assert.deepEqual(
+        result.mesocycles.at(-1)?.microcycles.map((week) => week.type),
+        ['tapering', 'race'],
+      )
+    }
   })
 
   it('no inventa el D+ de una carrera cuando el dato es desconocido', () => {

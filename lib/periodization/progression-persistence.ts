@@ -134,9 +134,19 @@ export function persistProgression({
         const existingMicrocycle = existingMicrocyclesByWeek.get(proposedMicrocycle.weekNumber)
 
         if (existingMicrocycle) {
+          const entersProtectedBlock = PROTECTED_PERIODS.has(proposedMesocycle.period)
+
           tx.update(microcycles)
             .set({
               mesocycleId,
+              ...(entersProtectedBlock
+                ? {
+                    type: proposedMicrocycle.type,
+                    startDate: proposedMicrocycle.startDate,
+                    endDate: proposedMicrocycle.endDate,
+                    notes: proposedMicrocycle.notes,
+                  }
+                : {}),
               targetVolumeKm: proposedMicrocycle.targetVolumeKm,
               targetVolumeSource: proposedMicrocycle.targetVolumeSource,
               targetElevationGain: proposedMicrocycle.targetElevationGain,
@@ -192,6 +202,13 @@ export function persistProgression({
       .set({ updatedAt: now })
       .where(eq(groupTrainingPlans.id, groupTrainingPlanId))
       .run()
+
+    if (planning.taperingWeeksCount > 0) {
+      tx.update(macrocycles)
+        .set({ taperingWeeksCount: planning.taperingWeeksCount, updatedAt: now })
+        .where(eq(macrocycles.id, macrocycleId))
+        .run()
+    }
   })
 
   return result

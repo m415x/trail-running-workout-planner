@@ -2,6 +2,7 @@ import { differenceInCalendarDays, format, parseISO, subDays } from 'date-fns'
 
 import {
   determineProgressionDurationProfile,
+  generateFractalMacrocycle,
   generateTrainingMesocycles,
   getUnreachableMaximumWarning,
 } from '@/lib/periodization/macrocycle-generator'
@@ -19,6 +20,7 @@ export interface LoadProgressionPreviewParams {
   endDate: string
   loadStrategy: LoadStrategyDraft
   targetRace?: TargetRaceSnapshot | null
+  finishesBeforeTaper?: boolean
   existingMicrocycles?: ExistingMicrocycleVolume[]
 }
 
@@ -39,17 +41,30 @@ export function buildLoadProgressionPreview({
   endDate,
   loadStrategy,
   targetRace = null,
+  finishesBeforeTaper = false,
   existingMicrocycles = [],
 }: LoadProgressionPreviewParams) {
+  const completePlanning = targetRace
+    ? generateFractalMacrocycle({
+        title,
+        goalType: loadStrategy.context.goalType,
+        startDate,
+        endDate,
+        athleteGroup: loadStrategy.context.athleteGroup,
+        loadStrategy,
+        race: targetRace,
+      })
+    : null
   const trainingWeeksCount = Math.ceil(
     (differenceInCalendarDays(parseISO(endDate), parseISO(startDate)) + 1) / 7,
   )
-  const mesocycles = generateTrainingMesocycles({
+  const mesocycles = completePlanning?.mesocycles ?? generateTrainingMesocycles({
     startDate,
     endDate,
     trainingWeeksCount,
     athleteGroup: loadStrategy.context.athleteGroup,
     loadStrategy,
+    finishesBeforeTaper,
   })
   const maximumWarning = getUnreachableMaximumWarning(
     mesocycles.at(-1)?.targetPeakVolumeKm,
@@ -61,7 +76,7 @@ export function buildLoadProgressionPreview({
   const raceDensityWarning = targetRace?.elevationGain === undefined
     ? null
     : assessElevationDensity(targetRace.distanceKm, targetRace.elevationGain).warning
-  const generatedPlanning: GeneratedMacrocycleDraft = {
+  const generatedPlanning: GeneratedMacrocycleDraft = completePlanning ?? {
     title,
     goalType: loadStrategy.context.goalType,
     athleteGroup: loadStrategy.context.athleteGroup,
@@ -70,14 +85,16 @@ export function buildLoadProgressionPreview({
     taperingWeeksCount: 0,
     trainingWeeksCount,
     progressionDurationProfile: determineProgressionDurationProfile(trainingWeeksCount),
-    race: targetRace,
-    generationWarnings: [
-      ...(maximumWarning ? [maximumWarning] : []),
-      ...strategyWarnings,
-      ...(raceDensityWarning ? [raceDensityWarning] : []),
-    ],
+    race: null,
+    generationWarnings: maximumWarning ? [maximumWarning] : [],
     mesocycles,
   }
+
+  generatedPlanning.generationWarnings = [
+    ...generatedPlanning.generationWarnings,
+    ...strategyWarnings,
+    ...(raceDensityWarning ? [raceDensityWarning] : []),
+  ]
 
   return reconcilePlanningRegeneration({
     generatedPlanning,

@@ -62,7 +62,7 @@ describe('vista previa de progresión', () => {
     )
   })
 
-  it('transporta la carrera objetivo sin convertirla todavía en carga semanal', () => {
+  it('reserva taper y genera la carrera objetivo como carga semanal', () => {
     const preview = buildLoadProgressionPreview({
       title: 'Preparación Patagonia Run',
       startDate: '2026-01-05',
@@ -80,6 +80,30 @@ describe('vista previa de progresión', () => {
       distanceKm: 42.2,
       elevationGain: 2400,
     })
+    assert.equal(preview.planning.taperingWeeksCount, 3)
+    assert.deepEqual(
+      preview.planning.mesocycles.at(-1)?.microcycles.map((week) => week.type),
+      ['tapering', 'tapering', 'race'],
+    )
+    assert.equal(preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetVolumeKm, 42.2)
+    assert.equal(preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetElevationGain, 2400)
+  })
+
+  it('mantiene una semana pico al regenerar antes de un taper persistido', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Preparación M1',
+      startDate: '2026-01-05',
+      endDate: '2026-05-24',
+      loadStrategy: suggestLoadStrategy('M1', 'race'),
+      finishesBeforeTaper: true,
+    })
+    const weeks = preview.planning.mesocycles
+      .flatMap((mesocycle) => mesocycle.microcycles)
+
+    assert.equal(weeks.at(-1)?.weekNumber, 20)
+    assert.equal(weeks.at(-1)?.type, 'shock')
+    assert.equal(weeks.at(-1)?.targetVolumeKm, 75)
+    assert.notEqual(weeks.at(-1)?.type, 'deload')
   })
 
   it('advierte cuando la carrera tiene una densidad vertical extrema', () => {

@@ -11,6 +11,9 @@ import type {
   MicrocycleType,
   IntensityMethod,
   IntensityZone,
+  IntensityEmphasis,
+  IntensityStrategyFieldSources,
+  MicrocycleIntensityTargetFieldSources,
   WorkoutType,
   DayStatus,
   TestType,
@@ -259,6 +262,22 @@ export const loadStrategies = pgTable(
   ],
 )
 
+export const intensityStrategies = pgTable(
+  'intensity_strategies',
+  {
+    ...baseColumns,
+    groupTrainingPlanId: text('group_training_plan_id')
+      .notNull()
+      .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+    goalType: text('goal_type').$type<TrainingGoalType>().notNull(),
+    defaultMethod: text('default_method').$type<IntensityMethod>().notNull(),
+    maximumIntenseSessionsPerWeek: integer('maximum_intense_sessions_per_week').notNull(),
+    minimumRecoveryDaysBetweenIntenseSessions: integer('minimum_recovery_days_between_intense_sessions').notNull(),
+    fieldSources: jsonb('field_sources').$type<IntensityStrategyFieldSources>().notNull(),
+  },
+  (table) => [uniqueIndex('intensity_strategies_plan_unique').on(table.groupTrainingPlanId)],
+)
+
 export const macrocycles = pgTable('macrocycles', {
   ...baseColumns,
 
@@ -314,6 +333,23 @@ export const microcycles = pgTable('microcycles', {
   targetDurationMin: integer('target_duration_min'),
   notes: text('notes'),
 })
+
+export const microcycleIntensityTargets = pgTable(
+  'microcycle_intensity_targets',
+  {
+    ...baseColumns,
+    microcycleId: text('microcycle_id')
+      .notNull()
+      .references(() => microcycles.id, { onDelete: 'cascade' }),
+    emphasis: text('emphasis').$type<IntensityEmphasis>().notNull(),
+    intenseSessionsTarget: integer('intense_sessions_target').notNull(),
+    predominantZone: text('predominant_zone').$type<IntensityZone>().notNull(),
+    pamPercentageTarget: doublePrecision('pam_percentage_target'),
+    minimumRecoveryDaysBetweenIntenseSessions: integer('minimum_recovery_days_between_intense_sessions').notNull(),
+    fieldSources: jsonb('field_sources').$type<MicrocycleIntensityTargetFieldSources>().notNull(),
+  },
+  (table) => [uniqueIndex('microcycle_intensity_targets_microcycle_unique').on(table.microcycleId)],
+)
 
 export const planningModificationRecords = pgTable('planning_modification_records', {
   ...baseColumns,
@@ -606,11 +642,19 @@ export const groupTrainingPlansRelations = relations(groupTrainingPlans, ({ one,
   macrocycles: many(macrocycles),
   modifications: many(planningModificationRecords),
   loadStrategy: one(loadStrategies),
+  intensityStrategy: one(intensityStrategies),
 }))
 
 export const loadStrategiesRelations = relations(loadStrategies, ({ one }) => ({
   groupTrainingPlan: one(groupTrainingPlans, {
     fields: [loadStrategies.groupTrainingPlanId],
+    references: [groupTrainingPlans.id],
+  }),
+}))
+
+export const intensityStrategiesRelations = relations(intensityStrategies, ({ one }) => ({
+  groupTrainingPlan: one(groupTrainingPlans, {
+    fields: [intensityStrategies.groupTrainingPlanId],
     references: [groupTrainingPlans.id],
   }),
 }))
@@ -635,6 +679,14 @@ export const microcyclesRelations = relations(microcycles, ({ one, many }) => ({
   }),
   sessionPrescriptions: many(groupSessionPrescriptions),
   modifications: many(planningModificationRecords),
+  intensityTarget: one(microcycleIntensityTargets),
+}))
+
+export const microcycleIntensityTargetsRelations = relations(microcycleIntensityTargets, ({ one }) => ({
+  microcycle: one(microcycles, {
+    fields: [microcycleIntensityTargets.microcycleId],
+    references: [microcycles.id],
+  }),
 }))
 
 export const planningModificationRecordsRelations = relations(planningModificationRecords, ({ one }) => ({
