@@ -118,7 +118,34 @@ describe('generación de planificación', () => {
 
     assert.deepEqual(
       result.mesocycles.map((mesocycle) => mesocycle.targetPeakElevationGain),
-      [1_400, 1_800],
+      [1_160, 1_350],
+    )
+    assert.deepEqual(
+      result.mesocycles.flatMap((mesocycle) => (
+        mesocycle.microcycles.map((microcycle) => microcycle.targetElevationGain)
+      )),
+      [1_000, 1_080, 1_160, 930, 1_160, 1_250, 1_350, 1_080],
+    )
+  })
+
+  it('no genera desnivel semanal cuando la estrategia lo desactiva', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    loadStrategy.values.initialWeeklyElevationGain = null
+    loadStrategy.values.maximumWeeklyElevationGain = null
+
+    const result = generateFractalMacrocycle({
+      title: 'Volumen sin D+',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+
+    assert.equal(
+      result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
+        .every((microcycle) => microcycle.targetElevationGain === null),
+      true,
     )
   })
 

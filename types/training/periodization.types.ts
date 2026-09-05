@@ -48,7 +48,7 @@ export interface GeneratedMicrocycleDraft {
   endDate: string
   targetVolumeKm: number
   targetVolumeSource: TargetVolumeSource
-  targetElevationGain: number
+  targetElevationGain: number | null
   notes: string
 }
 

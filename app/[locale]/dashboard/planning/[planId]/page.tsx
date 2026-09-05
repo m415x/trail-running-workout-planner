@@ -104,6 +104,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         mesocycle.microcycles.map((microcycle) => ({
           weekNumber: microcycle.weekNumber,
           volumeKm: microcycle.targetVolumeKm,
+          elevationGain: microcycle.targetElevationGain,
           type: microcycle.type,
           source: microcycle.targetVolumeSource,
         })),

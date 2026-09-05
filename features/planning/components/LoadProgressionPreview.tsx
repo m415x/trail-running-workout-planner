@@ -24,6 +24,7 @@ import { ChartContainer } from '@ui/chart'
 export interface LoadProgressionPoint {
   weekNumber: number
   volumeKm: number
+  elevationGain: number | null
   type: MicrocycleType
   source: TargetVolumeSource
 }
@@ -113,6 +114,9 @@ export function LoadProgressionPreview({
                       {microcycleLabels[point.type]} · {point.source === 'manual' ? 'Manual' : 'Generado'}
                     </p>
                     <p className='font-semibold'>{point.volumeKm.toLocaleString('es-AR')} km</p>
+                    {point.elevationGain !== null && (
+                      <p className='font-semibold'>+{point.elevationGain.toLocaleString('es-AR')} m D+</p>
+                    )}
                   </div>
                 )
               }}
