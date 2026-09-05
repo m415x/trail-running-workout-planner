@@ -321,7 +321,10 @@ export async function saveLoadProgression(
       startDate: macrocycle.startDate,
       endDate: trainingEndDate,
       loadStrategy,
-      targetRace: macrocycle.targetRaceName && macrocycle.targetRaceDistanceKm
+      finishesBeforeTaper: protectedMesocycles.length > 0,
+      targetRace: protectedMesocycles.length === 0
+        && macrocycle.targetRaceName
+        && macrocycle.targetRaceDistanceKm
         ? {
             name: macrocycle.targetRaceName,
             distanceKm: macrocycle.targetRaceDistanceKm,

@@ -212,7 +212,23 @@ function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
   return distribution
 }
 
-function getMicrocycleSequence(weeksInMesocycle: number): VolumeMatrixMicrocycleType[] {
+function getMicrocycleSequence(
+  weeksInMesocycle: number,
+  finishesBeforeTaper = false,
+): VolumeMatrixMicrocycleType[] {
+  if (finishesBeforeTaper) {
+    if (weeksInMesocycle === 2) return ['development', 'shock']
+
+    return [
+      'base',
+      ...Array.from(
+        { length: weeksInMesocycle - 2 },
+        (): VolumeMatrixMicrocycleType => 'development',
+      ),
+      'shock',
+    ]
+  }
+
   if (weeksInMesocycle === 5) {
     return ['base', 'development', 'development', 'shock', 'deload']
   }
@@ -228,6 +244,7 @@ export interface TrainingMesocycleGeneratorParams {
   trainingWeeksCount: number
   athleteGroup: AthleteGroupCode
   loadStrategy: LoadStrategyDraft
+  finishesBeforeTaper?: boolean
 }
 
 export function determineProgressionDurationProfile(
@@ -258,6 +275,7 @@ export function generateTrainingMesocycles({
   endDate,
   trainingWeeksCount,
   loadStrategy,
+  finishesBeforeTaper = false,
 }: TrainingMesocycleGeneratorParams): GeneratedMesocycleDraft[] {
   if (!Number.isInteger(trainingWeeksCount) || trainingWeeksCount < 2) {
     throw new Error('Se necesitan al menos 2 semanas de entrenamiento para generar mesociclos.')
@@ -291,7 +309,11 @@ export function generateTrainingMesocycles({
     : null
 
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
-    const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
+    const isLastMesocycle = mesocycleIndex === weekDistribution.length - 1
+    const microcycleSequence = getMicrocycleSequence(
+      weeksInMesocycle,
+      finishesBeforeTaper && isLastMesocycle,
+    )
     const mesocycleLoadTarget = mesocycleLoadTargets[mesocycleIndex]
     const mesocycleElevationTarget = mesocycleElevationTargets[mesocycleIndex]
     const distributedLoads = distributeMesocycleLoad({
@@ -348,7 +370,6 @@ export function generateTrainingMesocycles({
     globalWeekCounter += weeksInMesocycle
 
     const isFirstMesocycle = mesocycleIndex === 0
-    const isLastMesocycle = mesocycleIndex === weekDistribution.length - 1
     const period = isFirstMesocycle ? 'general_preparatory' : 'specific_preparatory'
     const focus = isFirstMesocycle
       ? 'Adaptación y base'
@@ -378,6 +399,7 @@ export interface CompetitiveMesocycleGeneratorParams {
   athleteGroup: AthleteGroupCode
   race: OptionalTargetRace
   taperingWeeksCount: 2 | 3
+  finalTrainingPeakVolumeKm: number
   finalTrainingPeakElevationGain: number | null
 }
 
@@ -389,6 +411,7 @@ export function generateCompetitiveMesocycle({
   athleteGroup,
   race,
   taperingWeeksCount,
+  finalTrainingPeakVolumeKm,
   finalTrainingPeakElevationGain,
 }: CompetitiveMesocycleGeneratorParams): GeneratedMesocycleDraft {
   if (!Number.isInteger(mesocycleNumber) || mesocycleNumber < 1) {
@@ -397,11 +420,7 @@ export function generateCompetitiveMesocycle({
 
   const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
   const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
-    const targetVolumeKm = calculateTargetVolume({
-      athleteGroup,
-      type: 'tapering',
-      volumeFactor,
-    })
+    const targetVolumeKm = Math.round(finalTrainingPeakVolumeKm * volumeFactor)
     const targetElevationGain = finalTrainingPeakElevationGain === null
       ? null
       : Math.round((finalTrainingPeakElevationGain * volumeFactor) / 10) * 10
@@ -475,6 +494,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     trainingWeeksCount,
     athleteGroup: params.athleteGroup,
     loadStrategy: params.loadStrategy,
+    finishesBeforeTaper: Boolean(params.race),
   })
   const currentWeekStart = addDays(start, trainingWeeksCount * 7)
   const globalWeekCounter = trainingWeeksCount + 1
@@ -492,6 +512,10 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       throw new Error('No se pudo determinar el tapering para la carrera.')
     }
 
+    if (finalTrainingPeakVolumeKm === undefined) {
+      throw new Error('No se pudo determinar el pico de carga previo al tapering.')
+    }
+
     mesocycles.push(generateCompetitiveMesocycle({
       startDate: format(currentWeekStart, 'yyyy-MM-dd'),
       endDate: params.endDate,
@@ -500,6 +524,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       athleteGroup: params.athleteGroup,
       race: params.race,
       taperingWeeksCount,
+      finalTrainingPeakVolumeKm,
       finalTrainingPeakElevationGain,
     }))
   }

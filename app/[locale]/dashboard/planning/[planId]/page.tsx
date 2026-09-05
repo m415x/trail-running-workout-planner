@@ -20,6 +20,7 @@ import {
   buildLoadProgressionPreview,
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
+import { determineMicrocycleLoadFocus } from '@/lib/periodization/microcycle-load-focus'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -94,7 +95,10 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         startDate: previewMacrocycle.startDate,
         endDate: trainingEndDate,
         loadStrategy,
-        targetRace: previewMacrocycle.targetRaceName && previewMacrocycle.targetRaceDistanceKm
+        finishesBeforeTaper: protectedMesocycles.length > 0,
+        targetRace: protectedMesocycles.length === 0
+          && previewMacrocycle.targetRaceName
+          && previewMacrocycle.targetRaceDistanceKm
           ? {
               name: previewMacrocycle.targetRaceName,
               distanceKm: previewMacrocycle.targetRaceDistanceKm,
@@ -106,7 +110,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         existingMicrocycles,
       })
     : null
-  const previewPoints: LoadProgressionPoint[] = preview
+  const generatedPreviewPoints: LoadProgressionPoint[] = preview
     ? preview.planning.mesocycles.flatMap((mesocycle) =>
         mesocycle.microcycles.map((microcycle) => ({
           weekNumber: microcycle.weekNumber,
@@ -119,6 +123,23 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         })),
       )
     : []
+  const protectedPreviewPoints: LoadProgressionPoint[] = protectedMesocycles.flatMap((mesocycle) =>
+    mesocycle.microcycles.flatMap((microcycle) => (
+      microcycle.targetVolumeKm === null
+        ? []
+        : [{
+            weekNumber: microcycle.weekNumber,
+            volumeKm: microcycle.targetVolumeKm,
+            elevationGain: microcycle.targetElevationGain,
+            type: microcycle.type,
+            loadFocus: determineMicrocycleLoadFocus(microcycle.type),
+            volumeSource: microcycle.targetVolumeSource,
+            elevationSource: microcycle.targetElevationSource,
+          }]
+    )),
+  )
+  const previewPoints = [...generatedPreviewPoints, ...protectedPreviewPoints]
+    .sort((first, second) => first.weekNumber - second.weekNumber)
   const intensityTargetsByMicrocycle = new Map(
     plan.intensityTargets.map((target) => [target.microcycleId, target]),
   )

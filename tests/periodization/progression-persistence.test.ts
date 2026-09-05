@@ -159,6 +159,59 @@ describe('persistencia de la progresión de carga', () => {
     assert.equal(database.select().from(microcycles).all().length, 8)
   })
 
+  it('convierte las últimas semanas existentes en taper y carrera y guarda el conteo', () => {
+    const initialPlanning = createPlanning()
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: initialPlanning,
+      database,
+    })
+    const existingMicrocycles = database.select().from(microcycles).all().map((week) => ({
+      id: week.id,
+      weekNumber: week.weekNumber,
+      targetVolumeKm: week.targetVolumeKm,
+      targetVolumeSource: week.targetVolumeSource,
+      targetElevationGain: week.targetElevationGain,
+      targetElevationSource: week.targetElevationSource,
+    }))
+    const racePlanning = buildLoadProgressionPreview({
+      title: 'Macrociclo S2',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: {
+        name: 'Carrera objetivo',
+        distanceKm: 21,
+        elevationGain: 900,
+      },
+      existingMicrocycles,
+    }).planning
+
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: racePlanning,
+      database,
+    })
+
+    const savedMacrocycle = database.select().from(macrocycles)
+      .where(eq(macrocycles.id, 'macro-1'))
+      .get()
+    const competitiveMesocycle = database.select().from(mesocycles)
+      .where(eq(mesocycles.period, 'competitive'))
+      .get()
+    const competitiveWeeks = database.select().from(microcycles)
+      .where(eq(microcycles.mesocycleId, competitiveMesocycle!.id))
+      .all()
+      .sort((first, second) => first.weekNumber - second.weekNumber)
+
+    assert.equal(savedMacrocycle?.taperingWeeksCount, 2)
+    assert.deepEqual(competitiveWeeks.map((week) => week.type), ['tapering', 'race'])
+    assert.equal(competitiveWeeks.at(-1)?.targetVolumeKm, 21)
+    assert.equal(competitiveWeeks.at(-1)?.targetElevationGain, 900)
+  })
+
   it('rechaza una propuesta inválida antes de realizar escrituras', () => {
     const planning = createPlanning()
     planning.mesocycles[1].microcycles[0].weekNumber = 1
