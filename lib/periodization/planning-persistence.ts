@@ -9,6 +9,7 @@ import {
   mesocycles,
   microcycles,
 } from '@/db/schema'
+import { assertPersistablePlanning } from '@/lib/periodization/planning-persistence-validator'
 
 import type { GeneratedMacrocycleDraft } from '@/types'
 
@@ -42,6 +43,8 @@ export function persistGeneratedPlanning({
   planning,
   notes,
 }: PersistGeneratedPlanningParams): PersistedPlanningResult {
+  assertPersistablePlanning(planning)
+
   return db.transaction((tx) => {
     const group = tx.query.athleteGroups.findFirst({
       where: and(
@@ -59,10 +62,6 @@ export function persistGeneratedPlanning({
     const groupCode = `${group.categoryCode}${group.levelCode}`
     if (groupCode !== planning.athleteGroup) {
       throw new Error('El borrador de planificación pertenece a otro grupo.')
-    }
-
-    if (planning.mesocycles.length === 0) {
-      throw new Error('La planificación debe contener al menos un mesociclo.')
     }
 
     const now = new Date().toISOString()

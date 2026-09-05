@@ -110,6 +110,68 @@ describe('persistencia de la progresión de carga', () => {
     assert.equal(savedWeek?.targetVolumeSource, 'manual')
   })
 
+  it('persiste el D+ manual en regeneraciones sucesivas sin duplicar semanas', () => {
+    const planning = createPlanning()
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning,
+      database,
+    })
+    const week = database.select().from(microcycles)
+      .where(eq(microcycles.weekNumber, 4))
+      .get()
+
+    assert.ok(week)
+    database.update(microcycles).set({
+      targetElevationGain: 1_250,
+      targetElevationSource: 'manual',
+    }).where(eq(microcycles.id, week.id)).run()
+
+    const regenerated = createPlanning([{
+      id: week.id,
+      weekNumber: week.weekNumber,
+      targetVolumeKm: week.targetVolumeKm,
+      targetVolumeSource: week.targetVolumeSource,
+      targetElevationGain: 1_250,
+      targetElevationSource: 'manual',
+    }])
+
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: regenerated,
+      database,
+    })
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: regenerated,
+      database,
+    })
+
+    const savedWeek = database.select().from(microcycles)
+      .where(eq(microcycles.id, week.id))
+      .get()
+    assert.equal(savedWeek?.targetElevationGain, 1_250)
+    assert.equal(savedWeek?.targetElevationSource, 'manual')
+    assert.equal(database.select().from(microcycles).all().length, 8)
+  })
+
+  it('rechaza una propuesta inválida antes de realizar escrituras', () => {
+    const planning = createPlanning()
+    planning.mesocycles[1].microcycles[0].weekNumber = 1
+
+    assert.throws(() => persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning,
+      database,
+    }), /semana 1 está duplicada/)
+    assert.equal(database.select().from(mesocycles).all().length, 0)
+    assert.equal(database.select().from(microcycles).all().length, 0)
+  })
+
   it('desactiva semanas de entrenamiento obsoletas sin tocar bloques protegidos', () => {
     const planning = createPlanning()
     persistProgression({
