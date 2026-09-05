@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
+import { MicrocycleElevationForm } from '@/features/planning/components/MicrocycleElevationForm'
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
@@ -128,7 +129,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <h2 className='text-3xl font-bold tracking-tight'>{plan.title}</h2>
             <Badge variant='secondary'>Grupo {groupCode}</Badge>
           </div>
-          <p className='text-muted-foreground'>Editá el volumen objetivo de cada semana sin regenerar la planificación.</p>
+          <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
           {previewMacrocycle?.targetRaceName && previewMacrocycle.targetRaceDistanceKm && (
             <p className='text-sm text-muted-foreground'>
               Carrera objetivo: {previewMacrocycle.targetRaceName} · {previewMacrocycle.targetRaceDistanceKm.toLocaleString('es-AR')} km
@@ -211,14 +212,13 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                             />
                           </TableCell>
                           <TableCell>
-                            <div className='flex flex-wrap items-center gap-2'>
-                              <span>{microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}</span>
-                              {microcycle.targetElevationGain !== null && (
-                                <Badge variant='outline'>
-                                  {microcycle.targetElevationSource === 'manual' ? 'Manual' : 'Generado'}
-                                </Badge>
-                              )}
-                            </div>
+                            <MicrocycleElevationForm
+                              microcycleId={microcycle.id}
+                              planId={plan.id}
+                              locale={locale}
+                              currentElevationGain={microcycle.targetElevationGain}
+                              currentSource={microcycle.targetElevationSource}
+                            />
                           </TableCell>
                           <TableCell>
                             <MicrocycleNotesForm

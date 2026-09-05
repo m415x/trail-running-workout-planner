@@ -17,6 +17,7 @@ export type TargetElevationSource = TargetValueSource
 export type MicrocycleLoadFocus = 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'
 export type PlanningModificationField =
   | 'target_volume_km'
+  | 'target_elevation_gain'
   | 'date_range'
   | 'type'
   | 'notes'

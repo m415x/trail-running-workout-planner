@@ -40,6 +40,20 @@ const updateMicrocycleVolumeSchema = z.object({
   locale: z.enum(locales).default('es'),
 })
 
+const updateMicrocycleElevationSchema = z.object({
+  microcycleId: z.string().trim().min(1, 'No se pudo identificar el microciclo'),
+  planId: z.string().trim().min(1, 'No se pudo identificar la planificación'),
+  targetElevationGain: z.preprocess(
+    (value) => value === '' ? null : value,
+    z.coerce.number()
+      .int('El desnivel debe expresarse en metros enteros')
+      .min(0, 'El desnivel no puede ser negativo')
+      .max(100_000, 'El desnivel no puede superar los 100.000 m')
+      .nullable(),
+  ),
+  locale: z.enum(locales).default('es'),
+})
+
 function isValidIsoDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && isValid(parseISO(value))
 }
@@ -67,6 +81,10 @@ const updateMicrocycleNotesSchema = z.object({
 })
 
 export interface MicrocycleVolumeFormState {
+  error?: string
+}
+
+export interface MicrocycleElevationFormState {
   error?: string
 }
 
@@ -353,6 +371,71 @@ export async function updateMicrocycleVolume(
   } catch (error) {
     console.error('Error updating microcycle volume:', error)
     return { error: 'No se pudo actualizar el volumen' }
+  }
+
+  const detailPath = planningPath(data.locale, `/${data.planId}`)
+  revalidatePath(planningPath(data.locale))
+  revalidatePath(detailPath)
+  redirect(detailPath)
+}
+
+export async function updateMicrocycleElevation(
+  _previousState: MicrocycleElevationFormState,
+  formData: FormData,
+): Promise<MicrocycleElevationFormState> {
+  const parsed = updateMicrocycleElevationSchema.safeParse(Object.fromEntries(formData))
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá el desnivel ingresado' }
+  }
+
+  const data = parsed.data
+
+  try {
+    const microcycle = getEditableMicrocycle(data.microcycleId)
+    const plan = microcycle?.mesocycle.macrocycle.groupTrainingPlan
+
+    if (!microcycle || !plan || !belongsToEditablePlan(microcycle, data.planId)) {
+      return { error: 'Microciclo no encontrado' }
+    }
+
+    if (
+      microcycle.targetElevationGain !== data.targetElevationGain
+      || microcycle.targetElevationSource !== 'manual'
+    ) {
+      const now = new Date().toISOString()
+
+      db.transaction((tx) => {
+        tx.update(microcycles)
+          .set({
+            targetElevationGain: data.targetElevationGain,
+            targetElevationSource: 'manual',
+            updatedAt: now,
+          })
+          .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))
+          .run()
+
+        tx.update(groupTrainingPlans)
+          .set({ updatedAt: now })
+          .where(eq(groupTrainingPlans.id, plan.id))
+          .run()
+
+        tx.insert(planningModificationRecords).values({
+          id: randomUUID(),
+          groupTrainingPlanId: plan.id,
+          microcycleId: microcycle.id,
+          field: 'target_elevation_gain',
+          previousValue: microcycle.targetElevationGain?.toString() ?? null,
+          newValue: data.targetElevationGain?.toString() ?? null,
+          changedByUserId: null,
+          createdAt: now,
+          updatedAt: now,
+        }).run()
+      })
+    }
+  } catch (error) {
+    console.error('Error updating microcycle elevation:', error)
+    return { error: 'No se pudo actualizar el desnivel' }
   }
 
   const detailPath = planningPath(data.locale, `/${data.planId}`)
