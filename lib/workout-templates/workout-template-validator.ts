@@ -10,6 +10,8 @@ export type WorkoutTemplateDefaultField =
   | 'teamId'
   | 'title'
   | 'type'
+  | 'category'
+  | 'tags'
   | 'structure'
   | 'distanceKm'
   | 'durationMin'
@@ -34,6 +36,16 @@ const STRUCTURE_FIELDS = [
   'mainBlock',
   'cooldown',
 ] as const
+const TEMPLATE_CATEGORIES = new Set([
+  'endurance',
+  'quality',
+  'mountain',
+  'technique',
+  'recovery',
+  'competition',
+])
+const MAX_TAGS = 10
+const MAX_TAG_LENGTH = 30
 
 function issue(
   field: WorkoutTemplateDefaultField,
@@ -146,6 +158,21 @@ export function validateWorkoutTemplateDefaults(
 
   if (!(sessionDefaults.type in WORKOUT_TYPES_CONFIG)) {
     errors.push(issue('type', 'type-invalid', 'Seleccioná un tipo de entrenamiento válido.'))
+  }
+
+  if (!TEMPLATE_CATEGORIES.has(template.category)) {
+    errors.push(issue('category', 'category-invalid', 'Seleccioná una categoría válida.'))
+  }
+
+  if (
+    template.tags.length > MAX_TAGS
+    || template.tags.some((tag) => !tag.trim() || tag.trim().length > MAX_TAG_LENGTH)
+  ) {
+    errors.push(issue(
+      'tags',
+      'tags-invalid',
+      `Usá hasta ${MAX_TAGS} etiquetas de no más de ${MAX_TAG_LENGTH} caracteres.`,
+    ))
   }
 
   for (const field of STRUCTURE_FIELDS) {

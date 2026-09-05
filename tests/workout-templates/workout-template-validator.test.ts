@@ -10,6 +10,8 @@ function templateFixture(
 ): WorkoutTemplateDraft {
   return {
     teamId: 'team_1',
+    category: 'mountain',
+    tags: ['cuestas', 'potencia'],
     sessionDefaults: {
       title: 'Cuestas cortas',
       type: 'Hills',
@@ -112,5 +114,15 @@ describe('valores predeterminados de plantillas', () => {
       result.errors.map((error) => error.field),
       ['teamId', 'title', 'type', 'structure', 'intensity'],
     )
+  })
+
+  it('rechaza categorías y etiquetas fuera de los límites del catálogo', () => {
+    const result = validateWorkoutTemplateDefaults(templateFixture({
+      category: 'invalid' as 'mountain',
+      tags: Array.from({ length: 11 }, (_, index) => `etiqueta-${index}`),
+    }))
+
+    assert.equal(result.isValid, false)
+    assert.deepEqual(result.errors.map((error) => error.field), ['category', 'tags'])
   })
 })

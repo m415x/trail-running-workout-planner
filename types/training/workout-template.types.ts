@@ -5,6 +5,31 @@ import type { TrainingVolume } from '@/types/training/volume.types'
 import type { WorkoutType } from '@/types/training/workout.types'
 
 /**
+ * Stable functional grouping used to browse templates.
+ *
+ * This is intentionally broader than WorkoutType: type describes the concrete
+ * session format, while category describes why a coach would search for it.
+ */
+export type WorkoutTemplateCategory =
+  | 'endurance'
+  | 'quality'
+  | 'mountain'
+  | 'technique'
+  | 'recovery'
+  | 'competition'
+
+export type WorkoutTemplateArchiveFilter = 'active' | 'archived' | 'all'
+
+/** Filters supported by the future workout-template catalogue. */
+export interface WorkoutTemplateSearchCriteria {
+  query?: string
+  categories?: WorkoutTemplateCategory[]
+  workoutTypes?: WorkoutType[]
+  tags?: string[]
+  archive?: WorkoutTemplateArchiveFilter
+}
+
+/**
  * Session-level values suggested when a coach selects a workout template.
  *
  * These values describe the shared event. Group-specific load and intensity
@@ -41,6 +66,8 @@ export interface WorkoutTemplatePrescriptionDefaults extends TrainingVolume {
  */
 export interface WorkoutTemplateDraft {
   teamId: string
+  category: WorkoutTemplateCategory
+  tags: string[]
   sessionDefaults: WorkoutTemplateSessionDefaults
   prescriptionDefaults: WorkoutTemplatePrescriptionDefaults
 }
