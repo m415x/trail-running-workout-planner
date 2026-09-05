@@ -192,10 +192,20 @@ function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
 
   if (remainingWeeks === 0) return distribution
 
-  if (remainingWeeks === 1 && distribution.length > 0) {
-    distribution[distribution.length - 1] = 3
-    distribution.push(2)
+  if (remainingWeeks === 1) {
+    if (distribution.length === 0) return [1]
+
+    distribution[distribution.length - 1] = 5
     return distribution
+  }
+
+  if (remainingWeeks === 2 && distribution.length >= 2) {
+    distribution.splice(-2, 2, 5, 5)
+    return distribution
+  }
+
+  if (remainingWeeks === 2 && distribution.length === 1) {
+    return [3, 3]
   }
 
   distribution.push(remainingWeeks)
@@ -203,6 +213,10 @@ function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
 }
 
 function getMicrocycleSequence(weeksInMesocycle: number): VolumeMatrixMicrocycleType[] {
+  if (weeksInMesocycle === 5) {
+    return ['base', 'development', 'development', 'shock', 'deload']
+  }
+
   if (weeksInMesocycle === 4) return STANDARD_MESOCYCLE_SEQUENCE
 
   return [...STANDARD_MESOCYCLE_SEQUENCE.slice(0, weeksInMesocycle - 1), 'deload']

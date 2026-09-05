@@ -66,23 +66,20 @@ const loadFocusLabels: Record<MicrocycleLoadFocus, string> = {
   race_specific: 'Foco carrera',
 }
 
-function getPointAppearance(point: LoadProgressionPoint) {
-  const hasManualVolume = point.volumeSource === 'manual'
-  const hasManualElevation = point.elevationSource === 'manual'
-
-  if (hasManualVolume && hasManualElevation) {
-    return { radius: 6, fill: 'var(--chart-5)', strokeWidth: 2 }
-  }
-
-  if (hasManualElevation) {
-    return { radius: 5, fill: 'var(--chart-2)', strokeWidth: 2 }
-  }
-
-  if (hasManualVolume) {
+function getVolumePointAppearance(point: LoadProgressionPoint) {
+  if (point.volumeSource === 'manual') {
     return { radius: 5, fill: 'var(--chart-4)', strokeWidth: 2 }
   }
 
   return { radius: 3, fill: 'var(--color-volume)', strokeWidth: 0 }
+}
+
+function getElevationPointAppearance(point: LoadProgressionPoint) {
+  if (point.elevationSource === 'manual') {
+    return { radius: 5, fill: 'var(--chart-5)', strokeWidth: 2 }
+  }
+
+  return { radius: 3, fill: 'var(--color-elevation)', strokeWidth: 0 }
 }
 
 export function LoadProgressionPreview({
@@ -95,15 +92,12 @@ export function LoadProgressionPreview({
   macrocycleId,
   locale,
 }: LoadProgressionPreviewProps) {
-  const manualVolumePoints = points.filter((point) => (
-    point.volumeSource === 'manual' && point.elevationSource !== 'manual'
+  const manualVolumePoints = points.filter((point) => point.volumeSource === 'manual')
+  const manualElevationPoints = points.filter((point) => point.elevationSource === 'manual')
+  const elevationValues = points.flatMap((point) => (
+    point.elevationGain === null ? [] : [point.elevationGain]
   ))
-  const manualElevationPoints = points.filter((point) => (
-    point.elevationSource === 'manual' && point.volumeSource !== 'manual'
-  ))
-  const fullyManualPoints = points.filter((point) => (
-    point.volumeSource === 'manual' && point.elevationSource === 'manual'
-  ))
+  const hasElevation = elevationValues.length > 0
   const [actionState, formAction, isPending] = useActionState(
     saveLoadProgression,
     initialActionState,
@@ -122,8 +116,14 @@ export function LoadProgressionPreview({
           <div className='flex flex-wrap gap-2'>
             <Badge variant='outline'>
               <span className='size-2 rounded-full bg-[var(--chart-1)]' />
-              Generado
+              Volumen (km)
             </Badge>
+            {hasElevation && (
+              <Badge variant='outline'>
+                <span className='size-2 rounded-full bg-[var(--chart-2)]' />
+                Desnivel (m D+)
+              </Badge>
+            )}
             {manualVolumePoints.length > 0 && (
               <Badge variant='outline'>
                 <span className='size-2 rounded-full bg-[var(--chart-4)]' />
@@ -132,14 +132,8 @@ export function LoadProgressionPreview({
             )}
             {manualElevationPoints.length > 0 && (
               <Badge variant='outline'>
-                <span className='size-2 rounded-full bg-[var(--chart-2)]' />
-                D+ manual: {manualElevationPoints.length}
-              </Badge>
-            )}
-            {fullyManualPoints.length > 0 && (
-              <Badge variant='outline'>
                 <span className='size-2 rounded-full bg-[var(--chart-5)]' />
-                Ambos manuales: {fullyManualPoints.length}
+                D+ manual: {manualElevationPoints.length}
               </Badge>
             )}
           </div>
@@ -147,13 +141,17 @@ export function LoadProgressionPreview({
       </CardHeader>
       <CardContent className='space-y-5'>
         <ChartContainer
-          config={{ volume: { label: 'Volumen', color: 'var(--chart-1)' } }}
+          config={{
+            volume: { label: 'Volumen', color: 'var(--chart-1)' },
+            elevation: { label: 'Desnivel', color: 'var(--chart-2)' },
+          }}
           className='h-72 w-full aspect-auto'
         >
           <LineChart data={points} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} />
             <XAxis dataKey='weekNumber' tickLine={false} axisLine={false} tickFormatter={(value) => `S${value}`} />
             <YAxis
+              yAxisId='volume'
               unit=' km'
               width={52}
               tickLine={false}
@@ -161,6 +159,18 @@ export function LoadProgressionPreview({
               allowDecimals={false}
               domain={['dataMin - 5', 'dataMax + 5']}
             />
+            {hasElevation && (
+              <YAxis
+                yAxisId='elevation'
+                orientation='right'
+                unit=' m'
+                width={68}
+                tickLine={false}
+                axisLine={false}
+                allowDecimals={false}
+                domain={[0, 'dataMax + 100']}
+              />
+            )}
             <Tooltip
               content={({ active, label }) => {
                 const point = points.find((candidate) => (
@@ -188,16 +198,17 @@ export function LoadProgressionPreview({
                 )
               }}
             />
-            <ReferenceLine y={initialVolumeKm} stroke='var(--muted-foreground)' strokeDasharray='4 4' />
-            <ReferenceLine y={maximumVolumeKm} stroke='var(--destructive)' strokeDasharray='4 4' />
+            <ReferenceLine yAxisId='volume' y={initialVolumeKm} stroke='var(--muted-foreground)' strokeDasharray='4 4' />
+            <ReferenceLine yAxisId='volume' y={maximumVolumeKm} stroke='var(--destructive)' strokeDasharray='4 4' />
             <Line
+              yAxisId='volume'
               type='monotone'
               dataKey='volumeKm'
               stroke='var(--color-volume)'
               strokeWidth={2}
               dot={(props) => {
                 const point = props.payload as LoadProgressionPoint
-                const appearance = getPointAppearance(point)
+                const appearance = getVolumePointAppearance(point)
 
                 return (
                   <circle
@@ -212,12 +223,40 @@ export function LoadProgressionPreview({
               }}
               activeDot={{ r: 5 }}
             />
+            {hasElevation && (
+              <Line
+                yAxisId='elevation'
+                type='monotone'
+                dataKey='elevationGain'
+                stroke='var(--color-elevation)'
+                strokeWidth={2}
+                dot={(props) => {
+                  const point = props.payload as LoadProgressionPoint
+                  const appearance = getElevationPointAppearance(point)
+
+                  return (
+                    <circle
+                      cx={props.cx}
+                      cy={props.cy}
+                      r={appearance.radius}
+                      fill={appearance.fill}
+                      stroke={appearance.strokeWidth > 0 ? 'var(--background)' : 'none'}
+                      strokeWidth={appearance.strokeWidth}
+                    />
+                  )
+                }}
+                activeDot={{ r: 5 }}
+              />
+            )}
           </LineChart>
         </ChartContainer>
 
         <div className='flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground'>
           <span>Inicio: {initialVolumeKm.toLocaleString('es-AR')} km</span>
           <span>Máximo: {maximumVolumeKm.toLocaleString('es-AR')} km</span>
+          {hasElevation && (
+            <span>Pico D+: {Math.max(...elevationValues).toLocaleString('es-AR')} m</span>
+          )}
           <span>{points.length} semanas</span>
         </div>
 
