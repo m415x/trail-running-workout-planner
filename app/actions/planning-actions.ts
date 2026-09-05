@@ -279,6 +279,8 @@ export async function saveLoadProgression(
         weekNumber: microcycle.weekNumber,
         targetVolumeKm: microcycle.targetVolumeKm,
         targetVolumeSource: microcycle.targetVolumeSource,
+        targetElevationGain: microcycle.targetElevationGain,
+        targetElevationSource: microcycle.targetElevationSource,
       })))
     const preview = buildLoadProgressionPreview({
       title: macrocycle.title,

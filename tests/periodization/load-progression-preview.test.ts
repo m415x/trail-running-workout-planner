@@ -29,13 +29,22 @@ describe('vista previa de progresión', () => {
       endDate: '2026-03-01',
       loadStrategy: suggestLoadStrategy('S2', 'base'),
       existingMicrocycles: [
-        { id: 'week-2', weekNumber: 2, targetVolumeKm: 45, targetVolumeSource: 'manual' },
+        {
+          id: 'week-2',
+          weekNumber: 2,
+          targetVolumeKm: 45,
+          targetVolumeSource: 'manual',
+          targetElevationGain: 1_250,
+          targetElevationSource: 'manual',
+        },
       ],
     })
     const week = preview.planning.mesocycles[0].microcycles[1]
 
     assert.equal(week.targetVolumeKm, 45)
     assert.equal(week.targetVolumeSource, 'manual')
+    assert.equal(week.targetElevationGain, 1_250)
+    assert.equal(week.targetElevationSource, 'manual')
     assert.equal(preview.conflicts[0].code, 'manual_volume_above_maximum')
   })
 

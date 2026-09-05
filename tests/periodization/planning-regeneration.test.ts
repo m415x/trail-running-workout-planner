@@ -5,6 +5,25 @@ import { generateFractalMacrocycle } from '@/lib/periodization/macrocycle-genera
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { reconcilePlanningRegeneration } from '@/lib/periodization/planning-regeneration'
 
+function existingTargets(overrides: Partial<{
+  id: string
+  weekNumber: number
+  targetVolumeKm: number | null
+  targetVolumeSource: 'generated' | 'manual'
+  targetElevationGain: number | null
+  targetElevationSource: 'generated' | 'manual'
+}>) {
+  return {
+    id: 'week-1',
+    weekNumber: 1,
+    targetVolumeKm: 35,
+    targetVolumeSource: 'generated' as const,
+    targetElevationGain: 800,
+    targetElevationSource: 'generated' as const,
+    ...overrides,
+  }
+}
+
 function createGeneratedPlanning() {
   const loadStrategy = suggestLoadStrategy('S2', 'base')
   const generatedPlanning = generateFractalMacrocycle({
@@ -26,8 +45,8 @@ describe('regeneración de planificación', () => {
       generatedPlanning,
       loadStrategy,
       existingMicrocycles: [
-        { id: 'week-1', weekNumber: 1, targetVolumeKm: 33, targetVolumeSource: 'generated' },
-        { id: 'week-2', weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' },
+        existingTargets({ targetVolumeKm: 33 }),
+        existingTargets({ id: 'week-2', weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' }),
       ],
     })
     const weeks = result.planning.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
@@ -46,7 +65,7 @@ describe('regeneración de planificación', () => {
       generatedPlanning,
       loadStrategy,
       existingMicrocycles: [
-        { id: 'week-2', weekNumber: 2, targetVolumeKm: 45, targetVolumeSource: 'manual' },
+        existingTargets({ id: 'week-2', weekNumber: 2, targetVolumeKm: 45, targetVolumeSource: 'manual' }),
       ],
     })
     const week = result.planning.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)[1]
@@ -63,7 +82,7 @@ describe('regeneración de planificación', () => {
       generatedPlanning,
       loadStrategy,
       existingMicrocycles: [
-        { id: 'week-2', weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' },
+        existingTargets({ id: 'week-2', weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' }),
       ],
       restoreGeneratedWeekNumbers: [2],
     })
@@ -81,7 +100,7 @@ describe('regeneración de planificación', () => {
       generatedPlanning,
       loadStrategy,
       existingMicrocycles: [
-        { id: 'week-20', weekNumber: 20, targetVolumeKm: 38, targetVolumeSource: 'manual' },
+        existingTargets({ id: 'week-20', weekNumber: 20, targetVolumeKm: 38, targetVolumeSource: 'manual' }),
       ],
     })
 
@@ -94,11 +113,105 @@ describe('regeneración de planificación', () => {
       generatedPlanning,
       loadStrategy,
       existingMicrocycles: [
-        { id: 'week-2-a', weekNumber: 2, targetVolumeKm: 34, targetVolumeSource: 'manual' },
-        { id: 'week-2-b', weekNumber: 2, targetVolumeKm: 35, targetVolumeSource: 'manual' },
+        existingTargets({ id: 'week-2-a', weekNumber: 2, targetVolumeKm: 34, targetVolumeSource: 'manual' }),
+        existingTargets({ id: 'week-2-b', weekNumber: 2, targetVolumeKm: 35, targetVolumeSource: 'manual' }),
       ],
     })
 
     assert.equal(result.conflicts.some((conflict) => conflict.code === 'duplicate_week_number'), true)
+  })
+
+  it('preserva el D+ manual sin modificar el origen del volumen', () => {
+    const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
+    const result = reconcilePlanningRegeneration({
+      generatedPlanning,
+      loadStrategy,
+      existingMicrocycles: [
+        existingTargets({
+          id: 'week-4',
+          weekNumber: 4,
+          targetElevationGain: 1_250,
+          targetElevationSource: 'manual',
+        }),
+      ],
+    })
+    const week = result.planning.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)[3]
+
+    assert.equal(week.targetElevationGain, 1_250)
+    assert.equal(week.targetElevationSource, 'manual')
+    assert.equal(week.targetVolumeSource, 'generated')
+    assert.deepEqual(result.preservedManualElevationWeekNumbers, [4])
+  })
+
+  it('preserva la decisión manual de no asignar D+', () => {
+    const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
+    const result = reconcilePlanningRegeneration({
+      generatedPlanning,
+      loadStrategy,
+      existingMicrocycles: [
+        existingTargets({
+          id: 'week-2',
+          weekNumber: 2,
+          targetElevationGain: null,
+          targetElevationSource: 'manual',
+        }),
+      ],
+    })
+    const week = result.planning.mesocycles[0].microcycles[1]
+
+    assert.equal(week.targetElevationGain, null)
+    assert.equal(week.targetElevationSource, 'manual')
+    assert.deepEqual(result.conflicts, [])
+  })
+
+  it('advierte un D+ manual superior al nuevo máximo sin sobrescribirlo', () => {
+    const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
+    const maximum = loadStrategy.values.maximumWeeklyElevationGain
+    assert.notEqual(maximum, null)
+    const manualElevation = (maximum ?? 0) + 500
+    const result = reconcilePlanningRegeneration({
+      generatedPlanning,
+      loadStrategy,
+      existingMicrocycles: [
+        existingTargets({
+          id: 'week-3',
+          weekNumber: 3,
+          targetElevationGain: manualElevation,
+          targetElevationSource: 'manual',
+        }),
+      ],
+    })
+    const week = result.planning.mesocycles[0].microcycles[2]
+
+    assert.equal(week.targetElevationGain, manualElevation)
+    assert.equal(week.targetElevationSource, 'manual')
+    assert.equal(result.conflicts[0]?.code, 'manual_elevation_above_maximum')
+  })
+
+  it('restaura solo el D+ al valor generado', () => {
+    const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
+    const generatedWeek = generatedPlanning.mesocycles[0].microcycles[1]
+    const result = reconcilePlanningRegeneration({
+      generatedPlanning,
+      loadStrategy,
+      existingMicrocycles: [
+        existingTargets({
+          id: 'week-2',
+          weekNumber: 2,
+          targetVolumeKm: 34.5,
+          targetVolumeSource: 'manual',
+          targetElevationGain: 1_250,
+          targetElevationSource: 'manual',
+        }),
+      ],
+      restoreGeneratedElevationWeekNumbers: [2],
+    })
+    const week = result.planning.mesocycles[0].microcycles[1]
+
+    assert.equal(week.targetVolumeKm, 34.5)
+    assert.equal(week.targetVolumeSource, 'manual')
+    assert.equal(week.targetElevationGain, generatedWeek.targetElevationGain)
+    assert.equal(week.targetElevationSource, 'generated')
+    assert.deepEqual(result.restoredGeneratedElevationWeekNumbers, [2])
   })
 })

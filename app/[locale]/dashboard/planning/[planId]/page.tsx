@@ -79,6 +79,8 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         weekNumber: microcycle.weekNumber,
         targetVolumeKm: microcycle.targetVolumeKm,
         targetVolumeSource: microcycle.targetVolumeSource,
+        targetElevationGain: microcycle.targetElevationGain,
+        targetElevationSource: microcycle.targetElevationSource,
       })),
     )
     : []

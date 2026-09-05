@@ -83,7 +83,14 @@ describe('persistencia de la progresión de carga', () => {
     }).where(eq(microcycles.id, week.id)).run()
 
     const regenerated = createPlanning([
-      { id: week.id, weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' },
+      {
+        id: week.id,
+        weekNumber: 2,
+        targetVolumeKm: 34.5,
+        targetVolumeSource: 'manual',
+        targetElevationGain: week.targetElevationGain,
+        targetElevationSource: week.targetElevationSource,
+      },
     ])
     persistProgression({
       groupTrainingPlanId: 'plan-1',

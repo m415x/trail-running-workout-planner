@@ -66,6 +66,25 @@ const loadFocusLabels: Record<MicrocycleLoadFocus, string> = {
   race_specific: 'Foco carrera',
 }
 
+function getPointAppearance(point: LoadProgressionPoint) {
+  const hasManualVolume = point.volumeSource === 'manual'
+  const hasManualElevation = point.elevationSource === 'manual'
+
+  if (hasManualVolume && hasManualElevation) {
+    return { radius: 6, fill: 'var(--chart-5)', strokeWidth: 2 }
+  }
+
+  if (hasManualElevation) {
+    return { radius: 5, fill: 'var(--chart-2)', strokeWidth: 2 }
+  }
+
+  if (hasManualVolume) {
+    return { radius: 5, fill: 'var(--chart-4)', strokeWidth: 2 }
+  }
+
+  return { radius: 3, fill: 'var(--color-volume)', strokeWidth: 0 }
+}
+
 export function LoadProgressionPreview({
   points,
   initialVolumeKm,
@@ -76,8 +95,15 @@ export function LoadProgressionPreview({
   macrocycleId,
   locale,
 }: LoadProgressionPreviewProps) {
-  const manualVolumePoints = points.filter((point) => point.volumeSource === 'manual')
-  const manualElevationPoints = points.filter((point) => point.elevationSource === 'manual')
+  const manualVolumePoints = points.filter((point) => (
+    point.volumeSource === 'manual' && point.elevationSource !== 'manual'
+  ))
+  const manualElevationPoints = points.filter((point) => (
+    point.elevationSource === 'manual' && point.volumeSource !== 'manual'
+  ))
+  const fullyManualPoints = points.filter((point) => (
+    point.volumeSource === 'manual' && point.elevationSource === 'manual'
+  ))
   const [actionState, formAction, isPending] = useActionState(
     saveLoadProgression,
     initialActionState,
@@ -94,12 +120,27 @@ export function LoadProgressionPreview({
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
-            <Badge variant='secondary'>Generado</Badge>
+            <Badge variant='outline'>
+              <span className='size-2 rounded-full bg-[var(--chart-1)]' />
+              Generado
+            </Badge>
             {manualVolumePoints.length > 0 && (
-              <Badge variant='outline'>Volumen manual: {manualVolumePoints.length}</Badge>
+              <Badge variant='outline'>
+                <span className='size-2 rounded-full bg-[var(--chart-4)]' />
+                Volumen manual: {manualVolumePoints.length}
+              </Badge>
             )}
             {manualElevationPoints.length > 0 && (
-              <Badge variant='outline'>D+ manual: {manualElevationPoints.length}</Badge>
+              <Badge variant='outline'>
+                <span className='size-2 rounded-full bg-[var(--chart-2)]' />
+                D+ manual: {manualElevationPoints.length}
+              </Badge>
+            )}
+            {fullyManualPoints.length > 0 && (
+              <Badge variant='outline'>
+                <span className='size-2 rounded-full bg-[var(--chart-5)]' />
+                Ambos manuales: {fullyManualPoints.length}
+              </Badge>
             )}
           </div>
         </div>
@@ -156,15 +197,16 @@ export function LoadProgressionPreview({
               strokeWidth={2}
               dot={(props) => {
                 const point = props.payload as LoadProgressionPoint
+                const appearance = getPointAppearance(point)
 
                 return (
                   <circle
                     cx={props.cx}
                     cy={props.cy}
-                    r={point.volumeSource === 'manual' ? 5 : 3}
-                    fill={point.volumeSource === 'manual' ? 'var(--chart-4)' : 'var(--color-volume)'}
-                    stroke={point.volumeSource === 'manual' ? 'var(--background)' : 'none'}
-                    strokeWidth={point.volumeSource === 'manual' ? 2 : 0}
+                    r={appearance.radius}
+                    fill={appearance.fill}
+                    stroke={appearance.strokeWidth > 0 ? 'var(--background)' : 'none'}
+                    strokeWidth={appearance.strokeWidth}
                   />
                 )
               }}
