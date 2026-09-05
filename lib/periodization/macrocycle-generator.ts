@@ -1,10 +1,13 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
-import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
+import { calculateMesocycleElevationTargets } from '@/lib/periodization/mesocycle-elevation-targets'
 import { distributeMesocycleLoad } from '@/lib/periodization/microcycle-load-distribution'
+import { distributeMesocycleElevation } from '@/lib/periodization/microcycle-elevation-distribution'
+import { resolveElevationProgressionStrategy } from '@/lib/periodization/elevation-progression-strategy'
+import { determineMicrocycleLoadFocus } from '@/lib/periodization/microcycle-load-focus'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -103,9 +106,10 @@ export function determineTaperingWeeksCount(
   return race.distanceKm >= 42 || group.startsWith('E') || group.startsWith('U') ? 3 : 2
 }
 
-function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: number, prefix?: string) {
+function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: number | null, prefix?: string) {
   const tsbTarget = TSB_TARGETS_BY_MICROCYCLE[type]
-  const summary = `Objetivo: ${volumeKm} km | +${elevationGain}m D+ | TSB esperado: [${tsbTarget.min} a ${tsbTarget.max}]`
+  const elevationSummary = elevationGain === null ? '' : ` | +${elevationGain}m D+`
+  const summary = `Objetivo: ${volumeKm} km${elevationSummary} | TSB esperado: [${tsbTarget.min} a ${tsbTarget.max}]`
 
   return prefix ? `${prefix}. ${summary}` : summary
 }
@@ -113,7 +117,7 @@ function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: numb
 export interface MicrocycleTarget {
   type: MicrocycleType
   targetVolumeKm: number
-  targetElevationGain: number
+  targetElevationGain: number | null
   notesPrefix?: string
 }
 
@@ -151,7 +155,10 @@ export function generateMicrocycles({
       throw new Error(`El volumen del microciclo ${startWeekNumber + index} debe ser un número no negativo.`)
     }
 
-    if (!Number.isInteger(target.targetElevationGain) || target.targetElevationGain < 0) {
+    if (
+      target.targetElevationGain !== null
+      && (!Number.isInteger(target.targetElevationGain) || target.targetElevationGain < 0)
+    ) {
       throw new Error(`El desnivel del microciclo ${startWeekNumber + index} debe ser un entero no negativo.`)
     }
 
@@ -161,11 +168,13 @@ export function generateMicrocycles({
     return {
       weekNumber: startWeekNumber + index,
       type: target.type,
+      loadFocus: determineMicrocycleLoadFocus(target.type),
       startDate: format(weekStart, 'yyyy-MM-dd'),
       endDate: format(weekEnd, 'yyyy-MM-dd'),
       targetVolumeKm: target.targetVolumeKm,
       targetVolumeSource: 'generated',
       targetElevationGain: target.targetElevationGain,
+      targetElevationSource: 'generated',
       notes: createNotes(
         target.type,
         target.targetVolumeKm,
@@ -183,10 +192,20 @@ function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
 
   if (remainingWeeks === 0) return distribution
 
-  if (remainingWeeks === 1 && distribution.length > 0) {
-    distribution[distribution.length - 1] = 3
-    distribution.push(2)
+  if (remainingWeeks === 1) {
+    if (distribution.length === 0) return [1]
+
+    distribution[distribution.length - 1] = 5
     return distribution
+  }
+
+  if (remainingWeeks === 2 && distribution.length >= 2) {
+    distribution.splice(-2, 2, 5, 5)
+    return distribution
+  }
+
+  if (remainingWeeks === 2 && distribution.length === 1) {
+    return [3, 3]
   }
 
   distribution.push(remainingWeeks)
@@ -194,6 +213,10 @@ function distributeWeeksIntoMesocycles(trainingWeeksCount: number) {
 }
 
 function getMicrocycleSequence(weeksInMesocycle: number): VolumeMatrixMicrocycleType[] {
+  if (weeksInMesocycle === 5) {
+    return ['base', 'development', 'development', 'shock', 'deload']
+  }
+
   if (weeksInMesocycle === 4) return STANDARD_MESOCYCLE_SEQUENCE
 
   return [...STANDARD_MESOCYCLE_SEQUENCE.slice(0, weeksInMesocycle - 1), 'deload']
@@ -234,7 +257,6 @@ export function generateTrainingMesocycles({
   startDate,
   endDate,
   trainingWeeksCount,
-  athleteGroup,
   loadStrategy,
 }: TrainingMesocycleGeneratorParams): GeneratedMesocycleDraft[] {
   if (!Number.isInteger(trainingWeeksCount) || trainingWeeksCount < 2) {
@@ -249,22 +271,29 @@ export function generateTrainingMesocycles({
     throw new Error('El rango de fechas no alcanza para las semanas de entrenamiento indicadas.')
   }
 
-  const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
-  const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const weekDistribution = distributeWeeksIntoMesocycles(trainingWeeksCount)
+  const elevationStrategy = resolveElevationProgressionStrategy(loadStrategy)
   const mesocycleLoadTargets = calculateMesocycleLoadTargets({
     initialWeeklyVolumeKm: loadStrategy.values.initialWeeklyVolumeKm,
     maximumWeeklyVolumeKm: loadStrategy.values.maximumWeeklyVolumeKm,
+    mesocycleCount: weekDistribution.length,
+  })
+  const mesocycleElevationTargets = calculateMesocycleElevationTargets({
+    strategy: elevationStrategy,
     mesocycleCount: weekDistribution.length,
   })
   const mesocycles: GeneratedMesocycleDraft[] = []
   let currentWeekStart = start
   let globalWeekCounter = 1
   let lastToleratedPeakVolumeKm = loadStrategy.values.initialWeeklyVolumeKm
+  let lastToleratedPeakElevationGain = elevationStrategy.mode === 'progressive'
+    ? elevationStrategy.initial.elevationGainM
+    : null
 
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
     const mesocycleLoadTarget = mesocycleLoadTargets[mesocycleIndex]
+    const mesocycleElevationTarget = mesocycleElevationTargets[mesocycleIndex]
     const distributedLoads = distributeMesocycleLoad({
       sequence: microcycleSequence,
       startingVolumeKm: lastToleratedPeakVolumeKm,
@@ -278,8 +307,29 @@ export function generateTrainingMesocycles({
         .map(({ targetVolumeKm }) => targetVolumeKm),
     )
     lastToleratedPeakVolumeKm = achievedPeakVolumeKm
-    const targets = distributedLoads.map(({ type, targetVolumeKm }): MicrocycleTarget => {
-      const targetElevationGain = Math.round(targetVolumeKm * elevationRatio)
+    const distributedElevations = (
+      elevationStrategy.mode === 'progressive'
+      && lastToleratedPeakElevationGain !== null
+      && mesocycleElevationTarget.targetPeakElevationGain !== null
+    )
+      ? distributeMesocycleElevation({
+          sequence: microcycleSequence,
+          startingElevationGain: lastToleratedPeakElevationGain,
+          targetPeakElevationGain: mesocycleElevationTarget.targetPeakElevationGain,
+          deloadPercentage: elevationStrategy.deloadPercentage,
+          maximumWeeklyIncreasePercentage: elevationStrategy.maximumWeeklyIncreasePercentage,
+        })
+      : null
+    const achievedPeakElevationGain = distributedElevations
+      ? Math.max(
+          ...distributedElevations
+            .filter(({ type }) => type !== 'deload')
+            .map(({ targetElevationGain }) => targetElevationGain),
+        )
+      : null
+    lastToleratedPeakElevationGain = achievedPeakElevationGain
+    const targets = distributedLoads.map(({ type, targetVolumeKm }, index): MicrocycleTarget => {
+      const targetElevationGain = distributedElevations?.[index].targetElevationGain ?? null
 
       return {
         type,
@@ -312,6 +362,7 @@ export function generateTrainingMesocycles({
       period,
       objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
       targetPeakVolumeKm: achievedPeakVolumeKm,
+      targetPeakElevationGain: achievedPeakElevationGain,
       microcycles,
     })
   })
@@ -327,6 +378,7 @@ export interface CompetitiveMesocycleGeneratorParams {
   athleteGroup: AthleteGroupCode
   race: OptionalTargetRace
   taperingWeeksCount: 2 | 3
+  finalTrainingPeakElevationGain: number | null
 }
 
 export function generateCompetitiveMesocycle({
@@ -337,13 +389,12 @@ export function generateCompetitiveMesocycle({
   athleteGroup,
   race,
   taperingWeeksCount,
+  finalTrainingPeakElevationGain,
 }: CompetitiveMesocycleGeneratorParams): GeneratedMesocycleDraft {
   if (!Number.isInteger(mesocycleNumber) || mesocycleNumber < 1) {
     throw new Error('mesocycleNumber debe ser un entero mayor que cero.')
   }
 
-  const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
-  const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
   const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
     const targetVolumeKm = calculateTargetVolume({
@@ -351,7 +402,9 @@ export function generateCompetitiveMesocycle({
       type: 'tapering',
       volumeFactor,
     })
-    const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
+    const targetElevationGain = finalTrainingPeakElevationGain === null
+      ? null
+      : Math.round((finalTrainingPeakElevationGain * volumeFactor) / 10) * 10
 
     return {
       type: 'tapering',
@@ -366,8 +419,7 @@ export function generateCompetitiveMesocycle({
     type: 'race',
     raceDistanceKm: race.distanceKm,
   })
-  const raceWeekElevationGain = race.elevationGain
-    ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
+  const raceWeekElevationGain = race.elevationGain ?? null
   const microcycles = generateMicrocycles({
     startDate,
     endDate,
@@ -428,6 +480,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const globalWeekCounter = trainingWeeksCount + 1
   const numberOfTrainingMesocycles = mesocycles.length
   const finalTrainingPeakVolumeKm = mesocycles.at(-1)?.targetPeakVolumeKm
+  const finalTrainingPeakElevationGain = mesocycles.at(-1)?.targetPeakElevationGain ?? null
   const maximumWarning = getUnreachableMaximumWarning(
     finalTrainingPeakVolumeKm,
     params.loadStrategy.values.maximumWeeklyVolumeKm,
@@ -447,6 +500,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       athleteGroup: params.athleteGroup,
       race: params.race,
       taperingWeeksCount,
+      finalTrainingPeakElevationGain,
     }))
   }
 

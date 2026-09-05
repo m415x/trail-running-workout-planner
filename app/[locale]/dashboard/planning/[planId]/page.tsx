@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
+import { MicrocycleElevationForm } from '@/features/planning/components/MicrocycleElevationForm'
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
@@ -78,6 +79,8 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         weekNumber: microcycle.weekNumber,
         targetVolumeKm: microcycle.targetVolumeKm,
         targetVolumeSource: microcycle.targetVolumeSource,
+        targetElevationGain: microcycle.targetElevationGain,
+        targetElevationSource: microcycle.targetElevationSource,
       })),
     )
     : []
@@ -87,6 +90,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         startDate: previewMacrocycle.startDate,
         endDate: trainingEndDate,
         loadStrategy,
+        targetRace: previewMacrocycle.targetRaceName && previewMacrocycle.targetRaceDistanceKm
+          ? {
+              name: previewMacrocycle.targetRaceName,
+              distanceKm: previewMacrocycle.targetRaceDistanceKm,
+              ...(previewMacrocycle.targetRaceElevationGain === null
+                ? {}
+                : { elevationGain: previewMacrocycle.targetRaceElevationGain }),
+            }
+          : null,
         existingMicrocycles,
       })
     : null
@@ -95,8 +107,11 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         mesocycle.microcycles.map((microcycle) => ({
           weekNumber: microcycle.weekNumber,
           volumeKm: microcycle.targetVolumeKm,
+          elevationGain: microcycle.targetElevationGain,
           type: microcycle.type,
-          source: microcycle.targetVolumeSource,
+          loadFocus: microcycle.loadFocus,
+          volumeSource: microcycle.targetVolumeSource,
+          elevationSource: microcycle.targetElevationSource,
         })),
       )
     : []
@@ -116,7 +131,13 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <h2 className='text-3xl font-bold tracking-tight'>{plan.title}</h2>
             <Badge variant='secondary'>Grupo {groupCode}</Badge>
           </div>
-          <p className='text-muted-foreground'>Editá el volumen objetivo de cada semana sin regenerar la planificación.</p>
+          <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
+          {previewMacrocycle?.targetRaceName && previewMacrocycle.targetRaceDistanceKm && (
+            <p className='text-sm text-muted-foreground'>
+              Carrera objetivo: {previewMacrocycle.targetRaceName} · {previewMacrocycle.targetRaceDistanceKm.toLocaleString('es-AR')} km
+              {previewMacrocycle.targetRaceElevationGain === null ? '' : ` · +${previewMacrocycle.targetRaceElevationGain.toLocaleString('es-AR')} m`}
+            </p>
+          )}
         </div>
       </div>
 
@@ -193,7 +214,13 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                             />
                           </TableCell>
                           <TableCell>
-                            {microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}
+                            <MicrocycleElevationForm
+                              microcycleId={microcycle.id}
+                              planId={plan.id}
+                              locale={locale}
+                              currentElevationGain={microcycle.targetElevationGain}
+                              currentSource={microcycle.targetElevationSource}
+                            />
                           </TableCell>
                           <TableCell>
                             <MicrocycleNotesForm

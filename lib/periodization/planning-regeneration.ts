@@ -2,6 +2,7 @@ import type {
   GeneratedMacrocycleDraft,
   GeneratedMicrocycleDraft,
   LoadStrategyDraft,
+  TargetElevationSource,
   TargetVolumeSource,
 } from '@/types'
 
@@ -10,11 +11,14 @@ export interface ExistingMicrocycleVolume {
   weekNumber: number
   targetVolumeKm: number | null
   targetVolumeSource: TargetVolumeSource
+  targetElevationGain: number | null
+  targetElevationSource: TargetElevationSource
 }
 
 export type RegenerationConflictCode =
   | 'manual_volume_missing'
   | 'manual_volume_above_maximum'
+  | 'manual_elevation_above_maximum'
   | 'manual_week_outside_horizon'
   | 'duplicate_week_number'
 
@@ -30,6 +34,7 @@ export interface ReconcilePlanningRegenerationParams {
   existingMicrocycles: ExistingMicrocycleVolume[]
   loadStrategy: LoadStrategyDraft
   restoreGeneratedWeekNumbers?: number[]
+  restoreGeneratedElevationWeekNumbers?: number[]
 }
 
 export interface ReconciledPlanningRegeneration {
@@ -37,6 +42,8 @@ export interface ReconciledPlanningRegeneration {
   conflicts: RegenerationConflict[]
   preservedManualWeekNumbers: number[]
   restoredGeneratedWeekNumbers: number[]
+  preservedManualElevationWeekNumbers: number[]
+  restoredGeneratedElevationWeekNumbers: number[]
 }
 
 function flattenGeneratedMicrocycles(planning: GeneratedMacrocycleDraft) {
@@ -48,10 +55,12 @@ export function reconcilePlanningRegeneration({
   existingMicrocycles,
   loadStrategy,
   restoreGeneratedWeekNumbers = [],
+  restoreGeneratedElevationWeekNumbers = [],
 }: ReconcilePlanningRegenerationParams): ReconciledPlanningRegeneration {
   const generatedMicrocycles = flattenGeneratedMicrocycles(generatedPlanning)
   const generatedWeekNumbers = new Set(generatedMicrocycles.map((week) => week.weekNumber))
   const restoredWeekNumbers = new Set(restoreGeneratedWeekNumbers)
+  const restoredElevationWeekNumbers = new Set(restoreGeneratedElevationWeekNumbers)
   const existingByWeekNumber = new Map<number, ExistingMicrocycleVolume>()
   const conflicts: RegenerationConflict[] = []
 
@@ -71,7 +80,7 @@ export function reconcilePlanningRegeneration({
     existingByWeekNumber.set(existing.weekNumber, existing)
 
     if (
-      existing.targetVolumeSource === 'manual'
+      (existing.targetVolumeSource === 'manual' || existing.targetElevationSource === 'manual')
       && !generatedWeekNumbers.has(existing.weekNumber)
     ) {
       conflicts.push({
@@ -85,47 +94,78 @@ export function reconcilePlanningRegeneration({
 
   const preservedManualWeekNumbers: number[] = []
   const restoredGeneratedWeekNumbers: number[] = []
+  const preservedManualElevationWeekNumbers: number[] = []
+  const restoredGeneratedElevationWeekNumbers: number[] = []
 
   const reconcileMicrocycle = (
     generated: GeneratedMicrocycleDraft,
   ): GeneratedMicrocycleDraft => {
     const existing = existingByWeekNumber.get(generated.weekNumber)
 
-    if (!existing || existing.targetVolumeSource !== 'manual') {
+    if (!existing) {
       return generated
     }
 
-    if (restoredWeekNumbers.has(generated.weekNumber)) {
-      restoredGeneratedWeekNumbers.push(generated.weekNumber)
-      return generated
+    let reconciled = generated
+
+    if (existing.targetVolumeSource === 'manual') {
+      if (restoredWeekNumbers.has(generated.weekNumber)) {
+        restoredGeneratedWeekNumbers.push(generated.weekNumber)
+      } else if (existing.targetVolumeKm === null || !Number.isFinite(existing.targetVolumeKm)) {
+        conflicts.push({
+          code: 'manual_volume_missing',
+          weekNumber: existing.weekNumber,
+          microcycleId: existing.id,
+          message: `La semana ${existing.weekNumber} está marcada como manual pero no tiene un volumen válido.`,
+        })
+      } else {
+        preservedManualWeekNumbers.push(generated.weekNumber)
+
+        if (existing.targetVolumeKm > loadStrategy.values.maximumWeeklyVolumeKm) {
+          conflicts.push({
+            code: 'manual_volume_above_maximum',
+            weekNumber: existing.weekNumber,
+            microcycleId: existing.id,
+            message: `El volumen manual de la semana ${existing.weekNumber} supera el máximo actual de ${loadStrategy.values.maximumWeeklyVolumeKm} km.`,
+          })
+        }
+
+        reconciled = {
+          ...reconciled,
+          targetVolumeKm: existing.targetVolumeKm,
+          targetVolumeSource: 'manual',
+        }
+      }
     }
 
-    if (existing.targetVolumeKm === null || !Number.isFinite(existing.targetVolumeKm)) {
-      conflicts.push({
-        code: 'manual_volume_missing',
-        weekNumber: existing.weekNumber,
-        microcycleId: existing.id,
-        message: `La semana ${existing.weekNumber} está marcada como manual pero no tiene un volumen válido.`,
-      })
-      return generated
+    if (existing.targetElevationSource === 'manual') {
+      if (restoredElevationWeekNumbers.has(generated.weekNumber)) {
+        restoredGeneratedElevationWeekNumbers.push(generated.weekNumber)
+      } else {
+        preservedManualElevationWeekNumbers.push(generated.weekNumber)
+
+        if (
+          existing.targetElevationGain !== null
+          && loadStrategy.values.maximumWeeklyElevationGain !== null
+          && existing.targetElevationGain > loadStrategy.values.maximumWeeklyElevationGain
+        ) {
+          conflicts.push({
+            code: 'manual_elevation_above_maximum',
+            weekNumber: existing.weekNumber,
+            microcycleId: existing.id,
+            message: `El D+ manual de la semana ${existing.weekNumber} supera el máximo actual de ${loadStrategy.values.maximumWeeklyElevationGain} m.`,
+          })
+        }
+
+        reconciled = {
+          ...reconciled,
+          targetElevationGain: existing.targetElevationGain,
+          targetElevationSource: 'manual',
+        }
+      }
     }
 
-    preservedManualWeekNumbers.push(generated.weekNumber)
-
-    if (existing.targetVolumeKm > loadStrategy.values.maximumWeeklyVolumeKm) {
-      conflicts.push({
-        code: 'manual_volume_above_maximum',
-        weekNumber: existing.weekNumber,
-        microcycleId: existing.id,
-        message: `El volumen manual de la semana ${existing.weekNumber} supera el máximo actual de ${loadStrategy.values.maximumWeeklyVolumeKm} km.`,
-      })
-    }
-
-    return {
-      ...generated,
-      targetVolumeKm: existing.targetVolumeKm,
-      targetVolumeSource: 'manual',
-    }
+    return reconciled
   }
 
   const planning: GeneratedMacrocycleDraft = {
@@ -141,5 +181,7 @@ export function reconcilePlanningRegeneration({
     conflicts,
     preservedManualWeekNumbers: preservedManualWeekNumbers.sort((a, b) => a - b),
     restoredGeneratedWeekNumbers: restoredGeneratedWeekNumbers.sort((a, b) => a - b),
+    preservedManualElevationWeekNumbers: preservedManualElevationWeekNumbers.sort((a, b) => a - b),
+    restoredGeneratedElevationWeekNumbers: restoredGeneratedElevationWeekNumbers.sort((a, b) => a - b),
   }
 }

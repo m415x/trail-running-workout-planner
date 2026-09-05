@@ -8,6 +8,7 @@ import {
   mesocycles,
   microcycles,
 } from '@/db/schema'
+import { assertPersistablePlanning } from '@/lib/periodization/planning-persistence-validator'
 import type { GeneratedMacrocycleDraft } from '@/types'
 
 const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
@@ -33,6 +34,8 @@ export function persistProgression({
   planning,
   database = db,
 }: PersistProgressionParams): PersistProgressionResult {
+  assertPersistablePlanning(planning)
+
   const macrocycle = database.query.macrocycles.findFirst({
     where: and(eq(macrocycles.id, macrocycleId), eq(macrocycles.isDeleted, false)),
     with: {
@@ -136,6 +139,8 @@ export function persistProgression({
               mesocycleId,
               targetVolumeKm: proposedMicrocycle.targetVolumeKm,
               targetVolumeSource: proposedMicrocycle.targetVolumeSource,
+              targetElevationGain: proposedMicrocycle.targetElevationGain,
+              targetElevationSource: proposedMicrocycle.targetElevationSource,
               isDeleted: false,
               updatedAt: now,
             })
@@ -153,6 +158,7 @@ export function persistProgression({
             targetVolumeKm: proposedMicrocycle.targetVolumeKm,
             targetVolumeSource: proposedMicrocycle.targetVolumeSource,
             targetElevationGain: proposedMicrocycle.targetElevationGain,
+            targetElevationSource: proposedMicrocycle.targetElevationSource,
             targetDurationMin: null,
             notes: proposedMicrocycle.notes,
             createdAt: now,

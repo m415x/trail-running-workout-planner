@@ -149,4 +149,24 @@ describe('validación de estrategia de carga', () => {
     ))
     assert.equal(validateLoadStrategy(omittedRange).isValid, true)
   })
+
+  it('advierte densidades verticales altas y extremas sin bloquearlas', () => {
+    const highDensity = strategyForS2()
+    highDensity.values.initialWeeklyVolumeKm = 20
+    highDensity.values.initialWeeklyElevationGain = 2_000
+    highDensity.values.maximumWeeklyVolumeKm = 30
+    highDensity.values.maximumWeeklyElevationGain = 6_000
+
+    const result = validateLoadStrategy(highDensity)
+
+    assert.equal(result.isValid, true)
+    assert.equal(
+      result.warnings.some((warning) => warning.code === 'initial-elevation-density-high'),
+      true,
+    )
+    assert.equal(
+      result.warnings.some((warning) => warning.code === 'maximum-elevation-density-extreme'),
+      true,
+    )
+  })
 })

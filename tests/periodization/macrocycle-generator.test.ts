@@ -38,6 +38,10 @@ describe('generación de planificación', () => {
       weeks.map((week) => week.targetVolumeKm),
       [35, 36, 37, 30, 37, 38, 39, 31],
     )
+    assert.deepEqual(
+      weeks.map((week) => week.loadFocus),
+      ['balanced', 'volume', 'elevation', 'recovery', 'balanced', 'volume', 'elevation', 'recovery'],
+    )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
     assert.equal(weeks.every((week) => week.targetVolumeSource === 'generated'), true)
@@ -57,12 +61,22 @@ describe('generación de planificación', () => {
 
     const weeks = result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
     const competitive = result.mesocycles.at(-1)
+    const finalTrainingPeakElevation = result.mesocycles.at(-2)?.targetPeakElevationGain
+    assert.equal(typeof finalTrainingPeakElevation, 'number')
     assert.equal(determineTaperingWeeksCount('S2', result.race ?? undefined), 3)
     assert.equal(result.taperingWeeksCount, 3)
     assert.equal(result.trainingWeeksCount, 9)
     assert.equal(result.progressionDurationProfile, 'normal')
     assert.equal(competitive?.period, 'competitive')
     assert.deepEqual(competitive?.microcycles.map((week) => week.type), ['tapering', 'tapering', 'race'])
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.6) / 10) * 10,
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.4) / 10) * 10,
+        1200,
+      ],
+    )
     assert.equal(competitive?.microcycles.at(-1)?.targetElevationGain, 1200)
     assert.match(competitive?.microcycles.at(-1)?.notes ?? '', /Maratón de prueba/)
     assert.equal(weeks.length, 12)
@@ -71,6 +85,47 @@ describe('generación de planificación', () => {
 
   it('usa dos semanas competitivas para una carrera corta', () => {
     assert.equal(determineTaperingWeeksCount('S2', { name: '10K', distanceKm: 10 }), 2)
+  })
+
+  it('no inventa el D+ de una carrera cuando el dato es desconocido', () => {
+    const result = generateFractalMacrocycle({
+      title: '10K sin D+',
+      goalType: 'race',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy: s2RaceStrategy,
+      race: { name: '10K local', distanceKm: 10 },
+    })
+    const competitive = result.mesocycles.at(-1)
+    const finalTrainingPeakElevation = result.mesocycles.at(-2)?.targetPeakElevationGain
+    assert.equal(typeof finalTrainingPeakElevation, 'number')
+
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [Math.round(((finalTrainingPeakElevation ?? 0) * 0.6) / 10) * 10, null],
+    )
+  })
+
+  it('mantiene el taper sin D+ cuando la estrategia vertical está desactivada', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'race')
+    loadStrategy.values.initialWeeklyElevationGain = null
+    loadStrategy.values.maximumWeeklyElevationGain = null
+    const result = generateFractalMacrocycle({
+      title: 'Carrera sin progresión vertical',
+      goalType: 'race',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+      race: { name: 'Trail corto', distanceKm: 15, elevationGain: 650 },
+    })
+    const competitive = result.mesocycles.at(-1)
+
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [null, 650],
+    )
   })
 
   it('rechaza una carrera sin sus datos obligatorios', () => {
@@ -100,6 +155,53 @@ describe('generación de planificación', () => {
 
     const volumes = result.mesocycles[0].microcycles.map((week) => week.targetVolumeKm)
     assert.deepEqual(volumes, [20, 21, 22, 18])
+  })
+
+  it('calcula picos de desnivel por mesociclo independientes del volumen', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    loadStrategy.values.initialWeeklyElevationGain = 1_000
+    loadStrategy.values.maximumWeeklyElevationGain = 1_800
+
+    const result = generateFractalMacrocycle({
+      title: 'Montaña S2',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+
+    assert.deepEqual(
+      result.mesocycles.map((mesocycle) => mesocycle.targetPeakElevationGain),
+      [1_160, 1_350],
+    )
+    assert.deepEqual(
+      result.mesocycles.flatMap((mesocycle) => (
+        mesocycle.microcycles.map((microcycle) => microcycle.targetElevationGain)
+      )),
+      [1_000, 1_080, 1_160, 930, 1_160, 1_250, 1_350, 1_080],
+    )
+  })
+
+  it('no genera desnivel semanal cuando la estrategia lo desactiva', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    loadStrategy.values.initialWeeklyElevationGain = null
+    loadStrategy.values.maximumWeeklyElevationGain = null
+
+    const result = generateFractalMacrocycle({
+      title: 'Volumen sin D+',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+
+    assert.equal(
+      result.mesocycles.flatMap((mesocycle) => mesocycle.microcycles)
+        .every((microcycle) => microcycle.targetElevationGain === null),
+      true,
+    )
   })
 
   it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {
@@ -180,6 +282,58 @@ describe('generación de planificación', () => {
       assert.equal(weeks.length, scenario.weeks)
       assertConsecutiveWeeks(weeks)
     }
+  })
+
+  it('evita mesociclos residuales de dos semanas en horizontes no divisibles por cuatro', () => {
+    const cases = [5, 6, 9, 10, 17, 18, 33, 34]
+
+    for (const trainingWeeksCount of cases) {
+      const startDate = new Date('2026-01-05T00:00:00Z')
+      const endDate = new Date(startDate)
+      endDate.setUTCDate(endDate.getUTCDate() + trainingWeeksCount * 7 - 1)
+      const planning = generateFractalMacrocycle({
+        title: `Plan de ${trainingWeeksCount} semanas`,
+        goalType: 'base',
+        startDate: '2026-01-05',
+        endDate: endDate.toISOString().slice(0, 10),
+        athleteGroup: 'S2',
+        loadStrategy: suggestLoadStrategy('S2', 'base'),
+      })
+      const blockSizes = planning.mesocycles.map((mesocycle) => mesocycle.microcycles.length)
+
+      assert.equal(blockSizes.reduce((total, size) => total + size, 0), trainingWeeksCount)
+      assert.equal(blockSizes.every((size) => size >= 3 && size <= 5), true)
+    }
+  })
+
+  it('termina 33 semanas con un bloque progresivo de cinco semanas', () => {
+    const planning = generateFractalMacrocycle({
+      title: 'Plan de 33 semanas',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-08-23',
+      athleteGroup: 'S2',
+      loadStrategy: suggestLoadStrategy('S2', 'base'),
+    })
+    const finalTypes = planning.mesocycles.at(-1)?.microcycles.map((week) => week.type)
+
+    assert.deepEqual(finalTypes, ['base', 'development', 'development', 'shock', 'deload'])
+  })
+
+  it('redistribuye 34 semanas en dos bloques finales de cinco semanas', () => {
+    const planning = generateFractalMacrocycle({
+      title: 'Plan de 34 semanas',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-08-30',
+      athleteGroup: 'S2',
+      loadStrategy: suggestLoadStrategy('S2', 'base'),
+    })
+    const finalBlockSizes = planning.mesocycles.slice(-2).map((mesocycle) => (
+      mesocycle.microcycles.length
+    ))
+
+    assert.deepEqual(finalBlockSizes, [5, 5])
   })
 })
 

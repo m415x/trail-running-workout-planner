@@ -5,17 +5,20 @@ import {
   generateTrainingMesocycles,
   getUnreachableMaximumWarning,
 } from '@/lib/periodization/macrocycle-generator'
+import { assessElevationDensity } from '@/lib/periodization/elevation-density-validator'
+import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import {
   reconcilePlanningRegeneration,
   type ExistingMicrocycleVolume,
 } from '@/lib/periodization/planning-regeneration'
-import type { GeneratedMacrocycleDraft, LoadStrategyDraft } from '@/types'
+import type { GeneratedMacrocycleDraft, LoadStrategyDraft, TargetRaceSnapshot } from '@/types'
 
 export interface LoadProgressionPreviewParams {
   title: string
   startDate: string
   endDate: string
   loadStrategy: LoadStrategyDraft
+  targetRace?: TargetRaceSnapshot | null
   existingMicrocycles?: ExistingMicrocycleVolume[]
 }
 
@@ -35,6 +38,7 @@ export function buildLoadProgressionPreview({
   startDate,
   endDate,
   loadStrategy,
+  targetRace = null,
   existingMicrocycles = [],
 }: LoadProgressionPreviewParams) {
   const trainingWeeksCount = Math.ceil(
@@ -51,6 +55,12 @@ export function buildLoadProgressionPreview({
     mesocycles.at(-1)?.targetPeakVolumeKm,
     loadStrategy.values.maximumWeeklyVolumeKm,
   )
+  const strategyWarnings = validateLoadStrategy(loadStrategy).warnings
+    .filter((warning) => warning.code.includes('elevation-density'))
+    .map((warning) => warning.message)
+  const raceDensityWarning = targetRace?.elevationGain === undefined
+    ? null
+    : assessElevationDensity(targetRace.distanceKm, targetRace.elevationGain).warning
   const generatedPlanning: GeneratedMacrocycleDraft = {
     title,
     goalType: loadStrategy.context.goalType,
@@ -60,8 +70,12 @@ export function buildLoadProgressionPreview({
     taperingWeeksCount: 0,
     trainingWeeksCount,
     progressionDurationProfile: determineProgressionDurationProfile(trainingWeeksCount),
-    race: null,
-    generationWarnings: maximumWarning ? [maximumWarning] : [],
+    race: targetRace,
+    generationWarnings: [
+      ...(maximumWarning ? [maximumWarning] : []),
+      ...strategyWarnings,
+      ...(raceDensityWarning ? [raceDensityWarning] : []),
+    ],
     mesocycles,
   }
 

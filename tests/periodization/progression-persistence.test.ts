@@ -55,7 +55,9 @@ describe('persistencia de la progresión de carga', () => {
     assert.equal(secondResult.updatedMesocycles, 2)
     assert.equal(secondResult.updatedMicrocycles, 8)
     assert.equal(database.select().from(mesocycles).all().length, 2)
-    assert.equal(database.select().from(microcycles).all().length, 8)
+    const savedMicrocycles = database.select().from(microcycles).all()
+    assert.equal(savedMicrocycles.length, 8)
+    assert.equal(savedMicrocycles.every((week) => week.targetElevationSource === 'generated'), true)
   })
 
   it('conserva fechas, tipo y notas editados al guardar un volumen manual', () => {
@@ -81,7 +83,14 @@ describe('persistencia de la progresión de carga', () => {
     }).where(eq(microcycles.id, week.id)).run()
 
     const regenerated = createPlanning([
-      { id: week.id, weekNumber: 2, targetVolumeKm: 34.5, targetVolumeSource: 'manual' },
+      {
+        id: week.id,
+        weekNumber: 2,
+        targetVolumeKm: 34.5,
+        targetVolumeSource: 'manual',
+        targetElevationGain: week.targetElevationGain,
+        targetElevationSource: week.targetElevationSource,
+      },
     ])
     persistProgression({
       groupTrainingPlanId: 'plan-1',
@@ -99,6 +108,68 @@ describe('persistencia de la progresión de carga', () => {
     assert.equal(savedWeek?.notes, 'Ajuste deliberado del profesor')
     assert.equal(savedWeek?.targetVolumeKm, 34.5)
     assert.equal(savedWeek?.targetVolumeSource, 'manual')
+  })
+
+  it('persiste el D+ manual en regeneraciones sucesivas sin duplicar semanas', () => {
+    const planning = createPlanning()
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning,
+      database,
+    })
+    const week = database.select().from(microcycles)
+      .where(eq(microcycles.weekNumber, 4))
+      .get()
+
+    assert.ok(week)
+    database.update(microcycles).set({
+      targetElevationGain: 1_250,
+      targetElevationSource: 'manual',
+    }).where(eq(microcycles.id, week.id)).run()
+
+    const regenerated = createPlanning([{
+      id: week.id,
+      weekNumber: week.weekNumber,
+      targetVolumeKm: week.targetVolumeKm,
+      targetVolumeSource: week.targetVolumeSource,
+      targetElevationGain: 1_250,
+      targetElevationSource: 'manual',
+    }])
+
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: regenerated,
+      database,
+    })
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning: regenerated,
+      database,
+    })
+
+    const savedWeek = database.select().from(microcycles)
+      .where(eq(microcycles.id, week.id))
+      .get()
+    assert.equal(savedWeek?.targetElevationGain, 1_250)
+    assert.equal(savedWeek?.targetElevationSource, 'manual')
+    assert.equal(database.select().from(microcycles).all().length, 8)
+  })
+
+  it('rechaza una propuesta inválida antes de realizar escrituras', () => {
+    const planning = createPlanning()
+    planning.mesocycles[1].microcycles[0].weekNumber = 1
+
+    assert.throws(() => persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning,
+      database,
+    }), /semana 1 está duplicada/)
+    assert.equal(database.select().from(mesocycles).all().length, 0)
+    assert.equal(database.select().from(microcycles).all().length, 0)
   })
 
   it('desactiva semanas de entrenamiento obsoletas sin tocar bloques protegidos', () => {
@@ -163,7 +234,8 @@ function createTestDatabase() {
     CREATE TABLE macrocycles (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
       title TEXT NOT NULL, group_training_plan_id TEXT NOT NULL, start_date TEXT NOT NULL,
-      end_date TEXT NOT NULL, tapering_weeks_count INTEGER, notes TEXT
+      end_date TEXT NOT NULL, tapering_weeks_count INTEGER, target_race_name TEXT,
+      target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT
     );
     CREATE TABLE mesocycles (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
@@ -175,6 +247,7 @@ function createTestDatabase() {
       mesocycle_id TEXT NOT NULL, week_number INTEGER NOT NULL, type TEXT NOT NULL,
       start_date TEXT NOT NULL, end_date TEXT NOT NULL, target_volume_km REAL,
       target_volume_source TEXT NOT NULL DEFAULT 'generated', target_elevation_gain INTEGER,
+      target_elevation_source TEXT NOT NULL DEFAULT 'generated',
       target_duration_min INTEGER, notes TEXT
     );
   `)

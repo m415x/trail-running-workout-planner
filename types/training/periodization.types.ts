@@ -11,9 +11,13 @@ export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
-export type TargetVolumeSource = 'generated' | 'manual'
+export type TargetValueSource = 'generated' | 'manual'
+export type TargetVolumeSource = TargetValueSource
+export type TargetElevationSource = TargetValueSource
+export type MicrocycleLoadFocus = 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'
 export type PlanningModificationField =
   | 'target_volume_km'
+  | 'target_elevation_gain'
   | 'date_range'
   | 'type'
   | 'notes'
@@ -44,12 +48,26 @@ export interface GroupVolumeProgression {
 export interface GeneratedMicrocycleDraft {
   weekNumber: number
   type: MicrocycleType
+  loadFocus: MicrocycleLoadFocus
   startDate: string
   endDate: string
   targetVolumeKm: number
   targetVolumeSource: TargetVolumeSource
-  targetElevationGain: number
+  targetElevationGain: number | null
+  targetElevationSource: TargetElevationSource
   notes: string
+}
+
+/**
+ * Immutable race context copied into a group macrocycle.
+ *
+ * This is not a link to an athlete's individual TrainingGoal. Distance is
+ * expressed in kilometers and elevation gain in positive meters (m+).
+ */
+export interface TargetRaceSnapshot {
+  name: string
+  distanceKm: number
+  elevationGain?: number
 }
 
 export interface GeneratedMesocycleDraft {
@@ -58,6 +76,7 @@ export interface GeneratedMesocycleDraft {
   period: PeriodType
   objective: string
   targetPeakVolumeKm?: number
+  targetPeakElevationGain?: number | null
   microcycles: GeneratedMicrocycleDraft[]
 }
 
@@ -70,11 +89,7 @@ export interface GeneratedMacrocycleDraft {
   taperingWeeksCount: 0 | 2 | 3
   trainingWeeksCount: number
   progressionDurationProfile: ProgressionDurationProfile
-  race: {
-    name: string
-    distanceKm: number
-    elevationGain?: number
-  } | null
+  race: TargetRaceSnapshot | null
   generationWarnings: string[]
   mesocycles: GeneratedMesocycleDraft[]
 }
@@ -83,11 +98,13 @@ export interface Microcycle extends BaseEntity {
   mesocycleId: string
   weekNumber: number
   type: MicrocycleType
+  loadFocus?: MicrocycleLoadFocus | null
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
   targetVolumeKm?: number | null
   targetVolumeSource: TargetVolumeSource
   targetElevationGain?: number | null
+  targetElevationSource: TargetElevationSource
   targetDurationMin?: number | null
   notes?: string
   sessions?: Session[]
@@ -108,6 +125,9 @@ export interface Macrocycle extends BaseEntity {
   startDate: string
   endDate: string
   taperingWeeksCount?: 0 | 2 | 3 | null
+  targetRaceName?: string | null
+  targetRaceDistanceKm?: number | null
+  targetRaceElevationGain?: number | null
   notes?: string | null
   mesocycles?: Mesocycle[]
 }

@@ -29,13 +29,22 @@ describe('vista previa de progresión', () => {
       endDate: '2026-03-01',
       loadStrategy: suggestLoadStrategy('S2', 'base'),
       existingMicrocycles: [
-        { id: 'week-2', weekNumber: 2, targetVolumeKm: 45, targetVolumeSource: 'manual' },
+        {
+          id: 'week-2',
+          weekNumber: 2,
+          targetVolumeKm: 45,
+          targetVolumeSource: 'manual',
+          targetElevationGain: 1_250,
+          targetElevationSource: 'manual',
+        },
       ],
     })
     const week = preview.planning.mesocycles[0].microcycles[1]
 
     assert.equal(week.targetVolumeKm, 45)
     assert.equal(week.targetVolumeSource, 'manual')
+    assert.equal(week.targetElevationGain, 1_250)
+    assert.equal(week.targetElevationSource, 'manual')
     assert.equal(preview.conflicts[0].code, 'manual_volume_above_maximum')
   })
 
@@ -50,6 +59,45 @@ describe('vista previa de progresión', () => {
     assert.equal(
       determineTrainingProgressionEndDate('2026-03-22', []),
       '2026-03-22',
+    )
+  })
+
+  it('transporta la carrera objetivo sin convertirla todavía en carga semanal', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Preparación Patagonia Run',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: {
+        name: 'Patagonia Run',
+        distanceKm: 42.2,
+        elevationGain: 2400,
+      },
+    })
+
+    assert.deepEqual(preview.planning.race, {
+      name: 'Patagonia Run',
+      distanceKm: 42.2,
+      elevationGain: 2400,
+    })
+  })
+
+  it('advierte cuando la carrera tiene una densidad vertical extrema', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Kilómetro vertical',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: {
+        name: 'KV',
+        distanceKm: 5,
+        elevationGain: 1_000,
+      },
+    })
+
+    assert.equal(
+      preview.planning.generationWarnings.some((warning) => warning.includes('densidad vertical es extrema')),
+      true,
     )
   })
 })

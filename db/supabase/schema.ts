@@ -19,6 +19,7 @@ import type {
   GroupTrainingPlanStatus,
   LoadStrategyFieldSources,
   PlanningModificationField,
+  TargetElevationSource,
   TargetVolumeSource,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
@@ -270,6 +271,10 @@ export const macrocycles = pgTable('macrocycles', {
   endDate: text('end_date').notNull(),
   taperingWeeksCount: integer('tapering_weeks_count'),
 
+  targetRaceName: text('target_race_name'),
+  targetRaceDistanceKm: doublePrecision('target_race_distance_km'),
+  targetRaceElevationGain: integer('target_race_elevation_gain'),
+
   notes: text('notes'),
 })
 
@@ -302,6 +307,10 @@ export const microcycles = pgTable('microcycles', {
     .notNull()
     .default('generated'),
   targetElevationGain: integer('target_elevation_gain'),
+  targetElevationSource: text('target_elevation_source')
+    .$type<TargetElevationSource>()
+    .notNull()
+    .default('generated'),
   targetDurationMin: integer('target_duration_min'),
   notes: text('notes'),
 })

@@ -18,6 +18,7 @@ export * from '@/types/route/gpx.types'
 export * from '@/types/route/track.types'
 
 export * from '@/types/training/intensity.types'
+export * from '@/types/training/elevation-progression.types'
 export * from '@/types/training/load-strategy.types'
 export * from '@/types/training/periodization.types'
 export * from '@/types/training/workout.types'

@@ -450,6 +450,7 @@ async function seed() {
     targetVolumeKm: weeklyCycle.targetKm || 40,
     targetVolumeSource: 'generated' as const,
     targetElevationGain: null,
+    targetElevationSource: 'generated' as const,
     targetDurationMin: null,
     notes: null,
   }))
