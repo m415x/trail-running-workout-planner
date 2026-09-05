@@ -107,7 +107,8 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           elevationGain: microcycle.targetElevationGain,
           type: microcycle.type,
           loadFocus: microcycle.loadFocus,
-          source: microcycle.targetVolumeSource,
+          volumeSource: microcycle.targetVolumeSource,
+          elevationSource: microcycle.targetElevationSource,
         })),
       )
     : []
@@ -210,7 +211,14 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                             />
                           </TableCell>
                           <TableCell>
-                            {microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}
+                            <div className='flex flex-wrap items-center gap-2'>
+                              <span>{microcycle.targetElevationGain == null ? '—' : `${microcycle.targetElevationGain} m`}</span>
+                              {microcycle.targetElevationGain !== null && (
+                                <Badge variant='outline'>
+                                  {microcycle.targetElevationSource === 'manual' ? 'Manual' : 'Generado'}
+                                </Badge>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <MicrocycleNotesForm

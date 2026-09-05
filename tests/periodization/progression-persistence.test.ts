@@ -55,7 +55,9 @@ describe('persistencia de la progresión de carga', () => {
     assert.equal(secondResult.updatedMesocycles, 2)
     assert.equal(secondResult.updatedMicrocycles, 8)
     assert.equal(database.select().from(mesocycles).all().length, 2)
-    assert.equal(database.select().from(microcycles).all().length, 8)
+    const savedMicrocycles = database.select().from(microcycles).all()
+    assert.equal(savedMicrocycles.length, 8)
+    assert.equal(savedMicrocycles.every((week) => week.targetElevationSource === 'generated'), true)
   })
 
   it('conserva fechas, tipo y notas editados al guardar un volumen manual', () => {
@@ -176,6 +178,7 @@ function createTestDatabase() {
       mesocycle_id TEXT NOT NULL, week_number INTEGER NOT NULL, type TEXT NOT NULL,
       start_date TEXT NOT NULL, end_date TEXT NOT NULL, target_volume_km REAL,
       target_volume_source TEXT NOT NULL DEFAULT 'generated', target_elevation_gain INTEGER,
+      target_elevation_source TEXT NOT NULL DEFAULT 'generated',
       target_duration_min INTEGER, notes TEXT
     );
   `)

@@ -11,7 +11,12 @@ import {
   YAxis,
 } from 'recharts'
 
-import type { MicrocycleLoadFocus, MicrocycleType, TargetVolumeSource } from '@/types'
+import type {
+  MicrocycleLoadFocus,
+  MicrocycleType,
+  TargetElevationSource,
+  TargetVolumeSource,
+} from '@/types'
 import {
   saveLoadProgression,
   type PersistProgressionFormState,
@@ -27,7 +32,8 @@ export interface LoadProgressionPoint {
   elevationGain: number | null
   type: MicrocycleType
   loadFocus: MicrocycleLoadFocus
-  source: TargetVolumeSource
+  volumeSource: TargetVolumeSource
+  elevationSource: TargetElevationSource
 }
 
 interface LoadProgressionPreviewProps {
@@ -70,7 +76,8 @@ export function LoadProgressionPreview({
   macrocycleId,
   locale,
 }: LoadProgressionPreviewProps) {
-  const manualPoints = points.filter((point) => point.source === 'manual')
+  const manualVolumePoints = points.filter((point) => point.volumeSource === 'manual')
+  const manualElevationPoints = points.filter((point) => point.elevationSource === 'manual')
   const [actionState, formAction, isPending] = useActionState(
     saveLoadProgression,
     initialActionState,
@@ -88,7 +95,12 @@ export function LoadProgressionPreview({
           </div>
           <div className='flex flex-wrap gap-2'>
             <Badge variant='secondary'>Generado</Badge>
-            {manualPoints.length > 0 && <Badge variant='outline'>Manual: {manualPoints.length}</Badge>}
+            {manualVolumePoints.length > 0 && (
+              <Badge variant='outline'>Volumen manual: {manualVolumePoints.length}</Badge>
+            )}
+            {manualElevationPoints.length > 0 && (
+              <Badge variant='outline'>D+ manual: {manualElevationPoints.length}</Badge>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -120,12 +132,16 @@ export function LoadProgressionPreview({
                   <div className='space-y-1 rounded-md border bg-background px-3 py-2 text-sm shadow-md'>
                     <p className='font-medium'>Semana {point.weekNumber}</p>
                     <p className='text-muted-foreground'>
-                      {microcycleLabels[point.type]} · {point.source === 'manual' ? 'Manual' : 'Generado'}
+                      {microcycleLabels[point.type]}
                     </p>
                     <p className='text-muted-foreground'>{loadFocusLabels[point.loadFocus]}</p>
-                    <p className='font-semibold'>{point.volumeKm.toLocaleString('es-AR')} km</p>
+                    <p className='font-semibold'>
+                      {point.volumeKm.toLocaleString('es-AR')} km · {point.volumeSource === 'manual' ? 'Manual' : 'Generado'}
+                    </p>
                     {point.elevationGain !== null && (
-                      <p className='font-semibold'>+{point.elevationGain.toLocaleString('es-AR')} m D+</p>
+                      <p className='font-semibold'>
+                        +{point.elevationGain.toLocaleString('es-AR')} m D+ · {point.elevationSource === 'manual' ? 'Manual' : 'Generado'}
+                      </p>
                     )}
                   </div>
                 )
@@ -145,10 +161,10 @@ export function LoadProgressionPreview({
                   <circle
                     cx={props.cx}
                     cy={props.cy}
-                    r={point.source === 'manual' ? 5 : 3}
-                    fill={point.source === 'manual' ? 'var(--chart-4)' : 'var(--color-volume)'}
-                    stroke={point.source === 'manual' ? 'var(--background)' : 'none'}
-                    strokeWidth={point.source === 'manual' ? 2 : 0}
+                    r={point.volumeSource === 'manual' ? 5 : 3}
+                    fill={point.volumeSource === 'manual' ? 'var(--chart-4)' : 'var(--color-volume)'}
+                    stroke={point.volumeSource === 'manual' ? 'var(--background)' : 'none'}
+                    strokeWidth={point.volumeSource === 'manual' ? 2 : 0}
                   />
                 )
               }}
@@ -185,7 +201,7 @@ export function LoadProgressionPreview({
             ) : conflicts.length > 0 ? (
               <p>Resolvé los conflictos antes de guardar la propuesta.</p>
             ) : (
-              <p>El guardado conservará los volúmenes marcados como manuales.</p>
+              <p>El guardado conservará por separado los valores de volumen y D+ marcados como manuales.</p>
             )}
           </div>
           <Button type='submit' disabled={isPending || conflicts.length > 0}>

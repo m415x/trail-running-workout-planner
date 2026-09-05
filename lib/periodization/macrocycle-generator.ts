@@ -174,6 +174,7 @@ export function generateMicrocycles({
       targetVolumeKm: target.targetVolumeKm,
       targetVolumeSource: 'generated',
       targetElevationGain: target.targetElevationGain,
+      targetElevationSource: 'generated',
       notes: createNotes(
         target.type,
         target.targetVolumeKm,

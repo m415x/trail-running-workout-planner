@@ -136,6 +136,8 @@ export function persistProgression({
               mesocycleId,
               targetVolumeKm: proposedMicrocycle.targetVolumeKm,
               targetVolumeSource: proposedMicrocycle.targetVolumeSource,
+              targetElevationGain: proposedMicrocycle.targetElevationGain,
+              targetElevationSource: proposedMicrocycle.targetElevationSource,
               isDeleted: false,
               updatedAt: now,
             })
@@ -153,6 +155,7 @@ export function persistProgression({
             targetVolumeKm: proposedMicrocycle.targetVolumeKm,
             targetVolumeSource: proposedMicrocycle.targetVolumeSource,
             targetElevationGain: proposedMicrocycle.targetElevationGain,
+            targetElevationSource: proposedMicrocycle.targetElevationSource,
             targetDurationMin: null,
             notes: proposedMicrocycle.notes,
             createdAt: now,

@@ -11,7 +11,9 @@ export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
-export type TargetVolumeSource = 'generated' | 'manual'
+export type TargetValueSource = 'generated' | 'manual'
+export type TargetVolumeSource = TargetValueSource
+export type TargetElevationSource = TargetValueSource
 export type MicrocycleLoadFocus = 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'
 export type PlanningModificationField =
   | 'target_volume_km'
@@ -51,6 +53,7 @@ export interface GeneratedMicrocycleDraft {
   targetVolumeKm: number
   targetVolumeSource: TargetVolumeSource
   targetElevationGain: number | null
+  targetElevationSource: TargetElevationSource
   notes: string
 }
 
@@ -100,6 +103,7 @@ export interface Microcycle extends BaseEntity {
   targetVolumeKm?: number | null
   targetVolumeSource: TargetVolumeSource
   targetElevationGain?: number | null
+  targetElevationSource: TargetElevationSource
   targetDurationMin?: number | null
   notes?: string
   sessions?: Session[]

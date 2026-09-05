@@ -125,6 +125,7 @@ export function persistGeneratedPlanning({
           targetVolumeKm: microcycle.targetVolumeKm,
           targetVolumeSource: microcycle.targetVolumeSource,
           targetElevationGain: microcycle.targetElevationGain,
+          targetElevationSource: microcycle.targetElevationSource,
           targetDurationMin: null,
           notes: microcycle.notes,
           createdAt: now,
