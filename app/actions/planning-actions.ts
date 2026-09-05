@@ -8,11 +8,13 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { intensityStrategies } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import {
   athleteGroups,
   groupTrainingPlans,
   macrocycles,
+  mesocycles,
   microcycles,
   planningModificationRecords,
 } from '@/db/schema'
@@ -21,7 +23,10 @@ import {
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
 import { persistProgression } from '@/lib/periodization/progression-persistence'
-import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
+import { calculateMicrocycleIntensityTarget } from '@/lib/periodization/microcycle-intensity-target'
+import { persistIntensityPlanning } from '@/lib/periodization/intensity-persistence'
+import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
+import type { AthleteGroupCode, IntensityStrategyDraft, LoadStrategyDraft } from '@/types'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
@@ -307,6 +312,48 @@ export async function saveLoadProgression(
       groupTrainingPlanId: plan.id,
       macrocycleId: macrocycle.id,
       planning: preview.planning,
+    })
+
+    const persistedIntensityStrategy = db.query.intensityStrategies.findFirst({
+      where: and(
+        eq(intensityStrategies.groupTrainingPlanId, plan.id),
+        eq(intensityStrategies.isDeleted, false),
+      ),
+    }).sync()
+    const intensityStrategy: IntensityStrategyDraft = persistedIntensityStrategy
+      ? {
+          context: { athleteGroup, goalType: persistedIntensityStrategy.goalType },
+          values: {
+            defaultMethod: persistedIntensityStrategy.defaultMethod,
+            maximumIntenseSessionsPerWeek:
+              persistedIntensityStrategy.maximumIntenseSessionsPerWeek,
+            minimumRecoveryDaysBetweenIntenseSessions:
+              persistedIntensityStrategy.minimumRecoveryDaysBetweenIntenseSessions,
+          },
+          fieldSources: persistedIntensityStrategy.fieldSources,
+        }
+      : suggestIntensityStrategy(athleteGroup, plan.loadStrategy.goalType)
+    const persistedMicrocycles = db.select({
+      id: microcycles.id,
+      type: microcycles.type,
+      period: mesocycles.period,
+    })
+      .from(microcycles)
+      .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+      .where(and(eq(mesocycles.macrocycleId, macrocycle.id), eq(microcycles.isDeleted, false)))
+      .all()
+
+    persistIntensityPlanning({
+      groupTrainingPlanId: plan.id,
+      strategy: intensityStrategy,
+      targets: persistedMicrocycles.map((microcycle) => ({
+        microcycleId: microcycle.id,
+        target: calculateMicrocycleIntensityTarget({
+          period: microcycle.period,
+          microcycleType: microcycle.type,
+          intensityStrategy,
+        }),
+      })),
     })
   } catch (error) {
     console.error('Error saving load progression:', error)

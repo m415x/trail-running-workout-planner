@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 
 import * as loadStrategySchema from '@/db/load-strategy-schema'
+import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as schema from '@/db/schema'
 import {
   groupTrainingPlans,
@@ -254,7 +255,9 @@ function createTestDatabase() {
 
   return {
     sqlite,
-    database: drizzle(sqlite, { schema: { ...schema, ...loadStrategySchema } }),
+    database: drizzle(sqlite, {
+      schema: { ...schema, ...loadStrategySchema, ...intensityStrategySchema },
+    }),
   }
 }
 

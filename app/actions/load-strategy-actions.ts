@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { intensityStrategies } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import {
   athleteGroups,
@@ -21,6 +22,7 @@ import {
 } from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
+import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
 import { resolveTargetRace } from '@/lib/periodization/target-race'
 import type {
   AthleteGroupCode,
@@ -134,6 +136,7 @@ export async function createGroupPlanWithLoadStrategy(
     }
 
     const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
+    const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, data.goalType)
     let targetRace
 
     try {
@@ -192,6 +195,20 @@ export async function createGroupPlanWithLoadStrategy(
         initialWeeklyElevationGain: data.values.initialWeeklyElevationGain,
         maximumWeeklyElevationGain: data.values.maximumWeeklyElevationGain,
         fieldSources,
+        createdAt: now,
+        updatedAt: now,
+      }).run()
+
+      tx.insert(intensityStrategies).values({
+        id: randomUUID(),
+        groupTrainingPlanId: planId,
+        goalType: data.goalType,
+        defaultMethod: suggestedIntensityStrategy.values.defaultMethod,
+        maximumIntenseSessionsPerWeek:
+          suggestedIntensityStrategy.values.maximumIntenseSessionsPerWeek,
+        minimumRecoveryDaysBetweenIntenseSessions:
+          suggestedIntensityStrategy.values.minimumRecoveryDaysBetweenIntenseSessions,
+        fieldSources: suggestedIntensityStrategy.fieldSources,
         createdAt: now,
         updatedAt: now,
       }).run()
