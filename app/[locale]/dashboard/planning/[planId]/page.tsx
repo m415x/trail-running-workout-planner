@@ -9,6 +9,10 @@ import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNo
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
 import {
+  IntensityDistribution,
+  type IntensityDistributionPoint,
+} from '@/features/planning/components/IntensityDistribution'
+import {
   LoadProgressionPreview,
   type LoadProgressionPoint,
 } from '@/features/planning/components/LoadProgressionPreview'
@@ -115,6 +119,31 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         })),
       )
     : []
+  const intensityTargetsByMicrocycle = new Map(
+    plan.intensityTargets.map((target) => [target.microcycleId, target]),
+  )
+  const intensityPoints: IntensityDistributionPoint[] = plan.macrocycles
+    .flatMap((macrocycle) => macrocycle.mesocycles)
+    .flatMap((mesocycle) => mesocycle.microcycles)
+    .flatMap((microcycle) => {
+      const target = intensityTargetsByMicrocycle.get(microcycle.id)
+
+      return target
+        ? [{
+            microcycleId: microcycle.id,
+            weekNumber: microcycle.weekNumber,
+            type: microcycle.type,
+            emphasis: target.emphasis,
+            intenseSessionsTarget: target.intenseSessionsTarget,
+            predominantZone: target.predominantZone,
+            pamPercentageTarget: target.pamPercentageTarget,
+            minimumRecoveryDaysBetweenIntenseSessions:
+              target.minimumRecoveryDaysBetweenIntenseSessions,
+            fieldSources: target.fieldSources,
+          }]
+        : []
+    })
+    .sort((first, second) => first.weekNumber - second.weekNumber)
 
   return (
     <div className='space-y-6'>
@@ -161,6 +190,20 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             </CardDescription>
           </CardHeader>
         </Card>
+      )}
+
+      {plan.intensityStrategy && (
+        <IntensityDistribution
+          points={intensityPoints}
+          defaultMethod={plan.intensityStrategy.defaultMethod}
+          maximumIntenseSessionsPerWeek={
+            plan.intensityStrategy.maximumIntenseSessionsPerWeek
+          }
+          minimumRecoveryDaysBetweenIntenseSessions={
+            plan.intensityStrategy.minimumRecoveryDaysBetweenIntenseSessions
+          }
+          strategySources={plan.intensityStrategy.fieldSources}
+        />
       )}
 
       {plan.macrocycles.map((macrocycle) => (

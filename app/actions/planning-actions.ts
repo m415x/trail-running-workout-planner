@@ -8,7 +8,10 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { intensityStrategies } from '@/db/intensity-strategy-schema'
+import {
+  intensityStrategies,
+  microcycleIntensityTargets,
+} from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import {
   athleteGroups,
@@ -228,7 +231,33 @@ export async function getGroupTrainingPlanById(planId: string) {
     })
   })
 
-  return { ...plan, loadStrategy: loadStrategy ?? null }
+  const intensityStrategy = db.query.intensityStrategies.findFirst({
+    where: and(
+      eq(intensityStrategies.groupTrainingPlanId, plan.id),
+      eq(intensityStrategies.isDeleted, false),
+    ),
+  }).sync()
+  const microcycleIds = plan.macrocycles.flatMap((macrocycle) => (
+    macrocycle.mesocycles.flatMap((mesocycle) => (
+      mesocycle.microcycles.map((microcycle) => microcycle.id)
+    ))
+  ))
+  const intensityTargets = microcycleIds.length === 0
+    ? []
+    : db.select()
+      .from(microcycleIntensityTargets)
+      .where(and(
+        inArray(microcycleIntensityTargets.microcycleId, microcycleIds),
+        eq(microcycleIntensityTargets.isDeleted, false),
+      ))
+      .all()
+
+  return {
+    ...plan,
+    loadStrategy: loadStrategy ?? null,
+    intensityStrategy: intensityStrategy ?? null,
+    intensityTargets,
+  }
 }
 
 export async function saveLoadProgression(
