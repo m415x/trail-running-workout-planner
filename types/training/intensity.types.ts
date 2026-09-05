@@ -1,4 +1,5 @@
 import type { TrainingGoalType } from '@/types/athlete/athlete.types'
+import type { AthleteGroupCode } from '@/types/athlete/group.types'
 import type { BaseEntity } from '@/types/core/base.types'
 import type {
   MicrocycleType,
@@ -42,6 +43,7 @@ export type TrainingIntensity =
 
 /** Inputs retained as the planning criterion for an intensity strategy. */
 export interface IntensityStrategyContext {
+  athleteGroup: AthleteGroupCode
   goalType: TrainingGoalType
 }
 
@@ -56,6 +58,11 @@ export interface IntensityStrategyValues {
   maximumIntenseSessionsPerWeek: number
   minimumRecoveryDaysBetweenIntenseSessions: number
 }
+
+export type IntensityStrategyLimits = Pick<
+  IntensityStrategyValues,
+  'maximumIntenseSessionsPerWeek' | 'minimumRecoveryDaysBetweenIntenseSessions'
+>
 
 export type IntensityStrategyField = keyof IntensityStrategyValues
 export type IntensityStrategyValueSource = 'suggested' | 'manual'
