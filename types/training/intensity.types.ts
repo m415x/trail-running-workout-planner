@@ -92,6 +92,7 @@ export interface IntensityStrategy extends BaseEntity, IntensityStrategyDraft {
  * predominantly Z2 and still prescribe one session at 90% PAM.
  */
 export interface MicrocycleIntensityTargetDraft {
+  emphasis: IntensityEmphasis
   intenseSessionsTarget: number
   predominantZone: IntensityZone
   pamPercentageTarget: PamPercentage | null
