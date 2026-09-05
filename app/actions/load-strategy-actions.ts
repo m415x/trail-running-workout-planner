@@ -21,6 +21,7 @@ import {
 } from '@/lib/periodization/load-strategy-modifications'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
+import { resolveTargetRace } from '@/lib/periodization/target-race'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
@@ -48,6 +49,9 @@ const createGroupPlanWithLoadStrategySchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   locale: z.enum(locales).default('es'),
+  raceName: z.string().trim().max(120).optional(),
+  raceDistanceKm: z.string().trim().optional(),
+  raceElevationGain: z.string().trim().optional(),
   values: loadStrategyValuesSchema,
 })
 
@@ -87,6 +91,9 @@ export async function createGroupPlanWithLoadStrategy(
     startDate: formData.get('startDate'),
     endDate: formData.get('endDate'),
     locale: formData.get('locale'),
+    raceName: formData.get('raceName') ?? undefined,
+    raceDistanceKm: formData.get('raceDistanceKm') ?? undefined,
+    raceElevationGain: formData.get('raceElevationGain') ?? undefined,
     values: rawValues,
   })
 
@@ -127,6 +134,17 @@ export async function createGroupPlanWithLoadStrategy(
     }
 
     const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
+    let targetRace
+
+    try {
+      targetRace = resolveTargetRace(data.goalType, {
+        name: data.raceName,
+        distanceKm: data.raceDistanceKm,
+        elevationGain: data.raceElevationGain,
+      })
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : 'Revisá los datos de la carrera objetivo' }
+    }
     const fieldSources = deriveLoadStrategyFieldSources(suggestedStrategy.values, data.values)
     const strategy: LoadStrategyDraft = {
       context: {
@@ -185,6 +203,9 @@ export async function createGroupPlanWithLoadStrategy(
         startDate: data.startDate,
         endDate: data.endDate,
         taperingWeeksCount: null,
+        targetRaceName: targetRace?.name ?? null,
+        targetRaceDistanceKm: targetRace?.distanceKm ?? null,
+        targetRaceElevationGain: targetRace?.elevationGain ?? null,
         notes: null,
         createdAt: now,
         updatedAt: now,

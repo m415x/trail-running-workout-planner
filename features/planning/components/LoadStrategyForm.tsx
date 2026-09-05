@@ -63,6 +63,9 @@ export function LoadStrategyForm({
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
   const [startDate, setStartDate] = useState(defaultStartDate)
   const [endDate, setEndDate] = useState(defaultEndDate)
+  const [raceName, setRaceName] = useState('')
+  const [raceDistanceKm, setRaceDistanceKm] = useState('')
+  const [raceElevationGain, setRaceElevationGain] = useState('')
   const [actionState, formAction, isPending] = useActionState(
     createGroupPlanWithLoadStrategy,
     initialActionState,
@@ -147,6 +150,65 @@ export function LoadStrategyForm({
           </SelectField>
         </CardContent>
       </Card>
+
+      {goalType === 'race' && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Carrera objetivo del grupo</CardTitle>
+            <CardDescription>
+              Estos datos se guardan como contexto del macrociclo y no modifican los objetivos individuales de los atletas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='grid gap-4 sm:grid-cols-3'>
+            <div className='space-y-1.5 sm:col-span-3'>
+              <label htmlFor='raceName' className='text-sm font-medium'>Nombre</label>
+              <Input
+                id='raceName'
+                name='raceName'
+                value={raceName}
+                maxLength={120}
+                required
+                placeholder='Ej.: Patagonia Run'
+                onChange={(event) => setRaceName(event.target.value)}
+              />
+            </div>
+            <div className='space-y-1.5'>
+              <label htmlFor='raceDistanceKm' className='text-sm font-medium'>Distancia</label>
+              <div className='relative'>
+                <Input
+                  id='raceDistanceKm'
+                  name='raceDistanceKm'
+                  type='number'
+                  min='0.1'
+                  step='0.1'
+                  value={raceDistanceKm}
+                  required
+                  onChange={(event) => setRaceDistanceKm(event.target.value)}
+                  className='pr-12'
+                />
+                <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>km</span>
+              </div>
+            </div>
+            <div className='space-y-1.5'>
+              <label htmlFor='raceElevationGain' className='text-sm font-medium'>Desnivel positivo</label>
+              <div className='relative'>
+                <Input
+                  id='raceElevationGain'
+                  name='raceElevationGain'
+                  type='number'
+                  min='0'
+                  step='1'
+                  value={raceElevationGain}
+                  onChange={(event) => setRaceElevationGain(event.target.value)}
+                  className='pr-12'
+                />
+                <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>m+</span>
+              </div>
+            </div>
+            <div className='flex items-end pb-2 text-sm text-muted-foreground'>El D+ es opcional si todavía no se conoce.</div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>

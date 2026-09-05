@@ -52,6 +52,18 @@ export interface GeneratedMicrocycleDraft {
   notes: string
 }
 
+/**
+ * Immutable race context copied into a group macrocycle.
+ *
+ * This is not a link to an athlete's individual TrainingGoal. Distance is
+ * expressed in kilometers and elevation gain in positive meters (m+).
+ */
+export interface TargetRaceSnapshot {
+  name: string
+  distanceKm: number
+  elevationGain?: number
+}
+
 export interface GeneratedMesocycleDraft {
   title: string
   number: number
@@ -70,11 +82,7 @@ export interface GeneratedMacrocycleDraft {
   taperingWeeksCount: 0 | 2 | 3
   trainingWeeksCount: number
   progressionDurationProfile: ProgressionDurationProfile
-  race: {
-    name: string
-    distanceKm: number
-    elevationGain?: number
-  } | null
+  race: TargetRaceSnapshot | null
   generationWarnings: string[]
   mesocycles: GeneratedMesocycleDraft[]
 }
@@ -108,6 +116,9 @@ export interface Macrocycle extends BaseEntity {
   startDate: string
   endDate: string
   taperingWeeksCount?: 0 | 2 | 3 | null
+  targetRaceName?: string | null
+  targetRaceDistanceKm?: number | null
+  targetRaceElevationGain?: number | null
   notes?: string | null
   mesocycles?: Mesocycle[]
 }

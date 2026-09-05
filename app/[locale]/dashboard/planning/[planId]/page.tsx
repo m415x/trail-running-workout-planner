@@ -87,6 +87,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         startDate: previewMacrocycle.startDate,
         endDate: trainingEndDate,
         loadStrategy,
+        targetRace: previewMacrocycle.targetRaceName && previewMacrocycle.targetRaceDistanceKm
+          ? {
+              name: previewMacrocycle.targetRaceName,
+              distanceKm: previewMacrocycle.targetRaceDistanceKm,
+              ...(previewMacrocycle.targetRaceElevationGain === null
+                ? {}
+                : { elevationGain: previewMacrocycle.targetRaceElevationGain }),
+            }
+          : null,
         existingMicrocycles,
       })
     : null
@@ -117,6 +126,12 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <Badge variant='secondary'>Grupo {groupCode}</Badge>
           </div>
           <p className='text-muted-foreground'>Editá el volumen objetivo de cada semana sin regenerar la planificación.</p>
+          {previewMacrocycle?.targetRaceName && previewMacrocycle.targetRaceDistanceKm && (
+            <p className='text-sm text-muted-foreground'>
+              Carrera objetivo: {previewMacrocycle.targetRaceName} · {previewMacrocycle.targetRaceDistanceKm.toLocaleString('es-AR')} km
+              {previewMacrocycle.targetRaceElevationGain === null ? '' : ` · +${previewMacrocycle.targetRaceElevationGain.toLocaleString('es-AR')} m`}
+            </p>
+          )}
         </div>
       </div>
 

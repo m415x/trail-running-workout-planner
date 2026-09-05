@@ -243,6 +243,10 @@ export const macrocycles = sqliteTable('macrocycles', {
   endDate: text('end_date').notNull(),
   taperingWeeksCount: integer('tapering_weeks_count'),
 
+  targetRaceName: text('target_race_name'),
+  targetRaceDistanceKm: real('target_race_distance_km'),
+  targetRaceElevationGain: integer('target_race_elevation_gain'),
+
   notes: text('notes'),
 })
 

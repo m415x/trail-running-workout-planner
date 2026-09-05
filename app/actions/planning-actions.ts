@@ -267,6 +267,15 @@ export async function saveLoadProgression(
       startDate: macrocycle.startDate,
       endDate: trainingEndDate,
       loadStrategy,
+      targetRace: macrocycle.targetRaceName && macrocycle.targetRaceDistanceKm
+        ? {
+            name: macrocycle.targetRaceName,
+            distanceKm: macrocycle.targetRaceDistanceKm,
+            ...(macrocycle.targetRaceElevationGain === null
+              ? {}
+              : { elevationGain: macrocycle.targetRaceElevationGain }),
+          }
+        : null,
       existingMicrocycles,
     })
 

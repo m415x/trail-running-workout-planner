@@ -52,4 +52,24 @@ describe('vista previa de progresión', () => {
       '2026-03-22',
     )
   })
+
+  it('transporta la carrera objetivo sin convertirla todavía en carga semanal', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Preparación Patagonia Run',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: {
+        name: 'Patagonia Run',
+        distanceKm: 42.2,
+        elevationGain: 2400,
+      },
+    })
+
+    assert.deepEqual(preview.planning.race, {
+      name: 'Patagonia Run',
+      distanceKm: 42.2,
+      elevationGain: 2400,
+    })
+  })
 })
