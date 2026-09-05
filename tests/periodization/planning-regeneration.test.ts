@@ -164,6 +164,29 @@ describe('regeneración de planificación', () => {
     assert.deepEqual(result.conflicts, [])
   })
 
+  it('permite un D+ manual aunque la estrategia no genere desnivel', () => {
+    const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
+    loadStrategy.values.initialWeeklyElevationGain = null
+    loadStrategy.values.maximumWeeklyElevationGain = null
+    const result = reconcilePlanningRegeneration({
+      generatedPlanning,
+      loadStrategy,
+      existingMicrocycles: [
+        existingTargets({
+          id: 'week-2',
+          weekNumber: 2,
+          targetElevationGain: 600,
+          targetElevationSource: 'manual',
+        }),
+      ],
+    })
+    const week = result.planning.mesocycles[0].microcycles[1]
+
+    assert.equal(week.targetElevationGain, 600)
+    assert.equal(week.targetElevationSource, 'manual')
+    assert.deepEqual(result.conflicts, [])
+  })
+
   it('advierte un D+ manual superior al nuevo máximo sin sobrescribirlo', () => {
     const { generatedPlanning, loadStrategy } = createGeneratedPlanning()
     const maximum = loadStrategy.values.maximumWeeklyElevationGain

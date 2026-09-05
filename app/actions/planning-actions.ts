@@ -401,9 +401,21 @@ export async function updateMicrocycleElevation(
       return { error: 'Microciclo no encontrado' }
     }
 
+    const loadStrategy = db.query.loadStrategies.findFirst({
+      where: and(
+        eq(loadStrategies.groupTrainingPlanId, plan.id),
+        eq(loadStrategies.isDeleted, false),
+      ),
+    }).sync()
+    const elevationSource = (
+      data.targetElevationGain === null
+      && loadStrategy?.initialWeeklyElevationGain === null
+      && loadStrategy.maximumWeeklyElevationGain === null
+    ) ? 'generated' : 'manual'
+
     if (
       microcycle.targetElevationGain !== data.targetElevationGain
-      || microcycle.targetElevationSource !== 'manual'
+      || microcycle.targetElevationSource !== elevationSource
     ) {
       const now = new Date().toISOString()
 
@@ -411,7 +423,7 @@ export async function updateMicrocycleElevation(
         tx.update(microcycles)
           .set({
             targetElevationGain: data.targetElevationGain,
-            targetElevationSource: 'manual',
+            targetElevationSource: elevationSource,
             updatedAt: now,
           })
           .where(and(eq(microcycles.id, microcycle.id), eq(microcycles.isDeleted, false)))

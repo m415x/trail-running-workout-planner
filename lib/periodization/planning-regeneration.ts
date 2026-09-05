@@ -19,7 +19,6 @@ export type RegenerationConflictCode =
   | 'manual_volume_missing'
   | 'manual_volume_above_maximum'
   | 'manual_elevation_above_maximum'
-  | 'manual_elevation_without_strategy'
   | 'manual_week_outside_horizon'
   | 'duplicate_week_number'
 
@@ -146,16 +145,6 @@ export function reconcilePlanningRegeneration({
         preservedManualElevationWeekNumbers.push(generated.weekNumber)
 
         if (
-          existing.targetElevationGain !== null
-          && loadStrategy.values.maximumWeeklyElevationGain === null
-        ) {
-          conflicts.push({
-            code: 'manual_elevation_without_strategy',
-            weekNumber: existing.weekNumber,
-            microcycleId: existing.id,
-            message: `El D+ manual de la semana ${existing.weekNumber} no es compatible con una estrategia sin desnivel.`,
-          })
-        } else if (
           existing.targetElevationGain !== null
           && loadStrategy.values.maximumWeeklyElevationGain !== null
           && existing.targetElevationGain > loadStrategy.values.maximumWeeklyElevationGain
