@@ -1,10 +1,24 @@
 import type { TrainingGoalType } from '@/types/athlete/athlete.types'
 import type { BaseEntity } from '@/types/core/base.types'
-import type { TargetValueSource } from '@/types/training/periodization.types'
+import type {
+  MicrocycleType,
+  PeriodType,
+  TargetValueSource,
+} from '@/types/training/periodization.types'
 
 export type IntensityZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
 
 export type IntensityMethod = 'hr_zone' | 'pam_percentage'
+
+export type IntensitySessionDemand = 'none' | 'reduced' | 'standard' | 'high'
+
+export type IntensityEmphasis =
+  | 'recovery'
+  | 'aerobic'
+  | 'tempo'
+  | 'threshold'
+  | 'vo2max'
+  | 'race_specific'
 
 /**
  * Percentage of the athlete's maximal aerobic pace (PAM).
@@ -84,3 +98,23 @@ export interface MicrocycleIntensityTarget
     MicrocycleIntensityTargetDraft {
   microcycleId: string
 }
+
+/**
+ * Qualitative recommendation for a period, microcycle and group objective.
+ *
+ * The rule deliberately does not contain a final number of intense sessions:
+ * later calculation must resolve `intenseSessionDemand` against the strategy
+ * limits and the number of weekly sessions available.
+ */
+export interface IntensityStrategyRule {
+  emphasis: IntensityEmphasis
+  predominantZone: IntensityZone
+  intenseSessionDemand: IntensitySessionDemand
+  suggestedPamPercentage: PamPercentage | null
+}
+
+/** Exhaustive intensity rule matrix indexed by period, microcycle and goal. */
+export type IntensityStrategyMatrix = Record<
+  PeriodType,
+  Record<MicrocycleType, Record<TrainingGoalType, IntensityStrategyRule>>
+>
