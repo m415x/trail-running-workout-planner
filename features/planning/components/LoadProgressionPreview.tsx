@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 
-import type { MicrocycleType, TargetVolumeSource } from '@/types'
+import type { MicrocycleLoadFocus, MicrocycleType, TargetVolumeSource } from '@/types'
 import {
   saveLoadProgression,
   type PersistProgressionFormState,
@@ -26,6 +26,7 @@ export interface LoadProgressionPoint {
   volumeKm: number
   elevationGain: number | null
   type: MicrocycleType
+  loadFocus: MicrocycleLoadFocus
   source: TargetVolumeSource
 }
 
@@ -49,6 +50,14 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   deload: 'Descarga',
   tapering: 'Taper',
   race: 'Carrera',
+}
+
+const loadFocusLabels: Record<MicrocycleLoadFocus, string> = {
+  balanced: 'Foco equilibrado',
+  volume: 'Foco volumen',
+  elevation: 'Foco montaña',
+  recovery: 'Foco recuperación',
+  race_specific: 'Foco carrera',
 }
 
 export function LoadProgressionPreview({
@@ -113,6 +122,7 @@ export function LoadProgressionPreview({
                     <p className='text-muted-foreground'>
                       {microcycleLabels[point.type]} · {point.source === 'manual' ? 'Manual' : 'Generado'}
                     </p>
+                    <p className='text-muted-foreground'>{loadFocusLabels[point.loadFocus]}</p>
                     <p className='font-semibold'>{point.volumeKm.toLocaleString('es-AR')} km</p>
                     {point.elevationGain !== null && (
                       <p className='font-semibold'>+{point.elevationGain.toLocaleString('es-AR')} m D+</p>

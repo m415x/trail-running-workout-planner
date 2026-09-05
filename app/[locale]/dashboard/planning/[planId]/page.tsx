@@ -106,6 +106,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           volumeKm: microcycle.targetVolumeKm,
           elevationGain: microcycle.targetElevationGain,
           type: microcycle.type,
+          loadFocus: microcycle.loadFocus,
           source: microcycle.targetVolumeSource,
         })),
       )

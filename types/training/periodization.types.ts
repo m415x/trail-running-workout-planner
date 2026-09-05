@@ -12,6 +12,7 @@ export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'compe
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
 export type TargetVolumeSource = 'generated' | 'manual'
+export type MicrocycleLoadFocus = 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'
 export type PlanningModificationField =
   | 'target_volume_km'
   | 'date_range'
@@ -44,6 +45,7 @@ export interface GroupVolumeProgression {
 export interface GeneratedMicrocycleDraft {
   weekNumber: number
   type: MicrocycleType
+  loadFocus: MicrocycleLoadFocus
   startDate: string
   endDate: string
   targetVolumeKm: number
@@ -92,6 +94,7 @@ export interface Microcycle extends BaseEntity {
   mesocycleId: string
   weekNumber: number
   type: MicrocycleType
+  loadFocus?: MicrocycleLoadFocus | null
   startDate: string // 'YYYY-MM-DD'
   endDate: string // 'YYYY-MM-DD'
   targetVolumeKm?: number | null

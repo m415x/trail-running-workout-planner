@@ -38,6 +38,10 @@ describe('generación de planificación', () => {
       weeks.map((week) => week.targetVolumeKm),
       [35, 36, 37, 30, 37, 38, 39, 31],
     )
+    assert.deepEqual(
+      weeks.map((week) => week.loadFocus),
+      ['balanced', 'volume', 'elevation', 'recovery', 'balanced', 'volume', 'elevation', 'recovery'],
+    )
     assert.equal(weeks.length, 8)
     assert.deepEqual(weeks.map((week) => week.weekNumber), [1, 2, 3, 4, 5, 6, 7, 8])
     assert.equal(weeks.every((week) => week.targetVolumeSource === 'generated'), true)

@@ -8,6 +8,7 @@ import { calculateMesocycleElevationTargets } from '@/lib/periodization/mesocycl
 import { distributeMesocycleLoad } from '@/lib/periodization/microcycle-load-distribution'
 import { distributeMesocycleElevation } from '@/lib/periodization/microcycle-elevation-distribution'
 import { resolveElevationProgressionStrategy } from '@/lib/periodization/elevation-progression-strategy'
+import { determineMicrocycleLoadFocus } from '@/lib/periodization/microcycle-load-focus'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -168,6 +169,7 @@ export function generateMicrocycles({
     return {
       weekNumber: startWeekNumber + index,
       type: target.type,
+      loadFocus: determineMicrocycleLoadFocus(target.type),
       startDate: format(weekStart, 'yyyy-MM-dd'),
       endDate: format(weekEnd, 'yyyy-MM-dd'),
       targetVolumeKm: target.targetVolumeKm,
