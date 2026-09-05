@@ -33,38 +33,43 @@ const GOAL_TYPES: readonly TrainingGoalType[] = [
   'custom',
 ]
 
+const DELOAD_RULE = rule('recovery', 'Z1', 'none', null)
+
+/** The race is the week's stressor; this rule adds no extra intense session. */
+const RACE_WEEK_RULE = rule('race_specific', 'Z1', 'none', null)
+
 const BASE_RULES: Record<PeriodType, Record<MicrocycleType, IntensityStrategyRule>> = {
   general_preparatory: {
     base: rule('aerobic', 'Z2', 'none', null),
     development: rule('aerobic', 'Z2', 'reduced', 80),
     shock: rule('tempo', 'Z3', 'standard', 90),
-    deload: rule('recovery', 'Z1', 'none', null),
+    deload: DELOAD_RULE,
     tapering: rule('aerobic', 'Z2', 'reduced', 80),
-    race: rule('race_specific', 'Z4', 'standard', null),
+    race: RACE_WEEK_RULE,
   },
   specific_preparatory: {
     base: rule('aerobic', 'Z2', 'reduced', 80),
     development: rule('tempo', 'Z3', 'standard', 90),
     shock: rule('threshold', 'Z4', 'high', 100),
-    deload: rule('recovery', 'Z1', 'none', null),
+    deload: DELOAD_RULE,
     tapering: rule('aerobic', 'Z2', 'reduced', 90),
-    race: rule('race_specific', 'Z4', 'standard', null),
+    race: RACE_WEEK_RULE,
   },
   competitive: {
     base: rule('aerobic', 'Z2', 'reduced', 80),
     development: rule('tempo', 'Z3', 'standard', 90),
     shock: rule('vo2max', 'Z5', 'high', 100),
-    deload: rule('recovery', 'Z1', 'none', null),
+    deload: DELOAD_RULE,
     tapering: rule('aerobic', 'Z2', 'reduced', 90),
-    race: rule('race_specific', 'Z4', 'standard', null),
+    race: RACE_WEEK_RULE,
   },
   transition: {
     base: rule('aerobic', 'Z2', 'none', null),
     development: rule('aerobic', 'Z2', 'reduced', 70),
     shock: rule('tempo', 'Z3', 'reduced', 80),
-    deload: rule('recovery', 'Z1', 'none', null),
+    deload: DELOAD_RULE,
     tapering: rule('recovery', 'Z1', 'none', null),
-    race: rule('race_specific', 'Z3', 'reduced', null),
+    race: RACE_WEEK_RULE,
   },
 }
 
@@ -87,10 +92,6 @@ function adaptRuleToGoal(
 ): IntensityStrategyRule {
   if (goalType !== 'base' && goalType !== 'maintenance') {
     return { ...baseRule }
-  }
-
-  if (baseRule.emphasis === 'race_specific') {
-    return rule('aerobic', 'Z2', 'reduced', 80)
   }
 
   if (baseRule.predominantZone === 'Z4' || baseRule.predominantZone === 'Z5') {
