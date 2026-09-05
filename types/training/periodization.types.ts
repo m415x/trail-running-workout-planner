@@ -70,6 +70,7 @@ export interface GeneratedMesocycleDraft {
   period: PeriodType
   objective: string
   targetPeakVolumeKm?: number
+  targetPeakElevationGain?: number | null
   microcycles: GeneratedMicrocycleDraft[]
 }
 

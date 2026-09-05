@@ -4,7 +4,9 @@ import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
+import { calculateMesocycleElevationTargets } from '@/lib/periodization/mesocycle-elevation-targets'
 import { distributeMesocycleLoad } from '@/lib/periodization/microcycle-load-distribution'
+import { resolveElevationProgressionStrategy } from '@/lib/periodization/elevation-progression-strategy'
 import { TSB_TARGETS_BY_MICROCYCLE } from '@/types'
 
 import type {
@@ -257,6 +259,10 @@ export function generateTrainingMesocycles({
     maximumWeeklyVolumeKm: loadStrategy.values.maximumWeeklyVolumeKm,
     mesocycleCount: weekDistribution.length,
   })
+  const mesocycleElevationTargets = calculateMesocycleElevationTargets({
+    strategy: resolveElevationProgressionStrategy(loadStrategy),
+    mesocycleCount: weekDistribution.length,
+  })
   const mesocycles: GeneratedMesocycleDraft[] = []
   let currentWeekStart = start
   let globalWeekCounter = 1
@@ -265,6 +271,7 @@ export function generateTrainingMesocycles({
   weekDistribution.forEach((weeksInMesocycle, mesocycleIndex) => {
     const microcycleSequence = getMicrocycleSequence(weeksInMesocycle)
     const mesocycleLoadTarget = mesocycleLoadTargets[mesocycleIndex]
+    const mesocycleElevationTarget = mesocycleElevationTargets[mesocycleIndex]
     const distributedLoads = distributeMesocycleLoad({
       sequence: microcycleSequence,
       startingVolumeKm: lastToleratedPeakVolumeKm,
@@ -312,6 +319,7 @@ export function generateTrainingMesocycles({
       period,
       objective: `${focus} mediante un bloque de ondulación (${weeksInMesocycle} semanas)`,
       targetPeakVolumeKm: achievedPeakVolumeKm,
+      targetPeakElevationGain: mesocycleElevationTarget.targetPeakElevationGain,
       microcycles,
     })
   })

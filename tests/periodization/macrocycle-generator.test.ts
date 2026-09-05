@@ -102,6 +102,26 @@ describe('generación de planificación', () => {
     assert.deepEqual(volumes, [20, 21, 22, 18])
   })
 
+  it('calcula picos de desnivel por mesociclo independientes del volumen', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'base')
+    loadStrategy.values.initialWeeklyElevationGain = 1_000
+    loadStrategy.values.maximumWeeklyElevationGain = 1_800
+
+    const result = generateFractalMacrocycle({
+      title: 'Montaña S2',
+      goalType: 'base',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+    })
+
+    assert.deepEqual(
+      result.mesocycles.map((mesocycle) => mesocycle.targetPeakElevationGain),
+      [1_400, 1_800],
+    )
+  })
+
   it('rechaza una estrategia que no corresponde al grupo o al objetivo', () => {
     assert.throws(() => generateFractalMacrocycle({
       title: 'Estrategia incorrecta',
