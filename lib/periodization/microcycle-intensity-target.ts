@@ -4,10 +4,18 @@ import { validateIntensityStrategyLimits } from '@/lib/periodization/intensity-s
 import type {
   IntensitySessionDemand,
   IntensityStrategyDraft,
+  MicrocycleIntensityTargetFieldSources,
   MicrocycleIntensityTargetDraft,
   MicrocycleType,
   PeriodType,
 } from '@/types'
+
+const GENERATED_FIELD_SOURCES: MicrocycleIntensityTargetFieldSources = {
+  intenseSessionsTarget: 'generated',
+  predominantZone: 'generated',
+  pamPercentageTarget: 'generated',
+  minimumRecoveryDaysBetweenIntenseSessions: 'generated',
+}
 
 const INTENSE_SESSION_COUNT_BY_DEMAND: Record<IntensitySessionDemand, number> = {
   none: 0,
@@ -57,6 +65,6 @@ export function calculateMicrocycleIntensityTarget({
     pamPercentageTarget: intenseSessionsTarget > 0 ? rule.suggestedPamPercentage : null,
     minimumRecoveryDaysBetweenIntenseSessions:
       intensityStrategy.values.minimumRecoveryDaysBetweenIntenseSessions,
-    source: 'generated',
+    fieldSources: { ...GENERATED_FIELD_SOURCES },
   }
 }

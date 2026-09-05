@@ -97,8 +97,20 @@ export interface MicrocycleIntensityTargetDraft {
   predominantZone: IntensityZone
   pamPercentageTarget: PamPercentage | null
   minimumRecoveryDaysBetweenIntenseSessions: number
-  source: TargetValueSource
+  fieldSources: MicrocycleIntensityTargetFieldSources
 }
+
+export type MicrocycleIntensityTargetField =
+  | 'intenseSessionsTarget'
+  | 'predominantZone'
+  | 'pamPercentageTarget'
+  | 'minimumRecoveryDaysBetweenIntenseSessions'
+
+/** Tracks manual/generated provenance independently for every editable value. */
+export type MicrocycleIntensityTargetFieldSources = Record<
+  MicrocycleIntensityTargetField,
+  TargetValueSource
+>
 
 /** Weekly intensity target associated with a persisted microcycle. */
 export interface MicrocycleIntensityTarget
