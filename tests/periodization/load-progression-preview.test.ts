@@ -72,4 +72,23 @@ describe('vista previa de progresión', () => {
       elevationGain: 2400,
     })
   })
+
+  it('advierte cuando la carrera tiene una densidad vertical extrema', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Kilómetro vertical',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: {
+        name: 'KV',
+        distanceKm: 5,
+        elevationGain: 1_000,
+      },
+    })
+
+    assert.equal(
+      preview.planning.generationWarnings.some((warning) => warning.includes('densidad vertical es extrema')),
+      true,
+    )
+  })
 })

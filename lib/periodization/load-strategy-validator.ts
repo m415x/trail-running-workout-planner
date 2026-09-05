@@ -1,4 +1,5 @@
 import { GROUP_VOLUME_MATRIX } from '@/data/periodization-matrix'
+import { assessElevationDensity } from '@/lib/periodization/elevation-density-validator'
 
 import type { LoadStrategyDraft, LoadStrategyField } from '@/types'
 
@@ -149,6 +150,50 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
       'initial-elevation-non-negative',
       'El desnivel inicial no puede ser negativo.',
     ))
+  }
+
+  if (
+    values.initialWeeklyElevationGain !== null
+    && Number.isInteger(values.initialWeeklyElevationGain)
+    && values.initialWeeklyElevationGain >= 0
+    && isFiniteNumber(values.initialWeeklyVolumeKm)
+    && values.initialWeeklyVolumeKm > 0
+  ) {
+    const assessment = assessElevationDensity(
+      values.initialWeeklyVolumeKm,
+      values.initialWeeklyElevationGain,
+    )
+
+    if (assessment.warning) {
+      issues.push(issue(
+        'initialWeeklyElevationGain',
+        'warning',
+        `initial-elevation-density-${assessment.level}`,
+        assessment.warning,
+      ))
+    }
+  }
+
+  if (
+    values.maximumWeeklyElevationGain !== null
+    && Number.isInteger(values.maximumWeeklyElevationGain)
+    && values.maximumWeeklyElevationGain >= 0
+    && isFiniteNumber(values.maximumWeeklyVolumeKm)
+    && values.maximumWeeklyVolumeKm > 0
+  ) {
+    const assessment = assessElevationDensity(
+      values.maximumWeeklyVolumeKm,
+      values.maximumWeeklyElevationGain,
+    )
+
+    if (assessment.warning) {
+      issues.push(issue(
+        'maximumWeeklyElevationGain',
+        'warning',
+        `maximum-elevation-density-${assessment.level}`,
+        assessment.warning,
+      ))
+    }
   }
 
   if (

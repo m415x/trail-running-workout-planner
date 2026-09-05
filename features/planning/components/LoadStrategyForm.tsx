@@ -8,6 +8,7 @@ import {
   type CreateGroupPlanWithLoadStrategyState,
 } from '@/app/actions/load-strategy-actions'
 import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
+import { assessElevationDensity } from '@/lib/periodization/elevation-density-validator'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateMacrocycleHorizon } from '@/lib/periodization/macrocycle-horizon'
 import {
@@ -80,6 +81,23 @@ export function LoadStrategyForm({
     () => getLoadStrategyModifications(suggestion.values, strategy.values).length > 0,
     [strategy.values, suggestion.values],
   )
+  const raceDensityWarning = useMemo(() => {
+    const distance = Number(raceDistanceKm)
+    const elevation = Number(raceElevationGain)
+
+    if (
+      goalType !== 'race'
+      || !Number.isFinite(distance)
+      || distance <= 0
+      || raceElevationGain === ''
+      || !Number.isInteger(elevation)
+      || elevation < 0
+    ) {
+      return null
+    }
+
+    return assessElevationDensity(distance, elevation).warning
+  }, [goalType, raceDistanceKm, raceElevationGain])
   const selectedGroup = groups.find((group) => group.code === groupCode) ?? groups[0]
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
@@ -206,6 +224,11 @@ export function LoadStrategyForm({
               </div>
             </div>
             <div className='flex items-end pb-2 text-sm text-muted-foreground'>El D+ es opcional si todavía no se conoce.</div>
+            {raceDensityWarning && (
+              <p className='text-sm text-amber-700 dark:text-amber-400 sm:col-span-3' role='status'>
+                Advertencia: {raceDensityWarning}
+              </p>
+            )}
           </CardContent>
         </Card>
       )}
