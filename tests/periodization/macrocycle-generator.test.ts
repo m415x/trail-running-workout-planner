@@ -67,6 +67,10 @@ describe('generación de planificación', () => {
     assert.equal(result.progressionDurationProfile, 'normal')
     assert.equal(competitive?.period, 'competitive')
     assert.deepEqual(competitive?.microcycles.map((week) => week.type), ['tapering', 'tapering', 'race'])
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [480, 320, 1200],
+    )
     assert.equal(competitive?.microcycles.at(-1)?.targetElevationGain, 1200)
     assert.match(competitive?.microcycles.at(-1)?.notes ?? '', /Maratón de prueba/)
     assert.equal(weeks.length, 12)
@@ -75,6 +79,45 @@ describe('generación de planificación', () => {
 
   it('usa dos semanas competitivas para una carrera corta', () => {
     assert.equal(determineTaperingWeeksCount('S2', { name: '10K', distanceKm: 10 }), 2)
+  })
+
+  it('no inventa el D+ de una carrera cuando el dato es desconocido', () => {
+    const result = generateFractalMacrocycle({
+      title: '10K sin D+',
+      goalType: 'race',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy: s2RaceStrategy,
+      race: { name: '10K local', distanceKm: 10 },
+    })
+    const competitive = result.mesocycles.at(-1)
+
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [470, null],
+    )
+  })
+
+  it('mantiene el taper sin D+ cuando la estrategia vertical está desactivada', () => {
+    const loadStrategy = suggestLoadStrategy('S2', 'race')
+    loadStrategy.values.initialWeeklyElevationGain = null
+    loadStrategy.values.maximumWeeklyElevationGain = null
+    const result = generateFractalMacrocycle({
+      title: 'Carrera sin progresión vertical',
+      goalType: 'race',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      athleteGroup: 'S2',
+      loadStrategy,
+      race: { name: 'Trail corto', distanceKm: 15, elevationGain: 650 },
+    })
+    const competitive = result.mesocycles.at(-1)
+
+    assert.deepEqual(
+      competitive?.microcycles.map((week) => week.targetElevationGain),
+      [null, 650],
+    )
   })
 
   it('rechaza una carrera sin sus datos obligatorios', () => {

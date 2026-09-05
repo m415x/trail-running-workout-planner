@@ -1,6 +1,5 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
-import { GROUP_ELEVATION_METERS_PER_KM } from '@/data/periodization-matrix'
 import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
@@ -364,6 +363,7 @@ export interface CompetitiveMesocycleGeneratorParams {
   athleteGroup: AthleteGroupCode
   race: OptionalTargetRace
   taperingWeeksCount: 2 | 3
+  finalTrainingPeakElevationGain: number | null
 }
 
 export function generateCompetitiveMesocycle({
@@ -374,13 +374,12 @@ export function generateCompetitiveMesocycle({
   athleteGroup,
   race,
   taperingWeeksCount,
+  finalTrainingPeakElevationGain,
 }: CompetitiveMesocycleGeneratorParams): GeneratedMesocycleDraft {
   if (!Number.isInteger(mesocycleNumber) || mesocycleNumber < 1) {
     throw new Error('mesocycleNumber debe ser un entero mayor que cero.')
   }
 
-  const athleteCategory = athleteGroup.charAt(0) as keyof typeof GROUP_ELEVATION_METERS_PER_KM
-  const elevationRatio = GROUP_ELEVATION_METERS_PER_KM[athleteCategory]
   const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
   const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
     const targetVolumeKm = calculateTargetVolume({
@@ -388,7 +387,9 @@ export function generateCompetitiveMesocycle({
       type: 'tapering',
       volumeFactor,
     })
-    const targetElevationGain = Math.round(targetVolumeKm * elevationRatio * 0.7)
+    const targetElevationGain = finalTrainingPeakElevationGain === null
+      ? null
+      : Math.round((finalTrainingPeakElevationGain * volumeFactor) / 10) * 10
 
     return {
       type: 'tapering',
@@ -403,8 +404,7 @@ export function generateCompetitiveMesocycle({
     type: 'race',
     raceDistanceKm: race.distanceKm,
   })
-  const raceWeekElevationGain = race.elevationGain
-    ?? Math.round(raceWeekVolumeKm * elevationRatio * 0.7)
+  const raceWeekElevationGain = race.elevationGain ?? null
   const microcycles = generateMicrocycles({
     startDate,
     endDate,
@@ -465,6 +465,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
   const globalWeekCounter = trainingWeeksCount + 1
   const numberOfTrainingMesocycles = mesocycles.length
   const finalTrainingPeakVolumeKm = mesocycles.at(-1)?.targetPeakVolumeKm
+  const finalTrainingPeakElevationGain = mesocycles.at(-1)?.targetPeakElevationGain ?? null
   const maximumWarning = getUnreachableMaximumWarning(
     finalTrainingPeakVolumeKm,
     params.loadStrategy.values.maximumWeeklyVolumeKm,
@@ -484,6 +485,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       athleteGroup: params.athleteGroup,
       race: params.race,
       taperingWeeksCount,
+      finalTrainingPeakElevationGain,
     }))
   }
 
