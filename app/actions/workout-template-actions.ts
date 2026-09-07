@@ -1,13 +1,100 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 import { db } from '@/db'
-import { workouts } from '@/db/schema'
-import { matchesWorkoutTemplateSearch } from '@/lib/workout-templates/workout-template-search'
-import type { TrainingIntensity, WorkoutTemplate, WorkoutTemplateSearchCriteria } from '@/types'
+import { trainingLocations, workouts } from '@/db/schema'
+import { matchesWorkoutTemplateSearch, normalizeWorkoutTemplateTags } from '@/lib/workout-templates/workout-template-search'
+import { validateWorkoutTemplateDefaults, type WorkoutTemplateDefaultField } from '@/lib/workout-templates/workout-template-validator'
+import type {
+  IntensityMethod,
+  IntensityZone,
+  TrainingIntensity,
+  WorkoutTemplate,
+  WorkoutTemplateCategory,
+  WorkoutTemplateDraft,
+  WorkoutTemplateSearchCriteria,
+  WorkoutType,
+} from '@/types'
 
 const CURRENT_TEAM_ID = 'team_1'
+
+export interface WorkoutTemplateFormState {
+  error?: string
+  fieldErrors?: Partial<Record<WorkoutTemplateDefaultField, string>>
+  values?: Record<string, string>
+  submissionKey?: number
+}
+
+function formValues(formData: FormData) {
+  return Object.fromEntries(
+    [...formData.entries()]
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+      .filter(([key]) => !key.startsWith('$ACTION_')),
+  )
+}
+
+function optionalText(formData: FormData, key: string) {
+  return formData.get(key)?.toString().trim() || null
+}
+
+function optionalNumber(formData: FormData, key: string) {
+  const value = formData.get(key)?.toString().trim()
+  return value ? Number(value) : null
+}
+
+function templatesPath(locale: string) {
+  return locale === 'es' ? '/dashboard/templates' : `/${locale}/dashboard/templates`
+}
+
+function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
+  const intensityMethod = optionalText(formData, 'intensityMethod') as IntensityMethod | null
+  let intensity: TrainingIntensity | null = null
+
+  if (intensityMethod === 'hr_zone') {
+    intensity = {
+      method: 'hr_zone',
+      zone: optionalText(formData, 'zone') as IntensityZone,
+    }
+  } else if (intensityMethod === 'pam_percentage') {
+    intensity = {
+      method: 'pam_percentage',
+      pamPercentage: optionalNumber(formData, 'pamPercentage') as number,
+    }
+  }
+
+  const structure = {
+    preliminaryExercises: optionalText(formData, 'preliminaryExercises'),
+    warmup: optionalText(formData, 'warmup'),
+    mainBlock: optionalText(formData, 'mainBlock'),
+    cooldown: optionalText(formData, 'cooldown'),
+  }
+  const hasStructure = Object.values(structure).some(Boolean)
+
+  return {
+    teamId: CURRENT_TEAM_ID,
+    category: formData.get('category')?.toString() as WorkoutTemplateCategory,
+    tags: (formData.get('tags')?.toString() ?? '').split(',').map((tag) => tag.trim()).filter(Boolean),
+    sessionDefaults: {
+      title: formData.get('title')?.toString() ?? '',
+      type: formData.get('type')?.toString() as WorkoutType,
+      locationKey: optionalText(formData, 'locationKey'),
+      trackPath: optionalText(formData, 'trackPath'),
+      structure: hasStructure ? structure : null,
+      notes: optionalText(formData, 'notes'),
+    },
+    prescriptionDefaults: {
+      distanceKm: optionalNumber(formData, 'distanceKm'),
+      durationMin: optionalNumber(formData, 'durationMin'),
+      elevationGain: optionalNumber(formData, 'elevationGain'),
+      intensity,
+      notes: optionalText(formData, 'prescriptionNotes'),
+    },
+  }
+}
 
 function resolveIntensity(row: typeof workouts.$inferSelect): TrainingIntensity | null {
   if (row.intensityMethod === 'hr_zone' && row.zone) return { method: 'hr_zone', zone: row.zone }
@@ -66,4 +153,72 @@ export async function getWorkoutTemplates(
     availableTags: [...new Set(catalogue.flatMap((template) => template.tags))]
       .sort((left, right) => left.localeCompare(right, 'es', { sensitivity: 'base' })),
   }
+}
+
+/** Returns the lightweight lookup data required by the template form. */
+export async function getWorkoutTemplateFormOptions() {
+  return {
+    locations: db.select({ key: trainingLocations.key, name: trainingLocations.name })
+      .from(trainingLocations)
+      .orderBy(trainingLocations.name)
+      .all(),
+  }
+}
+
+/** Validates and persists a new reusable workout template for the current team. */
+export async function createWorkoutTemplate(
+  previousState: WorkoutTemplateFormState,
+  formData: FormData,
+): Promise<WorkoutTemplateFormState> {
+  const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
+  const draft = draftFromFormData(formData)
+  const validation = validateWorkoutTemplateDefaults(draft)
+
+  if (!validation.isValid) {
+    const fieldErrors: WorkoutTemplateFormState['fieldErrors'] = {}
+    for (const issue of validation.errors) fieldErrors[issue.field] ??= issue.message
+    return {
+      error: 'Revisá los campos indicados antes de guardar.',
+      fieldErrors,
+      values: formValues(formData),
+      submissionKey: (previousState.submissionKey ?? 0) + 1,
+    }
+  }
+
+  try {
+    const now = new Date().toISOString()
+    const intensity = draft.prescriptionDefaults.intensity
+    db.insert(workouts).values({
+      id: randomUUID(),
+      teamId: CURRENT_TEAM_ID,
+      category: draft.category,
+      tags: normalizeWorkoutTemplateTags(draft.tags),
+      title: draft.sessionDefaults.title.trim(),
+      type: draft.sessionDefaults.type,
+      locationKey: draft.sessionDefaults.locationKey,
+      trackPath: draft.sessionDefaults.trackPath,
+      structure: draft.sessionDefaults.structure,
+      notes: draft.sessionDefaults.notes,
+      distance: draft.prescriptionDefaults.distanceKm,
+      time: draft.prescriptionDefaults.durationMin,
+      gain: draft.prescriptionDefaults.elevationGain,
+      intensityMethod: intensity?.method ?? null,
+      zone: intensity?.method === 'hr_zone' ? intensity.zone : null,
+      pamPercentage: intensity?.method === 'pam_percentage' ? intensity.pamPercentage : null,
+      prescriptionNotes: draft.prescriptionDefaults.notes,
+      createdAt: now,
+      updatedAt: now,
+    }).run()
+  } catch (error) {
+    console.error('Error creating workout template:', error)
+    return {
+      error: 'No se pudo crear la plantilla. Intentá nuevamente.',
+      values: formValues(formData),
+      submissionKey: (previousState.submissionKey ?? 0) + 1,
+    }
+  }
+
+  const path = templatesPath(locale)
+  revalidatePath(path)
+  redirect(path)
 }

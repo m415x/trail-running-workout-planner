@@ -52,6 +52,7 @@
     "navigation": "Plantillas",
     "title": "Plantillas de sesiones",
     "description": "Buscá y reutilizá estructuras frecuentes de entrenamiento del equipo.",
+    "new": "Nueva plantilla",
     "results": "{count, plural, =0 {Sin plantillas} one {# plantilla} other {# plantillas}}",
     "withoutLoadDefaults": "Sin carga predeterminada",
     "filters": {
@@ -85,6 +86,63 @@
       "description": "Las plantillas que cree el coach aparecerán en este catálogo.",
       "filteredTitle": "No encontramos coincidencias",
       "filteredDescription": "Probá con otros términos o limpiá los filtros seleccionados."
+    },
+    "form": {
+      "title": "Nueva plantilla",
+      "description": "Guardá una estructura reutilizable y sus valores sugeridos para futuras sesiones.",
+      "back": "Volver a plantillas",
+      "cancel": "Cancelar",
+      "create": "Crear plantilla",
+      "saving": "Guardando…",
+      "identity": {
+        "legend": "Identidad y clasificación",
+        "title": "Título",
+        "titlePlaceholder": "Ej.: Fondo progresivo de montaña",
+        "type": "Tipo de entrenamiento",
+        "selectType": "Seleccionar tipo",
+        "category": "Categoría",
+        "selectCategory": "Seleccionar categoría",
+        "tags": "Etiquetas",
+        "tagsPlaceholder": "fondo, sendero, progresivo",
+        "tagsHelp": "Separalas con comas. Podés usar hasta 10 etiquetas de 30 caracteres cada una."
+      },
+      "structure": {
+        "legend": "Estructura de la sesión",
+        "help": "Los bloques son opcionales y se copiarán a la sesión cuando se aplique la plantilla.",
+        "preliminary": "Ejercicios preliminares",
+        "preliminaryPlaceholder": "Movilidad, activación, técnica…",
+        "warmup": "Entrada en calor",
+        "warmupPlaceholder": "Ej.: 15 min suaves y movilidad dinámica",
+        "mainBlock": "Bloque principal",
+        "mainBlockPlaceholder": "Ej.: 4 × 10 min progresivos con 2 min suaves",
+        "cooldown": "Vuelta a la calma",
+        "cooldownPlaceholder": "Ej.: 10 min suaves y elongación"
+      },
+      "session": {
+        "legend": "Datos compartidos de la sesión",
+        "location": "Ubicación",
+        "noLocation": "Sin ubicación",
+        "track": "Track",
+        "trackPlaceholder": "Ruta o referencia del track",
+        "notes": "Notas generales",
+        "notesPlaceholder": "Indicaciones comunes para la sesión…"
+      },
+      "prescription": {
+        "legend": "Valores sugeridos para el grupo",
+        "help": "Todos son opcionales. El coach podrá ajustarlos al aplicar la plantilla.",
+        "distance": "Distancia (km)",
+        "duration": "Duración (min)",
+        "elevation": "Desnivel (m D+)",
+        "intensityMethod": "Método de intensidad",
+        "noIntensity": "Sin intensidad predeterminada",
+        "hrZone": "Zona de frecuencia cardíaca",
+        "pam": "Porcentaje PAM",
+        "zone": "Zona",
+        "selectZone": "Seleccionar zona",
+        "pamPercentage": "Porcentaje PAM",
+        "notes": "Indicaciones para el grupo",
+        "notesPlaceholder": "Pautas de ejecución, recuperaciones o adaptaciones…"
+      }
     }
   }
 }

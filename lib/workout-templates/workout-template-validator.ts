@@ -1,7 +1,6 @@
-import { WORKOUT_TYPES_CONFIG } from '@/lib/constants'
-
 import type {
   IntensityZone,
+  WorkoutType,
   WorkoutTemplateDraft,
   WorkoutTemplatePrescriptionDefaults,
 } from '@/types'
@@ -30,6 +29,18 @@ export interface WorkoutTemplateDefaultsValidationResult {
 }
 
 const INTENSITY_ZONES = new Set<IntensityZone>(['Z1', 'Z2', 'Z3', 'Z4', 'Z5'])
+const WORKOUT_TYPES = new Set<WorkoutType>([
+  'Base',
+  'Long',
+  'Intervals',
+  'Trail',
+  'Speed',
+  'Fartlek',
+  'PAM',
+  'Hills',
+  'Rest',
+  'Race',
+])
 const STRUCTURE_FIELDS = [
   'preliminaryExercises',
   'warmup',
@@ -156,7 +167,7 @@ export function validateWorkoutTemplateDefaults(
     ))
   }
 
-  if (!(sessionDefaults.type in WORKOUT_TYPES_CONFIG)) {
+  if (!WORKOUT_TYPES.has(sessionDefaults.type)) {
     errors.push(issue('type', 'type-invalid', 'Seleccioná un tipo de entrenamiento válido.'))
   }
 

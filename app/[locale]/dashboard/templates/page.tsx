@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { FilterX, Search } from 'lucide-react'
+import { FilterX, Plus, Search } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { getWorkoutTemplates } from '@/app/actions/workout-template-actions'
@@ -59,9 +59,12 @@ export default async function WorkoutTemplatesPage({ params, searchParams }: Wor
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h2 className='text-3xl font-bold tracking-tight'>{t('title')}</h2>
-        <p className='text-muted-foreground'>{t('description')}</p>
+      <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
+        <div>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('title')}</h2>
+          <p className='text-muted-foreground'>{t('description')}</p>
+        </div>
+        <Link href={`${templatesPath}/new`} className={buttonVariants()}><Plus /> {t('new')}</Link>
       </div>
 
       <Card>
