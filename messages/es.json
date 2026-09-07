@@ -47,5 +47,44 @@
     "wind": "Viento",
     "rainProb": "Prob. Lluvia",
     "snowAccum": "Nieve"
+  },
+  "WorkoutTemplates": {
+    "navigation": "Plantillas",
+    "title": "Plantillas de sesiones",
+    "description": "Buscá y reutilizá estructuras frecuentes de entrenamiento del equipo.",
+    "results": "{count, plural, =0 {Sin plantillas} one {# plantilla} other {# plantillas}}",
+    "withoutLoadDefaults": "Sin carga predeterminada",
+    "filters": {
+      "search": "Buscar",
+      "searchPlaceholder": "Título, estructura o etiqueta…",
+      "category": "Categoría",
+      "allCategories": "Todas",
+      "type": "Tipo",
+      "allTypes": "Todos",
+      "tag": "Etiqueta",
+      "allTags": "Todas",
+      "status": "Estado",
+      "apply": "Aplicar",
+      "clear": "Limpiar filtros"
+    },
+    "categories": {
+      "endurance": "Resistencia",
+      "quality": "Calidad",
+      "mountain": "Montaña",
+      "technique": "Técnica",
+      "recovery": "Recuperación",
+      "competition": "Competición"
+    },
+    "archive": {
+      "active": "Activas",
+      "archived": "Archivadas",
+      "all": "Todas"
+    },
+    "empty": {
+      "title": "Todavía no hay plantillas",
+      "description": "Las plantillas que cree el coach aparecerán en este catálogo.",
+      "filteredTitle": "No encontramos coincidencias",
+      "filteredDescription": "Probá con otros términos o limpiá los filtros seleccionados."
+    }
   }
 }
