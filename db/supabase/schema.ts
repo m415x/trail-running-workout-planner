@@ -24,6 +24,7 @@ import type {
   PlanningModificationField,
   TargetElevationSource,
   TargetVolumeSource,
+  WorkoutTemplateCategory,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
 
@@ -371,25 +372,32 @@ export const planningModificationRecords = pgTable('planning_modification_record
 export const workouts = pgTable('workouts', {
   ...baseColumns,
 
+  teamId: text('team_id')
+    .notNull()
+    .references(() => teams.id, { onDelete: 'cascade' }),
+
+  category: text('category').$type<WorkoutTemplateCategory>().notNull(),
+  tags: jsonb('tags').$type<string[]>().notNull(),
+  archivedAt: text('archived_at'),
+
   title: text('title').notNull(),
   type: text('type').$type<WorkoutType>().notNull(), // 'Base', 'Intervals', 'Trail', etc.
-  zone: text('zone').$type<IntensityZone>().notNull().default('Z2'),
-  distance: doublePrecision('distance').notNull().default(0), // km
-  time: integer('time').notNull().default(0), // min
-  gain: integer('gain').notNull().default(0), // m
+  distance: doublePrecision('distance'), // km
+  time: integer('time'), // min
+  gain: integer('gain'), // m D+
+  intensityMethod: text('intensity_method').$type<IntensityMethod>(),
+  zone: text('zone').$type<IntensityZone>(),
+  pamPercentage: doublePrecision('pam_percentage'),
   pace: integer('pace'), // seg/km
-  notes: text('notes'), // Instrucciones técnicas generales
+  notes: text('notes'), // Indicaciones generales de la sesión
+  prescriptionNotes: text('prescription_notes'),
   trackPath: text('track_path'),
   locationKey: text('location_key')
     .$type<string>()
     .references(() => trainingLocations.key),
 
   // Estructura interna del entrenamiento
-  structure: jsonb('structure').$type<{
-    warmup: string
-    mainBlock: string
-    cooldown: string
-  }>(),
+  structure: jsonb('structure').$type<SessionStructure>(),
 })
 
 /* -------------------------------------------------------------------------- */
@@ -541,6 +549,7 @@ export const teamsRelations = relations(teams, ({ many }) => ({
   athletes: many(athleteProfiles),
   groups: many(athleteGroups),
   sessions: many(sessions),
+  workouts: many(workouts),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -737,6 +746,10 @@ export const groupSessionPrescriptionsRelations = relations(groupSessionPrescrip
 }))
 
 export const workoutsRelations = relations(workouts, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [workouts.teamId],
+    references: [teams.id],
+  }),
   location: one(trainingLocations, {
     fields: [workouts.locationKey],
     references: [trainingLocations.key],

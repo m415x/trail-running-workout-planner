@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "db:push": "drizzle-kit push",
+    "db:migrate:workout-templates:sqlite": "tsx scripts/migrate-workout-templates-sqlite.ts",
     "db:generate:supabase": "drizzle-kit generate --config=drizzle.supabase.config.ts",
     "db:check:supabase": "drizzle-kit check --config=drizzle.supabase.config.ts",
     "db:migrate:supabase": "drizzle-kit migrate --config=drizzle.supabase.config.ts",

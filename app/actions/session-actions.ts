@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, isNull } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -79,7 +79,11 @@ export async function getSessionById(sessionId: string) {
 
 export async function getSessionFormOptions() {
   const workoutOptions = db.query.workouts.findMany({
-    where: eq(workouts.isDeleted, false),
+    where: and(
+      eq(workouts.teamId, CURRENT_TEAM_ID),
+      isNull(workouts.archivedAt),
+      eq(workouts.isDeleted, false),
+    ),
     orderBy: (table, { asc }) => [asc(table.title)],
   }).sync()
   const locationOptions = db.select().from(trainingLocations).orderBy(trainingLocations.name).all()
@@ -138,7 +142,12 @@ export async function createSession(_previousState: SessionFormState, formData: 
   try {
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
-        where: and(eq(workouts.id, data.workoutId), eq(workouts.isDeleted, false)),
+        where: and(
+          eq(workouts.id, data.workoutId),
+          eq(workouts.teamId, CURRENT_TEAM_ID),
+          isNull(workouts.archivedAt),
+          eq(workouts.isDeleted, false),
+        ),
       }).sync()
       if (!workout) return { error: 'La plantilla de entrenamiento seleccionada no existe' }
     }
@@ -204,7 +213,14 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     if (referenceError) return { error: referenceError }
 
     if (data.workoutId) {
-      const workout = db.query.workouts.findFirst({ where: and(eq(workouts.id, data.workoutId), eq(workouts.isDeleted, false)) }).sync()
+      const workout = db.query.workouts.findFirst({
+        where: and(
+          eq(workouts.id, data.workoutId),
+          eq(workouts.teamId, CURRENT_TEAM_ID),
+          isNull(workouts.archivedAt),
+          eq(workouts.isDeleted, false),
+        ),
+      }).sync()
       if (!workout) return { error: 'La plantilla de entrenamiento seleccionada no existe' }
     }
     if (data.locationKey) {
