@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as coreSchema from '@/db/schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
+import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
 
 // Conexión a la base de datos local en un archivo sqlite.db
 const sqlite = new Database('sqlite.db')
@@ -13,5 +14,6 @@ export const db = drizzle(sqlite, {
     ...coreSchema,
     ...loadStrategySchema,
     ...intensityStrategySchema,
+    ...sessionGenerationPreferencesSchema,
   },
 })
