@@ -56,7 +56,17 @@ describe('reglas semanales de generación de sesiones', () => {
     assert.equal(autoCount('development', 55, 60), 5)
     assert.equal(autoCount('shock', 50, 60), 5)
     assert.equal(autoCount('deload', 50, 60), 3)
-    assert.equal(autoCount('tapering', 50, 60), 3)
+  })
+
+  it('permite 3 o 4 sesiones en tapering según la carga relativa', () => {
+    assert.equal(autoCount('tapering', 30, 60), 3)
+    assert.equal(autoCount('tapering', 40, 60), 4)
+  })
+
+  it('cuenta la carrera como una de las sesiones de la semana competitiva', () => {
+    assert.equal(autoCount('race', 40, 60, true), 3)
+    assert.equal(autoCount('race', 40, 60, false), 4)
+    assert.equal(autoCount('race', 30, 60, false), 3)
   })
 
   it('respeta una frecuencia fija válida y rechaza valores fuera del MVP', () => {
@@ -175,11 +185,13 @@ function autoCount(
   microcycleType: 'base' | 'development' | 'shock' | 'deload' | 'tapering' | 'race',
   targetVolumeKm: number,
   maximumWeeklyVolumeKm: number,
+  includesRace = false,
 ) {
   return resolveWeeklySessionCount({
     frequency: { mode: 'auto' },
     microcycleType,
     targetVolumeKm,
     maximumWeeklyVolumeKm,
+    includesRace,
   })
 }
