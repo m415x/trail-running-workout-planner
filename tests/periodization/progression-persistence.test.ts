@@ -135,8 +135,11 @@ describe('persistencia de la progresión de carga', () => {
 
     assert.equal(savedMacrocycle?.taperingWeeksCount, 2)
     assert.deepEqual(competitiveWeeks.map((week) => week.type), ['tapering', 'race'])
-    assert.equal(competitiveWeeks.at(-1)?.targetVolumeKm, 21)
-    assert.equal(competitiveWeeks.at(-1)?.targetElevationGain, 900)
+    const proposedRaceWeek = racePlanning.mesocycles.at(-1)?.microcycles.at(-1)
+    assert.equal(competitiveWeeks.at(-1)?.targetVolumeKm, proposedRaceWeek?.targetVolumeKm)
+    assert.equal(competitiveWeeks.at(-1)?.targetElevationGain, proposedRaceWeek?.targetElevationGain)
+    assert.notEqual(competitiveWeeks.at(-1)?.targetVolumeKm, racePlanning.race?.distanceKm)
+    assert.notEqual(competitiveWeeks.at(-1)?.targetElevationGain, racePlanning.race?.elevationGain)
   })
 
   it('rechaza una propuesta inválida antes de realizar escrituras', () => {

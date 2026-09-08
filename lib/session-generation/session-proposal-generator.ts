@@ -37,7 +37,15 @@ export function generateWeeklySessionProposals(
   input: SessionGenerationInput,
 ): SessionGenerationResult {
   const { context } = input
-  const includesRace = context.microcycleType === 'race'
+  const includesRace = context.competition !== null
+  if (context.microcycleType === 'race' && !includesRace) {
+    throw new RangeError('Race microcycle requires a separate competition target')
+  }
+  if (context.competition && (
+    context.competition.date < context.startDate || context.competition.date > context.endDate
+  )) {
+    throw new RangeError('Competition date must belong to the race microcycle')
+  }
   const sessionCount = resolveWeeklySessionCount({
     frequency: context.frequency,
     microcycleType: context.microcycleType,
@@ -48,7 +56,7 @@ export function generateWeeklySessionProposals(
   const selectedSlots = selectWeeklySlots(context.pattern.slots, sessionCount, {
     microcycleType: context.microcycleType,
     includesRace,
-    raceWeekday: includesRace ? weekdayFromIsoDate(context.endDate) : undefined,
+    raceWeekday: context.competition ? weekdayFromIsoDate(context.competition.date) : undefined,
     weekStartDate: context.startDate,
     intenseSessionsTarget: context.intensity.intenseSessionsTarget,
     minimumRecoveryDays: context.intensity.minimumRecoveryDaysBetweenIntenseSessions,
@@ -69,19 +77,20 @@ export function generateWeeklySessionProposals(
     templateWarnings.set(slot.key, selection.warnings)
   }
 
-  const fixedVolume = resolveFixedVolume(assignment.assignments, selectedTemplates)
-  const fixedElevation = resolveFixedElevation(assignment.assignments, selectedTemplates)
+  const trainingAssignments = assignment.assignments.filter(({ slot }) => slot.role !== 'competition')
+  const fixedVolume = resolveFixedVolume(trainingAssignments, selectedTemplates)
+  const fixedElevation = resolveFixedElevation(trainingAssignments, selectedTemplates)
   const volume = distributeWeeklyVolume(
-    assignment.assignments.map(({ slot }) => slot),
+    trainingAssignments.map(({ slot }) => slot),
     context.load.targetVolumeKm,
     fixedVolume,
   )
   const elevation = distributeWeeklyElevation(
-    assignment.assignments.map(({ slot }) => slot),
+    trainingAssignments.map(({ slot }) => slot),
     context.load.targetElevationGain,
     fixedElevation,
   )
-  const intensity = distributeWeeklyIntensity(assignment.assignments, context.intensity)
+  const intensity = distributeWeeklyIntensity(trainingAssignments, context.intensity)
   const volumeBySlot = new Map(volume.allocations.map((value) => [value.slotKey, value]))
   const elevationBySlot = new Map(elevation.allocations.map((value) => [value.slotKey, value]))
   const intensityBySlot = new Map(intensity.allocations.map((value) => [value.slotKey, value]))
@@ -91,9 +100,13 @@ export function generateWeeklySessionProposals(
     const allocatedVolume = volumeBySlot.get(assigned.slot.key)
     const allocatedElevation = elevationBySlot.get(assigned.slot.key)
     const allocatedIntensity = intensityBySlot.get(assigned.slot.key)
+    const isCompetition = assigned.slot.role === 'competition'
 
-    if (!allocatedVolume || !allocatedElevation || !allocatedIntensity) {
+    if (!isCompetition && (!allocatedVolume || !allocatedElevation || !allocatedIntensity)) {
       throw new Error(`Incomplete generated allocation for slot ${assigned.slot.key}`)
+    }
+    if (isCompetition && !context.competition) {
+      throw new Error(`Competition slot ${assigned.slot.key} has no race target`)
     }
 
     return {
@@ -124,14 +137,18 @@ export function generateWeeklySessionProposals(
       prescription: {
         groupId: context.groupId,
         microcycleId: assigned.microcycleId,
-        distanceKm: allocatedVolume.distanceKm,
+        distanceKm: isCompetition
+          ? context.competition?.distanceKm ?? null
+          : allocatedVolume?.distanceKm ?? null,
         // Weekly duration still has no independent distribution rule. Copying
         // the weekly target into every session would multiply the planned load.
         durationMin: null,
-        elevationGain: allocatedElevation.elevationGain,
-        intensityMethod: allocatedIntensity.intensityMethod,
-        zone: allocatedIntensity.zone,
-        pamPercentage: allocatedIntensity.pamPercentage,
+        elevationGain: isCompetition
+          ? context.competition?.elevationGain ?? null
+          : allocatedElevation?.elevationGain ?? null,
+        intensityMethod: isCompetition ? 'hr_zone' : allocatedIntensity?.intensityMethod ?? 'hr_zone',
+        zone: isCompetition ? null : allocatedIntensity?.zone ?? null,
+        pamPercentage: isCompetition ? null : allocatedIntensity?.pamPercentage ?? null,
         notes: snapshot?.prescription.notes ?? null,
       },
       warnings: templateWarnings.get(assigned.slot.key) ?? [],

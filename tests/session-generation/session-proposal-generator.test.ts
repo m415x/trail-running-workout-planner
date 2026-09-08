@@ -32,6 +32,7 @@ const context: SessionGenerationContext = {
     pamPercentageTarget: 95,
     minimumRecoveryDaysBetweenIntenseSessions: 2,
   },
+  competition: null,
   frequency: { mode: 'fixed', sessionsPerWeek: 3 },
   pattern: DEFAULT_WEEKLY_TRAINING_PATTERN,
 }
@@ -124,6 +125,12 @@ describe('construcción de propuestas semanales', () => {
       endDate: '2026-09-12',
       frequency: { mode: 'auto' },
       intensity: { ...context.intensity, intenseSessionsTarget: 1 },
+      competition: {
+        name: 'Carrera objetivo',
+        date: '2026-09-12',
+        distanceKm: 21,
+        elevationGain: 900,
+      },
     }
     const result = generateWeeklySessionProposals({
       context: raceContext,
@@ -138,6 +145,11 @@ describe('construcción de propuestas semanales', () => {
     const race = result.proposals.find(({ role }) => role === 'competition')
     assert.equal(race?.session.date, '2026-09-12')
     assert.equal(race?.prescription.microcycleId, 'micro-8')
+    assert.equal(race?.prescription.distanceKm, 21)
+    assert.equal(race?.prescription.elevationGain, 900)
+    const training = result.proposals.filter(({ role }) => role !== 'competition')
+    assert.equal(sum(training, 'distanceKm'), raceContext.load.targetVolumeKm)
+    assert.equal(sum(training, 'elevationGain'), raceContext.load.targetElevationGain)
   })
 })
 

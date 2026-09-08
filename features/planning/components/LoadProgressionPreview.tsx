@@ -55,7 +55,7 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   shock: 'Carga',
   deload: 'Descarga',
   tapering: 'Taper',
-  race: 'Carrera',
+  race: 'Semana de carrera',
 }
 
 const loadFocusLabels: Record<MicrocycleLoadFocus, string> = {

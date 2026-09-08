@@ -62,7 +62,7 @@ describe('vista previa de progresión', () => {
     )
   })
 
-  it('reserva taper y genera la carrera objetivo como carga semanal', () => {
+  it('reserva taper y separa la carrera de la carga de entrenamiento semanal', () => {
     const preview = buildLoadProgressionPreview({
       title: 'Preparación Patagonia Run',
       startDate: '2026-01-05',
@@ -85,8 +85,16 @@ describe('vista previa de progresión', () => {
       preview.planning.mesocycles.at(-1)?.microcycles.map((week) => week.type),
       ['tapering', 'tapering', 'race'],
     )
-    assert.equal(preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetVolumeKm, 42.2)
-    assert.equal(preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetElevationGain, 2400)
+    const trainingPeak = preview.planning.mesocycles.at(-2)?.targetPeakVolumeKm ?? 0
+    const elevationPeak = preview.planning.mesocycles.at(-2)?.targetPeakElevationGain ?? 0
+    assert.equal(
+      preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetVolumeKm,
+      Math.round(trainingPeak * 0.3),
+    )
+    assert.equal(
+      preview.planning.mesocycles.at(-1)?.microcycles.at(-1)?.targetElevationGain,
+      Math.round((elevationPeak * 0.3) / 10) * 10,
+    )
   })
 
   it('mantiene una semana pico al regenerar antes de un taper persistido', () => {

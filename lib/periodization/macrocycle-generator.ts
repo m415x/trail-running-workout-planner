@@ -1,6 +1,5 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
-import { calculateTargetVolume } from '@/lib/periodization/target-volume-calculator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
 import { calculateMesocycleElevationTargets } from '@/lib/periodization/mesocycle-elevation-targets'
@@ -97,13 +96,29 @@ function validateParams(params: MacrocycleGeneratorParams) {
   }
 }
 
+const LONG_RACE_DISTANCE_KM = 42
+const HIGH_WEEKLY_LOAD_KM = 70
+const LONG_DISTANCE_KM = 21
+
+/**
+ * Selects the initial taper duration from race demand, planned peak load, and
+ * group scope. The coach can refine this generated proposal later.
+ */
 export function determineTaperingWeeksCount(
   group: AthleteGroupCode,
   race: OptionalTargetRace | undefined,
+  plannedPeakWeeklyVolumeKm: number,
 ): 0 | 2 | 3 {
   if (!race) return 0
 
-  return race.distanceKm >= 42 || group.startsWith('E') || group.startsWith('U') ? 3 : 2
+  const isLongRace = race.distanceKm >= LONG_RACE_DISTANCE_KM
+  const isHighLoadForLongDistance = (
+    race.distanceKm >= LONG_DISTANCE_KM
+    && plannedPeakWeeklyVolumeKm >= HIGH_WEEKLY_LOAD_KM
+  )
+  const isUltraGroup = group.startsWith('E') || group.startsWith('U')
+
+  return isLongRace || isHighLoadForLongDistance || isUltraGroup ? 3 : 2
 }
 
 function createNotes(type: MicrocycleType, volumeKm: number, elevationGain: number | null, prefix?: string) {
@@ -396,7 +411,6 @@ export interface CompetitiveMesocycleGeneratorParams {
   endDate: string
   startWeekNumber: number
   mesocycleNumber: number
-  athleteGroup: AthleteGroupCode
   race: OptionalTargetRace
   taperingWeeksCount: 2 | 3
   finalTrainingPeakVolumeKm: number
@@ -408,7 +422,6 @@ export function generateCompetitiveMesocycle({
   endDate,
   startWeekNumber,
   mesocycleNumber,
-  athleteGroup,
   race,
   taperingWeeksCount,
   finalTrainingPeakVolumeKm,
@@ -418,40 +431,29 @@ export function generateCompetitiveMesocycle({
     throw new Error('mesocycleNumber debe ser un entero mayor que cero.')
   }
 
-  const taperingFactors = taperingWeeksCount === 3 ? [0.6, 0.4] : [0.6]
-  const taperingTargets = taperingFactors.map((volumeFactor): MicrocycleTarget => {
+  // The taper count includes race week. Its target represents only pre-race
+  // training; competition load remains in the separate race snapshot.
+  const taperingFactors = taperingWeeksCount === 3 ? [0.75, 0.55, 0.3] : [0.6, 0.3]
+  const taperingTargets = taperingFactors.map((volumeFactor, index): MicrocycleTarget => {
     const targetVolumeKm = Math.round(finalTrainingPeakVolumeKm * volumeFactor)
     const targetElevationGain = finalTrainingPeakElevationGain === null
       ? null
       : Math.round((finalTrainingPeakElevationGain * volumeFactor) / 10) * 10
 
     return {
-      type: 'tapering',
+      type: index === taperingFactors.length - 1 ? 'race' : 'tapering',
       targetVolumeKm,
       targetElevationGain,
-      notesPrefix: `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`,
+      notesPrefix: index === taperingFactors.length - 1
+        ? `Semana de carrera: tapering al ${Math.round(volumeFactor * 100)}%. Competencia: ${race.name} (no incluida en esta carga)`
+        : `Tapering: reducción al ${Math.round(volumeFactor * 100)}%`,
     }
   })
-
-  const raceWeekVolumeKm = calculateTargetVolume({
-    athleteGroup,
-    type: 'race',
-    raceDistanceKm: race.distanceKm,
-  })
-  const raceWeekElevationGain = race.elevationGain ?? null
   const microcycles = generateMicrocycles({
     startDate,
     endDate,
     startWeekNumber,
-    targets: [
-      ...taperingTargets,
-      {
-        type: 'race',
-        targetVolumeKm: raceWeekVolumeKm,
-        targetElevationGain: raceWeekElevationGain,
-        notesPrefix: `Competencia: ${race.name}`,
-      },
-    ],
+    targets: taperingTargets,
   })
 
   return {
@@ -479,7 +481,11 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
     throw new Error('El macrociclo debe tener al menos 4 semanas de planificación.')
   }
 
-  const taperingWeeksCount = determineTaperingWeeksCount(params.athleteGroup, params.race)
+  const taperingWeeksCount = determineTaperingWeeksCount(
+    params.athleteGroup,
+    params.race,
+    params.loadStrategy.values.maximumWeeklyVolumeKm,
+  )
   const trainingWeeksCount = totalWeeks - taperingWeeksCount
 
   if (trainingWeeksCount < 2) {
@@ -521,7 +527,6 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
       endDate: params.endDate,
       startWeekNumber: globalWeekCounter,
       mesocycleNumber: numberOfTrainingMesocycles + 1,
-      athleteGroup: params.athleteGroup,
       race: params.race,
       taperingWeeksCount,
       finalTrainingPeakVolumeKm,

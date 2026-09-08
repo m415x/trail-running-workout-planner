@@ -91,8 +91,8 @@ describe('integración de volumen y desnivel', () => {
     const unknownRaceWeek = unknownElevation.mesocycles.at(-1)?.microcycles.at(-1)
 
     assert.equal(knownRaceWeek?.type, 'race')
-    assert.equal(knownRaceWeek?.targetElevationGain, 2_400)
+    assert.equal(typeof knownRaceWeek?.targetElevationGain, 'number')
     assert.equal(unknownRaceWeek?.type, 'race')
-    assert.equal(unknownRaceWeek?.targetElevationGain, null)
+    assert.equal(unknownRaceWeek?.targetElevationGain, knownRaceWeek?.targetElevationGain)
   })
 })

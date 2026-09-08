@@ -65,7 +65,7 @@ describe('generación de planificación', () => {
     const finalTrainingPeakVolume = result.mesocycles.at(-2)?.targetPeakVolumeKm
     const finalTrainingPeakElevation = result.mesocycles.at(-2)?.targetPeakElevationGain
     assert.equal(typeof finalTrainingPeakElevation, 'number')
-    assert.equal(determineTaperingWeeksCount('S2', result.race ?? undefined), 3)
+    assert.equal(determineTaperingWeeksCount('S2', result.race ?? undefined, 75), 3)
     assert.equal(result.taperingWeeksCount, 3)
     assert.equal(result.trainingWeeksCount, 9)
     assert.equal(result.progressionDurationProfile, 'normal')
@@ -75,27 +75,28 @@ describe('generación de planificación', () => {
     assert.deepEqual(
       competitive?.microcycles.map((week) => week.targetVolumeKm),
       [
-        Math.round((finalTrainingPeakVolume ?? 0) * 0.6),
-        Math.round((finalTrainingPeakVolume ?? 0) * 0.4),
-        42,
+        Math.round((finalTrainingPeakVolume ?? 0) * 0.75),
+        Math.round((finalTrainingPeakVolume ?? 0) * 0.55),
+        Math.round((finalTrainingPeakVolume ?? 0) * 0.3),
       ],
     )
     assert.deepEqual(
       competitive?.microcycles.map((week) => week.targetElevationGain),
       [
-        Math.round(((finalTrainingPeakElevation ?? 0) * 0.6) / 10) * 10,
-        Math.round(((finalTrainingPeakElevation ?? 0) * 0.4) / 10) * 10,
-        1200,
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.75) / 10) * 10,
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.55) / 10) * 10,
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.3) / 10) * 10,
       ],
     )
-    assert.equal(competitive?.microcycles.at(-1)?.targetElevationGain, 1200)
+    assert.notEqual(competitive?.microcycles.at(-1)?.targetVolumeKm, result.race?.distanceKm)
+    assert.notEqual(competitive?.microcycles.at(-1)?.targetElevationGain, result.race?.elevationGain)
     assert.match(competitive?.microcycles.at(-1)?.notes ?? '', /Maratón de prueba/)
     assert.equal(weeks.length, 12)
     assertConsecutiveWeeks(weeks)
   })
 
   it('usa dos semanas competitivas para una carrera corta', () => {
-    assert.equal(determineTaperingWeeksCount('S2', { name: '10K', distanceKm: 10 }), 2)
+    assert.equal(determineTaperingWeeksCount('S2', { name: '10K', distanceKm: 10 }, 75), 2)
 
     const result = generateFractalMacrocycle({
       title: '10K',
@@ -111,6 +112,13 @@ describe('generación de planificación', () => {
 
     assert.equal(trainingWeeks.at(-1)?.type, 'shock')
     assert.notEqual(trainingWeeks.at(-1)?.type, 'deload')
+  })
+
+  it('adapta la duración del taper a la carga pico en una media maratón', () => {
+    const halfMarathon = { name: 'Media maratón', distanceKm: 21 }
+
+    assert.equal(determineTaperingWeeksCount('S2', halfMarathon, 40), 2)
+    assert.equal(determineTaperingWeeksCount('S2', halfMarathon, 80), 3)
   })
 
   it('reemplaza la descarga final por carga específica antes del taper en horizontes residuales', () => {
@@ -154,7 +162,10 @@ describe('generación de planificación', () => {
 
     assert.deepEqual(
       competitive?.microcycles.map((week) => week.targetElevationGain),
-      [Math.round(((finalTrainingPeakElevation ?? 0) * 0.6) / 10) * 10, null],
+      [
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.6) / 10) * 10,
+        Math.round(((finalTrainingPeakElevation ?? 0) * 0.3) / 10) * 10,
+      ],
     )
   })
 
@@ -175,7 +186,7 @@ describe('generación de planificación', () => {
 
     assert.deepEqual(
       competitive?.microcycles.map((week) => week.targetElevationGain),
-      [null, 650],
+      [null, null],
     )
   })
 

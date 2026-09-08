@@ -198,6 +198,14 @@ export interface SessionGenerationIntensityTarget {
   minimumRecoveryDaysBetweenIntenseSessions: number
 }
 
+/** Race load kept separate from the taper training budget of race week. */
+export interface SessionGenerationCompetitionTarget {
+  name: string
+  date: string
+  distanceKm: number
+  elevationGain: number | null
+}
+
 /**
  * Planning context required to generate one group's sessions for one week.
  *
@@ -215,6 +223,7 @@ export interface SessionGenerationContext {
   endDate: string
   load: SessionGenerationLoadTarget
   intensity: SessionGenerationIntensityTarget
+  competition: SessionGenerationCompetitionTarget | null
   frequency: WeeklySessionFrequency
   pattern: WeeklyTrainingPattern
 }
