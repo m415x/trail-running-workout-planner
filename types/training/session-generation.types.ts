@@ -82,6 +82,18 @@ export interface DatedTrainingSlot {
   date: string
 }
 
+/** Weekly slot dated inside, and owned by, one persisted microcycle. */
+export interface AssignedMicrocycleSlot extends DatedTrainingSlot {
+  microcycleId: string
+}
+
+/** Automatic slot-to-microcycle assignment before proposal construction. */
+export interface MicrocycleSlotAssignmentResult {
+  assignments: AssignedMicrocycleSlot[]
+  omittedSlotKeys: string[]
+  warnings: string[]
+}
+
 /**
  * Describes whether a session load may absorb weekly planning adjustments.
  *
