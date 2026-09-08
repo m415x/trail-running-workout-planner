@@ -1,13 +1,15 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, isNull } from 'drizzle-orm'
+import { and, eq, isNull, or } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
+import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
+import type { TrainingIntensity, WorkoutTemplate } from '@/types'
 import {
   athleteGroups,
   groupSessionPrescriptions,
@@ -40,6 +42,49 @@ const createSessionSchema = z.object({
 })
 
 export interface SessionFormState { error?: string }
+
+function sessionTemplateOption(row: typeof workouts.$inferSelect) {
+  let intensity: TrainingIntensity | null = null
+  if (row.intensityMethod === 'hr_zone' && row.zone) {
+    intensity = { method: 'hr_zone', zone: row.zone }
+  } else if (row.intensityMethod === 'pam_percentage' && row.pamPercentage !== null) {
+    intensity = { method: 'pam_percentage', pamPercentage: row.pamPercentage }
+  }
+
+  const template: WorkoutTemplate = {
+    id: row.id,
+    teamId: row.teamId,
+    category: row.category,
+    tags: row.tags,
+    archivedAt: row.archivedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    isDeleted: row.isDeleted,
+    sessionDefaults: {
+      title: row.title,
+      type: row.type,
+      locationKey: row.locationKey,
+      trackPath: row.trackPath,
+      structure: row.structure,
+      notes: row.notes,
+    },
+    prescriptionDefaults: {
+      distanceKm: row.distance,
+      durationMin: row.time,
+      elevationGain: row.gain,
+      intensity,
+      notes: row.prescriptionNotes,
+    },
+  }
+
+  return {
+    id: row.id,
+    title: row.title,
+    type: row.type,
+    archivedAt: row.archivedAt,
+    snapshot: createWorkoutTemplateSnapshot(template),
+  }
+}
 
 function sessionsPath(locale: string) {
   return locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
@@ -77,11 +122,13 @@ export async function getSessionById(sessionId: string) {
   })
 }
 
-export async function getSessionFormOptions() {
+export async function getSessionFormOptions(includeWorkoutId?: string | null) {
   const workoutOptions = db.query.workouts.findMany({
     where: and(
       eq(workouts.teamId, CURRENT_TEAM_ID),
-      isNull(workouts.archivedAt),
+      includeWorkoutId
+        ? or(isNull(workouts.archivedAt), eq(workouts.id, includeWorkoutId))
+        : isNull(workouts.archivedAt),
       eq(workouts.isDeleted, false),
     ),
     orderBy: (table, { asc }) => [asc(table.title)],
@@ -127,7 +174,7 @@ export async function getSessionFormOptions() {
     )),
   }))
 
-  return { workouts: workoutOptions, locations: locationOptions, groups }
+  return { workouts: workoutOptions.map(sessionTemplateOption), locations: locationOptions, groups }
 }
 
 export async function createSession(_previousState: SessionFormState, formData: FormData): Promise<SessionFormState> {

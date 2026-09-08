@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
+import type { WorkoutTemplateSnapshot, WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
 
@@ -49,16 +50,12 @@ interface SessionFormProps {
 interface WorkoutTemplateOption {
   id: string
   title: string
-  type: string
-  locationKey: string | null
-  trackPath: string | null
-  notes: string | null
-  structure: {
-    preliminaryExercises?: string | null
-    warmup?: string | null
-    mainBlock?: string | null
-    cooldown?: string | null
-  } | null
+  type: WorkoutType
+  archivedAt: string | null
+  snapshot: WorkoutTemplateSnapshot
+}
+
+interface AppliedPrescriptionDefaults {
   distance: number | null
   time: number | null
   gain: number | null
@@ -66,13 +63,7 @@ interface WorkoutTemplateOption {
   zone: string | null
   pamPercentage: number | null
   prescriptionNotes: string | null
-  archivedAt: string | null
 }
-
-type AppliedPrescriptionDefaults = Pick<
-  WorkoutTemplateOption,
-  'distance' | 'time' | 'gain' | 'intensityMethod' | 'zone' | 'pamPercentage' | 'prescriptionNotes'
->
 
 interface PrescriptionFormValues {
   distanceKm: string
@@ -130,25 +121,26 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
     const form = event.currentTarget.form
     if (!form) return
+    const snapshot = template.snapshot
 
-    setFormValue(form, 'title', template.title)
-    setFormValue(form, 'type', template.type)
-    setFormValue(form, 'locationKey', template.locationKey)
-    setFormValue(form, 'trackPath', template.trackPath)
-    setFormValue(form, 'preliminaryExercises', template.structure?.preliminaryExercises)
-    setFormValue(form, 'warmup', template.structure?.warmup)
-    setFormValue(form, 'mainBlock', template.structure?.mainBlock)
-    setFormValue(form, 'cooldown', template.structure?.cooldown)
-    setFormValue(form, 'notes', template.notes)
+    setFormValue(form, 'title', snapshot.session.title)
+    setFormValue(form, 'type', snapshot.session.type)
+    setFormValue(form, 'locationKey', snapshot.session.locationKey)
+    setFormValue(form, 'trackPath', snapshot.session.trackPath)
+    setFormValue(form, 'preliminaryExercises', snapshot.session.structure?.preliminaryExercises)
+    setFormValue(form, 'warmup', snapshot.session.structure?.warmup)
+    setFormValue(form, 'mainBlock', snapshot.session.structure?.mainBlock)
+    setFormValue(form, 'cooldown', snapshot.session.structure?.cooldown)
+    setFormValue(form, 'notes', snapshot.session.notes)
 
     const defaults: AppliedPrescriptionDefaults = {
-      distance: template.distance,
-      time: template.time,
-      gain: template.gain,
-      intensityMethod: template.intensityMethod,
-      zone: template.zone,
-      pamPercentage: template.pamPercentage,
-      prescriptionNotes: template.prescriptionNotes,
+      distance: snapshot.prescription.distanceKm ?? null,
+      time: snapshot.prescription.durationMin ?? null,
+      gain: snapshot.prescription.elevationGain ?? null,
+      intensityMethod: snapshot.prescription.intensity?.method ?? null,
+      zone: snapshot.prescription.intensity?.method === 'hr_zone' ? snapshot.prescription.intensity.zone : null,
+      pamPercentage: snapshot.prescription.intensity?.method === 'pam_percentage' ? snapshot.prescription.intensity.pamPercentage : null,
+      prescriptionNotes: snapshot.prescription.notes,
     }
     setAppliedPrescriptionDefaults(defaults)
     setIntensityMethods((current) => ({

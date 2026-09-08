@@ -12,13 +12,10 @@ interface EditSessionPageProps {
 
 export default async function EditSessionPage({ params }: EditSessionPageProps) {
   const { locale, sessionId } = await params
-  const [session, options] = await Promise.all([getSessionById(sessionId), getSessionFormOptions()])
+  const session = await getSessionById(sessionId)
 
   if (!session) notFound()
-
-  const workoutOptions = session.workout && !options.workouts.some((workout) => workout.id === session.workoutId)
-    ? [...options.workouts, session.workout].sort((left, right) => left.title.localeCompare(right.title, 'es'))
-    : options.workouts
+  const options = await getSessionFormOptions(session.workoutId)
 
   const sessionPath = locale === 'es'
     ? `/dashboard/sessions/${session.id}`
@@ -36,7 +33,7 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
         </div>
       </div>
 
-      <SessionForm locale={locale} {...options} workouts={workoutOptions} session={session} />
+      <SessionForm locale={locale} {...options} session={session} />
     </div>
   )
 }
