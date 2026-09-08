@@ -35,8 +35,7 @@ export type WeeklySessionRole =
 /**
  * Controls how many sessions are generated for each microcycle.
  *
- * `auto` keeps the existing planning behaviour: the generator resolves the
- * number of sessions from the weekly load and microcycle context.
+ * `auto` resolves the weekly frequency from the microcycle and relative load.
  * `fixed` lets the coach repeat an explicit number of sessions every week.
  */
 export type WeeklySessionFrequency =
@@ -53,6 +52,8 @@ export type WeeklySessionFrequency =
  *
  * Roles and workout types are preferences, not hard constraints. Planning,
  * intensity and recovery rules always have higher priority than this pattern.
+ * Optional load weights let a pattern distinguish, for example, a Wednesday
+ * long run from a larger Saturday mountain long run.
  */
 export interface WeeklyTrainingSlot {
   /** Stable identifier inside the pattern, e.g. `monday-base`. */
@@ -61,6 +62,8 @@ export interface WeeklyTrainingSlot {
   role: WeeklySessionRole
   preferredWorkoutTypes: WorkoutType[]
   preferredTemplateCategories?: WorkoutTemplateCategory[]
+  volumeWeight?: number
+  elevationWeight?: number
 }
 
 /**
@@ -73,11 +76,45 @@ export interface WeeklyTrainingPattern {
   slots: WeeklyTrainingSlot[]
 }
 
-/** Resolved load target supplied by the persisted microcycle. */
+/**
+ * Describes whether a session load may absorb weekly planning adjustments.
+ *
+ * A geographical circuit with known distance/elevation is `fixed`; road or
+ * otherwise adjustable sessions are normally `flexible`.
+ */
+export type SessionLoadFlexibility = 'fixed' | 'flexible'
+
+/** Load already assigned to one weekly slot. */
+export interface WeeklyLoadAllocation {
+  slotKey: string
+  flexibility: SessionLoadFlexibility
+  distanceKm: number
+  elevationGain: number
+}
+
+/**
+ * Calculated weekly load budget used by generation and, later, the preview UI.
+ * It is derived state and does not need its own persistence model.
+ */
+export interface WeeklyLoadBudget {
+  targetVolumeKm: number
+  targetElevationGain: number | null
+  allocatedVolumeKm: number
+  allocatedElevationGain: number
+  remainingVolumeKm: number
+  remainingElevationGain: number | null
+  volumeUsageRatio: number
+  elevationUsageRatio: number | null
+  isVolumeExceeded: boolean
+  isElevationExceeded: boolean
+}
+
+/** Resolved load target plus the strategy reference needed by AUTO frequency. */
 export interface SessionGenerationLoadTarget {
   targetVolumeKm: number
   targetElevationGain: number | null
   targetDurationMin?: number | null
+  maximumWeeklyVolumeKm: number
 }
 
 /** Resolved intensity intent supplied by the planning layer. */
