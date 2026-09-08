@@ -5,6 +5,7 @@ export default defineConfig({
     './db/schema.ts',
     './db/load-strategy-schema.ts',
     './db/intensity-strategy-schema.ts',
+    './db/session-generation-preferences-schema.ts',
   ],
   out: './drizzle',
   dialect: 'sqlite',
