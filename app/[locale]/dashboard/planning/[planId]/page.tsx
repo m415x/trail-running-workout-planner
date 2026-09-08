@@ -3,11 +3,13 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
+import { getSessionGenerationPreferencesForPlan } from '@/app/actions/session-generation-preferences-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
 import { MicrocycleElevationForm } from '@/features/planning/components/MicrocycleElevationForm'
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
+import { SessionGenerationPreferencesForm } from '@/features/planning/components/SessionGenerationPreferencesForm'
 import {
   IntensityDistribution,
   type IntensityDistributionPoint,
@@ -43,6 +45,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     notFound()
   }
 
+  const generationPreferences = await getSessionGenerationPreferencesForPlan(planId)
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
@@ -224,6 +227,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             plan.intensityStrategy.minimumRecoveryDaysBetweenIntenseSessions
           }
           strategySources={plan.intensityStrategy.fieldSources}
+        />
+      )}
+
+      {generationPreferences && (
+        <SessionGenerationPreferencesForm
+          planId={plan.id}
+          locale={locale}
+          frequency={generationPreferences.frequency}
+          pattern={generationPreferences.pattern}
         />
       )}
 
