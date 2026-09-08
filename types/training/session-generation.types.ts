@@ -109,6 +109,23 @@ export interface WeeklyVolumeDistribution {
   warnings: string[]
 }
 
+/** Positive elevation assigned to one selected slot independently of distance. */
+export interface WeeklyElevationAllocation {
+  slotKey: string
+  flexibility: SessionLoadFlexibility
+  elevationGain: number
+}
+
+/** Result of distributing the microcycle positive elevation across sessions. */
+export interface WeeklyElevationDistribution {
+  allocations: WeeklyElevationAllocation[]
+  targetElevationGain: number | null
+  allocatedElevationGain: number
+  remainingElevationGain: number | null
+  isExceeded: boolean
+  warnings: string[]
+}
+
 /**
  * Calculated weekly load budget used by generation and, later, the preview UI.
  * It is derived state and does not need its own persistence model.

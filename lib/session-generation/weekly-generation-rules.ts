@@ -9,6 +9,7 @@ import type {
   WeeklyTrainingSlot,
 } from '@/types/training/session-generation.types'
 import { createWeeklyTrainingSlot } from '@/lib/session-generation/default-weekly-pattern'
+import { distributeWeeklyElevation } from '@/lib/session-generation/weekly-elevation-distribution'
 import { distributeWeeklyVolume } from '@/lib/session-generation/weekly-volume-distribution'
 
 const MIN_AUTO_SESSIONS = 3
@@ -59,15 +60,6 @@ const INTENSITY_PRIORITY: Record<WeeklySessionRole, number> = {
   long: 60,
   base: 30,
   recovery: 0,
-}
-
-const DEFAULT_ELEVATION_WEIGHT: Record<WeeklySessionRole, number> = {
-  base: 0.2,
-  mountain: 1.4,
-  long: 0.6,
-  quality: 0.2,
-  recovery: 0.1,
-  competition: 1,
 }
 
 export interface ResolveWeeklySessionCountInput {
@@ -172,19 +164,6 @@ export function selectWeeklySlots(
     ?.sort(compareByWeekday) ?? []
 }
 
-export function getElevationWeight(slot: WeeklyTrainingSlot) {
-  const weekendMountainBonus =
-    (slot.weekday === 'saturday' || slot.weekday === 'sunday') &&
-    (slot.role === 'long' || slot.role === 'mountain')
-      ? 1.4
-      : 1
-
-  return positiveWeight(
-    slot.elevationWeight,
-    DEFAULT_ELEVATION_WEIGHT[slot.role] * weekendMountainBonus,
-  )
-}
-
 /**
  * Calculates how much of the microcycle budget is already consumed. Negative
  * remaining values are intentionally preserved so the UI can show the overage.
@@ -247,6 +226,18 @@ export function distributeWeeklyLoad(
   const volumeBySlot = new Map(
     volumeDistribution.allocations.map((allocation) => [allocation.slotKey, allocation.distanceKm]),
   )
+  const elevationDistribution = distributeWeeklyElevation(
+    slots,
+    targetElevationGain,
+    fixedAllocations.map((allocation) => ({
+      slotKey: allocation.slotKey,
+      flexibility: 'fixed',
+      elevationGain: allocation.elevationGain,
+    })),
+  )
+  const elevationBySlot = new Map(
+    elevationDistribution.allocations.map((allocation) => [allocation.slotKey, allocation.elevationGain]),
+  )
 
   for (const slot of slots) {
     const fixed = fixedBySlot.get(slot.key)
@@ -257,17 +248,12 @@ export function distributeWeeklyLoad(
     }
   }
 
-  const fixedBudget = calculateWeeklyLoadBudget(targetVolumeKm, targetElevationGain, result)
-  const remainingElevation = Math.max(0, fixedBudget.remainingElevationGain ?? 0)
-
-  const elevations = distributeByWeight(flexibleSlots, remainingElevation, getElevationWeight, 0)
-
   for (const slot of flexibleSlots) {
     result.push({
       slotKey: slot.key,
       flexibility: 'flexible',
       distanceKm: volumeBySlot.get(slot.key) ?? 0,
-      elevationGain: targetElevationGain === null ? 0 : elevations.get(slot.key) ?? 0,
+      elevationGain: elevationBySlot.get(slot.key) ?? 0,
     })
   }
 
@@ -439,35 +425,6 @@ function dateForWeekday(weekStartDate: string, weekday: TrainingWeekday) {
 
 function compareByWeekday(a: WeeklyTrainingSlot, b: WeeklyTrainingSlot) {
   return WEEKDAY_INDEX[a.weekday] - WEEKDAY_INDEX[b.weekday]
-}
-
-function positiveWeight(value: number | undefined, fallback: number) {
-  return value !== undefined && Number.isFinite(value) && value > 0 ? value : fallback
-}
-
-function distributeByWeight(
-  slots: WeeklyTrainingSlot[],
-  total: number,
-  getWeight: (slot: WeeklyTrainingSlot) => number,
-  decimals: number,
-) {
-  const values = new Map<string, number>()
-  if (slots.length === 0) return values
-
-  const totalWeight = slots.reduce((sum, slot) => sum + getWeight(slot), 0)
-  let allocated = 0
-
-  slots.forEach((slot, index) => {
-    const isLast = index === slots.length - 1
-    const value = isLast
-      ? roundTo(total - allocated, decimals)
-      : roundTo((total * getWeight(slot)) / totalWeight, decimals)
-
-    values.set(slot.key, value)
-    allocated = roundTo(allocated + value, decimals)
-  })
-
-  return values
 }
 
 function respectsRecovery(slots: DatedTrainingSlot[], minimumRecoveryDays: number) {
