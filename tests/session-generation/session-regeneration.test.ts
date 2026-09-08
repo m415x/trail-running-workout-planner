@@ -34,6 +34,7 @@ describe('regeneración idempotente de sesiones', () => {
     )
     assert.deepEqual(repeated.obsoleteEventIds, [])
     assert.deepEqual(repeated.obsoletePrescriptionIds, [])
+    assert.deepEqual(repeated.preservedRecords, [])
   })
 
   it('retira generados obsoletos cuando cambia la propuesta', () => {
@@ -71,6 +72,15 @@ describe('regeneración idempotente de sesiones', () => {
     assert.deepEqual(result.obsoleteEventIds, [])
     assert.deepEqual(result.obsoletePrescriptionIds, [])
     assert.deepEqual(result.protectedCollisions.map(({ kind }) => kind), ['event', 'prescription'])
+    assert.deepEqual(result.preservedRecords, [
+      {
+        kind: 'event', existingId: 'session-1', generationKey: 'shared-tuesday', reason: 'modified',
+      },
+      {
+        kind: 'prescription', existingId: 'prescription-1', generationKey: 'group-tuesday',
+        reason: 'modified',
+      },
+    ])
   })
 
   it('ignora registros puramente manuales porque no poseen identidad generada', () => {
@@ -87,6 +97,40 @@ describe('regeneración idempotente de sesiones', () => {
     assert.deepEqual(result.prescriptions.map(({ action }) => action), ['create'])
     assert.deepEqual(result.obsoleteEventIds, [])
     assert.deepEqual(result.obsoletePrescriptionIds, [])
+    assert.deepEqual(result.preservedRecords, [
+      { kind: 'event', existingId: 'manual-session', generationKey: null, reason: 'manual' },
+      {
+        kind: 'prescription', existingId: 'manual-prescription', generationKey: null,
+        reason: 'manual',
+      },
+    ])
+  })
+
+  it('preserva modificaciones aunque su slot deje de existir en la nueva propuesta', () => {
+    const result = reconcileSessionGeneration({
+      proposal: generation(event('shared-thursday', prescription('group-thursday'))),
+      existingEvents: [{
+        id: 'session-edited',
+        provenance: { ownership: 'generated_modified', sharedEventKey: 'shared-tuesday' },
+      }],
+      existingPrescriptions: [{
+        id: 'prescription-edited', sessionId: 'session-edited',
+        provenance: { ownership: 'generated_modified', generationKey: 'group-tuesday' },
+      }],
+    })
+
+    assert.deepEqual(result.obsoleteEventIds, [])
+    assert.deepEqual(result.obsoletePrescriptionIds, [])
+    assert.deepEqual(result.preservedRecords, [
+      {
+        kind: 'event', existingId: 'session-edited', generationKey: 'shared-tuesday',
+        reason: 'no_longer_proposed',
+      },
+      {
+        kind: 'prescription', existingId: 'prescription-edited', generationKey: 'group-tuesday',
+        reason: 'no_longer_proposed',
+      },
+    ])
   })
 
   it('rechaza claves duplicadas en propuestas o registros existentes', () => {

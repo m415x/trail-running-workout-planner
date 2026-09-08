@@ -31,12 +31,20 @@ export interface ProtectedGenerationCollision {
   generationKey: string
 }
 
+export interface PreservedGenerationRecord {
+  kind: 'event' | 'prescription'
+  existingId: string
+  generationKey: string | null
+  reason: 'manual' | 'modified' | 'no_longer_proposed'
+}
+
 export interface SessionRegenerationPlan {
   events: SessionRegenerationOperation<SharedSessionEventProposal>[]
   prescriptions: SessionRegenerationOperation<SharedEventPrescriptionProposal>[]
   obsoleteEventIds: string[]
   obsoletePrescriptionIds: string[]
   protectedCollisions: ProtectedGenerationCollision[]
+  preservedRecords: PreservedGenerationRecord[]
 }
 
 export interface ReconcileSessionGenerationParams {
@@ -98,7 +106,56 @@ export function reconcileSessionGeneration({
     obsoleteEventIds: findObsoleteGeneratedIds(persistedEvents, proposedEvents),
     obsoletePrescriptionIds: findObsoleteGeneratedIds(persistedPrescriptions, proposedPrescriptions),
     protectedCollisions,
+    preservedRecords: collectPreservedRecords({
+      existingEvents,
+      existingPrescriptions,
+      proposedEvents,
+      proposedPrescriptions,
+    }),
   }
+}
+
+function collectPreservedRecords({
+  existingEvents,
+  existingPrescriptions,
+  proposedEvents,
+  proposedPrescriptions,
+}: {
+  existingEvents: ExistingGeneratedSessionEvent[]
+  existingPrescriptions: ExistingGeneratedSessionPrescription[]
+  proposedEvents: Map<string, SharedSessionEventProposal>
+  proposedPrescriptions: Map<string, SharedEventPrescriptionProposal>
+}): PreservedGenerationRecord[] {
+  const preservedEvents = existingEvents.flatMap((event): PreservedGenerationRecord[] => {
+    if (event.provenance.ownership === 'generated') return []
+    const key = event.provenance.sharedEventKey
+    return [{
+      kind: 'event',
+      existingId: event.id,
+      generationKey: key,
+      reason: event.provenance.ownership === 'manual'
+        ? 'manual'
+        : key !== null && proposedEvents.has(key) ? 'modified' : 'no_longer_proposed',
+    }]
+  })
+  const preservedPrescriptions = existingPrescriptions.flatMap(
+    (item): PreservedGenerationRecord[] => {
+      if (item.provenance.ownership === 'generated') return []
+      const key = item.provenance.generationKey
+      return [{
+        kind: 'prescription',
+        existingId: item.id,
+        generationKey: key,
+        reason: item.provenance.ownership === 'manual'
+          ? 'manual'
+          : key !== null && proposedPrescriptions.has(key) ? 'modified' : 'no_longer_proposed',
+      }]
+    },
+  )
+
+  return [...preservedEvents, ...preservedPrescriptions].sort((left, right) => (
+    left.kind.localeCompare(right.kind) || left.existingId.localeCompare(right.existingId)
+  ))
 }
 
 function indexProposedEvents(events: SharedSessionEventProposal[]) {
