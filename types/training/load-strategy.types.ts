@@ -16,11 +16,13 @@ export interface LoadStrategyContext {
 /**
  * Effective parameters that constrain load generation for a group plan.
  * Percentages use the human-readable 0-100 scale, not decimal factors.
+ *
+ * Weekly session frequency intentionally lives in SessionGenerationPreferences;
+ * load strategy owns how much load is planned, not how many sessions express it.
  */
 export interface LoadStrategyValues {
   initialWeeklyVolumeKm: number
   maximumWeeklyVolumeKm: number
-  sessionsPerWeek: number
   maximumWeeklyIncreasePercentage: number
   deloadPercentage: number
   initialWeeklyElevationGain: number | null
