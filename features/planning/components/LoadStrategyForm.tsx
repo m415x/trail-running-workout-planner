@@ -283,8 +283,8 @@ export function LoadStrategyForm({
         </CardHeader>
         <CardContent className='space-y-6'>
           <fieldset className='space-y-4'>
-            <legend className='font-medium'>Volumen y frecuencia</legend>
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-3'>
+            <legend className='font-medium'>Volumen</legend>
+            <div className='grid gap-4 sm:grid-cols-2'>
               <NumberField
                 label='Volumen inicial'
                 name='initialWeeklyVolumeKm'
@@ -302,15 +302,6 @@ export function LoadStrategyForm({
                 step='0.1'
                 issues={issuesFor('maximumWeeklyVolumeKm')}
                 onChange={(value) => handleValueChange('maximumWeeklyVolumeKm', value ?? 0)}
-              />
-              <NumberField
-                label='Sesiones'
-                name='sessionsPerWeek'
-                value={strategy.values.sessionsPerWeek}
-                suffix='por semana'
-                step='1'
-                issues={issuesFor('sessionsPerWeek')}
-                onChange={(value) => handleValueChange('sessionsPerWeek', value ?? 0)}
               />
             </div>
           </fieldset>
