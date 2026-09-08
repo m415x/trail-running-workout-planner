@@ -14,7 +14,6 @@ export interface LoadStrategyModification {
 const modificationFields: Record<LoadStrategyField, PlanningModificationField> = {
   initialWeeklyVolumeKm: 'load_initial_weekly_volume_km',
   maximumWeeklyVolumeKm: 'load_maximum_weekly_volume_km',
-  sessionsPerWeek: 'load_sessions_per_week',
   maximumWeeklyIncreasePercentage: 'load_maximum_weekly_increase_percentage',
   deloadPercentage: 'load_deload_percentage',
   initialWeeklyElevationGain: 'load_initial_weekly_elevation_gain',
