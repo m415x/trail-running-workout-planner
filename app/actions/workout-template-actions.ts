@@ -7,6 +7,13 @@ import { redirect } from 'next/navigation'
 
 import { db } from '@/db'
 import { trainingLocations, workouts } from '@/db/schema'
+import {
+  createWorkoutTemplateRecord,
+  duplicateWorkoutTemplateRecord,
+  setWorkoutTemplateArchiveStatusRecord,
+  updateWorkoutTemplateRecord,
+  type WorkoutTemplatePersistenceValues,
+} from '@/lib/workout-templates/workout-template-persistence'
 import { matchesWorkoutTemplateSearch, normalizeWorkoutTemplateTags } from '@/lib/workout-templates/workout-template-search'
 import { validateWorkoutTemplateDefaults, type WorkoutTemplateDefaultField } from '@/lib/workout-templates/workout-template-validator'
 import type {
@@ -136,7 +143,7 @@ function toWorkoutTemplate(row: typeof workouts.$inferSelect): WorkoutTemplate {
   }
 }
 
-function persistenceValues(draft: WorkoutTemplateDraft) {
+function persistenceValues(draft: WorkoutTemplateDraft): WorkoutTemplatePersistenceValues {
   const intensity = draft.prescriptionDefaults.intensity
   return {
     teamId: CURRENT_TEAM_ID,
@@ -225,13 +232,10 @@ export async function createWorkoutTemplate(
   }
 
   try {
-    const now = new Date().toISOString()
-    db.insert(workouts).values({
+    createWorkoutTemplateRecord({
       id: randomUUID(),
-      ...persistenceValues(draft),
-      createdAt: now,
-      updatedAt: now,
-    }).run()
+      values: persistenceValues(draft),
+    })
   } catch (error) {
     console.error('Error creating workout template:', error)
     return {
@@ -273,10 +277,11 @@ export async function updateWorkoutTemplate(
     const template = await getWorkoutTemplateById(templateId)
     if (!template) return { error: 'Plantilla no encontrada.' }
 
-    db.update(workouts)
-      .set({ ...persistenceValues(draft), updatedAt: new Date().toISOString() })
-      .where(and(eq(workouts.id, templateId), eq(workouts.teamId, CURRENT_TEAM_ID)))
-      .run()
+    updateWorkoutTemplateRecord({
+      id: templateId,
+      teamId: CURRENT_TEAM_ID,
+      values: persistenceValues(draft),
+    })
   } catch (error) {
     console.error('Error updating workout template:', error)
     return {
@@ -297,26 +302,14 @@ export async function duplicateWorkoutTemplate(formData: FormData) {
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   if (!templateId) redirect(templatesPath(locale))
 
-  const source = db.query.workouts.findFirst({
-    where: and(
-      eq(workouts.id, templateId),
-      eq(workouts.teamId, CURRENT_TEAM_ID),
-      eq(workouts.isDeleted, false),
-    ),
-  }).sync()
-  if (!source) redirect(templatesPath(locale))
-
   const duplicateId = randomUUID()
-  const now = new Date().toISOString()
-  db.insert(workouts).values({
-    ...source,
-    id: duplicateId,
-    title: `${locale === 'es' ? 'Copia de' : 'Copy of'} ${source.title}`.slice(0, 120),
-    archivedAt: null,
-    isDeleted: false,
-    createdAt: now,
-    updatedAt: now,
-  }).run()
+  const duplicated = duplicateWorkoutTemplateRecord({
+    sourceId: templateId,
+    duplicateId,
+    teamId: CURRENT_TEAM_ID,
+    titlePrefix: locale === 'es' ? 'Copia de' : 'Copy of',
+  })
+  if (!duplicated) redirect(templatesPath(locale))
 
   revalidatePath(templatesPath(locale))
   redirect(templateEditPath(locale, duplicateId))
@@ -329,26 +322,12 @@ export async function setWorkoutTemplateArchiveStatus(formData: FormData) {
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   if (!templateId) return
 
-  const template = db.query.workouts.findFirst({
-    where: and(
-      eq(workouts.id, templateId),
-      eq(workouts.teamId, CURRENT_TEAM_ID),
-      eq(workouts.isDeleted, false),
-    ),
-  }).sync()
-  if (!template) return
-
-  db.update(workouts)
-    .set({
-      archivedAt: shouldArchive ? new Date().toISOString() : null,
-      updatedAt: new Date().toISOString(),
-    })
-    .where(and(
-      eq(workouts.id, templateId),
-      eq(workouts.teamId, CURRENT_TEAM_ID),
-      eq(workouts.isDeleted, false),
-    ))
-    .run()
+  const changed = setWorkoutTemplateArchiveStatusRecord({
+    id: templateId,
+    teamId: CURRENT_TEAM_ID,
+    archived: shouldArchive,
+  })
+  if (!changed) return
 
   revalidatePath(templatesPath(locale))
   revalidatePath(`${locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`}/new`)
