@@ -276,6 +276,29 @@ export interface SessionGenerationResult {
   warnings: string[]
 }
 
+/** Group-owned part retained when compatible proposals share one event. */
+export interface SharedEventPrescriptionProposal {
+  generationKey: string
+  slotKey: string
+  role: WeeklySessionRole
+  prescription: GeneratedGroupPrescriptionDraft
+  warnings: string[]
+}
+
+/** One shared Session candidate with an independent prescription per group. */
+export interface SharedSessionEventProposal {
+  sharedEventKey: string
+  session: GeneratedSessionEventDraft
+  prescriptions: SharedEventPrescriptionProposal[]
+  warnings: string[]
+}
+
+/** Consolidated non-persisted result for one or more generated groups. */
+export interface SharedSessionGenerationResult {
+  events: SharedSessionEventProposal[]
+  warnings: string[]
+}
+
 /**
  * Ownership state required by later persistence/regeneration tasks.
  *
