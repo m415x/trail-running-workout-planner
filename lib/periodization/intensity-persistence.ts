@@ -4,11 +4,14 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
+import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import { athleteGroups, groupTrainingPlans, macrocycles, mesocycles, microcycles } from '@/db/schema'
 import { assertPersistableIntensityPlanning } from '@/lib/periodization/intensity-persistence-validator'
 import { reconcileMicrocycleIntensityTarget } from '@/lib/periodization/intensity-target-regeneration'
+import { resolveWeeklySessionCount } from '@/lib/session-generation/weekly-generation-rules'
 
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
+import type { WeeklySessionFrequency } from '@/types/training/session-generation.types'
 
 export interface PersistIntensityPlanningParams {
   groupTrainingPlanId: string
@@ -29,11 +32,20 @@ export function persistIntensityPlanning({
     categoryCode: athleteGroups.categoryCode,
     levelCode: athleteGroups.levelCode,
     goalType: loadStrategies.goalType,
-    sessionsPerWeek: loadStrategies.sessionsPerWeek,
+    maximumWeeklyVolumeKm: loadStrategies.maximumWeeklyVolumeKm,
+    frequencyMode: sessionGenerationPreferences.frequencyMode,
+    fixedSessionsPerWeek: sessionGenerationPreferences.fixedSessionsPerWeek,
   })
     .from(groupTrainingPlans)
     .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
     .innerJoin(loadStrategies, eq(loadStrategies.groupTrainingPlanId, groupTrainingPlans.id))
+    .leftJoin(
+      sessionGenerationPreferences,
+      and(
+        eq(sessionGenerationPreferences.groupTrainingPlanId, groupTrainingPlans.id),
+        eq(sessionGenerationPreferences.isDeleted, false),
+      ),
+    )
     .where(and(eq(groupTrainingPlans.id, groupTrainingPlanId), eq(groupTrainingPlans.isDeleted, false)))
     .get()
 
@@ -48,13 +60,23 @@ export function persistIntensityPlanning({
   const ids = targets.map(({ microcycleId }) => microcycleId)
   if (new Set(ids).size !== ids.length) throw new Error('Hay objetivos de intensidad duplicados.')
 
-  const ownedRows = ids.length === 0 ? [] : database.select({ id: microcycles.id })
+  const ownedRows = ids.length === 0 ? [] : database.select({
+    id: microcycles.id,
+    type: microcycles.type,
+    targetVolumeKm: microcycles.targetVolumeKm,
+  })
     .from(microcycles)
     .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
     .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
     .where(and(inArray(microcycles.id, ids), eq(macrocycles.groupTrainingPlanId, groupTrainingPlanId)))
     .all()
   if (ownedRows.length !== ids.length) throw new Error('Uno o más microciclos no pertenecen al plan indicado.')
+
+  const frequency: WeeklySessionFrequency = plan.frequencyMode === 'fixed'
+    && plan.fixedSessionsPerWeek !== null
+    ? { mode: 'fixed', sessionsPerWeek: plan.fixedSessionsPerWeek }
+    : { mode: 'auto' }
+  const ownedById = new Map(ownedRows.map((row) => [row.id, row]))
 
   const existingTargets = ids.length === 0 ? [] : database.select()
     .from(microcycleIntensityTargets)
@@ -81,11 +103,20 @@ export function persistIntensityPlanning({
     }
   })
 
-  assertPersistableIntensityPlanning(
-    strategy,
-    effectiveTargets.map(({ target }) => target),
-    plan.sessionsPerWeek,
-  )
+  for (const { microcycleId, target } of effectiveTargets) {
+    const microcycle = ownedById.get(microcycleId)
+    if (!microcycle) throw new Error('No se pudo resolver el microciclo para validar intensidad.')
+
+    const sessionsPerWeek = resolveWeeklySessionCount({
+      frequency,
+      microcycleType: microcycle.type,
+      targetVolumeKm: microcycle.targetVolumeKm ?? 0,
+      maximumWeeklyVolumeKm: plan.maximumWeeklyVolumeKm,
+      includesRace: microcycle.type === 'race',
+    })
+
+    assertPersistableIntensityPlanning(strategy, [target], sessionsPerWeek)
+  }
 
   const now = new Date().toISOString()
   const existingStrategy = database.select().from(intensityStrategies)
