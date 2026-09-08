@@ -321,3 +321,35 @@ export async function duplicateWorkoutTemplate(formData: FormData) {
   revalidatePath(templatesPath(locale))
   redirect(templateEditPath(locale, duplicateId))
 }
+
+/** Archives or reactivates a team-owned template without deleting its history. */
+export async function setWorkoutTemplateArchiveStatus(formData: FormData) {
+  const templateId = formData.get('templateId')?.toString()
+  const shouldArchive = formData.get('archive')?.toString() === 'true'
+  const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
+  if (!templateId) return
+
+  const template = db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, templateId),
+      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.isDeleted, false),
+    ),
+  }).sync()
+  if (!template) return
+
+  db.update(workouts)
+    .set({
+      archivedAt: shouldArchive ? new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(and(
+      eq(workouts.id, templateId),
+      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.isDeleted, false),
+    ))
+    .run()
+
+  revalidatePath(templatesPath(locale))
+  revalidatePath(`${locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`}/new`)
+}

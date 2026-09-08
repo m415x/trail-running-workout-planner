@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { Copy, FilterX, Pencil, Plus, Search } from 'lucide-react'
+import { Archive, ArchiveRestore, Copy, FilterX, Pencil, Plus, Search } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
-import { duplicateWorkoutTemplate, getWorkoutTemplates } from '@/app/actions/workout-template-actions'
+import { duplicateWorkoutTemplate, getWorkoutTemplates, setWorkoutTemplateArchiveStatus } from '@/app/actions/workout-template-actions'
 import type { WorkoutTemplateArchiveFilter, WorkoutTemplateCategory, WorkoutTemplateSearchCriteria, WorkoutType } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -135,6 +135,15 @@ export default async function WorkoutTemplatesPage({ params, searchParams }: Wor
                   </div>
                   {template.tags.length > 0 && <div className='flex flex-wrap gap-1.5'>{template.tags.map((value) => <Badge key={value} variant='secondary'>{value}</Badge>)}</div>}
                   <div className='flex flex-wrap justify-end gap-2 pt-2'>
+                    <form action={setWorkoutTemplateArchiveStatus}>
+                      <input type='hidden' name='templateId' value={template.id} />
+                      <input type='hidden' name='locale' value={locale} />
+                      <input type='hidden' name='archive' value={template.archivedAt ? 'false' : 'true'} />
+                      <button type='submit' className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                        {template.archivedAt ? <ArchiveRestore /> : <Archive />}
+                        {template.archivedAt ? t('reactivate') : t('archiveAction')}
+                      </button>
+                    </form>
                     <form action={duplicateWorkoutTemplate}>
                       <input type='hidden' name='templateId' value={template.id} />
                       <input type='hidden' name='locale' value={locale} />

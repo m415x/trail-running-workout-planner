@@ -55,6 +55,8 @@
     "new": "Nueva plantilla",
     "edit": "Editar",
     "duplicate": "Duplicar",
+    "archiveAction": "Archivar",
+    "reactivate": "Reactivar",
     "results": "{count, plural, =0 {Sin plantillas} one {# plantilla} other {# plantillas}}",
     "withoutLoadDefaults": "Sin carga predeterminada",
     "filters": {

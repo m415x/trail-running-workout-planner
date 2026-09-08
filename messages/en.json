@@ -55,6 +55,8 @@
     "new": "New template",
     "edit": "Edit",
     "duplicate": "Duplicate",
+    "archiveAction": "Archive",
+    "reactivate": "Reactivate",
     "results": "{count, plural, =0 {No templates} one {# template} other {# templates}}",
     "withoutLoadDefaults": "No default load",
     "filters": {
