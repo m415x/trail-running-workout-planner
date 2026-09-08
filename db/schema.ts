@@ -23,7 +23,10 @@ import type {
   WorkoutTemplateCategory,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
-import type { SessionGenerationOwnership } from '@/types/training/session-generation.types'
+import type {
+  SessionGenerationModificationAction,
+  SessionGenerationOwnership,
+} from '@/types/training/session-generation.types'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -409,6 +412,22 @@ export const groupSessionPrescriptions = sqliteTable(
     uniqueIndex('group_session_prescriptions_generation_key_unique').on(table.generationKey),
   ],
 )
+
+export const sessionGenerationModificationRecords = sqliteTable('session_generation_modification_records', {
+  ...baseColumns,
+  groupTrainingPlanId: text('group_training_plan_id')
+    .notNull()
+    .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+  sessionId: text('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  prescriptionId: text('prescription_id')
+    .references(() => groupSessionPrescriptions.id, { onDelete: 'set null' }),
+  action: text('action').$type<SessionGenerationModificationAction>().notNull(),
+  ownership: text('ownership').$type<SessionGenerationOwnership>().notNull(),
+  generationKey: text('generation_key'),
+  previousValue: text('previous_value'),
+  newValue: text('new_value'),
+  changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+})
 
 /* -------------------------------------------------------------------------- */
 /* 12. WORKOUT LOGS (Registro de ejecución + Estado del día)                  */

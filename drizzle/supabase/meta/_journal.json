@@ -57,6 +57,13 @@
       "when": 1788905310099,
       "tag": "0007_stale_captain_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788906385032,
+      "tag": "0008_large_rage",
+      "breakpoints": true
     }
   ]
 }

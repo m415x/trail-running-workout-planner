@@ -319,6 +319,12 @@ export type SessionGenerationOwnership =
   | 'generated_modified'
   | 'manual'
 
+export type SessionGenerationModificationAction =
+  | 'generated_created'
+  | 'generated_updated'
+  | 'generated_removed'
+  | 'manual_modified'
+
 /** Generation provenance for the shared Session event. */
 export type SessionEventGenerationProvenance =
   | {

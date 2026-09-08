@@ -13,6 +13,7 @@ import {
   mesocycles,
   microcycles,
   sessions,
+  sessionGenerationModificationRecords,
 } from '@/db/schema'
 import { reconcileSessionGeneration } from '@/lib/session-generation/session-regeneration'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
@@ -115,6 +116,9 @@ export async function persistGeneratedSessions(
       for (const operation of reconciliation.events) {
         const values = operation.proposal.session
         const id = operation.existingId ?? randomUUID()
+        const previousEvent = operation.existingId
+          ? persistedEvents.find((event) => event.id === operation.existingId) ?? null
+          : null
         eventIdByKey.set(operation.proposal.sharedEventKey, id)
         if (operation.action === 'create') {
           tx.insert(sessions).values({
@@ -131,6 +135,18 @@ export async function persistGeneratedSessions(
             type: values.type, locationKey: values.locationKey, trackPath: values.trackPath,
             structure: values.structure, notes: values.notes, isDeleted: false, updatedAt: now,
           }).where(eq(sessions.id, id)).run()
+        }
+        const previousAuditValue = previousEvent ? sessionAuditValue(previousEvent) : null
+        const nextAuditValue = sessionAuditValue(values)
+        if (operation.action === 'create' || !sameAuditValue(previousAuditValue, nextAuditValue)) {
+          tx.insert(sessionGenerationModificationRecords).values({
+            id: randomUUID(), groupTrainingPlanId: planId, sessionId: id,
+            action: operation.action === 'create' ? 'generated_created' : 'generated_updated',
+            ownership: 'generated', generationKey: operation.proposal.sharedEventKey,
+            previousValue: previousAuditValue ? serializeAuditValue(previousAuditValue) : null,
+            newValue: serializeAuditValue(nextAuditValue), changedByUserId: null,
+            createdAt: now, updatedAt: now,
+          }).run()
         }
       }
 
@@ -155,22 +171,48 @@ export async function persistGeneratedSessions(
               eq(groupSessionPrescriptions.groupId, values.groupId),
             )).get()
           if (!sameGroupPrescription) {
+            const prescriptionId = randomUUID()
             tx.insert(groupSessionPrescriptions).values({
-              id: randomUUID(), ...record, createdAt: now,
+              id: prescriptionId, ...record, createdAt: now,
             }).run()
+            insertPrescriptionAudit(tx, {
+              id: prescriptionId, planId, sessionId, generationKey: operation.proposal.generationKey,
+              action: 'generated_created', previousValue: null, newValue: values, now,
+            })
           } else if (sameGroupPrescription.generationOwnership === 'generated') {
             tx.update(groupSessionPrescriptions).set(record)
               .where(eq(groupSessionPrescriptions.id, sameGroupPrescription.id)).run()
+            insertPrescriptionAudit(tx, {
+              id: sameGroupPrescription.id, planId, sessionId,
+              generationKey: operation.proposal.generationKey, action: 'generated_updated',
+              previousValue: sameGroupPrescription, newValue: values, now,
+            })
           }
         } else {
+          const previousPrescription = persistedPrescriptions.find(
+            (item) => item.id === operation.existingId,
+          )
           tx.update(groupSessionPrescriptions).set(record)
             .where(eq(groupSessionPrescriptions.id, operation.existingId!)).run()
+          insertPrescriptionAudit(tx, {
+            id: operation.existingId!, planId, sessionId,
+            generationKey: operation.proposal.generationKey, action: 'generated_updated',
+            previousValue: previousPrescription ?? null, newValue: values, now,
+          })
         }
       }
 
       if (reconciliation.obsoletePrescriptionIds.length > 0) {
         tx.update(groupSessionPrescriptions).set({ isDeleted: true, updatedAt: now })
           .where(inArray(groupSessionPrescriptions.id, reconciliation.obsoletePrescriptionIds)).run()
+        for (const id of reconciliation.obsoletePrescriptionIds) {
+          const previous = persistedPrescriptions.find((item) => item.id === id)
+          if (previous) insertPrescriptionAudit(tx, {
+            id, planId, sessionId: previous.sessionId,
+            generationKey: previous.generationKey ?? '', action: 'generated_removed',
+            previousValue: previous, newValue: null, now,
+          })
+        }
       }
       for (const eventId of reconciliation.obsoleteEventIds) {
         const active = tx.select({ id: groupSessionPrescriptions.id })
@@ -179,8 +221,18 @@ export async function persistGeneratedSessions(
             eq(groupSessionPrescriptions.sessionId, eventId),
             eq(groupSessionPrescriptions.isDeleted, false),
           )).get()
-        if (!active) tx.update(sessions).set({ isDeleted: true, updatedAt: now })
-          .where(eq(sessions.id, eventId)).run()
+        if (!active) {
+          tx.update(sessions).set({ isDeleted: true, updatedAt: now })
+            .where(eq(sessions.id, eventId)).run()
+          const previous = persistedEvents.find((event) => event.id === eventId)
+          tx.insert(sessionGenerationModificationRecords).values({
+            id: randomUUID(), groupTrainingPlanId: planId, sessionId: eventId,
+            action: 'generated_removed', ownership: 'generated',
+            generationKey: previous?.sharedEventKey ?? null,
+            previousValue: previous ? serializeAuditValue(previous) : null,
+            newValue: null, changedByUserId: null, createdAt: now, updatedAt: now,
+          }).run()
+        }
       }
     })
 
@@ -198,6 +250,77 @@ export async function persistGeneratedSessions(
   } catch (error) {
     console.error('Error persisting generated sessions:', error)
     return { error: error instanceof Error ? error.message : 'No se pudo guardar la propuesta.' }
+  }
+}
+
+function serializeAuditValue(value: unknown): string {
+  return JSON.stringify(value)
+}
+
+function sameAuditValue(previousValue: unknown, newValue: unknown): boolean {
+  return serializeAuditValue(previousValue) === serializeAuditValue(newValue)
+}
+
+function sessionAuditValue(value: {
+  workoutId?: string | null
+  sourceTemplateId?: string | null
+  date: string
+  title: string
+  type: string
+  locationKey: string | null
+  trackPath: string | null
+  structure: unknown
+  notes: string | null
+}) {
+  return {
+    sourceTemplateId: value.sourceTemplateId ?? value.workoutId ?? null,
+    date: value.date, title: value.title, type: value.type,
+    locationKey: value.locationKey, trackPath: value.trackPath,
+    structure: value.structure, notes: value.notes,
+  }
+}
+
+function insertPrescriptionAudit(
+  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  values: {
+    id: string
+    planId: string
+    sessionId: string
+    generationKey: string
+    action: 'generated_created' | 'generated_updated' | 'generated_removed'
+    previousValue: unknown
+    newValue: unknown
+    now: string
+  },
+) {
+  const previousValue = values.previousValue === null
+    ? null
+    : prescriptionAuditValue(values.previousValue)
+  const newValue = values.newValue === null ? null : prescriptionAuditValue(values.newValue)
+  if (values.action === 'generated_updated' && sameAuditValue(previousValue, newValue)) return
+
+  tx.insert(sessionGenerationModificationRecords).values({
+    id: randomUUID(), groupTrainingPlanId: values.planId, sessionId: values.sessionId,
+    prescriptionId: values.id, action: values.action, ownership: 'generated',
+    generationKey: values.generationKey || null,
+    previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
+    newValue: newValue === null ? null : serializeAuditValue(newValue),
+    changedByUserId: null, createdAt: values.now, updatedAt: values.now,
+  }).run()
+}
+
+function prescriptionAuditValue(value: unknown) {
+  const record = value as Record<string, unknown>
+  return {
+    groupId: record.groupId,
+    microcycleId: record.microcycleId,
+    distanceKm: record.distanceKm,
+    durationMin: record.durationMin,
+    elevationGain: record.elevationGain,
+    intensityMethod: record.intensityMethod,
+    zone: record.zone,
+    pamPercentage: record.pamPercentage,
+    notes: record.notes,
   }
 }
 
