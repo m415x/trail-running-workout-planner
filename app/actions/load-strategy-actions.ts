@@ -40,7 +40,6 @@ const goalTypes = ['race', 'performance', 'base', 'maintenance', 'custom'] as co
 const loadStrategyValuesSchema = z.object({
   initialWeeklyVolumeKm: z.number(),
   maximumWeeklyVolumeKm: z.number(),
-  sessionsPerWeek: z.number(),
   maximumWeeklyIncreasePercentage: z.number(),
   deloadPercentage: z.number(),
   initialWeeklyElevationGain: z.number().nullable(),
@@ -195,7 +194,6 @@ export async function createGroupPlanWithLoadStrategy(
         goalType: data.goalType,
         initialWeeklyVolumeKm: data.values.initialWeeklyVolumeKm,
         maximumWeeklyVolumeKm: data.values.maximumWeeklyVolumeKm,
-        sessionsPerWeek: data.values.sessionsPerWeek,
         maximumWeeklyIncreasePercentage: data.values.maximumWeeklyIncreasePercentage,
         deloadPercentage: data.values.deloadPercentage,
         initialWeeklyElevationGain: data.values.initialWeeklyElevationGain,
