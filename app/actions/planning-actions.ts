@@ -289,7 +289,6 @@ export async function saveLoadProgression(
       values: {
         initialWeeklyVolumeKm: plan.loadStrategy.initialWeeklyVolumeKm,
         maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
-        sessionsPerWeek: plan.loadStrategy.sessionsPerWeek,
         maximumWeeklyIncreasePercentage: plan.loadStrategy.maximumWeeklyIncreasePercentage,
         deloadPercentage: plan.loadStrategy.deloadPercentage,
         initialWeeklyElevationGain: plan.loadStrategy.initialWeeklyElevationGain,
