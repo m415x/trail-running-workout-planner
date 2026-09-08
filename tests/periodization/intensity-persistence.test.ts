@@ -9,6 +9,8 @@ import * as intensitySchema from '@/db/intensity-strategy-schema'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import * as loadSchema from '@/db/load-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
+import * as sessionGenerationSchema from '@/db/session-generation-preferences-schema'
+import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import * as coreSchema from '@/db/schema'
 import { athleteGroups, groupTrainingPlans, macrocycles, mesocycles, microcycles, teams } from '@/db/schema'
 import { persistIntensityPlanning } from '@/lib/periodization/intensity-persistence'
@@ -110,6 +112,7 @@ function createTestDatabase() {
     CREATE TABLE athlete_groups (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, category_code TEXT NOT NULL, level_code TEXT NOT NULL, description TEXT, is_active INTEGER DEFAULT 1, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE group_training_plans (id TEXT PRIMARY KEY, group_id TEXT NOT NULL, title TEXT NOT NULL, status TEXT DEFAULT 'draft', notes TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE load_strategies (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL UNIQUE, goal_type TEXT NOT NULL, initial_weekly_volume_km REAL NOT NULL, maximum_weekly_volume_km REAL NOT NULL, maximum_weekly_increase_percentage REAL NOT NULL, deload_percentage REAL NOT NULL, initial_weekly_elevation_gain INTEGER, maximum_weekly_elevation_gain INTEGER, field_sources TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
+    CREATE TABLE session_generation_preferences (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL UNIQUE, frequency_mode TEXT NOT NULL, fixed_sessions_per_week INTEGER, weekly_pattern TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE macrocycles (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL, title TEXT NOT NULL, start_date TEXT NOT NULL, end_date TEXT NOT NULL, tapering_weeks_count INTEGER, target_race_name TEXT, target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE mesocycles (id TEXT PRIMARY KEY, macrocycle_id TEXT NOT NULL, title TEXT NOT NULL, number INTEGER NOT NULL, period TEXT NOT NULL, objective TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE microcycles (id TEXT PRIMARY KEY, mesocycle_id TEXT NOT NULL, week_number INTEGER NOT NULL, type TEXT NOT NULL, start_date TEXT NOT NULL, end_date TEXT NOT NULL, target_volume_km REAL, target_volume_source TEXT DEFAULT 'generated', target_elevation_gain INTEGER, target_elevation_source TEXT DEFAULT 'generated', target_duration_min INTEGER, notes TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
@@ -120,7 +123,12 @@ function createTestDatabase() {
   return {
     sqlite: sqliteDatabase,
     database: drizzle(sqliteDatabase, {
-      schema: { ...coreSchema, ...loadSchema, ...intensitySchema },
+      schema: {
+        ...coreSchema,
+        ...loadSchema,
+        ...intensitySchema,
+        ...sessionGenerationSchema,
+      },
     }),
   }
 }
@@ -145,6 +153,18 @@ function seedPlan(testDatabase: TestDatabase) {
       maximumWeeklyElevationGain: 'suggested',
     },
   }).run()
+  testDatabase.insert(sessionGenerationPreferences).values({
+    id: 'generation-1',
+    groupTrainingPlanId: 'plan-1',
+    frequencyMode: 'fixed',
+    fixedSessionsPerWeek: 4,
+    weeklyPattern: [
+      { weekday: 'monday', role: 'base' },
+      { weekday: 'tuesday', role: 'mountain' },
+      { weekday: 'thursday', role: 'quality' },
+      { weekday: 'saturday', role: 'long' },
+    ],
+  }).run()
   testDatabase.insert(macrocycles).values({
     id: 'macro-1', groupTrainingPlanId: 'plan-1', title: 'Macro',
     startDate: '2026-01-05', endDate: '2026-01-11',
@@ -155,6 +175,6 @@ function seedPlan(testDatabase: TestDatabase) {
   }).run()
   testDatabase.insert(microcycles).values({
     id: 'micro-1', mesocycleId: 'meso-1', weekNumber: 1, type: 'development',
-    startDate: '2026-01-05', endDate: '2026-01-11',
+    startDate: '2026-01-05', endDate: '2026-01-11', targetVolumeKm: 20,
   }).run()
 }
