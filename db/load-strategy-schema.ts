@@ -20,7 +20,6 @@ export const loadStrategies = sqliteTable(
 
     initialWeeklyVolumeKm: real('initial_weekly_volume_km').notNull(),
     maximumWeeklyVolumeKm: real('maximum_weekly_volume_km').notNull(),
-    sessionsPerWeek: integer('sessions_per_week').notNull(),
     maximumWeeklyIncreasePercentage: real('maximum_weekly_increase_percentage').notNull(),
     deloadPercentage: real('deload_percentage').notNull(),
     initialWeeklyElevationGain: integer('initial_weekly_elevation_gain'),

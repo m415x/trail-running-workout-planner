@@ -18,7 +18,6 @@ export interface LoadStrategyValidationResult {
   warnings: LoadStrategyValidationIssue[]
 }
 
-const MAX_SESSIONS_PER_WEEK = 7
 const MAX_WEEKLY_INCREASE_PERCENTAGE = 20
 const RECOMMENDED_WEEKLY_INCREASE_PERCENTAGE = 10
 
@@ -88,22 +87,6 @@ export function validateLoadStrategy(strategy: LoadStrategyDraft): LoadStrategyV
       'warning',
       'maximum-volume-outside-group-range',
       `El volumen máximo está fuera del rango de referencia de ${groupRange.min}-${groupRange.max} km/semana para el grupo ${context.athleteGroup}.`,
-    ))
-  }
-
-  if (!isFiniteNumber(values.sessionsPerWeek) || !Number.isInteger(values.sessionsPerWeek)) {
-    issues.push(issue(
-      'sessionsPerWeek',
-      'error',
-      'sessions-integer',
-      'La cantidad de sesiones por semana debe ser un número entero.',
-    ))
-  } else if (values.sessionsPerWeek < 1 || values.sessionsPerWeek > MAX_SESSIONS_PER_WEEK) {
-    issues.push(issue(
-      'sessionsPerWeek',
-      'error',
-      'sessions-range',
-      `La cantidad de sesiones por semana debe estar entre 1 y ${MAX_SESSIONS_PER_WEEK}.`,
     ))
   }
 

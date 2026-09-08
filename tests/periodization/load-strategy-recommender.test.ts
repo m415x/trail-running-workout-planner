@@ -16,7 +16,6 @@ describe('recomendaciones de estrategia de carga', () => {
     assert.deepEqual(strategy.values, {
       initialWeeklyVolumeKm: 36,
       maximumWeeklyVolumeKm: 42,
-      sessionsPerWeek: 4,
       maximumWeeklyIncreasePercentage: 10,
       deloadPercentage: 25,
       initialWeeklyElevationGain: 720,
@@ -50,7 +49,6 @@ describe('recomendaciones de estrategia de carga', () => {
         const { values } = suggestLoadStrategy(group, goalType)
 
         assert.ok(values.initialWeeklyVolumeKm <= values.maximumWeeklyVolumeKm)
-        assert.ok(values.sessionsPerWeek >= 3 && values.sessionsPerWeek <= 6)
         assert.ok(values.maximumWeeklyIncreasePercentage > 0)
         assert.ok(values.deloadPercentage >= 15 && values.deloadPercentage <= 25)
         assert.ok((values.initialWeeklyElevationGain ?? 0) >= 0)

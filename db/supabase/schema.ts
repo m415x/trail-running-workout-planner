@@ -27,6 +27,10 @@ import type {
   WorkoutTemplateCategory,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
+import type {
+  SessionGenerationModificationAction,
+  SessionGenerationOwnership,
+} from '@/types/training/session-generation.types'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -422,7 +426,14 @@ export const sessions = pgTable('sessions', {
   structure: jsonb('structure').$type<SessionStructure>(),
 
   notes: text('notes'),
-})
+  generationOwnership: text('generation_ownership')
+    .$type<SessionGenerationOwnership>()
+    .notNull()
+    .default('manual'),
+  sharedEventKey: text('shared_event_key'),
+}, (table) => [
+  uniqueIndex('sessions_shared_event_key_unique').on(table.sharedEventKey),
+])
 
 /* -------------------------------------------------------------------------- */
 /* 11. GROUP SESSION PRESCRIPTIONS (Indicaciones para sesiones grupales)      */
@@ -453,11 +464,33 @@ export const groupSessionPrescriptions = pgTable(
     pamPercentage: doublePrecision('pam_percentage'),
 
     notes: text('notes'),
+    generationOwnership: text('generation_ownership')
+      .$type<SessionGenerationOwnership>()
+      .notNull()
+      .default('manual'),
+    generationKey: text('generation_key'),
   },
   (table) => [
     uniqueIndex('group_session_prescriptions_session_group_unique').on(table.sessionId, table.groupId),
+    uniqueIndex('group_session_prescriptions_generation_key_unique').on(table.generationKey),
   ],
 )
+
+export const sessionGenerationModificationRecords = pgTable('session_generation_modification_records', {
+  ...baseColumns,
+  groupTrainingPlanId: text('group_training_plan_id')
+    .notNull()
+    .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+  sessionId: text('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  prescriptionId: text('prescription_id')
+    .references(() => groupSessionPrescriptions.id, { onDelete: 'set null' }),
+  action: text('action').$type<SessionGenerationModificationAction>().notNull(),
+  ownership: text('ownership').$type<SessionGenerationOwnership>().notNull(),
+  generationKey: text('generation_key'),
+  previousValue: text('previous_value'),
+  newValue: text('new_value'),
+  changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+})
 
 /* -------------------------------------------------------------------------- */
 /* 12. WORKOUT LOGS (Registro de ejecución + Estado del día)                  */

@@ -29,7 +29,6 @@ describe('modificaciones manuales de estrategia de carga', () => {
     assert.equal(sources.initialWeeklyVolumeKm, 'manual')
     assert.equal(sources.deloadPercentage, 'manual')
     assert.equal(sources.maximumWeeklyVolumeKm, 'suggested')
-    assert.equal(sources.sessionsPerWeek, 'suggested')
     assert.equal(sources.maximumWeeklyIncreasePercentage, 'suggested')
     assert.equal(sources.initialWeeklyElevationGain, 'suggested')
     assert.equal(sources.maximumWeeklyElevationGain, 'suggested')

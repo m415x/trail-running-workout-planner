@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, isNull, or } from 'drizzle-orm'
+import { and, eq, inArray, isNull, or } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -18,6 +18,7 @@ import {
   mesocycles,
   microcycles,
   sessions,
+  sessionGenerationModificationRecords,
   trainingLocations,
   workouts,
 } from '@/db/schema'
@@ -280,12 +281,51 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       ? { preliminaryExercises: data.preliminaryExercises, warmup: data.warmup, mainBlock: data.mainBlock, cooldown: data.cooldown }
       : null
     const now = new Date().toISOString()
+    const existingPrescriptions = db.select().from(groupSessionPrescriptions)
+      .where(eq(groupSessionPrescriptions.sessionId, sessionId)).all()
+    const prescriptionOwnership = new Map(existingPrescriptions.map((prescription) => [
+      prescription.groupId,
+      prescription.generationOwnership === 'generated'
+        ? 'generated_modified' as const
+        : prescription.generationOwnership,
+    ]))
+    const selectedMicrocycleIds = [...new Set(prescriptions.data.map(({ microcycleId }) => microcycleId))]
+    const auditPlans = selectedMicrocycleIds.length === 0 ? [] : db.select({
+      microcycleId: microcycles.id,
+      planId: groupTrainingPlans.id,
+    }).from(microcycles)
+      .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+      .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+      .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+      .where(inArray(microcycles.id, selectedMicrocycleIds)).all()
+    const planIdByMicrocycle = new Map(auditPlans.map(({ microcycleId, planId }) => [microcycleId, planId]))
 
     db.transaction((tx) => {
       tx.update(sessions).set({
         workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
-        locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes, updatedAt: now,
+        locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
+        generationOwnership: existingSession.generationOwnership === 'generated'
+          ? 'generated_modified'
+          : existingSession.generationOwnership,
+        updatedAt: now,
       }).where(eq(sessions.id, sessionId)).run()
+
+      for (const planId of new Set(auditPlans.map(({ planId }) => planId))) {
+        tx.insert(sessionGenerationModificationRecords).values({
+          id: randomUUID(), groupTrainingPlanId: planId, sessionId,
+          action: 'manual_modified',
+          ownership: existingSession.generationOwnership === 'generated'
+            ? 'generated_modified'
+            : existingSession.generationOwnership,
+          generationKey: existingSession.sharedEventKey,
+          previousValue: JSON.stringify(existingSession),
+          newValue: JSON.stringify({
+            workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
+            locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
+          }),
+          changedByUserId: null, createdAt: now, updatedAt: now,
+        }).run()
+      }
 
       tx.update(groupSessionPrescriptions)
         .set({ isDeleted: true, updatedAt: now })
@@ -293,12 +333,34 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         .run()
 
       for (const prescription of prescriptions.data) {
+        const previousPrescription = existingPrescriptions.find(
+          (existing) => existing.groupId === prescription.groupId,
+        )
         tx.insert(groupSessionPrescriptions).values({
-          id: randomUUID(), sessionId, ...prescription, createdAt: now, updatedAt: now,
+          id: randomUUID(), sessionId, ...prescription,
+          generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+          createdAt: now, updatedAt: now,
         }).onConflictDoUpdate({
           target: [groupSessionPrescriptions.sessionId, groupSessionPrescriptions.groupId],
-          set: { ...prescription, isDeleted: false, updatedAt: now },
+          set: {
+            ...prescription,
+            generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+            isDeleted: false,
+            updatedAt: now,
+          },
         }).run()
+        const planId = planIdByMicrocycle.get(prescription.microcycleId)
+        if (planId && previousPrescription) {
+          tx.insert(sessionGenerationModificationRecords).values({
+            id: randomUUID(), groupTrainingPlanId: planId, sessionId,
+            prescriptionId: previousPrescription.id, action: 'manual_modified',
+            ownership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+            generationKey: previousPrescription.generationKey,
+            previousValue: JSON.stringify(previousPrescription),
+            newValue: JSON.stringify(prescription), changedByUserId: null,
+            createdAt: now, updatedAt: now,
+          }).run()
+        }
       }
     })
   } catch (error) {

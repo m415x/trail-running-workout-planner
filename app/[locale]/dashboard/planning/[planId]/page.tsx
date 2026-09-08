@@ -3,11 +3,18 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
+import { getSessionGenerationPreferencesForPlan } from '@/app/actions/session-generation-preferences-actions'
+import { getWorkoutTemplates } from '@/app/actions/workout-template-actions'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
 import { MicrocycleElevationForm } from '@/features/planning/components/MicrocycleElevationForm'
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
 import { MicrocycleTypeForm } from '@/features/planning/components/MicrocycleTypeForm'
 import { MicrocycleVolumeForm } from '@/features/planning/components/MicrocycleVolumeForm'
+import { SessionGenerationPreferencesForm } from '@/features/planning/components/SessionGenerationPreferencesForm'
+import {
+  SessionGenerationPreview,
+  type SessionGenerationPreviewWeek,
+} from '@/features/planning/components/SessionGenerationPreview'
 import {
   IntensityDistribution,
   type IntensityDistributionPoint,
@@ -21,7 +28,10 @@ import {
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
 import { determineMicrocycleLoadFocus } from '@/lib/periodization/microcycle-load-focus'
+import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
+import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
+import type { SessionGenerationResult } from '@/types/training/session-generation.types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -43,6 +53,10 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     notFound()
   }
 
+  const [generationPreferences, templateCatalogue] = await Promise.all([
+    getSessionGenerationPreferencesForPlan(planId),
+    getWorkoutTemplates({ archive: 'active' }),
+  ])
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
@@ -55,7 +69,6 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         values: {
           initialWeeklyVolumeKm: plan.loadStrategy.initialWeeklyVolumeKm,
           maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
-          sessionsPerWeek: plan.loadStrategy.sessionsPerWeek,
           maximumWeeklyIncreasePercentage: plan.loadStrategy.maximumWeeklyIncreasePercentage,
           deloadPercentage: plan.loadStrategy.deloadPercentage,
           initialWeeklyElevationGain: plan.loadStrategy.initialWeeklyElevationGain,
@@ -165,6 +178,103 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         : []
     })
     .sort((first, second) => first.weekNumber - second.weekNumber)
+  const canGenerateSessions = Boolean(
+    plan.loadStrategy && plan.intensityStrategy && generationPreferences,
+  )
+  const generationResults: SessionGenerationResult[] = []
+  const sessionPreviewWarnings: string[] = []
+
+  if (plan.loadStrategy && plan.intensityStrategy && generationPreferences) {
+    for (const macrocycle of plan.macrocycles) {
+      for (const mesocycle of macrocycle.mesocycles) {
+        for (const microcycle of mesocycle.microcycles) {
+          const intensityTarget = intensityTargetsByMicrocycle.get(microcycle.id)
+          if (microcycle.targetVolumeKm === null || !intensityTarget) {
+            sessionPreviewWarnings.push(
+              `Semana ${microcycle.weekNumber}: falta un objetivo de volumen o intensidad.`,
+            )
+            continue
+          }
+
+          try {
+            generationResults.push(generateWeeklySessionProposals({
+              context: {
+                teamId: plan.group.teamId,
+                groupTrainingPlanId: plan.id,
+                groupId: plan.groupId,
+                microcycleId: microcycle.id,
+                period: mesocycle.period,
+                microcycleType: microcycle.type,
+                startDate: microcycle.startDate,
+                endDate: microcycle.endDate,
+                load: {
+                  targetVolumeKm: microcycle.targetVolumeKm,
+                  targetElevationGain: microcycle.targetElevationGain,
+                  targetDurationMin: microcycle.targetDurationMin,
+                  maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
+                },
+              intensity: {
+                  defaultMethod: plan.intensityStrategy.defaultMethod,
+                  emphasis: intensityTarget.emphasis,
+                  intenseSessionsTarget: intensityTarget.intenseSessionsTarget,
+                  predominantZone: intensityTarget.predominantZone,
+                  pamPercentageTarget: intensityTarget.pamPercentageTarget,
+                minimumRecoveryDaysBetweenIntenseSessions:
+                  intensityTarget.minimumRecoveryDaysBetweenIntenseSessions,
+              },
+              competition: microcycle.type === 'race'
+                && macrocycle.targetRaceName
+                && macrocycle.targetRaceDistanceKm
+                ? {
+                    name: macrocycle.targetRaceName,
+                    date: macrocycle.endDate,
+                    distanceKm: macrocycle.targetRaceDistanceKm,
+                    elevationGain: macrocycle.targetRaceElevationGain,
+                  }
+                : null,
+              frequency: generationPreferences.frequency,
+                pattern: generationPreferences.pattern,
+              },
+              templates: templateCatalogue.templates,
+            }))
+          } catch (error) {
+            sessionPreviewWarnings.push(
+              `Semana ${microcycle.weekNumber}: ${error instanceof Error ? error.message : 'no se pudo generar la propuesta'}.`,
+            )
+          }
+        }
+      }
+    }
+  }
+
+  const sharedPreview = groupSharedSessionEvents(generationResults)
+  const sessionPreviewWeeks: SessionGenerationPreviewWeek[] = plan.macrocycles
+    .flatMap((macrocycle) => macrocycle.mesocycles)
+    .flatMap((mesocycle) => mesocycle.microcycles)
+    .map((microcycle) => {
+      const events = sharedPreview.events.filter((event) => (
+        event.prescriptions.some(({ prescription }) => (
+          prescription.microcycleId === microcycle.id
+        ))
+      ))
+      const warnings = uniqueStrings([
+        ...events.flatMap((event) => event.warnings),
+        ...sessionPreviewWarnings.filter((warning) => (
+          warning.startsWith(`Semana ${microcycle.weekNumber}:`)
+        )),
+      ])
+
+      return {
+        microcycleId: microcycle.id,
+        weekNumber: microcycle.weekNumber,
+        type: microcycle.type,
+        startDate: microcycle.startDate,
+        endDate: microcycle.endDate,
+        events,
+        warnings,
+      }
+    })
+    .sort((first, second) => first.weekNumber - second.weekNumber)
 
   return (
     <div className='space-y-6'>
@@ -226,6 +336,27 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           strategySources={plan.intensityStrategy.fieldSources}
         />
       )}
+
+      {generationPreferences && (
+        <SessionGenerationPreferencesForm
+          planId={plan.id}
+          locale={locale}
+          frequency={generationPreferences.frequency}
+          pattern={generationPreferences.pattern}
+        />
+      )}
+
+      <SessionGenerationPreview
+        weeks={sessionPreviewWeeks}
+        warnings={uniqueStrings([
+          ...sessionPreviewWarnings,
+          ...sharedPreview.warnings,
+        ])}
+        isAvailable={canGenerateSessions}
+        planId={plan.id}
+        locale={locale}
+        proposal={sharedPreview}
+      />
 
       {plan.macrocycles.map((macrocycle) => (
         <div key={macrocycle.id} className='space-y-4'>
@@ -327,4 +458,8 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       ))}
     </div>
   )
+}
+
+function uniqueStrings(values: string[]) {
+  return [...new Set(values)]
 }

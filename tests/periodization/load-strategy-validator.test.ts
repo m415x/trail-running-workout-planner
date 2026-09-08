@@ -85,17 +85,6 @@ describe('validación de estrategia de carga', () => {
     assert.ok(result.warnings.some((currentIssue) => currentIssue.code === 'weekly-increase-above-reference'))
   })
 
-  it('rechaza sesiones no enteras o fuera del rango semanal', () => {
-    const decimalStrategy = strategyForS2()
-    decimalStrategy.values.sessionsPerWeek = 4.5
-
-    const excessiveStrategy = strategyForS2()
-    excessiveStrategy.values.sessionsPerWeek = 8
-
-    assert.equal(validateLoadStrategy(decimalStrategy).isValid, false)
-    assert.equal(validateLoadStrategy(excessiveStrategy).isValid, false)
-  })
-
   it('rechaza porcentajes de descarga fuera de rango', () => {
     const strategy = strategyForS2()
     strategy.values.deloadPercentage = 100

@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { intensityStrategies } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
+import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import {
   athleteGroups,
   groupTrainingPlans,
@@ -24,6 +25,8 @@ import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommend
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
 import { resolveTargetRace } from '@/lib/periodization/target-race'
+import { defaultWeeklyGenerationPreferences } from '@/lib/session-generation/generation-preferences'
+import { serializeSessionGenerationPreferences } from '@/lib/session-generation/generation-preferences-persistence'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
@@ -37,7 +40,6 @@ const goalTypes = ['race', 'performance', 'base', 'maintenance', 'custom'] as co
 const loadStrategyValuesSchema = z.object({
   initialWeeklyVolumeKm: z.number(),
   maximumWeeklyVolumeKm: z.number(),
-  sessionsPerWeek: z.number(),
   maximumWeeklyIncreasePercentage: z.number(),
   deloadPercentage: z.number(),
   initialWeeklyElevationGain: z.number().nullable(),
@@ -137,6 +139,9 @@ export async function createGroupPlanWithLoadStrategy(
 
     const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
     const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, data.goalType)
+    const generationPreferences = serializeSessionGenerationPreferences(
+      defaultWeeklyGenerationPreferences(),
+    )
     let targetRace
 
     try {
@@ -189,7 +194,6 @@ export async function createGroupPlanWithLoadStrategy(
         goalType: data.goalType,
         initialWeeklyVolumeKm: data.values.initialWeeklyVolumeKm,
         maximumWeeklyVolumeKm: data.values.maximumWeeklyVolumeKm,
-        sessionsPerWeek: data.values.sessionsPerWeek,
         maximumWeeklyIncreasePercentage: data.values.maximumWeeklyIncreasePercentage,
         deloadPercentage: data.values.deloadPercentage,
         initialWeeklyElevationGain: data.values.initialWeeklyElevationGain,
@@ -209,6 +213,16 @@ export async function createGroupPlanWithLoadStrategy(
         minimumRecoveryDaysBetweenIntenseSessions:
           suggestedIntensityStrategy.values.minimumRecoveryDaysBetweenIntenseSessions,
         fieldSources: suggestedIntensityStrategy.fieldSources,
+        createdAt: now,
+        updatedAt: now,
+      }).run()
+
+      tx.insert(sessionGenerationPreferences).values({
+        id: randomUUID(),
+        groupTrainingPlanId: planId,
+        frequencyMode: generationPreferences.frequencyMode,
+        fixedSessionsPerWeek: generationPreferences.fixedSessionsPerWeek,
+        weeklyPattern: generationPreferences.weeklyPattern,
         createdAt: now,
         updatedAt: now,
       }).run()

@@ -54,18 +54,10 @@ const GOAL_LOAD_PROFILES: Record<TrainingGoalType, GoalLoadProfile> = {
 const SUGGESTED_FIELD_SOURCES: LoadStrategyFieldSources = {
   initialWeeklyVolumeKm: 'suggested',
   maximumWeeklyVolumeKm: 'suggested',
-  sessionsPerWeek: 'suggested',
   maximumWeeklyIncreasePercentage: 'suggested',
   deloadPercentage: 'suggested',
   initialWeeklyElevationGain: 'suggested',
   maximumWeeklyElevationGain: 'suggested',
-}
-
-function getSessionsPerWeek(maximumWeeklyVolumeKm: number) {
-  if (maximumWeeklyVolumeKm >= 85) return 6
-  if (maximumWeeklyVolumeKm >= 60) return 5
-  if (maximumWeeklyVolumeKm >= 40) return 4
-  return 3
 }
 
 export function suggestLoadStrategy(
@@ -91,7 +83,6 @@ export function suggestLoadStrategy(
     values: {
       initialWeeklyVolumeKm,
       maximumWeeklyVolumeKm,
-      sessionsPerWeek: getSessionsPerWeek(maximumWeeklyVolumeKm),
       maximumWeeklyIncreasePercentage: goalProfile.maximumWeeklyIncreasePercentage,
       deloadPercentage: goalProfile.deloadPercentage,
       initialWeeklyElevationGain: Math.round(initialWeeklyVolumeKm * elevationMetersPerKm),
