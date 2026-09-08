@@ -59,6 +59,7 @@
     "reactivate": "Reactivar",
     "results": "{count, plural, =0 {Sin plantillas} one {# plantilla} other {# plantillas}}",
     "withoutLoadDefaults": "Sin carga predeterminada",
+    "applicationHelp": "La carga de la plantilla es un valor base: se copia inicialmente a cada grupo y después podés ajustarla de forma independiente.",
     "filters": {
       "search": "Buscar",
       "searchPlaceholder": "Título, estructura o etiqueta…",

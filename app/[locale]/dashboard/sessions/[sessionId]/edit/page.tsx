@@ -16,6 +16,10 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
 
   if (!session) notFound()
 
+  const workoutOptions = session.workout && !options.workouts.some((workout) => workout.id === session.workoutId)
+    ? [...options.workouts, session.workout].sort((left, right) => left.title.localeCompare(right.title, 'es'))
+    : options.workouts
+
   const sessionPath = locale === 'es'
     ? `/dashboard/sessions/${session.id}`
     : `/${locale}/dashboard/sessions/${session.id}`
@@ -32,7 +36,7 @@ export default async function EditSessionPage({ params }: EditSessionPageProps) 
         </div>
       </div>
 
-      <SessionForm locale={locale} {...options} session={session} />
+      <SessionForm locale={locale} {...options} workouts={workoutOptions} session={session} />
     </div>
   )
 }

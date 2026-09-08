@@ -217,11 +217,12 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         where: and(
           eq(workouts.id, data.workoutId),
           eq(workouts.teamId, CURRENT_TEAM_ID),
-          isNull(workouts.archivedAt),
           eq(workouts.isDeleted, false),
         ),
       }).sync()
-      if (!workout) return { error: 'La plantilla de entrenamiento seleccionada no existe' }
+      if (!workout || (workout.archivedAt && existingSession.workoutId !== workout.id)) {
+        return { error: 'La plantilla de entrenamiento seleccionada no existe o está archivada' }
+      }
     }
     if (data.locationKey) {
       const location = db.query.trainingLocations.findFirst({ where: eq(trainingLocations.key, data.locationKey) }).sync()

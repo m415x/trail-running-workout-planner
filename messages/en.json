@@ -59,6 +59,7 @@
     "reactivate": "Reactivate",
     "results": "{count, plural, =0 {No templates} one {# template} other {# templates}}",
     "withoutLoadDefaults": "No default load",
+    "applicationHelp": "Template load is a baseline: it is initially copied to each group and can then be adjusted independently.",
     "filters": {
       "search": "Search",
       "searchPlaceholder": "Title, structure, or tag…",
