@@ -58,7 +58,6 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         values: {
           initialWeeklyVolumeKm: plan.loadStrategy.initialWeeklyVolumeKm,
           maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
-          sessionsPerWeek: plan.loadStrategy.sessionsPerWeek,
           maximumWeeklyIncreasePercentage: plan.loadStrategy.maximumWeeklyIncreasePercentage,
           deloadPercentage: plan.loadStrategy.deloadPercentage,
           initialWeeklyElevationGain: plan.loadStrategy.initialWeeklyElevationGain,
