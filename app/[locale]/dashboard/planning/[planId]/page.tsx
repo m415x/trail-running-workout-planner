@@ -353,6 +353,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           ...sharedPreview.warnings,
         ])}
         isAvailable={canGenerateSessions}
+        planId={plan.id}
+        locale={locale}
+        proposal={sharedPreview}
       />
 
       {plan.macrocycles.map((macrocycle) => (

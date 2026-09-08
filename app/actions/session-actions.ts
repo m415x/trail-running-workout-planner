@@ -280,11 +280,23 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       ? { preliminaryExercises: data.preliminaryExercises, warmup: data.warmup, mainBlock: data.mainBlock, cooldown: data.cooldown }
       : null
     const now = new Date().toISOString()
+    const existingPrescriptions = db.select().from(groupSessionPrescriptions)
+      .where(eq(groupSessionPrescriptions.sessionId, sessionId)).all()
+    const prescriptionOwnership = new Map(existingPrescriptions.map((prescription) => [
+      prescription.groupId,
+      prescription.generationOwnership === 'generated'
+        ? 'generated_modified' as const
+        : prescription.generationOwnership,
+    ]))
 
     db.transaction((tx) => {
       tx.update(sessions).set({
         workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
-        locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes, updatedAt: now,
+        locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
+        generationOwnership: existingSession.generationOwnership === 'generated'
+          ? 'generated_modified'
+          : existingSession.generationOwnership,
+        updatedAt: now,
       }).where(eq(sessions.id, sessionId)).run()
 
       tx.update(groupSessionPrescriptions)
@@ -294,10 +306,17 @@ export async function updateSession(_previousState: SessionFormState, formData: 
 
       for (const prescription of prescriptions.data) {
         tx.insert(groupSessionPrescriptions).values({
-          id: randomUUID(), sessionId, ...prescription, createdAt: now, updatedAt: now,
+          id: randomUUID(), sessionId, ...prescription,
+          generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+          createdAt: now, updatedAt: now,
         }).onConflictDoUpdate({
           target: [groupSessionPrescriptions.sessionId, groupSessionPrescriptions.groupId],
-          set: { ...prescription, isDeleted: false, updatedAt: now },
+          set: {
+            ...prescription,
+            generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+            isDeleted: false,
+            updatedAt: now,
+          },
         }).run()
       }
     })

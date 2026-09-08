@@ -23,6 +23,7 @@ import type {
   WorkoutTemplateCategory,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
+import type { SessionGenerationOwnership } from '@/types/training/session-generation.types'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -359,7 +360,14 @@ export const sessions = sqliteTable('sessions', {
   structure: text('structure', { mode: 'json' }).$type<SessionStructure>(),
 
   notes: text('notes'),
-})
+  generationOwnership: text('generation_ownership')
+    .$type<SessionGenerationOwnership>()
+    .notNull()
+    .default('manual'),
+  sharedEventKey: text('shared_event_key'),
+}, (table) => [
+  uniqueIndex('sessions_shared_event_key_unique').on(table.sharedEventKey),
+])
 
 /* -------------------------------------------------------------------------- */
 /* 11. GROUP SESSION PRESCRIPTIONS (Indicaciones para sesiones grupales)      */
@@ -390,9 +398,15 @@ export const groupSessionPrescriptions = sqliteTable(
     pamPercentage: real('pam_percentage'),
 
     notes: text('notes'),
+    generationOwnership: text('generation_ownership')
+      .$type<SessionGenerationOwnership>()
+      .notNull()
+      .default('manual'),
+    generationKey: text('generation_key'),
   },
   (table) => [
     uniqueIndex('group_session_prescriptions_session_group_unique').on(table.sessionId, table.groupId),
+    uniqueIndex('group_session_prescriptions_generation_key_unique').on(table.generationKey),
   ],
 )
 

@@ -1,11 +1,17 @@
+'use client'
+
+import { useActionState } from 'react'
 import { AlertTriangle, CalendarClock, MapPin, Mountain, Route } from 'lucide-react'
 
+import { persistGeneratedSessions } from '@/app/actions/session-generation-actions'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
+  SharedSessionGenerationResult,
 } from '@/types/training/session-generation.types'
 import { Badge } from '@ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import { Button } from '@ui/button'
 
 export interface SessionGenerationPreviewWeek {
   microcycleId: string
@@ -21,6 +27,9 @@ interface SessionGenerationPreviewProps {
   weeks: SessionGenerationPreviewWeek[]
   warnings: string[]
   isAvailable: boolean
+  planId: string
+  locale: string
+  proposal: SharedSessionGenerationResult
 }
 
 const microcycleLabels: Record<MicrocycleType, string> = {
@@ -37,7 +46,11 @@ export function SessionGenerationPreview({
   weeks,
   warnings,
   isAvailable,
+  planId,
+  locale,
+  proposal,
 }: SessionGenerationPreviewProps) {
+  const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
 
   return (
@@ -51,7 +64,7 @@ export function SessionGenerationPreview({
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
-            <Badge variant='secondary'>No guardado</Badge>
+            <Badge variant='secondary'>{state.success ? 'Guardado' : 'No guardado'}</Badge>
             {isAvailable && <Badge variant='outline'>{sessionCount} sesiones</Badge>}
           </div>
         </div>
@@ -159,10 +172,22 @@ export function SessionGenerationPreview({
             </ul>
           </div>
         )}
-        {isAvailable && (
-          <p className='text-xs text-muted-foreground'>
-            Esta vista previa no crea ni modifica sesiones del calendario.
-          </p>
+        {isAvailable && sessionCount > 0 && (
+          <form action={formAction} className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+            <input type='hidden' name='planId' value={planId} />
+            <input type='hidden' name='locale' value={locale} />
+            <input type='hidden' name='proposal' value={JSON.stringify(proposal)} />
+            <div className='text-sm'>
+              {state.error && <p className='text-destructive'>{state.error}</p>}
+              {state.success && <p className='text-emerald-600'>{state.success}</p>}
+              {!state.error && !state.success && (
+                <p className='text-muted-foreground'>Guardá esta propuesta para publicarla en el calendario.</p>
+              )}
+            </div>
+            <Button type='submit' disabled={isPending}>
+              {isPending ? 'Guardando…' : 'Guardar sesiones'}
+            </Button>
+          </form>
         )}
       </CardContent>
     </Card>

@@ -50,6 +50,13 @@
       "when": 1788642648113,
       "tag": "0006_nasty_black_widow",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788905310099,
+      "tag": "0007_stale_captain_stacy",
+      "breakpoints": true
     }
   ]
 }
