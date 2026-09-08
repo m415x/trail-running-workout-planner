@@ -76,6 +76,12 @@ export interface WeeklyTrainingPattern {
   slots: WeeklyTrainingSlot[]
 }
 
+/** Selected weekly slot paired with its concrete calendar date. */
+export interface DatedTrainingSlot {
+  slot: WeeklyTrainingSlot
+  date: string
+}
+
 /**
  * Describes whether a session load may absorb weekly planning adjustments.
  *
@@ -123,6 +129,25 @@ export interface WeeklyElevationDistribution {
   allocatedElevationGain: number
   remainingElevationGain: number | null
   isExceeded: boolean
+  warnings: string[]
+}
+
+/** Intensity assigned to one dated weekly slot from the microcycle target. */
+export interface WeeklyIntensityAllocation {
+  slotKey: string
+  date: string
+  isIntense: boolean
+  intensityMethod: IntensityMethod
+  zone: IntensityZone | null
+  pamPercentage: PamPercentage | null
+}
+
+/** Result of placing intense stimuli and recovery across a selected week. */
+export interface WeeklyIntensityDistribution {
+  allocations: WeeklyIntensityAllocation[]
+  intenseSessionsTarget: number
+  assignedIntenseSessions: number
+  minimumRecoveryDaysBetweenIntenseSessions: number
   warnings: string[]
 }
 

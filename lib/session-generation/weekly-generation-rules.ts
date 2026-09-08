@@ -1,5 +1,6 @@
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
+  DatedTrainingSlot,
   SessionGenerationIntensityTarget,
   TrainingWeekday,
   WeeklyLoadAllocation,
@@ -264,11 +265,6 @@ export function distributeWeeklyLoad(
   )
 }
 
-export interface DatedTrainingSlot {
-  slot: WeeklyTrainingSlot
-  date: string
-}
-
 /**
  * Chooses the highest-value combination of intense slots that satisfies the
  * required number of complete calendar recovery days between intense sessions.
@@ -285,18 +281,21 @@ export function selectIntenseSlots(
   let best: DatedTrainingSlot[] = []
   let bestScore = -Infinity
 
-  for (const combination of combinations(candidates, desiredCount)) {
-    if (!respectsRecovery(combination, minimumRecoveryDays)) continue
+  for (let count = desiredCount; count > 0; count -= 1) {
+    for (const combination of combinations(candidates, count)) {
+      if (!respectsRecovery(combination, minimumRecoveryDays)) continue
 
-    const score = combination.reduce(
-      (sum, candidate) => sum + INTENSITY_PRIORITY[candidate.slot.role],
-      0,
-    )
+      const score = combination.reduce(
+        (sum, candidate) => sum + INTENSITY_PRIORITY[candidate.slot.role],
+        0,
+      )
 
-    if (score > bestScore) {
-      best = combination
-      bestScore = score
+      if (score > bestScore) {
+        best = combination
+        bestScore = score
+      }
     }
+    if (best.length > 0) break
   }
 
   return best.sort((a, b) => a.date.localeCompare(b.date))
