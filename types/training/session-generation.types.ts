@@ -92,6 +92,23 @@ export interface WeeklyLoadAllocation {
   elevationGain: number
 }
 
+/** Distance assigned to one selected weekly slot before D+ is distributed. */
+export interface WeeklyVolumeAllocation {
+  slotKey: string
+  flexibility: SessionLoadFlexibility
+  distanceKm: number
+}
+
+/** Result of distributing the microcycle distance across selected sessions. */
+export interface WeeklyVolumeDistribution {
+  allocations: WeeklyVolumeAllocation[]
+  targetVolumeKm: number
+  allocatedVolumeKm: number
+  remainingVolumeKm: number
+  isExceeded: boolean
+  warnings: string[]
+}
+
 /**
  * Calculated weekly load budget used by generation and, later, the preview UI.
  * It is derived state and does not need its own persistence model.

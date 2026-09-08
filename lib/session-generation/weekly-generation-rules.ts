@@ -9,6 +9,7 @@ import type {
   WeeklyTrainingSlot,
 } from '@/types/training/session-generation.types'
 import { createWeeklyTrainingSlot } from '@/lib/session-generation/default-weekly-pattern'
+import { distributeWeeklyVolume } from '@/lib/session-generation/weekly-volume-distribution'
 
 const MIN_AUTO_SESSIONS = 3
 const MAX_AUTO_SESSIONS = 5
@@ -58,15 +59,6 @@ const INTENSITY_PRIORITY: Record<WeeklySessionRole, number> = {
   long: 60,
   base: 30,
   recovery: 0,
-}
-
-const DEFAULT_VOLUME_WEIGHT: Record<WeeklySessionRole, number> = {
-  base: 1,
-  mountain: 1.1,
-  long: 1.2,
-  quality: 0.8,
-  recovery: 0.7,
-  competition: 1.4,
 }
 
 const DEFAULT_ELEVATION_WEIGHT: Record<WeeklySessionRole, number> = {
@@ -180,10 +172,6 @@ export function selectWeeklySlots(
     ?.sort(compareByWeekday) ?? []
 }
 
-export function getVolumeWeight(slot: WeeklyTrainingSlot) {
-  return positiveWeight(slot.volumeWeight, DEFAULT_VOLUME_WEIGHT[slot.role])
-}
-
 export function getElevationWeight(slot: WeeklyTrainingSlot) {
   const weekendMountainBonus =
     (slot.weekday === 'saturday' || slot.weekday === 'sunday') &&
@@ -247,6 +235,18 @@ export function distributeWeeklyLoad(
   const fixedBySlot = new Map(fixedAllocations.map((allocation) => [allocation.slotKey, allocation]))
   const result: WeeklyLoadAllocation[] = []
   const flexibleSlots: WeeklyTrainingSlot[] = []
+  const volumeDistribution = distributeWeeklyVolume(
+    slots,
+    targetVolumeKm,
+    fixedAllocations.map((allocation) => ({
+      slotKey: allocation.slotKey,
+      flexibility: 'fixed',
+      distanceKm: allocation.distanceKm,
+    })),
+  )
+  const volumeBySlot = new Map(
+    volumeDistribution.allocations.map((allocation) => [allocation.slotKey, allocation.distanceKm]),
+  )
 
   for (const slot of slots) {
     const fixed = fixedBySlot.get(slot.key)
@@ -258,17 +258,15 @@ export function distributeWeeklyLoad(
   }
 
   const fixedBudget = calculateWeeklyLoadBudget(targetVolumeKm, targetElevationGain, result)
-  const remainingKm = Math.max(0, fixedBudget.remainingVolumeKm)
   const remainingElevation = Math.max(0, fixedBudget.remainingElevationGain ?? 0)
 
-  const distances = distributeByWeight(flexibleSlots, remainingKm, getVolumeWeight, 1)
   const elevations = distributeByWeight(flexibleSlots, remainingElevation, getElevationWeight, 0)
 
   for (const slot of flexibleSlots) {
     result.push({
       slotKey: slot.key,
       flexibility: 'flexible',
-      distanceKm: distances.get(slot.key) ?? 0,
+      distanceKm: volumeBySlot.get(slot.key) ?? 0,
       elevationGain: targetElevationGain === null ? 0 : elevations.get(slot.key) ?? 0,
     })
   }
