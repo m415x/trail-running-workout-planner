@@ -318,3 +318,25 @@ export type SessionGenerationOwnership =
   | 'generated'
   | 'generated_modified'
   | 'manual'
+
+/** Generation provenance for the shared Session event. */
+export type SessionEventGenerationProvenance =
+  | {
+      ownership: 'generated' | 'generated_modified'
+      sharedEventKey: string
+    }
+  | {
+      ownership: 'manual'
+      sharedEventKey: null
+    }
+
+/** Generation provenance for one group-owned prescription. */
+export type SessionPrescriptionGenerationProvenance =
+  | {
+      ownership: 'generated' | 'generated_modified'
+      generationKey: string
+    }
+  | {
+      ownership: 'manual'
+      generationKey: null
+    }
