@@ -103,6 +103,86 @@ describe('reglas semanales de generación de sesiones', () => {
     )
   })
 
+  it('adapta la prioridad de roles al tipo de microciclo', () => {
+    assert.deepEqual(
+      selectWeeklySlots(coachPattern, 3, { microcycleType: 'base' }).map((slot) => slot.key),
+      ['monday-base', 'wednesday-long', 'saturday-long'],
+    )
+    assert.deepEqual(
+      selectWeeklySlots(coachPattern, 3, { microcycleType: 'tapering' }).map((slot) => slot.key),
+      ['monday-base', 'wednesday-long', 'thursday-quality'],
+    )
+    assert.deepEqual(
+      selectWeeklySlots(coachPattern, 3, { microcycleType: 'shock' }).map((slot) => slot.key),
+      ['tuesday-mountain', 'thursday-quality', 'saturday-long'],
+    )
+    assert.deepEqual(
+      selectWeeklySlots(coachPattern, 3, { microcycleType: 'deload' }).map((slot) => slot.key),
+      ['monday-base', 'wednesday-long', 'saturday-long'],
+    )
+  })
+
+  it('mantiene el patrón personalizado como preferencia y completa días solo si hacen falta', () => {
+    const customPattern = [coachPattern[0], coachPattern[3], coachPattern[4]]
+
+    assert.deepEqual(
+      selectWeeklySlots(customPattern, 3).map((slot) => slot.key),
+      ['monday-base', 'thursday-quality', 'saturday-long'],
+    )
+    assert.deepEqual(
+      selectWeeklySlots(customPattern, 5).map((slot) => slot.weekday),
+      ['monday', 'tuesday', 'wednesday', 'thursday', 'saturday'],
+    )
+  })
+
+  it('reserva la fecha de carrera dentro del total semanal', () => {
+    const selected = selectWeeklySlots(coachPattern, 3, {
+      microcycleType: 'race',
+      includesRace: true,
+      raceWeekday: 'saturday',
+    })
+
+    assert.equal(selected.length, 3)
+    assert.deepEqual(selected.map(({ weekday, role }) => ({ weekday, role })), [
+      { weekday: 'monday', role: 'base' },
+      { weekday: 'thursday', role: 'quality' },
+      { weekday: 'saturday', role: 'competition' },
+    ])
+    assert.throws(
+      () => selectWeeklySlots(coachPattern, 3, { includesRace: true }),
+      RangeError,
+    )
+  })
+
+  it('elige una combinación que permita separar los estímulos intensos', () => {
+    const selected = selectWeeklySlots(coachPattern, 3, {
+      microcycleType: 'development',
+      weekStartDate: '2026-09-07',
+      intenseSessionsTarget: 2,
+      minimumRecoveryDays: 2,
+    })
+    const dated = selected.map((slot) => ({
+      slot,
+      date: {
+        monday: '2026-09-07',
+        tuesday: '2026-09-08',
+        wednesday: '2026-09-09',
+        thursday: '2026-09-10',
+        friday: '2026-09-11',
+        saturday: '2026-09-12',
+        sunday: '2026-09-13',
+      }[slot.weekday],
+    }))
+
+    assert.equal(selectIntenseSlots(dated, 2, 2).length, 2)
+  })
+
+  it('rechaza patrones ambiguos y cantidades de slots inválidas', () => {
+    assert.throws(() => selectWeeklySlots([coachPattern[0], coachPattern[0]], 1), RangeError)
+    assert.throws(() => selectWeeklySlots(coachPattern, 4.5), RangeError)
+    assert.throws(() => selectWeeklySlots(coachPattern, 8), RangeError)
+  })
+
   it('consume primero un circuito fijo y reparte el resto entre sesiones flexibles', () => {
     const allocations = distributeWeeklyLoad(coachPattern, 60, 1800, [
       {

@@ -8,6 +8,7 @@ import type {
   WeeklySessionRole,
   WeeklyTrainingSlot,
 } from '@/types/training/session-generation.types'
+import { createWeeklyTrainingSlot } from '@/lib/session-generation/default-weekly-pattern'
 
 const MIN_AUTO_SESSIONS = 3
 const MAX_AUTO_SESSIONS = 5
@@ -29,6 +30,25 @@ const SLOT_SELECTION_PRIORITY: Record<WeeklySessionRole, number> = {
   base: 70,
   long: 60,
   recovery: 50,
+}
+
+const MICROTYPE_SLOT_PRIORITY: Record<MicrocycleType, Record<WeeklySessionRole, number>> = {
+  base: { competition: 0, quality: 60, mountain: 75, base: 90, long: 95, recovery: 70 },
+  development: SLOT_SELECTION_PRIORITY,
+  shock: { competition: 0, quality: 100, mountain: 95, base: 65, long: 90, recovery: 40 },
+  deload: { competition: 0, quality: 50, mountain: 55, base: 100, long: 75, recovery: 95 },
+  tapering: { competition: 0, quality: 80, mountain: 40, base: 100, long: 70, recovery: 95 },
+  race: { competition: 120, quality: 70, mountain: 20, base: 90, long: 30, recovery: 85 },
+}
+
+const FALLBACK_ROLE_BY_WEEKDAY: Record<TrainingWeekday, WeeklySessionRole> = {
+  monday: 'base',
+  tuesday: 'mountain',
+  wednesday: 'long',
+  thursday: 'quality',
+  friday: 'recovery',
+  saturday: 'long',
+  sunday: 'recovery',
 }
 
 const INTENSITY_PRIORITY: Record<WeeklySessionRole, number> = {
@@ -116,20 +136,48 @@ export function resolveWeeklySessionCount(input: ResolveWeeklySessionCountInput)
 }
 
 /**
- * Chooses the habitual slots that survive when AUTO/FIXED frequency is below
- * the full pattern. The returned slots are always restored to weekday order.
+ * Selects the best deterministic slot combination for one microcycle.
  *
- * Weekend long/mountain slots receive a bonus so a five-day Mon/Tue/Wed/Thu/Sat
- * pattern naturally resolves to Tue/Thu/Sat for 3 sessions and adds Mon for 4.
+ * Planning role priorities and recovery constraints take precedence over the
+ * habitual pattern. Configured days receive a preference bonus, and missing
+ * weekdays are considered only when the requested frequency cannot otherwise
+ * be fulfilled. A race inside the week must occupy one of the selected slots.
  */
-export function selectWeeklySlots(slots: WeeklyTrainingSlot[], sessionCount: number) {
-  if (sessionCount < 1) return []
-  if (sessionCount >= slots.length) return [...slots].sort(compareByWeekday)
+export interface WeeklySlotSelectionContext {
+  microcycleType?: MicrocycleType
+  includesRace?: boolean
+  raceWeekday?: TrainingWeekday
+  weekStartDate?: string
+  intenseSessionsTarget?: number
+  minimumRecoveryDays?: number
+}
 
-  return [...slots]
-    .sort((a, b) => getSlotSelectionScore(b) - getSlotSelectionScore(a) || compareByWeekday(b, a))
-    .slice(0, sessionCount)
-    .sort(compareByWeekday)
+export function selectWeeklySlots(
+  slots: WeeklyTrainingSlot[],
+  sessionCount: number,
+  context: WeeklySlotSelectionContext = {},
+) {
+  if (sessionCount < 1) return []
+  if (!Number.isInteger(sessionCount) || sessionCount > 7) {
+    throw new RangeError('Weekly slot count must be an integer between 1 and 7')
+  }
+
+  assertUniqueSlotWeekdays(slots)
+  const candidates = completeSlotCandidates(slots, sessionCount, context)
+  const desiredCount = Math.min(sessionCount, candidates.length)
+  const possibleCombinations = combinations(candidates, desiredCount)
+  const compatible = possibleCombinations.filter((combination) => (
+    respectsSelectionConstraints(combination, context)
+  ))
+  const selectable = compatible.length > 0 ? compatible : possibleCombinations
+
+  return selectable
+    .sort((left, right) => (
+      getCombinationScore(right, slots, context.microcycleType ?? 'development') -
+        getCombinationScore(left, slots, context.microcycleType ?? 'development') ||
+      compareCombinationOrder(left, right)
+    ))[0]
+    ?.sort(compareByWeekday) ?? []
 }
 
 export function getVolumeWeight(slot: WeeklyTrainingSlot) {
@@ -286,14 +334,109 @@ export function isPamPreferred(
   )
 }
 
-function getSlotSelectionScore(slot: WeeklyTrainingSlot) {
+function getSlotSelectionScore(slot: WeeklyTrainingSlot, microcycleType: MicrocycleType) {
   const weekendLongBonus =
+    microcycleType !== 'race' &&
+    microcycleType !== 'tapering' &&
     (slot.weekday === 'saturday' || slot.weekday === 'sunday') &&
     (slot.role === 'long' || slot.role === 'mountain')
       ? 30
       : 0
 
-  return SLOT_SELECTION_PRIORITY[slot.role] + weekendLongBonus
+  return MICROTYPE_SLOT_PRIORITY[microcycleType][slot.role] + weekendLongBonus
+}
+
+function completeSlotCandidates(
+  slots: WeeklyTrainingSlot[],
+  sessionCount: number,
+  context: WeeklySlotSelectionContext,
+) {
+  const byWeekday = new Map(slots.map((slot) => [slot.weekday, { ...slot }]))
+
+  if (context.includesRace) {
+    if (!context.raceWeekday) {
+      throw new RangeError('Race weekday is required when the microcycle includes a race')
+    }
+    const existing = byWeekday.get(context.raceWeekday)
+    byWeekday.set(context.raceWeekday, {
+      ...createWeeklyTrainingSlot(context.raceWeekday, 'competition'),
+      key: existing?.key ?? `weekly-${context.raceWeekday}`,
+    })
+  }
+
+  if (byWeekday.size < sessionCount) {
+    for (const weekday of Object.keys(WEEKDAY_INDEX) as TrainingWeekday[]) {
+      if (!byWeekday.has(weekday)) {
+        byWeekday.set(weekday, createWeeklyTrainingSlot(weekday, FALLBACK_ROLE_BY_WEEKDAY[weekday]))
+      }
+    }
+  }
+
+  return [...byWeekday.values()]
+}
+
+function respectsSelectionConstraints(
+  slots: WeeklyTrainingSlot[],
+  context: WeeklySlotSelectionContext,
+) {
+  if (context.includesRace && !slots.some((slot) => slot.role === 'competition')) return false
+
+  const intenseSessionsTarget = context.intenseSessionsTarget ?? 0
+  if (intenseSessionsTarget <= 0 || !context.weekStartDate) return true
+
+  const dated = slots.map((slot) => ({
+    slot,
+    date: dateForWeekday(context.weekStartDate as string, slot.weekday),
+  }))
+  return selectIntenseSlots(
+    dated,
+    intenseSessionsTarget,
+    context.minimumRecoveryDays ?? 0,
+  ).length >= Math.min(intenseSessionsTarget, slots.length)
+}
+
+function getCombinationScore(
+  combination: WeeklyTrainingSlot[],
+  habitualSlots: WeeklyTrainingSlot[],
+  microcycleType: MicrocycleType,
+) {
+  const habitualKeys = new Set(habitualSlots.map((slot) => slot.key))
+  const roleDiversity = new Set(combination.map((slot) => slot.role)).size * 5
+
+  return combination.reduce((score, slot) => (
+    score + getSlotSelectionScore(slot, microcycleType) + (habitualKeys.has(slot.key) ? 15 : 0)
+  ), roleDiversity)
+}
+
+function compareCombinationOrder(left: WeeklyTrainingSlot[], right: WeeklyTrainingSlot[]) {
+  return left
+    .map((slot) => WEEKDAY_INDEX[slot.weekday])
+    .sort((a, b) => a - b)
+    .join('')
+    .localeCompare(
+      right.map((slot) => WEEKDAY_INDEX[slot.weekday]).sort((a, b) => a - b).join(''),
+    )
+}
+
+function assertUniqueSlotWeekdays(slots: WeeklyTrainingSlot[]) {
+  const weekdays = new Set<TrainingWeekday>()
+  for (const slot of slots) {
+    if (weekdays.has(slot.weekday)) {
+      throw new RangeError(`Weekly pattern contains duplicated weekday: ${slot.weekday}`)
+    }
+    weekdays.add(slot.weekday)
+  }
+}
+
+function dateForWeekday(weekStartDate: string, weekday: TrainingWeekday) {
+  const start = parseIsoDate(weekStartDate)
+  if (Number.isNaN(start.getTime())) throw new RangeError('Invalid week start date')
+
+  const startWeekday = start.getUTCDay() === 0 ? 7 : start.getUTCDay()
+  const offset = (WEEKDAY_INDEX[weekday] - startWeekday + 7) % 7
+  const date = new Date(start)
+  date.setUTCDate(date.getUTCDate() + offset)
+  return date.toISOString().slice(0, 10)
 }
 
 function compareByWeekday(a: WeeklyTrainingSlot, b: WeeklyTrainingSlot) {
