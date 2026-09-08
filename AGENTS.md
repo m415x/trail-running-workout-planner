@@ -42,6 +42,25 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `pnpm db:migrate:supabase` — Apply pending migrations to Supabase
 - `pnpm db:verify:supabase` — Verify remote tables and RLS status
 
+## Context-efficient workflow
+
+- Start with `docs/README.md` and the latest relevant file under
+  `docs/handoffs/`; do not reconstruct completed histories from git or chat when
+  the handoff already answers the question.
+- Use `rg` to locate symbols and read bounded sections of relevant files. Avoid
+  rereading whole directories after a localized change.
+- Use `C:\Users\lahoz\.local\bin\rtk.exe` explicitly for noisy read-only commands
+  such as `git status`, `git diff`, and focused test output when it preserves the
+  information needed for review. Do not require RTK for contributors or CI.
+- Keep Codebase Memory optional. Never make builds, tests, or repository behavior
+  depend on a local index or MCP server.
+- Run focused tests while implementing. Before each task handoff run the complete
+  `pnpm test`, `pnpm lint`, and `pnpm run build` checks; output compression must
+  not reduce test coverage.
+- Update durable architecture docs only when a domain decision changes. Replace
+  the current handoff when moving a history to a fresh Codex task; do not store
+  full conversation transcripts.
+
 ## Architecture & Directory Structure
 
 - `app/[locale]/` — Localized App Router pages (`es` default, `en` secondary via `next-intl`, prefix: `as-needed`)
