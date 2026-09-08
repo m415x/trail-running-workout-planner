@@ -63,11 +63,19 @@ export interface ResolveWeeklySessionCountInput {
   microcycleType: MicrocycleType
   targetVolumeKm: number
   maximumWeeklyVolumeKm: number
+  /**
+   * True only when the race itself falls inside this microcycle. The race
+   * counts as one generated weekly session, not as an extra event.
+   */
+  includesRace?: boolean
 }
 
 /**
- * Resolves 3-5 weekly sessions for AUTO mode. Deload/taper/race weeks stay at
- * three sessions; base/development/shock use relative load to choose 3, 4 or 5.
+ * Resolves 3-5 weekly sessions for AUTO mode.
+ *
+ * Deload is intentionally conservative. Tapering may keep four sessions when
+ * there is still meaningful weekly load, while a race microcycle that actually
+ * contains the race resolves to three total sessions including the race.
  */
 export function resolveWeeklySessionCount(input: ResolveWeeklySessionCountInput) {
   if (input.frequency.mode === 'fixed') {
@@ -82,12 +90,21 @@ export function resolveWeeklySessionCount(input: ResolveWeeklySessionCountInput)
     return input.frequency.sessionsPerWeek
   }
 
-  if (['deload', 'tapering', 'race'].includes(input.microcycleType)) return 3
-
   const relativeLoad =
     input.maximumWeeklyVolumeKm > 0
       ? input.targetVolumeKm / input.maximumWeeklyVolumeKm
       : 0
+
+  if (input.microcycleType === 'deload') return 3
+
+  if (input.microcycleType === 'tapering') {
+    return relativeLoad > 0.55 ? 4 : 3
+  }
+
+  if (input.microcycleType === 'race') {
+    if (input.includesRace) return 3
+    return relativeLoad > 0.55 ? 4 : 3
+  }
 
   if (input.microcycleType === 'shock') {
     return relativeLoad < 0.55 ? 4 : 5
