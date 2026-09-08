@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { intensityStrategies } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
+import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import {
   athleteGroups,
   groupTrainingPlans,
@@ -24,6 +25,8 @@ import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommend
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
 import { resolveTargetRace } from '@/lib/periodization/target-race'
+import { defaultWeeklyGenerationPreferences } from '@/lib/session-generation/generation-preferences'
+import { serializeSessionGenerationPreferences } from '@/lib/session-generation/generation-preferences-persistence'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
@@ -137,6 +140,9 @@ export async function createGroupPlanWithLoadStrategy(
 
     const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
     const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, data.goalType)
+    const generationPreferences = serializeSessionGenerationPreferences(
+      defaultWeeklyGenerationPreferences(),
+    )
     let targetRace
 
     try {
@@ -209,6 +215,16 @@ export async function createGroupPlanWithLoadStrategy(
         minimumRecoveryDaysBetweenIntenseSessions:
           suggestedIntensityStrategy.values.minimumRecoveryDaysBetweenIntenseSessions,
         fieldSources: suggestedIntensityStrategy.fieldSources,
+        createdAt: now,
+        updatedAt: now,
+      }).run()
+
+      tx.insert(sessionGenerationPreferences).values({
+        id: randomUUID(),
+        groupTrainingPlanId: planId,
+        frequencyMode: generationPreferences.frequencyMode,
+        fixedSessionsPerWeek: generationPreferences.fixedSessionsPerWeek,
+        weeklyPattern: generationPreferences.weeklyPattern,
         createdAt: now,
         updatedAt: now,
       }).run()
