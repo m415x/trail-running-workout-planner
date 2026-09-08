@@ -17,12 +17,12 @@ interface SessionWorkout {
   title: string
   type: WorkoutType
 
-  distance: number
-  time: number
-  gain: number
+  distance: number | null
+  time: number | null
+  gain: number | null
   pace: number | null
 
-  zone: IntensityZone
+  zone: IntensityZone | null
 
   notes?: string | null
   trackPath?: string | null

@@ -47,5 +47,110 @@
     "wind": "Wind",
     "rainProb": "Rain Prob.",
     "snowAccum": "Snow"
+  },
+  "WorkoutTemplates": {
+    "navigation": "Templates",
+    "title": "Session templates",
+    "description": "Search and reuse the team's recurring workout structures.",
+    "new": "New template",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "archiveAction": "Archive",
+    "reactivate": "Reactivate",
+    "results": "{count, plural, =0 {No templates} one {# template} other {# templates}}",
+    "withoutLoadDefaults": "No default load",
+    "applicationHelp": "Template load is a baseline: it is initially copied to each group and can then be adjusted independently.",
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Title, structure, or tag…",
+      "category": "Category",
+      "allCategories": "All",
+      "type": "Type",
+      "allTypes": "All",
+      "tag": "Tag",
+      "allTags": "All",
+      "status": "Status",
+      "apply": "Apply",
+      "clear": "Clear filters"
+    },
+    "categories": {
+      "endurance": "Endurance",
+      "quality": "Quality",
+      "mountain": "Mountain",
+      "technique": "Technique",
+      "recovery": "Recovery",
+      "competition": "Competition"
+    },
+    "archive": {
+      "active": "Active",
+      "archived": "Archived",
+      "all": "All"
+    },
+    "empty": {
+      "title": "There are no templates yet",
+      "description": "Templates created by the coach will appear in this catalogue.",
+      "filteredTitle": "No matches found",
+      "filteredDescription": "Try different terms or clear the selected filters."
+    },
+    "form": {
+      "title": "New template",
+      "description": "Save a reusable structure and its suggested values for future sessions.",
+      "editTitle": "Edit template",
+      "editDescription": "Update the structure and values suggested for future sessions.",
+      "back": "Back to templates",
+      "cancel": "Cancel",
+      "create": "Create template",
+      "update": "Save changes",
+      "saving": "Saving…",
+      "identity": {
+        "legend": "Identity and classification",
+        "title": "Title",
+        "titlePlaceholder": "E.g. Progressive mountain long run",
+        "type": "Workout type",
+        "selectType": "Select a type",
+        "category": "Category",
+        "selectCategory": "Select a category",
+        "tags": "Tags",
+        "tagsPlaceholder": "long run, trail, progressive",
+        "tagsHelp": "Separate them with commas. You can use up to 10 tags of 30 characters each."
+      },
+      "structure": {
+        "legend": "Session structure",
+        "help": "Blocks are optional and will be copied to the session when the template is applied.",
+        "preliminary": "Preliminary exercises",
+        "preliminaryPlaceholder": "Mobility, activation, technique…",
+        "warmup": "Warm-up",
+        "warmupPlaceholder": "E.g. 15 easy minutes and dynamic mobility",
+        "mainBlock": "Main block",
+        "mainBlockPlaceholder": "E.g. 4 × 10 progressive minutes with 2 easy minutes",
+        "cooldown": "Cool-down",
+        "cooldownPlaceholder": "E.g. 10 easy minutes and stretching"
+      },
+      "session": {
+        "legend": "Shared session details",
+        "location": "Location",
+        "noLocation": "No location",
+        "track": "Track",
+        "trackPlaceholder": "Track route or reference",
+        "notes": "General notes",
+        "notesPlaceholder": "Instructions shared by the session…"
+      },
+      "prescription": {
+        "legend": "Suggested group values",
+        "help": "All values are optional. The coach can adjust them when applying the template.",
+        "distance": "Distance (km)",
+        "duration": "Duration (min)",
+        "elevation": "Elevation (m D+)",
+        "intensityMethod": "Intensity method",
+        "noIntensity": "No default intensity",
+        "hrZone": "Heart-rate zone",
+        "pam": "PAM percentage",
+        "zone": "Zone",
+        "selectZone": "Select a zone",
+        "pamPercentage": "PAM percentage",
+        "notes": "Group instructions",
+        "notesPlaceholder": "Execution guidelines, recoveries, or adaptations…"
+      }
+    }
   }
 }

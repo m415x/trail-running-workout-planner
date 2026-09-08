@@ -463,17 +463,32 @@ async function seed() {
 
   const workoutRows = Object.entries(workouts).map(([id, workout]) => ({
     id: String(id),
+    teamId,
 
     title: workout.title,
     type: workout.type,
-    zone: workout.zone || 'Z2',
+    category: workout.type === 'Race'
+      ? 'competition' as const
+      : workout.type === 'Trail' || workout.type === 'Hills'
+        ? 'mountain' as const
+        : workout.type === 'Intervals' || workout.type === 'Speed' || workout.type === 'Fartlek' || workout.type === 'PAM'
+          ? 'quality' as const
+          : workout.type === 'Rest'
+            ? 'recovery' as const
+            : 'endurance' as const,
+    tags: [],
+    archivedAt: null,
 
-    distance: Number(workout.distance ?? 0),
-    time: Number(workout.time ?? 0),
-    gain: Number(workout.gain ?? 0),
+    distance: workout.distance == null ? null : Number(workout.distance),
+    time: workout.time == null ? null : Number(workout.time),
+    gain: workout.gain == null ? null : Number(workout.gain),
+    intensityMethod: workout.zone ? 'hr_zone' as const : null,
+    zone: workout.zone ?? null,
+    pamPercentage: null,
     pace: workout.pace != null ? Number(workout.pace) : null,
 
     notes: workout.notes || null,
+    prescriptionNotes: workout.notes || null,
     trackPath: workout.trackPath || null,
 
     locationKey: 'locationKey' in workout ? workout.locationKey || null : null,

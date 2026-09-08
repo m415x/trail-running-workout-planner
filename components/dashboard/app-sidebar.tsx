@@ -1,6 +1,7 @@
 'use client'
 
-import { CalendarDays, CalendarRange, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarRange, Dumbbell, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 import { Link, usePathname } from '@/i18n/routing'
 import {
@@ -42,10 +43,16 @@ const navigationItems = [
     href: '/dashboard/sessions',
     icon: CalendarDays,
   },
+  {
+    label: 'templates',
+    href: '/dashboard/templates',
+    icon: Dumbbell,
+  },
 ] as const
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const t = useTranslations('WorkoutTemplates')
 
   return (
     <Sidebar collapsible='icon'>
@@ -68,12 +75,13 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
+                const label = item.label === 'templates' ? t('navigation') : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton render={<Link href={item.href} />} isActive={isActive} tooltip={item.label}>
+                    <SidebarMenuButton render={<Link href={item.href} />} isActive={isActive} tooltip={label}>
                       <item.icon />
-                      <span>{item.label}</span>
+                      <span>{label}</span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 )

@@ -1,15 +1,17 @@
 'use client'
 
-import { useActionState, useState, type FormEvent } from 'react'
+import { useActionState, useState, type ChangeEvent, type FormEvent } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
+import type { WorkoutTemplateSnapshot, WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
 
 interface SessionFormProps {
   locale: string
-  workouts: Array<{ id: string; title: string; type: string }>
+  workouts: WorkoutTemplateOption[]
   locations: Array<{ key: string; name: string }>
   groups: Array<{
     id: string
@@ -45,21 +47,156 @@ interface SessionFormProps {
   }
 }
 
+interface WorkoutTemplateOption {
+  id: string
+  title: string
+  type: WorkoutType
+  archivedAt: string | null
+  snapshot: WorkoutTemplateSnapshot
+}
+
+interface AppliedPrescriptionDefaults {
+  distance: number | null
+  time: number | null
+  gain: number | null
+  intensityMethod: 'hr_zone' | 'pam_percentage' | null
+  zone: string | null
+  pamPercentage: number | null
+  prescriptionNotes: string | null
+}
+
+interface PrescriptionFormValues {
+  distanceKm: string
+  durationMin: string
+  elevationGain: string
+  zone: string
+  pamPercentage: string
+  notes: string
+}
+
+function formValue(value: string | number | null | undefined) {
+  return value == null ? '' : String(value)
+}
+
 const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const initialState: SessionFormState = {}
 
 export function SessionForm({ locale, workouts, locations, groups, session }: SessionFormProps) {
+  const templateText = useTranslations('WorkoutTemplates')
   const [state, formAction, pending] = useActionState(session ? updateSession : createSession, initialState)
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => session?.sessionPrescriptions.map((item) => item.groupId) ?? [])
   const [clientError, setClientError] = useState<string>()
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState(session?.workoutId ?? '')
+  const [appliedPrescriptionDefaults, setAppliedPrescriptionDefaults] = useState<AppliedPrescriptionDefaults | null>(null)
+  const [prescriptionValues, setPrescriptionValues] = useState<Record<string, PrescriptionFormValues>>(() => Object.fromEntries(
+    session?.sessionPrescriptions.map((item) => [item.groupId, {
+      distanceKm: formValue(item.distanceKm),
+      durationMin: formValue(item.durationMin),
+      elevationGain: formValue(item.elevationGain),
+      zone: formValue(item.zone),
+      pamPercentage: formValue(item.pamPercentage),
+      notes: formValue(item.notes),
+    }]) ?? [],
+  ))
   const [intensityMethods, setIntensityMethods] = useState<Record<string, string>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.groupId, item.intensityMethod ?? '']) ?? [],
   ))
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
 
+  function setFormValue(form: HTMLFormElement, name: string, value: string | number | null | undefined) {
+    const field = form.elements.namedItem(name)
+    if (field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement || field instanceof HTMLSelectElement) {
+      field.value = value == null ? '' : String(value)
+    }
+  }
+
+  function applyWorkoutTemplate(event: ChangeEvent<HTMLSelectElement>) {
+    const workoutId = event.target.value
+    setSelectedWorkoutId(workoutId)
+    const template = workouts.find((workout) => workout.id === workoutId)
+    if (!template) {
+      setAppliedPrescriptionDefaults(null)
+      return
+    }
+
+    const form = event.currentTarget.form
+    if (!form) return
+    const snapshot = template.snapshot
+
+    setFormValue(form, 'title', snapshot.session.title)
+    setFormValue(form, 'type', snapshot.session.type)
+    setFormValue(form, 'locationKey', snapshot.session.locationKey)
+    setFormValue(form, 'trackPath', snapshot.session.trackPath)
+    setFormValue(form, 'preliminaryExercises', snapshot.session.structure?.preliminaryExercises)
+    setFormValue(form, 'warmup', snapshot.session.structure?.warmup)
+    setFormValue(form, 'mainBlock', snapshot.session.structure?.mainBlock)
+    setFormValue(form, 'cooldown', snapshot.session.structure?.cooldown)
+    setFormValue(form, 'notes', snapshot.session.notes)
+
+    const defaults: AppliedPrescriptionDefaults = {
+      distance: snapshot.prescription.distanceKm ?? null,
+      time: snapshot.prescription.durationMin ?? null,
+      gain: snapshot.prescription.elevationGain ?? null,
+      intensityMethod: snapshot.prescription.intensity?.method ?? null,
+      zone: snapshot.prescription.intensity?.method === 'hr_zone' ? snapshot.prescription.intensity.zone : null,
+      pamPercentage: snapshot.prescription.intensity?.method === 'pam_percentage' ? snapshot.prescription.intensity.pamPercentage : null,
+      prescriptionNotes: snapshot.prescription.notes,
+    }
+    setAppliedPrescriptionDefaults(defaults)
+    setIntensityMethods((current) => ({
+      ...current,
+      ...Object.fromEntries(selectedGroupIds.map((groupId) => [groupId, defaults.intensityMethod ?? ''])),
+    }))
+    setPrescriptionValues((current) => ({
+      ...current,
+      ...Object.fromEntries(selectedGroupIds.map((groupId) => [groupId, valuesFromDefaults(defaults)])),
+    }))
+  }
+
+  function valuesFromDefaults(defaults: AppliedPrescriptionDefaults): PrescriptionFormValues {
+    return {
+      distanceKm: formValue(defaults.distance),
+      durationMin: formValue(defaults.time),
+      elevationGain: formValue(defaults.gain),
+      zone: formValue(defaults.zone),
+      pamPercentage: formValue(defaults.pamPercentage),
+      notes: formValue(defaults.prescriptionNotes),
+    }
+  }
+
+  function updatePrescriptionValue(groupId: string, field: keyof PrescriptionFormValues, value: string) {
+    setPrescriptionValues((current) => ({
+      ...current,
+      [groupId]: {
+        ...(current[groupId] ?? valuesFromDefaults(appliedPrescriptionDefaults ?? {
+          distance: null,
+          time: null,
+          gain: null,
+          intensityMethod: null,
+          zone: null,
+          pamPercentage: null,
+          prescriptionNotes: null,
+        })),
+        [field]: value,
+      },
+    }))
+  }
+
   function toggleGroup(groupId: string, checked: boolean) {
     setSelectedGroupIds((current) => checked ? [...current, groupId] : current.filter((id) => id !== groupId))
-    if (checked) setClientError(undefined)
+    if (checked) {
+      setClientError(undefined)
+      if (appliedPrescriptionDefaults) {
+        setIntensityMethods((current) => ({
+          ...current,
+          [groupId]: appliedPrescriptionDefaults.intensityMethod ?? '',
+        }))
+        setPrescriptionValues((current) => ({
+          ...current,
+          [groupId]: current[groupId] ?? valuesFromDefaults(appliedPrescriptionDefaults),
+        }))
+      }
+    }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -86,10 +223,13 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           <option value=''>Seleccionar tipo</option>
           {workoutTypes.map((type) => <option key={type} value={type}>{type}</option>)}
         </SelectField>
-        <SelectField label='Plantilla de entrenamiento' name='workoutId' defaultValue={session?.workoutId ?? ''}>
-          <option value=''>Sin plantilla</option>
-          {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workout.type}</option>)}
-        </SelectField>
+        <div className='space-y-1.5'>
+          <SelectField label='Plantilla de entrenamiento' name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
+            <option value=''>Sin plantilla</option>
+            {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workout.type}{workout.archivedAt ? ` · ${templateText('archive.archived')}` : ''}</option>)}
+          </SelectField>
+          <p className='text-xs text-muted-foreground'>{templateText('applicationHelp')}</p>
+        </div>
       </div>
 
       <SelectField label='Ubicación' name='locationKey' defaultValue={session?.locationKey ?? ''}>
@@ -121,6 +261,14 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           const current = session?.sessionPrescriptions.find((item) => item.groupId === group.id)
           const method = intensityMethods[group.id] ?? current?.intensityMethod ?? ''
           const hasMicrocycles = group.microcycles.length > 0
+          const values = prescriptionValues[group.id] ?? {
+            distanceKm: '',
+            durationMin: '',
+            elevationGain: '',
+            zone: '',
+            pamPercentage: '',
+            notes: '',
+          }
 
           return (
             <div key={group.id} className='rounded-lg border p-4'>
@@ -147,9 +295,9 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   </SelectField>
 
                   <div className='grid gap-4 sm:grid-cols-3'>
-                    <Field label='Distancia (km)' name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' defaultValue={current?.distanceKm ?? ''} />
-                    <Field label='Duración (min)' name={`durationMin:${group.id}`} type='number' min='0' step='1' defaultValue={current?.durationMin ?? ''} />
-                    <Field label='Desnivel (m+)' name={`elevationGain:${group.id}`} type='number' min='0' step='1' defaultValue={current?.elevationGain ?? ''} />
+                    <Field label='Distancia (km)' name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
+                    <Field label='Duración (min)' name={`durationMin:${group.id}`} type='number' min='0' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
+                    <Field label='Desnivel (m+)' name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(group.id, 'elevationGain', event.target.value)} />
                   </div>
 
                   <SelectField
@@ -164,16 +312,16 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   </SelectField>
 
                   {method === 'hr_zone' && (
-                    <SelectField label='Zona' name={`zone:${group.id}`} defaultValue={current?.zone ?? ''} required>
+                    <SelectField label='Zona' name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(group.id, 'zone', value)} required>
                       <option value=''>Seleccionar zona</option>
                       {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                     </SelectField>
                   )}
                   {method === 'pam_percentage' && (
-                    <Field label='Porcentaje PAM' name={`pamPercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' defaultValue={current?.pamPercentage ?? ''} required />
+                    <Field label='Porcentaje PAM' name={`pamPercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.pamPercentage} onChange={(event) => updatePrescriptionValue(group.id, 'pamPercentage', event.target.value)} required />
                   )}
 
-                  <TextAreaField label='Indicaciones para el grupo' name={`prescriptionNotes:${group.id}`} rows={3} defaultValue={current?.notes} />
+                  <TextAreaField label='Indicaciones para el grupo' name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
                 </div>
               )}
             </div>
@@ -189,14 +337,16 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   )
 }
 
-function Field({ label, name, type = 'text', placeholder, required, defaultValue, min, max, step, minLength }: { label: string; name: string; type?: string; placeholder?: string; required?: boolean; defaultValue?: string | number | null; min?: string; max?: string; step?: string; minLength?: number }) {
-  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}{required && <span className='text-destructive'> *</span>}</label><Input id={name} name={name} type={type} placeholder={placeholder} required={required} defaultValue={defaultValue ?? ''} min={min} max={max} step={step} minLength={minLength} /></div>
+type FieldProps = React.ComponentProps<typeof Input> & { label: string; name: string }
+
+function Field({ label, name, type = 'text', required, defaultValue, value, ...props }: FieldProps) {
+  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}{required && <span className='text-destructive'> *</span>}</label><Input id={name} name={name} type={type} required={required} defaultValue={value === undefined ? defaultValue ?? '' : undefined} value={value} {...props} /></div>
 }
 
-function TextAreaField({ label, name, rows, placeholder, defaultValue }: { label: string; name: string; rows: number; placeholder?: string; defaultValue?: string | null }) {
-  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}</label><textarea id={name} name={name} rows={rows} placeholder={placeholder} defaultValue={defaultValue ?? ''} className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]' /></div>
+function TextAreaField({ label, name, rows, placeholder, defaultValue, value, onChange }: { label: string; name: string; rows: number; placeholder?: string; defaultValue?: string | null; value?: string; onChange?: (value: string) => void }) {
+  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}</label><textarea id={name} name={name} rows={rows} placeholder={placeholder} defaultValue={value === undefined ? defaultValue ?? '' : undefined} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined} className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]' /></div>
 }
 
-function SelectField({ label, name, required, children, defaultValue, value, onChange }: { label: string; name: string; required?: boolean; children: React.ReactNode; defaultValue?: string; value?: string; onChange?: (value: string) => void }) {
-  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}{required && <span className='text-destructive'> *</span>}</label><select id={name} name={name} required={required} defaultValue={value === undefined ? defaultValue : undefined} value={value} onChange={onChange ? (event) => onChange(event.target.value) : undefined} className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'>{children}</select></div>
+function SelectField({ label, name, required, children, defaultValue, value, onChange, onChangeEvent }: { label: string; name: string; required?: boolean; children: React.ReactNode; defaultValue?: string; value?: string; onChange?: (value: string) => void; onChangeEvent?: (event: ChangeEvent<HTMLSelectElement>) => void }) {
+  return <div className='space-y-1.5'><label htmlFor={name} className='text-sm font-medium'>{label}{required && <span className='text-destructive'> *</span>}</label><select id={name} name={name} required={required} defaultValue={value === undefined ? defaultValue : undefined} value={value} onChange={onChangeEvent ?? (onChange ? (event) => onChange(event.target.value) : undefined)} className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'>{children}</select></div>
 }
