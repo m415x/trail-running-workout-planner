@@ -53,6 +53,8 @@
     "title": "Session templates",
     "description": "Search and reuse the team's recurring workout structures.",
     "new": "New template",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
     "results": "{count, plural, =0 {No templates} one {# template} other {# templates}}",
     "withoutLoadDefaults": "No default load",
     "filters": {
@@ -90,9 +92,12 @@
     "form": {
       "title": "New template",
       "description": "Save a reusable structure and its suggested values for future sessions.",
+      "editTitle": "Edit template",
+      "editDescription": "Update the structure and values suggested for future sessions.",
       "back": "Back to templates",
       "cancel": "Cancel",
       "create": "Create template",
+      "update": "Save changes",
       "saving": "Saving…",
       "identity": {
         "legend": "Identity and classification",

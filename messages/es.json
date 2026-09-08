@@ -53,6 +53,8 @@
     "title": "Plantillas de sesiones",
     "description": "Buscá y reutilizá estructuras frecuentes de entrenamiento del equipo.",
     "new": "Nueva plantilla",
+    "edit": "Editar",
+    "duplicate": "Duplicar",
     "results": "{count, plural, =0 {Sin plantillas} one {# plantilla} other {# plantillas}}",
     "withoutLoadDefaults": "Sin carga predeterminada",
     "filters": {
@@ -90,9 +92,12 @@
     "form": {
       "title": "Nueva plantilla",
       "description": "Guardá una estructura reutilizable y sus valores sugeridos para futuras sesiones.",
+      "editTitle": "Editar plantilla",
+      "editDescription": "Actualizá la estructura y los valores que se sugerirán en futuras sesiones.",
       "back": "Volver a plantillas",
       "cancel": "Cancelar",
       "create": "Crear plantilla",
+      "update": "Guardar cambios",
       "saving": "Guardando…",
       "identity": {
         "legend": "Identidad y clasificación",

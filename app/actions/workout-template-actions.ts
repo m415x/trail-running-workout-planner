@@ -50,6 +50,10 @@ function templatesPath(locale: string) {
   return locale === 'es' ? '/dashboard/templates' : `/${locale}/dashboard/templates`
 }
 
+function templateEditPath(locale: string, templateId: string) {
+  return `${templatesPath(locale)}/${templateId}/edit`
+}
+
 function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
   const intensityMethod = optionalText(formData, 'intensityMethod') as IntensityMethod | null
   let intensity: TrainingIntensity | null = null
@@ -132,6 +136,28 @@ function toWorkoutTemplate(row: typeof workouts.$inferSelect): WorkoutTemplate {
   }
 }
 
+function persistenceValues(draft: WorkoutTemplateDraft) {
+  const intensity = draft.prescriptionDefaults.intensity
+  return {
+    teamId: CURRENT_TEAM_ID,
+    category: draft.category,
+    tags: normalizeWorkoutTemplateTags(draft.tags),
+    title: draft.sessionDefaults.title.trim(),
+    type: draft.sessionDefaults.type,
+    locationKey: draft.sessionDefaults.locationKey,
+    trackPath: draft.sessionDefaults.trackPath,
+    structure: draft.sessionDefaults.structure,
+    notes: draft.sessionDefaults.notes,
+    distance: draft.prescriptionDefaults.distanceKm,
+    time: draft.prescriptionDefaults.durationMin,
+    gain: draft.prescriptionDefaults.elevationGain,
+    intensityMethod: intensity?.method ?? null,
+    zone: intensity?.method === 'hr_zone' ? intensity.zone : null,
+    pamPercentage: intensity?.method === 'pam_percentage' ? intensity.pamPercentage : null,
+    prescriptionNotes: draft.prescriptionDefaults.notes,
+  }
+}
+
 /**
  * Returns the reusable workout catalogue owned by one team.
  *
@@ -153,6 +179,19 @@ export async function getWorkoutTemplates(
     availableTags: [...new Set(catalogue.flatMap((template) => template.tags))]
       .sort((left, right) => left.localeCompare(right, 'es', { sensitivity: 'base' })),
   }
+}
+
+/** Returns one team-owned template or undefined when it is unavailable. */
+export async function getWorkoutTemplateById(templateId: string) {
+  const row = db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, templateId),
+      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.isDeleted, false),
+    ),
+  }).sync()
+
+  return row ? toWorkoutTemplate(row) : undefined
 }
 
 /** Returns the lightweight lookup data required by the template form. */
@@ -187,25 +226,9 @@ export async function createWorkoutTemplate(
 
   try {
     const now = new Date().toISOString()
-    const intensity = draft.prescriptionDefaults.intensity
     db.insert(workouts).values({
       id: randomUUID(),
-      teamId: CURRENT_TEAM_ID,
-      category: draft.category,
-      tags: normalizeWorkoutTemplateTags(draft.tags),
-      title: draft.sessionDefaults.title.trim(),
-      type: draft.sessionDefaults.type,
-      locationKey: draft.sessionDefaults.locationKey,
-      trackPath: draft.sessionDefaults.trackPath,
-      structure: draft.sessionDefaults.structure,
-      notes: draft.sessionDefaults.notes,
-      distance: draft.prescriptionDefaults.distanceKm,
-      time: draft.prescriptionDefaults.durationMin,
-      gain: draft.prescriptionDefaults.elevationGain,
-      intensityMethod: intensity?.method ?? null,
-      zone: intensity?.method === 'hr_zone' ? intensity.zone : null,
-      pamPercentage: intensity?.method === 'pam_percentage' ? intensity.pamPercentage : null,
-      prescriptionNotes: draft.prescriptionDefaults.notes,
+      ...persistenceValues(draft),
       createdAt: now,
       updatedAt: now,
     }).run()
@@ -221,4 +244,80 @@ export async function createWorkoutTemplate(
   const path = templatesPath(locale)
   revalidatePath(path)
   redirect(path)
+}
+
+/** Validates and updates one template without changing its identity or archive state. */
+export async function updateWorkoutTemplate(
+  previousState: WorkoutTemplateFormState,
+  formData: FormData,
+): Promise<WorkoutTemplateFormState> {
+  const templateId = formData.get('templateId')?.toString()
+  const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
+  const draft = draftFromFormData(formData)
+  const validation = validateWorkoutTemplateDefaults(draft)
+
+  if (!templateId) return { error: 'No se pudo identificar la plantilla.' }
+
+  if (!validation.isValid) {
+    const fieldErrors: WorkoutTemplateFormState['fieldErrors'] = {}
+    for (const issue of validation.errors) fieldErrors[issue.field] ??= issue.message
+    return {
+      error: 'Revisá los campos indicados antes de guardar.',
+      fieldErrors,
+      values: formValues(formData),
+      submissionKey: (previousState.submissionKey ?? 0) + 1,
+    }
+  }
+
+  try {
+    const template = await getWorkoutTemplateById(templateId)
+    if (!template) return { error: 'Plantilla no encontrada.' }
+
+    db.update(workouts)
+      .set({ ...persistenceValues(draft), updatedAt: new Date().toISOString() })
+      .where(and(eq(workouts.id, templateId), eq(workouts.teamId, CURRENT_TEAM_ID)))
+      .run()
+  } catch (error) {
+    console.error('Error updating workout template:', error)
+    return {
+      error: 'No se pudo actualizar la plantilla. Intentá nuevamente.',
+      values: formValues(formData),
+      submissionKey: (previousState.submissionKey ?? 0) + 1,
+    }
+  }
+
+  const path = templatesPath(locale)
+  revalidatePath(path)
+  redirect(path)
+}
+
+/** Creates an active, independent copy and opens it for review. */
+export async function duplicateWorkoutTemplate(formData: FormData) {
+  const templateId = formData.get('templateId')?.toString()
+  const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
+  if (!templateId) redirect(templatesPath(locale))
+
+  const source = db.query.workouts.findFirst({
+    where: and(
+      eq(workouts.id, templateId),
+      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.isDeleted, false),
+    ),
+  }).sync()
+  if (!source) redirect(templatesPath(locale))
+
+  const duplicateId = randomUUID()
+  const now = new Date().toISOString()
+  db.insert(workouts).values({
+    ...source,
+    id: duplicateId,
+    title: `${locale === 'es' ? 'Copia de' : 'Copy of'} ${source.title}`.slice(0, 120),
+    archivedAt: null,
+    isDeleted: false,
+    createdAt: now,
+    updatedAt: now,
+  }).run()
+
+  revalidatePath(templatesPath(locale))
+  redirect(templateEditPath(locale, duplicateId))
 }

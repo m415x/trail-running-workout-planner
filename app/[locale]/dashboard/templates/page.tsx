@@ -1,8 +1,8 @@
 import Link from 'next/link'
-import { FilterX, Plus, Search } from 'lucide-react'
+import { Copy, FilterX, Pencil, Plus, Search } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
-import { getWorkoutTemplates } from '@/app/actions/workout-template-actions'
+import { duplicateWorkoutTemplate, getWorkoutTemplates } from '@/app/actions/workout-template-actions'
 import type { WorkoutTemplateArchiveFilter, WorkoutTemplateCategory, WorkoutTemplateSearchCriteria, WorkoutType } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -134,6 +134,14 @@ export default async function WorkoutTemplatesPage({ params, searchParams }: Wor
                     {!hasLoad && <span className='text-muted-foreground'>{t('withoutLoadDefaults')}</span>}
                   </div>
                   {template.tags.length > 0 && <div className='flex flex-wrap gap-1.5'>{template.tags.map((value) => <Badge key={value} variant='secondary'>{value}</Badge>)}</div>}
+                  <div className='flex flex-wrap justify-end gap-2 pt-2'>
+                    <form action={duplicateWorkoutTemplate}>
+                      <input type='hidden' name='templateId' value={template.id} />
+                      <input type='hidden' name='locale' value={locale} />
+                      <button type='submit' className={buttonVariants({ variant: 'outline', size: 'sm' })}><Copy /> {t('duplicate')}</button>
+                    </form>
+                    <Link href={`${templatesPath}/${template.id}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}><Pencil /> {t('edit')}</Link>
+                  </div>
                 </CardContent>
               </Card>
             )
