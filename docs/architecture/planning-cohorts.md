@@ -237,14 +237,32 @@ group prescription as fallback.
 This task does not change `GroupSessionPrescription`, its uniqueness rules, or
 the generation keys established by automatic session generation.
 
-## Scope boundary for H7/T1
+## Implemented H7 boundary
 
-This document defines terminology and invariants only. It intentionally does not
-introduce:
+H7 implements the cohort foundation end to end:
 
-- database tables or migrations;
-- cohort management screens;
-- competition calendars or race registration;
-- automatic cohort assignment;
-- individual session overrides;
-- changes to planning or session generation.
+- SQLite and PostgreSQL persistence for cohorts and dated memberships;
+- base-plan and cohort-variant associations;
+- detached derivation of a draft variant from a base plan;
+- coach list, detail, create, edit, archive, assignment, and closure flows;
+- separate current, scheduled, and historical membership presentation;
+- dated athlete planning resolution with cohort precedence and group fallback;
+- team, group, cohort, athlete, lifecycle, deletion, and overlap isolation
+  tests.
+
+The athlete list presents the stable sporting group and adds the current cohort
+only when one applies. It deliberately avoids fallback labels such as “group
+plan” so the common case remains visually compact.
+
+H7 intentionally does not introduce:
+
+- competition calendars, race registration, or automatic cohort proposals;
+- individual planning or session overrides;
+- cohort-specific session-prescription targeting;
+- automatic activation of a derived cohort plan;
+- production authentication, authorization policies, or runtime migration from
+  SQLite to PostgreSQL.
+
+These boundaries prevent the cohort model from prematurely absorbing the
+competitive-calendar and session-prescription responsibilities of later
+stories.

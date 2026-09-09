@@ -97,6 +97,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Session create/edit requires at least one group prescription and preserves form data after validation errors.
 - Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
 - Athlete Home and `/plan` resolve sessions from the athlete's current group prescriptions.
+- Planning cohorts subdivide one sporting group temporarily without changing
+  athlete category or level. Coach flows support cohort management and dated
+  memberships, while athlete planning resolution uses the applicable cohort
+  variant first and the group base plan as fallback.
 - Session deletion is not implemented yet.
 
 ## Database Environments
@@ -116,6 +120,9 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Microcycles are consecutive, but session forms currently ask the coach to select one manually. Automatic microcycle inference belongs to the next planning-automation epic.
 - Intensity method defaults and propagation across groups are also future automation work; preserve the current manual override capability.
 - Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
+- Cohort session prescriptions, competition calendars, race registration, and
+  automatic cohort proposals remain future work; do not infer them from the H7
+  cohort foundation.
 
 ## Key Conventions & Gotchas
 

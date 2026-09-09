@@ -1,12 +1,13 @@
-# Handoff — Epic 2 / History 7 in progress
+# Handoff — Epic 2 / History 7 completed
 
 ## Repository state
 
 - Story branch: `h-16-planning-cohorts`.
 - T7 commit: `e8d01d5 feat: add planning cohort views`.
 - Persistence prerequisite commit: `689ed1e feat: persist planning cohorts`.
-- H7 is complete through T12, with T13 remaining as the final task.
-- Cohort persistence, read screens, and create/edit management now exist.
+- H7 is complete through T13.
+- Cohort persistence, management, dated memberships, planning resolution, and
+  isolation coverage are implemented.
 
 ## Story objective
 

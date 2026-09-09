@@ -28,7 +28,7 @@ inconsistency, or the origin of a domain rule is relevant to the task.
 ## Handoffs
 
 - [Epic 2 / History 6 completed](handoffs/epic-2-h6.md)
-- [Epic 2 / History 7 in progress](handoffs/epic-2-h7.md)
+- [Epic 2 / History 7 completed](handoffs/epic-2-h7.md)
 
 Handoffs describe the current operational state and are the primary starting
 point for continuing active implementation work.

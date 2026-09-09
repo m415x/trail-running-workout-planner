@@ -796,7 +796,7 @@ consistently.
 
 ---
 
-# Current transition — Planning cohorts
+# H7 — Manage planning cohorts
 
 H1–H6 improved how one group plan is created and transformed into training
 sessions.
@@ -824,7 +824,7 @@ The next problem therefore became:
 > without changing sporting classification or turning planning
 > athlete-first?
 
-This motivates H7 and the introduction of `PlanningCohort`.
+This motivated H7 and the introduction of `PlanningCohort`.
 
 The emerging distinction is:
 
@@ -841,16 +841,74 @@ an unrelated planning hierarchy.
 
 Individual `TrainingGoal` remains separate.
 
-The current H7 handoff and planning-cohort architecture document are the
-operational and architectural sources of truth while that history remains in
-progress.
+### Goal
 
-This history document should only absorb H7 once the story closes and its
-decisions are stable.
+Allow athletes from the same sporting group to follow a shared temporary plan
+variant without changing their sporting classification or creating individual
+plans.
+
+### Result
+
+H7 separated sporting identity from planning audience:
+
+```text
+AthleteGroup
+    ├── base GroupTrainingPlan
+    └── PlanningCohort
+          ├── dated athlete memberships
+          └── derived planning variant
+```
+
+`PlanningCohort` belongs to one team and one parent group. It has no independent
+date range: membership periods determine when it applies to an athlete, while
+the plan and macrocycles retain the planning horizon.
+
+Memberships reference `AthleteProfile`, preserve assignment and closure history,
+and use inclusive ISO date boundaries. They do not replace the financial
+`memberships` model and never modify `AthleteProfile.groupId`.
+
+A cohort variant remains a `GroupTrainingPlan` for the same group and records
+both its cohort and direct base-plan source. Variant chains are forbidden.
+Derivation creates a detached draft snapshot with new identities while
+preserving generated/manual provenance; materialized sessions are not copied.
+
+For a given athlete and date, resolution now follows an explicit order:
+
+1. reconstruct the applicable sporting group for the date;
+2. use the applicable cohort variant when exactly one valid membership exists;
+3. otherwise use the applicable base group plan;
+4. report conflicting legacy data instead of choosing silently.
+
+The coach can create, edit, archive, inspect, assign athletes to, and close
+memberships in cohorts. Current, scheduled, and historical periods remain
+visibly separate. The athlete list keeps the stable group visible and adds the
+current cohort only when applicable.
+
+### Domain outcome
+
+Group-first planning no longer means that every athlete in one sporting group
+must always be the same planning audience. A cohort is still shared planning,
+not an individual override.
+
+The preferred future entry point is competitive intent: race and distance,
+combined with the athlete's group and planning horizon, should allow the system
+to propose a compatible cohort for coach confirmation. H7 deliberately retains
+manual cohort management as the foundation and does not introduce the race
+calendar, automatic assignment, or cohort-specific session prescriptions.
+
+Persistence was prepared consistently for SQLite and PostgreSQL, including RLS
+enablement for the new Supabase tables. Production policies and authentication
+remain future work. Cross-aggregate rules such as same-team/same-group
+consistency and date overlap remain transaction-level application invariants in
+addition to database constraints.
+
+The durable contract and detailed invariants live in
+`docs/architecture/planning-cohorts.md`; the completed operational record lives
+in `docs/handoffs/epic-2-h7.md`.
 
 ---
 
-# Architecture after H6
+# Architecture after H7
 
 By the end of H6, the automation model can be summarized conceptually as:
 
@@ -882,6 +940,16 @@ AthleteProfile
 TrainingGoal
 ```
 
+Planning audiences now extend that structure without replacing it:
+
+```text
+AthleteGroup
+    ├── base GroupTrainingPlan
+    └── PlanningCohort
+          ├── PlanningCohortMembership → AthleteProfile
+          └── cohort GroupTrainingPlan variant
+```
+
 The diagrams describe domain responsibilities rather than exact database
 cardinalities or foreign keys.
 
@@ -889,7 +957,7 @@ cardinalities or foreign keys.
 
 # Durable outcomes so far
 
-Epic 2 H1–H6 established the following principles:
+Epic 2 H1–H7 established the following principles:
 
 - Planning strategy should be explicit rather than hidden inside generators.
 - Load progression and recovery are deliberate planning concepts.
@@ -913,6 +981,13 @@ Epic 2 H1–H6 established the following principles:
 - Pure domain generation should remain separate from persistence.
 - Automation supports the coach; it does not silently replace coach
   decisions.
+- Sporting group and planning audience are separate concepts.
+- Cohort applicability is dated and historical; current group membership alone
+  is insufficient for historical plan resolution.
+- A cohort plan is a direct variant of one base group plan, not an independent
+  hierarchy or a chain of variants.
+- Planning resolution prefers one valid cohort variant, falls back to the group
+  base plan, and exposes ambiguity rather than resolving it arbitrarily.
 
 ---
 
@@ -934,11 +1009,11 @@ to:
 
 H1–H6 answer much of the transformation side of that question.
 
-H7 now addresses the audience side:
+H7 addresses the audience side:
 
 > Who should a particular planning variant apply to, and for what period,
 > without changing the athlete's sporting identity?
 
-That question continues the same pattern established throughout Epic 2:
+That answer continues the same pattern established throughout Epic 2:
 automation becomes safer and more useful as previously implicit domain
 assumptions become explicit.
