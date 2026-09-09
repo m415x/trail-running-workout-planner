@@ -65,10 +65,10 @@ function getCurrentDateInArgentina() {
   }).format(new Date())
 }
 
-export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
+export async function getAthletesByTeam() {
   try {
     const athletes = await db.query.athleteProfiles.findMany({
-      where: and(eq(athleteProfiles.teamId, teamId), eq(athleteProfiles.isDeleted, false)),
+      where: and(eq(athleteProfiles.teamId, CURRENT_TEAM_ID), eq(athleteProfiles.isDeleted, false)),
       with: {
         user: true,
         group: true,

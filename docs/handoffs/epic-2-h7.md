@@ -244,13 +244,19 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   and lint remained at 0 errors with the same 11 known warnings.
 - T11 final gate: 261 tests passed, type checking and production build passed,
   and lint remained at 0 errors with the same 11 known warnings.
+- T13 final gate: 267 tests passed, type checking and production build passed,
+  and lint remained at 0 errors with the same 11 known warnings.
+- The coach completed the T13 regression walkthrough successfully. The only
+  console noise observed was missing static avatar files (HTTP 404), which is
+  unrelated to cohort isolation and remains separate data/static-asset debt.
 
-## Next functional task
+## Story status
 
-T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+H7 is complete through T13 / KAN-176.
 
-Exercise persistence and resolution boundaries across teams, groups, cohorts,
-and athletes before closing the story.
+The final isolation coverage verifies team, group, cohort, membership, plan,
+and athlete boundaries, including deleted records and overlapping membership
+conflicts. The athlete list query is also fixed to the current team boundary.
 
 ## Confirmed execution sequence
 
@@ -278,10 +284,7 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
-
-Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
-are recorded here from the current sequential plan.
+None. Run the story-level final gate again only if code changes before merge.
 
 ## Consolidated constraints
 
