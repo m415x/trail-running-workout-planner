@@ -8,7 +8,8 @@ const applicationTables = [
   'group_session_prescriptions', 'group_training_plans', 'macrocycles',
   'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'microcycle_intensity_targets', 'physiology_records',
-  'planning_modification_records', 'sessions', 'shoes', 'teams',
+  'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
+  'sessions', 'shoes', 'teams',
   'training_goals', 'training_locations', 'users', 'workout_logs', 'workouts',
 ]
 

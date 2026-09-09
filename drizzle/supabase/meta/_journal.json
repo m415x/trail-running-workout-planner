@@ -64,6 +64,13 @@
       "when": 1788906385032,
       "tag": "0008_large_rage",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1788979166135,
+      "tag": "0009_thin_bushwacker",
+      "breakpoints": true
     }
   ]
 }

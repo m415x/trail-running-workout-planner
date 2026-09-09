@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core'
-import { relations } from 'drizzle-orm'
+import { check, index, sqliteTable, text, integer, real, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
+import { relations, sql } from 'drizzle-orm'
 
 import type {
   UserRole,
@@ -21,6 +22,7 @@ import type {
   TargetElevationSource,
   TargetVolumeSource,
   WorkoutTemplateCategory,
+  PlanningCohortStatus,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
 import type {
@@ -108,6 +110,27 @@ export const athleteGroups = sqliteTable(
   ],
 )
 
+export const planningCohorts = sqliteTable(
+  'planning_cohorts',
+  {
+    ...baseColumns,
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    name: text('name').notNull(),
+    purpose: text('purpose').notNull(),
+    description: text('description'),
+    status: text('status').$type<PlanningCohortStatus>().notNull().default('active'),
+  },
+  (table) => [
+    index('planning_cohorts_team_group_status_idx').on(table.teamId, table.groupId, table.status),
+    check('planning_cohorts_status_check', sql`${table.status} in ('active', 'archived')`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 4. ATHLETE PROFILES (Datos deportivos)                                     */
 /* -------------------------------------------------------------------------- */
@@ -140,6 +163,45 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
   physiology: text('physiology', { mode: 'json' }).$type<AthletePhysiology>(),
   medical: text('medical', { mode: 'json' }).$type<MedicalRecord>(),
 })
+
+export const planningCohortMemberships = sqliteTable(
+  'planning_cohort_memberships',
+  {
+    ...baseColumns,
+    planningCohortId: text('planning_cohort_id')
+      .notNull()
+      .references(() => planningCohorts.id, { onDelete: 'cascade' }),
+    athleteProfileId: text('athlete_profile_id')
+      .notNull()
+      .references(() => athleteProfiles.id, { onDelete: 'cascade' }),
+    startDate: text('start_date').notNull(),
+    endDate: text('end_date'),
+    assignedByUserId: text('assigned_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    assignmentReason: text('assignment_reason'),
+    endedByUserId: text('ended_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    endReason: text('end_reason'),
+  },
+  (table) => [
+    index('planning_cohort_memberships_cohort_dates_idx').on(
+      table.planningCohortId,
+      table.startDate,
+      table.endDate,
+    ),
+    index('planning_cohort_memberships_athlete_dates_idx').on(
+      table.athleteProfileId,
+      table.startDate,
+      table.endDate,
+    ),
+    check(
+      'planning_cohort_memberships_date_order_check',
+      sql`${table.endDate} is null or ${table.endDate} >= ${table.startDate}`,
+    ),
+    check(
+      'planning_cohort_memberships_open_end_metadata_check',
+      sql`${table.endDate} is not null or (${table.endedByUserId} is null and ${table.endReason} is null)`,
+    ),
+  ],
+)
 
 /* -------------------------------------------------------------------------- */
 /* 5. PHYSIOLOGY RECORDS (Historial de evaluaciones)                         */
@@ -225,17 +287,38 @@ export const trainingGoals = sqliteTable('training_goals', {
 /* 8. CICLOS                                                                  */
 /* -------------------------------------------------------------------------- */
 
-export const groupTrainingPlans = sqliteTable('group_training_plans', {
-  ...baseColumns,
+export const groupTrainingPlans = sqliteTable(
+  'group_training_plans',
+  {
+    ...baseColumns,
 
-  groupId: text('group_id')
-    .notNull()
-    .references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    groupId: text('group_id')
+      .notNull()
+      .references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    planningCohortId: text('planning_cohort_id')
+      .references(() => planningCohorts.id, { onDelete: 'restrict' }),
+    sourceGroupTrainingPlanId: text('source_group_training_plan_id')
+      .references((): AnySQLiteColumn => groupTrainingPlans.id, {
+        onDelete: 'restrict',
+      }),
 
-  title: text('title').notNull(),
-  status: text('status').$type<GroupTrainingPlanStatus>().notNull().default('draft'),
-  notes: text('notes'),
-})
+    title: text('title').notNull(),
+    status: text('status').$type<GroupTrainingPlanStatus>().notNull().default('draft'),
+    notes: text('notes'),
+  },
+  (table) => [
+    uniqueIndex('group_training_plans_planning_cohort_unique').on(table.planningCohortId),
+    index('group_training_plans_source_idx').on(table.sourceGroupTrainingPlanId),
+    check(
+      'group_training_plans_cohort_source_pair_check',
+      sql`(${table.planningCohortId} is null and ${table.sourceGroupTrainingPlanId} is null) or (${table.planningCohortId} is not null and ${table.sourceGroupTrainingPlanId} is not null)`,
+    ),
+    check(
+      'group_training_plans_source_not_self_check',
+      sql`${table.sourceGroupTrainingPlanId} is null or ${table.sourceGroupTrainingPlanId} <> ${table.id}`,
+    ),
+  ],
+)
 
 export const macrocycles = sqliteTable('macrocycles', {
   ...baseColumns,
@@ -518,6 +601,7 @@ export const shoes = sqliteTable('shoes', {
 export const teamsRelations = relations(teams, ({ many }) => ({
   athletes: many(athleteProfiles),
   groups: many(athleteGroups),
+  planningCohorts: many(planningCohorts),
   sessions: many(sessions),
   workouts: many(workouts),
 }))
@@ -545,6 +629,7 @@ export const athleteGroupsRelations = relations(athleteGroups, ({ one, many }) =
   }),
   sessionPrescriptions: many(groupSessionPrescriptions),
   trainingPlans: many(groupTrainingPlans),
+  planningCohorts: many(planningCohorts),
 }))
 
 export const athleteProfilesRelations = relations(athleteProfiles, ({ one, many }) => ({
@@ -566,6 +651,41 @@ export const athleteProfilesRelations = relations(athleteProfiles, ({ one, many 
   shoes: many(shoes),
   workoutLogs: many(workoutLogs),
   memberships: many(memberships),
+  planningCohortMemberships: many(planningCohortMemberships),
+}))
+
+export const planningCohortsRelations = relations(planningCohorts, ({ one, many }) => ({
+  team: one(teams, {
+    fields: [planningCohorts.teamId],
+    references: [teams.id],
+  }),
+  group: one(athleteGroups, {
+    fields: [planningCohorts.groupId],
+    references: [athleteGroups.id],
+  }),
+  memberships: many(planningCohortMemberships),
+  planningVariant: one(groupTrainingPlans),
+}))
+
+export const planningCohortMembershipsRelations = relations(planningCohortMemberships, ({ one }) => ({
+  planningCohort: one(planningCohorts, {
+    fields: [planningCohortMemberships.planningCohortId],
+    references: [planningCohorts.id],
+  }),
+  athleteProfile: one(athleteProfiles, {
+    fields: [planningCohortMemberships.athleteProfileId],
+    references: [athleteProfiles.id],
+  }),
+  assignedBy: one(users, {
+    fields: [planningCohortMemberships.assignedByUserId],
+    references: [users.id],
+    relationName: 'planningCohortMembershipAssignedBy',
+  }),
+  endedBy: one(users, {
+    fields: [planningCohortMemberships.endedByUserId],
+    references: [users.id],
+    relationName: 'planningCohortMembershipEndedBy',
+  }),
 }))
 
 export const physiologyRecordsRelations = relations(physiologyRecords, ({ one }) => ({
@@ -617,6 +737,18 @@ export const groupTrainingPlansRelations = relations(groupTrainingPlans, ({ one,
   group: one(athleteGroups, {
     fields: [groupTrainingPlans.groupId],
     references: [athleteGroups.id],
+  }),
+  planningCohort: one(planningCohorts, {
+    fields: [groupTrainingPlans.planningCohortId],
+    references: [planningCohorts.id],
+  }),
+  sourceGroupTrainingPlan: one(groupTrainingPlans, {
+    fields: [groupTrainingPlans.sourceGroupTrainingPlanId],
+    references: [groupTrainingPlans.id],
+    relationName: 'planningVariantSource',
+  }),
+  derivedVariants: many(groupTrainingPlans, {
+    relationName: 'planningVariantSource',
   }),
   macrocycles: many(macrocycles),
   modifications: many(planningModificationRecords),

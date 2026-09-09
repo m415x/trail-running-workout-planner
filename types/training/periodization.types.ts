@@ -10,6 +10,7 @@ export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'del
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
 export type PeriodType = 'general_preparatory' | 'specific_preparatory' | 'competitive' | 'transition'
 export type GroupTrainingPlanStatus = 'draft' | 'active' | 'completed' | 'cancelled'
+export type GroupTrainingPlanKind = 'group_base' | 'cohort_variant'
 export type ProgressionDurationProfile = 'short' | 'normal' | 'long'
 export type TargetValueSource = 'generated' | 'manual'
 export type TargetVolumeSource = TargetValueSource
@@ -134,6 +135,10 @@ export interface Macrocycle extends BaseEntity {
 
 export interface GroupTrainingPlan extends BaseEntity {
   groupId: string
+  /** Null for a base plan; identifies the audience of a cohort variant. */
+  planningCohortId: string | null
+  /** Null for a base plan; identifies the base plan copied by a variant. */
+  sourceGroupTrainingPlanId: string | null
   title: string
   status: GroupTrainingPlanStatus
   notes?: string | null

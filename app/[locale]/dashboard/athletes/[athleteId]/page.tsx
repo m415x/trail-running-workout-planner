@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
+import { ArrowLeft, CalendarRange, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
+import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -27,6 +28,15 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
 }
 
+function todayInArgentina() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
   return (
     <div>
@@ -38,7 +48,11 @@ function DetailItem({ label, value }: { label: string; value: string | null | un
 
 export default async function AthleteDetailPage({ params }: AthleteDetailPageProps) {
   const { locale, athleteId } = await params
-  const athlete = await getAthleteById(athleteId)
+  const today = todayInArgentina()
+  const [athlete, planningResult] = await Promise.all([
+    getAthleteById(athleteId),
+    getAthletePlanningResolutionOnDate(athleteId, today),
+  ])
 
   if (!athlete) {
     notFound()
@@ -52,6 +66,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const editPath = athletePath(locale, `/${athlete.id}/edit`)
   const groupPath = athletePath(locale, `/${athlete.id}/group`)
   const newGoalPath = athletePath(locale, `/${athlete.id}/goals/new`)
+  const planningBasePath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-6'>
@@ -139,6 +154,45 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 <p className='font-medium'>{athlete.phone || 'No informado'}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className='md:col-span-2'>
+          <CardHeader>
+            <CardTitle className='flex items-center gap-2'>
+              <CalendarRange className='size-5' />
+              Planificación aplicable hoy
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {planningResult?.resolution.status === 'resolved' ? (
+              <div className='flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between'>
+                <div>
+                  <div className='flex flex-wrap items-center gap-2'>
+                    <p className='font-medium'>{planningResult.planTitle ?? 'Planificación sin título disponible'}</p>
+                    <Badge variant={planningResult.resolution.source === 'cohort' ? 'default' : 'secondary'}>
+                      {planningResult.resolution.source === 'cohort' ? 'Cohorte' : 'Plan grupal'}
+                    </Badge>
+                  </div>
+                  <p className='mt-1 text-sm text-muted-foreground'>
+                    {planningResult.resolution.source === 'cohort'
+                      ? `Variante compartida por ${planningResult.cohortName ?? 'la cohorte aplicable'}.`
+                      : 'Se usa el plan base del grupo porque no existe una variante de cohorte aplicable.'}
+                  </p>
+                </div>
+                <Link href={`${planningBasePath}/${planningResult.resolution.planId}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                  Ver planificación
+                </Link>
+              </div>
+            ) : planningResult?.resolution.status === 'conflict' ? (
+              <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive'>
+                No se pudo resolver una planificación única. Revisá las membresías de cohorte y los planes que cubren esta fecha.
+              </div>
+            ) : (
+              <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
+                No hay una planificación activa que cubra la fecha actual para el grupo del atleta.
+              </p>
+            )}
           </CardContent>
         </Card>
 

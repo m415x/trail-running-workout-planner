@@ -97,6 +97,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Session create/edit requires at least one group prescription and preserves form data after validation errors.
 - Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
 - Athlete Home and `/plan` resolve sessions from the athlete's current group prescriptions.
+- Planning cohorts subdivide one sporting group temporarily without changing
+  athlete category or level. Coach flows support cohort management and dated
+  memberships, while athlete planning resolution uses the applicable cohort
+  variant first and the group base plan as fallback.
 - Session deletion is not implemented yet.
 
 ## Database Environments
@@ -116,6 +120,9 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Microcycles are consecutive, but session forms currently ask the coach to select one manually. Automatic microcycle inference belongs to the next planning-automation epic.
 - Intensity method defaults and propagation across groups are also future automation work; preserve the current manual override capability.
 - Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
+- Cohort session prescriptions, competition calendars, race registration, and
+  automatic cohort proposals remain future work; do not infer them from the H7
+  cohort foundation.
 
 ## Key Conventions & Gotchas
 
@@ -140,7 +147,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 - Work in a story branch and keep commits aligned with the current task.
 - Before each task commit, provide focused manual checks for the affected UI flow.
-- Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` in proportion to the change; build is mandatory before release-oriented merges.
+- During implementation, prefer focused tests plus type checking and linting of the affected area.
+- Before handing an affected UI flow to the user, run the full validation gate when the task adds routes, server actions, persistence, shared domain behavior, or another structurally relevant change.
+- After the user completes the manual checks, do not repeat an unchanged full gate: confirm that the validated code has not changed, review the final diff, and commit it. If manual testing leads to any code change, rerun the full gate before committing.
+- Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation. Build is also mandatory for other release-oriented merges.
 - Existing lint warnings should not be multiplied. New code must introduce no lint errors.
 - Push the story branch, validate the Vercel deployment, and only then merge it into `dashboard`.
 - Keep documentation-only changes in a separate commit when possible.
