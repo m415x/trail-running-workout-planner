@@ -140,7 +140,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 - Work in a story branch and keep commits aligned with the current task.
 - Before each task commit, provide focused manual checks for the affected UI flow.
-- Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` in proportion to the change; build is mandatory before release-oriented merges.
+- During implementation, prefer focused tests plus type checking and linting of the affected area.
+- Before handing an affected UI flow to the user, run the full validation gate when the task adds routes, server actions, persistence, shared domain behavior, or another structurally relevant change.
+- After the user completes the manual checks, do not repeat an unchanged full gate: confirm that the validated code has not changed, review the final diff, and commit it. If manual testing leads to any code change, rerun the full gate before committing.
+- Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation. Build is also mandatory for other release-oriented merges.
 - Existing lint warnings should not be multiplied. New code must introduce no lint errors.
 - Push the story branch, validate the Vercel deployment, and only then merge it into `dashboard`.
 - Keep documentation-only changes in a separate commit when possible.
