@@ -184,7 +184,8 @@ function createTestDatabase() {
   sqlite.exec(`
     CREATE TABLE group_training_plans (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
-      group_id TEXT NOT NULL, title TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', notes TEXT
+      group_id TEXT NOT NULL, planning_cohort_id TEXT, source_group_training_plan_id TEXT,
+      title TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'draft', notes TEXT
     );
     CREATE TABLE macrocycles (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,

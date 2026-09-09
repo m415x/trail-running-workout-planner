@@ -136,6 +136,46 @@ The source must be a base plan; variant chains are not allowed. This keeps one
 stable baseline for comparison and regeneration. Associating a new variant to
 an archived cohort is invalid.
 
+### Variant derivation
+
+Derivation creates a detached draft snapshot and performs no database writes.
+The variant always starts as `draft`; creating it and activating it are separate
+coach decisions.
+
+Every persisted child receives a new identity, and every internal reference is
+explicitly remapped. The snapshot copies the load strategy, intensity strategy,
+session-generation preferences, macrocycles, mesocycles, microcycles, and
+microcycle intensity targets. It preserves manual/generated and
+suggested/manual provenance while sharing no mutable state with the source.
+
+The operation rejects duplicate derived IDs, reused source IDs, orphaned
+microcycle intensity targets, archived or cross-group cohorts, and non-base
+sources. Materialized `Session` and `GroupSessionPrescription` records are not
+copied; they remain governed by their own generation and ownership lifecycle.
+
+### Persistence foundation
+
+SQLite and PostgreSQL persist cohorts in `planning_cohorts` and dated athlete
+assignments in `planning_cohort_memberships`. The existing financial
+`memberships` table remains unrelated.
+
+`group_training_plans` stores nullable `planning_cohort_id` and
+`source_group_training_plan_id`. Both values must be null for a base plan and
+both must be populated for a cohort variant. A cohort has at most one directly
+associated planning variant, and a plan cannot reference itself as its source.
+
+The databases enforce foreign keys, lifecycle values, basic membership date
+order, open-membership closure metadata, complete plan associations, and the
+one-variant-per-cohort rule. Same-team and same-group consistency, membership
+overlaps, source-plan group consistency, and variant-chain prevention cross
+aggregate boundaries and must still be validated in the application
+transaction.
+
+The local SQLite migration is idempotent and leaves both new plan references
+null for existing records. PostgreSQL introduces the same structures through
+the reviewed Drizzle migration and enables RLS on both new tables; production
+policies remain part of the future authentication and authorization work.
+
 For a given athlete and calendar date, planning is resolved with this precedence:
 
 1. use the applicable cohort planning variant when an active dated membership
