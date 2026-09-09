@@ -124,6 +124,18 @@ group change and those closures must eventually be persisted atomically.
 
 ## Planning resolution
 
+### Base plans and cohort variants
+
+`GroupTrainingPlan.groupId` remains required for every plan. A base group plan
+has both `planningCohortId` and `sourceGroupTrainingPlanId` set to null. A cohort
+variant must set both fields: the cohort identifies its audience and the source
+plan identifies the baseline from which it was derived.
+
+A variant and its source must belong to the same sporting group as the cohort.
+The source must be a base plan; variant chains are not allowed. This keeps one
+stable baseline for comparison and regeneration. Associating a new variant to
+an archived cohort is invalid.
+
 For a given athlete and calendar date, planning is resolved with this precedence:
 
 1. use the applicable cohort planning variant when an active dated membership
