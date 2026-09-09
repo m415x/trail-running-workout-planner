@@ -7,7 +7,7 @@
   `d50e87ca21edfae6913f6beeeddabe825c3ce48f`.
 - HEAD commit: `d50e87c chore: refresh sqlite planning seed`.
 - Previous feature commit: `a79c8a9 feat: derive cohort planning variants`.
-- H7 is complete through T6 plus the advanced persistence prerequisite T12.
+- H7 is complete through T7 plus the advanced persistence prerequisite T12.
 - The tree was clean after `git fetch --prune` and before this handoff update.
 - Cohort persistence and migrations exist; CRUD server actions and cohort UI do
   not exist yet.
@@ -138,6 +138,23 @@ Implemented after T6 as the technical prerequisite for T7.
 - Added focused migration and constraint tests.
 - The Supabase migration is prepared but was not applied remotely in this task.
 
+### T7 / KAN-170 — Create cohort list and detail screens
+
+Implemented against the real SQLite cohort persistence introduced by T12.
+
+- Added a coach sidebar entry and the localized routes
+  `/dashboard/cohorts` and `/dashboard/cohorts/[cohortId]`.
+- The list shows lifecycle, parent sporting group, purpose, current membership
+  count, and associated planning variant.
+- The detail shows cohort context, planning lineage when available, and dated
+  current/historical memberships linked to athlete profiles.
+- Soft-deleted cohorts, memberships, and planning variants are excluded.
+- Queries remain isolated to the current development team without spreading its
+  fixed ID into domain helpers.
+- Seed fixtures include an active S2 cohort with current and historical
+  memberships plus an archived empty M1 cohort.
+- T7 remains read-only: create/edit and athlete assignment belong to T8/T9.
+
 ## Validation known at this handoff
 
 - T4 membership policy: 9 focused tests.
@@ -145,17 +162,17 @@ Implemented after T6 as the technical prerequisite for T7.
 - T6 plan derivation: 10 focused tests, rerun successfully on
   `d50e87ca21edfae6913f6beeeddabe825c3ce48f` while preparing this handoff.
 - T12 migration policy: 3 focused tests.
-- Full suite after T12: 248 passed, 0 failed.
+- T7 membership presentation: 3 focused tests.
+- Full suite after T7: 251 passed, 0 failed.
 - TypeScript and production build passed.
 - Supabase migration journal check passed.
 - Lint: 0 errors and the same 11 known baseline warnings.
 
 ## Next functional task
 
-T7 / KAN-170 — Create cohort list and detail screens.
+T8 / KAN-171 — Create and edit cohorts.
 
-Implement T7 against the real cohort persistence introduced by T12. Do not add
-mock persistence or temporary data contracts.
+Use the existing real persistence and keep membership assignment outside T8.
 
 ## Confirmed execution sequence
 
@@ -183,12 +200,11 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T7 / KAN-170 — Create cohort list and detail screens.
-2. T8 / KAN-171 — Create and edit cohorts.
-3. T9 / KAN-172 — Assign and remove athletes from a cohort.
-4. T10 / KAN-173 — Show members and membership history.
-5. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
-6. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+1. T8 / KAN-171 — Create and edit cohorts.
+2. T9 / KAN-172 — Assign and remove athletes from a cohort.
+3. T10 / KAN-173 — Show members and membership history.
+4. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
+5. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
 Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
 are recorded here from the current sequential plan.

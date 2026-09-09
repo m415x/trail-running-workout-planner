@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, CalendarRange, Dumbbell, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarRange, Dumbbell, GitBranch, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { Link, usePathname } from '@/i18n/routing'
@@ -32,6 +32,11 @@ const navigationItems = [
     label: 'Grupos',
     href: '/dashboard/groups',
     icon: UsersRound,
+  },
+  {
+    label: 'Cohortes',
+    href: '/dashboard/cohorts',
+    icon: GitBranch,
   },
   {
     label: 'Planificación',

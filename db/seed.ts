@@ -7,6 +7,8 @@ import {
   macrocycles,
   mesocycles,
   microcycles,
+  planningCohortMemberships,
+  planningCohorts,
   sessions,
   shoes as shoesTable,
   teams,
@@ -565,7 +567,68 @@ async function seed() {
   await db.insert(athleteProfiles).values(testAthleteRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
-  // 6. Objetivo individual del atleta actual
+  // 6. Cohortes de planificación demostrativas
+  // -----------------------------------------------------------------------
+
+  await db.insert(planningCohorts).values([
+    {
+      id: 'planning_cohort_s2_short_trail',
+      teamId,
+      groupId: getGroupId('S2'),
+      name: 'Short Trail primavera',
+      purpose: 'Preparar una carrera corta de trail con un horizonte compartido.',
+      description: 'Cohorte activa para validar integrantes vigentes e históricos.',
+      status: 'active',
+    },
+    {
+      id: 'planning_cohort_m1_archived',
+      teamId,
+      groupId: getGroupId('M1'),
+      name: 'Maratón de montaña 2025',
+      purpose: 'Conservar la planificación histórica de una cohorte finalizada.',
+      description: null,
+      status: 'archived',
+    },
+   ]).onConflictDoNothing().run()
+
+  await db.insert(planningCohortMemberships).values([
+    {
+      id: 'cohort_membership_current_athlete',
+      planningCohortId: 'planning_cohort_s2_short_trail',
+      athleteProfileId,
+      startDate: currentWeekStart,
+      endDate: null,
+      assignedByUserId: null,
+      assignmentReason: 'Objetivo Short Trail compartido.',
+      endedByUserId: null,
+      endReason: null,
+    },
+    {
+      id: 'cohort_membership_ana',
+      planningCohortId: 'planning_cohort_s2_short_trail',
+      athleteProfileId: 'profile_user_2',
+      startDate: currentWeekStart,
+      endDate: null,
+      assignedByUserId: null,
+      assignmentReason: 'Objetivo Short Trail compartido.',
+      endedByUserId: null,
+      endReason: null,
+    },
+    {
+      id: 'cohort_membership_bruno_history',
+      planningCohortId: 'planning_cohort_s2_short_trail',
+      athleteProfileId: 'profile_user_3',
+      startDate: shiftISODate(currentWeekStart, -8 * 7),
+      endDate: shiftISODate(currentWeekStart, -1),
+      assignedByUserId: null,
+      assignmentReason: 'Preparación compartida del bloque anterior.',
+      endedByUserId: null,
+      endReason: 'Objetivo completado.',
+    },
+  ]).onConflictDoNothing().run()
+
+  // -----------------------------------------------------------------------
+  // 7. Objetivo individual del atleta actual
   // -----------------------------------------------------------------------
   //
   // El atleta actual pertenece a S2, por lo que el fixture utiliza una
@@ -591,7 +654,7 @@ async function seed() {
     .run()
 
   // -----------------------------------------------------------------------
-  // 7. Planificaciones modernas de Epic 2
+  // 8. Planificaciones modernas de Epic 2
   // -----------------------------------------------------------------------
 
   const planDefinitions: SeedPlanDefinition[] = [
