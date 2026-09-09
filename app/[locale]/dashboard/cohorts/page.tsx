@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { CalendarRange, Eye, Users } from 'lucide-react'
+import { CalendarRange, Eye, Plus, Users } from 'lucide-react'
 
 import { getPlanningCohortsByTeam } from '@/app/actions/planning-cohort-actions'
 import { isPlanningCohortMembershipActiveOn } from '@/lib/planning-cohorts/membership-view'
@@ -28,11 +28,12 @@ export default async function PlanningCohortsPage({ params }: PlanningCohortsPag
 
   return (
     <div className='space-y-6'>
-      <div>
-        <h2 className='text-3xl font-bold tracking-tight'>Cohortes de planificación</h2>
-        <p className='text-muted-foreground'>
-          Variantes compartidas para atletas del mismo grupo con objetivos compatibles.
-        </p>
+      <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+        <div>
+          <h2 className='text-3xl font-bold tracking-tight'>Cohortes de planificación</h2>
+          <p className='text-muted-foreground'>Variantes compartidas para atletas del mismo grupo con objetivos compatibles.</p>
+        </div>
+        <Link href={`${cohortsPath}/new`} className={buttonVariants()}><Plus /> Nueva cohorte</Link>
       </div>
 
       {cohorts.length === 0 ? (

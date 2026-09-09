@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CalendarRange, Eye, UsersRound } from 'lucide-react'
+import { ArrowLeft, CalendarRange, Eye, Pencil, UsersRound } from 'lucide-react'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
 import { isPlanningCohortMembershipActiveOn } from '@/lib/planning-cohorts/membership-view'
@@ -56,7 +56,7 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
         >
           <ArrowLeft />
         </Link>
-        <div>
+        <div className='min-w-0 flex-1'>
           <div className='flex flex-wrap items-center gap-2'>
             <h2 className='text-3xl font-bold tracking-tight'>{cohort.name}</h2>
             <Badge variant={cohort.status === 'active' ? 'default' : 'secondary'}>
@@ -67,6 +67,9 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
           <p className='text-muted-foreground'>{cohort.purpose}</p>
           {cohort.description && <p className='mt-2 max-w-3xl text-sm'>{cohort.description}</p>}
         </div>
+        <Link href={`${cohortsPath}/${cohort.id}/edit`} className={buttonVariants({ variant: 'outline' })}>
+          <Pencil /> {cohort.status === 'active' ? 'Editar' : 'Ver archivo'}
+        </Link>
       </div>
 
       <Card>

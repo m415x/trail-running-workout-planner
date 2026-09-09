@@ -3,14 +3,10 @@
 ## Repository state
 
 - Story branch: `h-16-planning-cohorts`.
-- Confirmed local and remote HEAD before this update:
-  `d50e87ca21edfae6913f6beeeddabe825c3ce48f`.
-- HEAD commit: `d50e87c chore: refresh sqlite planning seed`.
-- Previous feature commit: `a79c8a9 feat: derive cohort planning variants`.
-- H7 is complete through T7 plus the advanced persistence prerequisite T12.
-- The tree was clean after `git fetch --prune` and before this handoff update.
-- Cohort persistence and migrations exist; CRUD server actions and cohort UI do
-  not exist yet.
+- T7 commit: `e8d01d5 feat: add planning cohort views`.
+- Persistence prerequisite commit: `689ed1e feat: persist planning cohorts`.
+- H7 is complete through T8 plus the advanced persistence prerequisite T12.
+- Cohort persistence, read screens, and create/edit management now exist.
 
 ## Story objective
 
@@ -155,6 +151,23 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   memberships plus an archived empty M1 cohort.
 - T7 remains read-only: create/edit and athlete assignment belong to T8/T9.
 
+### T8 / KAN-171 — Create and edit cohorts
+
+- Added creation restricted to active sporting groups in the current team.
+- Added editing of name, shared purpose, and description from cohort detail.
+- The parent sporting group remains immutable after creation.
+- Duplicate visible names are rejected within the same sporting group; the same
+  name remains valid in another group.
+- Form values survive server-side validation failures.
+- Active cohorts can be archived as a terminal operation. Archived cohorts
+  remain visible as read-only history and cannot be reactivated or edited.
+- Creation starts with no memberships and no derived plan; those remain separate
+  operations.
+- Coach-managed cohorts are the initial entry point. The documented target
+  evolution is a race-calendar flow where athlete race/distance intent plus the
+  current sporting group proposes a compatible cohort for coach confirmation.
+  Manual creation remains an alternative, and T8 adds no premature race fields.
+
 ## Validation known at this handoff
 
 - T4 membership policy: 9 focused tests.
@@ -167,12 +180,17 @@ Implemented against the real SQLite cohort persistence introduced by T12.
 - TypeScript and production build passed.
 - Supabase migration journal check passed.
 - Lint: 0 errors and the same 11 known baseline warnings.
+- T8 reused the 251-test suite successfully; type checking and production build
+  passed, and lint remained at 0 errors with the same 11 warnings.
+- The coach completed the T8 create, edit, duplicate-name, validation,
+  immutable-group, and archival walkthrough successfully.
 
 ## Next functional task
 
-T8 / KAN-171 — Create and edit cohorts.
+T9 / KAN-172 — Assign and remove athletes from a cohort.
 
-Use the existing real persistence and keep membership assignment outside T8.
+Use the existing dated membership policy. Keep automatic race-driven assignment
+outside T9, but preserve it as the preferred future entry flow.
 
 ## Confirmed execution sequence
 
@@ -200,11 +218,10 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T8 / KAN-171 — Create and edit cohorts.
-2. T9 / KAN-172 — Assign and remove athletes from a cohort.
-3. T10 / KAN-173 — Show members and membership history.
-4. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
-5. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+1. T9 / KAN-172 — Assign and remove athletes from a cohort.
+2. T10 / KAN-173 — Show members and membership history.
+3. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
+4. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
 Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
 are recorded here from the current sequential plan.
@@ -243,8 +260,9 @@ are recorded here from the current sequential plan.
 
 - One task per commit, after user approval.
 - Focused tests during implementation.
-- Before every implementation commit: full tests, lint, typecheck, build,
-  `git diff --check`, and a manual walkthrough when UI changes.
+- Use focused checks during implementation. Run the full gate before manual
+  handoff for structural changes, and repeat it after manual testing only when
+  the validated code changes. Always run the full gate before the story merge.
 - Add progressive JSDoc to new or substantially changed contracts.
 - Keep durable rules in `docs/architecture/`; keep operational continuation
   state in this handoff.

@@ -91,6 +91,42 @@ AthleteProfile
           shared planning variant
 ```
 
+## Competitive-calendar evolution
+
+The initial management flow lets the coach create a cohort explicitly inside
+one sporting group. This is the persistence and operational foundation, not the
+intended final entry point for every cohort.
+
+The preferred future flow begins with a race calendar and athlete intent:
+
+```text
+athlete chooses race and distance
+              +
+current sporting group
+              +
+compatible competitive horizon
+              |
+              v
+system proposes a planning cohort
+              |
+              v
+coach confirms or changes the proposal
+```
+
+A race may offer several distances, and athletes from different sporting
+groups may choose the same distance. They must not automatically share one
+planning variant: for example, an H2 athlete and an M1 athlete preparing for the
+same 21 km race retain different group baselines. Cohort compatibility is
+therefore expected to combine the race or distance option with the parent
+sporting group and planning horizon rather than replacing `groupId`.
+
+Manual cohort creation and assignment remain valid coach alternatives. Future
+automation should propose rather than silently assign, because individual
+goals, current load, availability, and intermediate competitions may make an
+otherwise similar race objective incompatible. The competitive calendar, race
+registration, automatic proposal rules, and race-linked cohort fields belong to
+later stories; the current cohort schema must not invent them prematurely.
+
 ## Membership invariants
 
 The initial cohort model follows these rules:

@@ -1,11 +1,65 @@
 'use server'
 
-import { and, eq } from 'drizzle-orm'
+import { randomUUID } from 'node:crypto'
+import { and, eq, ne } from 'drizzle-orm'
+import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { z } from 'zod'
 
 import { db } from '@/db'
-import { planningCohortMemberships, planningCohorts } from '@/db/schema'
+import { athleteGroups, planningCohortMemberships, planningCohorts } from '@/db/schema'
 
 const CURRENT_TEAM_ID = 'team_1'
+const locales = ['es', 'en'] as const
+
+type SupportedLocale = (typeof locales)[number]
+
+const createPlanningCohortSchema = z.object({
+  groupId: z.string().trim().min(1, 'Seleccioná un grupo deportivo'),
+  name: z.string().trim().min(2, 'Ingresá un nombre de al menos 2 caracteres').max(80, 'El nombre no puede superar los 80 caracteres'),
+  purpose: z.string().trim().min(3, 'Describí el objetivo compartido').max(160, 'El objetivo no puede superar los 160 caracteres'),
+  description: z.string().trim().max(500, 'La descripción no puede superar los 500 caracteres').optional(),
+  locale: z.enum(locales).default('es'),
+})
+
+const updatePlanningCohortSchema = createPlanningCohortSchema.omit({ groupId: true }).extend({
+  status: z.enum(['active', 'archived']),
+})
+
+export interface PlanningCohortFormState {
+  error?: string
+  values?: {
+    groupId?: string
+    name?: string
+    purpose?: string
+    description?: string
+  }
+}
+
+function cohortsPath(locale: SupportedLocale) {
+  return locale === 'es' ? '/dashboard/cohorts' : `/${locale}/dashboard/cohorts`
+}
+
+function formValues(formData: FormData): PlanningCohortFormState['values'] {
+  return {
+    groupId: formData.get('groupId')?.toString(),
+    name: formData.get('name')?.toString(),
+    purpose: formData.get('purpose')?.toString(),
+    description: formData.get('description')?.toString(),
+  }
+}
+
+/** Lists active sporting groups eligible to receive a new cohort. */
+export async function getActiveGroupsForPlanningCohort() {
+  return db.query.athleteGroups.findMany({
+    where: and(
+      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.isActive, true),
+      eq(athleteGroups.isDeleted, false),
+    ),
+    orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
+  })
+}
 
 /** Lists visible planning cohorts for the current development team. */
 export async function getPlanningCohortsByTeam() {
@@ -69,4 +123,133 @@ export async function getPlanningCohortDetail(cohortId: string) {
   })
 
   return cohort
+}
+
+/** Creates an empty cohort; athlete assignments remain a separate operation. */
+export async function createPlanningCohort(
+  _previousState: PlanningCohortFormState,
+  formData: FormData,
+): Promise<PlanningCohortFormState> {
+  const parsed = createPlanningCohortSchema.safeParse(Object.fromEntries(formData))
+  const values = formValues(formData)
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
+  }
+
+  const data = parsed.data
+
+  try {
+    const group = db.query.athleteGroups.findFirst({
+      where: and(
+        eq(athleteGroups.id, data.groupId),
+        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+        eq(athleteGroups.isActive, true),
+        eq(athleteGroups.isDeleted, false),
+      ),
+    }).sync()
+
+    if (!group) {
+      return { error: 'El grupo seleccionado no está disponible', values }
+    }
+
+    const duplicate = db.query.planningCohorts.findFirst({
+      where: and(
+        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.groupId, group.id),
+        eq(planningCohorts.name, data.name),
+        eq(planningCohorts.isDeleted, false),
+      ),
+    }).sync()
+
+    if (duplicate) {
+      return { error: `Ya existe una cohorte llamada “${data.name}” en ese grupo`, values }
+    }
+
+    const now = new Date().toISOString()
+    db.insert(planningCohorts).values({
+      id: randomUUID(),
+      teamId: CURRENT_TEAM_ID,
+      groupId: group.id,
+      name: data.name,
+      purpose: data.purpose,
+      description: data.description || null,
+      status: 'active',
+      createdAt: now,
+      updatedAt: now,
+    }).run()
+  } catch (error) {
+    console.error('Error creating planning cohort:', error)
+    return { error: 'No se pudo crear la cohorte', values }
+  }
+
+  const path = cohortsPath(data.locale)
+  revalidatePath(path)
+  redirect(path)
+}
+
+/** Updates cohort metadata and supports one-way archival without moving groups. */
+export async function updatePlanningCohort(
+  _previousState: PlanningCohortFormState,
+  formData: FormData,
+): Promise<PlanningCohortFormState> {
+  const cohortId = formData.get('cohortId')?.toString()
+  const parsed = updatePlanningCohortSchema.safeParse(Object.fromEntries(formData))
+  const values = formValues(formData)
+
+  if (!cohortId) return { error: 'No se pudo identificar la cohorte', values }
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
+  }
+
+  const data = parsed.data
+
+  try {
+    const cohort = db.query.planningCohorts.findFirst({
+      where: and(
+        eq(planningCohorts.id, cohortId),
+        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.isDeleted, false),
+      ),
+    }).sync()
+
+    if (!cohort) return { error: 'Cohorte no encontrada', values }
+    if (cohort.status === 'archived') {
+      return { error: 'Una cohorte archivada conserva su historial y no puede modificarse', values }
+    }
+
+    const duplicate = db.query.planningCohorts.findFirst({
+      where: and(
+        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.groupId, cohort.groupId),
+        eq(planningCohorts.name, data.name),
+        eq(planningCohorts.isDeleted, false),
+        ne(planningCohorts.id, cohort.id),
+      ),
+    }).sync()
+
+    if (duplicate) {
+      return { error: `Ya existe una cohorte llamada “${data.name}” en este grupo`, values }
+    }
+
+    db.update(planningCohorts).set({
+      name: data.name,
+      purpose: data.purpose,
+      description: data.description || null,
+      status: data.status,
+      updatedAt: new Date().toISOString(),
+    }).where(and(
+      eq(planningCohorts.id, cohort.id),
+      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.isDeleted, false),
+    )).run()
+  } catch (error) {
+    console.error('Error updating planning cohort:', error)
+    return { error: 'No se pudo actualizar la cohorte', values }
+  }
+
+  const path = cohortsPath(data.locale)
+  revalidatePath(path)
+  revalidatePath(`${path}/${cohortId}`)
+  redirect(`${path}/${cohortId}`)
 }
