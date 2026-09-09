@@ -58,6 +58,19 @@ Membership periods use ISO calendar dates and inclusive boundaries:
 - a closed membership remains as history and is not overwritten by a later
   assignment.
 
+Its initial contract contains:
+
+- required `planningCohortId` and `athleteProfileId` references;
+- required `startDate` and nullable `endDate`;
+- nullable `assignedByUserId` and `assignmentReason` audit context;
+- nullable `endedByUserId` and `endReason` closure context.
+
+Membership status is derived rather than stored: `endDate = null` means open
+and a populated `endDate` means closed. This avoids contradictory combinations
+such as an active status with an already-ended interval. Closing a membership
+must populate the end metadata consistently; those validation rules belong to
+the next task.
+
 ## Relationship to individual goals
 
 `TrainingGoal` remains owned by one athlete. A cohort does not replace, merge,

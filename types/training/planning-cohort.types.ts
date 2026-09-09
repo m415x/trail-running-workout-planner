@@ -32,3 +32,29 @@ export interface PlanningCohort extends BaseEntity, PlanningCohortDraft {
   status: PlanningCohortStatus
 }
 
+/**
+ * Dated athlete assignment to a shared planning cohort before persistence.
+ *
+ * Dates use the ISO `YYYY-MM-DD` calendar format and both boundaries are
+ * inclusive. A null endDate represents an open membership. The referenced
+ * athlete is an AthleteProfile, not an application User or a fee membership.
+ */
+export interface PlanningCohortMembershipDraft {
+  planningCohortId: string
+  athleteProfileId: string
+  startDate: string
+  endDate: string | null
+  assignedByUserId: string | null
+  assignmentReason: string | null
+  endedByUserId: string | null
+  endReason: string | null
+}
+
+/**
+ * Persisted historical membership between an athlete and a planning cohort.
+ *
+ * Closing a membership updates its end metadata; later assignments create new
+ * records instead of reopening or rewriting the historical period.
+ */
+export interface PlanningCohortMembership
+  extends BaseEntity, PlanningCohortMembershipDraft {}
