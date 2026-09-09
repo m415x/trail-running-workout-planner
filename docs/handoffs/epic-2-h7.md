@@ -5,7 +5,7 @@
 - Story branch: `h-16-planning-cohorts`.
 - T7 commit: `e8d01d5 feat: add planning cohort views`.
 - Persistence prerequisite commit: `689ed1e feat: persist planning cohorts`.
-- H7 is complete through T8 plus the advanced persistence prerequisite T12.
+- H7 is complete through T9 plus the advanced persistence prerequisite T12.
 - Cohort persistence, read screens, and create/edit management now exist.
 
 ## Story objective
@@ -168,6 +168,23 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   current sporting group proposes a compatible cohort for coach confirmation.
   Manual creation remains an alternative, and T8 adds no premature race fields.
 
+### T9 / KAN-172 — Assign and remove athletes from a cohort
+
+- Added explicit manual assignment from an active cohort to active athletes in
+  its parent sporting group.
+- Each assignment creates a new dated membership with an inclusive start date
+  and optional coach reason; it never changes `AthleteProfile.groupId`.
+- The persistence action revalidates team, group, athlete, cohort lifecycle, and
+  overlapping periods inside one transaction.
+- Removing an athlete closes the open membership with an inclusive final date
+  and optional reason. It never deletes or rewrites the historical period.
+- Invalid dates, repeated closure, cross-group assignment, archived cohorts,
+  and same-group period overlaps are rejected.
+- Added focused closure-policy tests and coach-facing forms that preserve input
+  after server-side validation errors.
+- The coach completed assignment, overlap, closure, history, archived-cohort,
+  and console checks without finding errors.
+
 ## Validation known at this handoff
 
 - T4 membership policy: 9 focused tests.
@@ -184,13 +201,15 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   passed, and lint remained at 0 errors with the same 11 warnings.
 - The coach completed the T8 create, edit, duplicate-name, validation,
   immutable-group, and archival walkthrough successfully.
+- T9 full gate: 253 tests passed, type checking and production build passed,
+  and lint remained at 0 errors with the same 11 known warnings.
 
 ## Next functional task
 
-T9 / KAN-172 — Assign and remove athletes from a cohort.
+T10 / KAN-173 — Show members and membership history.
 
-Use the existing dated membership policy. Keep automatic race-driven assignment
-outside T9, but preserve it as the preferred future entry flow.
+Consolidate presentation of current members and complete dated history without
+duplicating the assignment and closure behavior completed in T9.
 
 ## Confirmed execution sequence
 
@@ -218,10 +237,9 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T9 / KAN-172 — Assign and remove athletes from a cohort.
-2. T10 / KAN-173 — Show members and membership history.
-3. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
-4. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+1. T10 / KAN-173 — Show members and membership history.
+2. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
+3. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
 Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
 are recorded here from the current sequential plan.

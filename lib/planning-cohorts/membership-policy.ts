@@ -48,6 +48,11 @@ export interface ValidateGroupChangeCohortImpactInput {
   membershipsAfterChange: ResolvedPlanningCohortMembershipPeriod[]
 }
 
+export interface ValidatePlanningCohortMembershipClosureInput {
+  membership: Pick<PlanningCohortMembershipDraft, 'startDate' | 'endDate'>
+  endDate: string
+}
+
 function isIsoCalendarDate(value: string) {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) && isValid(parseISO(value))
 }
@@ -176,3 +181,21 @@ export function validateGroupChangeCohortImpact(
   return { isValid: errors.length === 0, errors }
 }
 
+/** Validates the inclusive final day used to close an open membership. */
+export function validatePlanningCohortMembershipClosure(
+  input: ValidatePlanningCohortMembershipClosureInput,
+): PlanningCohortMembershipValidationResult {
+  const errors: PlanningCohortMembershipIssue[] = []
+
+  if (input.membership.endDate !== null) {
+    errors.push(issue('membership', 'membership-already-closed', 'La membresía ya tiene una fecha de finalización.'))
+  }
+
+  if (!isIsoCalendarDate(input.endDate)) {
+    errors.push(issue('endDate', 'invalid-end-date', 'La fecha de fin debe usar el formato YYYY-MM-DD.'))
+  } else if (input.endDate < input.membership.startDate) {
+    errors.push(issue('endDate', 'end-before-start', 'La fecha de fin no puede ser anterior a la fecha de inicio.'))
+  }
+
+  return { isValid: errors.length === 0, errors }
+}

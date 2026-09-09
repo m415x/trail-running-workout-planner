@@ -7,7 +7,11 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, planningCohortMemberships, planningCohorts } from '@/db/schema'
+import { athleteGroups, athleteProfiles, planningCohortMemberships, planningCohorts } from '@/db/schema'
+import {
+  validatePlanningCohortMembership,
+  validatePlanningCohortMembershipClosure,
+} from '@/lib/planning-cohorts/membership-policy'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
@@ -36,6 +40,32 @@ export interface PlanningCohortFormState {
   }
 }
 
+export interface PlanningCohortMembershipFormState {
+  error?: string
+  values?: {
+    athleteProfileId?: string
+    startDate?: string
+    endDate?: string
+    reason?: string
+  }
+}
+
+const assignPlanningCohortMembershipSchema = z.object({
+  cohortId: z.string().trim().min(1),
+  athleteProfileId: z.string().trim().min(1, 'Seleccioná un atleta'),
+  startDate: z.iso.date('Ingresá una fecha de inicio válida'),
+  reason: z.string().trim().max(300, 'El motivo no puede superar los 300 caracteres').optional(),
+  locale: z.enum(locales).default('es'),
+})
+
+const closePlanningCohortMembershipSchema = z.object({
+  cohortId: z.string().trim().min(1),
+  membershipId: z.string().trim().min(1),
+  endDate: z.iso.date('Ingresá una fecha de finalización válida'),
+  reason: z.string().trim().max(300, 'El motivo no puede superar los 300 caracteres').optional(),
+  locale: z.enum(locales).default('es'),
+})
+
 function cohortsPath(locale: SupportedLocale) {
   return locale === 'es' ? '/dashboard/cohorts' : `/${locale}/dashboard/cohorts`
 }
@@ -59,6 +89,38 @@ export async function getActiveGroupsForPlanningCohort() {
     ),
     orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
+}
+
+/** Lists active athletes from the cohort's parent group for manual assignment. */
+export async function getAthletesForPlanningCohort(cohortId: string) {
+  const cohort = await db.query.planningCohorts.findFirst({
+    where: and(
+      eq(planningCohorts.id, cohortId),
+      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.isDeleted, false),
+    ),
+  })
+
+  if (!cohort) return null
+
+  const athletes = await db.query.athleteProfiles.findMany({
+    where: and(
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.groupId, cohort.groupId),
+      eq(athleteProfiles.isActive, true),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    with: { user: true },
+  })
+
+  athletes.sort((first, second) => (
+    `${first.user.lastName} ${first.user.firstName}`.localeCompare(
+      `${second.user.lastName} ${second.user.firstName}`,
+      'es',
+    )
+  ))
+
+  return { cohort, athletes }
 }
 
 /** Lists visible planning cohorts for the current development team. */
@@ -252,4 +314,165 @@ export async function updatePlanningCohort(
   revalidatePath(path)
   revalidatePath(`${path}/${cohortId}`)
   redirect(`${path}/${cohortId}`)
+}
+
+/** Opens a dated membership after validating team, group, lifecycle, and overlap rules. */
+export async function assignAthleteToPlanningCohort(
+  _previousState: PlanningCohortMembershipFormState,
+  formData: FormData,
+): Promise<PlanningCohortMembershipFormState> {
+  const parsed = assignPlanningCohortMembershipSchema.safeParse(Object.fromEntries(formData))
+  const values = {
+    athleteProfileId: formData.get('athleteProfileId')?.toString(),
+    startDate: formData.get('startDate')?.toString(),
+    reason: formData.get('reason')?.toString(),
+  }
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
+  }
+
+  const data = parsed.data
+
+  try {
+    db.transaction((tx) => {
+      const cohort = tx.query.planningCohorts.findFirst({
+        where: and(
+          eq(planningCohorts.id, data.cohortId),
+          eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+          eq(planningCohorts.isDeleted, false),
+        ),
+        with: { group: true },
+      }).sync()
+
+      if (!cohort) throw new Error('Cohorte no encontrada')
+
+      const athlete = tx.query.athleteProfiles.findFirst({
+        where: and(
+          eq(athleteProfiles.id, data.athleteProfileId),
+          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+          eq(athleteProfiles.isDeleted, false),
+        ),
+      }).sync()
+
+      if (!athlete) throw new Error('Atleta no encontrado')
+
+      const existingMemberships = tx.query.planningCohortMemberships.findMany({
+        where: and(
+          eq(planningCohortMemberships.athleteProfileId, athlete.id),
+          eq(planningCohortMemberships.isDeleted, false),
+        ),
+        with: { planningCohort: true },
+      }).sync().map((membership) => ({
+        id: membership.id,
+        planningCohortId: membership.planningCohortId,
+        athleteProfileId: membership.athleteProfileId,
+        parentGroupId: membership.planningCohort.groupId,
+        startDate: membership.startDate,
+        endDate: membership.endDate,
+      }))
+
+      const membership = {
+        planningCohortId: cohort.id,
+        athleteProfileId: athlete.id,
+        startDate: data.startDate,
+        endDate: null,
+        assignedByUserId: null,
+        assignmentReason: data.reason || null,
+        endedByUserId: null,
+        endReason: null,
+      }
+      const validation = validatePlanningCohortMembership({
+        membership,
+        cohort,
+        athlete,
+        parentGroupIsActive: cohort.group.isActive && !cohort.group.isDeleted,
+        existingMemberships,
+      })
+
+      if (!validation.isValid) {
+        throw new Error(validation.errors[0]?.message ?? 'La asignación no es válida')
+      }
+
+      const now = new Date().toISOString()
+      tx.insert(planningCohortMemberships).values({
+        id: randomUUID(),
+        ...membership,
+        createdAt: now,
+        updatedAt: now,
+      }).run()
+    })
+  } catch (error) {
+    console.error('Error assigning athlete to planning cohort:', error)
+    return { error: error instanceof Error ? error.message : 'No se pudo asignar el atleta', values }
+  }
+
+  const path = `${cohortsPath(data.locale)}/${data.cohortId}`
+  revalidatePath(path)
+  revalidatePath(cohortsPath(data.locale))
+  redirect(path)
+}
+
+/** Closes an open membership on an inclusive final day without deleting its history. */
+export async function closePlanningCohortMembership(
+  _previousState: PlanningCohortMembershipFormState,
+  formData: FormData,
+): Promise<PlanningCohortMembershipFormState> {
+  const parsed = closePlanningCohortMembershipSchema.safeParse(Object.fromEntries(formData))
+  const values = {
+    endDate: formData.get('endDate')?.toString(),
+    reason: formData.get('reason')?.toString(),
+  }
+
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
+  }
+
+  const data = parsed.data
+
+  try {
+    db.transaction((tx) => {
+      const cohort = tx.query.planningCohorts.findFirst({
+        where: and(
+          eq(planningCohorts.id, data.cohortId),
+          eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+          eq(planningCohorts.isDeleted, false),
+        ),
+      }).sync()
+      if (!cohort) throw new Error('Cohorte no encontrada')
+
+      const membership = tx.query.planningCohortMemberships.findFirst({
+        where: and(
+          eq(planningCohortMemberships.id, data.membershipId),
+          eq(planningCohortMemberships.planningCohortId, cohort.id),
+          eq(planningCohortMemberships.isDeleted, false),
+        ),
+      }).sync()
+      if (!membership) throw new Error('Membresía no encontrada')
+
+      const validation = validatePlanningCohortMembershipClosure({ membership, endDate: data.endDate })
+      if (!validation.isValid) {
+        throw new Error(validation.errors[0]?.message ?? 'La fecha de finalización no es válida')
+      }
+
+      tx.update(planningCohortMemberships).set({
+        endDate: data.endDate,
+        endedByUserId: null,
+        endReason: data.reason || null,
+        updatedAt: new Date().toISOString(),
+      }).where(and(
+        eq(planningCohortMemberships.id, membership.id),
+        eq(planningCohortMemberships.planningCohortId, cohort.id),
+        eq(planningCohortMemberships.isDeleted, false),
+      )).run()
+    })
+  } catch (error) {
+    console.error('Error closing planning cohort membership:', error)
+    return { error: error instanceof Error ? error.message : 'No se pudo retirar el atleta', values }
+  }
+
+  const path = `${cohortsPath(data.locale)}/${data.cohortId}`
+  revalidatePath(path)
+  revalidatePath(cohortsPath(data.locale))
+  redirect(path)
 }

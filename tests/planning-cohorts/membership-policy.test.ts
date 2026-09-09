@@ -4,6 +4,7 @@ import { describe, it } from 'node:test'
 import {
   validateGroupChangeCohortImpact,
   validatePlanningCohortMembership,
+  validatePlanningCohortMembershipClosure,
   type ResolvedPlanningCohortMembershipPeriod,
 } from '@/lib/planning-cohorts/membership-policy'
 import type { AthleteProfile, PlanningCohort, PlanningCohortMembershipDraft } from '@/types'
@@ -108,5 +109,28 @@ describe('impacto de un cambio de grupo', () => {
       athleteProfileId: athlete.id, currentGroupId: cohort.groupId, newGroupId: cohort.groupId,
       effectiveDate: '2026-04-01', membershipsAfterChange: [existing({ startDate: '2026-03-01', endDate: null })],
     }).isValid, true)
+  })
+})
+
+describe('cierre de membresías de cohortes', () => {
+  it('acepta el mismo día inicial como último día inclusivo', () => {
+    const result = validatePlanningCohortMembershipClosure({
+      membership: { startDate: '2026-09-10', endDate: null },
+      endDate: '2026-09-10',
+    })
+
+    assert.equal(result.isValid, true)
+  })
+
+  it('rechaza fechas anteriores, inválidas o membresías ya cerradas', () => {
+    assert.equal(validatePlanningCohortMembershipClosure({
+      membership: { startDate: '2026-09-10', endDate: null }, endDate: '2026-09-09',
+    }).isValid, false)
+    assert.equal(validatePlanningCohortMembershipClosure({
+      membership: { startDate: '2026-09-10', endDate: null }, endDate: '10/09/2026',
+    }).isValid, false)
+    assert.equal(validatePlanningCohortMembershipClosure({
+      membership: { startDate: '2026-09-01', endDate: '2026-09-09' }, endDate: '2026-09-10',
+    }).isValid, false)
   })
 })

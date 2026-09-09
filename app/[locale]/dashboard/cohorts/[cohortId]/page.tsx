@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CalendarRange, Eye, Pencil, UsersRound } from 'lucide-react'
+import { ArrowLeft, CalendarRange, Eye, LogOut, Pencil, UserPlus, UsersRound } from 'lucide-react'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
 import { isPlanningCohortMembershipActiveOn } from '@/lib/planning-cohorts/membership-view'
@@ -108,15 +108,19 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
 
       <Card>
         <CardHeader>
-          <CardTitle className='flex items-center gap-2'>
-            <UsersRound className='size-5' />
-            Integrantes e historial
-          </CardTitle>
-          <CardDescription>
-            {visibleMemberships.length === 0
-              ? 'Esta cohorte todavía no tiene membresías registradas.'
-              : `${visibleMemberships.length} ${visibleMemberships.length === 1 ? 'período registrado' : 'períodos registrados'} · ${activeMembers} ${activeMembers === 1 ? 'vigente' : 'vigentes'} hoy`}
-          </CardDescription>
+          <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+            <div>
+              <CardTitle className='flex items-center gap-2'><UsersRound className='size-5' /> Integrantes e historial</CardTitle>
+              <CardDescription>
+                {visibleMemberships.length === 0
+                  ? 'Esta cohorte todavía no tiene membresías registradas.'
+                  : `${visibleMemberships.length} ${visibleMemberships.length === 1 ? 'período registrado' : 'períodos registrados'} · ${activeMembers} ${activeMembers === 1 ? 'vigente' : 'vigentes'} hoy`}
+              </CardDescription>
+            </div>
+            {cohort.status === 'active' && (
+              <Link href={`${cohortsPath}/${cohort.id}/members/new`} className={buttonVariants({ size: 'sm' })}><UserPlus /> Asignar atleta</Link>
+            )}
+          </div>
         </CardHeader>
 
         {visibleMemberships.length > 0 && (
@@ -128,7 +132,7 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
                     <TableHead>Atleta</TableHead>
                     <TableHead>Período</TableHead>
                     <TableHead>Estado</TableHead>
-                    <TableHead className='w-16'><span className='sr-only'>Acciones</span></TableHead>
+                    <TableHead className='w-28'><span className='sr-only'>Acciones</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -159,13 +163,12 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Link
-                            href={`${athletesPath}/${athlete.id}`}
-                            aria-label={`Ver detalle de ${fullName}`}
-                            className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-                          >
-                            <Eye />
-                          </Link>
+                          <div className='flex justify-end gap-1'>
+                            <Link href={`${athletesPath}/${athlete.id}`} aria-label={`Ver detalle de ${fullName}`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><Eye /></Link>
+                            {cohort.status === 'active' && membership.endDate === null && (
+                              <Link href={`${cohortsPath}/${cohort.id}/members/${membership.id}/close`} aria-label={`Retirar a ${fullName} de la cohorte`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><LogOut /></Link>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
