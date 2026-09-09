@@ -7,11 +7,22 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, athleteProfiles, planningCohortMemberships, planningCohorts } from '@/db/schema'
+import {
+  athleteGroups,
+  athleteProfiles,
+  groupHistoryRecords,
+  groupTrainingPlans,
+  planningCohortMemberships,
+  planningCohorts,
+} from '@/db/schema'
 import {
   validatePlanningCohortMembership,
   validatePlanningCohortMembershipClosure,
 } from '@/lib/planning-cohorts/membership-policy'
+import {
+  resolveAthleteGroupOnDate,
+  resolveAthletePlanningOnDate,
+} from '@/lib/planning-cohorts/planning-resolution'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
@@ -121,6 +132,79 @@ export async function getAthletesForPlanningCohort(cohortId: string) {
   ))
 
   return { cohort, athletes }
+}
+
+/** Resolves and labels the shared plan applicable to an athlete on one date. */
+export async function getAthletePlanningResolutionOnDate(athleteId: string, date: string) {
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, athleteId),
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    with: {
+      groupHistory: {
+        where: eq(groupHistoryRecords.isDeleted, false),
+      },
+    },
+  })
+
+  if (!athlete) return null
+
+  const groupResolution = resolveAthleteGroupOnDate(athlete.groupId, athlete.groupHistory, date)
+  const memberships = await db.query.planningCohortMemberships.findMany({
+    where: and(
+      eq(planningCohortMemberships.athleteProfileId, athlete.id),
+      eq(planningCohortMemberships.isDeleted, false),
+    ),
+    with: {
+      planningCohort: {
+        with: {
+          planningVariant: {
+            with: { macrocycles: true },
+          },
+        },
+      },
+    },
+  })
+
+  const basePlans = groupResolution.groupId === null
+    ? []
+    : await db.query.groupTrainingPlans.findMany({
+      where: and(
+        eq(groupTrainingPlans.groupId, groupResolution.groupId),
+        eq(groupTrainingPlans.isDeleted, false),
+      ),
+      with: { group: true, macrocycles: true },
+    })
+
+  const visibleBasePlans = basePlans.filter((plan) => (
+    plan.group.teamId === CURRENT_TEAM_ID && !plan.group.isDeleted
+  ))
+  const resolution = resolveAthletePlanningOnDate({
+    athleteTeamId: athlete.teamId,
+    currentGroupId: athlete.groupId,
+    groupChanges: athlete.groupHistory,
+    memberships: memberships.map((membership) => ({
+      ...membership,
+      cohort: membership.planningCohort,
+    })),
+    basePlans: visibleBasePlans,
+    date,
+  })
+
+  if (resolution.status !== 'resolved') return { resolution, planTitle: null, cohortName: null }
+
+  const membership = memberships.find((candidate) => candidate.planningCohort.id === resolution.cohortId)
+  const resolvedPlan = resolution.source === 'cohort'
+    ? membership?.planningCohort.planningVariant
+    : visibleBasePlans.find((plan) => plan.id === resolution.planId)
+
+  return {
+    resolution,
+    planTitle: resolvedPlan?.title ?? null,
+    cohortName: membership?.planningCohort.name ?? null,
+  }
 }
 
 /** Lists visible planning cohorts for the current development team. */

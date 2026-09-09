@@ -5,7 +5,7 @@
 - Story branch: `h-16-planning-cohorts`.
 - T7 commit: `e8d01d5 feat: add planning cohort views`.
 - Persistence prerequisite commit: `689ed1e feat: persist planning cohorts`.
-- H7 is complete through T10 plus the advanced persistence prerequisite T12.
+- H7 is complete through T12, with T13 remaining as the final task.
 - Cohort persistence, read screens, and create/edit management now exist.
 
 ## Story objective
@@ -200,6 +200,28 @@ Implemented against the real SQLite cohort persistence introduced by T12.
 - The coach completed the status separation, dates, reasons, actions, empty
   states, and console walkthrough without finding errors.
 
+### T11 / KAN-174 — Resolve the plan applicable to an athlete on a date
+
+- Added a pure dated resolver that prioritizes an applicable cohort variant and
+  falls back to the base sporting-group plan.
+- Plan applicability requires a visible active or completed plan with a visible
+  macrocycle covering the requested date; drafts and cancelled plans do not
+  apply.
+- Historical sporting group is reconstructed from dated group-change records
+  rather than assuming the athlete's current `groupId` for every date.
+- Overlapping cohort memberships, ambiguous group history, invalid cohort-plan
+  associations, and multiple base plans covering the same date return explicit
+  conflicts instead of choosing silently.
+- The athlete detail now shows the plan resolved for today, its cohort/group
+  origin, and a direct planning link without changing session prescriptions.
+- The athlete list combines group and current cohort in one compact column. It
+  omits fallback wording when no cohort exists and links the cohort name only
+  when a dated membership is current.
+- Added seven focused tests covering precedence, fallback, plan horizon and
+  lifecycle, conflicts, and historical group reconstruction.
+- The coach completed list, cohort link, fallback, plan detail, empty-state, and
+  console checks without finding errors.
+
 ## Validation known at this handoff
 
 - T4 membership policy: 9 focused tests.
@@ -220,13 +242,15 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   and lint remained at 0 errors with the same 11 known warnings.
 - T10 full gate: 254 tests passed, type checking and production build passed,
   and lint remained at 0 errors with the same 11 known warnings.
+- T11 final gate: 261 tests passed, type checking and production build passed,
+  and lint remained at 0 errors with the same 11 known warnings.
 
 ## Next functional task
 
-T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
+T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
-Resolve cohort variant first and base group plan as fallback using the dated
-membership rather than the athlete's present-day state.
+Exercise persistence and resolution boundaries across teams, groups, cohorts,
+and athletes before closing the story.
 
 ## Confirmed execution sequence
 
@@ -254,8 +278,7 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
-2. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+1. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
 Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
 are recorded here from the current sequential plan.

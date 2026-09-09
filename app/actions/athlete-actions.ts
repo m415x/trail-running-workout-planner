@@ -7,7 +7,14 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, athleteProfiles, groupHistoryRecords, users } from '@/db/schema'
+import {
+  athleteGroups,
+  athleteProfiles,
+  groupHistoryRecords,
+  planningCohortMemberships,
+  users,
+} from '@/db/schema'
+import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 
 export interface AthleteFormState {
   error?: string
@@ -49,6 +56,15 @@ function athletesPath(locale: string) {
   return locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
 }
 
+function getCurrentDateInArgentina() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
   try {
     const athletes = await db.query.athleteProfiles.findMany({
@@ -56,6 +72,10 @@ export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
       with: {
         user: true,
         group: true,
+        planningCohortMemberships: {
+          where: eq(planningCohortMemberships.isDeleted, false),
+          with: { planningCohort: true },
+        },
       },
     })
 
@@ -66,9 +86,26 @@ export async function getAthletesByTeam(teamId: string = CURRENT_TEAM_ID) {
       return firstName.localeCompare(secondName, 'es')
     })
 
+    const today = getCurrentDateInArgentina()
+    const listItems = athletes.map(({ planningCohortMemberships: memberships, ...athlete }) => {
+      const currentMemberships = memberships.filter((membership) => (
+        !membership.planningCohort.isDeleted
+        && classifyPlanningCohortMembership(membership, today) === 'current'
+      ))
+      const currentMembership = currentMemberships.length === 1 ? currentMemberships[0] : null
+
+      return {
+        ...athlete,
+        currentPlanningCohort: currentMembership
+          ? { id: currentMembership.planningCohort.id, name: currentMembership.planningCohort.name }
+          : null,
+        hasPlanningCohortConflict: currentMemberships.length > 1,
+      }
+    })
+
     return {
       success: true as const,
-      data: athletes,
+      data: listItems,
     }
   } catch (error) {
     console.error('Error fetching athletes:', error)
