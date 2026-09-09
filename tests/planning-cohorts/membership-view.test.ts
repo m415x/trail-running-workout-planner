@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { isPlanningCohortMembershipActiveOn } from '@/lib/planning-cohorts/membership-view'
+import {
+  classifyPlanningCohortMembership,
+  isPlanningCohortMembershipActiveOn,
+} from '@/lib/planning-cohorts/membership-view'
 
 const membership = {
   startDate: '2026-09-01',
@@ -29,5 +32,12 @@ describe('visualización de membresías de cohorte', () => {
       ...membership,
       isDeleted: true,
     }, '2026-09-15'), false)
+  })
+
+  it('separa integrantes vigentes, incorporaciones futuras e historial', () => {
+    assert.equal(classifyPlanningCohortMembership(membership, '2026-09-15'), 'current')
+    assert.equal(classifyPlanningCohortMembership(membership, '2026-08-31'), 'scheduled')
+    assert.equal(classifyPlanningCohortMembership(membership, '2026-10-01'), 'historical')
+    assert.equal(classifyPlanningCohortMembership({ ...membership, isDeleted: true }, '2026-09-15'), null)
   })
 })

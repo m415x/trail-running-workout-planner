@@ -5,7 +5,7 @@
 - Story branch: `h-16-planning-cohorts`.
 - T7 commit: `e8d01d5 feat: add planning cohort views`.
 - Persistence prerequisite commit: `689ed1e feat: persist planning cohorts`.
-- H7 is complete through T9 plus the advanced persistence prerequisite T12.
+- H7 is complete through T10 plus the advanced persistence prerequisite T12.
 - Cohort persistence, read screens, and create/edit management now exist.
 
 ## Story objective
@@ -185,6 +185,21 @@ Implemented against the real SQLite cohort persistence introduced by T12.
 - The coach completed assignment, overlap, closure, history, archived-cohort,
   and console checks without finding errors.
 
+### T10 / KAN-173 — Show members and membership history
+
+- Replaced the mixed membership table with separate sections for athletes whose
+  period is current, scheduled to begin in the future, or already historical.
+- Temporal classification retains inclusive start and end boundaries and hides
+  soft-deleted records.
+- Each row shows the athlete, nickname, complete period, assignment reason, and
+  closure reason when available.
+- Current and scheduled open memberships retain the closure action; historical
+  periods remain read-only while preserving access to the athlete profile.
+- Added focused tests for current, scheduled, historical, and soft-deleted
+  presentation states.
+- The coach completed the status separation, dates, reasons, actions, empty
+  states, and console walkthrough without finding errors.
+
 ## Validation known at this handoff
 
 - T4 membership policy: 9 focused tests.
@@ -203,13 +218,15 @@ Implemented against the real SQLite cohort persistence introduced by T12.
   immutable-group, and archival walkthrough successfully.
 - T9 full gate: 253 tests passed, type checking and production build passed,
   and lint remained at 0 errors with the same 11 known warnings.
+- T10 full gate: 254 tests passed, type checking and production build passed,
+  and lint remained at 0 errors with the same 11 known warnings.
 
 ## Next functional task
 
-T10 / KAN-173 — Show members and membership history.
+T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
 
-Consolidate presentation of current members and complete dated history without
-duplicating the assignment and closure behavior completed in T9.
+Resolve cohort variant first and base group plan as fallback using the dated
+membership rather than the athlete's present-day state.
 
 ## Confirmed execution sequence
 
@@ -237,9 +254,8 @@ validation; a simple foreign key cannot enforce them.
 
 ## Remaining H7 tasks
 
-1. T10 / KAN-173 — Show members and membership history.
-2. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
-3. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
+1. T11 / KAN-174 — Resolve which plan applies to an athlete on a date.
+2. T13 / KAN-176 — Add isolation tests across group, cohort, and athlete.
 
 Verify Jira identifiers after KAN-170 if the remote tracker differs; later IDs
 are recorded here from the current sequential plan.

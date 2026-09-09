@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarRange, Eye, LogOut, Pencil, UserPlus, UsersRound } from 'lucide-react'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
-import { isPlanningCohortMembershipActiveOn } from '@/lib/planning-cohorts/membership-view'
+import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 interface PlanningCohortDetailPageProps {
   params: Promise<{ locale: string; cohortId: string }>
 }
+
+type CohortMembership = NonNullable<Awaited<ReturnType<typeof getPlanningCohortDetail>>>['memberships'][number]
 
 function todayInArgentina() {
   return new Intl.DateTimeFormat('en-CA', {
@@ -28,6 +30,66 @@ function formatDate(value: string | null) {
   return `${day}/${month}/${year}`
 }
 
+function MembershipTable({
+  memberships,
+  athletesPath,
+  cohortPath,
+  allowClose,
+}: {
+  memberships: CohortMembership[]
+  athletesPath: string
+  cohortPath: string
+  allowClose: boolean
+}) {
+  return (
+    <div className='overflow-hidden rounded-lg border'>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Atleta</TableHead>
+            <TableHead>Período</TableHead>
+            <TableHead>Motivo</TableHead>
+            <TableHead className='w-28'><span className='sr-only'>Acciones</span></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {memberships.map((membership) => {
+            const athlete = membership.athleteProfile
+            const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+
+            return (
+              <TableRow key={membership.id}>
+                <TableCell>
+                  <p className='font-medium'>{fullName}</p>
+                  {athlete.nickName && <p className='text-xs text-muted-foreground'>“{athlete.nickName}”</p>}
+                </TableCell>
+                <TableCell>
+                  <p>{formatDate(membership.startDate)}</p>
+                  <p className='text-xs text-muted-foreground'>
+                    {membership.endDate === null ? 'Sin fecha de fin' : `hasta ${formatDate(membership.endDate)}`}
+                  </p>
+                </TableCell>
+                <TableCell className='max-w-72'>
+                  <p className='truncate'>{membership.assignmentReason ?? 'Sin motivo de asignación'}</p>
+                  {membership.endReason && <p className='truncate text-xs text-muted-foreground'>Cierre: {membership.endReason}</p>}
+                </TableCell>
+                <TableCell>
+                  <div className='flex justify-end gap-1'>
+                    <Link href={`${athletesPath}/${athlete.id}`} aria-label={`Ver detalle de ${fullName}`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><Eye /></Link>
+                    {allowClose && membership.endDate === null && (
+                      <Link href={`${cohortPath}/members/${membership.id}/close`} aria-label={`Retirar a ${fullName} de la cohorte`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><LogOut /></Link>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  )
+}
+
 export default async function PlanningCohortDetailPage({ params }: PlanningCohortDetailPageProps) {
   const { locale, cohortId } = await params
   const cohort = await getPlanningCohortDetail(cohortId)
@@ -41,10 +103,10 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const groupCode = `${cohort.group.categoryCode}${cohort.group.levelCode}`
   const today = todayInArgentina()
-  const visibleMemberships = cohort.memberships
-  const activeMembers = visibleMemberships.filter((membership) => (
-    isPlanningCohortMembershipActiveOn(membership, today)
-  )).length
+  const cohortPath = `${cohortsPath}/${cohort.id}`
+  const currentMemberships = cohort.memberships.filter((membership) => classifyPlanningCohortMembership(membership, today) === 'current')
+  const scheduledMemberships = cohort.memberships.filter((membership) => classifyPlanningCohortMembership(membership, today) === 'scheduled')
+  const historicalMemberships = cohort.memberships.filter((membership) => classifyPlanningCohortMembership(membership, today) === 'historical')
 
   return (
     <div className='space-y-6'>
@@ -110,74 +172,39 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
         <CardHeader>
           <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
             <div>
-              <CardTitle className='flex items-center gap-2'><UsersRound className='size-5' /> Integrantes e historial</CardTitle>
+              <CardTitle className='flex items-center gap-2'><UsersRound className='size-5' /> Integrantes vigentes</CardTitle>
               <CardDescription>
-                {visibleMemberships.length === 0
-                  ? 'Esta cohorte todavía no tiene membresías registradas.'
-                  : `${visibleMemberships.length} ${visibleMemberships.length === 1 ? 'período registrado' : 'períodos registrados'} · ${activeMembers} ${activeMembers === 1 ? 'vigente' : 'vigentes'} hoy`}
+                {currentMemberships.length === 0
+                  ? 'No hay atletas siguiendo esta planificación hoy.'
+                  : `${currentMemberships.length} ${currentMemberships.length === 1 ? 'atleta sigue' : 'atletas siguen'} esta planificación hoy.`}
               </CardDescription>
             </div>
             {cohort.status === 'active' && (
-              <Link href={`${cohortsPath}/${cohort.id}/members/new`} className={buttonVariants({ size: 'sm' })}><UserPlus /> Asignar atleta</Link>
+              <Link href={`${cohortPath}/members/new`} className={buttonVariants({ size: 'sm' })}><UserPlus /> Asignar atleta</Link>
             )}
           </div>
         </CardHeader>
+        {currentMemberships.length > 0 && <CardContent><MembershipTable memberships={currentMemberships} athletesPath={athletesPath} cohortPath={cohortPath} allowClose={cohort.status === 'active'} /></CardContent>}
+      </Card>
 
-        {visibleMemberships.length > 0 && (
-          <CardContent>
-            <div className='overflow-hidden rounded-lg border'>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Atleta</TableHead>
-                    <TableHead>Período</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className='w-28'><span className='sr-only'>Acciones</span></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {visibleMemberships.map((membership) => {
-                    const athlete = membership.athleteProfile
-                    const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
-                    const isCurrent = isPlanningCohortMembershipActiveOn(membership, today)
+      {scheduledMemberships.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Próximas incorporaciones <Badge variant='outline'>{scheduledMemberships.length}</Badge></CardTitle>
+            <CardDescription>Atletas cuyo período en la cohorte todavía no comenzó.</CardDescription>
+          </CardHeader>
+          <CardContent><MembershipTable memberships={scheduledMemberships} athletesPath={athletesPath} cohortPath={cohortPath} allowClose={cohort.status === 'active'} /></CardContent>
+        </Card>
+      )}
 
-                    return (
-                      <TableRow key={membership.id}>
-                        <TableCell>
-                          <p className='font-medium'>{fullName}</p>
-                          {athlete.nickName && (
-                            <p className='text-xs text-muted-foreground'>“{athlete.nickName}”</p>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <p>{formatDate(membership.startDate)}</p>
-                          <p className='text-xs text-muted-foreground'>
-                            {membership.endDate === null
-                              ? 'Sin fecha de fin'
-                              : `hasta ${formatDate(membership.endDate)}`}
-                          </p>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={isCurrent ? 'default' : 'outline'}>
-                            {isCurrent ? 'Vigente' : 'Histórica'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className='flex justify-end gap-1'>
-                            <Link href={`${athletesPath}/${athlete.id}`} aria-label={`Ver detalle de ${fullName}`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><Eye /></Link>
-                            {cohort.status === 'active' && membership.endDate === null && (
-                              <Link href={`${cohortsPath}/${cohort.id}/members/${membership.id}/close`} aria-label={`Retirar a ${fullName} de la cohorte`} className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}><LogOut /></Link>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Historial de membresías <Badge variant='secondary'>{historicalMemberships.length}</Badge></CardTitle>
+          <CardDescription>Períodos finalizados que se conservan para trazabilidad.</CardDescription>
+        </CardHeader>
+        {historicalMemberships.length > 0
+          ? <CardContent><MembershipTable memberships={historicalMemberships} athletesPath={athletesPath} cohortPath={cohortPath} allowClose={false} /></CardContent>
+          : <CardContent><p className='text-sm text-muted-foreground'>Todavía no hay períodos finalizados.</p></CardContent>}
       </Card>
     </div>
   )
