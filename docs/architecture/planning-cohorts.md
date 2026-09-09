@@ -117,6 +117,11 @@ Rules that can be represented by foreign keys or indexes should be reinforced in
 the database. Cross-aggregate and date-overlap rules must also be validated by
 the application transaction that changes membership.
 
+Date intervals are inclusive. Two periods therefore overlap when one starts on
+the same day the other ends. When a sporting-group change becomes effective,
+every membership of the previous group must end strictly before that date. The
+group change and those closures must eventually be persisted atomically.
+
 ## Planning resolution
 
 For a given athlete and calendar date, planning is resolved with this precedence:
