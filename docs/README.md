@@ -6,6 +6,7 @@ prevents implementation history from living only in long chat conversations.
 ## Architecture
 
 - [Automatic session generation](architecture/session-generation.md)
+- [Planning cohorts](architecture/planning-cohorts.md)
 
 ## Handoffs
 
