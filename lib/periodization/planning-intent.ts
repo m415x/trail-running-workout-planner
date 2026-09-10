@@ -9,6 +9,12 @@ const LEGACY_GOAL_TO_PLANNING_INTENT = {
   custom: 'development',
 } as const satisfies Record<TrainingGoalType, PlanningIntent>
 
+const BASE_PLAN_INTENT_TO_LEGACY_GOAL = {
+  development: 'performance',
+  base: 'base',
+  maintenance: 'maintenance',
+} as const satisfies Record<PlanningIntent, TrainingGoalType>
+
 /**
  * Maps legacy group-planning goal types to the dedicated planning intent model.
  *
@@ -18,4 +24,15 @@ const LEGACY_GOAL_TO_PLANNING_INTENT = {
  */
 export function resolveLegacyPlanningIntent(goalType: TrainingGoalType): PlanningIntent {
   return LEGACY_GOAL_TO_PLANNING_INTENT[goalType]
+}
+
+/**
+ * Provides the temporary legacy persistence/recommender value for a base plan.
+ *
+ * `development` intentionally maps to `performance`, never `race`, so creating a
+ * base plan cannot acquire competitive semantics while legacy schemas still
+ * require `TrainingGoalType`.
+ */
+export function resolveBasePlanLegacyGoalType(planningIntent: PlanningIntent): TrainingGoalType {
+  return BASE_PLAN_INTENT_TO_LEGACY_GOAL[planningIntent]
 }
