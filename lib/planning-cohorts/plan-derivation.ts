@@ -1,6 +1,7 @@
 import type { StoredSessionGenerationPreferences } from '@/lib/session-generation/generation-preferences-persistence'
 import { validatePlanningCohortPlanAssociation } from '@/lib/planning-cohorts/plan-association'
 import type {
+  CompetitionEntry,
   GroupTrainingPlan,
   IntensityStrategy,
   LoadStrategy,
@@ -36,6 +37,11 @@ export interface PlanningVariantSource {
   intensityStrategy: IntensityStrategy | null
   sessionGenerationPreferences: PlanningVariantSessionGenerationPreferences | null
   microcycleIntensityTargets: MicrocycleIntensityTarget[]
+  /**
+   * Competition entries available on the source plan for explicit inheritance.
+   * Omitted by legacy callers that predate the H9 competition-calendar model.
+   */
+  competitionEntries?: CompetitionEntry[]
 }
 
 /**
@@ -53,6 +59,7 @@ export interface PlanningVariantIdentityMap {
   mesocycleIds: Record<string, string>
   microcycleIds: Record<string, string>
   intensityTargetIds: Record<string, string>
+  competitionEntryIds: Record<string, string>
 }
 
 /**
@@ -68,19 +75,23 @@ export interface DerivedPlanningVariant {
   intensityStrategy: IntensityStrategy | null
   sessionGenerationPreferences: PlanningVariantSessionGenerationPreferences | null
   microcycleIntensityTargets: MicrocycleIntensityTarget[]
+  competitionEntries: CompetitionEntry[]
   identityMap: PlanningVariantIdentityMap
 }
 
 /**
  * Inputs required to derive an independent cohort planning variant.
  *
- * `createId` is injected so the derivation has no persistence dependency and
- * can use deterministic identities in focused tests.
+ * `selectedCompetitionEntryIds` is opt-in. Source competitions are never copied
+ * merely because they exist on the base plan. `createId` is injected so the
+ * derivation has no persistence dependency and can use deterministic identities
+ * in focused tests.
  */
 export interface DerivePlanningCohortVariantInput {
   source: PlanningVariantSource
   cohort: PlanningCohort
   title: string
+  selectedCompetitionEntryIds?: readonly string[]
   createId: () => string
 }
 
@@ -130,6 +141,10 @@ function collectSourceIds(source: PlanningVariantSource): Set<string> {
 
   if (source.sessionGenerationPreferences) {
     ids.add(source.sessionGenerationPreferences.id)
+  }
+
+  for (const competitionEntry of source.competitionEntries ?? []) {
+    ids.add(competitionEntry.id)
   }
 
   for (const macrocycle of source.plan.macrocycles ?? []) {
@@ -233,6 +248,37 @@ function cloneMacrocycle(
   }
 }
 
+function resolveSelectedCompetitionEntries(
+  source: PlanningVariantSource,
+  selectedCompetitionEntryIds: readonly string[],
+): CompetitionEntry[] {
+  if (new Set(selectedCompetitionEntryIds).size !== selectedCompetitionEntryIds.length) {
+    throw new PlanningVariantDerivationError([
+      derivationIssue('duplicate-competition-selection', 'duplicate-competition-selection'),
+    ])
+  }
+
+  const sourceEntries = new Map((source.competitionEntries ?? []).map((entry) => [entry.id, entry]))
+
+  return selectedCompetitionEntryIds.map((id) => {
+    const entry = sourceEntries.get(id)
+
+    if (!entry) {
+      throw new PlanningVariantDerivationError([
+        derivationIssue('competition-selection-not-in-source', 'competition-selection-not-in-source'),
+      ])
+    }
+
+    if (entry.groupTrainingPlanId !== source.plan.id) {
+      throw new PlanningVariantDerivationError([
+        derivationIssue('competition-selection-owner-mismatch', 'competition-selection-owner-mismatch'),
+      ])
+    }
+
+    return entry
+  })
+}
+
 /**
  * Derives an independent planning snapshot for a cohort from a group base plan.
  *
@@ -243,15 +289,22 @@ function cloneMacrocycle(
  * - keeps the direct base plan as lineage through sourceGroupTrainingPlanId;
  * - always starts as `draft`, independently of the source plan status;
  * - receives new identities for every copied persisted planning entity;
+ * - copies only competition entries explicitly selected for the new audience;
  * - preserves manual/generated and suggested/manual provenance values;
  * - never shares mutable nested planning state with the source; and
  * - never copies Session or GroupSessionPrescription records.
  *
  * The operation performs no database writes. Persisting the returned snapshot
- * belongs to a later H7 task.
+ * belongs to a later task.
  */
 export function derivePlanningCohortVariant(input: DerivePlanningCohortVariantInput): DerivedPlanningVariant {
-  const { source, cohort, title, createId } = input
+  const {
+    source,
+    cohort,
+    title,
+    selectedCompetitionEntryIds = [],
+    createId,
+  } = input
 
   const sourceValidation = validatePlanningCohortPlanAssociation({
     plan: source.plan,
@@ -268,6 +321,10 @@ export function derivePlanningCohortVariant(input: DerivePlanningCohortVariantIn
     ])
   }
 
+  const selectedCompetitionEntries = resolveSelectedCompetitionEntries(
+    source,
+    selectedCompetitionEntryIds,
+  )
   const sourceIds = collectSourceIds(source)
   const derivedIds = new Set<string>()
 
@@ -309,7 +366,25 @@ export function derivePlanningCohortVariant(input: DerivePlanningCohortVariantIn
     mesocycleIds: {},
     microcycleIds: {},
     intensityTargetIds: {},
+    competitionEntryIds: {},
   }
+
+  const competitionEntries = selectedCompetitionEntries.map((sourceEntry) => {
+    const id = nextId()
+    identityMap.competitionEntryIds[sourceEntry.id] = id
+
+    return {
+      id,
+      groupTrainingPlanId: variantPlanId,
+      name: sourceEntry.name,
+      date: sourceEntry.date,
+      distanceKm: sourceEntry.distanceKm,
+      elevationGainM: sourceEntry.elevationGainM,
+      priority: sourceEntry.priority,
+      status: sourceEntry.status,
+      description: sourceEntry.description,
+    } satisfies CompetitionEntry
+  })
 
   const loadStrategy = source.loadStrategy
     ? (() => {
@@ -412,6 +487,7 @@ export function derivePlanningCohortVariant(input: DerivePlanningCohortVariantIn
     intensityStrategy,
     sessionGenerationPreferences,
     microcycleIntensityTargets,
+    competitionEntries,
     identityMap,
   }
 }
