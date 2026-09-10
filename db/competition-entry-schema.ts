@@ -23,7 +23,7 @@ export const competitionEntries = sqliteTable(
     name: text('name').notNull(),
     date: text('date').notNull(),
     distanceKm: real('distance_km').notNull(),
-    elevationGainM: integer('elevation_gain_m'),
+    elevationGainM: real('elevation_gain_m'),
     priority: text('priority').$type<CompetitionPriority>().notNull(),
     status: text('status').$type<CompetitionStatus>().notNull().default('planned'),
     description: text('description'),
