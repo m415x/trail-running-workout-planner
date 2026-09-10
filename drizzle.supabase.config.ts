@@ -4,7 +4,10 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 
 export default defineConfig({
-  schema: './db/supabase/schema.ts',
+  schema: [
+    './db/supabase/schema.ts',
+    './db/supabase/competition-entry-schema.ts',
+  ],
   out: './drizzle/supabase',
   dialect: 'postgresql',
   dbCredentials: {
