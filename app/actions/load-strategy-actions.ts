@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 
 import { db } from '@/db'
@@ -30,7 +31,6 @@ import { serializeSessionGenerationPreferences } from '@/lib/session-generation/
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
-  PlanningIntent,
 } from '@/types'
 
 const CURRENT_TEAM_ID = 'team_1'
@@ -58,19 +58,6 @@ const createGroupPlanWithLoadStrategySchema = z.object({
 
 export interface CreateGroupPlanWithLoadStrategyState {
   error?: string
-}
-
-const planningIntentLabels: Record<(typeof locales)[number], Record<PlanningIntent, string>> = {
-  es: {
-    development: 'Desarrollo',
-    base: 'Base aeróbica',
-    maintenance: 'Mantenimiento',
-  },
-  en: {
-    development: 'Development',
-    base: 'Aerobic base',
-    maintenance: 'Maintenance',
-  },
 }
 
 function planningPath(locale: string, suffix = '') {
@@ -167,7 +154,13 @@ export async function createGroupPlanWithLoadStrategy(
     const strategyId = randomUUID()
     const macrocycleId = randomUUID()
     const now = new Date().toISOString()
-    const title = `Plan ${resolvedGroupCode} · ${planningIntentLabels[data.locale][data.planningIntent]}`
+    const t = await getTranslations({ locale: data.locale, namespace: 'BasePlanning' })
+    const planningIntentLabel = data.planningIntent === 'development'
+      ? t('intents.development')
+      : data.planningIntent === 'base'
+        ? t('intents.base')
+        : t('intents.maintenance')
+    const title = `Plan ${resolvedGroupCode} · ${planningIntentLabel}`
 
     db.transaction((tx) => {
       tx.insert(groupTrainingPlans).values({
