@@ -3,7 +3,7 @@ import { describe, it } from 'node:test'
 
 import { validateCompetitionEntryDraft } from '@/lib/periodization/competition-entry'
 
-import type { CompetitionEntryDraft } from '@/types'
+import type { CompetitionEntryDraft, CompetitionStatus } from '@/types'
 
 const validDraft: CompetitionEntryDraft = {
   groupTrainingPlanId: 'plan-1',
@@ -12,13 +12,21 @@ const validDraft: CompetitionEntryDraft = {
   distanceKm: 42,
   elevationGainM: 2500,
   priority: 'A',
-  status: 'scheduled',
+  status: 'planned',
   description: null,
 }
 
 describe('competition entry domain validation', () => {
   it('accepts a concrete competition modality with a positive distance', () => {
     assert.deepEqual(validateCompetitionEntryDraft(validDraft), { valid: true })
+  })
+
+  it('accepts every lifecycle status defined by the competition domain', () => {
+    const statuses: CompetitionStatus[] = ['planned', 'confirmed', 'completed', 'cancelled']
+
+    for (const status of statuses) {
+      assert.deepEqual(validateCompetitionEntryDraft({ ...validDraft, status }), { valid: true })
+    }
   })
 
   it('rejects zero, negative and non-finite competition distances', () => {
