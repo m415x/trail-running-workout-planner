@@ -2,7 +2,7 @@
 
 ## Starting state
 
-- Story: KAN-177; current task: T2 / KAN-179.
+- Story: KAN-177; current task: T3 / KAN-180.
 - Branch: `h-17-category-race-distance`.
 - Started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
 - Read AGENTS.md, docs/README.md, the H7 handoff and cohort architecture.
@@ -28,15 +28,28 @@ one bound. Added frozen default options with tolerancePercent = 10 and JSDoc
 for units, inclusivity, configuration constraints and scope. T2 adds no evaluator,
 UI or persistence changes. The user approved T2 after technical validation.
 
+## T3 completed — user approved
+
+T3 implemented `validateRaceDistanceForCategory` and the shared result type.
+Nine focused tests passed. The evaluator has no UI or persistence dependency;
+it reports non-blocking mismatches with direction and original/effective bounds.
+Category/options validation precedes missing-distance handling; E/B do not
+bypass invalid inputs. Machine epsilon handles inclusive decimal boundaries.
+The user approved T3 after validation. No UI behavior is available to manually
+test in T3.
+
 ## Next steps
 
-Proceed to T3 / KAN-180: implement pure evaluation, including
-runtime input/configuration validation and inclusive tolerance boundaries.
+Continue with T4 / KAN-181 (planning integration).
 Read the architecture document for effective endpoints and test examples.
 Do not infer competitive limits from weekly kilometers or enforce exclusive
 category ranges. B remains pending without blocking T2/T3.
 
 ## Validation
+
+T3: all 276 tests passed (including nine new evaluator tests), standalone
+TypeScript and production build passed. Lint: zero errors, 11 existing warnings.
+No UI walkthrough applies until integration; user review is complete.
 
 T1 was documentation-only and accepted through domain review.
 T2: 267 existing tests passed; production build (including TypeScript) passed;

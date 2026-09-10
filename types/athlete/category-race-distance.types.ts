@@ -28,3 +28,28 @@ export type CategoryRaceDistancePolicy =
 export interface CategoryRaceDistancePolicyOptions {
   readonly tolerancePercent: number
 }
+
+/** Pure evaluation outcome; only invalid data/configuration blocks continuation. */
+export type CategoryRaceDistanceResult =
+  | {
+      readonly status: 'invalid'
+      readonly blocking: true
+      readonly reason: 'category' | 'distance' | 'tolerance' | 'policy'
+    }
+  | {
+      readonly status: 'not_applicable' | 'unrestricted' | 'policy_not_defined'
+      readonly blocking: false
+    }
+  | {
+      readonly status: 'compatible' | 'incompatible'
+      readonly blocking: false
+      /** Direction outside the effective range; null when compatible. */
+      readonly direction: 'below_minimum' | 'above_maximum' | null
+      /** Original competitive bounds, in km, retained for display. */
+      readonly minKm: number | null
+      readonly maxKm: number | null
+      /** Inclusive alert thresholds, in km, without rounding race distance. */
+      readonly effectiveMinKm: number | null
+      readonly effectiveMaxKm: number | null
+      readonly tolerancePercent: number
+    }
