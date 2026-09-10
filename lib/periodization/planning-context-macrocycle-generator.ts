@@ -19,6 +19,28 @@ import type {
   PlanningIntent,
 } from '@/types'
 
+export type PlanningContextGenerationErrorCode =
+  | 'INVALID_DATE'
+  | 'MACROCYCLE_TITLE_REQUIRED'
+  | 'LOAD_STRATEGY_GROUP_MISMATCH'
+  | 'LOAD_STRATEGY_INTENT_MISMATCH'
+  | 'LOAD_STRATEGY_INVALID'
+  | 'COMPETITION_NAME_REQUIRED'
+  | 'COMPETITION_DISTANCE_INVALID'
+  | 'COMPETITION_ELEVATION_INVALID'
+  | 'MACROCYCLE_DATE_ORDER_INVALID'
+  | 'MACROCYCLE_MIN_DURATION'
+  | 'INSUFFICIENT_TIME_FOR_TAPER'
+  | 'TAPER_UNDETERMINED'
+  | 'PRE_TAPER_PEAK_UNDETERMINED'
+
+export class PlanningContextGenerationError extends Error {
+  constructor(readonly code: PlanningContextGenerationErrorCode) {
+    super(code)
+    this.name = 'PlanningContextGenerationError'
+  }
+}
+
 export interface PlanningContextMacrocycleGeneratorParams {
   title: string
   planningIntent: PlanningIntent
@@ -29,11 +51,15 @@ export interface PlanningContextMacrocycleGeneratorParams {
   competitionContext?: CompetitionContext
 }
 
-function parseRequiredDate(value: string, fieldName: string) {
+function fail(code: PlanningContextGenerationErrorCode): never {
+  throw new PlanningContextGenerationError(code)
+}
+
+function parseRequiredDate(value: string) {
   const date = parseISO(value)
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !isValid(date)) {
-    throw new Error(`${fieldName} debe ser una fecha válida con formato YYYY-MM-DD.`)
+    fail('INVALID_DATE')
   }
 
   return date
@@ -44,40 +70,36 @@ function validateCompetitionContext(competitionContext: CompetitionContext | und
   if (!competition) return
 
   if (!competition.name.trim()) {
-    throw new Error('La carrera debe tener un nombre.')
+    fail('COMPETITION_NAME_REQUIRED')
   }
 
   if (!Number.isFinite(competition.distanceKm) || competition.distanceKm <= 0) {
-    throw new Error('La distancia de la carrera debe ser mayor que cero.')
+    fail('COMPETITION_DISTANCE_INVALID')
   }
 
   if (
     competition.elevationGain !== undefined
     && (!Number.isInteger(competition.elevationGain) || competition.elevationGain < 0)
   ) {
-    throw new Error('El desnivel de la carrera debe ser un entero no negativo.')
+    fail('COMPETITION_ELEVATION_INVALID')
   }
 }
 
 function validateParams(params: PlanningContextMacrocycleGeneratorParams) {
   if (!params.title.trim()) {
-    throw new Error('El macrociclo debe tener un título.')
+    fail('MACROCYCLE_TITLE_REQUIRED')
   }
 
   if (params.loadStrategy.context.athleteGroup !== params.athleteGroup) {
-    throw new Error('La estrategia de carga pertenece a otro grupo.')
+    fail('LOAD_STRATEGY_GROUP_MISMATCH')
   }
 
   if (resolveLegacyPlanningIntent(params.loadStrategy.context.goalType) !== params.planningIntent) {
-    throw new Error('La estrategia de carga pertenece a otra intención de planificación.')
+    fail('LOAD_STRATEGY_INTENT_MISMATCH')
   }
 
-  const strategyValidation = validateLoadStrategy(params.loadStrategy)
-
-  if (!strategyValidation.isValid) {
-    throw new Error(
-      strategyValidation.errors[0]?.message ?? 'La estrategia de carga no es válida.',
-    )
+  if (!validateLoadStrategy(params.loadStrategy).isValid) {
+    fail('LOAD_STRATEGY_INVALID')
   }
 
   validateCompetitionContext(params.competitionContext)
@@ -90,23 +112,26 @@ function validateParams(params: PlanningContextMacrocycleGeneratorParams) {
  * `loadStrategy.context.goalType` remains transitional metadata and is used only
  * to verify compatibility with `planningIntent`; it does not activate tapering
  * or competitive mesocycles.
+ *
+ * Errors from this new boundary use locale-neutral codes so UI/server boundaries
+ * can translate them through next-intl instead of embedding product copy here.
  */
 export function generateMacrocycleFromPlanningContext(
   params: PlanningContextMacrocycleGeneratorParams,
 ): GeneratedMacrocycleDraft {
   validateParams(params)
 
-  const start = parseRequiredDate(params.startDate, 'startDate')
-  const end = parseRequiredDate(params.endDate, 'endDate')
+  const start = parseRequiredDate(params.startDate)
+  const end = parseRequiredDate(params.endDate)
   const planningDays = differenceInCalendarDays(end, start) + 1
 
   if (planningDays <= 0) {
-    throw new Error('endDate debe ser posterior o igual a startDate.')
+    fail('MACROCYCLE_DATE_ORDER_INVALID')
   }
 
   const totalWeeks = Math.ceil(planningDays / 7)
   if (totalWeeks < 4) {
-    throw new Error('El macrociclo debe tener al menos 4 semanas de planificación.')
+    fail('MACROCYCLE_MIN_DURATION')
   }
 
   const primaryCompetition = params.competitionContext?.primaryCompetition
@@ -118,7 +143,7 @@ export function generateMacrocycleFromPlanningContext(
   const trainingWeeksCount = totalWeeks - taperingWeeksCount
 
   if (trainingWeeksCount < 2) {
-    throw new Error('El período disponible no alcanza para incluir entrenamiento y tapering.')
+    fail('INSUFFICIENT_TIME_FOR_TAPER')
   }
 
   const progressionDurationProfile = determineProgressionDurationProfile(trainingWeeksCount)
@@ -143,11 +168,11 @@ export function generateMacrocycleFromPlanningContext(
 
   if (primaryCompetition) {
     if (taperingWeeksCount === 0) {
-      throw new Error('No se pudo determinar el tapering para la carrera.')
+      fail('TAPER_UNDETERMINED')
     }
 
     if (finalTrainingPeakVolumeKm === undefined) {
-      throw new Error('No se pudo determinar el pico de carga previo al tapering.')
+      fail('PRE_TAPER_PEAK_UNDETERMINED')
     }
 
     mesocycles.push(generateCompetitiveMesocycle({
