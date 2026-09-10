@@ -13,6 +13,10 @@ import {
   updateCompetition,
   type CompetitionCalendarServiceErrorCode,
 } from '@/lib/periodization/competition-calendar-service'
+import {
+  withCompetitionDistanceCompatibility,
+  type CompetitionEntryWithDistanceCompatibility,
+} from '@/lib/periodization/competition-distance-context'
 import type {
   CompetitionEntry,
   CompetitionEntryDraft,
@@ -108,15 +112,23 @@ function revalidateCompetitionCalendar(locale: SupportedLocale, planId: string) 
   revalidatePath(planningPath(locale, planId))
 }
 
-/** Returns the visible competition calendar only for plans owned by the current team. */
+/**
+ * Returns the visible competition calendar only for plans owned by the current
+ * team, enriched with the current H8 distance advisory from the owning group.
+ * Compatibility remains derived at read time and is never persisted.
+ */
 export async function getCompetitionCalendarAction(
   input: CompetitionCalendarActionContext,
-): Promise<CompetitionCalendarActionResult<CompetitionEntry[]>> {
-  if (!requireAccessiblePlan(input.planId)) return forbiddenResult()
+): Promise<CompetitionCalendarActionResult<CompetitionEntryWithDistanceCompatibility[]>> {
+  const plan = requireAccessiblePlan(input.planId)
+  if (!plan) return forbiddenResult()
 
   return {
     ok: true,
-    value: getCompetitionCalendar(input.planId),
+    value: withCompetitionDistanceCompatibility(
+      plan.group.categoryCode,
+      getCompetitionCalendar(input.planId),
+    ),
     sameDateCompetitionIds: [],
   }
 }
