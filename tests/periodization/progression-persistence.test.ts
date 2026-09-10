@@ -5,6 +5,7 @@ import Database from 'better-sqlite3'
 import { eq } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 
+import * as competitionSchema from '@/db/competition-entry-schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
@@ -213,6 +214,7 @@ function createTestDatabase() {
     database: drizzle(sqlite, {
       schema: {
         ...schema,
+        ...competitionSchema,
         ...loadStrategySchema,
         ...intensityStrategySchema,
         ...sessionGenerationPreferencesSchema,
