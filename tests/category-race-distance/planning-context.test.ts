@@ -7,6 +7,36 @@ import { assessPlanningRaceDistance, withPlanningRaceDistance } from '@/lib/peri
 import type { AthleteGroupCode } from '@/types/athlete/group.types'
 
 describe('compatibilidad en el contexto de planificación', () => {
+  it('preserva volumen y D+ manuales al regenerar una carrera incompatible', () => {
+    const existing = [{ id: 'manual', weekNumber: 2, targetVolumeKm: 30,
+      targetVolumeSource: 'manual' as const, targetElevationGain: 450,
+      targetElevationSource: 'manual' as const }]
+    const before = structuredClone(existing)
+    const preview = buildLoadProgressionPreview({
+      title: 'S2 42K', startDate: '2026-01-05', endDate: '2026-03-29',
+      loadStrategy: suggestLoadStrategy('S2', 'race'),
+      targetRace: { name: '42K', distanceKm: 42 }, existingMicrocycles: existing,
+    })
+    const week = preview.planning.mesocycles.flatMap((meso) => meso.microcycles).find((item) => item.weekNumber === 2)!
+    assert.equal(preview.planning.raceDistanceCompatibility?.status, 'incompatible')
+    assert.deepEqual(preview.conflicts, [])
+    assert.equal(week.targetVolumeKm, 30)
+    assert.equal(week.targetElevationGain, 450)
+    assert.equal(week.targetVolumeSource, 'manual')
+    assert.equal(week.targetElevationSource, 'manual')
+    assert.deepEqual(existing, before)
+  })
+
+  it('recalcula snapshots desactualizados y conserva los inválidos como error explícito', () => {
+    const cycles = [{ targetRaceDistanceKm: 42,
+      raceDistanceCompatibility: { status: 'compatible' } }, { targetRaceDistanceKm: 0 }]
+    const before = structuredClone(cycles)
+    const result = withPlanningRaceDistance('S', cycles)
+    assert.equal(result[0].raceDistanceCompatibility.status, 'incompatible')
+    assert.equal(result[1].raceDistanceCompatibility.status, 'invalid')
+    assert.deepEqual(cycles, before)
+  })
+
   it('genera S2 con 42K sin bloquear ni alterar estrategia u objetivo', () => {
     const loadStrategy = suggestLoadStrategy('S2', 'race')
     const before = structuredClone(loadStrategy)

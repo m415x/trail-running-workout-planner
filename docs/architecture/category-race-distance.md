@@ -75,6 +75,15 @@ per macrocycle and remain available after progression saving or reload, even
 when competitive blocks are excluded from regeneration. Live notices use
 role=status and do not disable controls or reset form values.
 
+### Coverage (T6)
+
+H8 has 21 focused tests: nine evaluator tests, seven planning-context tests and
+five rendering tests. Rendering uses the actual notice and next-intl provider
+in Spanish/English, checking visible content and silent states. Integration
+coverage also protects manual volume/D+ and reevaluates stale snapshots.
+These tests do not replace browser save/reload or responsive-layout checks;
+the coach approved those during T5. No browser automation dependency was added.
+
 Sources: `types/athlete/group.types.ts`, `lib/constants.ts` and
 `data/periodization-matrix.ts`. Jira KAN-178 supplies additional design context.
 

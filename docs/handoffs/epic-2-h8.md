@@ -2,7 +2,7 @@
 
 ## Starting state
 
-- Story: KAN-177; current task: T5 / KAN-182.
+- Story: KAN-177; current task: T6 / KAN-183.
 - Branch: `h-17-category-race-distance`.
 - Started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
 - Read AGENTS.md, docs/README.md, the H7 handoff and cohort architecture.
@@ -75,6 +75,17 @@ Save S2 42, reload, and save progression: warning remains and data are retained.
 Check English messages, mobile wrapping, and console.
 
 ## Validation
+
+T6 adds seven tests without changing runtime behavior: five rendered-component
+tests using the actual next-intl provider, plus manual volume/D+ preservation
+and stale/invalid snapshot reevaluation. H8 now has 21 focused tests.
+Rendering tests are not browser interaction/E2E tests; T5's approved walkthrough
+remains the evidence for save/reload, responsiveness and live interaction.
+The user approved T6. Next is T7 / KAN-184 documentation closeout.
+
+T6 validation: full suite 288 passed; build passed after fixing test-provider
+typing. The final test-only provider-props adjustment passed focused rendering
+tests and focused lint. Full lint baseline: zero errors, 11 known warnings.
 
 T5: 281 tests passed. A notice type-narrowing error found by the initial build
 was corrected; subsequent lint and build/type checking passed (11 unchanged
