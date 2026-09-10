@@ -7,6 +7,7 @@ prevents implementation history from living only in long chat conversations.
 
 - [Automatic session generation](architecture/session-generation.md)
 - [Planning cohorts](architecture/planning-cohorts.md)
+- [Category and competitive distance — policy design](architecture/category-race-distance.md)
 
 Architecture documents describe the current durable domain model and should be
 preferred when the task depends on how the system works now.
@@ -29,6 +30,7 @@ inconsistency, or the origin of a domain rule is relevant to the task.
 
 - [Epic 2 / History 6 completed](handoffs/epic-2-h6.md)
 - [Epic 2 / History 7 completed](handoffs/epic-2-h7.md)
+- [Epic 2 / History 8 in progress](handoffs/epic-2-h8.md)
 
 Handoffs describe the current operational state and are the primary starting
 point for continuing active implementation work.
