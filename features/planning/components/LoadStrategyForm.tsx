@@ -1,18 +1,17 @@
 'use client'
 
-import { useActionState, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { RaceDistanceNotice } from '@/features/planning/components/RaceDistanceNotice'
-import { validateRaceDistanceForCategory } from '@/lib/validate-race-distance-for-category'
+import { useActionState, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   createGroupPlanWithLoadStrategy,
   type CreateGroupPlanWithLoadStrategyState,
 } from '@/app/actions/load-strategy-actions'
 import { getLoadStrategyModifications } from '@/lib/periodization/load-strategy-modifications'
-import { assessElevationDensity } from '@/lib/periodization/elevation-density-validator'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateMacrocycleHorizon } from '@/lib/periodization/macrocycle-horizon'
+import { resolveBasePlanLegacyGoalType } from '@/lib/periodization/planning-intent'
 import {
   validateLoadStrategy,
   type LoadStrategyValidationIssue,
@@ -21,7 +20,7 @@ import type {
   AthleteGroupCode,
   LoadStrategyDraft,
   LoadStrategyField,
-  TrainingGoalType,
+  PlanningIntent,
 } from '@/types'
 import { Badge } from '@ui/badge'
 import { Button, buttonVariants } from '@ui/button'
@@ -41,13 +40,7 @@ interface LoadStrategyFormProps {
   defaultEndDate: string
 }
 
-const goalTypeOptions: Array<{ value: TrainingGoalType; label: string }> = [
-  { value: 'race', label: 'Preparar una carrera' },
-  { value: 'performance', label: 'Mejorar rendimiento' },
-  { value: 'base', label: 'Desarrollar base aeróbica' },
-  { value: 'maintenance', label: 'Mantener condición' },
-  { value: 'custom', label: 'Otro objetivo' },
-]
+const planningIntentOptions: PlanningIntent[] = ['development', 'base', 'maintenance']
 
 const initialActionState: CreateGroupPlanWithLoadStrategyState = {}
 
@@ -57,18 +50,16 @@ export function LoadStrategyForm({
   defaultStartDate,
   defaultEndDate,
 }: LoadStrategyFormProps) {
+  const t = useTranslations('BasePlanning')
   const [groupCode, setGroupCode] = useState<AthleteGroupCode>(groups[0].code)
-  const [goalType, setGoalType] = useState<TrainingGoalType>('race')
+  const [planningIntent, setPlanningIntent] = useState<PlanningIntent>('development')
   const suggestion = useMemo(
-    () => suggestLoadStrategy(groupCode, goalType),
-    [groupCode, goalType],
+    () => suggestLoadStrategy(groupCode, resolveBasePlanLegacyGoalType(planningIntent)),
+    [groupCode, planningIntent],
   )
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
   const [startDate, setStartDate] = useState(defaultStartDate)
   const [endDate, setEndDate] = useState(defaultEndDate)
-  const [raceName, setRaceName] = useState('')
-  const [raceDistanceKm, setRaceDistanceKm] = useState('')
-  const [raceElevationGain, setRaceElevationGain] = useState('')
   const [actionState, formAction, isPending] = useActionState(
     createGroupPlanWithLoadStrategy,
     initialActionState,
@@ -83,38 +74,24 @@ export function LoadStrategyForm({
     () => getLoadStrategyModifications(suggestion.values, strategy.values).length > 0,
     [strategy.values, suggestion.values],
   )
-  const raceDensityWarning = useMemo(() => {
-    const distance = Number(raceDistanceKm)
-    const elevation = Number(raceElevationGain)
-
-    if (
-      goalType !== 'race'
-      || !Number.isFinite(distance)
-      || distance <= 0
-      || raceElevationGain === ''
-      || !Number.isInteger(elevation)
-      || elevation < 0
-    ) {
-      return null
-    }
-
-    return assessElevationDensity(distance, elevation).warning
-  }, [goalType, raceDistanceKm, raceElevationGain])
   const selectedGroup = groups.find((group) => group.code === groupCode) ?? groups[0]
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
-  function resetStrategy(nextGroupCode: AthleteGroupCode, nextGoalType: TrainingGoalType) {
-    setStrategy(suggestLoadStrategy(nextGroupCode, nextGoalType))
+  function resetStrategy(nextGroupCode: AthleteGroupCode, nextPlanningIntent: PlanningIntent) {
+    setStrategy(suggestLoadStrategy(
+      nextGroupCode,
+      resolveBasePlanLegacyGoalType(nextPlanningIntent),
+    ))
   }
 
   function handleGroupChange(nextGroupCode: AthleteGroupCode) {
     setGroupCode(nextGroupCode)
-    resetStrategy(nextGroupCode, goalType)
+    resetStrategy(nextGroupCode, planningIntent)
   }
 
-  function handleGoalTypeChange(nextGoalType: TrainingGoalType) {
-    setGoalType(nextGoalType)
-    resetStrategy(groupCode, nextGoalType)
+  function handlePlanningIntentChange(nextPlanningIntent: PlanningIntent) {
+    setPlanningIntent(nextPlanningIntent)
+    resetStrategy(groupCode, nextPlanningIntent)
   }
 
   function handleValueChange(field: LoadStrategyField, value: number | null) {
@@ -139,108 +116,38 @@ export function LoadStrategyForm({
 
       <Card>
         <CardHeader>
-          <CardTitle>Contexto de la estrategia</CardTitle>
-          <CardDescription>
-            Elegí el grupo y el propósito general para obtener una propuesta inicial.
-          </CardDescription>
+          <CardTitle>{t('contextTitle')}</CardTitle>
+          <CardDescription>{t('contextDescription')}</CardDescription>
         </CardHeader>
-        <CardContent className='grid gap-4 sm:grid-cols-2'>
-          <SelectField
-            label='Grupo'
-            name='groupCode'
-            value={groupCode}
-            onChange={(value) => handleGroupChange(value as AthleteGroupCode)}
-          >
-            {groups.map((group) => (
-              <option key={group.id} value={group.code}>
-                {group.code}{group.description ? ` · ${group.description}` : ''}
-              </option>
-            ))}
-          </SelectField>
+        <CardContent className='space-y-3'>
+          <div className='grid gap-4 sm:grid-cols-2'>
+            <SelectField
+              label={t('group')}
+              name='groupCode'
+              value={groupCode}
+              onChange={(value) => handleGroupChange(value as AthleteGroupCode)}
+            >
+              {groups.map((group) => (
+                <option key={group.id} value={group.code}>
+                  {group.code}{group.description ? ` · ${group.description}` : ''}
+                </option>
+              ))}
+            </SelectField>
 
-          <SelectField
-            label='Objetivo'
-            name='goalType'
-            value={goalType}
-            onChange={(value) => handleGoalTypeChange(value as TrainingGoalType)}
-          >
-            {goalTypeOptions.map((option) => (
-              <option key={option.value} value={option.value}>{option.label}</option>
-            ))}
-          </SelectField>
+            <SelectField
+              label={t('planningIntent')}
+              name='planningIntent'
+              value={planningIntent}
+              onChange={(value) => handlePlanningIntentChange(value as PlanningIntent)}
+            >
+              {planningIntentOptions.map((option) => (
+                <option key={option} value={option}>{t(`intents.${option}`)}</option>
+              ))}
+            </SelectField>
+          </div>
+          <p className='text-sm text-muted-foreground'>{t('competitionNeutral')}</p>
         </CardContent>
       </Card>
-
-      {goalType === 'race' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Carrera objetivo del grupo</CardTitle>
-            <CardDescription>
-              Estos datos se guardan como contexto del macrociclo y no modifican los objetivos individuales de los atletas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className='grid gap-4 sm:grid-cols-3'>
-            <div className='space-y-1.5 sm:col-span-3'>
-              <label htmlFor='raceName' className='text-sm font-medium'>Nombre</label>
-              <Input
-                id='raceName'
-                name='raceName'
-                value={raceName}
-                maxLength={120}
-                required
-                placeholder='Ej.: Patagonia Run'
-                onChange={(event) => setRaceName(event.target.value)}
-              />
-            </div>
-            <div className='space-y-1.5'>
-              <label htmlFor='raceDistanceKm' className='text-sm font-medium'>Distancia</label>
-              <div className='relative'>
-                <Input
-                  id='raceDistanceKm'
-                  name='raceDistanceKm'
-                  type='number'
-                  min='0.1'
-                  step='any'
-                  value={raceDistanceKm}
-                  required
-                  onChange={(event) => setRaceDistanceKm(event.target.value)}
-                  className='pr-12'
-                />
-                <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>km</span>
-              </div>
-            </div>
-            <div className='space-y-1.5'>
-              <label htmlFor='raceElevationGain' className='text-sm font-medium'>Desnivel positivo</label>
-              <div className='relative'>
-                <Input
-                  id='raceElevationGain'
-                  name='raceElevationGain'
-                  type='number'
-                  min='0'
-                  step='1'
-                  value={raceElevationGain}
-                  onChange={(event) => setRaceElevationGain(event.target.value)}
-                  className='pr-12'
-                />
-                <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>m+</span>
-              </div>
-            </div>
-            <div className='flex items-end pb-2 text-sm text-muted-foreground'>El D+ es opcional si todavía no se conoce.</div>
-            {raceDensityWarning && (
-              <p className='text-sm text-amber-700 dark:text-amber-400 sm:col-span-3' role='status'>
-                Advertencia: {raceDensityWarning}
-              </p>
-            )}
-            <div className='sm:col-span-3'>
-              <RaceDistanceNotice
-                groupCode={groupCode}
-                distanceKm={raceDistanceKm.trim() === '' ? null : Number(raceDistanceKm)}
-                result={validateRaceDistanceForCategory(groupCode[0], raceDistanceKm.trim() === '' ? null : Number(raceDistanceKm))}
-              />
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Card>
         <CardHeader>
