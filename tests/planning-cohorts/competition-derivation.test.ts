@@ -28,7 +28,7 @@ function sourceWithCompetitions(): PlanningVariantSource {
       distanceKm: 42,
       elevationGainM: 2200,
       priority: 'A',
-      status: 'scheduled',
+      status: 'confirmed',
       description: 'Objetivo principal.',
       createdAt: '2026-09-01T00:00:00.000Z',
       updatedAt: '2026-09-02T00:00:00.000Z',
@@ -41,7 +41,7 @@ function sourceWithCompetitions(): PlanningVariantSource {
       distanceKm: 21,
       elevationGainM: 900,
       priority: 'B',
-      status: 'scheduled',
+      status: 'planned',
       description: null,
     },
   ]
@@ -101,7 +101,7 @@ describe('competition calendar cohort derivation', () => {
       distanceKm: 21,
       elevationGainM: 900,
       priority: 'B',
-      status: 'scheduled',
+      status: 'planned',
       description: null,
     })
     assert.equal(result.identityMap.competitionEntryIds['competition-b'], 'derived-2')
