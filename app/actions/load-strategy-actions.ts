@@ -1,5 +1,6 @@
 'use server'
 
+import { localizeLoadIssue } from '@/features/planning/load-strategy-copy'
 import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
@@ -69,12 +70,13 @@ export async function createGroupPlanWithLoadStrategy(
   _previousState: CreateGroupPlanWithLoadStrategyState,
   formData: FormData,
 ): Promise<CreateGroupPlanWithLoadStrategyState> {
+  const t = await getTranslations({ locale: formData.get('locale') === 'en' ? 'en' : 'es', namespace: 'BasePlanning' })
   let rawValues: unknown
 
   try {
     rawValues = JSON.parse(String(formData.get('values') ?? ''))
   } catch {
-    return { error: 'No se pudieron interpretar los parámetros de carga' }
+    return { error: t('parseError') }
   }
 
   const parsed = createGroupPlanWithLoadStrategySchema.safeParse({
@@ -88,7 +90,7 @@ export async function createGroupPlanWithLoadStrategy(
   })
 
   if (!parsed.success) {
-    return { error: 'Revisá los datos de la estrategia antes de continuar' }
+    return { error: t('invalidError') }
   }
 
   const data = parsed.data
@@ -98,7 +100,7 @@ export async function createGroupPlanWithLoadStrategy(
   })
 
   if (!horizonValidation.isValid) {
-    return { error: horizonValidation.error }
+    return { error: t('horizonInvalid') }
   }
 
   let planId: string
@@ -114,13 +116,13 @@ export async function createGroupPlanWithLoadStrategy(
     }).sync()
 
     if (!group) {
-      return { error: 'El grupo seleccionado no está disponible' }
+      return { error: t('groupUnavailable') }
     }
 
     const resolvedGroupCode = `${group.categoryCode}${group.levelCode}` as AthleteGroupCode
 
     if (resolvedGroupCode !== data.groupCode) {
-      return { error: 'El grupo seleccionado no coincide con la estrategia configurada' }
+      return { error: t('groupMismatch') }
     }
 
     // Persistence and recommenders still require TrainingGoalType during H9.
@@ -145,7 +147,7 @@ export async function createGroupPlanWithLoadStrategy(
     const validation = validateLoadStrategy(strategy)
 
     if (!validation.isValid) {
-      return { error: validation.errors[0]?.message ?? 'La estrategia contiene valores inválidos' }
+      return { error: validation.errors[0] ? localizeLoadIssue(validation.errors[0], strategy, t) : t('invalidError') }
     }
 
     const modifications = getLoadStrategyModifications(suggestedStrategy.values, data.values)
@@ -154,13 +156,12 @@ export async function createGroupPlanWithLoadStrategy(
     const strategyId = randomUUID()
     const macrocycleId = randomUUID()
     const now = new Date().toISOString()
-    const t = await getTranslations({ locale: data.locale, namespace: 'BasePlanning' })
     const planningIntentLabel = data.planningIntent === 'development'
       ? t('intents.development')
       : data.planningIntent === 'base'
         ? t('intents.base')
         : t('intents.maintenance')
-    const title = `Plan ${resolvedGroupCode} · ${planningIntentLabel}`
+    const title = t('planTitle', { group: resolvedGroupCode, intent: planningIntentLabel })
 
     db.transaction((tx) => {
       tx.insert(groupTrainingPlans).values({
@@ -243,7 +244,7 @@ export async function createGroupPlanWithLoadStrategy(
     })
   } catch (error) {
     console.error('Error creating group plan with load strategy:', error)
-    return { error: 'No se pudo crear el plan grupal con su estrategia de carga' }
+    return { error: t('createError') }
   }
 
   const detailPath = planningPath(data.locale, `/${planId}`)

@@ -19,6 +19,57 @@
       "development": "Desarrollo",
       "base": "Base aeróbica",
       "maintenance": "Mantenimiento"
+    },
+    "horizonTitle": "Horizonte del macrociclo",
+    "horizonDescription": "Definí el período que tendrá disponible el motor para distribuir la carga.",
+    "startDate": "Fecha inicial",
+    "endDate": "Fecha final",
+    "duration": "{weeks, number} semanas · {days, number} días de planificación.",
+    "horizonInvalid": "Ingresá fechas válidas, en orden, que abarquen al menos 4 semanas.",
+    "loadTitle": "Parámetros de carga",
+    "loadDescription": "Valores semanales sugeridos para {group}. Podés ajustarlos antes de crear el plan.",
+    "customized": "Valores personalizados",
+    "suggested": "Valores sugeridos",
+    "volume": "Volumen",
+    "initialVolume": "Volumen inicial",
+    "maximumVolume": "Volumen máximo",
+    "kmPerWeek": "km/semana",
+    "progression": "Progresión",
+    "increase": "Incremento semanal máximo",
+    "deload": "Descarga",
+    "elevation": "Desnivel",
+    "elevationOptional": "Podés dejar ambos valores vacíos para definirlos más adelante.",
+    "initialElevation": "Desnivel inicial",
+    "maximumElevation": "Desnivel máximo",
+    "metersPerWeek": "m+/semana",
+    "warnings": "Hay {count, number} advertencias metodológicas. Podés continuar si responden a una decisión planificada.",
+    "errors": "Corregí los {count, number} errores antes de continuar.",
+    "draftNotice": "Al continuar se creará un plan grupal en borrador con esta estrategia asociada.",
+    "cancel": "Cancelar",
+    "creating": "Creando…",
+    "create": "Crear plan",
+    "warning": "Advertencia: {message}",
+    "parseError": "No se pudieron interpretar los parámetros de carga.",
+    "invalidError": "Revisá los datos de la estrategia antes de continuar.",
+    "groupUnavailable": "El grupo seleccionado no está disponible.",
+    "groupMismatch": "El grupo seleccionado no coincide con la estrategia configurada.",
+    "createError": "No se pudo crear el plan grupal con su estrategia de carga.",
+    "planTitle": "Plan {group} · {intent}",
+    "issues": {
+      "initial-volume-positive": "El volumen inicial debe ser mayor que 0 km por semana.",
+      "maximum-volume-positive": "El volumen máximo debe ser mayor que 0 km por semana.",
+      "initial-volume-above-maximum": "El volumen inicial no puede superar el máximo.",
+      "initial-volume-outside-group-range": "El volumen inicial está fuera del rango de referencia de {min, number}–{max, number} km/semana para {group}.",
+      "maximum-volume-outside-group-range": "El volumen máximo está fuera del rango de referencia de {min, number}–{max, number} km/semana para {group}.",
+      "weekly-increase-range": "El incremento semanal debe ser mayor que 0% y no superar 20%.",
+      "weekly-increase-above-reference": "El incremento supera la referencia conservadora del 10%. El profesor puede mantenerlo como decisión planificada.",
+      "deload-range": "La descarga debe ser mayor que 0% y menor que 100%.",
+      "initial-elevation-non-negative": "El desnivel inicial debe ser finito y no negativo.",
+      "maximum-elevation-non-negative": "El desnivel máximo debe ser finito y no negativo.",
+      "incomplete-elevation-range": "Informá ambos valores de desnivel o dejalos ambos vacíos.",
+      "initial-elevation-above-maximum": "El desnivel inicial no puede superar el máximo.",
+      "density-high": "Densidad vertical alta ({density, number} m+/km). Confirmá que responde a un objetivo de montaña deliberado.",
+      "density-extreme": "Densidad vertical extrema ({density, number} m+/km). Verificá distancia y desnivel."
     }
   },
   "Common": {
@@ -173,6 +224,15 @@
         "notes": "Indicaciones para el grupo",
         "notesPlaceholder": "Pautas de ejecución, recuperaciones o adaptaciones…"
       }
+    }
+  },
+  "DomainGlossary": {
+    "planningIntent": {
+      "title": "Intención de planificación",
+      "summary": "Indica la dirección general del entrenamiento, independientemente de las carreras.",
+      "development": "Desarrollo: mejorar progresivamente las capacidades del grupo.",
+      "base": "Base aeróbica: construir o recuperar capacidad general con una progresión conservadora.",
+      "maintenance": "Mantenimiento: conservar la capacidad actual sin una progresión importante."
     }
   }
 }

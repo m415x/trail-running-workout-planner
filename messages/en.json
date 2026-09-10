@@ -19,6 +19,57 @@
       "development": "Development",
       "base": "Aerobic base",
       "maintenance": "Maintenance"
+    },
+    "horizonTitle": "Macrocycle horizon",
+    "horizonDescription": "Define the period available to distribute training load.",
+    "startDate": "Start date",
+    "endDate": "End date",
+    "duration": "{weeks, number} weeks · {days, number} planning days.",
+    "horizonInvalid": "Enter valid dates in order covering at least 4 weeks.",
+    "loadTitle": "Load parameters",
+    "loadDescription": "Suggested weekly values for {group}. You can adjust them before creating the plan.",
+    "customized": "Custom values",
+    "suggested": "Suggested values",
+    "volume": "Volume",
+    "initialVolume": "Initial volume",
+    "maximumVolume": "Maximum volume",
+    "kmPerWeek": "km/week",
+    "progression": "Progression",
+    "increase": "Maximum weekly increase",
+    "deload": "Deload",
+    "elevation": "Elevation gain",
+    "elevationOptional": "You can leave both values empty and define them later.",
+    "initialElevation": "Initial elevation gain",
+    "maximumElevation": "Maximum elevation gain",
+    "metersPerWeek": "m+/week",
+    "warnings": "There are {count, number} methodological warnings. You can continue if these are deliberate planning decisions.",
+    "errors": "Correct the {count, number} errors before continuing.",
+    "draftNotice": "Continuing creates a draft group plan with this strategy.",
+    "cancel": "Cancel",
+    "creating": "Creating…",
+    "create": "Create plan",
+    "warning": "Warning: {message}",
+    "parseError": "The load parameters could not be read.",
+    "invalidError": "Check the strategy data before continuing.",
+    "groupUnavailable": "The selected group is not available.",
+    "groupMismatch": "The selected group does not match the strategy.",
+    "createError": "The group plan and its load strategy could not be created.",
+    "planTitle": "Plan {group} · {intent}",
+    "issues": {
+      "initial-volume-positive": "Initial volume must be greater than 0 km per week.",
+      "maximum-volume-positive": "Maximum volume must be greater than 0 km per week.",
+      "initial-volume-above-maximum": "Initial volume cannot exceed the maximum.",
+      "initial-volume-outside-group-range": "Initial volume is outside the reference range of {min, number}–{max, number} km/week for {group}.",
+      "maximum-volume-outside-group-range": "Maximum volume is outside the reference range of {min, number}–{max, number} km/week for {group}.",
+      "weekly-increase-range": "Weekly increase must be greater than 0% and no more than 20%.",
+      "weekly-increase-above-reference": "The increase exceeds the conservative 10% reference. The coach can retain it as a deliberate planning decision.",
+      "deload-range": "Deload must be greater than 0% and less than 100%.",
+      "initial-elevation-non-negative": "Initial elevation gain must be finite and non-negative.",
+      "maximum-elevation-non-negative": "Maximum elevation gain must be finite and non-negative.",
+      "incomplete-elevation-range": "Enter both elevation values or leave both empty.",
+      "initial-elevation-above-maximum": "Initial elevation gain cannot exceed the maximum.",
+      "density-high": "High vertical density ({density, number} m+/km). Confirm that this is a deliberate mountain objective.",
+      "density-extreme": "Extreme vertical density ({density, number} m+/km). Check distance and elevation gain."
     }
   },
   "Common": {
@@ -173,6 +224,15 @@
         "notes": "Group instructions",
         "notesPlaceholder": "Execution guidelines, recoveries, or adaptations…"
       }
+    }
+  },
+  "DomainGlossary": {
+    "planningIntent": {
+      "title": "Planning intent",
+      "summary": "Describes the general training direction, independently of races.",
+      "development": "Development: progressively improve the group's capabilities.",
+      "base": "Aerobic base: build or rebuild general capacity with conservative progression.",
+      "maintenance": "Maintenance: preserve current capacity without significant progression."
     }
   }
 }

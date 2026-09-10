@@ -1,6 +1,8 @@
 'use client'
 
 import Link from 'next/link'
+import { PlanningIntentHelp } from '@/features/planning/components/PlanningIntentHelp'
+import { localizeLoadIssue } from '@/features/planning/load-strategy-copy'
 import { useActionState, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -105,7 +107,9 @@ export function LoadStrategyForm({
   }
 
   function issuesFor(field: LoadStrategyField) {
-    return [...validation.errors, ...validation.warnings].filter((issue) => issue.field === field)
+    return [...validation.errors, ...validation.warnings]
+      .filter((issue) => issue.field === field)
+      .map((issue) => ({ ...issue, message: localizeLoadIssue(issue, strategy, t) }))
   }
 
   return (
@@ -146,26 +150,27 @@ export function LoadStrategyForm({
             </SelectField>
           </div>
           <p className='text-sm text-muted-foreground'>{t('competitionNeutral')}</p>
+          <PlanningIntentHelp />
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Horizonte del macrociclo</CardTitle>
+          <CardTitle>{t('horizonTitle')}</CardTitle>
           <CardDescription>
-            Definí el período que tendrá disponible el motor para distribuir la carga.
+            {t('horizonDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent className='space-y-3'>
           <div className='grid gap-4 sm:grid-cols-2'>
             <DateField
-              label='Fecha inicial'
+              label={t('startDate')}
               name='startDate'
               value={startDate}
               onChange={setStartDate}
             />
             <DateField
-              label='Fecha final'
+              label={t('endDate')}
               name='endDate'
               value={endDate}
               min={startDate}
@@ -177,8 +182,8 @@ export function LoadStrategyForm({
             role={horizonValidation.isValid ? undefined : 'alert'}
           >
             {horizonValidation.isValid
-              ? `${horizonValidation.durationWeeks} semanas · ${horizonValidation.durationDays} días de planificación.`
-              : horizonValidation.error}
+              ? t('duration', { weeks: horizonValidation.durationWeeks ?? 0, days: horizonValidation.durationDays ?? 0 })
+              : t('horizonInvalid')}
           </p>
         </CardContent>
       </Card>
@@ -187,34 +192,34 @@ export function LoadStrategyForm({
         <CardHeader>
           <div className='flex flex-wrap items-start justify-between gap-3'>
             <div>
-              <CardTitle>Parámetros de carga</CardTitle>
+              <CardTitle>{t('loadTitle')}</CardTitle>
               <CardDescription>
-                Valores semanales sugeridos para {groupCode}. Podés ajustarlos antes de crear el plan.
+                {t('loadDescription', { group: groupCode })}
               </CardDescription>
             </div>
             <Badge variant={isCustomized ? 'outline' : 'secondary'}>
-              {isCustomized ? 'Valores personalizados' : 'Valores sugeridos'}
+              {isCustomized ? t('customized') : t('suggested')}
             </Badge>
           </div>
         </CardHeader>
         <CardContent className='space-y-6'>
           <fieldset className='space-y-4'>
-            <legend className='font-medium'>Volumen</legend>
+            <legend className='font-medium'>{t('volume')}</legend>
             <div className='grid gap-4 sm:grid-cols-2'>
               <NumberField
-                label='Volumen inicial'
+                label={t('initialVolume')}
                 name='initialWeeklyVolumeKm'
                 value={strategy.values.initialWeeklyVolumeKm}
-                suffix='km/semana'
+                suffix={t('kmPerWeek')}
                 step='0.1'
                 issues={issuesFor('initialWeeklyVolumeKm')}
                 onChange={(value) => handleValueChange('initialWeeklyVolumeKm', value ?? 0)}
               />
               <NumberField
-                label='Volumen máximo'
+                label={t('maximumVolume')}
                 name='maximumWeeklyVolumeKm'
                 value={strategy.values.maximumWeeklyVolumeKm}
-                suffix='km/semana'
+                suffix={t('kmPerWeek')}
                 step='0.1'
                 issues={issuesFor('maximumWeeklyVolumeKm')}
                 onChange={(value) => handleValueChange('maximumWeeklyVolumeKm', value ?? 0)}
@@ -223,10 +228,10 @@ export function LoadStrategyForm({
           </fieldset>
 
           <fieldset className='space-y-4'>
-            <legend className='font-medium'>Progresión</legend>
+            <legend className='font-medium'>{t('progression')}</legend>
             <div className='grid gap-4 sm:grid-cols-2'>
               <NumberField
-                label='Incremento semanal máximo'
+                label={t('increase')}
                 name='maximumWeeklyIncreasePercentage'
                 value={strategy.values.maximumWeeklyIncreasePercentage}
                 suffix='%'
@@ -235,7 +240,7 @@ export function LoadStrategyForm({
                 onChange={(value) => handleValueChange('maximumWeeklyIncreasePercentage', value ?? 0)}
               />
               <NumberField
-                label='Descarga'
+                label={t('deload')}
                 name='deloadPercentage'
                 value={strategy.values.deloadPercentage}
                 suffix='%'
@@ -248,24 +253,24 @@ export function LoadStrategyForm({
 
           <fieldset className='space-y-4'>
             <div>
-              <legend className='font-medium'>Desnivel</legend>
-              <p className='text-sm text-muted-foreground'>Podés dejar ambos valores vacíos para definirlos más adelante.</p>
+              <legend className='font-medium'>{t('elevation')}</legend>
+              <p className='text-sm text-muted-foreground'>{t('elevationOptional')}</p>
             </div>
             <div className='grid gap-4 sm:grid-cols-2'>
               <NumberField
-                label='Desnivel inicial'
+                label={t('initialElevation')}
                 name='initialWeeklyElevationGain'
                 value={strategy.values.initialWeeklyElevationGain}
-                suffix='m+/semana'
+                suffix={t('metersPerWeek')}
                 step='1'
                 issues={issuesFor('initialWeeklyElevationGain')}
                 onChange={(value) => handleValueChange('initialWeeklyElevationGain', value)}
               />
               <NumberField
-                label='Desnivel máximo'
+                label={t('maximumElevation')}
                 name='maximumWeeklyElevationGain'
                 value={strategy.values.maximumWeeklyElevationGain}
-                suffix='m+/semana'
+                suffix={t('metersPerWeek')}
                 step='1'
                 issues={issuesFor('maximumWeeklyElevationGain')}
                 onChange={(value) => handleValueChange('maximumWeeklyElevationGain', value)}
@@ -275,7 +280,7 @@ export function LoadStrategyForm({
 
           {validation.warnings.length > 0 && validation.errors.length === 0 && (
             <p className='text-sm text-muted-foreground'>
-              Hay {validation.warnings.length} advertencia{validation.warnings.length === 1 ? '' : 's'} metodológica{validation.warnings.length === 1 ? '' : 's'}. Podés continuar con esos valores si responden a una decisión planificada.
+              {t('warnings', { count: validation.warnings.length })}
             </p>
           )}
         </CardContent>
@@ -285,17 +290,17 @@ export function LoadStrategyForm({
         <div className='space-y-1'>
           <p className='text-sm text-muted-foreground'>
             {validation.errors.length > 0
-              ? `Corregí ${validation.errors.length} error${validation.errors.length === 1 ? '' : 'es'} antes de continuar.`
-              : 'Al continuar se creará un plan grupal en borrador con esta estrategia asociada.'}
+              ? t('errors', { count: validation.errors.length })
+              : t('draftNotice')}
           </p>
           {actionState.error && (
             <p className='text-sm text-destructive' role='alert'>{actionState.error}</p>
           )}
         </div>
         <div className='flex justify-end gap-2'>
-          <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
+          <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>{t('cancel')}</Link>
           <Button type='submit' disabled={!validation.isValid || !horizonValidation.isValid || isPending}>
-            {isPending ? 'Creando…' : 'Crear plan'}
+            {isPending ? t('creating') : t('create')}
           </Button>
         </div>
       </div>
@@ -364,6 +369,7 @@ interface NumberFieldProps {
 }
 
 function NumberField({ label, name, value, suffix, step, issues, onChange }: NumberFieldProps) {
+  const t = useTranslations('BasePlanning')
   const hasError = issues.some((issue) => issue.severity === 'error')
 
   return (
@@ -396,7 +402,7 @@ function NumberField({ label, name, value, suffix, step, issues, onChange }: Num
               key={issue.code}
               className={issue.severity === 'error' ? 'text-destructive' : 'text-muted-foreground'}
             >
-              {issue.severity === 'warning' ? 'Advertencia: ' : ''}{issue.message}
+              {issue.severity === 'warning' ? t('warning', { message: issue.message }) : issue.message}
             </p>
           ))}
         </div>
