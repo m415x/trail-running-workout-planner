@@ -7,9 +7,9 @@ Define the durable domain contract for competitions that can condition a
 sporting group.
 
 The competition calendar is introduced progressively during H9. This document
-captures the entity, ownership, cohort-derivation and priority boundaries
-established by KAN-189 through KAN-192; persistence, CRUD and lifecycle
-transitions are implemented in later tasks.
+captures the entity, ownership, cohort-derivation, priority and lifecycle
+boundaries established by KAN-189 through KAN-193; persistence and CRUD are
+implemented in later tasks.
 
 ## Ownership
 
@@ -75,7 +75,7 @@ CompetitionEntry
 - distanceKm
 - elevationGainM?
 - priority: A | B | C
-- status: scheduled | cancelled
+- status: planned | confirmed | completed | cancelled
 - description?
 - createdAt / updatedAt metadata
 ```
@@ -142,26 +142,80 @@ locale-neutral code:
 
 B and C entries never become the primary candidate through the priority policy.
 
-The priority resolver intentionally does not decide whether an entry is active
-or whether its date belongs to a macrocycle. Lifecycle semantics belong to
-KAN-193 and horizon/context derivation belongs to later H9 tasks. This prevents
-priority rules from being coupled prematurely to `scheduled | cancelled`.
+## Competition lifecycle
+
+The MVP lifecycle distinguishes four states:
+
+- `planned`: the competition is part of the intended calendar but participation
+  is not yet confirmed;
+- `confirmed`: the planning audience is confirmed to participate;
+- `completed`: the competition remains as historical context after participation;
+- `cancelled`: the entry remains historically visible but no longer participates
+  in active planning.
+
+The allowed transitions are deliberately conservative:
+
+```text
+planned -> confirmed
+planned -> cancelled
+confirmed -> completed
+confirmed -> cancelled
+```
+
+`completed` and `cancelled` are terminal in the MVP. The domain does not silently
+reopen historical entries. If future workflows require restoration or a richer
+audit trail, that must be introduced explicitly rather than inferred.
+
+A direct `planned -> completed` transition is not valid. Confirmation is part of
+the lifecycle semantics even if a future UI chooses to make the two user actions
+feel contiguous.
+
+### Active planning context
+
+Lifecycle and priority remain separate concerns. KAN-193 defines which statuses
+participate in forward-looking planning:
+
+```text
+planned   -> active
+confirmed -> active
+completed -> historical / inactive
+cancelled -> historical / inactive
+```
+
+This means a cancelled or completed A entry cannot remain a primary candidate for
+future planning once callers compose lifecycle filtering with the KAN-192
+priority resolver.
+
+The domain must not infer `completed` only because `date < today`. Completion is
+an explicit state transition because a past event may have been cancelled, not
+started, or otherwise not completed by the planning audience.
+
+### Rescheduling is not a lifecycle state
+
+Reprogramming changes `CompetitionEntry.date` without necessarily changing its
+status. The lifecycle therefore does not introduce `postponed` in the MVP.
+
+For example, a confirmed competition may remain `confirmed` after its date moves.
+The application layer may later expose an explicit reschedule operation, but the
+domain keeps date changes and participation lifecycle as separate dimensions.
+
+### Planning immutability on lifecycle changes
+
+Confirming, completing, cancelling or rescheduling a live competition entry does
+not automatically regenerate or rewrite persisted macrocycles, strategies,
+intensity targets or sessions.
+
+A persisted plan may later be identified as having been generated from stale
+competitive context, but regeneration remains an explicit operation. This
+preserves the snapshot semantics already established for H7 and the transitional
+`Macrocycle.targetRace*` fields.
 
 ### Product-help requirement
 
-A/B/C are user-visible domain concepts that require interpretation. When they
-reach UI, the reusable domain glossary/help layer must provide coach/athlete
-content in both `es` and `en`, following the product-help and progressive-i18n
-policies. KAN-192 does not add UI and therefore does not duplicate those strings
-inside the domain policy.
-
-### Status
-
-The minimum initial vocabulary is `scheduled | cancelled`.
-
-Cancellation remains explicit so an event can stop participating in the active
-calendar without deleting its historical identity. Detailed state transitions,
-possible future statuses and edit semantics belong to KAN-193.
+A/B/C priorities and the competition lifecycle states are user-visible domain
+concepts that require interpretation. When they reach UI, the reusable domain
+glossary/help layer must provide coach/athlete content in both `es` and `en`,
+following the product-help and progressive-i18n policies.
 
 ## Validation boundaries
 
@@ -170,8 +224,11 @@ required for a structurally valid competition entry: owner ID, name, real date,
 positive distance, optional non-negative D+, known priority and known status.
 
 KAN-190 adds a separate ownership policy. KAN-192 adds a separate priority
-policy. Keeping these policies independent allows later application boundaries
-to compose structural, ownership, lifecycle and contextual validation without
+policy. KAN-193 adds a separate lifecycle policy for valid status transitions
+and active-planning participation.
+
+Keeping these policies independent allows later application boundaries to
+compose structural, ownership, lifecycle and contextual validation without
 coupling pure domain rules to persistence.
 
 Validation returns locale-neutral error codes. User-facing text must be
@@ -208,18 +265,18 @@ automatic load changes, result data or an external race-catalog identity.
 
 `Macrocycle.targetRace*` remains transitional historical/operational data. A
 live `CompetitionEntry` is not a mutable pointer into an accepted macrocycle.
-Editing, rescheduling or cancelling the live calendar must not silently rewrite
-persisted planning.
+Editing, rescheduling, completing or cancelling the live calendar must not
+silently rewrite persisted planning.
 
-## Not defined by KAN-192
+## Not defined by KAN-193
 
 This contract intentionally does not yet decide:
 
-- lifecycle transition rules;
 - persistence schemas or migrations;
-- CRUD permissions and validation at action/UI boundaries;
+- CRUD permissions and application/UI validation;
 - automatic macrocycle-horizon filtering;
 - `CompetitionContext` derivation;
-- taper or other competitive-generation behavior.
+- taper or other competitive-generation behavior;
+- restoration of terminal lifecycle states.
 
 Those responsibilities remain isolated in their corresponding H9 tasks.
