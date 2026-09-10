@@ -21,7 +21,12 @@ export type CompetitionEntryValidationResult =
     }
 
 const COMPETITION_PRIORITIES: readonly CompetitionPriority[] = ['A', 'B', 'C']
-const COMPETITION_STATUSES: readonly CompetitionStatus[] = ['scheduled', 'cancelled']
+const COMPETITION_STATUSES: readonly CompetitionStatus[] = [
+  'planned',
+  'confirmed',
+  'completed',
+  'cancelled',
+]
 
 function isValidIsoDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
@@ -38,8 +43,8 @@ function isValidIsoDate(value: string): boolean {
 
 /**
  * Validates the minimum domain invariants required for a competition to act as
- * planning context. Detailed priority semantics and lifecycle transitions are
- * intentionally handled by later H9 tasks.
+ * planning context. Lifecycle transitions are validated by the dedicated
+ * competition lifecycle policy.
  */
 export function validateCompetitionEntryDraft(
   draft: CompetitionEntryDraft,
