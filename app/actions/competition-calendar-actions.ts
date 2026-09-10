@@ -21,9 +21,8 @@ import type {
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
 const CURRENT_TEAM_ID = 'team_1'
-const locales = ['es', 'en'] as const
 
-type SupportedLocale = (typeof locales)[number]
+type SupportedLocale = 'es' | 'en'
 type EditableCompetitionDraft = Omit<CompetitionEntryDraft, 'groupTrainingPlanId' | 'status'>
 
 export type CompetitionCalendarActionErrorCode =
