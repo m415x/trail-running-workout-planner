@@ -1,4 +1,14 @@
 {
+  "RaceDistancePolicy": {
+    "warning": "La carrera de {distance} km está fuera del rango habitual del grupo {group}.",
+    "bounds": "Rango orientativo: {range}. Se aplica un {tolerance}% de tolerancia en cada límite.",
+    "range": "{min}–{max} km",
+    "minimum": "desde {min} km",
+    "maximum": "hasta {max} km",
+    "continue": "Podés continuar y guardar bajo tu criterio como entrenador. Esta advertencia no modifica el grupo ni la carga.",
+    "pending": "La política de distancia del grupo {group} está pendiente de definición. Podés continuar; no se ha confirmado la compatibilidad.",
+    "invalid": "No se pudo evaluar la distancia competitiva. Revisá los datos de carrera y grupo."
+  },
   "Common": {
     "today": "Hoy",
     "save": "Guardar",

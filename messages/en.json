@@ -1,4 +1,14 @@
 {
+  "RaceDistancePolicy": {
+    "warning": "The {distance} km race is outside the usual range for group {group}.",
+    "bounds": "Reference range: {range}. A {tolerance}% tolerance applies at each boundary.",
+    "range": "{min}–{max} km",
+    "minimum": "from {min} km",
+    "maximum": "up to {max} km",
+    "continue": "You may continue and save at your discretion as coach. This warning does not change the group or training load.",
+    "pending": "The distance policy for group {group} has not been defined yet. You may continue; compatibility has not been confirmed.",
+    "invalid": "Competitive distance could not be evaluated. Check the race and group data."
+  },
   "Common": {
     "today": "Today",
     "save": "Save",

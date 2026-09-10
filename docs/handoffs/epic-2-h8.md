@@ -2,7 +2,7 @@
 
 ## Starting state
 
-- Story: KAN-177; current task: T4 / KAN-181.
+- Story: KAN-177; current task: T5 / KAN-182.
 - Branch: `h-17-category-race-distance`.
 - Started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
 - Read AGENTS.md, docs/README.md, the H7 handoff and cohort architecture.
@@ -58,7 +58,28 @@ Read the architecture document for effective endpoints and test examples.
 Do not infer competitive limits from weekly kilometers or enforce exclusive
 category ranges. B remains pending without blocking T2/T3.
 
+## T5 completed — manual checks approved
+
+Localized RaceDistanceNotice now appears in the creation form and plan detail.
+It shows mismatch context, base range, 10% tolerance, and permission to continue
+through the existing save action. B gets a pending-policy informational notice;
+compatible/E/no-race states are silent. Detail uses saved macrocycle snapshots.
+Distance input accepts decimal steps for half/full-marathon precision.
+No overrides, checkbox, automatic group/load changes, or save restrictions added.
+The user confirmed the manual checks passed. Next task after commit:
+T6 / KAN-183 (policy/integration test review).
+
+Manual checks: S2 42 warns, 12 clears; S2 16.5 is accepted and 16.501 warns;
+H 21.0975 and M 42.195 are accepted; E silent; B pending; non-race hides notice.
+Save S2 42, reload, and save progression: warning remains and data are retained.
+Check English messages, mobile wrapping, and console.
+
 ## Validation
+
+T5: 281 tests passed. A notice type-narrowing error found by the initial build
+was corrected; subsequent lint and build/type checking passed (11 unchanged
+lint warnings, zero errors). The user approved the visual walkthrough without
+requesting code changes; the unchanged validation gate was not repeated.
 
 T4: 281 tests passed (five new integration tests); production build and its
 TypeScript check passed. Lint: zero errors and 11 existing warnings.

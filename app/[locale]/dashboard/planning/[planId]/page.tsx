@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { RaceDistanceNotice } from '@/features/planning/components/RaceDistanceNotice'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
@@ -300,6 +301,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           )}
         </div>
       </div>
+
+      {plan.macrocycles.map((macrocycle) => (
+        <RaceDistanceNotice
+          key={`race-distance-${macrocycle.id}`}
+          result={macrocycle.raceDistanceCompatibility}
+          groupCode={groupCode}
+          distanceKm={macrocycle.targetRaceDistanceKm}
+        />
+      ))}
 
       {preview && loadStrategy ? (
         <LoadProgressionPreview

@@ -6,7 +6,7 @@ Epic 2 / H8 / T1 (KAN-178): initial product policy approved by the user.
 The 10% tolerance is an initial configurable product rule, subject to future
 coach refinement. T2 adds the typed catalog and T3 implements pure evaluation;
 T4 attaches evaluation to generated previews and persisted plan reads;
-visual warnings follow in T5.
+T5 presents localized advisory notices in the creation form and plan detail.
 
 ## Implementation map
 
@@ -54,9 +54,26 @@ omits protected competitive blocks from its generation input.
 
 No distance mismatch is appended to blocking regeneration conflicts. Existing
 race input validation remains responsible for mandatory/invalid race data.
-T5 will render structured results; T4 adds no visible warnings or new forms.
+T4 supplies structured results; T5 renders them without changing save rules.
 Integration tests exercise generation, preview propagation, persisted-record
 enrichment, group-level independence, and preservation of source values.
+
+### Coach notices (T5)
+
+`RaceDistanceNotice` uses next-intl messages (Spanish/English) and number
+formatting. Mismatches show group, competitive distance, original range and
+tolerance, with an explicit explanation that the coach may save unchanged.
+Submitting the existing save form is the deliberate continuation action; there
+is no additional checkbox, persisted exception, or automatic submission.
+Pending B policy is informative, not a successful compatibility result.
+Compatible, unrestricted and absent-context states render no notice.
+
+The creation form reevaluates when the selected group/distance changes; race
+fields and notices disappear for non-race goals. Race distance accepts arbitrary
+decimal steps to support 21.0975/42.195 km. Detail notices use persisted snapshots
+per macrocycle and remain available after progression saving or reload, even
+when competitive blocks are excluded from regeneration. Live notices use
+role=status and do not disable controls or reset form values.
 
 Sources: `types/athlete/group.types.ts`, `lib/constants.ts` and
 `data/periodization-matrix.ts`. Jira KAN-178 supplies additional design context.

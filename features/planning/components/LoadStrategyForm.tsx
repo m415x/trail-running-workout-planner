@@ -2,6 +2,8 @@
 
 import { useActionState, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { RaceDistanceNotice } from '@/features/planning/components/RaceDistanceNotice'
+import { validateRaceDistanceForCategory } from '@/lib/validate-race-distance-for-category'
 
 import {
   createGroupPlanWithLoadStrategy,
@@ -198,7 +200,7 @@ export function LoadStrategyForm({
                   name='raceDistanceKm'
                   type='number'
                   min='0.1'
-                  step='0.1'
+                  step='any'
                   value={raceDistanceKm}
                   required
                   onChange={(event) => setRaceDistanceKm(event.target.value)}
@@ -229,6 +231,13 @@ export function LoadStrategyForm({
                 Advertencia: {raceDensityWarning}
               </p>
             )}
+            <div className='sm:col-span-3'>
+              <RaceDistanceNotice
+                groupCode={groupCode}
+                distanceKm={raceDistanceKm.trim() === '' ? null : Number(raceDistanceKm)}
+                result={validateRaceDistanceForCategory(groupCode[0], raceDistanceKm.trim() === '' ? null : Number(raceDistanceKm))}
+              />
+            </div>
           </CardContent>
         </Card>
       )}
