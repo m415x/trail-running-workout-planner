@@ -7,8 +7,9 @@ Define the durable domain contract for competitions that can condition a
 sporting group.
 
 The competition calendar is introduced progressively during H9. This document
-captures the entity boundary established by KAN-189; persistence, CRUD,
-priority behavior and lifecycle transitions are implemented in later tasks.
+captures the entity and ownership boundaries established by KAN-189 and
+KAN-190; persistence, CRUD, priority behavior and lifecycle transitions are
+implemented in later tasks.
 
 ## Ownership
 
@@ -21,13 +22,71 @@ GroupTrainingPlan
     `-- * CompetitionEntry
 ```
 
-For the MVP, competition-specific planning is expected primarily on
-`cohort_variant` plans. The ownership nevertheless remains on
-`GroupTrainingPlan` so the model can support a future whole-group competitive
-context without changing the entity boundary.
-
 A competition does not belong to `TrainingGoal`, `PlanningCohort` or
 `Macrocycle`.
+
+### Audience-complete ownership rule
+
+A competition attached to a plan must apply to the entire planning audience
+represented by that plan.
+
+For a base plan:
+
+```text
+GroupTrainingPlan(kind = group_base)
+    audience = whole AthleteGroup
+```
+
+Therefore a base plan may own a `CompetitionEntry` only when the competition
+really applies to the whole sporting group represented by that plan. This is a
+legitimate but exceptional MVP case; base plans remain competition-neutral by
+default.
+
+If only some athletes from the sporting group participate, the competition must
+not be attached to the base plan. That subset is represented through a
+`PlanningCohort` and its detached plan variant:
+
+```text
+AthleteGroup
+    |
+    |-- GroupTrainingPlan base
+    |      competition-neutral for the shared progression
+    |
+    `-- PlanningCohort
+           |
+           `-- GroupTrainingPlan variant
+                  |
+                  `-- CompetitionEntry *
+```
+
+For a cohort variant, the owning plan audience is the cohort itself. A
+competition may be attached to that variant when it applies to the whole cohort
+audience.
+
+This yields one uniform invariant for both kinds of plan:
+
+> A `CompetitionEntry` may only condition the full audience of its owning
+> `GroupTrainingPlan`.
+
+The rule prevents partial competition context from leaking into a broader plan
+and avoids reintroducing the original race-as-group-objective coupling.
+
+### Why ownership stays on GroupTrainingPlan
+
+`CompetitionEntry.groupTrainingPlanId` remains the technical ownership boundary
+for both base plans and cohort variants. The entity does not gain a separate
+`planningCohortId`.
+
+That keeps the calendar aligned with the exact planning snapshot it may later
+condition and supports both legitimate cases without schema redesign:
+
+- normal case: a cohort variant owns the competitions specific to that planning
+  audience;
+- exceptional case: a base plan owns a competition that genuinely concerns its
+  entire AthleteGroup audience.
+
+Moving an athlete into or out of a cohort is governed by H7 membership rules and
+does not silently move or rewrite competition entries.
 
 ## CompetitionEntry contract
 
@@ -76,8 +135,8 @@ The explicit `M` suffix keeps the unit visible at the entity boundary.
 `YYYY-MM-DD` format. It belongs to the competition rather than to the
 macrocycle snapshot.
 
-The date will later participate in deriving `CompetitionContext`; KAN-189 does
-not yet define primary-competition selection or proximity behavior.
+The date will later participate in deriving `CompetitionContext`; KAN-189 and
+KAN-190 do not yet define primary-competition selection or proximity behavior.
 
 ### Priority
 
@@ -88,7 +147,7 @@ contain several competitions with different priorities. A planning cohort does
 not map one-to-one to a race.
 
 KAN-192 defines the sporting meaning, ordering and primary-competition rules.
-KAN-189 only establishes the field and accepted vocabulary.
+The current contract only establishes the field and accepted vocabulary.
 
 ### Status
 
@@ -98,10 +157,10 @@ Cancellation remains explicit so an event can stop participating in the active
 calendar without deleting its historical identity. Detailed state transitions,
 possible future statuses and edit semantics belong to KAN-193.
 
-## Validation boundary
+## Validation boundaries
 
-The domain validator established in KAN-189 checks only invariants required for
-a structurally valid competition entry:
+The structural domain validator established in KAN-189 checks only invariants
+required for a structurally valid competition entry:
 
 - non-empty `groupTrainingPlanId`;
 - non-empty competition name;
@@ -110,6 +169,15 @@ a structurally valid competition entry:
 - optional non-negative finite elevation gain;
 - known A/B/C priority;
 - known scheduled/cancelled status.
+
+KAN-190 adds a separate ownership policy. It receives the plan kind plus whether
+the competition covers the full audience represented by that plan. It accepts
+both `group_base` and `cohort_variant` owners only when
+`coversEntirePlanAudience` is true.
+
+Keeping structural validation and ownership validation separate allows later
+CRUD/application boundaries to resolve the actual plan and audience before
+persisting a competition without coupling the pure entity validator to Drizzle.
 
 Validation returns locale-neutral error codes. User-facing text must be
 translated by the presentation/server boundary according to the progressive
@@ -140,11 +208,10 @@ persisted planning.
 
 Snapshot evolution is handled later in H9.
 
-## Not defined by KAN-189
+## Not defined by KAN-190
 
 This contract intentionally does not yet decide:
 
-- whether base and variant plans may create competitions under every workflow;
 - A/B/C sporting semantics and primary selection;
 - status transition rules;
 - persistence schemas or migrations;
