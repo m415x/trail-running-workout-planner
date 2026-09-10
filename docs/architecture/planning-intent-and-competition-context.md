@@ -59,10 +59,40 @@ It answers:
 
 > What training direction should this plan pursue for its audience?
 
-The H9 target model introduces a dedicated type instead of reusing
-`TrainingGoalType`. Its exact values are finalized in the next task, but `race`
-is deliberately excluded because a competition is not a general planning
-intent.
+H9 introduces a dedicated planning-domain type instead of reusing
+`TrainingGoalType`:
+
+```text
+development | base | maintenance
+```
+
+- `development` means the plan seeks progressive development or improvement of
+  the audience's training capabilities. It is the normal/default intent for a
+  base group plan.
+- `base` means the plan prioritizes building or rebuilding general aerobic
+  capacity with a more conservative progression.
+- `maintenance` means the plan seeks to preserve current capacity without
+  significant progression.
+
+`race` is deliberately excluded because a competition is planning context, not a
+general plan intent. `custom` is also excluded because manual coach adaptation is
+already represented by strategy values and their provenance; it is not itself a
+planning direction. Recovery remains represented at lower planning layers such
+as transition periods, deload microcycles, and recovery intensity emphasis.
+
+Legacy group-planning values map during H9 as follows:
+
+```text
+race        -> development
+performance -> development
+base        -> base
+maintenance -> maintenance
+custom      -> development
+```
+
+For a legacy `race` plan, concrete `targetRace*` data is not discarded. The
+planning intent maps to `development`, while race data must migrate separately to
+competition context in later H9 tasks.
 
 A base group plan must be valid without any competitive context.
 
