@@ -1,7 +1,7 @@
 import type { BaseEntity } from '@/types/core/base.types'
 
 export type CompetitionPriority = 'A' | 'B' | 'C'
-export type CompetitionStatus = 'scheduled' | 'cancelled'
+export type CompetitionStatus = 'planned' | 'confirmed' | 'completed' | 'cancelled'
 
 /**
  * One concrete competition modality attached to a GroupTrainingPlan.
