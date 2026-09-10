@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { generateMacrocycleFromPlanningContext } from '@/lib/periodization/planning-context-macrocycle-generator'
+import {
+  PlanningContextGenerationError,
+  generateMacrocycleFromPlanningContext,
+} from '@/lib/periodization/planning-context-macrocycle-generator'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
 const s2RaceStrategy = suggestLoadStrategy('S2', 'race')
@@ -61,7 +64,8 @@ describe('generación con intención y contexto competitivo separados', () => {
         athleteGroup: 'S2',
         loadStrategy: s2BaseStrategy,
       }),
-      /otra intención de planificación/,
+      (error) => error instanceof PlanningContextGenerationError
+        && error.code === 'LOAD_STRATEGY_INTENT_MISMATCH',
     )
   })
 })
