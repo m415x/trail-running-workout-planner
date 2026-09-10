@@ -8,6 +8,8 @@ prevents implementation history from living only in long chat conversations.
 - [Automatic session generation](architecture/session-generation.md)
 - [Planning cohorts](architecture/planning-cohorts.md)
 - [Category and competitive distance](architecture/category-race-distance.md)
+- [Planning intent and competition context](architecture/planning-intent-and-competition-context.md)
+- [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 
 Architecture documents describe the current durable domain model and should be
 preferred when the task depends on how the system works now.
