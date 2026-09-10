@@ -24,18 +24,18 @@ import {
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
 import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
-import { resolveTargetRace } from '@/lib/periodization/target-race'
+import { resolveBasePlanLegacyGoalType } from '@/lib/periodization/planning-intent'
 import { defaultWeeklyGenerationPreferences } from '@/lib/session-generation/generation-preferences'
 import { serializeSessionGenerationPreferences } from '@/lib/session-generation/generation-preferences-persistence'
 import type {
   AthleteGroupCode,
   LoadStrategyDraft,
-  TrainingGoalType,
+  PlanningIntent,
 } from '@/types'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
-const goalTypes = ['race', 'performance', 'base', 'maintenance', 'custom'] as const
+const planningIntents = ['development', 'base', 'maintenance'] as const
 
 const loadStrategyValuesSchema = z.object({
   initialWeeklyVolumeKm: z.number(),
@@ -49,13 +49,10 @@ const loadStrategyValuesSchema = z.object({
 const createGroupPlanWithLoadStrategySchema = z.object({
   groupId: z.string().trim().min(1),
   groupCode: z.string().trim().min(2),
-  goalType: z.enum(goalTypes),
+  planningIntent: z.enum(planningIntents),
   startDate: z.string(),
   endDate: z.string(),
   locale: z.enum(locales).default('es'),
-  raceName: z.string().trim().max(120).optional(),
-  raceDistanceKm: z.string().trim().optional(),
-  raceElevationGain: z.string().trim().optional(),
   values: loadStrategyValuesSchema,
 })
 
@@ -63,12 +60,17 @@ export interface CreateGroupPlanWithLoadStrategyState {
   error?: string
 }
 
-const goalLabels: Record<TrainingGoalType, string> = {
-  race: 'Carrera',
-  performance: 'Rendimiento',
-  base: 'Base aeróbica',
-  maintenance: 'Mantenimiento',
-  custom: 'Objetivo personalizado',
+const planningIntentLabels: Record<(typeof locales)[number], Record<PlanningIntent, string>> = {
+  es: {
+    development: 'Desarrollo',
+    base: 'Base aeróbica',
+    maintenance: 'Mantenimiento',
+  },
+  en: {
+    development: 'Development',
+    base: 'Aerobic base',
+    maintenance: 'Maintenance',
+  },
 }
 
 function planningPath(locale: string, suffix = '') {
@@ -91,13 +93,10 @@ export async function createGroupPlanWithLoadStrategy(
   const parsed = createGroupPlanWithLoadStrategySchema.safeParse({
     groupId: formData.get('groupId'),
     groupCode: formData.get('groupCode'),
-    goalType: formData.get('goalType'),
+    planningIntent: formData.get('planningIntent'),
     startDate: formData.get('startDate'),
     endDate: formData.get('endDate'),
     locale: formData.get('locale'),
-    raceName: formData.get('raceName') ?? undefined,
-    raceDistanceKm: formData.get('raceDistanceKm') ?? undefined,
-    raceElevationGain: formData.get('raceElevationGain') ?? undefined,
     values: rawValues,
   })
 
@@ -137,27 +136,20 @@ export async function createGroupPlanWithLoadStrategy(
       return { error: 'El grupo seleccionado no coincide con la estrategia configurada' }
     }
 
-    const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, data.goalType)
-    const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, data.goalType)
+    // Persistence and recommenders still require TrainingGoalType during H9.
+    // Base plans map development to performance so `race` cannot become their
+    // planning authority or create an implicit competition.
+    const legacyGoalType = resolveBasePlanLegacyGoalType(data.planningIntent)
+    const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, legacyGoalType)
+    const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, legacyGoalType)
     const generationPreferences = serializeSessionGenerationPreferences(
       defaultWeeklyGenerationPreferences(),
     )
-    let targetRace
-
-    try {
-      targetRace = resolveTargetRace(data.goalType, {
-        name: data.raceName,
-        distanceKm: data.raceDistanceKm,
-        elevationGain: data.raceElevationGain,
-      })
-    } catch (error) {
-      return { error: error instanceof Error ? error.message : 'Revisá los datos de la carrera objetivo' }
-    }
     const fieldSources = deriveLoadStrategyFieldSources(suggestedStrategy.values, data.values)
     const strategy: LoadStrategyDraft = {
       context: {
         athleteGroup: resolvedGroupCode,
-        goalType: data.goalType,
+        goalType: legacyGoalType,
       },
       values: data.values,
       fieldSources,
@@ -175,7 +167,7 @@ export async function createGroupPlanWithLoadStrategy(
     const strategyId = randomUUID()
     const macrocycleId = randomUUID()
     const now = new Date().toISOString()
-    const title = `Plan ${resolvedGroupCode} · ${goalLabels[data.goalType]}`
+    const title = `Plan ${resolvedGroupCode} · ${planningIntentLabels[data.locale][data.planningIntent]}`
 
     db.transaction((tx) => {
       tx.insert(groupTrainingPlans).values({
@@ -191,7 +183,7 @@ export async function createGroupPlanWithLoadStrategy(
       tx.insert(loadStrategies).values({
         id: strategyId,
         groupTrainingPlanId: planId,
-        goalType: data.goalType,
+        goalType: legacyGoalType,
         initialWeeklyVolumeKm: data.values.initialWeeklyVolumeKm,
         maximumWeeklyVolumeKm: data.values.maximumWeeklyVolumeKm,
         maximumWeeklyIncreasePercentage: data.values.maximumWeeklyIncreasePercentage,
@@ -206,7 +198,7 @@ export async function createGroupPlanWithLoadStrategy(
       tx.insert(intensityStrategies).values({
         id: randomUUID(),
         groupTrainingPlanId: planId,
-        goalType: data.goalType,
+        goalType: legacyGoalType,
         defaultMethod: suggestedIntensityStrategy.values.defaultMethod,
         maximumIntenseSessionsPerWeek:
           suggestedIntensityStrategy.values.maximumIntenseSessionsPerWeek,
@@ -234,9 +226,9 @@ export async function createGroupPlanWithLoadStrategy(
         startDate: data.startDate,
         endDate: data.endDate,
         taperingWeeksCount: null,
-        targetRaceName: targetRace?.name ?? null,
-        targetRaceDistanceKm: targetRace?.distanceKm ?? null,
-        targetRaceElevationGain: targetRace?.elevationGain ?? null,
+        targetRaceName: null,
+        targetRaceDistanceKm: null,
+        targetRaceElevationGain: null,
         notes: null,
         createdAt: now,
         updatedAt: now,
