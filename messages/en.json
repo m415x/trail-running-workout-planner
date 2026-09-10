@@ -9,6 +9,18 @@
     "pending": "The distance policy for group {group} has not been defined yet. You may continue; compatibility has not been confirmed.",
     "invalid": "Competitive distance could not be evaluated. Check the race and group data."
   },
+  "BasePlanning": {
+    "contextTitle": "Strategy context",
+    "contextDescription": "Choose the group and general planning intent to get an initial proposal.",
+    "group": "Group",
+    "planningIntent": "Planning intent",
+    "competitionNeutral": "The base plan represents the group's general progression. Competitions are managed separately for the relevant audience.",
+    "intents": {
+      "development": "Development",
+      "base": "Aerobic base",
+      "maintenance": "Maintenance"
+    }
+  },
   "Common": {
     "today": "Today",
     "save": "Save",
