@@ -5,7 +5,8 @@
 Epic 2 / H8 / T1 (KAN-178): initial product policy approved by the user.
 The 10% tolerance is an initial configurable product rule, subject to future
 coach refinement. T2 adds the typed catalog and T3 implements pure evaluation;
-planning and UI integration follow in T4–T5.
+T4 attaches evaluation to generated previews and persisted plan reads;
+visual warnings follow in T5.
 
 ## Implementation map
 
@@ -36,6 +37,26 @@ training volume, elevation gain, and athlete level. This policy must not change
 `GROUP_VOLUME_MATRIX`, `LoadStrategy`, group membership, or cohort membership.
 
 ## Existing evidence
+
+### Planning integration (T4)
+
+`lib/periodization/race-distance-context.ts` adapts generated sporting-group
+codes and persisted macrocycle race distances to the central evaluator.
+`generateFractalMacrocycle` populates `raceDistanceCompatibility`; previews keep
+it through reconciliation and emit not_applicable when no race is being generated.
+The optional draft field preserves compatibility with legacy draft producers.
+
+`getGroupTrainingPlans` and `getGroupTrainingPlanById` enrich returned macrocycles
+using the loaded parent group's category, including cohort variants. This is
+derived read data, not a schema column or persisted validation result. A saved
+race snapshot remains available here even when a training-only regeneration
+omits protected competitive blocks from its generation input.
+
+No distance mismatch is appended to blocking regeneration conflicts. Existing
+race input validation remains responsible for mandatory/invalid race data.
+T5 will render structured results; T4 adds no visible warnings or new forms.
+Integration tests exercise generation, preview propagation, persisted-record
+enrichment, group-level independence, and preservation of source values.
 
 Sources: `types/athlete/group.types.ts`, `lib/constants.ts` and
 `data/periodization-matrix.ts`. Jira KAN-178 supplies additional design context.

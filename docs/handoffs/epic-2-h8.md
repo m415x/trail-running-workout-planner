@@ -2,7 +2,7 @@
 
 ## Starting state
 
-- Story: KAN-177; current task: T3 / KAN-180.
+- Story: KAN-177; current task: T4 / KAN-181.
 - Branch: `h-17-category-race-distance`.
 - Started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
 - Read AGENTS.md, docs/README.md, the H7 handoff and cohort architecture.
@@ -40,12 +40,28 @@ test in T3.
 
 ## Next steps
 
-Continue with T4 / KAN-181 (planning integration).
+T4 implemented: the central evaluator is adapted by race-distance-context.ts.
+Generated drafts/previews carry raceDistanceCompatibility; plan list/detail
+queries enrich persisted macrocycles using the parent group's category, so
+cohort variants inherit the same policy. Results are computed, not persisted.
+Incompatibility never becomes a blocking regeneration conflict.
+Five integration tests cover generation, preview states, no race, persisted
+snapshot enrichment and group-code handling (14 focused H8 tests passed).
+T4 user approval received after the manual regression walkthrough. Continue
+with T5 / KAN-182 (UI) after committing T4.
+
+Manual T4 regression: open planning list/detail; create a disposable S2 race
+plan with 42 km, generate/save progression, reload and verify race distance and
+group stay unchanged. Also check a no-race plan. Warnings are not visible yet.
+The user confirmed this walkthrough passed.
 Read the architecture document for effective endpoints and test examples.
 Do not infer competitive limits from weekly kilometers or enforce exclusive
 category ranges. B remains pending without blocking T2/T3.
 
 ## Validation
+
+T4: 281 tests passed (five new integration tests); production build and its
+TypeScript check passed. Lint: zero errors and 11 existing warnings.
 
 T3: all 276 tests passed (including nine new evaluator tests), standalone
 TypeScript and production build passed. Lint: zero errors, 11 existing warnings.

@@ -1,6 +1,7 @@
 import { addDays, differenceInCalendarDays, format, isValid, parseISO } from 'date-fns'
 
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
+import { assessPlanningRaceDistance } from '@/lib/periodization/race-distance-context'
 import { calculateMesocycleLoadTargets } from '@/lib/periodization/mesocycle-load-targets'
 import { calculateMesocycleElevationTargets } from '@/lib/periodization/mesocycle-elevation-targets'
 import { distributeMesocycleLoad } from '@/lib/periodization/microcycle-load-distribution'
@@ -551,6 +552,7 @@ export function generateFractalMacrocycle(params: MacrocycleGeneratorParams): Ge
         }
       : null,
     generationWarnings,
+    raceDistanceCompatibility: assessPlanningRaceDistance(params.athleteGroup, params.race),
     mesocycles,
   }
 }

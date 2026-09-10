@@ -8,6 +8,7 @@ import {
 } from '@/lib/periodization/macrocycle-generator'
 import { assessElevationDensity } from '@/lib/periodization/elevation-density-validator'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
+import { assessPlanningRaceDistance } from '@/lib/periodization/race-distance-context'
 import {
   reconcilePlanningRegeneration,
   type ExistingMicrocycleVolume,
@@ -86,6 +87,7 @@ export function buildLoadProgressionPreview({
     trainingWeeksCount,
     progressionDurationProfile: determineProgressionDurationProfile(trainingWeeksCount),
     race: null,
+    raceDistanceCompatibility: assessPlanningRaceDistance(loadStrategy.context.athleteGroup, null),
     generationWarnings: maximumWarning ? [maximumWarning] : [],
     mesocycles,
   }

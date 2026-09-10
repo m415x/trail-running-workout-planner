@@ -5,6 +5,7 @@ import { BaseEntity } from '@/types/core/base.types'
 import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { TrainingGoalType } from '@/types/athlete/athlete.types'
 import type { Session } from '@/types/training/session.types'
+import type { CategoryRaceDistanceResult } from '@/types/athlete/category-race-distance.types'
 
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
@@ -92,6 +93,8 @@ export interface GeneratedMacrocycleDraft {
   progressionDurationProfile: ProgressionDurationProfile
   race: TargetRaceSnapshot | null
   generationWarnings: string[]
+  /** Derived advisory result, not persisted; optional for legacy draft producers. */
+  raceDistanceCompatibility?: CategoryRaceDistanceResult
   mesocycles: GeneratedMesocycleDraft[]
 }
 

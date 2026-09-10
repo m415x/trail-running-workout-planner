@@ -26,6 +26,7 @@ import {
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
 import { persistProgression } from '@/lib/periodization/progression-persistence'
+import { withPlanningRaceDistance } from '@/lib/periodization/race-distance-context'
 import { calculateMicrocycleIntensityTarget } from '@/lib/periodization/microcycle-intensity-target'
 import { persistIntensityPlanning } from '@/lib/periodization/intensity-persistence'
 import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
@@ -187,6 +188,10 @@ export async function getGroupTrainingPlans() {
   })
 
   return plans.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+    .map((plan) => ({
+      ...plan,
+      macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
+    }))
 }
 
 export async function getGroupTrainingPlanById(planId: string) {
@@ -255,6 +260,7 @@ export async function getGroupTrainingPlanById(planId: string) {
   return {
     ...plan,
     loadStrategy: loadStrategy ?? null,
+    macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
     intensityStrategy: intensityStrategy ?? null,
     intensityTargets,
   }
