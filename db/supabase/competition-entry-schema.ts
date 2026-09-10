@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm'
-import { check, doublePrecision, index, integer, pgTable, text } from 'drizzle-orm/pg-core'
+import { boolean, check, doublePrecision, index, integer, pgTable, text } from 'drizzle-orm/pg-core'
 
 import { groupTrainingPlans } from '@/db/supabase/schema'
 import type { CompetitionPriority, CompetitionStatus } from '@/types'
@@ -28,10 +28,7 @@ export const competitionEntries = pgTable(
     status: text('status').$type<CompetitionStatus>().notNull().default('planned'),
     description: text('description'),
 
-    isDeleted: text('is_deleted')
-      .$type<'false' | 'true'>()
-      .notNull()
-      .default('false'),
+    isDeleted: boolean('is_deleted').notNull().default(false),
     createdAt: text('created_at')
       .notNull()
       .$defaultFn(() => new Date().toISOString()),
