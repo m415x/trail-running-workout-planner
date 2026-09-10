@@ -1,7 +1,8 @@
 import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 
-import * as schema from '@/db/supabase/schema'
+import * as coreSchema from '@/db/supabase/schema'
+import * as competitionEntrySchema from '@/db/supabase/competition-entry-schema'
 
 const connectionString = process.env.SUPABASE_DATABASE_URL
 
@@ -15,4 +16,9 @@ export const supabaseClient = postgres(connectionString, {
   max: 1,
 })
 
-export const supabaseDb = drizzle(supabaseClient, { schema })
+export const supabaseDb = drizzle(supabaseClient, {
+  schema: {
+    ...coreSchema,
+    ...competitionEntrySchema,
+  },
+})
