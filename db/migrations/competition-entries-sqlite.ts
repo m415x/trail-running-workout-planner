@@ -19,7 +19,7 @@ export function migrateCompetitionEntriesSqlite(sqlite: Database.Database) {
         name TEXT NOT NULL,
         date TEXT NOT NULL,
         distance_km REAL NOT NULL,
-        elevation_gain_m INTEGER,
+        elevation_gain_m REAL,
         priority TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'planned',
         description TEXT,
