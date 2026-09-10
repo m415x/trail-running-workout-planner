@@ -9,6 +9,7 @@ prevents implementation history from living only in long chat conversations.
 - [Planning cohorts](architecture/planning-cohorts.md)
 - [Category and competitive distance](architecture/category-race-distance.md)
 - [Planning intent and competition context](architecture/planning-intent-and-competition-context.md)
+- [Competition calendar](architecture/competition-calendar.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 
