@@ -127,7 +127,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 ## Key Conventions & Gotchas
 
 - **Styling:** Tailwind CSS v4 (`@tailwindcss/postcss`) combined with Shadcn UI primitives (`base-nova` style).
-- **Internationalization:** Uses `next-intl`. Ensure new strings or localized messages are added to `messages/es.json` and `messages/en.json`.
+- **Internationalization:** Uses `next-intl`. All new user-visible product copy must be added to both `messages/es.json` and `messages/en.json` in the same change. When substantially modifying an existing user-facing flow, migrate the directly affected hard-coded legacy copy progressively; do not broaden the task into unrelated translation cleanup. Treat missing `es`/`en` messages as incomplete implementation. See `docs/architecture/internationalization-policy.md`.
 - **Type Checking:** Run `pnpm exec tsc --noEmit` after modifying types or routes. `.next/types/` validates route parameters.
 - **Next.js documentation:** Preserve the generated rules block at the top of this file and consult the installed Next.js documentation before relying on remembered APIs.
 - **Date handling:** Store domain dates as ISO date strings where the schema expects them and avoid accidental UTC shifts in calendar views.
