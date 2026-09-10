@@ -6,6 +6,7 @@ export * from '@/types/user/role.types'
 
 export * from '@/types/athlete/athlete.types'
 export * from '@/types/athlete/group.types'
+export * from '@/types/athlete/category-race-distance.types'
 export * from '@/types/athlete/physiology.types'
 
 export * from '@/types/profile/profile.types'

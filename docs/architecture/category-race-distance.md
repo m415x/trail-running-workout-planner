@@ -4,7 +4,21 @@
 
 Epic 2 / H8 / T1 (KAN-178): initial product policy approved by the user.
 The 10% tolerance is an initial configurable product rule, subject to future
-coach refinement. No distance policy has been added to runtime code yet.
+coach refinement. T2 adds the typed catalog; runtime evaluation and UI
+integration follow in T3–T5.
+
+## Implementation map
+
+- `types/athlete/category-race-distance.types.ts`: readonly discriminated
+  policy union (`bounded`, `unrestricted`, `pending`), nonempty bounds and
+  evaluation options. Public types are re-exported by `types/index.ts`.
+- `lib/category-race-distance-policy.ts`: exhaustive frozen category catalog
+  and frozen default options (`tolerancePercent: 10`). No database or volume
+  matrix dependency. Callers can supply separate options without mutation.
+- T3 must validate numeric bounds/options at runtime: positive finite bounds,
+  ordered endpoints, and finite tolerance in [0, 100). Zero disables tolerance;
+  100 or above is invalid configuration because it eliminates a positive lower
+  threshold. T2 supplies contracts and constants only.
 
 Competitive distance is measured in kilometers. It is distinct from weekly
 training volume, elevation gain, and athlete level. This policy must not change
