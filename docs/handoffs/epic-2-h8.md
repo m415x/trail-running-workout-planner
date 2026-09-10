@@ -1,106 +1,121 @@
 # Handoff — Epic 2 / H8: Category and competitive distance
 
-## Starting state
+## Status
 
-- Story: KAN-177; current task: T6 / KAN-183.
+- Story: KAN-177 — H8: Validate compatibility between category and target distance.
 - Branch: `h-17-category-race-distance`.
-- Started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
-- Read AGENTS.md, docs/README.md, the H7 handoff and cohort architecture.
+- H8 implementation is complete through T6; T7 / KAN-184 closes the story documentation.
+- The story started from clean, synchronized `dashboard` at H7 merge `e48ca8d`.
+- Last implementation/test commit before T7: `a45ca98f` (`test: cover race distance notices and planning preservation`).
 
-## T1 completed — user-approved initial policy
+## Completed outcome
 
-Reviewed the actual E/U/M/H/S/B category definitions and the separate weekly
-volume matrix. Added [policy design](../architecture/category-race-distance.md)
-with source evidence, evaluation semantics, boundary examples and precise
-questions for the coach. The M/H descriptions do not establish complete ranges.
+H8 makes competitive-distance compatibility an explicit domain rule without
+turning it into automatic athlete classification or a planning constraint.
 
-The user approved inclusive base ranges U >=42, M 21–42, H 15–21, S 5–15 km,
-with a configurable initial 10% outward tolerance used only for alerts.
-E is explicitly unrestricted; B remains pending. Warnings never block valid
-competitive distances. No runtime code, schema, fixtures, or category constants
-were changed. The user approved closure of this documentation task.
+The story originated when seed maintenance exposed a technically valid but
+sportingly incoherent combination: an S2 group paired with a 42 km race. That
+showed that two independent concepts had been conflated:
 
-## T2 completed — user approved
+```text
+AthleteCategory / race distance
+    → competitive context
 
-Added readonly discriminated policy types and an exhaustive frozen catalog,
-separating E (unrestricted) from B (pending). Bounded policies require at least
-one bound. Added frozen default options with tolerancePercent = 10 and JSDoc
-for units, inclusivity, configuration constraints and scope. T2 adds no evaluator,
-UI or persistence changes. The user approved T2 after technical validation.
+AthleteGroup / GROUP_VOLUME_MATRIX
+    → weekly training load
+```
 
-## T3 completed — user approved
+Weekly kilometers never determine race-category compatibility.
 
-T3 implemented `validateRaceDistanceForCategory` and the shared result type.
-Nine focused tests passed. The evaluator has no UI or persistence dependency;
-it reports non-blocking mismatches with direction and original/effective bounds.
-Category/options validation precedes missing-distance handling; E/B do not
-bypass invalid inputs. Machine epsilon handles inclusive decimal boundaries.
-The user approved T3 after validation. No UI behavior is available to manually
-test in T3.
+## Approved policy
 
-## Next steps
+The initial base ranges are inclusive:
 
-T4 implemented: the central evaluator is adapted by race-distance-context.ts.
-Generated drafts/previews carry raceDistanceCompatibility; plan list/detail
-queries enrich persisted macrocycles using the parent group's category, so
-cohort variants inherit the same policy. Results are computed, not persisted.
-Incompatibility never becomes a blocking regeneration conflict.
-Five integration tests cover generation, preview states, no race, persisted
-snapshot enrichment and group-code handling (14 focused H8 tests passed).
-T4 user approval received after the manual regression walkthrough. Continue
-with T5 / KAN-182 (UI) after committing T4.
+- E: unrestricted; coach judgment, no automatic distance ceiling.
+- U: 42 km and above.
+- M: 21–42 km.
+- H: 15–21 km.
+- S: 5–15 km.
+- B: pending; no competitive range has been approved yet.
 
-Manual T4 regression: open planning list/detail; create a disposable S2 race
-plan with 42 km, generate/save progression, reload and verify race distance and
-group stay unchanged. Also check a no-race plan. Warnings are not visible yet.
-The user confirmed this walkthrough passed.
-Read the architecture document for effective endpoints and test examples.
-Do not infer competitive limits from weekly kilometers or enforce exclusive
-category ranges. B remains pending without blocking T2/T3.
+A configurable initial 10% outward tolerance applies only to alert thresholds.
+It does not modify the base sporting ranges. Overlap between category ranges is
+intentional because this is a compatibility check for an existing group, not a
+classifier that assigns each race to exactly one category.
 
-## T5 completed — manual checks approved
+Levels 1, 2 and 3 do not alter competitive-distance policy. A cohort variant
+uses the category of its parent sporting group.
 
-Localized RaceDistanceNotice now appears in the creation form and plan detail.
-It shows mismatch context, base range, 10% tolerance, and permission to continue
-through the existing save action. B gets a pending-policy informational notice;
-compatible/E/no-race states are silent. Detail uses saved macrocycle snapshots.
-Distance input accepts decimal steps for half/full-marathon precision.
-No overrides, checkbox, automatic group/load changes, or save restrictions added.
-The user confirmed the manual checks passed. Next task after commit:
-T6 / KAN-183 (policy/integration test review).
+## Domain and implementation contract
 
-Manual checks: S2 42 warns, 12 clears; S2 16.5 is accepted and 16.501 warns;
-H 21.0975 and M 42.195 are accepted; E silent; B pending; non-race hides notice.
-Save S2 42, reload, and save progression: warning remains and data are retained.
-Check English messages, mobile wrapping, and console.
+`CATEGORY_RACE_DISTANCE_POLICY` is a typed, frozen catalog independent from
+`GROUP_VOLUME_MATRIX` and `LoadStrategy`. The pure
+`validateRaceDistanceForCategory` evaluator distinguishes compatible,
+incompatible, unrestricted, policy_not_defined, not_applicable and invalid
+results. It validates category/options/input before compatibility and does not
+coerce or round competitive distances.
 
-## Validation
+A valid mismatch is advisory and non-blocking. It never changes the athlete's
+group, goal, load strategy, planning, cohort membership, or persisted override.
+The coach can deliberately save the combination unchanged. The validator does
+not infer readiness, injury risk, or whether an athlete should change category.
 
-T6 adds seven tests without changing runtime behavior: five rendered-component
-tests using the actual next-intl provider, plus manual volume/D+ preservation
-and stale/invalid snapshot reevaluation. H8 now has 21 focused tests.
-Rendering tests are not browser interaction/E2E tests; T5's approved walkthrough
-remains the evidence for save/reload, responsiveness and live interaction.
-The user approved T6. Next is T7 / KAN-184 documentation closeout.
+Planning integration derives `raceDistanceCompatibility` for generated
+previews and persisted plan reads. The evaluation result is not stored in the
+database. Persisted macrocycle race snapshots allow the notice to be
+re-evaluated after save/reload and after progression operations. Cohort variants
+use their parent group's category.
 
-T6 validation: full suite 288 passed; build passed after fixing test-provider
-typing. The final test-only provider-props adjustment passed focused rendering
-tests and focused lint. Full lint baseline: zero errors, 11 known warnings.
+`RaceDistanceNotice` exposes the result in the creation and plan-detail flows.
+Incompatible distances show the sporting reason, base range and tolerance while
+making it clear that the coach may continue. B shows a pending-policy notice.
+Compatible, E/unrestricted and no-race contexts remain silent. No override
+checkbox, automatic reassignment or save restriction was introduced.
 
-T5: 281 tests passed. A notice type-narrowing error found by the initial build
-was corrected; subsequent lint and build/type checking passed (11 unchanged
-lint warnings, zero errors). The user approved the visual walkthrough without
-requesting code changes; the unchanged validation gate was not repeated.
+The durable contract, exact endpoints and review examples live in
+`docs/architecture/category-race-distance.md`.
 
-T4: 281 tests passed (five new integration tests); production build and its
-TypeScript check passed. Lint: zero errors and 11 existing warnings.
+## Tasks completed
 
-T3: all 276 tests passed (including nine new evaluator tests), standalone
-TypeScript and production build passed. Lint: zero errors, 11 existing warnings.
-No UI walkthrough applies until integration; user review is complete.
+- T1 / KAN-178 — Define category-distance policy.
+- T2 / KAN-179 — Model `CATEGORY_RACE_DISTANCE_POLICY`.
+- T3 / KAN-180 — Implement pure compatibility validation.
+- T4 / KAN-181 — Integrate policy with planning context.
+- T5 / KAN-182 — Expose coach warning.
+- T6 / KAN-183 — Cover policy and integration with tests.
+- T7 / KAN-184 — Consolidate the durable rule and Epic 2 evolution documentation.
 
-T1 was documentation-only and accepted through domain review.
-T2: 267 existing tests passed; production build (including TypeScript) passed;
-lint reports zero errors and the same 11 baseline warnings. Diff whitespace
-checks passed. No new UI behavior exists to exercise; review the policy states,
-base ranges and default tolerance before approving the task commit.
+## Validation evidence
+
+H8 finishes with 21 focused tests: nine evaluator tests, seven planning-context
+tests and five rendered-component tests. T6 reported the full suite at 288
+passing tests. Production build and its TypeScript check passed. Full lint had
+zero errors and the same 11 known baseline warnings.
+
+The rendering tests use the actual notice and next-intl provider but are not
+browser/E2E tests. T5's approved manual walkthrough remains the evidence for
+live interaction, save/reload behavior, responsiveness and localization.
+
+Manual checks included S2 42 warning; S2 12 silent; S2 16.5 accepted and 16.501
+warning; H 21.0975 and M 42.195 accepted; E silent; B pending; non-race hidden;
+and save/reload preserving both the warning context and planning data.
+
+T7 is documentation-only. No new runtime behavior was introduced and no new
+test/build execution should be inferred from the T7 documentation commits.
+
+## Decisions still open
+
+- B remains `pending` until its competitive-distance semantics are validated
+  with the coach.
+- The 10% tolerance is an initial configurable product rule and remains subject
+  to future coach refinement.
+- Persisted exceptions/override auditing, automatic group reassignment,
+  race-calendar behavior and cohort proposals remain outside H8.
+
+## Next starting point
+
+H8 is ready to close after the T7 documentation changes are reviewed. The next
+Epic 2 story is H9 — Manage competition calendar. Start future work from
+`AGENTS.md`, `docs/README.md`, the relevant new H9 handoff when it exists, and
+the durable architecture documents it references. Do not reconstruct H8 from
+chat history unless historical rationale is specifically needed.
