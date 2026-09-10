@@ -24,6 +24,7 @@ const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 
 type SupportedLocale = (typeof locales)[number]
+type EditableCompetitionDraft = Omit<CompetitionEntryDraft, 'groupTrainingPlanId' | 'status'>
 
 export type CompetitionCalendarActionErrorCode =
   | CompetitionCalendarServiceErrorCode
@@ -52,7 +53,7 @@ export interface CreateCompetitionActionInput extends CompetitionCalendarActionC
 
 export interface UpdateCompetitionActionInput extends CompetitionCalendarActionContext {
   readonly competitionId: string
-  readonly draft: Omit<CompetitionEntryDraft, 'groupTrainingPlanId'>
+  readonly draft: EditableCompetitionDraft
 }
 
 export interface RescheduleCompetitionActionInput extends CompetitionCalendarActionContext {
@@ -142,7 +143,7 @@ export async function createCompetitionAction(
   return result
 }
 
-/** Updates mutable competition data while lifecycle changes remain explicit operations. */
+/** Updates mutable data without allowing edits to bypass lifecycle transitions. */
 export async function updateCompetitionAction(
   input: UpdateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
