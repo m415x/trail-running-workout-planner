@@ -9,6 +9,18 @@
     "pending": "La política de distancia del grupo {group} está pendiente de definición. Podés continuar; no se ha confirmado la compatibilidad.",
     "invalid": "No se pudo evaluar la distancia competitiva. Revisá los datos de carrera y grupo."
   },
+  "BasePlanning": {
+    "contextTitle": "Contexto de la estrategia",
+    "contextDescription": "Elegí el grupo y la intención general para obtener una propuesta inicial.",
+    "group": "Grupo",
+    "planningIntent": "Intención de planificación",
+    "competitionNeutral": "El plan base representa la progresión general del grupo. Las competencias se gestionan por separado para la audiencia que corresponda.",
+    "intents": {
+      "development": "Desarrollo",
+      "base": "Base aeróbica",
+      "maintenance": "Mantenimiento"
+    }
+  },
   "Common": {
     "today": "Hoy",
     "save": "Guardar",
