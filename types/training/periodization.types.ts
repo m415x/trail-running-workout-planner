@@ -6,6 +6,7 @@ import { AthleteGroupCode } from '@/types/athlete/group.types'
 import { TrainingGoalType } from '@/types/athlete/athlete.types'
 import type { Session } from '@/types/training/session.types'
 import type { CategoryRaceDistanceResult } from '@/types/athlete/category-race-distance.types'
+import type { PlanningIntent } from '@/types/training/planning-intent.types'
 
 export type VolumeMatrixMicrocycleType = 'base' | 'development' | 'shock' | 'deload'
 export type MicrocycleType = VolumeMatrixMicrocycleType | 'tapering' | 'race'
@@ -84,7 +85,10 @@ export interface GeneratedMesocycleDraft {
 
 export interface GeneratedMacrocycleDraft {
   title: string
+  /** Transitional legacy metadata retained while group planning migrates off TrainingGoalType. */
   goalType: TrainingGoalType
+  /** New planning authority. Optional only for legacy draft producers during H9 migration. */
+  planningIntent?: PlanningIntent
   athleteGroup: AthleteGroupCode
   startDate: string
   endDate: string
