@@ -152,6 +152,29 @@ describe('competition impact window', () => {
     assert.ok(result.overlaps[0].reasonCodes.includes('same_priority_overlap'))
   })
 
+  it('moves only the competitive impact window when the competition date changes', () => {
+    const original = window({ id: 'race', priority: 'A', date: '2026-11-15', taperDays: 10, recoveryDays: 7 })
+    const rescheduled = window({ id: 'race', priority: 'A', date: '2026-11-22', taperDays: 10, recoveryDays: 7 })
+
+    assert.equal(original.pre?.startDate, '2026-11-05')
+    assert.equal(rescheduled.pre?.startDate, '2026-11-12')
+    assert.equal(rescheduled.race.startDate, '2026-11-22')
+    assert.equal(rescheduled.post?.endDate, '2026-11-29')
+    assert.equal(rescheduled.startDate > original.startDate, true)
+  })
+
+  it('rebuilds priority-specific protection when a B competition is promoted to A', () => {
+    const asB = window({ id: 'race', priority: 'B', date: '2026-11-15', taperDays: 5, recoveryDays: 3 })
+    const asA = window({ id: 'race', priority: 'A', date: '2026-11-15', taperDays: 10, recoveryDays: 7 })
+
+    assert.equal(asB.priority, 'B')
+    assert.equal(asA.priority, 'A')
+    assert.equal(asA.pre?.durationDays, 10)
+    assert.equal(asA.post?.durationDays, 7)
+    assert.equal(asA.startDate < asB.startDate, true)
+    assert.equal(asA.endDate > asB.endDate, true)
+  })
+
   it('rejects invalid calendar dates and mismatched recovery priority', () => {
     assert.throws(
       () => buildCompetitionImpactWindow({
