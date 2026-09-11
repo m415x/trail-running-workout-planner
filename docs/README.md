@@ -19,7 +19,8 @@ preferred when the task depends on how the system works now.
 ## History
 
 - [Epic 1 — Planning Core](history/epic-1.md)
-- [Epic 2 — Planning Automation](history/epic-2.md)
+- [Epic 2 — Planning Automation (H1-H8)](history/epic-2.md)
+- [Epic 2 / H9 — Planning intent and competitive calendar](history/epic-2-h9.md)
 
 History documents preserve how the product and domain model evolved: original
 assumptions, implementation outcomes, coach feedback, discovered limitations,
