@@ -97,6 +97,35 @@ describe('vista previa de progresión', () => {
     )
   })
 
+  it('usa CompetitionContext aunque el goalType legacy sea neutral', () => {
+    const preview = buildLoadProgressionPreview({
+      title: 'Desarrollo S2 con carrera A',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'performance'),
+      competitionContext: {
+        primaryCompetition: {
+          id: 'competition-a',
+          name: 'Trail A',
+          date: '2026-03-01',
+          distanceKm: 30,
+          elevationGain: 1_400,
+          priority: 'A',
+        },
+        intermediateCompetitions: [],
+      },
+    })
+
+    assert.equal(preview.planning.goalType, 'performance')
+    assert.deepEqual(preview.planning.race, {
+      name: 'Trail A',
+      date: '2026-03-01',
+      distanceKm: 30,
+      elevationGain: 1_400,
+    })
+    assert.equal(preview.planning.taperingWeeksCount > 0, true)
+  })
+
   it('mantiene una semana pico al regenerar antes de un taper persistido', () => {
     const preview = buildLoadProgressionPreview({
       title: 'Preparación M1',
