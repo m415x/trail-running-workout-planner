@@ -23,9 +23,9 @@ import {
   deriveLoadStrategyFieldSources,
   getLoadStrategyModifications,
 } from '@/lib/periodization/load-strategy-modifications'
-import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
+import { suggestLoadStrategyForPlanningIntent } from '@/lib/periodization/load-strategy-recommender'
 import { validateLoadStrategy } from '@/lib/periodization/load-strategy-validator'
-import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
+import { suggestIntensityStrategyForPlanningIntent } from '@/lib/periodization/intensity-strategy-recommender'
 import { resolveBasePlanLegacyGoalType } from '@/lib/periodization/planning-intent'
 import { defaultWeeklyGenerationPreferences } from '@/lib/session-generation/generation-preferences'
 import { serializeSessionGenerationPreferences } from '@/lib/session-generation/generation-preferences-persistence'
@@ -125,12 +125,19 @@ export async function createGroupPlanWithLoadStrategy(
       return { error: t('groupMismatch') }
     }
 
-    // Persistence and recommenders still require TrainingGoalType during H9.
-    // Base plans map development to performance so `race` cannot become their
-    // planning authority or create an implicit competition.
+    // Legacy schemas still store TrainingGoalType, but recommendations now use
+    // PlanningIntent directly. Development maps to `performance`, never `race`.
     const legacyGoalType = resolveBasePlanLegacyGoalType(data.planningIntent)
-    const suggestedStrategy = suggestLoadStrategy(resolvedGroupCode, legacyGoalType)
-    const suggestedIntensityStrategy = suggestIntensityStrategy(resolvedGroupCode, legacyGoalType)
+    const suggestedStrategy = suggestLoadStrategyForPlanningIntent(
+      resolvedGroupCode,
+      data.planningIntent,
+      legacyGoalType,
+    )
+    const suggestedIntensityStrategy = suggestIntensityStrategyForPlanningIntent(
+      resolvedGroupCode,
+      data.planningIntent,
+      legacyGoalType,
+    )
     const generationPreferences = serializeSessionGenerationPreferences(
       defaultWeeklyGenerationPreferences(),
     )
