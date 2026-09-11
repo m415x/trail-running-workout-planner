@@ -377,6 +377,7 @@ export const macrocycles = pgTable('macrocycles', {
   taperingWeeksCount: integer('tapering_weeks_count'),
 
   targetRaceName: text('target_race_name'),
+  targetRaceDate: text('target_race_date'),
   targetRaceDistanceKm: doublePrecision('target_race_distance_km'),
   targetRaceElevationGain: integer('target_race_elevation_gain'),
 
