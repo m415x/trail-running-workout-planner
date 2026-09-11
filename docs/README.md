@@ -35,16 +35,18 @@ inconsistency, or the origin of a domain rule is relevant to the task.
 - [Epic 2 / History 6 completed](handoffs/epic-2-h6.md)
 - [Epic 2 / History 7 completed](handoffs/epic-2-h7.md)
 - [Epic 2 / History 8 completed](handoffs/epic-2-h8.md)
-- [Epic 2 / History 9 active](handoffs/epic-2-h9.md)
+- [Epic 2 / History 9 completed](handoffs/epic-2-h9.md)
 
-Handoffs describe the current operational state and are the primary starting
-point for continuing active implementation work. The H9 handoff is the current
-source of continuity while KAN-200 and the remaining H9 tasks are completed.
+Handoffs describe the operational state at a story boundary. H9 is complete and
+its handoff is retained as the authoritative dependency summary for planning
+intent and competitive-calendar work. The next story should create a new handoff
+once its scope and branch are agreed; do not keep appending unrelated work to the
+H9 handoff.
 
 ## Maintenance rule
 
 Update architecture documents only when a durable domain decision changes.
 Consolidate meaningful product/domain evolution into the corresponding history
 document without turning it into a commit log. Create or replace a handoff when
-a history closes or work moves to a new Codex task. Do not copy complete chat
+a history closes or work moves to a new task/context. Do not copy complete chat
 transcripts into this directory.
