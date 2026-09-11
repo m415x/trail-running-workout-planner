@@ -203,12 +203,19 @@ export function persistProgression({
       .where(eq(groupTrainingPlans.id, groupTrainingPlanId))
       .run()
 
-    if (planning.taperingWeeksCount > 0) {
-      tx.update(macrocycles)
-        .set({ taperingWeeksCount: planning.taperingWeeksCount, updatedAt: now })
-        .where(eq(macrocycles.id, macrocycleId))
-        .run()
-    }
+    // Competition data is copied only when this explicit planning persistence
+    // boundary runs. Calendar edits therefore cannot silently rewrite the
+    // historical context that produced an already persisted macrocycle.
+    tx.update(macrocycles)
+      .set({
+        taperingWeeksCount: planning.taperingWeeksCount,
+        targetRaceName: planning.race?.name ?? null,
+        targetRaceDistanceKm: planning.race?.distanceKm ?? null,
+        targetRaceElevationGain: planning.race?.elevationGain ?? null,
+        updatedAt: now,
+      })
+      .where(eq(macrocycles.id, macrocycleId))
+      .run()
   })
 
   return result
