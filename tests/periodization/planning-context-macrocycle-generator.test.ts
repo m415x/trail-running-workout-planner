@@ -53,6 +53,7 @@ describe('generación con intención y contexto competitivo separados', () => {
     assert.equal(result.goalType, 'performance')
     assert.equal(result.planningIntent, 'development')
     assert.equal(result.race?.name, 'Maratón de prueba')
+    assert.equal(result.race?.date, '2026-03-29')
     assert.equal(result.taperingWeeksCount, 3)
     assert.equal(result.mesocycles.at(-1)?.period, 'competitive')
     assert.equal(result.mesocycles.at(-1)?.microcycles.at(-1)?.type, 'race')
