@@ -37,12 +37,14 @@ inconsistency, or the origin of a domain rule is relevant to the task.
 - [Epic 2 / History 7 completed](handoffs/epic-2-h7.md)
 - [Epic 2 / History 8 completed](handoffs/epic-2-h8.md)
 - [Epic 2 / History 9 completed](handoffs/epic-2-h9.md)
+- [Epic 2 / History 10 active — Competitive adjustment](handoffs/epic-2-h10.md)
 
-Handoffs describe the operational state at a story boundary. H9 is complete and
-its handoff is retained as the authoritative dependency summary for planning
-intent and competitive-calendar work. The next story should create a new handoff
-once its scope and branch are agreed; do not keep appending unrelated work to the
-H9 handoff.
+Handoffs describe the operational state at a story boundary and are the primary
+starting point for active implementation work. H9 is complete and remains the
+authoritative dependency summary for planning intent and the competition
+calendar. H10 is the current active handoff and owns taper refinement, local
+competitive adjustment, race-week load separation, recovery, overlap resolution,
+and protected-state reconciliation.
 
 ## Maintenance rule
 
