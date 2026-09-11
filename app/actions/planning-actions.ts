@@ -21,10 +21,12 @@ import {
   microcycles,
   planningModificationRecords,
 } from '@/db/schema'
+import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
+import { resolveMacrocycleCompetitionContext } from '@/lib/periodization/macrocycle-competition-context'
 import { persistProgression } from '@/lib/periodization/progression-persistence'
 import { withPlanningRaceDistance } from '@/lib/periodization/race-distance-context'
 import { calculateMicrocycleIntensityTarget } from '@/lib/periodization/microcycle-intensity-target'
@@ -321,23 +323,36 @@ export async function saveLoadProgression(
         targetElevationGain: microcycle.targetElevationGain,
         targetElevationSource: microcycle.targetElevationSource,
       })))
+    const competitionResolution = resolveMacrocycleCompetitionContext({
+      competitionEntries: getCompetitionCalendar(plan.id),
+      macrocycle,
+    })
+
+    if (!competitionResolution.valid) {
+      return { error: 'El calendario competitivo tiene más de una competencia principal activa' }
+    }
+
+    const primaryCompetition = competitionResolution.context.primaryCompetition
+    const targetRace = protectedMesocycles.length === 0 && primaryCompetition
+      ? {
+          name: primaryCompetition.name,
+          distanceKm: primaryCompetition.distanceKm,
+          ...(primaryCompetition.elevationGain === undefined
+            ? {}
+            : { elevationGain: primaryCompetition.elevationGain }),
+        }
+      : null
+    const preserveCompetitionSnapshot = (
+      protectedMesocycles.length > 0
+      || competitionResolution.source === 'legacy_snapshot_incomplete'
+    )
     const preview = buildLoadProgressionPreview({
       title: macrocycle.title,
       startDate: macrocycle.startDate,
       endDate: trainingEndDate,
       loadStrategy,
       finishesBeforeTaper: protectedMesocycles.length > 0,
-      targetRace: protectedMesocycles.length === 0
-        && macrocycle.targetRaceName
-        && macrocycle.targetRaceDistanceKm
-        ? {
-            name: macrocycle.targetRaceName,
-            distanceKm: macrocycle.targetRaceDistanceKm,
-            ...(macrocycle.targetRaceElevationGain === null
-              ? {}
-              : { elevationGain: macrocycle.targetRaceElevationGain }),
-          }
-        : null,
+      targetRace,
       existingMicrocycles,
     })
 
@@ -345,10 +360,15 @@ export async function saveLoadProgression(
       return { error: preview.conflicts[0].message }
     }
 
+    if (preview.planning.race && primaryCompetition) {
+      preview.planning.race.date = primaryCompetition.date
+    }
+
     persistProgression({
       groupTrainingPlanId: plan.id,
       macrocycleId: macrocycle.id,
       planning: preview.planning,
+      competitionSnapshotMode: preserveCompetitionSnapshot ? 'preserve' : 'replace',
     })
 
     const persistedIntensityStrategy = db.query.intensityStrategies.findFirst({
