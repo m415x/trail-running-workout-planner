@@ -63,17 +63,21 @@ New and touched domain contracts must make units explicit:
 
 The existing `CompetitionContextEntry.elevationGain` and legacy generator fields are transitional. Rename them only through scoped migrations with tests; do not create parallel ambiguous fields casually.
 
-## CompetitionAdjustmentPolicy direction
+## CompetitionAdjustmentPolicy
 
-Priority expresses planning importance, not physiological cost.
+Priority expresses planning importance, not physiological cost. H10 centralizes priority guardrails in `getCompetitionAdjustmentPolicy()` rather than scattering them through generators.
 
-| Priority | Initial planning strategy |
-| --- | --- |
-| A | full taper, principal peak, race week, protected recovery |
-| B | proportional/local adjustment, possible mini-taper, contextual recovery |
-| C | minimal/no formal taper when appropriate; may act as a specific quality stimulus |
+| Priority | Default strategy | Formal taper days | Overall volume-reduction guardrail | No formal taper allowed | Race as training stimulus | Post-race planning protection |
+| --- | --- | ---: | ---: | --- | --- | --- |
+| A | `full_taper` | 4–21 | 30–60% | no | no | `protected` |
+| B | `proportional_adjustment` | 0–7 | 0–40% | yes | no | `contextual` |
+| C | `specific_stimulus` | 0–3 | 0–20% | yes | yes | `minimal_interference` |
 
-Policy values must be centralized and replaceable. Do not scatter percentages or duration thresholds through generators.
+These values are policy guardrails, not a direct prescription. Later H10 decisions must refine duration and magnitude from course demand and reached load. Task-specific reduction curves belong to the taper/reduction policies, not to these priority defaults.
+
+All priorities preserve the option for brief intensity stimuli while training volume is reduced.
+
+Post-competition planning protection must not be mistaken for physiological recovery duration. Recovery demand is assessed separately from priority; a high-demand C event remains physiologically demanding even when its role in the plan is secondary.
 
 Course demand constrains the plausible adjustment range; reached pre-competition load selects/refines the proposal within that range. Priority modifies planning treatment. Recovery need remains driven primarily by physiological/event demand.
 
