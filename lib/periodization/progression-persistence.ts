@@ -210,6 +210,7 @@ export function persistProgression({
       .set({
         taperingWeeksCount: planning.taperingWeeksCount,
         targetRaceName: planning.race?.name ?? null,
+        targetRaceDate: planning.race?.date ?? null,
         targetRaceDistanceKm: planning.race?.distanceKm ?? null,
         targetRaceElevationGain: planning.race?.elevationGain ?? null,
         updatedAt: now,
