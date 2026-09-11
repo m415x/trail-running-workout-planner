@@ -97,3 +97,35 @@ export interface CompetitionDemandAssessment {
     readonly technicalityKnown: boolean
   }
 }
+
+export type PreCompetitionLoadTrend = 'rising' | 'stable' | 'falling'
+
+/** Normalized one-week planning load used by pre-competition assessment. */
+export interface PreCompetitionWeekLoad {
+  /** Planned/reached training volume in kilometers. */
+  readonly volumeKm: number
+  /** Planned/reached positive elevation gain in meters; null when not available. */
+  readonly elevationGainM: number | null
+}
+
+/**
+ * Load context immediately preceding a competitive-adjustment window.
+ *
+ * Volume and elevation remain separate dimensions. This context deliberately
+ * avoids converting them into a single synthetic load score.
+ */
+export interface PreCompetitionLoadContext {
+  readonly referenceWindowWeeks: number
+  readonly analyzedWeeks: number
+  readonly volume: {
+    readonly recentAverageKm: number
+    readonly achievedPeakVolumeKm: number
+    readonly trend: PreCompetitionLoadTrend
+  }
+  readonly elevation: {
+    readonly recentAverageGainM: number | null
+    readonly achievedPeakElevationGainM: number | null
+    readonly trend: PreCompetitionLoadTrend | null
+    readonly knownWeeks: number
+  }
+}
