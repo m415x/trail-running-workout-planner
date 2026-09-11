@@ -113,6 +113,41 @@ describe('snapshot competitivo histórico del macrociclo', () => {
     assert.equal(saved?.targetRaceElevationGain, null)
     assert.equal(saved?.taperingWeeksCount, 0)
   })
+
+  it('una persistencia de carga puede preservar el snapshot competitivo aceptado', () => {
+    database.update(macrocycles).set({
+      targetRaceName: 'Snapshot histórico',
+      targetRaceDate: '2026-03-01',
+      targetRaceDistanceKm: 42,
+      targetRaceElevationGain: 1_500,
+      taperingWeeksCount: 3,
+    }).where(eq(macrocycles.id, 'macro-1')).run()
+
+    const planning = buildLoadProgressionPreview({
+      title: 'Macrociclo S2',
+      startDate: '2026-01-05',
+      endDate: '2026-03-01',
+      loadStrategy: suggestLoadStrategy('S2', 'base'),
+    }).planning
+
+    persistProgression({
+      groupTrainingPlanId: 'plan-1',
+      macrocycleId: 'macro-1',
+      planning,
+      competitionSnapshotMode: 'preserve',
+      database,
+    })
+
+    const saved = database.select().from(macrocycles)
+      .where(eq(macrocycles.id, 'macro-1'))
+      .get()
+
+    assert.equal(saved?.targetRaceName, 'Snapshot histórico')
+    assert.equal(saved?.targetRaceDate, '2026-03-01')
+    assert.equal(saved?.targetRaceDistanceKm, 42)
+    assert.equal(saved?.targetRaceElevationGain, 1_500)
+    assert.equal(saved?.taperingWeeksCount, 3)
+  })
 })
 
 function createTestDatabase() {
