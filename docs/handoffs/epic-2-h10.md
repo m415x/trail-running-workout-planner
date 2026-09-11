@@ -5,7 +5,8 @@
 - Story: `KAN-204` — H10: Refinar taper y reajustar semanas competitivas.
 - Branch: `h-19-competitive-adjustment`.
 - Base branch: `dashboard` after H9 closure.
-- Current starting task: `KAN-205` — Auditar taper y reestructuración competitiva actual.
+- Completed tasks: `KAN-205`, `KAN-206`.
+- Current task: `KAN-207` — Modelar demanda del recorrido y perfil extensible.
 - Delivery mode for H10: remote-first on GitHub/Jira. Local validation is reserved for cases that cannot be validated reasonably in remote review; the complete local gate and Vercel deployment validation are required before story merge.
 
 ## Why H10 exists
@@ -48,16 +49,7 @@ courseEffortKm = distanceKm + elevationGainM / 100
 
 This value estimates course demand; it does **not** directly determine taper duration.
 
-Future `CourseProfile` enrichment must remain possible without redesigning taper/recovery policy. A GPX/FIT track may later provide:
-
-- measured distance;
-- D+;
-- D-;
-- gradient distribution;
-- major climbs and descents;
-- altitude profile;
-- terrain/technicality signals where derivable;
-- estimated race duration from athlete-specific context.
+Future `CourseProfile` enrichment must remain possible without redesigning taper/recovery policy. A GPX/FIT track may later provide measured distance, D+, D-, gradient distribution, major climbs/descents, altitude profile, terrain/technicality signals and athlete-specific expected duration.
 
 GPX/FIT parsing must stay upstream of the taper policy. `TaperDecision` and `RecoveryDecision` consume assessed demand, not track-file formats.
 
@@ -65,16 +57,7 @@ GPX/FIT parsing must stay upstream of the taper policy. `TaperDecision` and `Rec
 
 The taper should use the load **actually reached by the generated/persisted progression**, not the configured theoretical maximum.
 
-A single peak is still insufficient. H10 should introduce a `PreCompetitionLoadContext` or equivalent that can describe, at minimum:
-
-- recent reference window;
-- recent average volume;
-- achieved peak volume;
-- volume trend;
-- recent average elevation gain;
-- achieved peak elevation gain;
-- elevation trend;
-- relative load band versus the plan/group's own preparation context.
+A single peak is still insufficient. H10 should introduce a `PreCompetitionLoadContext` or equivalent that can describe, at minimum, recent reference window, recent average volume, achieved peak volume, volume trend, recent average elevation gain, achieved peak elevation gain, elevation trend and relative load band versus the plan/group's own preparation context.
 
 Volume and elevation remain separate dimensions. Do not invent a generic training-load formula by reusing course-effort mathematics.
 
@@ -82,19 +65,7 @@ Initial reference-window policy may use approximately the last four complete pre
 
 ### Unit convention
 
-H10 must make elevation units explicit in names. In particular, rename:
-
-```text
-achievedPeakElevationGain
-```
-
-to:
-
-```text
-achievedPeakElevationGainM
-```
-
-when the affected contract is modified. Follow the same explicit-unit convention for new fields (`distanceKm`, `elevationGainM`, `durationMinutes`, etc.).
+H10 must make elevation units explicit in names. In particular, rename `achievedPeakElevationGain` to `achievedPeakElevationGainM` when the affected contract is modified. Follow the same explicit-unit convention for new fields (`distanceKm`, `elevationGainM`, `durationMinutes`, etc.).
 
 ### Priority and physiological demand are independent
 
@@ -106,7 +77,7 @@ Initial planning behavior:
 - **B**: proportional taper/local adjustment and contextual recovery.
 - **C**: minimal or no formal taper when appropriate; may act as a quality/specific stimulus.
 
-However, a long/high-demand C event remains physiologically demanding. Recovery need must be derived from event demand, while priority modifies how that need is handled in the surrounding plan.
+A long/high-demand C event remains physiologically demanding. Recovery need must be derived from event demand, while priority modifies how that need is handled in the surrounding plan.
 
 ### Recovery
 
@@ -139,9 +110,7 @@ CompetitionImpactWindow
 └── postCompetition
 ```
 
-The pre and post windows are derived through different decisions.
-
-Overlapping windows must be resolved as one planning problem rather than by running independent tapers/recoveries over the same microcycles.
+The pre and post windows are derived through different decisions. Overlapping windows must be resolved as one planning problem rather than by running independent tapers/recoveries over the same microcycles.
 
 ### Proposal before persistence
 
@@ -160,12 +129,28 @@ This continues the Epic 2 automation-ownership rule: automation may update autom
 
 ### Planned versus realized impact
 
-Changing/cancelling a competition after a taper has already been accepted exposes an important distinction:
-
-- planned competitive impact;
-- realized competition/recovery impact.
+Changing/cancelling a competition after a taper has already been accepted exposes an important distinction between planned competitive impact and realized competition/recovery impact.
 
 A cancellation before the event must not create post-race recovery as if the competition occurred. Conversely, already-realized taper changes must not be silently rolled back.
+
+## Implemented so far
+
+### KAN-205 — audit and migration boundary
+
+- Legacy taper remains temporarily compatible but must not receive new A/B/C logic.
+- `determineTaperingWeeksCount()` and `generateCompetitiveMesocycle()` are migration safety-net code, not the H10 policy home.
+- New behavior is being moved into pure domain policies.
+- Durable boundary documented in `docs/architecture/competitive-adjustment.md`.
+
+### KAN-206 — A/B/C priority policy
+
+`getCompetitionAdjustmentPolicy()` centralizes priority guardrails:
+
+- A: `full_taper`, 4–21 days, 30–60% global volume-reduction guardrail, protected post-race planning.
+- B: `proportional_adjustment`, 0–7 days, 0–40%, contextual post-race planning.
+- C: `specific_stimulus`, 0–3 days, 0–20%, may have no formal taper and may act as a training stimulus.
+- All priorities retain brief intensity stimuli.
+- Priority does not determine physiological recovery duration.
 
 ## Domain boundaries inherited from H9
 
@@ -187,14 +172,15 @@ References:
 - `docs/architecture/planning-intent-and-competition-context.md`
 - `docs/architecture/competition-calendar.md`
 - `docs/architecture/category-race-distance.md`
+- `docs/architecture/competitive-adjustment.md`
 
 ## Jira task sequence
 
-- `KAN-205` — Audit current taper and competitive restructuring.
-- `KAN-206` — Define `CompetitionAdjustmentPolicy` for A/B/C.
-- `KAN-207` — Define `CompetitionImpactWindow` pre/race/post.
-- `KAN-208` — Calculate the reached pre-competition load context and apply explicit units (`achievedPeakElevationGainM`).
-- `KAN-209` — Determine adjustment duration/intensity from priority, course demand and reached load.
+- `KAN-205` — Audit current taper and competitive restructuring. **Done**
+- `KAN-206` — Define `CompetitionAdjustmentPolicy` for A/B/C. **Done**
+- `KAN-207` — Model course demand and extensible `CourseProfile` / `CompetitionDemandAssessment`. **In progress**
+- `KAN-208` — Calculate reached pre-competition load context and apply explicit units (`achievedPeakElevationGainM`).
+- `KAN-209` — Determine taper duration in days from priority, course demand and reached load.
 - `KAN-210` — Define progressive volume reductions.
 - `KAN-211` — Reduce elevation while preserving specificity.
 - `KAN-212` — Preserve brief intensity stimuli.
@@ -204,7 +190,7 @@ References:
 - `KAN-216` — Model C competition as optional specific training stimulus.
 - `KAN-217` — Add post-competition recovery.
 - `KAN-218` — Resolve overlapping competitive windows.
-- `KAN-219` — Generate `CompetitionAdjustmentProposal` over existing microcycles.
+- `KAN-219` — Generate a local `CompetitionAdjustmentProposal` over existing microcycles.
 - `KAN-220` — Detect and preserve protected/manual values, microcycles and sessions.
 - `KAN-221` — Allow coach review/manual adjustment before persistence.
 - `KAN-222` — Reconcile only the affected window and record generated/manual adjustments.
@@ -246,15 +232,4 @@ H10 is complete when A/B/C competitions can produce local, reviewable competitiv
 
 ## Immediate starting point
 
-Start with `KAN-205`. Audit the existing taper implementation and identify precisely:
-
-- current duration heuristics and constants;
-- inputs actually used by current taper generation;
-- where achieved peak volume/elevation already exist;
-- how competitive mesocycles/microcycles are created;
-- how race week is currently represented;
-- what H6 ownership/provenance protections can be reused;
-- which responsibilities must move out of the legacy macrocycle generator into pure H10 policies;
-- tests that encode current behavior and therefore form the migration safety net.
-
-Do not implement the new taper policy until this audit is documented and its migration boundary is agreed.
+Continue `KAN-207`: stabilize the pure `CourseProfile` / `CompetitionDemandAssessment` contract, explicitly preserve unknown D+ instead of assuming flat terrain, and keep richer GPX/FIT-derived signals optional and upstream of policy. After this task, proceed to `KAN-208` and derive reached pre-competition load context from actual generated/persisted planning rather than configured maxima.
