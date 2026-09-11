@@ -68,11 +68,22 @@ function accountForCompetitionAsQualityStimulus(
 ): TaperIntensityPreservationDecision {
   if (!competitionActsAsQualityStimulus) return intensity
 
+  // The competition replaces one exposure from the original weekly reference.
+  // Taper preservation may already have reduced that count, so subtracting from
+  // the proposed value would double-reduce the remaining quality work.
+  const remainingPlannedQualityExposures = Math.max(
+    0,
+    intensity.reference.intenseSessionsTarget - 1,
+  )
+
   return {
     ...intensity,
     proposed: {
       ...intensity.proposed,
-      intenseSessionsTarget: Math.max(0, intensity.proposed.intenseSessionsTarget - 1),
+      intenseSessionsTarget: Math.min(
+        intensity.proposed.intenseSessionsTarget,
+        remainingPlannedQualityExposures,
+      ),
     },
   }
 }
