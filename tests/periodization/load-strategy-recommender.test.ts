@@ -2,14 +2,17 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { GROUP_VOLUME_MATRIX } from '@/data/periodization-matrix'
-import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
+import {
+  suggestLoadStrategy,
+  suggestLoadStrategyForPlanningIntent,
+} from '@/lib/periodization/load-strategy-recommender'
 
 import type { AthleteGroupCode, TrainingGoalType } from '@/types'
 
 const GOAL_TYPES: TrainingGoalType[] = ['race', 'performance', 'base', 'maintenance', 'custom']
 
 describe('recomendaciones de estrategia de carga', () => {
-  it('propone el pico del grupo para un objetivo de carrera', () => {
+  it('propone el perfil de desarrollo para un objetivo legacy de carrera', () => {
     const strategy = suggestLoadStrategy('S2', 'race')
 
     assert.deepEqual(strategy.context, { athleteGroup: 'S2', goalType: 'race' })
@@ -21,6 +24,19 @@ describe('recomendaciones de estrategia de carga', () => {
       initialWeeklyElevationGain: 720,
       maximumWeeklyElevationGain: 840,
     })
+  })
+
+  it('race y performance legacy comparten exactamente la política de development', () => {
+    const race = suggestLoadStrategy('S2', 'race')
+    const performance = suggestLoadStrategy('S2', 'performance')
+    const development = suggestLoadStrategyForPlanningIntent('S2', 'development', 'performance')
+
+    assert.deepEqual(race.values, performance.values)
+    assert.deepEqual(race.fieldSources, performance.fieldSources)
+    assert.deepEqual(performance.values, development.values)
+    assert.deepEqual(performance.fieldSources, development.fieldSources)
+    assert.equal(race.context.goalType, 'race')
+    assert.equal(performance.context.goalType, 'performance')
   })
 
   it('mantiene una propuesta conservadora para mantenimiento', () => {
