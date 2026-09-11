@@ -332,16 +332,6 @@ export async function saveLoadProgression(
       return { error: 'El calendario competitivo tiene más de una competencia principal activa' }
     }
 
-    const primaryCompetition = competitionResolution.context.primaryCompetition
-    const targetRace = protectedMesocycles.length === 0 && primaryCompetition
-      ? {
-          name: primaryCompetition.name,
-          distanceKm: primaryCompetition.distanceKm,
-          ...(primaryCompetition.elevationGain === undefined
-            ? {}
-            : { elevationGain: primaryCompetition.elevationGain }),
-        }
-      : null
     const preserveCompetitionSnapshot = (
       protectedMesocycles.length > 0
       || competitionResolution.source === 'legacy_snapshot_incomplete'
@@ -352,16 +342,14 @@ export async function saveLoadProgression(
       endDate: trainingEndDate,
       loadStrategy,
       finishesBeforeTaper: protectedMesocycles.length > 0,
-      targetRace,
+      competitionContext: protectedMesocycles.length === 0
+        ? competitionResolution.context
+        : undefined,
       existingMicrocycles,
     })
 
     if (preview.conflicts.length > 0) {
       return { error: preview.conflicts[0].message }
-    }
-
-    if (preview.planning.race && primaryCompetition) {
-      preview.planning.race.date = primaryCompetition.date
     }
 
     persistProgression({
