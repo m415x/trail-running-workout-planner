@@ -20,6 +20,9 @@ const DEMAND_POSITION_RANGES: Record<CompetitionDemandBand, NumericRange> = {
   extreme: { min: 0.8, max: 1 },
 }
 
+const SUSTAINED_LOAD_WEIGHT = 0.7
+const LOAD_TREND_WEIGHT = 0.3
+
 function clamp(value: number, min = 0, max = 1) {
   return Math.min(max, Math.max(min, value))
 }
@@ -40,7 +43,10 @@ function loadDimensionPosition(
   peak: number,
   trend: PreCompetitionLoadTrend | null,
 ) {
-  return (sustainedLoadRatio(average, peak) * 0.7) + (trendPosition(trend) * 0.3)
+  return (
+    (sustainedLoadRatio(average, peak) * SUSTAINED_LOAD_WEIGHT)
+    + (trendPosition(trend) * LOAD_TREND_WEIGHT)
+  )
 }
 
 function resolveReachedLoadPosition(load: PreCompetitionLoadContext) {
