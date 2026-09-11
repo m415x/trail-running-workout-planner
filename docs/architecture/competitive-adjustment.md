@@ -141,6 +141,16 @@ The caller supplies the existing competition-week role and planned training targ
 
 This is still a proposal boundary: no microcycle is persisted or rewritten here. Later impact-window reconciliation will decide how accepted changes interact with provenance, manual protection and neighboring competitions.
 
+## Specific-stimulus treatment for priority C
+
+`buildCompetitionCAdjustmentProposal()` keeps a C event secondary in planning role while preserving its assessed physiological demand. C uses the centralized 0–3 day / 0–20% guardrails and never becomes a primary peak.
+
+A C with `very_low`, `low`, or `moderate` assessed demand may act as a planned quality/specific stimulus when it is not embedded in a recovery week. In that case the competition replaces one planned intense training exposure rather than being added on top of the same weekly quality count; HR-zone/PAM semantics stay unchanged for any remaining training stimulus.
+
+A recovery week is never promoted to a quality week solely because it contains a C race. High/very-high/extreme C events are treated as minimal local adjustments, not as ordinary quality sessions, and they explicitly surface `physiologicalDemandRequiresRecoveryReview` for the post-competition policy. Priority C therefore never downgrades physiological cost.
+
+As with B, any taper-derived training target acts only as a ceiling over the existing planned week, and competition load remains separate through `CompetitionWeekLoad`. Unknown course demand triggers coach review rather than being assumed light enough to serve as training stimulus.
+
 ## Ownership and reconciliation
 
 Reuse the Epic 2 ownership rule: generated state may be regenerated while explicit coach-owned/manual state is preserved. Protected values inside an impact window must surface conflicts instead of being silently overwritten.
