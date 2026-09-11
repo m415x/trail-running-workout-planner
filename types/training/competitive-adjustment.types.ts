@@ -279,3 +279,40 @@ export interface FullCompetitionATaperProposal {
   readonly competitionWeek: CompetitionWeekLoad
   readonly requiresCoachReview: boolean
 }
+
+/** Context of the existing microcycle that contains an intermediate B race. */
+export interface CompetitionBWeekContext {
+  readonly role: 'development' | 'recovery' | 'other'
+  readonly plannedTraining: CompetitionWeekTrainingLoad
+}
+
+/** Inputs for a local, proportional adjustment around one B-priority race. */
+export interface CompetitionBAdjustmentInput {
+  readonly competition: CompetitionWeekCompetitionLoad
+  readonly courseProfile: CourseProfile
+  readonly preCompetitionLoad: PreCompetitionLoadContext
+  readonly intensityReference: TaperIntensityReference
+  readonly competitionWeekContext: CompetitionBWeekContext
+}
+
+/**
+ * Pure H10 proposal for an intermediate B race.
+ *
+ * Unlike an A taper, this proposal never promotes the event to a primary peak.
+ * A zero-day decision leaves the existing competition-week training target
+ * intact; a formal mini-taper only reduces it when the taper curve is stricter.
+ */
+export interface CompetitionBAdjustmentProposal {
+  readonly priority: 'B'
+  readonly strategy: 'proportional_adjustment'
+  readonly competitionId: string
+  readonly competitionDate: string
+  readonly competitionWeekRole: CompetitionBWeekContext['role']
+  readonly demand: CompetitionDemandAssessment
+  readonly duration: TaperDurationDecision
+  readonly volumeCurve: TaperVolumeReductionCurve
+  readonly elevationCurve: TaperElevationReductionCurve
+  readonly intensity: TaperIntensityPreservationDecision
+  readonly competitionWeek: CompetitionWeekLoad
+  readonly requiresCoachReview: boolean
+}
