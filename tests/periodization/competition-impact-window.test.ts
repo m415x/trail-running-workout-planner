@@ -107,7 +107,7 @@ describe('competition impact window', () => {
 
   it('gives A precedence over an overlapping B pre/race adjustment', () => {
     const a = window({ id: 'a', priority: 'A', date: '2026-11-15', taperDays: 10, recoveryDays: 2 })
-    const b = window({ id: 'b', priority: 'B', date: '2026-11-12', taperDays: 5, recoveryDays: 1 })
+    const b = window({ id: 'b', priority: 'B', date: '2026-11-12', taperDays: 5, recoveryDays: 0 })
 
     const result = resolveCompetitionImpactWindows([b, a])
     const overlap = result.overlaps.find((item) => (
