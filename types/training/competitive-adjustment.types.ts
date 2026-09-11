@@ -218,3 +218,36 @@ export interface TaperIntensityPreservationDecision {
   readonly requiresCoachReview: boolean
   readonly reasonCodes: readonly TaperIntensityReasonCode[]
 }
+
+/** Prescribed training load in the calendar week containing a competition. */
+export interface CompetitionWeekTrainingLoad {
+  readonly volumeKm: number
+  readonly elevationGainM: number | null
+}
+
+/** Competition exposure kept separate from the prescribed training target. */
+export interface CompetitionWeekCompetitionLoad {
+  readonly competitionId: string
+  readonly name: string
+  readonly date: string
+  readonly priority: CompetitionPriority
+  readonly distanceKm: number
+  readonly elevationGainM: number | null
+}
+
+/**
+ * Race-week load boundary.
+ *
+ * `training` is the coach/system prescription before/around the race and never
+ * includes race distance or race D+. `competition` is the event exposure. The
+ * optional totals are derived views only and must not be persisted back as
+ * training targets.
+ */
+export interface CompetitionWeekLoad {
+  readonly training: CompetitionWeekTrainingLoad
+  readonly competition: CompetitionWeekCompetitionLoad
+  readonly totalExposure: {
+    readonly distanceKm: number
+    readonly elevationGainM: number | null
+  }
+}
