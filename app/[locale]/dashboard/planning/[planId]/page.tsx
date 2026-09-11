@@ -1,11 +1,12 @@
 import Link from 'next/link'
-import { RaceDistanceNotice } from '@/features/planning/components/RaceDistanceNotice'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
+import { getCompetitionCalendarAction } from '@/app/actions/competition-calendar-actions'
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { getSessionGenerationPreferencesForPlan } from '@/app/actions/session-generation-preferences-actions'
 import { getWorkoutTemplates } from '@/app/actions/workout-template-actions'
+import { CompetitionCalendarSummary } from '@/features/planning/components/CompetitionCalendarSummary'
 import { MicrocycleDatesForm } from '@/features/planning/components/MicrocycleDatesForm'
 import { MicrocycleElevationForm } from '@/features/planning/components/MicrocycleElevationForm'
 import { MicrocycleNotesForm } from '@/features/planning/components/MicrocycleNotesForm'
@@ -24,6 +25,7 @@ import {
   LoadProgressionPreview,
   type LoadProgressionPoint,
 } from '@/features/planning/components/LoadProgressionPreview'
+import { deriveCompetitionContext } from '@/lib/periodization/competition-context'
 import {
   buildLoadProgressionPreview,
   determineTrainingProgressionEndDate,
@@ -54,10 +56,16 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     notFound()
   }
 
-  const [generationPreferences, templateCatalogue] = await Promise.all([
+  const [generationPreferences, templateCatalogue, competitionCalendarResult] = await Promise.all([
     getSessionGenerationPreferencesForPlan(planId),
     getWorkoutTemplates({ archive: 'active' }),
+    getCompetitionCalendarAction({ planId, locale: locale === 'en' ? 'en' : 'es' }),
   ])
+  const competitions = competitionCalendarResult.ok ? competitionCalendarResult.value : []
+  const competitionContextResult = deriveCompetitionContext(competitions)
+  const primaryCompetitionId = competitionContextResult.valid
+    ? competitionContextResult.context.primaryCompetition?.id ?? null
+    : null
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
@@ -110,17 +118,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         endDate: trainingEndDate,
         loadStrategy,
         finishesBeforeTaper: protectedMesocycles.length > 0,
-        targetRace: protectedMesocycles.length === 0
-          && previewMacrocycle.targetRaceName
-          && previewMacrocycle.targetRaceDistanceKm
-          ? {
-              name: previewMacrocycle.targetRaceName,
-              distanceKm: previewMacrocycle.targetRaceDistanceKm,
-              ...(previewMacrocycle.targetRaceElevationGain === null
-                ? {}
-                : { elevationGain: previewMacrocycle.targetRaceElevationGain }),
-            }
-          : null,
+        competitionContext: protectedMesocycles.length === 0 && competitionContextResult.valid
+          ? competitionContextResult.context
+          : undefined,
         existingMicrocycles,
       })
     : null
@@ -293,23 +293,15 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <Badge variant='secondary'>Grupo {groupCode}</Badge>
           </div>
           <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
-          {previewMacrocycle?.targetRaceName && previewMacrocycle.targetRaceDistanceKm && (
-            <p className='text-sm text-muted-foreground'>
-              Carrera objetivo: {previewMacrocycle.targetRaceName} · {previewMacrocycle.targetRaceDistanceKm.toLocaleString('es-AR')} km
-              {previewMacrocycle.targetRaceElevationGain === null ? '' : ` · +${previewMacrocycle.targetRaceElevationGain.toLocaleString('es-AR')} m`}
-            </p>
-          )}
         </div>
       </div>
 
-      {plan.macrocycles.map((macrocycle) => (
-        <RaceDistanceNotice
-          key={`race-distance-${macrocycle.id}`}
-          result={macrocycle.raceDistanceCompatibility}
-          groupCode={groupCode}
-          distanceKm={macrocycle.targetRaceDistanceKm}
-        />
-      ))}
+      <CompetitionCalendarSummary
+        competitions={competitions}
+        primaryCompetitionId={primaryCompetitionId}
+        locale={locale}
+        hasPrimaryConflict={!competitionContextResult.valid}
+      />
 
       {preview && loadStrategy ? (
         <LoadProgressionPreview
