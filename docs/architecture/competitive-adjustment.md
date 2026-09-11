@@ -73,7 +73,7 @@ Priority expresses planning importance, not physiological cost. H10 centralizes 
 | B | `proportional_adjustment` | 0–7 | 0–40% | yes | no | `contextual` |
 | C | `specific_stimulus` | 0–3 | 0–20% | yes | yes | `minimal_interference` |
 
-These values are policy guardrails, not a direct prescription. Later H10 decisions must refine duration and magnitude from course demand and reached load. Task-specific reduction curves belong to the taper/reduction policies, not to these priority defaults.
+These values are policy guardrails, not a direct prescription. Later H10 decisions refine duration and magnitude from course demand and reached load. Task-specific reduction curves belong to taper/reduction policies, not to generators.
 
 All priorities preserve the option for brief intensity stimuli while training volume is reduced.
 
@@ -95,9 +95,25 @@ Future GPX/FIT ingestion may enrich an upstream `CourseProfile` with D-, gradien
 
 ## Pre-competition load
 
-Do not use configured `maximumWeeklyVolumeKm` as a proxy for fatigue/load reached. H10 must derive context from generated/persisted progression. A single peak is also insufficient: recent average, peak, trend, reference window, and relative load should remain representable for both volume and elevation as separate dimensions.
+Do not use configured `maximumWeeklyVolumeKm` as a proxy for fatigue/load reached. H10 derives context from generated/persisted progression. A single peak is insufficient: recent average, peak, trend, reference window, and relative load remain representable for both volume and elevation as separate dimensions.
 
-When the existing elevation peak contract is touched, migrate `achievedPeakElevationGain` to `achievedPeakElevationGainM`.
+The H10 contract uses `achievedPeakElevationGainM`; legacy generator-local names remain transitional until that generator is replaced.
+
+## Taper duration
+
+`determineTaperDuration()` returns a formal taper duration in calendar days plus rationale. Priority supplies hard guardrails, competition demand narrows the plausible section of that range, and reached recent load positions the proposal inside that section. Unknown/low-confidence course demand requires coach review rather than being interpreted as flat terrain.
+
+The old `0 | 2 | 3`-week generator remains compatibility-only while H10 policies are integrated.
+
+## Progressive volume reduction
+
+`calculateTaperVolumeReductionCurve()` produces a monotonic day-based reduction curve from the **recent reached average weekly volume**, not from configured maximum volume or race distance.
+
+The final reduction is derived from the priority guardrail and where the chosen taper duration sits within that priority's allowed duration range. H10 v1 uses a transparent linear progression from the start of the taper to the final pre-race reduction. Curve shape is isolated so it can be replaced later without changing callers.
+
+The curve returns `targetWeeklyEquivalentVolumeKm` for each taper day. This is a planning-equivalent value used by later impact-window/microcycle reconciliation; it is **not** a prescribed daily running distance. Competition distance is excluded from these targets.
+
+A zero-day B/C adjustment returns no taper-volume curve instead of fabricating a formal taper.
 
 ## Race-week accounting
 
@@ -115,4 +131,4 @@ A competition can be rescheduled, reprioritized, or cancelled after an adjustmen
 
 ## Test migration strategy
 
-Existing tests that assert 2/3-week tapers and fixed factors remain regression coverage while compatibility exists. New H10 tests should target pure policies first. Integration should be migrated only after policy contracts are stable, then legacy assertions can be retired deliberately rather than rewritten opportunistically.
+Existing tests that assert 2/3-week tapers and fixed factors remain regression coverage while compatibility exists. New H10 tests target pure policies first. Integration should be migrated only after policy contracts are stable, then legacy assertions can be retired deliberately rather than rewritten opportunistically.
