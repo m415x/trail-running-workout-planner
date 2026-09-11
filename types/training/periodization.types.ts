@@ -62,13 +62,16 @@ export interface GeneratedMicrocycleDraft {
 }
 
 /**
- * Immutable race context copied into a group macrocycle.
+ * Immutable competitive context copied into a group macrocycle.
  *
- * This is not a link to an athlete's individual TrainingGoal. Distance is
- * expressed in kilometers and elevation gain in positive meters (m+).
+ * This is not a live link to CompetitionEntry or an athlete TrainingGoal. New
+ * H9 generation copies the competition date as part of the historical snapshot
+ * so later calendar edits or reprogramming cannot rewrite prior context.
  */
 export interface TargetRaceSnapshot {
   name: string
+  /** Historical competition date in YYYY-MM-DD format. Optional only for legacy snapshots. */
+  date?: string
   distanceKm: number
   elevationGain?: number
 }
@@ -134,6 +137,8 @@ export interface Macrocycle extends BaseEntity {
   endDate: string
   taperingWeeksCount?: 0 | 2 | 3 | null
   targetRaceName?: string | null
+  /** Historical date captured with targetRace* snapshot; nullable for legacy rows. */
+  targetRaceDate?: string | null
   targetRaceDistanceKm?: number | null
   targetRaceElevationGain?: number | null
   notes?: string | null
