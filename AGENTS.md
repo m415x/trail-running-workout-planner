@@ -66,7 +66,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `app/[locale]/` — Localized App Router pages (`es` default, `en` secondary via `next-intl`, prefix: `as-needed`)
   - `app/[locale]/(mobile)/` — Mobile shell layout & core views (Home, Plan, Stats, Profile)
 - `features/` — Feature-driven modules (`workouts/`, `profile/`, etc.) containing components and feature hooks
-- `app/actions/` — Server actions for athletes, groups, goals, plans, and sessions
+- `app/actions/` — Server actions for athletes, groups, goals, plans, sessions, and competition-calendar operations
 - `db/schema.ts` — SQLite schema used by the application runtime
 - `db/supabase/` — PostgreSQL schema, connection, and remote verification
 - `drizzle/supabase/` — Reviewed SQL migrations and Drizzle migration metadata
@@ -79,7 +79,9 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 - Planning is **group-first**, not athlete-first. `AthleteGroup` is the operational planning unit.
 - Every `AthleteProfile` belongs to a team (`teamId` required) and may have a current group (`groupId` nullable FK to `athleteGroups`).
-- `TrainingGoal` belongs to an individual athlete. A race is optional goal context; a race catalogue and athlete registration flow are future work.
+- `TrainingGoal` belongs to an individual athlete. Its race fields are legacy/individual context and are not the live competitive source for group periodization; a public race catalogue and athlete registration flow remain future work.
+- Live competitive planning context is owned by plan-scoped `CompetitionEntry` records. A/B/C priorities and explicit lifecycle state determine which events are relevant to planning.
+- `Macrocycle.targetRace*` is a historical snapshot of the primary competition used for an accepted generation/revision, not the live race entity. Live calendar edits must not silently rewrite that snapshot.
 - `memberships` reference `athleteProfiles`; group changes are recorded in `groupHistoryRecords` using group IDs.
 - Athlete category and level are derived from the assigned group. They are TypeScript value objects/constants, not configurable database tables.
 - The planning hierarchy is `GroupTrainingPlan -> Macrocycle -> Mesocycle -> Microcycle`.
@@ -91,8 +93,8 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 - Athlete management supports create/edit, group assignment/change, and group-history recording.
 - Group management supports create/edit, duplicate, deactivate, and member listing.
-- Training goals support optional race data and feed macrocycle generation.
-- Planning generation creates and persists macrocycles, mesocycles, microcycles, target volumes, and taper phases when applicable.
+- Training goals retain optional race data for individual and legacy compatibility, while new competitive planning uses `CompetitionEntry`/`CompetitionContext`.
+- Planning generation creates and persists macrocycles, mesocycles, microcycles, target volumes, and taper phases when applicable. Taper is driven by `competitionContext.primaryCompetition`, not by the literal legacy `goalType = race` signal.
 - Persisted microcycles support volume, date, type, and notes edits.
 - Session create/edit requires at least one group prescription and preserves form data after validation errors.
 - Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
@@ -101,6 +103,8 @@ The current implementation is an authenticated-product prototype: user/team cont
   athlete category or level. Coach flows support cohort management and dated
   memberships, while athlete planning resolution uses the applicable cohort
   variant first and the group base plan as fallback.
+- Competition calendars support plan-scoped entries, A/B/C priorities, explicit lifecycle transitions, rescheduling/cancellation without history loss, and derived category-distance advisories.
+- `CompetitionContext` is the pure boundary consumed by periodization. `Macrocycle.targetRace*`, including `targetRaceDate`, remains an immutable-by-default historical snapshot updated only by explicit planning persistence.
 - Session deletion is not implemented yet.
 
 ## Database Environments
@@ -110,7 +114,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `SUPABASE_DIRECT_URL` is for migrations (direct connection or session pooler on port 5432).
 - `SUPABASE_DATABASE_URL` is for the Vercel/serverless runtime (transaction pooler on port 6543, prepared statements disabled).
 - Both variables are server-only secrets. Never prefix them with `NEXT_PUBLIC_`, commit `.env.local`, or print their values.
-- The current Supabase migrations create 20 tables with RLS enabled, including `load_strategies`. Policies and production authentication/authorization still need to be designed before exposing data through the Data API.
+- The current Supabase schema/migration chain contains 26 tables as of H9. Production policies and authentication/authorization still need to be designed before exposing data through the Data API.
 - SQLite server actions currently use synchronous query APIs. Moving runtime access to PostgreSQL requires an intentional asynchronous repository/data-access migration; do not swap the driver mechanically.
 
 ## Known Transitional Constraints
@@ -120,9 +124,8 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Microcycles are consecutive, but session forms currently ask the coach to select one manually. Automatic microcycle inference belongs to the next planning-automation epic.
 - Intensity method defaults and propagation across groups are also future automation work; preserve the current manual override capability.
 - Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
-- Cohort session prescriptions, competition calendars, race registration, and
-  automatic cohort proposals remain future work; do not infer them from the H7
-  cohort foundation.
+- Cohort session prescriptions, race registration, and automatic cohort proposals remain future work; do not infer them from the H7/H9 foundations.
+- Legacy plans may still carry `goalType = race` and `Macrocycle.targetRace*` without `CompetitionEntry` rows. Keep that fallback isolated in the KAN-200 compatibility adapter; do not reintroduce legacy goal type as the primary competitive trigger.
 
 ## Key Conventions & Gotchas
 
