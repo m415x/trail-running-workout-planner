@@ -1,4 +1,9 @@
 import type { CompetitionPriority } from '@/types/training/competition-entry.types'
+import type {
+  IntensityEmphasis,
+  IntensityZone,
+  PamPercentage,
+} from '@/types/training/intensity.types'
 
 export type CompetitionAdjustmentStrategy =
   | 'full_taper'
@@ -179,4 +184,37 @@ export interface TaperElevationReductionCurve {
   readonly specificityFloorPercentage: number | null
   readonly requiresCoachReview: boolean
   readonly points: readonly TaperElevationCurvePoint[]
+}
+
+/** Existing weekly intensity target projected into H10 without redefining intensity semantics. */
+export interface TaperIntensityReference {
+  readonly emphasis: IntensityEmphasis
+  readonly intenseSessionsTarget: number
+  readonly predominantZone: IntensityZone
+  readonly pamPercentageTarget: PamPercentage | null
+  readonly minimumRecoveryDaysBetweenIntenseSessions: number
+}
+
+export type TaperIntensityReasonCode =
+  | 'no_formal_taper'
+  | 'brief_intensity_preserved'
+  | 'intense_session_count_reduced'
+  | 'existing_hr_zone_preserved'
+  | 'existing_pam_percentage_preserved'
+
+/**
+ * H10 proposal for retaining short quality stimuli while unloading total work.
+ *
+ * It deliberately reuses the existing HR-zone/PAM target model. Intensity
+ * magnitude is not multiplied by the taper volume curve; later session
+ * reconciliation reduces duration/repetitions/total work instead.
+ */
+export interface TaperIntensityPreservationDecision {
+  readonly priority: CompetitionPriority
+  readonly durationDays: number
+  readonly preserveBriefIntensityStimuli: boolean
+  readonly reference: TaperIntensityReference
+  readonly proposed: TaperIntensityReference
+  readonly requiresCoachReview: boolean
+  readonly reasonCodes: readonly TaperIntensityReasonCode[]
 }
