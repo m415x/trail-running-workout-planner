@@ -55,6 +55,13 @@ describe('snapshot competitivo histórico del macrociclo', () => {
       },
     }).planning
 
+    // The H9 generator supplies the competition date in its immutable snapshot.
+    // The legacy preview used by this persistence fixture predates that boundary,
+    // so the date is added explicitly to exercise the new persisted field.
+    if (planning.race) {
+      planning.race.date = '2026-03-01'
+    }
+
     persistProgression({
       groupTrainingPlanId: 'plan-1',
       macrocycleId: 'macro-1',
@@ -67,6 +74,7 @@ describe('snapshot competitivo histórico del macrociclo', () => {
       .get()
 
     assert.equal(saved?.targetRaceName, 'Carrera objetivo')
+    assert.equal(saved?.targetRaceDate, '2026-03-01')
     assert.equal(saved?.targetRaceDistanceKm, 21)
     assert.equal(saved?.targetRaceElevationGain, 900)
     assert.equal(saved?.taperingWeeksCount, 2)
@@ -75,6 +83,7 @@ describe('snapshot competitivo histórico del macrociclo', () => {
   it('una revisión explícita sin competencia reemplaza el snapshot anterior', () => {
     database.update(macrocycles).set({
       targetRaceName: 'Snapshot anterior',
+      targetRaceDate: '2026-03-01',
       targetRaceDistanceKm: 42,
       targetRaceElevationGain: 1_500,
       taperingWeeksCount: 3,
@@ -99,6 +108,7 @@ describe('snapshot competitivo histórico del macrociclo', () => {
       .get()
 
     assert.equal(saved?.targetRaceName, null)
+    assert.equal(saved?.targetRaceDate, null)
     assert.equal(saved?.targetRaceDistanceKm, null)
     assert.equal(saved?.targetRaceElevationGain, null)
     assert.equal(saved?.taperingWeeksCount, 0)
@@ -117,7 +127,7 @@ function createTestDatabase() {
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
       title TEXT NOT NULL, group_training_plan_id TEXT NOT NULL, start_date TEXT NOT NULL,
       end_date TEXT NOT NULL, tapering_weeks_count INTEGER, target_race_name TEXT,
-      target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT
+      target_race_date TEXT, target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT
     );
     CREATE TABLE mesocycles (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
