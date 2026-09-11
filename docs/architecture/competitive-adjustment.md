@@ -53,15 +53,7 @@ H9 boundaries remain authoritative:
 
 ## Units
 
-New and touched domain contracts must make units explicit:
-
-- `distanceKm`
-- `elevationGainM`
-- `elevationLossM` when available in the future
-- `durationDays` / `durationMinutes`
-- `achievedPeakElevationGainM`
-
-The existing `CompetitionContextEntry.elevationGain` and legacy generator fields are transitional. Rename them only through scoped migrations with tests; do not create parallel ambiguous fields casually.
+New and touched domain contracts must make units explicit: `distanceKm`, `elevationGainM`, optional `elevationLossM`, `durationDays` / `durationMinutes`, and `achievedPeakElevationGainM`.
 
 ## CompetitionAdjustmentPolicy
 
@@ -73,97 +65,45 @@ Priority expresses planning importance, not physiological cost. H10 centralizes 
 | B | `proportional_adjustment` | 0–7 | 0–40% | yes | no | `contextual` |
 | C | `specific_stimulus` | 0–3 | 0–20% | yes | yes | `minimal_interference` |
 
-These values are policy guardrails, not a direct prescription. Later H10 decisions refine duration and magnitude from course demand and reached load. Task-specific reduction curves belong to taper/reduction policies, not to generators.
+Priority modifies planning treatment; physiological recovery remains driven by event demand.
 
-All priorities preserve the option for brief intensity stimuli while training volume is reduced.
+## Course demand and future enrichment
 
-Post-competition planning protection must not be mistaken for physiological recovery duration. Recovery demand is assessed separately from priority; a high-demand C event remains physiologically demanding even when its role in the plan is secondary.
+H10 v1 uses `courseEffortKm = distanceKm + elevationGainM / 100` as a course-demand baseline, not as a direct taper or training-load formula. Future GPX/FIT ingestion may enrich `CourseProfile` with D−, gradients, altitude, technicality and expected duration without coupling track parsing to competitive-adjustment policies.
 
-Course demand constrains the plausible adjustment range; reached pre-competition load selects/refines the proposal within that range. Priority modifies planning treatment. Recovery need remains driven primarily by physiological/event demand.
+## Pre-competition load and taper
 
-## Course demand v1 and future enrichment
-
-H10 v1 can assess course demand from the data currently available:
-
-```text
-courseEffortKm = distanceKm + elevationGainM / 100
-```
-
-This is a course-demand baseline, not a direct taper-duration formula and not a training-load formula.
-
-Future GPX/FIT ingestion may enrich an upstream `CourseProfile` with D-, gradients, climbs/descents, altitude, technicality signals, and expected duration. Track parsing remains upstream; competitive-adjustment policies consume assessed domain data only.
-
-## Pre-competition load
-
-Do not use configured `maximumWeeklyVolumeKm` as a proxy for fatigue/load reached. H10 derives context from generated/persisted progression. A single peak is insufficient: recent average, peak, trend, reference window, and relative load remain representable for both volume and elevation as separate dimensions.
-
-The H10 contract uses `achievedPeakElevationGainM`; legacy generator-local names remain transitional until that generator is replaced.
-
-## Taper duration
-
-`determineTaperDuration()` returns a formal taper duration in calendar days plus rationale. Priority supplies hard guardrails, competition demand narrows the plausible section of that range, and reached recent load positions the proposal inside that section. Unknown/low-confidence course demand requires coach review rather than being interpreted as flat terrain.
-
-The old `0 | 2 | 3`-week generator remains compatibility-only while H10 policies are integrated.
-
-## Progressive volume reduction
-
-`calculateTaperVolumeReductionCurve()` produces a monotonic day-based reduction curve from the **recent reached average weekly volume**, not from configured maximum volume or race distance.
-
-The final reduction is derived from the priority guardrail and where the chosen taper duration sits within that priority's allowed duration range. H10 v1 uses a transparent linear progression from the start of the taper to the final pre-race reduction. Curve shape is isolated so it can be replaced later without changing callers.
-
-The curve returns `targetWeeklyEquivalentVolumeKm` for each taper day. This is a planning-equivalent value used by later impact-window/microcycle reconciliation; it is **not** a prescribed daily running distance. Competition distance is excluded from these targets.
-
-A zero-day B/C adjustment returns no taper-volume curve instead of fabricating a formal taper.
+H10 uses load actually reached rather than configured maximum volume. `determineTaperDuration()` returns calendar days inside priority guardrails; `calculateTaperVolumeReductionCurve()` and the elevation curve produce progressive planning-equivalent ceilings. A zero-day B/C adjustment produces no artificial formal taper.
 
 ## Race-week accounting
 
-Training load and competition load are structurally distinct in `CompetitionWeekLoad`.
+`CompetitionWeekLoad` keeps prescribed training structurally separate from event exposure. Derived total exposure is reporting/analysis data and is never written back as the training target.
 
-- `training.volumeKm` / `training.elevationGainM` represent only prescribed training in the competition week;
-- `competition.distanceKm` / `competition.elevationGainM` represent the event itself;
-- `totalExposure` is derived for reporting/analysis only and must never be written back as the training target;
-- if either training or competition D+ is unknown, derived total D+ remains `null` instead of assuming zero;
-- zero pre-race training remains a valid prescription while competition exposure is still represented explicitly.
+## Priority-specific proposals
 
-`buildCompetitionWeekLoad()` enforces this boundary. The legacy race microcycle note already said the race was excluded; H10 now makes that rule a domain contract rather than relying on free text.
-
-## Full taper proposal for priority A
-
-`buildFullCompetitionATaperProposal()` is the first composition boundary for the new H10 model. It accepts one A-priority competition, a normalized `CourseProfile`, reached pre-competition load, and the existing weekly intensity target. It then composes demand assessment, day-based taper duration, progressive volume/D+ reduction, brief-intensity preservation and separated race-week load.
-
-The resulting `FullCompetitionATaperProposal` is pure and reviewable. It does not write to the database, mutate microcycles, or bypass ownership/provenance rules. Short A races can resolve to fewer than 14 taper days, while high-demand marathon/ultra events can resolve to longer windows within the centralized 4–21 day A guardrail.
-
-## Proportional adjustment for priority B
-
-`buildCompetitionBAdjustmentProposal()` applies the same pure demand/load-aware building blocks under the B guardrails (0–7 formal taper days and 0–40% volume reduction), without promoting the event to a primary peak.
-
-The caller supplies the existing competition-week role and planned training target. A B race inside a development week may receive a mini-taper, but the taper target acts only as a ceiling over the already planned week. A B race near/in a recovery week therefore cannot increase volume or known D+ merely to satisfy a competition-specific target. If the B duration policy resolves to zero days, the existing training target is retained unchanged and the race exposure remains structurally separate.
-
-This is still a proposal boundary: no microcycle is persisted or rewritten here. Later impact-window reconciliation will decide how accepted changes interact with provenance, manual protection and neighboring competitions.
-
-## Specific-stimulus treatment for priority C
-
-`buildCompetitionCAdjustmentProposal()` keeps a C event secondary in planning role while preserving its assessed physiological demand. C uses the centralized 0–3 day / 0–20% guardrails and never becomes a primary peak.
-
-A C with `very_low`, `low`, or `moderate` assessed demand may act as a planned quality/specific stimulus when it is not embedded in a recovery week. In that case the competition replaces one planned intense training exposure rather than being added on top of the same weekly quality count; HR-zone/PAM semantics stay unchanged for any remaining training stimulus.
-
-A recovery week is never promoted to a quality week solely because it contains a C race. High/very-high/extreme C events are treated as minimal local adjustments, not as ordinary quality sessions, and they explicitly surface `physiologicalDemandRequiresRecoveryReview` for the post-competition policy. Priority C therefore never downgrades physiological cost.
-
-As with B, any taper-derived training target acts only as a ceiling over the existing planned week, and competition load remains separate through `CompetitionWeekLoad`. Unknown course demand triggers coach review rather than being assumed light enough to serve as training stimulus.
+`buildFullCompetitionATaperProposal()` composes the full A taper. `buildCompetitionBAdjustmentProposal()` applies proportional B adjustment without raising an already lighter recovery week. `buildCompetitionCAdjustmentProposal()` can treat low/moderate C events as specific quality stimuli while preserving their physiological demand; high-demand C events are never misclassified as trivial training.
 
 ## Post-competition recovery
 
-`decidePostCompetitionRecovery()` is deliberately independent from taper duration and from competitive importance. It maps assessed event demand to three possible recovery phases: `acute_recovery`, `recovery`, and `progressive_reentry`. Priority A/B/C only selects planning protection (`protected`, `contextual`, `minimal_interference`) for those phases.
+`decidePostCompetitionRecovery()` maps physiological demand to `acute_recovery`, `recovery` and `progressive_reentry`. A/B/C only changes planning protection. Known large D− can conservatively raise recovery demand; missing D− is not assumed to be zero. Unknown D+ requires coach review.
 
-V1 maps increasing course demand to progressively longer recovery and lower training-load ceilings. No intense training is automatically reintroduced inside the recovery decision; later reconciliation may resume quality only after the proposed reentry window or through explicit coach review.
+## Competition impact window and overlap
 
-Known `elevationLossM` is used conservatively as an eccentric-load signal: a clearly large descent can raise recovery demand by one band. Missing D− is never treated as zero physiological cost. The contract records whether downhill load and technicality are known so a future GPS/FIT-derived model can replace the coarse threshold with descent density, slope distribution, technicality, altitude and expected-duration signals without changing callers.
+`CompetitionImpactWindow` joins pre/race/post calendar ranges. B/C with zero taper omit `pre`. Overlap resolution uses A > B > C for incompatible pre/race planning, but physiological recovery is never discarded. A race scheduled during active recovery requires coach review.
 
-Unknown D+ produces unknown recovery demand and requires coach review rather than inventing a recovery duration from distance alone.
+## Local adjustment proposal
 
-## Ownership and reconciliation
+`buildCompetitionAdjustmentProposal()` previews only microcycles intersecting the impact window. It exposes current/proposed type, volume, D+, intensity allowance, rationale and overlap conflicts before persistence. Race-week training remains separate from competition exposure and recovery applies conservative ceilings.
 
-Reuse the Epic 2 ownership rule: generated state may be regenerated while explicit coach-owned/manual state is preserved. Protected values inside an impact window must surface conflicts instead of being silently overwritten.
+## Ownership and protected planning reconciliation
+
+Reuse the Epic 2 ownership rule: generated state may be regenerated while explicit coach-owned/manual state is preserved.
+
+`preserveProtectedCompetitionPlanning()` is a second pure reconciliation layer over `CompetitionAdjustmentProposal`. The caller supplies persisted ownership/protection metadata for affected microcycles. Existing `targetVolumeSource` / `targetElevationSource` semantics identify manual target values; structural flags identify protected microcycles/objectives and protected session IDs.
+
+When the competitive proposal would change a manual target or protected microcycle type, the current value is retained in the proposal. Objectives and sessions are not rewritten by this layer; their protection is surfaced explicitly. Every preservation emits a `protected_planning_preserved` conflict and forces coach review. Generated targets remain adjustable.
+
+This separation is intentional: KAN-219 answers “what would the competitive policy change?”, while KAN-220 answers “which proposed changes are coach-owned and therefore must not be silently applied?”. Persistence remains a later concern.
 
 Competition changes should produce a new local proposal. They must not trigger whole-macrocycle regeneration by default.
 
@@ -173,4 +113,4 @@ A competition can be rescheduled, reprioritized, or cancelled after an adjustmen
 
 ## Test migration strategy
 
-Existing tests that assert 2/3-week tapers and fixed factors remain regression coverage while compatibility exists. New H10 tests target pure policies first. Integration should be migrated only after policy contracts are stable, then legacy assertions can be retired deliberately rather than rewritten opportunistically.
+Existing legacy taper tests remain regression coverage while compatibility exists. New H10 tests target pure policies first. Integration should be migrated only after policy contracts are stable, then legacy assertions can be retired deliberately rather than rewritten opportunistically.
