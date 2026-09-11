@@ -47,6 +47,9 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Start with `docs/README.md` and the latest relevant file under
   `docs/handoffs/`; do not reconstruct completed histories from git or chat when
   the handoff already answers the question.
+- The active Epic 2 story is H10. Start competitive-adjustment work from
+  `docs/handoffs/epic-2-h10.md`; use the H9 handoff only for inherited
+  competition-context decisions.
 - Use `rg` to locate symbols and read bounded sections of relevant files. Avoid
   rereading whole directories after a localized change.
 - Use `C:\Users\lahoz\.local\bin\rtk.exe` explicitly for noisy read-only commands
@@ -55,10 +58,14 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Keep Codebase Memory optional. Never make builds, tests, or repository behavior
   depend on a local index or MCP server.
 - Run focused tests while implementing. Before each task handoff run the complete
-  `pnpm test`, `pnpm lint`, and `pnpm run build` checks; output compression must
-  not reduce test coverage.
+  `pnpm test`, `pnpm lint`, and `pnpm run build` checks when executing locally;
+  output compression must not reduce test coverage.
+- H10 is being delivered remote-first through GitHub/Jira. Do not require local
+  validation after every task; request it only when runtime, interactive, or
+  database behavior cannot be established reliably through remote review. The
+  full local gate remains mandatory before story merge.
 - Update durable architecture docs only when a domain decision changes. Replace
-  the current handoff when moving a history to a fresh Codex task; do not store
+  the current handoff when moving a history to a fresh task/context; do not store
   full conversation transcripts.
 
 ## Architecture & Directory Structure
@@ -82,6 +89,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `TrainingGoal` belongs to an individual athlete. Its race fields are legacy/individual context and are not the live competitive source for group periodization; a public race catalogue and athlete registration flow remain future work.
 - Live competitive planning context is owned by plan-scoped `CompetitionEntry` records. A/B/C priorities and explicit lifecycle state determine which events are relevant to planning.
 - `Macrocycle.targetRace*` is a historical snapshot of the primary competition used for an accepted generation/revision, not the live race entity. Live calendar edits must not silently rewrite that snapshot.
+- `CompetitionContext` is the pure competitive boundary consumed by periodization; new competitive behavior must not depend directly on Drizzle or `goalType === 'race'`.
+- H10 treats taper/recovery as local competitive adjustments. Competition priority controls planning treatment; physiological event demand remains a separate concern.
+- H10 must model taper duration in days rather than extending the legacy closed `0 | 2 | 3` week model.
+- Future GPX/FIT course analysis belongs upstream of competitive-adjustment policy. Taper/recovery policies consume assessed course demand, not track-file formats.
 - `memberships` reference `athleteProfiles`; group changes are recorded in `groupHistoryRecords` using group IDs.
 - Athlete category and level are derived from the assigned group. They are TypeScript value objects/constants, not configurable database tables.
 - The planning hierarchy is `GroupTrainingPlan -> Macrocycle -> Mesocycle -> Microcycle`.
@@ -95,6 +106,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Group management supports create/edit, duplicate, deactivate, and member listing.
 - Training goals retain optional race data for individual and legacy compatibility, while new competitive planning uses `CompetitionEntry`/`CompetitionContext`.
 - Planning generation creates and persists macrocycles, mesocycles, microcycles, target volumes, and taper phases when applicable. Taper is driven by `competitionContext.primaryCompetition`, not by the literal legacy `goalType = race` signal.
+- The current taper duration heuristic is intentionally considered legacy for H10: it is coarse, race-A-centric and still uses fixed thresholds. Audit it before replacement; do not deepen its authority with new H10 rules.
 - Persisted microcycles support volume, date, type, and notes edits.
 - Session create/edit requires at least one group prescription and preserves form data after validation errors.
 - Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
@@ -126,6 +138,9 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
 - Cohort session prescriptions, race registration, and automatic cohort proposals remain future work; do not infer them from the H7/H9 foundations.
 - Legacy plans may still carry `goalType = race` and `Macrocycle.targetRace*` without `CompetitionEntry` rows. Compatibility is isolated in `lib/periodization/legacy-competition-context.ts`; do not expand that fallback into new domain authority or reintroduce legacy goal type as the primary competitive trigger.
+- During H10, keep course demand, pre-competition training load, taper decision and post-competition recovery as distinct concepts. Do not collapse them into one generic load score.
+- Distance and elevation units must be explicit in newly modified domain contracts. Prefer names such as `distanceKm`, `elevationGainM`, and `durationMinutes`; when H10 touches the existing achieved elevation peak, rename `achievedPeakElevationGain` to `achievedPeakElevationGainM` consistently.
+- Do not reuse trail course-effort mathematics as a generic training-load formula. Volume and elevation remain separate training-load dimensions unless a future evidence-backed load model is introduced.
 
 ## Key Conventions & Gotchas
 
@@ -149,10 +164,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 ## Delivery Workflow
 
 - Work in a story branch and keep commits aligned with the current task.
-- Before each task commit, provide focused manual checks for the affected UI flow.
-- During implementation, prefer focused tests plus type checking and linting of the affected area.
-- Before handing an affected UI flow to the user, run the full validation gate when the task adds routes, server actions, persistence, shared domain behavior, or another structurally relevant change.
-- After the user completes the manual checks, do not repeat an unchanged full gate: confirm that the validated code has not changed, review the final diff, and commit it. If manual testing leads to any code change, rerun the full gate before committing.
+- Before each task commit, provide focused manual checks for the affected UI flow when manual verification is materially useful.
+- During implementation, prefer focused tests plus type checking and linting of the affected area where execution is available.
+- Before handing an affected UI flow to the user, run the full validation gate when the task adds routes, server actions, persistence, shared domain behavior, or another structurally relevant change and the environment supports it.
+- After the user completes manual checks, do not repeat an unchanged full gate: confirm that the validated code has not changed, review the final diff, and commit it. If manual testing leads to any code change, rerun the full gate before committing.
 - Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation. Build is also mandatory for other release-oriented merges.
 - Existing lint warnings should not be multiplied. New code must introduce no lint errors.
 - Push the story branch, validate the Vercel deployment, and only then merge it into `dashboard`.
