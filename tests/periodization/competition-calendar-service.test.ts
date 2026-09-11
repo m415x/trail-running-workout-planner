@@ -224,6 +224,7 @@ function createTestDatabase() {
       end_date TEXT NOT NULL,
       tapering_weeks_count INTEGER,
       target_race_name TEXT,
+      target_race_date TEXT,
       target_race_distance_km REAL,
       target_race_elevation_gain INTEGER,
       notes TEXT,
