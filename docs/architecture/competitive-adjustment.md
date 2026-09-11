@@ -109,7 +109,15 @@ When the competitive proposal would change a manual target or protected microcyc
 
 Review cannot overwrite fields preserved by KAN-220, cannot target microcycles outside the local proposal, and validates numeric target edits before producing an accepted artifact. An `accepted` decision cannot contain edits and an `adjusted` decision must contain at least one edit. The result is still pure and non-persistent; later reconciliation/persistence consumes this reviewed artifact.
 
-This separation is intentional: KAN-219 answers “what would the competitive policy change?”, KAN-220 answers “which proposed changes are coach-owned and therefore must not be silently applied?”, and KAN-221 answers “what did the coach explicitly accept or adjust?”. Persistence remains a later concern.
+## Local reconciliation and audit boundary
+
+`reconcileReviewedCompetitionAdjustment()` converts only the microcycles present in the reviewed competitive proposal into persistence-ready patches. It never expands the scope to the rest of the macrocycle, so state outside the accepted impact window is not part of the write set.
+
+For every value that actually changes, reconciliation also emits an audit record with plan, competition, microcycle, field, previous/new value, actor and provenance. Fields accepted from the generator remain `generated`; fields explicitly changed at the coach-review boundary remain `coach`. Unchanged values do not create modification records.
+
+The function remains pure. A database adapter must apply the returned patches and audit records transactionally; it must not regenerate the whole macrocycle. Existing `planning_modification_records` can carry the field/value/actor portion of this audit trail, while the reconciliation artifact preserves competition/provenance context until persistence storage is finalized.
+
+This separation is intentional: KAN-219 answers “what would the competitive policy change?”, KAN-220 answers “which proposed changes are coach-owned and therefore must not be silently applied?”, KAN-221 answers “what did the coach explicitly accept or adjust?”, and KAN-222 answers “what exact local write set and audit trail may persistence apply?”.
 
 Competition changes should produce a new local proposal. They must not trigger whole-macrocycle regeneration by default.
 
