@@ -35,9 +35,11 @@ inconsistency, or the origin of a domain rule is relevant to the task.
 - [Epic 2 / History 6 completed](handoffs/epic-2-h6.md)
 - [Epic 2 / History 7 completed](handoffs/epic-2-h7.md)
 - [Epic 2 / History 8 completed](handoffs/epic-2-h8.md)
+- [Epic 2 / History 9 active](handoffs/epic-2-h9.md)
 
 Handoffs describe the current operational state and are the primary starting
-point for continuing active implementation work.
+point for continuing active implementation work. The H9 handoff is the current
+source of continuity while KAN-200 and the remaining H9 tasks are completed.
 
 ## Maintenance rule
 
