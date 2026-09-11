@@ -44,6 +44,17 @@ function sourceWithCompetitions(): PlanningVariantSource {
       status: 'planned',
       description: null,
     },
+    {
+      id: 'competition-c',
+      groupTrainingPlanId: 'plan-base',
+      name: 'Trail C',
+      date: '2027-02-01',
+      distanceKm: 12,
+      elevationGainM: 450,
+      priority: 'C',
+      status: 'planned',
+      description: null,
+    },
   ]
 
   return {
@@ -106,6 +117,25 @@ describe('competition calendar cohort derivation', () => {
     })
     assert.equal(result.identityMap.competitionEntryIds['competition-b'], 'derived-2')
     assert.equal(result.identityMap.competitionEntryIds['competition-a'], undefined)
+  })
+
+  it('preserves A B C priorities when a cohort variant explicitly selects the full calendar', () => {
+    const result = derivePlanningCohortVariant({
+      source: sourceWithCompetitions(),
+      cohort,
+      title: 'Variante Patagonia',
+      selectedCompetitionEntryIds: ['competition-a', 'competition-b', 'competition-c'],
+      createId: ids(),
+    })
+
+    assert.deepEqual(
+      result.competitionEntries.map((entry) => entry.priority),
+      ['A', 'B', 'C'],
+    )
+    assert.equal(result.competitionEntries.every((entry) => (
+      entry.groupTrainingPlanId === result.plan.id
+    )), true)
+    assert.equal(result.plan.sourceGroupTrainingPlanId, 'plan-base')
   })
 
   it('creates an independent snapshot with no live synchronization to the source entry', () => {
