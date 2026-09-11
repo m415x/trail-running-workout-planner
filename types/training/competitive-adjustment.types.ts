@@ -43,3 +43,57 @@ export interface CompetitionPriorityAdjustmentPolicy {
    */
   readonly postCompetitionPlanningProtection: PostCompetitionPlanningProtection
 }
+
+export type CourseTechnicality = 'unknown' | 'low' | 'moderate' | 'high' | 'very_high'
+export type CourseProfileSource = 'manual' | 'gpx' | 'fit' | 'derived'
+
+/**
+ * Normalized course information consumed by demand assessment.
+ *
+ * H10 v1 only requires distance and can use D+ when known. Optional fields keep
+ * the contract ready for future GPX/FIT enrichment without coupling domain
+ * policy to track-file formats.
+ */
+export interface CourseProfile {
+  /** Course distance in kilometers. */
+  readonly distanceKm: number
+  /** Positive elevation gain in meters; null when unknown. */
+  readonly elevationGainM: number | null
+  /** Negative elevation loss in meters; optional until richer course data is available. */
+  readonly elevationLossM?: number | null
+  readonly minAltitudeM?: number | null
+  readonly maxAltitudeM?: number | null
+  readonly technicality?: CourseTechnicality
+  readonly source?: CourseProfileSource
+}
+
+export type CompetitionDemandBand =
+  | 'unknown'
+  | 'very_low'
+  | 'low'
+  | 'moderate'
+  | 'high'
+  | 'very_high'
+  | 'extreme'
+
+export type CompetitionDemandConfidence = 'low' | 'medium' | 'high'
+
+/**
+ * Course-demand assessment used by competitive-adjustment policy.
+ *
+ * `courseEffortKm` follows the distance + D+/100 baseline when D+ is known.
+ * It characterizes the course and must not be interpreted as taper days or as a
+ * generic training-load score.
+ */
+export interface CompetitionDemandAssessment {
+  readonly courseEffortKm: number | null
+  readonly band: CompetitionDemandBand
+  readonly confidence: CompetitionDemandConfidence
+  readonly profile: CourseProfile
+  readonly limitations: {
+    readonly elevationGainKnown: boolean
+    readonly elevationLossKnown: boolean
+    readonly altitudeProfileKnown: boolean
+    readonly technicalityKnown: boolean
+  }
+}
