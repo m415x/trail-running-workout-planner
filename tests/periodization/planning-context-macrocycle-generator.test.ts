@@ -39,10 +39,14 @@ describe('generación con intención y contexto competitivo separados', () => {
       loadStrategy: s2PerformanceStrategy,
       competitionContext: {
         primaryCompetition: {
+          id: 'competition-primary',
           name: 'Maratón de prueba',
+          date: '2026-03-29',
           distanceKm: 42,
           elevationGain: 1200,
+          priority: 'A',
         },
+        intermediateCompetitions: [],
       },
     })
 
