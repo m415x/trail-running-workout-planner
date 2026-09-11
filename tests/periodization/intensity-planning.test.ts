@@ -3,31 +3,64 @@ import { describe, it } from 'node:test'
 
 import { validateIntensityFeasibility } from '@/lib/periodization/intensity-feasibility-validator'
 import {
+  getIntensityStrategyRuleForPlanningIntent,
   INTENSITY_STRATEGY_MATRIX,
   PAM_PERCENTAGE_STEPS,
 } from '@/lib/periodization/intensity-strategy-matrix'
-import { suggestIntensityStrategyLimits } from '@/lib/periodization/intensity-strategy-limits'
+import {
+  suggestIntensityStrategyLimits,
+  suggestIntensityStrategyLimitsForPlanningIntent,
+} from '@/lib/periodization/intensity-strategy-limits'
 import {
   getNearestPamPercentageStep,
   proposeMicrocycleIntensity,
 } from '@/lib/periodization/microcycle-intensity-proposal'
 import { calculateMicrocycleIntensityTarget } from '@/lib/periodization/microcycle-intensity-target'
-import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
+import {
+  suggestIntensityStrategy,
+  suggestIntensityStrategyForPlanningIntent,
+} from '@/lib/periodization/intensity-strategy-recommender'
 import { applyManualMicrocycleIntensityChanges } from '@/lib/periodization/intensity-target-modifications'
 import { reconcileMicrocycleIntensityTarget } from '@/lib/periodization/intensity-target-regeneration'
 import type { MicrocycleIntensityTargetDraft } from '@/types'
 
 describe('planificación de intensidad', () => {
-  it('define una matriz exhaustiva con porcentajes PAM prácticos', () => {
+  it('define una matriz exhaustiva por intención con porcentajes PAM prácticos', () => {
     const rules = Object.values(INTENSITY_STRATEGY_MATRIX).flatMap((microcycles) => (
-      Object.values(microcycles).flatMap((goals) => Object.values(goals))
+      Object.values(microcycles).flatMap((intents) => Object.values(intents))
     ))
 
-    assert.equal(rules.length, 4 * 6 * 5)
+    assert.equal(rules.length, 4 * 6 * 3)
     assert.equal(rules.every((rule) => (
       rule.suggestedPamPercentage === null
       || (PAM_PERCENTAGE_STEPS as readonly number[]).includes(rule.suggestedPamPercentage)
     )), true)
+  })
+
+  it('race y performance legacy resuelven la misma política development', () => {
+    const race = suggestIntensityStrategy('S2', 'race')
+    const performance = suggestIntensityStrategy('S2', 'performance')
+    const development = suggestIntensityStrategyForPlanningIntent('S2', 'development', 'performance')
+
+    assert.deepEqual(race.values, performance.values)
+    assert.deepEqual(performance.values, development.values)
+    assert.deepEqual(
+      suggestIntensityStrategyLimits('S2', 'race'),
+      suggestIntensityStrategyLimits('S2', 'performance'),
+    )
+    assert.deepEqual(
+      suggestIntensityStrategyLimits('S2', 'performance'),
+      suggestIntensityStrategyLimitsForPlanningIntent('S2', 'development'),
+    )
+    assert.deepEqual(
+      getIntensityStrategyRuleForPlanningIntent('competitive', 'shock', 'development'),
+      {
+        emphasis: 'vo2max',
+        predominantZone: 'Z5',
+        intenseSessionDemand: 'high',
+        suggestedPamPercentage: 100,
+      },
+    )
   })
 
   it('limita más la intensidad en principiantes y objetivos de base', () => {
@@ -45,7 +78,7 @@ describe('planificación de intensidad', () => {
     )
   })
 
-  it('selecciona PAM para rendimiento y zonas para mantenimiento', () => {
+  it('selecciona PAM para desarrollo y zonas para mantenimiento', () => {
     assert.equal(suggestIntensityStrategy('S2', 'performance').values.defaultMethod, 'pam_percentage')
     assert.equal(suggestIntensityStrategy('S2', 'maintenance').values.defaultMethod, 'hr_zone')
   })
@@ -56,6 +89,7 @@ describe('planificación de intensidad', () => {
       period: 'competitive',
       microcycleType: 'shock',
       intensityStrategy: strategy,
+      planningIntent: 'development',
     })
 
     assert.equal(target.intenseSessionsTarget, 1)
@@ -63,13 +97,14 @@ describe('planificación de intensidad', () => {
     assert.equal(target.pamPercentageTarget, 100)
   })
 
-  it('protege descarga, taper y semana de carrera', () => {
-    const strategy = suggestIntensityStrategy('S1', 'race')
+  it('protege descarga, taper y semana de carrera sin depender de goalType race', () => {
+    const strategy = suggestIntensityStrategyForPlanningIntent('S1', 'development', 'performance')
     const calculate = (microcycleType: 'deload' | 'tapering' | 'race') => (
       calculateMicrocycleIntensityTarget({
         period: 'competitive',
         microcycleType,
         intensityStrategy: strategy,
+        planningIntent: 'development',
       })
     )
 
