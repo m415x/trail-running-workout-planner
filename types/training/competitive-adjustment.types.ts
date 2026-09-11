@@ -47,19 +47,10 @@ export interface CompetitionPriorityAdjustmentPolicy {
 export type CourseTechnicality = 'unknown' | 'low' | 'moderate' | 'high' | 'very_high'
 export type CourseProfileSource = 'manual' | 'gpx' | 'fit' | 'derived'
 
-/**
- * Normalized course information consumed by demand assessment.
- *
- * H10 v1 only requires distance and can use D+ when known. Optional fields keep
- * the contract ready for future GPX/FIT enrichment without coupling domain
- * policy to track-file formats.
- */
+/** Normalized course information consumed by demand assessment. */
 export interface CourseProfile {
-  /** Course distance in kilometers. */
   readonly distanceKm: number
-  /** Positive elevation gain in meters; null when unknown. */
   readonly elevationGainM: number | null
-  /** Negative elevation loss in meters; optional until richer course data is available. */
   readonly elevationLossM?: number | null
   readonly minAltitudeM?: number | null
   readonly maxAltitudeM?: number | null
@@ -78,13 +69,6 @@ export type CompetitionDemandBand =
 
 export type CompetitionDemandConfidence = 'low' | 'medium' | 'high'
 
-/**
- * Course-demand assessment used by competitive-adjustment policy.
- *
- * `courseEffortKm` follows the distance + D+/100 baseline when D+ is known.
- * It characterizes the course and must not be interpreted as taper days or as a
- * generic training-load score.
- */
 export interface CompetitionDemandAssessment {
   readonly courseEffortKm: number | null
   readonly band: CompetitionDemandBand
@@ -100,20 +84,11 @@ export interface CompetitionDemandAssessment {
 
 export type PreCompetitionLoadTrend = 'rising' | 'stable' | 'falling'
 
-/** Normalized one-week planning load used by pre-competition assessment. */
 export interface PreCompetitionWeekLoad {
-  /** Planned/reached training volume in kilometers. */
   readonly volumeKm: number
-  /** Planned/reached positive elevation gain in meters; null when not available. */
   readonly elevationGainM: number | null
 }
 
-/**
- * Load context immediately preceding a competitive-adjustment window.
- *
- * Volume and elevation remain separate dimensions. This context deliberately
- * avoids converting them into a single synthetic load score.
- */
 export interface PreCompetitionLoadContext {
   readonly referenceWindowWeeks: number
   readonly analyzedWeeks: number
@@ -138,13 +113,6 @@ export type TaperDecisionReasonCode =
   | 'elevation_load_available'
   | 'elevation_load_unknown'
 
-/**
- * Pure H10 decision for formal pre-competition taper duration.
- *
- * The decision remains bounded by priority policy. Course demand narrows the
- * plausible section of that range and reached load positions the proposal
- * within it. Rationale is data, not localized UI copy.
- */
 export interface TaperDurationDecision {
   readonly priority: CompetitionPriority
   readonly strategy: CompetitionAdjustmentStrategy
@@ -164,13 +132,6 @@ export interface TaperDurationDecision {
   }
 }
 
-/**
- * One calendar-day point in the pre-competition volume curve.
- *
- * `targetWeeklyEquivalentVolumeKm` remains expressed against the weekly
- * reference load so later window/microcycle reconciliation can aggregate the
- * day-based taper without pretending this value is a daily running distance.
- */
 export interface TaperVolumeCurvePoint {
   readonly dayNumber: number
   readonly daysBeforeCompetition: number
@@ -179,15 +140,43 @@ export interface TaperVolumeCurvePoint {
   readonly targetWeeklyEquivalentVolumeKm: number
 }
 
-/**
- * Progressive training-volume reduction for the formal taper window.
- * Competition distance is not included in these targets.
- */
 export interface TaperVolumeReductionCurve {
   readonly priority: CompetitionPriority
   readonly durationDays: number
-  /** Recent reached weekly volume used as the reduction reference, in kilometers. */
   readonly referenceVolumeKm: number
   readonly finalReductionPercentage: number
   readonly points: readonly TaperVolumeCurvePoint[]
+}
+
+export type TaperElevationSpecificity =
+  | 'unknown'
+  | 'flat_or_minimal'
+  | 'meaningful_vertical'
+  | 'high_vertical'
+
+/** One calendar-day point in the D+ taper curve, expressed as a weekly-equivalent target. */
+export interface TaperElevationCurvePoint {
+  readonly dayNumber: number
+  readonly daysBeforeCompetition: number
+  readonly reductionPercentage: number
+  readonly remainingElevationPercentage: number
+  readonly targetWeeklyEquivalentElevationGainM: number
+}
+
+/**
+ * Progressive D+ reduction kept independent from volume reduction.
+ *
+ * The curve unloads vertical work while retaining a bounded amount of specific
+ * climbing exposure when the target course has meaningful D+.
+ */
+export interface TaperElevationReductionCurve {
+  readonly priority: CompetitionPriority
+  readonly durationDays: number
+  readonly referenceElevationGainM: number | null
+  readonly courseVerticalDensityMPerKm: number | null
+  readonly specificity: TaperElevationSpecificity
+  readonly finalReductionPercentage: number | null
+  readonly specificityFloorPercentage: number | null
+  readonly requiresCoachReview: boolean
+  readonly points: readonly TaperElevationCurvePoint[]
 }
