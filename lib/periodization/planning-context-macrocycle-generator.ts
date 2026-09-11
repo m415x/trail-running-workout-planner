@@ -201,6 +201,7 @@ export function generateMacrocycleFromPlanningContext(
     race: primaryCompetition
       ? {
           name: primaryCompetition.name.trim(),
+          date: primaryCompetition.date,
           distanceKm: primaryCompetition.distanceKm,
           elevationGain: primaryCompetition.elevationGain,
         }
