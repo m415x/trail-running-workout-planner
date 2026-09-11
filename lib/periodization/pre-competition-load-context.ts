@@ -6,6 +6,11 @@ import type {
 
 export const DEFAULT_PRE_COMPETITION_REFERENCE_WEEKS = 4
 
+export interface PreCompetitionMicrocycleLoadSource {
+  readonly targetVolumeKm?: number | null
+  readonly targetElevationGain?: number | null
+}
+
 function average(values: readonly number[]) {
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 100) / 100
 }
@@ -29,6 +34,26 @@ function validateWeek(week: PreCompetitionWeekLoad, index: number) {
   ) {
     throw new Error(`elevationGainM for week ${index + 1} must be null or finite and non-negative.`)
   }
+}
+
+/**
+ * Normalizes current generated/persisted microcycle load fields into the H10
+ * explicit-unit contract. Legacy `targetElevationGain` is interpreted as meters
+ * only at this adapter boundary.
+ */
+export function normalizePreCompetitionMicrocycleLoads(
+  microcycles: readonly PreCompetitionMicrocycleLoadSource[],
+): PreCompetitionWeekLoad[] {
+  return microcycles.map((microcycle, index) => {
+    if (microcycle.targetVolumeKm === undefined || microcycle.targetVolumeKm === null) {
+      throw new Error(`targetVolumeKm for microcycle ${index + 1} is required.`)
+    }
+
+    return {
+      volumeKm: microcycle.targetVolumeKm,
+      elevationGainM: microcycle.targetElevationGain ?? null,
+    }
+  })
 }
 
 /**
@@ -73,4 +98,17 @@ export function derivePreCompetitionLoadContext(
       knownWeeks: elevationValues.length,
     },
   }
+}
+
+/**
+ * Convenience boundary for current macrocycle/microcycle storage shapes.
+ */
+export function derivePreCompetitionLoadContextFromMicrocycles(
+  microcycles: readonly PreCompetitionMicrocycleLoadSource[],
+  referenceWindowWeeks = DEFAULT_PRE_COMPETITION_REFERENCE_WEEKS,
+): PreCompetitionLoadContext {
+  return derivePreCompetitionLoadContext(
+    normalizePreCompetitionMicrocycleLoads(microcycles),
+    referenceWindowWeeks,
+  )
 }
