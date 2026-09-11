@@ -103,7 +103,13 @@ Reuse the Epic 2 ownership rule: generated state may be regenerated while explic
 
 When the competitive proposal would change a manual target or protected microcycle type, the current value is retained in the proposal. Objectives and sessions are not rewritten by this layer; their protection is surfaced explicitly. Every preservation emits a `protected_planning_preserved` conflict and forces coach review. Generated targets remain adjustable.
 
-This separation is intentional: KAN-219 answers “what would the competitive policy change?”, while KAN-220 answers “which proposed changes are coach-owned and therefore must not be silently applied?”. Persistence remains a later concern.
+## Coach review boundary
+
+`reviewCompetitionAdjustmentProposal()` is the explicit approval boundary after protection reconciliation and before persistence. The coach can either accept the protected proposal unchanged or submit explicit edits for affected microcycles. Accepted values retain `generated` provenance; only fields explicitly edited during review become `coach` owned in the resulting review artifact.
+
+Review cannot overwrite fields preserved by KAN-220, cannot target microcycles outside the local proposal, and validates numeric target edits before producing an accepted artifact. An `accepted` decision cannot contain edits and an `adjusted` decision must contain at least one edit. The result is still pure and non-persistent; later reconciliation/persistence consumes this reviewed artifact.
+
+This separation is intentional: KAN-219 answers “what would the competitive policy change?”, KAN-220 answers “which proposed changes are coach-owned and therefore must not be silently applied?”, and KAN-221 answers “what did the coach explicitly accept or adjust?”. Persistence remains a later concern.
 
 Competition changes should produce a new local proposal. They must not trigger whole-macrocycle regeneration by default.
 
