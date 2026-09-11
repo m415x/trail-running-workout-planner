@@ -192,7 +192,7 @@ function createTestDatabase() {
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
       title TEXT NOT NULL, group_training_plan_id TEXT NOT NULL, start_date TEXT NOT NULL,
       end_date TEXT NOT NULL, tapering_weeks_count INTEGER, target_race_name TEXT,
-      target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT
+      target_race_date TEXT, target_race_distance_km REAL, target_race_elevation_gain INTEGER, notes TEXT
     );
     CREATE TABLE mesocycles (
       id TEXT PRIMARY KEY, created_at TEXT, updated_at TEXT, is_deleted INTEGER NOT NULL DEFAULT 0,
