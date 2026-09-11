@@ -1,0 +1,1 @@
+ALTER TABLE "macrocycles" ADD COLUMN "target_race_date" text;
