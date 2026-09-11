@@ -163,3 +163,31 @@ export interface TaperDurationDecision {
     readonly reasonCodes: readonly TaperDecisionReasonCode[]
   }
 }
+
+/**
+ * One calendar-day point in the pre-competition volume curve.
+ *
+ * `targetWeeklyEquivalentVolumeKm` remains expressed against the weekly
+ * reference load so later window/microcycle reconciliation can aggregate the
+ * day-based taper without pretending this value is a daily running distance.
+ */
+export interface TaperVolumeCurvePoint {
+  readonly dayNumber: number
+  readonly daysBeforeCompetition: number
+  readonly reductionPercentage: number
+  readonly remainingVolumePercentage: number
+  readonly targetWeeklyEquivalentVolumeKm: number
+}
+
+/**
+ * Progressive training-volume reduction for the formal taper window.
+ * Competition distance is not included in these targets.
+ */
+export interface TaperVolumeReductionCurve {
+  readonly priority: CompetitionPriority
+  readonly durationDays: number
+  /** Recent reached weekly volume used as the reduction reference, in kilometers. */
+  readonly referenceVolumeKm: number
+  readonly finalReductionPercentage: number
+  readonly points: readonly TaperVolumeCurvePoint[]
+}
