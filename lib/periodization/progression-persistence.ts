@@ -13,10 +13,18 @@ import type { GeneratedMacrocycleDraft } from '@/types'
 
 const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
 
+export type CompetitionSnapshotPersistenceMode = 'replace' | 'preserve'
+
 export interface PersistProgressionParams {
   groupTrainingPlanId: string
   macrocycleId: string
   planning: GeneratedMacrocycleDraft
+  /**
+   * `replace` persists the planning result as the new historical competitive
+   * snapshot. `preserve` updates only training progression and leaves the
+   * previously accepted competition/taper snapshot untouched.
+   */
+  competitionSnapshotMode?: CompetitionSnapshotPersistenceMode
   database?: typeof db
 }
 
@@ -32,6 +40,7 @@ export function persistProgression({
   groupTrainingPlanId,
   macrocycleId,
   planning,
+  competitionSnapshotMode = 'replace',
   database = db,
 }: PersistProgressionParams): PersistProgressionResult {
   assertPersistablePlanning(planning)
@@ -204,15 +213,19 @@ export function persistProgression({
       .run()
 
     // Competition data is copied only when this explicit planning persistence
-    // boundary runs. Calendar edits therefore cannot silently rewrite the
-    // historical context that produced an already persisted macrocycle.
+    // boundary is allowed to replace the historical snapshot. Load-only saves
+    // can preserve the accepted snapshot while still updating progression.
     tx.update(macrocycles)
       .set({
-        taperingWeeksCount: planning.taperingWeeksCount,
-        targetRaceName: planning.race?.name ?? null,
-        targetRaceDate: planning.race?.date ?? null,
-        targetRaceDistanceKm: planning.race?.distanceKm ?? null,
-        targetRaceElevationGain: planning.race?.elevationGain ?? null,
+        ...(competitionSnapshotMode === 'replace'
+          ? {
+              taperingWeeksCount: planning.taperingWeeksCount,
+              targetRaceName: planning.race?.name ?? null,
+              targetRaceDate: planning.race?.date ?? null,
+              targetRaceDistanceKm: planning.race?.distanceKm ?? null,
+              targetRaceElevationGain: planning.race?.elevationGain ?? null,
+            }
+          : {}),
         updatedAt: now,
       })
       .where(eq(macrocycles.id, macrocycleId))
