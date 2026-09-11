@@ -4,6 +4,7 @@ import { describe, it } from 'node:test'
 import {
   DEFAULT_PRE_COMPETITION_REFERENCE_WEEKS,
   derivePreCompetitionLoadContext,
+  derivePreCompetitionLoadContextFromMicrocycles,
 } from '@/lib/periodization/pre-competition-load-context'
 
 describe('pre-competition load context', () => {
@@ -75,6 +76,29 @@ describe('pre-competition load context', () => {
     assert.equal(result.volume.recentAverageKm, 42.5)
     assert.equal(result.volume.achievedPeakVolumeKm, 45)
     assert.equal(result.elevation.recentAverageGainM, 1_000)
+  })
+
+  it('normalizes current microcycle fields at an explicit-unit adapter boundary', () => {
+    const result = derivePreCompetitionLoadContextFromMicrocycles([
+      { targetVolumeKm: 42, targetElevationGain: 1_100 },
+      { targetVolumeKm: 46, targetElevationGain: 1_300 },
+      { targetVolumeKm: 50, targetElevationGain: 1_500 },
+      { targetVolumeKm: 54, targetElevationGain: 1_700 },
+    ])
+
+    assert.equal(result.volume.achievedPeakVolumeKm, 54)
+    assert.equal(result.elevation.achievedPeakElevationGainM, 1_700)
+    assert.equal(result.volume.trend, 'rising')
+    assert.equal(result.elevation.trend, 'rising')
+  })
+
+  it('rejects missing persisted volume instead of silently treating it as zero', () => {
+    assert.throws(
+      () => derivePreCompetitionLoadContextFromMicrocycles([
+        { targetVolumeKm: null, targetElevationGain: 500 },
+      ]),
+      /targetVolumeKm/,
+    )
   })
 
   it('rejects invalid reference windows and negative load values', () => {
