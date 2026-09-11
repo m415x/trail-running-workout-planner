@@ -117,7 +117,15 @@ A zero-day B/C adjustment returns no taper-volume curve instead of fabricating a
 
 ## Race-week accounting
 
-Training load and competition load are distinct. The legacy generator already notes that the race is excluded from the race-week training target; H10 must make this separation structural rather than relying on notes.
+Training load and competition load are structurally distinct in `CompetitionWeekLoad`.
+
+- `training.volumeKm` / `training.elevationGainM` represent only prescribed training in the competition week;
+- `competition.distanceKm` / `competition.elevationGainM` represent the event itself;
+- `totalExposure` is derived for reporting/analysis only and must never be written back as the training target;
+- if either training or competition D+ is unknown, derived total D+ remains `null` instead of assuming zero;
+- zero pre-race training remains a valid prescription while competition exposure is still represented explicitly.
+
+`buildCompetitionWeekLoad()` enforces this boundary. The legacy race microcycle note already said the race was excluded; H10 now makes that rule a domain contract rather than relying on free text.
 
 ## Ownership and reconciliation
 
