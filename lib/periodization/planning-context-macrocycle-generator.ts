@@ -134,7 +134,7 @@ export function generateMacrocycleFromPlanningContext(
     fail('MACROCYCLE_MIN_DURATION')
   }
 
-  const primaryCompetition = params.competitionContext?.primaryCompetition
+  const primaryCompetition = params.competitionContext?.primaryCompetition ?? undefined
   const taperingWeeksCount = determineTaperingWeeksCount(
     params.athleteGroup,
     primaryCompetition,
