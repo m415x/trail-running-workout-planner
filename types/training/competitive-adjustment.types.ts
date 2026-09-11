@@ -129,3 +129,37 @@ export interface PreCompetitionLoadContext {
     readonly knownWeeks: number
   }
 }
+
+export type TaperDecisionReasonCode =
+  | 'priority_guardrail'
+  | 'course_demand'
+  | 'course_demand_unknown'
+  | 'reached_load'
+  | 'elevation_load_available'
+  | 'elevation_load_unknown'
+
+/**
+ * Pure H10 decision for formal pre-competition taper duration.
+ *
+ * The decision remains bounded by priority policy. Course demand narrows the
+ * plausible section of that range and reached load positions the proposal
+ * within it. Rationale is data, not localized UI copy.
+ */
+export interface TaperDurationDecision {
+  readonly priority: CompetitionPriority
+  readonly strategy: CompetitionAdjustmentStrategy
+  readonly durationDays: number
+  readonly policyLimitsDays: NumericRange
+  readonly demandPositionRange: NumericRange
+  readonly reachedLoadPosition: number
+  readonly requiresCoachReview: boolean
+  readonly rationale: {
+    readonly demandBand: CompetitionDemandBand
+    readonly demandConfidence: CompetitionDemandConfidence
+    readonly volumeTrend: PreCompetitionLoadTrend
+    readonly elevationTrend: PreCompetitionLoadTrend | null
+    readonly volumeSustainedLoadRatio: number
+    readonly elevationSustainedLoadRatio: number | null
+    readonly reasonCodes: readonly TaperDecisionReasonCode[]
+  }
+}
