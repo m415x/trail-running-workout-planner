@@ -151,6 +151,16 @@ A recovery week is never promoted to a quality week solely because it contains a
 
 As with B, any taper-derived training target acts only as a ceiling over the existing planned week, and competition load remains separate through `CompetitionWeekLoad`. Unknown course demand triggers coach review rather than being assumed light enough to serve as training stimulus.
 
+## Post-competition recovery
+
+`decidePostCompetitionRecovery()` is deliberately independent from taper duration and from competitive importance. It maps assessed event demand to three possible recovery phases: `acute_recovery`, `recovery`, and `progressive_reentry`. Priority A/B/C only selects planning protection (`protected`, `contextual`, `minimal_interference`) for those phases.
+
+V1 maps increasing course demand to progressively longer recovery and lower training-load ceilings. No intense training is automatically reintroduced inside the recovery decision; later reconciliation may resume quality only after the proposed reentry window or through explicit coach review.
+
+Known `elevationLossM` is used conservatively as an eccentric-load signal: a clearly large descent can raise recovery demand by one band. Missing D− is never treated as zero physiological cost. The contract records whether downhill load and technicality are known so a future GPS/FIT-derived model can replace the coarse threshold with descent density, slope distribution, technicality, altitude and expected-duration signals without changing callers.
+
+Unknown D+ produces unknown recovery demand and requires coach review rather than inventing a recovery duration from distance alone.
+
 ## Ownership and reconciliation
 
 Reuse the Epic 2 ownership rule: generated state may be regenerated while explicit coach-owned/manual state is preserved. Protected values inside an impact window must surface conflicts instead of being silently overwritten.
