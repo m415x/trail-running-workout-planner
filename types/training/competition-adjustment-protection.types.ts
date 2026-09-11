@@ -19,6 +19,8 @@ export type CompetitionAdjustmentProtectionReason =
 
 export interface CompetitionAdjustmentProtectedState {
   readonly microcycleId: string
+  readonly targetVolumeSource?: TargetValueSource
+  readonly targetElevationSource?: TargetValueSource
   readonly protectMicrocycle?: boolean
   readonly protectObjective?: boolean
   readonly protectedSessionIds?: readonly string[]
@@ -29,6 +31,7 @@ export interface CompetitionAdjustmentProtectionConflict {
   readonly microcycleId: string
   readonly field: ProtectedCompetitionAdjustmentField
   readonly reason: CompetitionAdjustmentProtectionReason
+  readonly relatedEntityIds: readonly string[]
   readonly messageKey: 'competitionAdjustment.conflicts.protectedPlanningPreserved'
 }
 
@@ -50,10 +53,4 @@ export interface ProtectedCompetitionAdjustmentProposal
   readonly affectedMicrocycles: readonly ProtectedCompetitionMicrocycleAdjustmentPreview[]
   readonly protectionConflicts: readonly CompetitionAdjustmentProtectionConflict[]
   readonly requiresCoachReview: boolean
-}
-
-/** Explicit ownership metadata already present on microcycle target values. */
-export interface CompetitionAdjustmentTargetOwnership {
-  readonly targetVolumeSource: TargetValueSource
-  readonly targetElevationSource: TargetValueSource
 }
