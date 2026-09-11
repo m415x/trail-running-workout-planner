@@ -251,3 +251,31 @@ export interface CompetitionWeekLoad {
     readonly elevationGainM: number | null
   }
 }
+
+/** Inputs for the pure full-taper proposal of one primary A competition. */
+export interface FullCompetitionATaperInput {
+  readonly competition: CompetitionWeekCompetitionLoad
+  readonly courseProfile: CourseProfile
+  readonly preCompetitionLoad: PreCompetitionLoadContext
+  readonly intensityReference: TaperIntensityReference
+}
+
+/**
+ * Pure, reviewable H10 proposal for a primary A competition.
+ *
+ * Nothing in this object mutates or persists microcycles. It composes the
+ * demand/load-aware taper policies so later impact-window reconciliation can
+ * decide how to apply the proposal while preserving coach-owned state.
+ */
+export interface FullCompetitionATaperProposal {
+  readonly priority: 'A'
+  readonly competitionId: string
+  readonly competitionDate: string
+  readonly demand: CompetitionDemandAssessment
+  readonly duration: TaperDurationDecision
+  readonly volumeCurve: TaperVolumeReductionCurve
+  readonly elevationCurve: TaperElevationReductionCurve
+  readonly intensity: TaperIntensityPreservationDecision
+  readonly competitionWeek: CompetitionWeekLoad
+  readonly requiresCoachReview: boolean
+}
