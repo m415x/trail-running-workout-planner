@@ -127,6 +127,21 @@ Training load and competition load are structurally distinct in `CompetitionWeek
 
 `buildCompetitionWeekLoad()` enforces this boundary. The legacy race microcycle note already said the race was excluded; H10 now makes that rule a domain contract rather than relying on free text.
 
+## Full taper proposal for priority A
+
+`buildFullCompetitionATaperProposal()` is the first composition boundary for the new H10 model. It accepts one A-priority competition, a normalized `CourseProfile`, reached pre-competition load, and the existing weekly intensity target. It then composes:
+
+1. `CompetitionDemandAssessment`;
+2. day-based `TaperDurationDecision`;
+3. progressive volume reduction;
+4. independent D+ reduction with terrain specificity;
+5. brief-intensity preservation using the existing HR-zone/PAM semantics;
+6. structurally separated competition-week training and race exposure.
+
+The resulting `FullCompetitionATaperProposal` is pure and reviewable. It does not write to the database, mutate microcycles, or bypass ownership/provenance rules. Short A races can resolve to fewer than 14 taper days, while high-demand marathon/ultra events can resolve to longer windows within the centralized 4–21 day A guardrail.
+
+The final pre-race points of the volume and D+ curves supply the training side of `CompetitionWeekLoad`; the competition itself stays separate. Unknown/low-confidence course inputs propagate `requiresCoachReview` instead of being silently normalized.
+
 ## Ownership and reconciliation
 
 Reuse the Epic 2 ownership rule: generated state may be regenerated while explicit coach-owned/manual state is preserved. Protected values inside an impact window must surface conflicts instead of being silently overwritten.
