@@ -125,7 +125,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Intensity method defaults and propagation across groups are also future automation work; preserve the current manual override capability.
 - Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
 - Cohort session prescriptions, race registration, and automatic cohort proposals remain future work; do not infer them from the H7/H9 foundations.
-- Legacy plans may still carry `goalType = race` and `Macrocycle.targetRace*` without `CompetitionEntry` rows. Keep that fallback isolated in the KAN-200 compatibility adapter; do not reintroduce legacy goal type as the primary competitive trigger.
+- Legacy plans may still carry `goalType = race` and `Macrocycle.targetRace*` without `CompetitionEntry` rows. Compatibility is isolated in `lib/periodization/legacy-competition-context.ts`; do not expand that fallback into new domain authority or reintroduce legacy goal type as the primary competitive trigger.
 
 ## Key Conventions & Gotchas
 
