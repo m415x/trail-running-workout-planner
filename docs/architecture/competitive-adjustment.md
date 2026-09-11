@@ -129,18 +129,17 @@ Training load and competition load are structurally distinct in `CompetitionWeek
 
 ## Full taper proposal for priority A
 
-`buildFullCompetitionATaperProposal()` is the first composition boundary for the new H10 model. It accepts one A-priority competition, a normalized `CourseProfile`, reached pre-competition load, and the existing weekly intensity target. It then composes:
-
-1. `CompetitionDemandAssessment`;
-2. day-based `TaperDurationDecision`;
-3. progressive volume reduction;
-4. independent D+ reduction with terrain specificity;
-5. brief-intensity preservation using the existing HR-zone/PAM semantics;
-6. structurally separated competition-week training and race exposure.
+`buildFullCompetitionATaperProposal()` is the first composition boundary for the new H10 model. It accepts one A-priority competition, a normalized `CourseProfile`, reached pre-competition load, and the existing weekly intensity target. It then composes demand assessment, day-based taper duration, progressive volume/D+ reduction, brief-intensity preservation and separated race-week load.
 
 The resulting `FullCompetitionATaperProposal` is pure and reviewable. It does not write to the database, mutate microcycles, or bypass ownership/provenance rules. Short A races can resolve to fewer than 14 taper days, while high-demand marathon/ultra events can resolve to longer windows within the centralized 4–21 day A guardrail.
 
-The final pre-race points of the volume and D+ curves supply the training side of `CompetitionWeekLoad`; the competition itself stays separate. Unknown/low-confidence course inputs propagate `requiresCoachReview` instead of being silently normalized.
+## Proportional adjustment for priority B
+
+`buildCompetitionBAdjustmentProposal()` applies the same pure demand/load-aware building blocks under the B guardrails (0–7 formal taper days and 0–40% volume reduction), without promoting the event to a primary peak.
+
+The caller supplies the existing competition-week role and planned training target. A B race inside a development week may receive a mini-taper, but the taper target acts only as a ceiling over the already planned week. A B race near/in a recovery week therefore cannot increase volume or known D+ merely to satisfy a competition-specific target. If the B duration policy resolves to zero days, the existing training target is retained unchanged and the race exposure remains structurally separate.
+
+This is still a proposal boundary: no microcycle is persisted or rewritten here. Later impact-window reconciliation will decide how accepted changes interact with provenance, manual protection and neighboring competitions.
 
 ## Ownership and reconciliation
 
