@@ -1,8 +1,10 @@
+import { resolveLegacyPlanningIntent } from '@/lib/periodization/planning-intent'
+
 import type {
-  IntensityStrategyMatrix,
   IntensityStrategyRule,
   MicrocycleType,
   PeriodType,
+  PlanningIntent,
   TrainingGoalType,
 } from '@/types'
 
@@ -25,12 +27,10 @@ const MICROCYCLE_TYPES: readonly MicrocycleType[] = [
   'race',
 ]
 
-const GOAL_TYPES: readonly TrainingGoalType[] = [
-  'race',
-  'performance',
+const PLANNING_INTENTS: readonly PlanningIntent[] = [
+  'development',
   'base',
   'maintenance',
-  'custom',
 ]
 
 const DELOAD_RULE = rule('recovery', 'Z1', 'none', null)
@@ -83,14 +83,14 @@ function rule(
 }
 
 /**
- * Applies the group objective without turning the matrix into session-level
- * prescriptions. Base and maintenance goals stay deliberately conservative.
+ * Applies the group planning intent without coupling intensity to competitions.
+ * Base and maintenance intents stay deliberately conservative.
  */
-function adaptRuleToGoal(
+function adaptRuleToPlanningIntent(
   baseRule: IntensityStrategyRule,
-  goalType: TrainingGoalType,
+  planningIntent: PlanningIntent,
 ): IntensityStrategyRule {
-  if (goalType !== 'base' && goalType !== 'maintenance') {
+  if (planningIntent === 'development') {
     return { ...baseRule }
   }
 
@@ -109,7 +109,12 @@ function adaptRuleToGoal(
   return { ...baseRule }
 }
 
-function buildIntensityStrategyMatrix(): IntensityStrategyMatrix {
+type PlanningIntentIntensityMatrix = Record<
+  PeriodType,
+  Record<MicrocycleType, Record<PlanningIntent, IntensityStrategyRule>>
+>
+
+function buildIntensityStrategyMatrix(): PlanningIntentIntensityMatrix {
   return Object.fromEntries(
     PERIODS.map((period) => [
       period,
@@ -117,24 +122,40 @@ function buildIntensityStrategyMatrix(): IntensityStrategyMatrix {
         MICROCYCLE_TYPES.map((microcycleType) => [
           microcycleType,
           Object.fromEntries(
-            GOAL_TYPES.map((goalType) => [
-              goalType,
-              adaptRuleToGoal(BASE_RULES[period][microcycleType], goalType),
+            PLANNING_INTENTS.map((planningIntent) => [
+              planningIntent,
+              adaptRuleToPlanningIntent(BASE_RULES[period][microcycleType], planningIntent),
             ]),
           ),
         ]),
       ),
     ]),
-  ) as IntensityStrategyMatrix
+  ) as PlanningIntentIntensityMatrix
 }
 
 export const INTENSITY_STRATEGY_MATRIX = buildIntensityStrategyMatrix()
 
-/** Returns a detached rule so callers cannot mutate the shared matrix. */
+/** Returns a detached rule using the H9 planning authority. */
+export function getIntensityStrategyRuleForPlanningIntent(
+  period: PeriodType,
+  microcycleType: MicrocycleType,
+  planningIntent: PlanningIntent,
+): IntensityStrategyRule {
+  return { ...INTENSITY_STRATEGY_MATRIX[period][microcycleType][planningIntent] }
+}
+
+/**
+ * Legacy compatibility wrapper. A persisted `race` value maps to development
+ * and cannot select a separate intensity policy.
+ */
 export function getIntensityStrategyRule(
   period: PeriodType,
   microcycleType: MicrocycleType,
   goalType: TrainingGoalType,
 ): IntensityStrategyRule {
-  return { ...INTENSITY_STRATEGY_MATRIX[period][microcycleType][goalType] }
+  return getIntensityStrategyRuleForPlanningIntent(
+    period,
+    microcycleType,
+    resolveLegacyPlanningIntent(goalType),
+  )
 }
