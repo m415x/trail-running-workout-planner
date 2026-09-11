@@ -1,7 +1,10 @@
+import { resolveLegacyPlanningIntent } from '@/lib/periodization/planning-intent'
+
 import type {
   AthleteGroupCode,
   AthleteLevelCode,
   IntensityStrategyLimits,
+  PlanningIntent,
   TrainingGoalType,
 } from '@/types'
 
@@ -16,12 +19,10 @@ const MAXIMUM_INTENSE_SESSIONS_BY_LEVEL: Record<AthleteLevelCode, number> = {
   '3': 1,
 }
 
-const MAXIMUM_INTENSE_SESSIONS_BY_GOAL: Record<TrainingGoalType, number> = {
-  race: 2,
-  performance: 2,
+const MAXIMUM_INTENSE_SESSIONS_BY_INTENT: Record<PlanningIntent, number> = {
+  development: 2,
   base: 1,
   maintenance: 1,
-  custom: 2,
 }
 
 const MINIMUM_RECOVERY_DAYS_BY_LEVEL: Record<AthleteLevelCode, number> = {
@@ -36,24 +37,35 @@ export interface IntensityLimitsValidationResult {
 }
 
 /**
- * Suggests conservative weekly limits from the group level and objective.
+ * Suggests conservative weekly limits from the group level and planning intent.
  *
  * One recovery day means one complete calendar day between intense sessions;
  * for example, Tuesday and Thursday have Wednesday as their recovery day.
  */
-export function suggestIntensityStrategyLimits(
+export function suggestIntensityStrategyLimitsForPlanningIntent(
   athleteGroup: AthleteGroupCode,
-  goalType: TrainingGoalType,
+  planningIntent: PlanningIntent,
 ): IntensityStrategyLimits {
   const levelCode = athleteGroup[1] as AthleteLevelCode
 
   return {
     maximumIntenseSessionsPerWeek: Math.min(
       MAXIMUM_INTENSE_SESSIONS_BY_LEVEL[levelCode],
-      MAXIMUM_INTENSE_SESSIONS_BY_GOAL[goalType],
+      MAXIMUM_INTENSE_SESSIONS_BY_INTENT[planningIntent],
     ),
     minimumRecoveryDaysBetweenIntenseSessions: MINIMUM_RECOVERY_DAYS_BY_LEVEL[levelCode],
   }
+}
+
+/** Legacy compatibility wrapper; race-specific authority is intentionally absent. */
+export function suggestIntensityStrategyLimits(
+  athleteGroup: AthleteGroupCode,
+  goalType: TrainingGoalType,
+): IntensityStrategyLimits {
+  return suggestIntensityStrategyLimitsForPlanningIntent(
+    athleteGroup,
+    resolveLegacyPlanningIntent(goalType),
+  )
 }
 
 /** Validates absolute limits before strategy or weekly calculations use them. */
