@@ -55,6 +55,7 @@ function buildMicrocycle({
       targetDurationMin: duration,
     },
     intensityTarget: null,
+    competitiveAdjustmentValueSources: null,
     sessions: prescriptions.map((prescriptionCount, sessionIndex) => ({
       session: {
         ...baseEntity,
