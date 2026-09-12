@@ -149,11 +149,11 @@ describe('reconciliación parcial integral', () => {
       current,
       proposed,
       decisions: [{
-        blockId: 'macrocycle:macrocycle:id:macro-1',
+        blockId: 'macrocycle:macrocycle:generation:plan-variant:ordinal:1',
         decision: 'accept',
         provenance: coach,
       }, {
-        blockId: 'macrocycle:macrocycle:id:macro-2',
+        blockId: 'macrocycle:macrocycle:generation:plan-variant:ordinal:2',
         decision: 'reject',
         provenance: { ...coach, reason: 'Mantener segunda semana' },
       }],
@@ -166,12 +166,12 @@ describe('reconciliación parcial integral', () => {
       endDate: '2026-01-11',
     })
     assert.deepEqual(result.operations.map(({ identity }) => identity), [
-      'microcycle:id:micro-1',
+      'microcycle:generation:plan-variant:week:1',
       'prescription:generation:plan-variant::micro-1::group-1::wednesday',
       'session:generation:plan-variant::micro-1::wednesday',
     ])
     assert.equal(
-      result.operations.some(({ identity }) => identity === 'microcycle:id:micro-2'),
+      result.operations.some(({ identity }) => identity === 'microcycle:generation:plan-variant:week:2'),
       false,
     )
     assert.equal(result.planningOperations.length, 1)
@@ -179,7 +179,7 @@ describe('reconciliación parcial integral', () => {
     assert.equal(result.prescriptionOperations.length, 1)
     assert.equal(result.competitionOperations.length, 0)
     assert.deepEqual(result.rejectedBlockIds, [
-      'macrocycle:macrocycle:id:macro-2',
+      'macrocycle:macrocycle:generation:plan-variant:ordinal:2',
     ])
     assert.deepEqual(result.operations[0]?.decisionProvenance, coach)
     assert.deepEqual(current, currentSnapshot)
@@ -200,15 +200,15 @@ describe('reconciliación parcial integral', () => {
       current,
       proposed,
       decisions: [{
-        blockId: 'macrocycle:macrocycle:id:macro-1',
+        blockId: 'macrocycle:macrocycle:generation:plan-variant:ordinal:1',
         decision: 'accept',
         provenance: coach,
       }],
     })
 
-    assert.deepEqual(result.acceptedItemIdentities, ['microcycle:id:micro-1'])
+    assert.deepEqual(result.acceptedItemIdentities, ['microcycle:generation:plan-variant:week:1'])
     assert.deepEqual(result.pendingBlockIds, [
-      'macrocycle:macrocycle:id:macro-2',
+      'macrocycle:macrocycle:generation:plan-variant:ordinal:2',
     ])
   })
 
@@ -226,7 +226,7 @@ describe('reconciliación parcial integral', () => {
         current,
         proposed,
         decisions: [{
-          blockId: 'macrocycle:macrocycle:id:macro-1',
+          blockId: 'macrocycle:macrocycle:generation:plan-variant:ordinal:1',
           decision: 'accept',
           provenance: coach,
         }],
