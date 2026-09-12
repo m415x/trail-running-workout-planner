@@ -13,7 +13,8 @@
 - Completed: `KAN-230` — integral diff before regeneration/persistence.
 - Completed: `KAN-231` — coherent block acceptance/rejection.
 - Completed: `KAN-232` — exact block/range-scoped reconciliation.
-- Current: `KAN-233` — stable identity audit across the integral write set.
+- Completed: `KAN-233` — stable identity audit across the integral write set.
+- Current: `KAN-234` — atomic persistence of the accepted write set.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -261,6 +262,37 @@ rejected and pending block exclusion, exact session/prescription inclusion,
 coach provenance, protected-conflict refusal, scope isolation and input
 immutability. The remote Vercel build passed.
 
+## KAN-233 stable regeneration identities
+
+The identity audit confirmed that random UUID creation remains correct at two
+boundaries: initial persistence of a brand-new plan and one-time derivation of
+an independent cohort variant. Reconciliation must not use those new UUIDs as
+logical matching keys.
+
+`lib/periodization/planning-stable-identity.ts` now centralizes the
+authoritative H11 matching rules:
+
+- a macrocycle is stable by plan plus generated ordinal;
+- a mesocycle is stable by its macrocycle key plus mesocycle number;
+- a microcycle is stable by plan plus week number, matching the existing
+  planning-regeneration boundary;
+- generated Sessions continue to use the H6 `sharedEventKey`;
+- generated GroupSessionPrescriptions continue to use the H6 `generationKey`;
+- manual Session/prescription records continue to use their persisted IDs;
+- base and cohort-variant identities remain isolated because every planning key
+  is namespaced by the owning plan ID.
+
+The KAN-230 diff now matches macro/meso/micro entities through these logical
+keys. Transient draft IDs and regenerated parent UUIDs do not produce false
+delete/create operations; a real update retains the current persisted entity
+ID. Duplicate logical positions still fail fast, while H6 protected identity
+rules remain unchanged.
+
+Focused tests prove deterministic keys, base/variant isolation, H6 key reuse,
+invalid-key rejection, equivalent hierarchy regeneration with entirely new
+draft UUIDs, persisted-ID retention on a real update, and the updated KAN-230–
+KAN-232 pipeline. The remote Vercel build passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -272,7 +304,8 @@ immutability. The remote Vercel build passed.
 | KAN-230 integral diff | implemented | pure stable-identity diff with create/update/remove intent and protection-aware classification |
 | KAN-231 accept/reject blocks | implemented | pure macrocycle/competition/plan blocks with dependencies and coach-decision provenance |
 | KAN-232 unified partial reconciliation | implemented | exact accepted-item write set, block ranges, scope isolation and existing-boundary routing |
-| KAN-233 stable IDs | mostly implemented | audit and test cross-boundary stability; fix only real gaps |
+| KAN-233 stable IDs | implemented | centralized logical hierarchy keys, retained H6 keys and persisted-ID updates |
+
 | KAN-234 atomic persistence | partial | separate transactions exist; one accepted aggregate transaction is missing |
 | KAN-235 end-to-end idempotency | partial | component guarantees exist; prove complete workflow |
 | KAN-236 cohort → group resolution | already implemented | integration/regression validation only |
@@ -295,4 +328,4 @@ immutability. The remote Vercel build passed.
 
 ## Next step
 
-Close `KAN-232` after recording the exact scoped write-set boundary in Jira. Then start `KAN-233` by auditing stable identities across accepted create/update/remove operations and fixing only demonstrated gaps.
+Close `KAN-233` after recording the identity audit in Jira. Then start `KAN-234` by applying the accepted, stable-identity write set through one atomic persistence boundary.
