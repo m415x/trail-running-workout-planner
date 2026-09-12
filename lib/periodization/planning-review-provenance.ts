@@ -23,11 +23,13 @@ function protectedValuesFor(
   return values.filter((value) => value.entityId === entityId)
 }
 
-function compareEntityId(
-  first: { readonly entityId: string },
-  second: { readonly entityId: string },
+function sortById<T>(
+  values: readonly T[],
+  getId: (value: T) => string,
 ) {
-  return first.entityId.localeCompare(second.entityId)
+  return [...values].sort((first, second) => (
+    getId(first).localeCompare(getId(second))
+  ))
 }
 
 /**
@@ -42,49 +44,45 @@ export function buildIntegralPlanningReviewProvenance(
   review: IntegralPlanningReview,
 ): IntegralPlanningReviewProvenance {
   const protectedValues = sortProtectedValues(review.protectedValues)
-  const microcycles = review.macrocycles
+  const microcycleNodes = review.macrocycles
     .flatMap(({ mesocycles }) => mesocycles)
-    .flatMap(({ microcycles: nodes }) => nodes)
-    .map((node) => ({
-      entityId: node.microcycle.id,
-      microcycleId: node.microcycle.id,
-      targetSources: {
-        targetVolumeSource: node.targets.targetVolumeSource,
-        targetElevationSource: node.targets.targetElevationSource,
-      },
-      competitiveAdjustmentValueSources: node.competitiveAdjustmentValueSources,
-      protectedValues: protectedValuesFor(protectedValues, node.microcycle.id),
-    }))
-    .sort(compareEntityId)
-    .map(({ entityId: _entityId, ...provenance }) => provenance)
-  const sessions = review.macrocycles
-    .flatMap(({ mesocycles }) => mesocycles)
-    .flatMap(({ microcycles: nodes }) => nodes)
-    .flatMap(({ sessions: nodes }) => nodes)
-    .map((node) => ({
-      entityId: node.session.id,
-      sessionId: node.session.id,
-      provenance: node.provenance,
-      replaceableByRegeneration: canRegenerationReplace(node.provenance.ownership),
-      protectedValues: protectedValuesFor(protectedValues, node.session.id),
-      prescriptions: node.prescriptions
-        .map((prescription) => ({
-          entityId: prescription.prescription.id,
-          prescriptionId: prescription.prescription.id,
-          provenance: prescription.provenance,
-          replaceableByRegeneration: canRegenerationReplace(
-            prescription.provenance.ownership,
-          ),
-          protectedValues: protectedValuesFor(
-            protectedValues,
-            prescription.prescription.id,
-          ),
-        }))
-        .sort(compareEntityId)
-        .map(({ entityId: _entityId, ...provenance }) => provenance),
-    }))
-    .sort(compareEntityId)
-    .map(({ entityId: _entityId, ...provenance }) => provenance)
+    .flatMap(({ microcycles }) => microcycles)
+  const microcycles = sortById(
+    microcycleNodes,
+    ({ microcycle }) => microcycle.id,
+  ).map((node) => ({
+    microcycleId: node.microcycle.id,
+    targetSources: {
+      targetVolumeSource: node.targets.targetVolumeSource,
+      targetElevationSource: node.targets.targetElevationSource,
+    },
+    competitiveAdjustmentValueSources: node.competitiveAdjustmentValueSources,
+    protectedValues: protectedValuesFor(protectedValues, node.microcycle.id),
+  }))
+  const sessionNodes = microcycleNodes.flatMap(({ sessions }) => sessions)
+  const sessions = sortById(
+    sessionNodes,
+    ({ session }) => session.id,
+  ).map((node) => ({
+    sessionId: node.session.id,
+    provenance: node.provenance,
+    replaceableByRegeneration: canRegenerationReplace(node.provenance.ownership),
+    protectedValues: protectedValuesFor(protectedValues, node.session.id),
+    prescriptions: sortById(
+      node.prescriptions,
+      ({ prescription }) => prescription.id,
+    ).map((prescription) => ({
+      prescriptionId: prescription.prescription.id,
+      provenance: prescription.provenance,
+      replaceableByRegeneration: canRegenerationReplace(
+        prescription.provenance.ownership,
+      ),
+      protectedValues: protectedValuesFor(
+        protectedValues,
+        prescription.prescription.id,
+      ),
+    })),
+  }))
 
   return {
     plan: review.scope,
