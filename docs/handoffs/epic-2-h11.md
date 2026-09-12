@@ -11,7 +11,9 @@
 - Completed: `KAN-228` — provenance, ownership and base/variant origin.
 - Completed: `KAN-229` — global cross-domain consistency validator.
 - Completed: `KAN-230` — integral diff before regeneration/persistence.
-- Current: `KAN-231` — coherent block acceptance/rejection.
+- Completed: `KAN-231` — coherent block acceptance/rejection.
+- Completed: `KAN-232` — exact block/range-scoped reconciliation.
+- Current: `KAN-233` — stable identity audit across the integral write set.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -228,6 +230,37 @@ cover subtree cohesion, dependencies, accepted write-set projection, coach
 provenance, conflict blocking and input immutability. The remote Vercel build
 passed.
 
+## KAN-232 exact scoped reconciliation
+
+`lib/periodization/planning-review-reconciliation.ts` now rebuilds the
+KAN-230/KAN-231 review pipeline and projects only valid, explicitly accepted
+changes into a pure persistence-ready write set.
+
+The reconciliation boundary:
+
+- requires current and proposed reviews to have the exact same team, group,
+  plan, group-base/cohort-variant kind and lineage scope;
+- rebuilds the integral diff and coherent blocks instead of trusting caller
+  supplied item identities;
+- validates every coach decision and refuses conflicted or
+  dependency-breaking selections;
+- emits only accepted `create | update | remove` items; unchanged descendants,
+  rejected blocks and pending blocks never enter the write set;
+- preserves block ranges, parent identities and coach decision provenance on
+  every operation;
+- separates exact planning, Session, GroupSessionPrescription and competition
+  operations so KAN-234 can route them through the existing H6/H10 persistence
+  boundaries in one transaction;
+- supports both group-base and shared cohort-variant plans without introducing
+  athlete-specific overrides;
+- performs no database mutation and never expands a selection to a complete
+  macrocycle implicitly.
+
+Focused tests cover an accepted range inside a two-macrocycle cohort variant,
+rejected and pending block exclusion, exact session/prescription inclusion,
+coach provenance, protected-conflict refusal, scope isolation and input
+immutability. The remote Vercel build passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -238,7 +271,7 @@ passed.
 | KAN-229 global validator | implemented | typed pure composition of referential, temporal and cross-domain checks |
 | KAN-230 integral diff | implemented | pure stable-identity diff with create/update/remove intent and protection-aware classification |
 | KAN-231 accept/reject blocks | implemented | pure macrocycle/competition/plan blocks with dependencies and coach-decision provenance |
-| KAN-232 unified partial reconciliation | partial | compose planning, session and competitive scoped reconciliation |
+| KAN-232 unified partial reconciliation | implemented | exact accepted-item write set, block ranges, scope isolation and existing-boundary routing |
 | KAN-233 stable IDs | mostly implemented | audit and test cross-boundary stability; fix only real gaps |
 | KAN-234 atomic persistence | partial | separate transactions exist; one accepted aggregate transaction is missing |
 | KAN-235 end-to-end idempotency | partial | component guarantees exist; prove complete workflow |
@@ -262,4 +295,4 @@ passed.
 
 ## Next step
 
-Close `KAN-231` after recording the coherent decision boundary in Jira. Then start `KAN-232` by reconciling only the accepted item identities across the existing scoped planning, H6 session and H10 competition boundaries.
+Close `KAN-232` after recording the exact scoped write-set boundary in Jira. Then start `KAN-233` by auditing stable identities across accepted create/update/remove operations and fixing only demonstrated gaps.
