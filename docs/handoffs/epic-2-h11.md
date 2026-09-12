@@ -15,7 +15,8 @@
 - Completed: `KAN-232` — exact block/range-scoped reconciliation.
 - Completed: `KAN-233` — stable identity audit across the integral write set.
 - Completed: `KAN-234` — atomic persistence boundary for the accepted write set.
-- Current: `KAN-235` — end-to-end idempotency of the integral workflow.
+- Completed: `KAN-235` — end-to-end idempotency of the integral workflow.
+- Current: `KAN-236` — cohort-first/group-fallback resolution regression.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -325,6 +326,36 @@ when audit persistence fails after earlier writes. Vercel passed. KAN-239 still
 owns validation of this same contract against the real Supabase transaction and
 rollback mechanism.
 
+## KAN-235 end-to-end idempotency
+
+`lib/periodization/planning-review-idempotency.ts` now derives a canonical
+SHA-256 submission key from the exact group/cohort scope, accepted blocks,
+operations, field changes and coach decisions.
+
+The KAN-234 transaction port now requires an idempotency journal that is read
+and written through the same transaction handle as domain operations and audit
+records:
+
+- a first submission applies every accepted operation, appends one matching
+  audit record and stores the committed result;
+- an equivalent replay returns `already_committed` with the original key and
+  result, without applying or auditing anything again;
+- block, operation and decision ordering is canonicalized, so caller array order
+  cannot bypass replay detection;
+- a changed scope, write set, field value or coach decision produces a distinct
+  semantic submission;
+- journal registration occurs only after every operation and audit succeeds, so
+  rollback cannot leave a false committed marker;
+- stable KAN-233 identities remain the entity-level defense against duplicate
+  plans/microcycles/sessions/prescriptions, while the journal prevents duplicate
+  competitive adjustments and audit records for the same accepted submission.
+
+Focused tests cover first commit versus replay, unchanged state after replay,
+all integral entity categories, absence of duplicate audits, canonical ordering
+and the existing transaction rollback guarantees. The remote Vercel build
+passed. KAN-240 still owns simultaneous double-submit/concurrency behavior and
+the database-level uniqueness mechanism.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -339,7 +370,7 @@ rollback mechanism.
 | KAN-233 stable IDs | implemented | centralized logical hierarchy keys, retained H6 keys and persisted-ID updates |
 
 | KAN-234 atomic persistence | implemented | one transaction port applies exact operations and audit records with rollback semantics |
-| KAN-235 end-to-end idempotency | partial | component guarantees exist; prove complete workflow |
+| KAN-235 end-to-end idempotency | implemented | canonical submission key and same-transaction replay journal suppress duplicate writes/audits |
 | KAN-236 cohort → group resolution | already implemented | integration/regression validation only |
 | KAN-237 isolation | partial | consolidate team/group/cohort/plan scope tests |
 | KAN-238 end-to-end tests | missing | compose H6–H10 paths rather than duplicate unit tests |
@@ -360,4 +391,4 @@ rollback mechanism.
 
 ## Next step
 
-Close `KAN-234` after recording the transaction boundary in Jira. Then start `KAN-235` by proving end-to-end idempotency for repeated equivalent integral submissions.
+Close `KAN-235` after recording replay suppression in Jira. Then start `KAN-236` by verifying cohort-first/group-fallback resolution against the completed H11 flow.
