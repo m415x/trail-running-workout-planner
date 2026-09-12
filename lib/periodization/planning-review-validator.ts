@@ -141,7 +141,7 @@ function validateScope(review: IntegralPlanningReview, issues: PlanningReviewIss
   }
 }
 
-function validateLoadStrategy(review: IntegralPlanningReview, issues: PlanningReviewIssue[]) {
+function validateReviewLoadStrategy(review: IntegralPlanningReview, issues: PlanningReviewIssue[]) {
   if (review.loadStrategy === null) return
 
   const validation = validateLoadStrategy(review.loadStrategy)
@@ -459,7 +459,7 @@ export function validateIntegralPlanningReview(
   const existingEntities = new Set<string>([`plan:${review.plan.id}`])
 
   validateScope(review, issues)
-  validateLoadStrategy(review, issues)
+  validateReviewLoadStrategy(review, issues)
   validateHierarchy(review, issues, seen, existingEntities)
   validateCompetition(review, issues, seen)
   validateProtectedReferences(review, issues, existingEntities)
