@@ -10,7 +10,8 @@
 - Completed: `KAN-227` — integral group/cohort summary.
 - Completed: `KAN-228` — provenance, ownership and base/variant origin.
 - Completed: `KAN-229` — global cross-domain consistency validator.
-- Current: `KAN-230` — integral diff before regeneration/persistence.
+- Completed: `KAN-230` — integral diff before regeneration/persistence.
+- Current: `KAN-231` — coherent block acceptance/rejection.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -168,6 +169,36 @@ blocks persistence. Focused tests cover a valid immutable aggregate,
 multi-boundary conflicts in one pass, non-blocking warnings and malformed H6
 provenance. The remote Vercel build passed.
 
+## KAN-230 integral pre-persistence diff
+
+`lib/periodization/planning-review-diff.ts` now compares a persisted/current
+integral review with a proposed review without accepting or writing changes.
+
+The diff:
+
+- classifies each matched entity as `added`, `updated`, `preserved` or
+  `conflict`;
+- keeps the classification set required by H11 while representing concrete
+  `create`, `update`, `remove` or `none` operations separately;
+- includes inspectable field-level current/proposed values and deterministic
+  aggregate counts;
+- matches macro/meso/micro/competition entities by stable persisted ID;
+- matches generated Sessions and GroupSessionPrescriptions by authoritative H6
+  `sharedEventKey` / `generationKey`, so an identity-breaking recreation is
+  surfaced as conflict rather than a duplicate create;
+- allows ordinary generated changes and removals while preserving manual,
+  generated-modified, coach-owned or explicitly protected values;
+- treats disappearance of protected records as preservation, never silent
+  deletion;
+- carries global validation issues from KAN-229 and reports them through the
+  same pre-persistence artifact;
+- remains pure and leaves block acceptance to KAN-231.
+
+Focused tests cover identical/preserved state, generated updates/removals,
+manual preservation, added entities, manual/coach protection, protected session
+changes, stable-key identity and input immutability. The remote Vercel build
+passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -176,7 +207,7 @@ provenance. The remote Vercel build passed.
 | KAN-227 integral summary | implemented | pure deterministic projection over the integral review aggregate |
 | KAN-228 provenance/ownership | implemented | expose authoritative H7/H6/H10 semantics and derived H6 replaceability |
 | KAN-229 global validator | implemented | typed pure composition of referential, temporal and cross-domain checks |
-| KAN-230 integral diff | partial | generalize existing regeneration/H10 reconciliation concepts |
+| KAN-230 integral diff | implemented | pure stable-identity diff with create/update/remove intent and protection-aware classification |
 | KAN-231 accept/reject blocks | partial | extend explicit H10 coach-review principle to coherent blocks |
 | KAN-232 unified partial reconciliation | partial | compose planning, session and competitive scoped reconciliation |
 | KAN-233 stable IDs | mostly implemented | audit and test cross-boundary stability; fix only real gaps |
@@ -202,4 +233,4 @@ provenance. The remote Vercel build passed.
 
 ## Next step
 
-Close `KAN-229` after recording the validator in Jira. Then start `KAN-230` by building an inspectable integral diff over valid review aggregates; keep diff construction pure and separate from acceptance or persistence.
+Close `KAN-230` after recording the diff in Jira. Then start `KAN-231` by grouping diff items into coherent acceptance blocks whose dependencies cannot be partially accepted; keep persistence out of that decision boundary.
