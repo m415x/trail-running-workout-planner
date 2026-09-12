@@ -44,13 +44,13 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 ## Context-efficient workflow
 
-- Start with `docs/README.md` and the single current file under `docs/handoffs/`. Do not reconstruct completed stories from old chats or deleted handoffs when architecture/history/Jira already contain the durable context.
-- H10 (`KAN-204`) is in final validation on `h-19-competitive-adjustment`; `KAN-223` is the remaining task. Start from `docs/handoffs/epic-2-h10.md` and `docs/architecture/competitive-adjustment.md`.
-- Superseded handoffs are intentionally deleted once durable information is consolidated into `docs/history/` and `docs/architecture/`. Do not recreate H6-H9 handoffs merely for historical reference.
+- Start with `docs/README.md` and the single current file under `docs/handoffs/` when one exists. Do not reconstruct completed stories from old chats or deleted handoffs when architecture/history/Jira already contain the durable context.
+- H10 (`KAN-204`) is completed and merged into `dashboard`. H11 (`KAN-224`) is the next active story; begin with `KAN-225`, auditing H6–H10 before implementing new integration or persistence behavior.
+- Superseded handoffs are intentionally deleted once durable information is consolidated into `docs/history/` and `docs/architecture/`. Do not recreate completed-story handoffs merely for historical reference.
 - Use `rg` to locate symbols and read bounded sections of relevant files. Avoid rereading whole directories after a localized change.
 - Use `C:\Users\lahoz\.local\bin\rtk.exe` explicitly for noisy read-only commands such as `git status`, `git diff`, and focused test output when it preserves the information needed for review. Do not require RTK for contributors or CI.
 - Keep Codebase Memory optional. Never make builds, tests, or repository behavior depend on a local index or MCP server.
-- H10 was delivered remote-first through GitHub/Jira; the complete local story gate is mandatory before `KAN-223` / H10 can close or merge.
+- H11 must reuse and validate H6–H10 boundaries rather than reimplementing generation, cohorts, competitive context, taper/recovery, coach review, provenance or local competitive reconciliation.
 - Update durable architecture docs only when a domain decision changes. Keep the current handoff operational and concise; do not store full conversation transcripts.
 
 ## Architecture & Directory Structure
@@ -153,7 +153,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Work in a story branch and keep commits aligned with the current task.
 - During implementation, prefer focused tests plus type checking and linting of the affected area where execution is available.
 - Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation.
-- For H10 final validation also run `pnpm db:check:supabase`; generate/apply a migration only if a real schema delta exists.
+- Run `pnpm db:check:supabase` for stories that touch schema/persistence boundaries; generate/apply a migration only when Drizzle reports a real schema delta.
 - Existing lint warnings should not be multiplied. New code must introduce no lint errors or new warnings.
 - Push the story branch, validate the Vercel deployment when quota permits, and only then merge it into `dashboard`.
 - Keep documentation-only changes in separate commits when practical.
