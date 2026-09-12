@@ -201,4 +201,26 @@ describe('persistencia atómica de la revisión integral', () => {
     )
     assert.deepEqual(port.state, { applied: [], audits: [] })
   })
+  it('completa eliminaciones antes de altas o actualizaciones', () => {
+    const port = new MemoryTransactionPort()
+    const input = reconciliation([
+      operation('plan-new', 'plan', 'create'),
+      operation('session-old', 'session', 'remove'),
+      operation('prescription-old', 'prescription', 'remove'),
+      operation('microcycle-new', 'microcycle', 'update'),
+    ])
+
+    persistIntegralPlanningReconciliation({
+      reconciliation: input,
+      persistence: port,
+    })
+
+    assert.deepEqual(port.state.applied, [
+      'prescription-old',
+      'session-old',
+      'plan-new',
+      'microcycle-new',
+    ])
+  })
+
 })
