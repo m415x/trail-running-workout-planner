@@ -79,6 +79,30 @@ export interface PlanningReviewIssueReference {
   readonly field?: string
 }
 
+export type PlanningReviewIssueCode =
+  | 'scope_plan_id_mismatch'
+  | 'scope_group_id_mismatch'
+  | 'scope_plan_kind_mismatch'
+  | 'scope_cohort_lineage_mismatch'
+  | 'load_strategy_plan_mismatch'
+  | 'intensity_strategy_plan_mismatch'
+  | 'hierarchy_parent_mismatch'
+  | 'duplicate_entity_id'
+  | 'invalid_date_range'
+  | 'child_outside_parent_range'
+  | 'invalid_target_value'
+  | 'microcycle_target_projection_mismatch'
+  | 'intensity_target_microcycle_mismatch'
+  | 'intensity_target_infeasible'
+  | 'competition_plan_mismatch'
+  | 'competition_outside_planning_horizon'
+  | 'competition_window_mismatch'
+  | 'session_team_mismatch'
+  | 'session_outside_microcycle'
+  | 'prescription_reference_mismatch'
+  | 'invalid_generation_provenance'
+  | 'protected_value_reference_missing'
+
 /**
  * Cross-domain issue surfaced before persistence.
  *
@@ -86,7 +110,7 @@ export interface PlanningReviewIssueReference {
  * this contract only establishes how issues belong to the review aggregate.
  */
 export interface PlanningReviewIssue {
-  readonly code: string
+  readonly code: PlanningReviewIssueCode
   readonly severity: 'warning' | 'conflict'
   readonly sourceBoundary:
     | 'planning'
@@ -97,6 +121,13 @@ export interface PlanningReviewIssue {
     | 'persistence'
   readonly message: string
   readonly references: readonly PlanningReviewIssueReference[]
+}
+
+
+/** Pure result of validating one complete review before persistence. */
+export interface IntegralPlanningReviewValidation {
+  readonly isValid: boolean
+  readonly issues: readonly PlanningReviewIssue[]
 }
 
 /** Load/provenance state already persisted on one microcycle. */
