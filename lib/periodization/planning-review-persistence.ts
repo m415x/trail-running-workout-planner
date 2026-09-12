@@ -1,3 +1,4 @@
+import { integralPlanningIdempotencyKey } from '@/lib/periodization/planning-review-idempotency'
 import type {
   PlanningReviewAtomicAuditRecord,
   PersistedIntegralPlanningReconciliation,
@@ -129,8 +130,14 @@ export function persistIntegralPlanningReconciliation<TTransaction>({
 }: PersistIntegralPlanningReconciliationInput<TTransaction>): PersistedIntegralPlanningReconciliation {
   validateReconciliation(reconciliation)
   const operations = orderedOperations(reconciliation.operations)
+  const idempotencyKey = integralPlanningIdempotencyKey(reconciliation)
 
   return persistence.transaction((tx) => {
+    const previous = persistence.findCommittedResult(tx, idempotencyKey)
+    if (previous !== null) {
+      return { ...previous, outcome: 'already_committed' }
+    }
+
     const appliedOperationIdentities: string[] = []
     const auditedOperationIdentities: string[] = []
 
@@ -145,11 +152,15 @@ export function persistIntegralPlanningReconciliation<TTransaction>({
       auditedOperationIdentities.push(operation.identity)
     }
 
-    return {
+    const result: PersistedIntegralPlanningReconciliation = {
+      idempotencyKey,
+      outcome: 'committed',
       scope: reconciliation.scope,
       appliedOperationIdentities,
       auditedOperationIdentities,
       committedBlockIds: reconciliation.blocks.map(({ blockId }) => blockId),
     }
+    persistence.markCommitted(tx, idempotencyKey, result)
+    return result
   })
 }
