@@ -270,4 +270,29 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.equal(Object.keys(port.state.journal).length, 1)
   })
 
+  it('trata como equivalente el mismo write set aunque cambie el orden de entrada', () => {
+    const port = new MemoryTransactionPort()
+    const operations = [
+      operation('plan-1', 'plan'),
+      operation('microcycle-1', 'microcycle'),
+      operation('session-1', 'session'),
+    ]
+    const firstInput = reconciliation(operations)
+    const reorderedInput = reconciliation([...operations].reverse())
+
+    const first = persistIntegralPlanningReconciliation({
+      reconciliation: firstInput,
+      persistence: port,
+    })
+    const repeated = persistIntegralPlanningReconciliation({
+      reconciliation: reorderedInput,
+      persistence: port,
+    })
+
+    assert.equal(repeated.idempotencyKey, first.idempotencyKey)
+    assert.equal(repeated.outcome, 'already_committed')
+    assert.equal(port.state.applied.length, 3)
+    assert.equal(port.state.audits.length, 3)
+  })
+
 })
