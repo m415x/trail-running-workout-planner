@@ -21,6 +21,7 @@ interface ComparableEntity {
   readonly fields: Readonly<Record<string, unknown>>
   readonly protectedFields: ReadonlySet<string>
   readonly protectWholeEntity: boolean
+  readonly protectRemoval: boolean
 }
 
 const FIELD_ALIASES: Readonly<Record<string, string>> = {
@@ -108,6 +109,7 @@ function flattenReview(review: IntegralPlanningReview) {
     },
     protectedFields: new Set(['id', 'groupId', 'planningCohortId', 'sourceGroupTrainingPlanId']),
     protectWholeEntity: false,
+    protectRemoval: true,
   })
 
   for (const macroNode of review.macrocycles) {
@@ -119,6 +121,7 @@ function flattenReview(review: IntegralPlanningReview) {
       fields: normalize(macrocycle) as Readonly<Record<string, unknown>>,
       protectedFields: new Set(['id', 'groupTrainingPlanId']),
       protectWholeEntity: false,
+      protectRemoval: false,
     })
 
     for (const mesoNode of macroNode.mesocycles) {
@@ -130,6 +133,7 @@ function flattenReview(review: IntegralPlanningReview) {
         fields: normalize(mesocycle) as Readonly<Record<string, unknown>>,
         protectedFields: new Set(['id', 'macrocycleId']),
         protectWholeEntity: false,
+        protectRemoval: false,
       })
 
       for (const microNode of mesoNode.microcycles) {
@@ -177,6 +181,7 @@ function flattenReview(review: IntegralPlanningReview) {
           },
           protectedFields,
           protectWholeEntity: false,
+          protectRemoval: protectedFields.size > 2,
         })
 
         for (const sessionNode of microNode.sessions) {
@@ -191,6 +196,8 @@ function flattenReview(review: IntegralPlanningReview) {
             },
             protectedFields: protectedFieldsFor(annotations, session.id),
             protectWholeEntity: provenance.ownership !== 'generated',
+            protectRemoval: provenance.ownership !== 'generated'
+              || protectedFieldsFor(annotations, session.id).size > 0,
           })
 
           for (const prescriptionNode of sessionNode.prescriptions) {
@@ -208,6 +215,8 @@ function flattenReview(review: IntegralPlanningReview) {
               },
               protectedFields: protectedFieldsFor(annotations, prescription.id),
               protectWholeEntity: prescriptionProvenance.ownership !== 'generated',
+              protectRemoval: prescriptionProvenance.ownership !== 'generated'
+                || protectedFieldsFor(annotations, prescription.id).size > 0,
             })
           }
         }
@@ -226,6 +235,7 @@ function flattenReview(review: IntegralPlanningReview) {
       },
       protectedFields: new Set(['id', 'groupTrainingPlanId']),
       protectWholeEntity: false,
+      protectRemoval: true,
     })
   }
 
@@ -263,7 +273,7 @@ function classifyExisting(
   }
 
   if (proposed === undefined) {
-    const protectedEntity = current.protectWholeEntity || current.protectedFields.size > 0
+    const protectedEntity = current.protectRemoval
     return {
       identity: current.identity,
       entity,
