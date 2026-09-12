@@ -26,6 +26,10 @@ export interface PlanningReviewTransactionPort<TTransaction> {
    * and audit append when work throws.
    */
   transaction<TResult>(work: (tx: TTransaction) => TResult): TResult
+  findCommittedResult(
+    tx: TTransaction,
+    idempotencyKey: string,
+  ): PersistedIntegralPlanningReconciliation | null
   applyOperation(
     tx: TTransaction,
     operation: PlanningReviewScopedOperation,
@@ -33,6 +37,11 @@ export interface PlanningReviewTransactionPort<TTransaction> {
   appendAuditRecord(
     tx: TTransaction,
     record: PlanningReviewAtomicAuditRecord,
+  ): void
+  markCommitted(
+    tx: TTransaction,
+    idempotencyKey: string,
+    result: PersistedIntegralPlanningReconciliation,
   ): void
 }
 
@@ -42,6 +51,8 @@ export interface PersistIntegralPlanningReconciliationInput<TTransaction> {
 }
 
 export interface PersistedIntegralPlanningReconciliation {
+  readonly idempotencyKey: string
+  readonly outcome: 'committed' | 'already_committed'
   readonly scope: PlanningReviewScope
   readonly appliedOperationIdentities: readonly string[]
   readonly auditedOperationIdentities: readonly string[]
