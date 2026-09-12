@@ -185,6 +185,40 @@ describe('diff integral de planificación', () => {
     )
   })
 
+  it('clasifica una nueva sesión generada como alta', () => {
+    const current = buildReview()
+    const proposed = structuredClone(current)
+    const proposedMicrocycle = microcycle(proposed)
+    const newSession = {
+      session: {
+        ...baseEntity,
+        id: 'session-new',
+        teamId: 'team-1',
+        date: '2026-01-09',
+        title: 'Rodaje nuevo',
+        type: 'Base' as const,
+      },
+      provenance: {
+        ownership: 'generated' as const,
+        sharedEventKey: 'plan-1::micro-1::shared-friday',
+      },
+      prescriptions: [],
+    }
+    Object.assign(proposedMicrocycle, {
+      sessions: [...proposedMicrocycle.sessions, newSession],
+    })
+
+    const diff = buildIntegralPlanningDiff(current, proposed)
+    const added = diff.items.find(({ identity }) => (
+      identity === 'session:generation:plan-1::micro-1::shared-friday'
+    ))
+
+    assert.deepEqual(
+      [added?.classification, added?.operation, added?.reason],
+      ['added', 'create', 'new_entity'],
+    )
+  })
+
   it('marca conflicto al cambiar volumen manual o una sesión protegida', () => {
     const current = buildReview()
     const currentMicrocycle = microcycle(current)
