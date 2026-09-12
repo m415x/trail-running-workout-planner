@@ -27,8 +27,10 @@ function orderedOperations(
   return [...operations].sort((first, second) => {
     const firstRank = ENTITY_ORDER[first.entity.entityType]
     const secondRank = ENTITY_ORDER[second.entity.entityType]
-    const dependencyOrder = first.operation === 'remove'
-      && second.operation === 'remove'
+    const firstRemoves = first.operation === 'remove'
+    const secondRemoves = second.operation === 'remove'
+    if (firstRemoves !== secondRemoves) return firstRemoves ? -1 : 1
+    const dependencyOrder = firstRemoves
       ? secondRank - firstRank
       : firstRank - secondRank
     return dependencyOrder || first.identity.localeCompare(second.identity)
@@ -84,6 +86,16 @@ function validateReconciliation(
       new Set(block.operationIdentities),
     ]),
   )
+  const declaredIdentities = reconciliation.blocks.flatMap(
+    ({ operationIdentities }) => operationIdentities,
+  )
+  if (
+    new Set(declaredIdentities).size !== declaredIdentities.length
+    || declaredIdentities.length !== operationIdentities.length
+    || declaredIdentities.some((identity) => !acceptedIdentities.has(identity))
+  ) {
+    throw new Error('Accepted blocks and atomic operations must match exactly')
+  }
   for (const operation of reconciliation.operations) {
     if (!declaredByBlock.get(operation.blockId)?.has(operation.identity)) {
       throw new Error(`Operation ${operation.identity} is outside its accepted block`)
