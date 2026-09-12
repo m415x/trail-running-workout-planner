@@ -14,7 +14,8 @@
 - Completed: `KAN-231` — coherent block acceptance/rejection.
 - Completed: `KAN-232` — exact block/range-scoped reconciliation.
 - Completed: `KAN-233` — stable identity audit across the integral write set.
-- Current: `KAN-234` — atomic persistence of the accepted write set.
+- Completed: `KAN-234` — atomic persistence boundary for the accepted write set.
+- Current: `KAN-235` — end-to-end idempotency of the integral workflow.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -293,6 +294,37 @@ invalid-key rejection, equivalent hierarchy regeneration with entirely new
 draft UUIDs, persisted-ID retention on a real update, and the updated KAN-230–
 KAN-232 pipeline. The remote Vercel build passed.
 
+## KAN-234 atomic persistence boundary
+
+`lib/periodization/planning-review-persistence.ts` now applies one validated
+KAN-232 reconciliation and all of its audit records through a single shared
+transaction callback.
+
+The boundary:
+
+- refuses duplicate operations, unaccepted identities, invalid coach
+  provenance, excluded blocks and any mismatch between accepted blocks and the
+  atomic write set before opening a transaction;
+- orders removals from prescriptions toward parent planning entities, then
+  orders creates/updates from plan parents toward sessions and prescriptions;
+- applies each operation and appends its audit record through the same
+  transaction handle;
+- includes exact group/cohort scope, changed fields, block identity and coach
+  decision provenance in every audit record;
+- returns a committed result only after every operation and audit append
+  succeeds;
+- delegates concrete database statements to
+  `PlanningReviewTransactionPort`, whose contract requires rollback when the
+  callback throws;
+- preserves the existing specialized H6/H10 rules behind the future concrete
+  adapter instead of nesting their independent transactions.
+
+Focused transaction-port tests prove referential ordering, one-to-one
+operation/audit application, exact accepted-set enforcement and full rollback
+when audit persistence fails after earlier writes. Vercel passed. KAN-239 still
+owns validation of this same contract against the real Supabase transaction and
+rollback mechanism.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -306,7 +338,7 @@ KAN-232 pipeline. The remote Vercel build passed.
 | KAN-232 unified partial reconciliation | implemented | exact accepted-item write set, block ranges, scope isolation and existing-boundary routing |
 | KAN-233 stable IDs | implemented | centralized logical hierarchy keys, retained H6 keys and persisted-ID updates |
 
-| KAN-234 atomic persistence | partial | separate transactions exist; one accepted aggregate transaction is missing |
+| KAN-234 atomic persistence | implemented | one transaction port applies exact operations and audit records with rollback semantics |
 | KAN-235 end-to-end idempotency | partial | component guarantees exist; prove complete workflow |
 | KAN-236 cohort → group resolution | already implemented | integration/regression validation only |
 | KAN-237 isolation | partial | consolidate team/group/cohort/plan scope tests |
@@ -328,4 +360,4 @@ KAN-232 pipeline. The remote Vercel build passed.
 
 ## Next step
 
-Close `KAN-233` after recording the identity audit in Jira. Then start `KAN-234` by applying the accepted, stable-identity write set through one atomic persistence boundary.
+Close `KAN-234` after recording the transaction boundary in Jira. Then start `KAN-235` by proving end-to-end idempotency for repeated equivalent integral submissions.
