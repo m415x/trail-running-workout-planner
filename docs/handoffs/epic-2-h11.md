@@ -8,7 +8,8 @@
 - Completed: `KAN-225` — audit of H6–H10 boundaries.
 - Completed: `KAN-226` — integral planning review contract.
 - Completed: `KAN-227` — integral group/cohort summary.
-- Current: `KAN-228` — expose provenance, ownership and base/variant origin.
+- Completed: `KAN-228` — provenance, ownership and base/variant origin.
+- Current: `KAN-229` — global cross-domain consistency validator.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -110,13 +111,38 @@ Focused tests cover hierarchical totals, null targets, competition counts,
 deterministic ordering, input immutability, cohort lineage and impact-window
 preservation. The remote Vercel build for the implementation commit passed.
 
+## KAN-228 provenance and ownership projection
+
+`lib/periodization/planning-review-provenance.ts` now exposes the existing
+H7/H6/H10 source semantics through the integral review and its summary.
+
+The projection:
+
+- preserves the exact H7 `PlanningReviewScope`, including `group_base` or
+  `cohort_variant`, cohort identity and direct base-plan lineage;
+- exposes persisted microcycle `generated | manual` target sources unchanged;
+- carries H10 `generated | coach` competitive-adjustment value sources when a
+  reviewed competitive change affected the microcycle;
+- preserves H6 session and prescription provenance unions, including stable
+  `sharedEventKey` and `generationKey` values;
+- derives replaceability only through H6 `canRegenerationReplace()`, so only
+  untouched generated records are replaceable;
+- groups existing protected-value annotations by entity while retaining the
+  authoritative source boundary;
+- sorts copied projections deterministically without mutating the review.
+
+No new ownership/provenance enum, persistence model, schema migration or UI was
+introduced. Focused tests cover cohort lineage, planning and H10 sources,
+generated/generated-modified/manual ownership, stable keys, protection and
+input immutability. The remote Vercel build passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
 | --- | --- | --- |
 | KAN-226 integral review model | implemented | pure composition contract; reuse existing domain entities |
 | KAN-227 integral summary | implemented | pure deterministic projection over the integral review aggregate |
-| KAN-228 provenance/ownership | partial | expose existing H6/H10 source semantics; do not invent another provenance model |
+| KAN-228 provenance/ownership | implemented | expose authoritative H7/H6/H10 semantics and derived H6 replaceability |
 | KAN-229 global validator | missing | compose focused validators into cross-domain checks |
 | KAN-230 integral diff | partial | generalize existing regeneration/H10 reconciliation concepts |
 | KAN-231 accept/reject blocks | partial | extend explicit H10 coach-review principle to coherent blocks |
@@ -144,4 +170,4 @@ preservation. The remote Vercel build for the implementation commit passed.
 
 ## Next step
 
-Close `KAN-227` after recording the projection in Jira. Then start `KAN-228` by exposing the existing H6/H10 provenance and ownership semantics through the integral review; do not introduce a competing provenance model.
+Close `KAN-228` after recording the projection in Jira. Then start `KAN-229` by composing existing focused validators into stable cross-domain consistency rules; do not mix validation with persistence.
