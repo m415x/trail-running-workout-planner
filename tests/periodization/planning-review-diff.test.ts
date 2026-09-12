@@ -165,7 +165,7 @@ describe('diff integral de planificación', () => {
     const manualSession = diff.items.find(({ identity }) => (
       identity === 'session:id:session-manual'
     ))
-    const week = diff.items.find(({ identity }) => identity === 'microcycle:id:micro-1')
+    const week = diff.items.find(({ identity }) => identity === 'microcycle:generation:plan-1:week:1')
 
     assert.deepEqual(
       [week?.classification, week?.operation],
@@ -242,7 +242,7 @@ describe('diff integral de planificación', () => {
     })
 
     const diff = buildIntegralPlanningDiff(current, proposed)
-    const week = diff.items.find(({ identity }) => identity === 'microcycle:id:micro-1')
+    const week = diff.items.find(({ identity }) => identity === 'microcycle:generation:plan-1:week:1')
     const session = diff.items.find(({ identity }) => (
       identity === 'session:generation:plan-1::micro-1::shared-wednesday'
     ))
