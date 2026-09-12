@@ -5,6 +5,7 @@ import { persistIntegralPlanningReconciliation } from '@/lib/periodization/plann
 import type {
   PlanningReviewAtomicAuditRecord,
   PlanningReviewTransactionPort,
+  PersistedIntegralPlanningReconciliation,
 } from '@/types/training/planning-review-persistence.types'
 import type {
   IntegralPlanningReconciliation,
@@ -14,10 +15,11 @@ import type {
 interface MemoryState {
   applied: string[]
   audits: PlanningReviewAtomicAuditRecord[]
+  journal: Record<string, PersistedIntegralPlanningReconciliation>
 }
 
 class MemoryTransactionPort implements PlanningReviewTransactionPort<MemoryState> {
-  state: MemoryState = { applied: [], audits: [] }
+  state: MemoryState = { applied: [], audits: [], journal: {} }
 
   constructor(private readonly failAuditIdentity: string | null = null) {}
 
@@ -31,6 +33,10 @@ class MemoryTransactionPort implements PlanningReviewTransactionPort<MemoryState
     }
   }
 
+  findCommittedResult(tx: MemoryState, idempotencyKey: string) {
+    return tx.journal[idempotencyKey] ?? null
+  }
+
   applyOperation(tx: MemoryState, operation: PlanningReviewScopedOperation) {
     tx.applied.push(operation.identity)
   }
@@ -40,6 +46,14 @@ class MemoryTransactionPort implements PlanningReviewTransactionPort<MemoryState
       throw new Error(`audit failure: ${record.identity}`)
     }
     tx.audits.push(record)
+  }
+
+  markCommitted(
+    tx: MemoryState,
+    idempotencyKey: string,
+    result: PersistedIntegralPlanningReconciliation,
+  ) {
+    tx.journal[idempotencyKey] = result
   }
 }
 
@@ -181,7 +195,9 @@ describe('persistencia atómica de la revisión integral', () => {
       }),
       /audit failure: session-1/,
     )
-    assert.deepEqual(port.state, { applied: [], audits: [] })
+    assert.deepEqual(port.state.applied, [])
+    assert.deepEqual(port.state.audits, [])
+    assert.deepEqual(port.state.journal, {})
   })
 
   it('rechaza write sets que exceden la selección aceptada antes de abrir la transacción', () => {
@@ -199,7 +215,9 @@ describe('persistencia atómica de la revisión integral', () => {
       }),
       /was not accepted by the coach/,
     )
-    assert.deepEqual(port.state, { applied: [], audits: [] })
+    assert.deepEqual(port.state.applied, [])
+    assert.deepEqual(port.state.audits, [])
+    assert.deepEqual(port.state.journal, {})
   })
   it('completa eliminaciones antes de altas o actualizaciones', () => {
     const port = new MemoryTransactionPort()
@@ -221,6 +239,35 @@ describe('persistencia atómica de la revisión integral', () => {
       'plan-new',
       'microcycle-new',
     ])
+  })
+
+  it('no reaplica ni vuelve a auditar una entrega integral equivalente', () => {
+    const port = new MemoryTransactionPort()
+    const input = reconciliation([
+      operation('plan-1', 'plan'),
+      operation('microcycle-1', 'microcycle'),
+      operation('competition-1', 'competition'),
+      operation('session-1', 'session'),
+      operation('prescription-1', 'prescription'),
+    ])
+
+    const first = persistIntegralPlanningReconciliation({
+      reconciliation: input,
+      persistence: port,
+    })
+    const stateAfterFirst = structuredClone(port.state)
+    const repeated = persistIntegralPlanningReconciliation({
+      reconciliation: structuredClone(input),
+      persistence: port,
+    })
+
+    assert.equal(first.outcome, 'committed')
+    assert.equal(repeated.outcome, 'already_committed')
+    assert.equal(repeated.idempotencyKey, first.idempotencyKey)
+    assert.deepEqual(port.state, stateAfterFirst)
+    assert.equal(port.state.applied.length, 5)
+    assert.equal(port.state.audits.length, 5)
+    assert.equal(Object.keys(port.state.journal).length, 1)
   })
 
 })
