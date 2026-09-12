@@ -1,4 +1,5 @@
 import type { CompetitionEntry } from '@/types/training/competition-entry.types'
+import type { ReviewedCompetitionMicrocycleAdjustment } from '@/types/training/competition-adjustment-review.types'
 import type { CompetitionImpactWindow } from '@/types/training/competition-impact-window.types'
 import type { IntensityStrategy, MicrocycleIntensityTarget } from '@/types/training/intensity.types'
 import type { LoadStrategy } from '@/types/training/load-strategy.types'
@@ -112,6 +113,10 @@ export interface PlanningReviewMicrocycle {
   readonly microcycle: Microcycle
   readonly targets: PlanningReviewMicrocycleTargets
   readonly intensityTarget: MicrocycleIntensityTarget | null
+  /** Existing H10 generated/coach sources, when competitive review affected this week. */
+  readonly competitiveAdjustmentValueSources:
+    | ReviewedCompetitionMicrocycleAdjustment['valueSources']
+    | null
   readonly sessions: readonly PlanningReviewSession[]
 }
 
@@ -135,6 +140,51 @@ export interface PlanningReviewMacrocycle {
 export interface PlanningReviewCompetition {
   readonly entry: CompetitionEntry
   readonly impactWindow: CompetitionImpactWindow | null
+}
+
+
+/** Existing planning/H10 provenance projected for one reviewed microcycle. */
+export interface PlanningReviewMicrocycleProvenance {
+  readonly microcycleId: string
+  readonly targetSources: Pick<
+    PlanningReviewMicrocycleTargets,
+    'targetVolumeSource' | 'targetElevationSource'
+  >
+  readonly competitiveAdjustmentValueSources:
+    | ReviewedCompetitionMicrocycleAdjustment['valueSources']
+    | null
+  readonly protectedValues: readonly PlanningReviewProtectedValue[]
+}
+
+/** Existing H6 provenance projected for one reviewed prescription. */
+export interface PlanningReviewPrescriptionProvenance {
+  readonly prescriptionId: string
+  readonly provenance: SessionPrescriptionGenerationProvenance
+  readonly replaceableByRegeneration: boolean
+  readonly protectedValues: readonly PlanningReviewProtectedValue[]
+}
+
+/** Existing H6 provenance projected for one shared session event. */
+export interface PlanningReviewSessionProvenance {
+  readonly sessionId: string
+  readonly provenance: SessionEventGenerationProvenance
+  readonly replaceableByRegeneration: boolean
+  readonly protectedValues: readonly PlanningReviewProtectedValue[]
+  readonly prescriptions: readonly PlanningReviewPrescriptionProvenance[]
+}
+
+/**
+ * Provenance projection for review consumers.
+ *
+ * Every source and ownership value is the authoritative H7/H6/H10 type. The
+ * projection only groups and exposes those values; it defines no replacement
+ * ownership state.
+ */
+export interface IntegralPlanningReviewProvenance {
+  readonly plan: PlanningReviewScope
+  readonly microcycles: readonly PlanningReviewMicrocycleProvenance[]
+  readonly sessions: readonly PlanningReviewSessionProvenance[]
+  readonly protectedValues: readonly PlanningReviewProtectedValue[]
 }
 
 /** Aggregate totals used consistently at macro, meso and full-plan levels. */
@@ -176,6 +226,7 @@ export interface IntegralPlanningReviewSummary {
   readonly totals: PlanningReviewTotals
   readonly macrocycles: readonly PlanningReviewMacrocycleSummary[]
   readonly competitions: readonly PlanningReviewCompetition[]
+  readonly provenance: IntegralPlanningReviewProvenance
 }
 
 /**
