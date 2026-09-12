@@ -6,7 +6,9 @@
 - Branch: `h-20-planning-review-persistence`.
 - Base: `dashboard` after H10 closure documentation.
 - Completed: `KAN-225` — audit of H6–H10 boundaries.
-- Current: `KAN-226` — integral planning review contract.
+- Completed: `KAN-226` — integral planning review contract.
+- Completed: `KAN-227` — integral group/cohort summary.
+- Current: `KAN-228` — expose provenance, ownership and base/variant origin.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -83,12 +85,37 @@ Key decisions:
 
 No DB/schema changes are required for KAN-226.
 
+## KAN-227 integral summary
+
+`lib/periodization/planning-review-summary.ts` now projects an `IntegralPlanningReview`
+into the typed `IntegralPlanningReviewSummary` without persistence or UI coupling.
+
+The projection:
+
+- preserves the exact group-base or cohort-variant review scope;
+- aggregates target volume (km), positive elevation (m), duration (minutes),
+  microcycles, sessions and prescriptions at week, mesocycle, macrocycle and
+  whole-plan levels;
+- keeps null targets visible in the authoritative aggregate while treating them
+  as zero only for summary arithmetic;
+- associates plan-scoped competitions with calendar weeks by inclusive ISO date
+  range and preserves every A/B/C entry plus its H10 impact window in the
+  integral calendar;
+- sorts copied hierarchy/calendar arrays deterministically without mutating the
+  review aggregate;
+- deliberately performs no H11 global validation, diff or persistence work,
+  which remain owned by KAN-229 onward.
+
+Focused tests cover hierarchical totals, null targets, competition counts,
+deterministic ordering, input immutability, cohort lineage and impact-window
+preservation. The remote Vercel build for the implementation commit passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
 | --- | --- | --- |
 | KAN-226 integral review model | implemented | pure composition contract; reuse existing domain entities |
-| KAN-227 integral summary | partial | compose/extend existing planning detail information |
+| KAN-227 integral summary | implemented | pure deterministic projection over the integral review aggregate |
 | KAN-228 provenance/ownership | partial | expose existing H6/H10 source semantics; do not invent another provenance model |
 | KAN-229 global validator | missing | compose focused validators into cross-domain checks |
 | KAN-230 integral diff | partial | generalize existing regeneration/H10 reconciliation concepts |
@@ -117,4 +144,4 @@ No DB/schema changes are required for KAN-226.
 
 ## Next step
 
-Close `KAN-226` after recording the contract in Jira. Then start `KAN-227` by building the integral summary from persisted group/cohort data into `IntegralPlanningReview`; do not begin with a new UI or schema migration unless the summary contract proves one is required.
+Close `KAN-227` after recording the projection in Jira. Then start `KAN-228` by exposing the existing H6/H10 provenance and ownership semantics through the integral review; do not introduce a competing provenance model.
