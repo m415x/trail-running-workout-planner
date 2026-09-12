@@ -31,6 +31,7 @@ export interface IntegralPlanningFieldChange {
 
 export interface IntegralPlanningDiffItem {
   readonly identity: string
+  readonly parentIdentity: string | null
   readonly entity: PlanningReviewIssueReference
   readonly classification: IntegralPlanningDiffClassification
   readonly operation: IntegralPlanningDiffOperation
