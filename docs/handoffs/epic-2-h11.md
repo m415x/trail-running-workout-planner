@@ -9,7 +9,8 @@
 - Completed: `KAN-226` — integral planning review contract.
 - Completed: `KAN-227` — integral group/cohort summary.
 - Completed: `KAN-228` — provenance, ownership and base/variant origin.
-- Current: `KAN-229` — global cross-domain consistency validator.
+- Completed: `KAN-229` — global cross-domain consistency validator.
+- Current: `KAN-230` — integral diff before regeneration/persistence.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -136,6 +137,37 @@ introduced. Focused tests cover cohort lineage, planning and H10 sources,
 generated/generated-modified/manual ownership, stable keys, protection and
 input immutability. The remote Vercel build passed.
 
+## KAN-229 global consistency validator
+
+`lib/periodization/planning-review-validator.ts` now performs one pure
+pre-persistence pass over the complete `IntegralPlanningReview`.
+
+The validator:
+
+- returns stable, typed issue codes with `warning` or blocking `conflict`
+  severity and entity/field references;
+- verifies scope against plan ID, group, base/variant kind, cohort and direct
+  source-plan lineage;
+- verifies load/intensity strategy ownership and composes the existing load
+  strategy validator instead of redefining its policy;
+- checks macro → meso → micro parent references, type-scoped duplicate IDs,
+  valid date ranges, child containment and target projection consistency;
+- composes the existing intensity feasibility validator against materialized
+  weekly sessions;
+- checks session team/date ownership, prescription session/group/microcycle
+  references and H6 stable provenance keys;
+- checks competition plan ownership, calendar horizon and H10 impact-window
+  identity/date/priority coherence;
+- verifies that every protected-value annotation points to an entity present in
+  the review;
+- carries pre-existing review issues forward and never mutates or persists the
+  aggregate.
+
+Warnings remain reviewable and do not make the result invalid; any conflict
+blocks persistence. Focused tests cover a valid immutable aggregate,
+multi-boundary conflicts in one pass, non-blocking warnings and malformed H6
+provenance. The remote Vercel build passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -143,7 +175,7 @@ input immutability. The remote Vercel build passed.
 | KAN-226 integral review model | implemented | pure composition contract; reuse existing domain entities |
 | KAN-227 integral summary | implemented | pure deterministic projection over the integral review aggregate |
 | KAN-228 provenance/ownership | implemented | expose authoritative H7/H6/H10 semantics and derived H6 replaceability |
-| KAN-229 global validator | missing | compose focused validators into cross-domain checks |
+| KAN-229 global validator | implemented | typed pure composition of referential, temporal and cross-domain checks |
 | KAN-230 integral diff | partial | generalize existing regeneration/H10 reconciliation concepts |
 | KAN-231 accept/reject blocks | partial | extend explicit H10 coach-review principle to coherent blocks |
 | KAN-232 unified partial reconciliation | partial | compose planning, session and competitive scoped reconciliation |
@@ -170,4 +202,4 @@ input immutability. The remote Vercel build passed.
 
 ## Next step
 
-Close `KAN-228` after recording the projection in Jira. Then start `KAN-229` by composing existing focused validators into stable cross-domain consistency rules; do not mix validation with persistence.
+Close `KAN-229` after recording the validator in Jira. Then start `KAN-230` by building an inspectable integral diff over valid review aggregates; keep diff construction pure and separate from acceptance or persistence.
