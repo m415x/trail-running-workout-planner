@@ -3,8 +3,11 @@ export function formatGain(gain: number): string {
 }
 
 export function formatPace(secondsPerKm: number): string {
-  const minutes = Math.floor(secondsPerKm / 60)
-  const remainingSeconds = secondsPerKm % 60
+  const totalSecondsRounded = Math.round(secondsPerKm)
+
+  const minutes = Math.floor(totalSecondsRounded / 60)
+  const remainingSeconds = totalSecondsRounded % 60
+
   const formattedSeconds = remainingSeconds.toString().padStart(2, '0')
 
   return `${minutes}:${formattedSeconds}`
