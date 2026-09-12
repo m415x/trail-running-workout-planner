@@ -17,6 +17,7 @@ interface ComparableEntity {
   readonly identity: string
   readonly entityType: EntityType
   readonly entityId: string
+  readonly parentIdentity: string | null
   readonly fields: Readonly<Record<string, unknown>>
   readonly protectedFields: ReadonlySet<string>
   readonly protectWholeEntity: boolean
@@ -97,6 +98,7 @@ function flattenReview(review: IntegralPlanningReview) {
     identity: `plan:id:${review.plan.id}`,
     entityType: 'plan',
     entityId: review.plan.id,
+    parentIdentity: null,
     fields: {
       id: review.plan.id,
       groupId: review.plan.groupId,
@@ -117,6 +119,7 @@ function flattenReview(review: IntegralPlanningReview) {
       identity: `macrocycle:id:${macrocycle.id}`,
       entityType: 'macrocycle',
       entityId: macrocycle.id,
+      parentIdentity: `plan:id:${review.plan.id}`,
       fields: normalize(macrocycle) as Readonly<Record<string, unknown>>,
       protectedFields: new Set(['id', 'groupTrainingPlanId']),
       protectWholeEntity: false,
@@ -129,6 +132,7 @@ function flattenReview(review: IntegralPlanningReview) {
         identity: `mesocycle:id:${mesocycle.id}`,
         entityType: 'mesocycle',
         entityId: mesocycle.id,
+        parentIdentity: `macrocycle:id:${macrocycle.id}`,
         fields: normalize(mesocycle) as Readonly<Record<string, unknown>>,
         protectedFields: new Set(['id', 'macrocycleId']),
         protectWholeEntity: false,
@@ -164,6 +168,7 @@ function flattenReview(review: IntegralPlanningReview) {
           identity: `microcycle:id:${microcycle.id}`,
           entityType: 'microcycle',
           entityId: microcycle.id,
+          parentIdentity: `mesocycle:id:${mesocycle.id}`,
           fields: {
             id: microcycle.id,
             mesocycleId: microcycle.mesocycleId,
@@ -192,6 +197,7 @@ function flattenReview(review: IntegralPlanningReview) {
             identity: stableSessionIdentity(session.id, provenance),
             entityType: 'session',
             entityId: session.id,
+            parentIdentity: `microcycle:id:${microcycle.id}`,
             fields: {
               ...normalize(session) as Readonly<Record<string, unknown>>,
               provenance: normalize(provenance),
@@ -211,6 +217,7 @@ function flattenReview(review: IntegralPlanningReview) {
               ),
               entityType: 'prescription',
               entityId: prescription.id,
+              parentIdentity: stableSessionIdentity(session.id, provenance),
               fields: {
                 ...normalize(prescription) as Readonly<Record<string, unknown>>,
                 provenance: normalize(prescriptionProvenance),
@@ -231,6 +238,7 @@ function flattenReview(review: IntegralPlanningReview) {
       identity: `competition:id:${entry.id}`,
       entityType: 'competition',
       entityId: entry.id,
+      parentIdentity: `plan:id:${review.plan.id}`,
       fields: {
         ...normalize(entry) as Readonly<Record<string, unknown>>,
         impactWindow: normalize(impactWindow),
@@ -278,6 +286,7 @@ function classifyExisting(
     const protectedEntity = current.protectRemoval
     return {
       identity: current.identity,
+      parentIdentity: current.parentIdentity,
       entity,
       classification: protectedEntity ? 'preserved' : 'updated',
       operation: protectedEntity ? 'none' : 'remove',
@@ -294,6 +303,7 @@ function classifyExisting(
   if (changes.length === 0) {
     return {
       identity: current.identity,
+      parentIdentity: current.parentIdentity,
       entity,
       classification: 'preserved',
       operation: 'none',
@@ -307,6 +317,7 @@ function classifyExisting(
 
   return {
     identity: current.identity,
+    parentIdentity: current.parentIdentity,
     entity,
     classification: protectedChange ? 'conflict' : 'updated',
     operation: protectedChange ? 'none' : 'update',
@@ -350,6 +361,7 @@ export function buildIntegralPlanningDiff(
     if (currentEntities.has(identity)) continue
     items.push({
       identity,
+      parentIdentity: entity.parentIdentity,
       entity: {
         entityType: entity.entityType,
         entityId: entity.entityId,
