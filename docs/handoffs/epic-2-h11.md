@@ -199,6 +199,35 @@ manual preservation, added entities, manual/coach protection, protected session
 changes, stable-key identity and input immutability. The remote Vercel build
 passed.
 
+## KAN-231 coherent block decisions
+
+`lib/periodization/planning-review-blocks.ts` now turns the KAN-230 diff into
+pure, reviewable acceptance units without persisting any decision.
+
+The decision boundary:
+
+- groups every changed macrocycle with its complete mesocycle, microcycle,
+  session and prescription subtree, so internal references cannot be split by a
+  partial coach decision;
+- keeps plan changes and each competition change in explicit blocks;
+- declares plan dependencies whenever a changed plan block must be accepted
+  with a macrocycle or competition block;
+- excludes unchanged/preserved items from the decision set while continuing to
+  surface protected conflicts from the diff;
+- marks blocks containing protected or global validation conflicts as
+  non-acceptable;
+- validates duplicate, unknown, conflicted and dependency-breaking decisions;
+- retains the coach ID, timestamp and optional reason on every accepted or
+  rejected block;
+- produces only the accepted diff item identities for KAN-232 reconciliation;
+- remains immutable and performs no database write.
+
+The KAN-230 diff now carries `parentIdentity`, preserving its hierarchy for
+safe grouping without duplicating H6 ownership or H10 provenance. Focused tests
+cover subtree cohesion, dependencies, accepted write-set projection, coach
+provenance, conflict blocking and input immutability. The remote Vercel build
+passed.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
@@ -208,7 +237,7 @@ passed.
 | KAN-228 provenance/ownership | implemented | expose authoritative H7/H6/H10 semantics and derived H6 replaceability |
 | KAN-229 global validator | implemented | typed pure composition of referential, temporal and cross-domain checks |
 | KAN-230 integral diff | implemented | pure stable-identity diff with create/update/remove intent and protection-aware classification |
-| KAN-231 accept/reject blocks | partial | extend explicit H10 coach-review principle to coherent blocks |
+| KAN-231 accept/reject blocks | implemented | pure macrocycle/competition/plan blocks with dependencies and coach-decision provenance |
 | KAN-232 unified partial reconciliation | partial | compose planning, session and competitive scoped reconciliation |
 | KAN-233 stable IDs | mostly implemented | audit and test cross-boundary stability; fix only real gaps |
 | KAN-234 atomic persistence | partial | separate transactions exist; one accepted aggregate transaction is missing |
@@ -233,4 +262,4 @@ passed.
 
 ## Next step
 
-Close `KAN-230` after recording the diff in Jira. Then start `KAN-231` by grouping diff items into coherent acceptance blocks whose dependencies cannot be partially accepted; keep persistence out of that decision boundary.
+Close `KAN-231` after recording the coherent decision boundary in Jira. Then start `KAN-232` by reconciling only the accepted item identities across the existing scoped planning, H6 session and H10 competition boundaries.
