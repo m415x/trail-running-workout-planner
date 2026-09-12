@@ -26,7 +26,11 @@ export function integralPlanningIdempotencyKey(
 ) {
   const payload = {
     scope: reconciliation.scope,
-    blocks: [...reconciliation.blocks]
+    blocks: reconciliation.blocks
+      .map((block) => ({
+        ...block,
+        operationIdentities: [...block.operationIdentities].sort(),
+      }))
       .sort((first, second) => first.blockId.localeCompare(second.blockId)),
     operations: [...reconciliation.operations]
       .sort((first, second) => first.identity.localeCompare(second.identity)),
