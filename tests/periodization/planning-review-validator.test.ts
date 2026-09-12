@@ -156,7 +156,7 @@ describe('validador integral de planificación', () => {
       teamId: 'team-other',
       date: '2026-02-01',
     })
-    Object.assign(session.prescriptions[0].prescription, { groupId: 'group-other' })
+    Object.assign(session.prescriptions[0].prescription, { groupId: 'group-third' })
     Object.assign(competition.entry, {
       groupTrainingPlanId: 'plan-other',
       date: '2026-02-01',
