@@ -137,6 +137,47 @@ export interface PlanningReviewCompetition {
   readonly impactWindow: CompetitionImpactWindow | null
 }
 
+/** Aggregate totals used consistently at macro, meso and full-plan levels. */
+export interface PlanningReviewTotals {
+  readonly targetVolumeKm: number
+  readonly targetElevationGainM: number
+  readonly targetDurationMin: number
+  readonly microcycleCount: number
+  readonly sessionCount: number
+  readonly prescriptionCount: number
+  readonly competitionCount: number
+}
+
+/** Weekly distribution projected from one reviewed microcycle. */
+export interface PlanningReviewWeekSummary extends PlanningReviewTotals {
+  readonly microcycleId: string
+  readonly weekNumber: number
+  readonly startDate: string
+  readonly endDate: string
+}
+
+/** Mesocycle totals plus its ordered week distribution. */
+export interface PlanningReviewMesocycleSummary {
+  readonly mesocycleId: string
+  readonly totals: PlanningReviewTotals
+  readonly weeks: readonly PlanningReviewWeekSummary[]
+}
+
+/** Macrocycle totals plus nested mesocycle summaries. */
+export interface PlanningReviewMacrocycleSummary {
+  readonly macrocycleId: string
+  readonly totals: PlanningReviewTotals
+  readonly mesocycles: readonly PlanningReviewMesocycleSummary[]
+}
+
+/** Integral projection consumed by the H11 review UI and later diff boundary. */
+export interface IntegralPlanningReviewSummary {
+  readonly scope: PlanningReviewScope
+  readonly totals: PlanningReviewTotals
+  readonly macrocycles: readonly PlanningReviewMacrocycleSummary[]
+  readonly competitions: readonly PlanningReviewCompetition[]
+}
+
 /**
  * Pure, persistence-agnostic representation reviewed by the coach in H11.
  *
