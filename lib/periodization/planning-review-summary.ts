@@ -1,3 +1,4 @@
+import { buildIntegralPlanningReviewProvenance } from '@/lib/periodization/planning-review-provenance'
 import type {
   IntegralPlanningReview,
   IntegralPlanningReviewSummary,
@@ -159,5 +160,6 @@ export function buildIntegralPlanningReviewSummary(
     },
     macrocycles,
     competitions,
+    provenance: buildIntegralPlanningReviewProvenance(review),
   }
 }
