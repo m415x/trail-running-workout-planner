@@ -282,4 +282,70 @@ describe('diff integral de planificación', () => {
     )
     assert.equal(prescriptionItems[0].classification, 'conflict')
   })
+  it('conserva IDs persistidos aunque un borrador equivalente traiga UUID nuevos', () => {
+    const current = buildReview()
+    Object.assign(microcycle(current), { sessions: [] })
+    const proposed = structuredClone(current)
+    const proposedMacro = proposed.macrocycles[0]
+    const proposedMeso = proposedMacro.mesocycles[0]
+    const proposedMicro = proposedMeso.microcycles[0]
+
+    Object.assign(proposedMacro.macrocycle, { id: 'random-macro' })
+    Object.assign(proposedMeso.mesocycle, {
+      id: 'random-meso',
+      macrocycleId: 'random-macro',
+    })
+    Object.assign(proposedMicro.microcycle, {
+      id: 'random-micro',
+      mesocycleId: 'random-meso',
+    })
+
+    const diff = buildIntegralPlanningDiff(current, proposed)
+    const hierarchy = diff.items.filter(({ entity }) => (
+      entity.entityType === 'macrocycle'
+      || entity.entityType === 'mesocycle'
+      || entity.entityType === 'microcycle'
+    ))
+
+    assert.equal(hierarchy.every(({ classification }) => classification === 'preserved'), true)
+    assert.deepEqual(hierarchy.map(({ entity }) => entity.entityId), [
+      'macro-1',
+      'meso-1',
+      'micro-1',
+    ])
+    assert.equal(diff.hasConflicts, false)
+  })
+
+  it('actualiza por semana estable y conserva el ID persistido del microciclo', () => {
+    const current = buildReview()
+    Object.assign(microcycle(current), { sessions: [] })
+    const proposed = structuredClone(current)
+    const proposedMacro = proposed.macrocycles[0]
+    const proposedMeso = proposedMacro.mesocycles[0]
+    const proposedMicro = proposedMeso.microcycles[0]
+
+    Object.assign(proposedMacro.macrocycle, { id: 'random-macro' })
+    Object.assign(proposedMeso.mesocycle, {
+      id: 'random-meso',
+      macrocycleId: 'random-macro',
+    })
+    Object.assign(proposedMicro.microcycle, {
+      id: 'random-micro',
+      mesocycleId: 'random-meso',
+      targetVolumeKm: 42,
+    })
+    Object.assign(proposedMicro.targets, { targetVolumeKm: 42 })
+
+    const diff = buildIntegralPlanningDiff(current, proposed)
+    const week = diff.items.find(({ identity }) => (
+      identity === 'microcycle:generation:plan-1:week:1'
+    ))
+
+    assert.equal(week?.classification, 'updated')
+    assert.equal(week?.operation, 'update')
+    assert.equal(week?.entity.entityId, 'micro-1')
+    assert.equal(week?.changes.some(({ field }) => field === 'id'), false)
+    assert.equal(week?.changes.some(({ field }) => field === 'mesocycleId'), false)
+  })
+
 })
