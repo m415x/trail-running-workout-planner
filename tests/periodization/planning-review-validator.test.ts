@@ -161,12 +161,14 @@ describe('validador integral de planificación', () => {
       groupTrainingPlanId: 'plan-other',
       date: '2026-02-01',
     })
-    review.protectedValues.push({
-      entityType: 'session',
-      entityId: 'session-missing',
-      field: 'title',
-      sourceBoundary: 'session_generation',
-      reason: 'Referencia ausente.',
+    Object.assign(review, {
+      protectedValues: [...review.protectedValues, {
+        entityType: 'session',
+        entityId: 'session-missing',
+        field: 'title',
+        sourceBoundary: 'session_generation',
+        reason: 'Referencia ausente.',
+      }],
     })
 
     const validation = validateIntegralPlanningReview(review)
