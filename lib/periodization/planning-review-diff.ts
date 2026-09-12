@@ -1,7 +1,6 @@
 import { validateIntegralPlanningReview } from '@/lib/periodization/planning-review-validator'
 import type {
   IntegralPlanningDiff,
-  IntegralPlanningDiffClassification,
   IntegralPlanningDiffCounts,
   IntegralPlanningDiffItem,
   IntegralPlanningFieldChange,
