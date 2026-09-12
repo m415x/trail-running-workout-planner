@@ -28,7 +28,9 @@ History documents preserve how the product and domain model evolved: original as
 
 ## Handoffs
 
-There is currently no active handoff on `dashboard`. H10 is closed and its temporary handoff was removed after durable information was consolidated into architecture/history. The next active story should create a single concise handoff on its story branch once its audit establishes the current working context.
+- [Epic 2 / H11 — Planning review and safe persistence](handoffs/epic-2-h11.md)
+
+H10 is closed and its temporary handoff was removed after durable information was consolidated into architecture/history. H11 keeps the single active operational handoff on its story branch.
 
 Handoffs are intentionally temporary and minimal. Keep only the handoff needed to resume the active/recent story; durable decisions belong in architecture/history and execution state belongs in Jira. Superseded handoffs should be removed once their durable information has been consolidated.
 
