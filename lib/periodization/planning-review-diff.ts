@@ -156,6 +156,9 @@ function flattenReview(review: IntegralPlanningReview) {
         if (competitiveSources?.targetElevationGainM === 'coach') {
           protectedFields.add('targetElevationGainM')
         }
+        if (competitiveSources?.allowIntenseSessions === 'coach') {
+          protectedFields.add('intensityTarget')
+        }
 
         addEntity(entities, {
           identity: `microcycle:id:${microcycle.id}`,
