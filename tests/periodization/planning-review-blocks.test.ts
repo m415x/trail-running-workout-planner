@@ -18,7 +18,7 @@ function buildDiff(): IntegralPlanningDiff {
       reason: 'generated_change',
       changes: [{ field: 'title', currentValue: 'Plan', proposedValue: 'Plan 2027' }],
     }, {
-      identity: 'macrocycle:id:macro-1',
+      identity: 'macrocycle:generation:plan-1:ordinal:1',
       parentIdentity: 'plan:id:plan-1',
       entity: { entityType: 'macrocycle', entityId: 'macro-1' },
       classification: 'updated',
@@ -26,16 +26,16 @@ function buildDiff(): IntegralPlanningDiff {
       reason: 'generated_change',
       changes: [{ field: 'endDate', currentValue: '2027-03-01', proposedValue: '2027-03-08' }],
     }, {
-      identity: 'microcycle:id:micro-1',
-      parentIdentity: 'mesocycle:id:meso-1',
+      identity: 'microcycle:generation:plan-1:week:1',
+      parentIdentity: 'mesocycle:generation:macrocycle:generation:plan-1:ordinal:1:number:1',
       entity: { entityType: 'microcycle', entityId: 'micro-1' },
       classification: 'updated',
       operation: 'update',
       reason: 'generated_change',
       changes: [{ field: 'targetVolumeKm', currentValue: 40, proposedValue: 42 }],
     }, {
-      identity: 'mesocycle:id:meso-1',
-      parentIdentity: 'macrocycle:id:macro-1',
+      identity: 'mesocycle:generation:macrocycle:generation:plan-1:ordinal:1:number:1',
+      parentIdentity: 'macrocycle:generation:plan-1:ordinal:1',
       entity: { entityType: 'mesocycle', entityId: 'meso-1' },
       classification: 'preserved',
       operation: 'none',
@@ -43,7 +43,7 @@ function buildDiff(): IntegralPlanningDiff {
       changes: [],
     }, {
       identity: 'session:generation:shared-1',
-      parentIdentity: 'microcycle:id:micro-1',
+      parentIdentity: 'microcycle:generation:plan-1:week:1',
       entity: { entityType: 'session', entityId: 'session-1' },
       classification: 'added',
       operation: 'create',
@@ -84,8 +84,8 @@ describe('decisiones por bloques de revisión integral', () => {
 
     assert.equal(review.blocks.length, 3)
     assert.deepEqual(macroBlock?.itemIdentities, [
-      'macrocycle:id:macro-1',
-      'microcycle:id:micro-1',
+      'macrocycle:generation:plan-1:ordinal:1',
+      'microcycle:generation:plan-1:week:1',
       'prescription:generation:group-1',
       'session:generation:shared-1',
     ])
@@ -167,7 +167,7 @@ describe('decisiones por bloques de revisión integral', () => {
   it('no permite aceptar bloques con conflictos protegidos', () => {
     const diff = buildDiff()
     const conflictedItems = diff.items.map((item) => (
-      item.identity === 'microcycle:id:micro-1'
+      item.identity === 'microcycle:generation:plan-1:week:1'
         ? {
             ...item,
             classification: 'conflict' as const,
