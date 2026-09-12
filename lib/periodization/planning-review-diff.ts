@@ -1,3 +1,11 @@
+import {
+  stableMacrocycleIdentity,
+  stableMesocycleIdentity,
+  stableMicrocycleIdentity,
+  stablePlanIdentity,
+  stablePrescriptionIdentity,
+  stableSessionIdentity,
+} from '@/lib/periodization/planning-stable-identity'
 import { validateIntegralPlanningReview } from '@/lib/periodization/planning-review-validator'
 import type {
   IntegralPlanningDiff,
@@ -51,24 +59,6 @@ function equal(first: unknown, second: unknown) {
   return JSON.stringify(normalize(first)) === JSON.stringify(normalize(second))
 }
 
-function stableSessionIdentity(
-  id: string,
-  provenance: { readonly sharedEventKey: string | null },
-) {
-  return provenance.sharedEventKey === null
-    ? `session:id:${id}`
-    : `session:generation:${provenance.sharedEventKey}`
-}
-
-function stablePrescriptionIdentity(
-  id: string,
-  provenance: { readonly generationKey: string | null },
-) {
-  return provenance.generationKey === null
-    ? `prescription:id:${id}`
-    : `prescription:generation:${provenance.generationKey}`
-}
-
 function protectedFieldsFor(
   values: readonly PlanningReviewProtectedValue[],
   entityId: string,
@@ -95,7 +85,7 @@ function flattenReview(review: IntegralPlanningReview) {
   const annotations = review.protectedValues
 
   addEntity(entities, {
-    identity: `plan:id:${review.plan.id}`,
+    identity: stablePlanIdentity(review.plan.id),
     entityType: 'plan',
     entityId: review.plan.id,
     parentIdentity: null,
@@ -113,13 +103,17 @@ function flattenReview(review: IntegralPlanningReview) {
     protectRemoval: true,
   })
 
-  for (const macroNode of review.macrocycles) {
+  for (const [macrocycleIndex, macroNode] of review.macrocycles.entries()) {
     const { macrocycle } = macroNode
+    const macrocycleIdentity = stableMacrocycleIdentity(
+      review.plan.id,
+      macrocycleIndex + 1,
+    )
     addEntity(entities, {
-      identity: `macrocycle:id:${macrocycle.id}`,
+      identity: macrocycleIdentity,
       entityType: 'macrocycle',
       entityId: macrocycle.id,
-      parentIdentity: `plan:id:${review.plan.id}`,
+      parentIdentity: stablePlanIdentity(review.plan.id),
       fields: normalize(macrocycle) as Readonly<Record<string, unknown>>,
       protectedFields: new Set(['id', 'groupTrainingPlanId']),
       protectWholeEntity: false,
@@ -128,11 +122,15 @@ function flattenReview(review: IntegralPlanningReview) {
 
     for (const mesoNode of macroNode.mesocycles) {
       const { mesocycle } = mesoNode
+      const mesocycleIdentity = stableMesocycleIdentity(
+        macrocycleIdentity,
+        mesocycle.number,
+      )
       addEntity(entities, {
-        identity: `mesocycle:id:${mesocycle.id}`,
+        identity: mesocycleIdentity,
         entityType: 'mesocycle',
         entityId: mesocycle.id,
-        parentIdentity: `macrocycle:id:${macrocycle.id}`,
+        parentIdentity: macrocycleIdentity,
         fields: normalize(mesocycle) as Readonly<Record<string, unknown>>,
         protectedFields: new Set(['id', 'macrocycleId']),
         protectWholeEntity: false,
@@ -141,6 +139,10 @@ function flattenReview(review: IntegralPlanningReview) {
 
       for (const microNode of mesoNode.microcycles) {
         const { microcycle, targets, intensityTarget } = microNode
+        const microcycleIdentity = stableMicrocycleIdentity(
+          review.plan.id,
+          microcycle.weekNumber,
+        )
         const protectedFields = protectedFieldsFor(annotations, microcycle.id)
         protectedFields.add('id')
         protectedFields.add('mesocycleId')
@@ -165,10 +167,10 @@ function flattenReview(review: IntegralPlanningReview) {
         }
 
         addEntity(entities, {
-          identity: `microcycle:id:${microcycle.id}`,
+          identity: microcycleIdentity,
           entityType: 'microcycle',
           entityId: microcycle.id,
-          parentIdentity: `mesocycle:id:${mesocycle.id}`,
+          parentIdentity: mesocycleIdentity,
           fields: {
             id: microcycle.id,
             mesocycleId: microcycle.mesocycleId,
@@ -197,7 +199,7 @@ function flattenReview(review: IntegralPlanningReview) {
             identity: stableSessionIdentity(session.id, provenance),
             entityType: 'session',
             entityId: session.id,
-            parentIdentity: `microcycle:id:${microcycle.id}`,
+            parentIdentity: microcycleIdentity,
             fields: {
               ...normalize(session) as Readonly<Record<string, unknown>>,
               provenance: normalize(provenance),
@@ -238,7 +240,7 @@ function flattenReview(review: IntegralPlanningReview) {
       identity: `competition:id:${entry.id}`,
       entityType: 'competition',
       entityId: entry.id,
-      parentIdentity: `plan:id:${review.plan.id}`,
+      parentIdentity: stablePlanIdentity(review.plan.id),
       fields: {
         ...normalize(entry) as Readonly<Record<string, unknown>>,
         impactWindow: normalize(impactWindow),
@@ -252,15 +254,28 @@ function flattenReview(review: IntegralPlanningReview) {
   return entities
 }
 
+const TRANSIENT_REGENERATION_FIELDS: Readonly<Record<EntityType, ReadonlySet<string>>> = {
+  plan: new Set(),
+  macrocycle: new Set(['id', 'groupTrainingPlanId']),
+  mesocycle: new Set(['id', 'macrocycleId']),
+  microcycle: new Set(['id', 'mesocycleId']),
+  competition: new Set(),
+  competition_window: new Set(),
+  session: new Set(),
+  prescription: new Set(),
+}
+
 function changesBetween(
   current: ComparableEntity,
   proposed: ComparableEntity,
 ) {
+  const transientFields = TRANSIENT_REGENERATION_FIELDS[current.entityType]
   const fields = new Set([
     ...Object.keys(current.fields),
     ...Object.keys(proposed.fields),
   ])
   return [...fields]
+    .filter((field) => !transientFields.has(field))
     .sort()
     .flatMap((field): IntegralPlanningFieldChange[] => (
       equal(current.fields[field], proposed.fields[field])
