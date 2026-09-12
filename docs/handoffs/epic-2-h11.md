@@ -5,7 +5,8 @@
 - Story: `KAN-224` — H11: Revisión integral y persistencia segura del motor de planificación.
 - Branch: `h-20-planning-review-persistence`.
 - Base: `dashboard` after H10 closure documentation.
-- Current audit: `KAN-225` — boundaries H6–H10.
+- Completed: `KAN-225` — audit of H6–H10 boundaries.
+- Current: `KAN-226` — integral planning review contract.
 - Delivery mode: remote-first. Local full gate remains a story-end requirement unless a task specifically needs local DB/runtime validation.
 
 ## H11 purpose
@@ -65,11 +66,28 @@ resolved athlete view
 - real Supabase transaction/rollback validation;
 - explicit concurrency/double-submit/stale-review handling.
 
+## KAN-226 integral review contract
+
+`types/training/planning-review.types.ts` now defines a pure composition model instead of another persistence/domain model.
+
+Key decisions:
+
+- `PlanningReviewScope` reuses H7 `GroupTrainingPlanKind` and lineage IDs to distinguish `group_base` from `cohort_variant` without duplicating association rules.
+- macro → meso → micro hierarchy wraps existing persisted entities rather than copying their fields into a second planning schema.
+- microcycle targets keep the existing `generated | manual` volume/D+ source semantics; the review model only makes units explicit (`targetElevationGainM`).
+- persisted Sessions and GroupSessionPrescriptions are paired with the existing H6 provenance unions (`SessionEventGenerationProvenance` / `SessionPrescriptionGenerationProvenance`).
+- competitions reuse `CompetitionEntry`; competitive windows reuse `CompetitionImpactWindow`.
+- protected values are review annotations that point back to the authoritative boundary (`planning_manual`, `session_generation`, `competition_adjustment`) rather than defining new ownership states.
+- cross-domain issues have a common review shape, while stable issue codes/rules remain intentionally deferred to KAN-229.
+- `IntegralPlanningReview` is persistence-agnostic: constructing or reviewing it performs no writes.
+
+No DB/schema changes are required for KAN-226.
+
 ## Task classification after KAN-225
 
 | Task | Classification | H11 interpretation |
 | --- | --- | --- |
-| KAN-226 integral review model | missing | define composition model; reuse existing domain entities |
+| KAN-226 integral review model | implemented | pure composition contract; reuse existing domain entities |
 | KAN-227 integral summary | partial | compose/extend existing planning detail information |
 | KAN-228 provenance/ownership | partial | expose existing H6/H10 source semantics; do not invent another provenance model |
 | KAN-229 global validator | missing | compose focused validators into cross-domain checks |
@@ -99,4 +117,4 @@ resolved athlete view
 
 ## Next step
 
-After `KAN-225` closes, start `KAN-226` by defining the integral review contract from these existing boundaries. Do not begin with UI or database schema changes unless the review contract demonstrates that they are required.
+Close `KAN-226` after recording the contract in Jira. Then start `KAN-227` by building the integral summary from persisted group/cohort data into `IntegralPlanningReview`; do not begin with a new UI or schema migration unless the summary contract proves one is required.
