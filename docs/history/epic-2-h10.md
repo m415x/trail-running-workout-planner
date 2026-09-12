@@ -103,4 +103,8 @@ The story contains focused coverage for:
 - date changes shifting the impact window;
 - B -> A promotion rebuilding the priority-specific window.
 
-The complete local test/lint/type/build gate remains the final acceptance step before closing `KAN-223` / H10 and merging into `dashboard`.
+## Closure
+
+H10 completed its full local story gate successfully: automated tests, lint, TypeScript type checking, production build and Supabase schema validation were green after the final regression fixes. `KAN-223` and `KAN-204` were transitioned to `Finalizada` in Jira.
+
+The story branch `h-19-competitive-adjustment` was merged into `dashboard` in commit `6ea77fc` (`Merge H10 competitive adjustment into dashboard`). H10 is therefore closed; future work should consume the durable competitive-adjustment contracts rather than treating this history as an active implementation checklist.
