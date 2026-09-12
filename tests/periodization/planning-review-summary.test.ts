@@ -9,8 +9,8 @@ import type {
 } from '@/types/training/planning-review.types'
 
 const baseEntity = {
-  createdAt: new Date('2026-01-01T00:00:00.000Z'),
-  updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+  createdAt: '2026-01-01T00:00:00.000Z',
+  updatedAt: '2026-01-01T00:00:00.000Z',
 }
 
 function buildMicrocycle({
@@ -62,7 +62,7 @@ function buildMicrocycle({
         teamId: 'team-1',
         date: startDate,
         title: 'Rodaje',
-        type: 'easy_run',
+        type: 'Base',
       },
       provenance: {
         ownership: 'generated',
@@ -248,9 +248,22 @@ describe('resumen integral de planificación', () => {
         startDate: '2026-01-15',
         endDate: '2026-01-15',
         recovery: {
-          durationDays: 0,
-          mode: 'none',
-          rationale: [],
+          priority: 'B',
+          demand: {
+            band: 'minimal',
+            confidence: 'high',
+            competitionDemandBand: 'very_low',
+            courseEffortKm: 21,
+            elevationLossM: null,
+            downhillLoadKnown: false,
+            technicalityKnown: false,
+            requiresCoachReview: false,
+          },
+          planningProtection: 'contextual',
+          phases: [],
+          totalRecoveryDays: 0,
+          requiresCoachReview: false,
+          reasonCodes: ['competition_demand'],
         },
       },
     }
