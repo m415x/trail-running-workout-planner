@@ -1,5 +1,16 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+import { Pencil, XCircle } from 'lucide-react'
+
+import {
+  changeCompetitionStatusAction,
+  updateCompetitionAction,
+} from '@/app/actions/competition-calendar-actions'
 import type { CompetitionEntryWithDistanceCompatibility } from '@/lib/periodization/competition-distance-context'
+import type { CompetitionPriority } from '@/types/training/competition-entry.types'
 import { Badge } from '@ui/badge'
+import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
 
@@ -50,6 +61,11 @@ export function CompetitionCalendarSummary({
   locale,
   hasPrimaryConflict = false,
 }: CompetitionCalendarSummaryProps) {
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [priority, setPriority] = useState<CompetitionPriority>('C')
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [pending, startTransition] = useTransition()
+
   if (competitions.length === 0) return null
 
   const language = locale === 'en' ? 'en' : 'es'
@@ -70,8 +86,14 @@ export function CompetitionCalendarSummary({
         distance: 'Distance',
         elevation: 'Elevation',
         status: 'Status',
-        compatibility: 'H8 compatibility',
+        compatibility: 'Category/distance compatibility',
         primary: 'Main',
+        actions: 'Actions',
+        edit: 'Edit',
+        save: 'Save',
+        cancelEdit: 'Cancel edit',
+        cancelCompetition: 'Cancel competition',
+        actionError: 'The competition could not be updated. Review the calendar rules and try again.',
       }
     : {
         title: 'Calendario competitivo',
@@ -83,9 +105,62 @@ export function CompetitionCalendarSummary({
         distance: 'Distancia',
         elevation: 'Desnivel',
         status: 'Estado',
-        compatibility: 'Compatibilidad H8',
+        compatibility: 'Compatibilidad categoría/distancia',
         primary: 'Principal',
+        actions: 'Acciones',
+        edit: 'Editar',
+        save: 'Guardar',
+        cancelEdit: 'Cancelar edición',
+        cancelCompetition: 'Cancelar competencia',
+        actionError: 'No se pudo actualizar la competencia. Revisá las reglas del calendario e intentá nuevamente.',
       }
+
+  function beginEdit(competition: CompetitionEntryWithDistanceCompatibility) {
+    setActionError(null)
+    setEditingId(competition.id)
+    setPriority(competition.priority)
+  }
+
+  function savePriority(competition: CompetitionEntryWithDistanceCompatibility) {
+    setActionError(null)
+    startTransition(async () => {
+      const result = await updateCompetitionAction({
+        planId: competition.groupTrainingPlanId,
+        competitionId: competition.id,
+        locale: language,
+        draft: {
+          name: competition.name,
+          date: competition.date,
+          distanceKm: competition.distanceKm,
+          elevationGainM: competition.elevationGainM ?? null,
+          priority,
+          description: competition.description ?? null,
+        },
+      })
+
+      if (!result.ok) {
+        setActionError(copy.actionError)
+        return
+      }
+
+      setEditingId(null)
+    })
+  }
+
+  function cancelCompetition(competition: CompetitionEntryWithDistanceCompatibility) {
+    setActionError(null)
+    startTransition(async () => {
+      const result = await changeCompetitionStatusAction({
+        planId: competition.groupTrainingPlanId,
+        competitionId: competition.id,
+        locale: language,
+        status: 'cancelled',
+      })
+
+      if (!result.ok) setActionError(copy.actionError)
+      else setEditingId(null)
+    })
+  }
 
   return (
     <Card>
@@ -94,6 +169,9 @@ export function CompetitionCalendarSummary({
         <CardDescription>{copy.description}</CardDescription>
         {hasPrimaryConflict && (
           <p role='status' className='text-sm text-destructive'>{copy.conflict}</p>
+        )}
+        {actionError && (
+          <p role='alert' className='text-sm text-destructive'>{actionError}</p>
         )}
       </CardHeader>
       <CardContent>
@@ -108,21 +186,37 @@ export function CompetitionCalendarSummary({
                 <TableHead>{copy.elevation}</TableHead>
                 <TableHead>{copy.status}</TableHead>
                 <TableHead>{copy.compatibility}</TableHead>
+                <TableHead className='text-right'>{copy.actions}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {sortedCompetitions.map((competition) => {
                 const isPrimary = competition.id === primaryCompetitionId
+                const isEditing = editingId === competition.id
 
                 return (
                   <TableRow key={competition.id}>
                     <TableCell>
-                      <div className='flex items-center gap-2'>
-                        <Badge variant={competition.priority === 'A' ? 'default' : 'secondary'}>
-                          {competition.priority}
-                        </Badge>
-                        {isPrimary && <Badge variant='outline'>{copy.primary}</Badge>}
-                      </div>
+                      {isEditing ? (
+                        <select
+                          aria-label={copy.priority}
+                          value={priority}
+                          onChange={(event) => setPriority(event.target.value as CompetitionPriority)}
+                          disabled={pending}
+                          className='h-8 rounded-md border border-input bg-background px-2 text-sm'
+                        >
+                          <option value='A'>A</option>
+                          <option value='B'>B</option>
+                          <option value='C'>C</option>
+                        </select>
+                      ) : (
+                        <div className='flex items-center gap-2'>
+                          <Badge variant={competition.priority === 'A' ? 'default' : 'secondary'}>
+                            {competition.priority}
+                          </Badge>
+                          {isPrimary && <Badge variant='outline'>{copy.primary}</Badge>}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell className='font-medium'>{competition.name}</TableCell>
                     <TableCell>
@@ -141,6 +235,33 @@ export function CompetitionCalendarSummary({
                       <Badge variant={competition.distanceCompatibility.status === 'incompatible' || competition.distanceCompatibility.status === 'invalid' ? 'destructive' : 'outline'}>
                         {compatibilityLabels[competition.distanceCompatibility.status]}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className='flex justify-end gap-2'>
+                        {isEditing ? (
+                          <>
+                            <Button type='button' size='sm' disabled={pending} onClick={() => savePriority(competition)}>
+                              {copy.save}
+                            </Button>
+                            <Button type='button' variant='outline' size='sm' disabled={pending} onClick={() => setEditingId(null)}>
+                              {copy.cancelEdit}
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            {competition.status !== 'cancelled' && competition.status !== 'completed' && (
+                              <Button type='button' variant='outline' size='sm' disabled={pending} onClick={() => beginEdit(competition)}>
+                                <Pencil /> {copy.edit}
+                              </Button>
+                            )}
+                            {competition.status !== 'cancelled' && competition.status !== 'completed' && (
+                              <Button type='button' variant='ghost' size='sm' disabled={pending} onClick={() => cancelCompetition(competition)}>
+                                <XCircle /> {copy.cancelCompetition}
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )
