@@ -8,161 +8,130 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-## Project Overview
+# Trail Running Workout Planner — agent rules
 
-Full-stack web app for trail running group management, workout planning, and runner metrics (El Parque Team App).
+## Project overview
 
-The product has two main experiences:
+Full-stack trail-running group management and planning application. The coach remains the decision owner: automation generates/reviews evidence and proposals but must not silently replace deliberate coach state.
 
-- **Coach dashboard:** athletes, groups, training goals, periodized plans, sessions, and monthly/weekly calendars.
-- **Athlete mobile view:** current week, group-prescribed sessions, instructions, volume, and location through Home and `/plan`.
+## Technology baseline
 
-The current implementation is an authenticated-product prototype: user/team context still uses fixed development IDs until authentication and tenant resolution are introduced.
+- Next.js 16 App Router, React 19, TypeScript, pnpm.
+- Tailwind CSS 4 + Shadcn UI; `next-intl` ES/EN.
+- Drizzle ORM; SQLite is the current local runtime DB; PostgreSQL/Supabase is the parallel verified target.
+- Node test runner through `tsx`.
 
-## Technology Baseline
-
-- Next.js 16 App Router, React 19, TypeScript 6, and pnpm 11.
-- Tailwind CSS 4 and Shadcn UI (`base-nova`).
-- `next-intl` with Spanish as the default locale and English as the secondary locale.
-- Drizzle ORM with SQLite for the current local application runtime.
-- A parallel PostgreSQL schema and migrations prepared for Supabase.
-- Node's test runner through `tsx` for domain and parsing tests.
+Confirm exact versions from `package.json`/lockfile and installed docs before relying on remembered APIs.
 
 ## Commands
 
-- `pnpm dev` — Start development server with Turbopack
-- `pnpm build` — Build for production (also generates `.next/types` required for strict TS validation)
-- `pnpm lint` — Run ESLint
-- `pnpm test` — Run automated tests
-- `pnpm exec tsc --noEmit` — Run TypeScript type-checking
-- `pnpm db:push` — Apply the SQLite schema in local development
-- `pnpm db:seed` — Populate relative-date local demo data
-- `pnpm db:generate:supabase` — Generate a PostgreSQL migration for Supabase
-- `pnpm db:check:supabase` — Validate the Supabase migration journal
-- `pnpm db:migrate:supabase` — Apply pending migrations to Supabase
-- `pnpm db:verify:supabase` — Verify remote tables and RLS status
-- `pnpm db:verify:h11:supabase` — Verify H11 PostgreSQL transaction, rollback, idempotency, isolation and stale-review behavior using temporary probe tables
+- `pn dev` — local development
+- `pn test` — automated suite
+- `pn lint` — ESLint
+- `pn exec tsc --noEmit` — typecheck
+- `pn build` — production build
+- `pn db:push` / `pn db:seed` — local SQLite
+- `pn db:generate:supabase` — generate PostgreSQL migration
+- `pn db:check:supabase` — validate migration journal
+- `pn db:migrate:supabase` — apply pending migrations
+- `pn db:verify:supabase` — verify remote application tables + RLS
+- `pn db:verify:h11:supabase` — H11 transaction semantics probe
 
-## Context-efficient workflow
+## Source-of-truth order
 
-- Start with `docs/README.md` and the single current file under `docs/handoffs/` when one exists. Do not reconstruct completed stories from old chats or deleted handoffs when architecture/history/Jira already contain the durable context.
-- H10 (`KAN-204`) is completed and merged into `dashboard`. H11 (`KAN-224`) is in final validation on `h-20-planning-review-persistence`; read `docs/handoffs/epic-2-h11.md` and `docs/architecture/planning-review-persistence.md` before continuing.
-- Superseded handoffs are intentionally deleted once durable information is consolidated into `docs/history/` and `docs/architecture/`. Do not recreate completed-story handoffs merely for historical reference.
-- Use `rg` to locate symbols and read bounded sections of relevant files. Avoid rereading whole directories after a localized change.
-- Use `C:\Users\lahoz\.local\bin\rtk.exe` explicitly for noisy read-only commands such as `git status`, `git diff`, and focused test output when it preserves the information needed for review. Do not require RTK for contributors or CI.
-- Keep Codebase Memory optional. Never make builds, tests, or repository behavior depend on a local index or MCP server.
-- H11 composes H6–H10 boundaries. Do not replace their generation ownership, cohort semantics, competitive context, taper/recovery, coach review or provenance with competing models.
-- Update durable architecture docs only when a domain decision changes. Keep the current handoff operational and concise; do not store full conversation transcripts.
+1. Current code/schema/types and tests for actual behavior.
+2. `docs/architecture/` for durable domain contracts/invariants.
+3. Jira for scope, acceptance criteria and execution state.
+4. `docs/handoffs/epic-2.md` for immediate closure/resumption context.
+5. `docs/history/` only for historical rationale/evolution.
 
-## Architecture & Directory Structure
+Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
 
-- `app/[locale]/` — Localized App Router pages (`es` default, `en` secondary via `next-intl`, prefix: `as-needed`)
-  - `app/[locale]/(mobile)/` — Mobile shell layout & core views (Home, Plan, Stats, Profile)
-- `features/` — Feature-driven modules (`workouts/`, `profile/`, etc.) containing components and feature hooks
-- `app/actions/` — Server actions for athletes, groups, goals, plans, sessions, and competition-calendar operations
-- `db/schema.ts` — SQLite schema used by the application runtime
-- `db/supabase/` — PostgreSQL schema, connection, remote verification and H11 transaction probe
-- `drizzle/supabase/` — Reviewed SQL migrations and Drizzle migration metadata
-- `lib/` — Core domain logic (physiology, periodization, session prescriptions, weather, GPX parsers)
-- `types/` — Shared TypeScript definitions
-- `utils/` — Pure helper functions and date/formatting utilities
-- `tests/` — Automated tests for critical domain flows
+## Architecture and directory map
 
-## Domain Model Decisions
+- `app/[locale]/` — localized routes and shells
+- `app/actions/` — server actions
+- `features/` — feature modules/components/hooks
+- `lib/` — pure/core domain logic
+- `types/` — shared domain/application types
+- `db/schema.ts` — SQLite schema
+- `db/supabase/` — PostgreSQL schema/connections/verifiers
+- `drizzle/supabase/` — reviewed generated migrations + metadata
+- `tests/` — domain/integration regressions
+- `docs/architecture/` — current contracts
+- `docs/history/` — consolidated epic evolution
+- `docs/handoffs/` — single operational handoff
 
-- Planning is **group-first**, not athlete-first. `AthleteGroup` is the operational planning unit.
-- Every `AthleteProfile` belongs to a team (`teamId` required) and may have a current group (`groupId` nullable FK to `athleteGroups`).
-- `TrainingGoal` belongs to an individual athlete. Its race fields are legacy/individual context and are not the live competitive source for group periodization; a public race catalogue and athlete registration flow remain future work.
-- Live competitive planning context is owned by plan-scoped `CompetitionEntry` records. A/B/C priorities and explicit lifecycle state determine which events are relevant to planning.
-- `Macrocycle.targetRace*` is a historical snapshot of the primary competition used for an accepted generation/revision, not the live race entity. Live calendar edits must not silently rewrite that snapshot.
-- `CompetitionContext` is the pure competitive boundary consumed by periodization; new competitive behavior must not depend directly on Drizzle or `goalType === 'race'`.
-- H10 treats taper/recovery as local competitive adjustments. Competition priority controls planning treatment; physiological event demand remains a separate concern.
-- Taper duration is modeled in days in H10 policy. Do not extend the legacy closed `0 | 2 | 3` week model with new competitive rules.
-- Course demand, pre-competition training load, taper decision and post-competition recovery are distinct concepts. Do not collapse them into one generic score.
-- Future GPX/FIT course analysis belongs upstream of competitive-adjustment policy. Taper/recovery policies consume assessed course demand, not track-file formats.
-- Competitive adjustment is proposal-first: pure policy -> local proposal -> protected-state reconciliation -> coach review -> local reconciliation/audit write set.
-- Generated values may be regenerated; explicit coach/manual values, protected microcycles, objectives and sessions must never be silently overwritten.
-- Race-week prescribed training is structurally separate from competition exposure. Derived total exposure is reporting data, not a training target.
-- `memberships` reference `athleteProfiles`; group changes are recorded in `groupHistoryRecords` using group IDs.
-- Athlete category and level are derived from the assigned group. They are TypeScript value objects/constants, not configurable database tables.
-- The planning hierarchy is `GroupTrainingPlan -> Macrocycle -> Mesocycle -> Microcycle`.
-- `Session` is the shared training event. `GroupSessionPrescription` specifies what each assigned group performs in that session and links it to the relevant microcycle.
-- Never change a group's base plan to accommodate one athlete. Individual adjustments and dampened group-transition overrides are future domain features.
-- The coach retains manual control: generated planning may propose values, but must not silently overwrite deliberate edits.
-- H11 `IntegralPlanningReview` is the pure pre-persistence composition boundary. It validates hierarchy, scope, sessions/prescriptions, competitions and protected state as one aggregate before accepted writes are emitted.
-- H11 stable reconciliation identity is not the same as draft UUID identity. Macro/meso/micro use plan-scoped logical positions; generated Sessions and prescriptions retain H6 `sharedEventKey` / `generationKey`. Replacing an already-persisted Session/prescription UUID under the same H6 key is a conflict.
-- Every H11 reconciled write carries exact team/group/plan/cohort/lineage scope and must be rejected if it crosses the accepted review scope.
-- H11 async PostgreSQL persistence is optimistic-concurrency protected: source/result review revisions, idempotency journal lookup, plan-scoped revision lock, stale rejection, writes/audits and revision advance are one transaction boundary.
+## Epic 2 durable domain invariants
 
-## Current Functional State
+- Planning is group-first; planning cohorts temporarily subdivide a sporting group without changing category/level.
+- Athlete resolution is cohort-variant first for the applicable interval, then group-base fallback.
+- `CompetitionEntry` is live plan-scoped competitive data; `CompetitionContext` is the pure periodization boundary. `Macrocycle.targetRace*` is an accepted historical snapshot, not live authority.
+- H8 category-distance compatibility is advisory and distinct from H10 competitive treatment and H12 individual readiness.
+- H10 course demand, pre-competition load, taper and recovery are separate concepts. Volume and D+ remain separate dimensions; course-effort math is not a generic training-load formula.
+- Generated planning is proposal/reconciliation driven. Manual/protected coach state must never be silently overwritten.
+- H6 stable generation keys (`sharedEventKey` / `generationKey`) are logical reconciliation identities. Replacing an already-persisted generated UUID under the same key is a conflict.
+- H11 composes hierarchy/sessions/prescriptions/competitions/provenance into one scoped review. Every accepted write carries exact team/group/plan/cohort/lineage scope.
+- H11 PostgreSQL semantics include idempotent replay, atomic rollback, revision locking and stale rejection; do not degrade to accidental last-write-wins.
 
-- Athlete management supports create/edit, group assignment/change, and group-history recording.
-- Group management supports create/edit, duplicate, deactivate, and member listing.
-- Training goals retain optional race data for individual and legacy compatibility, while new competitive planning uses `CompetitionEntry`/`CompetitionContext`.
-- Planning generation creates and persists macrocycles, mesocycles, microcycles and target loads. Legacy taper generation still exists as compatibility, while H10 competitive-adjustment policies provide the new pure/local domain path.
-- H10 supports course-demand assessment, reached pre-competition load context, taper duration in days, progressive volume/D+ reduction, intensity preservation, A/B/C proposals, race-week load separation, post-race recovery, overlap resolution, protected planning, coach review and local reconciliation/audit artifacts.
-- H11 provides integral review/summary/validation/diff, coherent block decisions, scoped reconciliation, atomic operation/audit persistence ports, end-to-end idempotency, team/group/cohort/plan isolation, cohort-first athlete resolution regression and stale/double-submit semantics for the async PostgreSQL boundary.
-- Persisted microcycles support volume, date, type, and notes edits.
-- Session create/edit requires at least one group prescription and preserves form data after validation errors.
-- Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
-- Athlete Home and `/plan` resolve sessions from the athlete's current group prescriptions.
-- Planning cohorts subdivide one sporting group temporarily without changing athlete category or level. Coach flows support cohort management and dated memberships, while athlete planning resolution uses the applicable cohort variant first and the group base plan as fallback.
-- Competition calendars support plan-scoped entries, A/B/C priorities, explicit lifecycle transitions, rescheduling/cancellation without history loss, and derived category-distance advisories.
-- `CompetitionContext` is the pure boundary consumed by periodization. `Macrocycle.targetRace*`, including `targetRaceDate`, remains an immutable-by-default historical snapshot updated only by explicit planning persistence.
-- Session deletion is not implemented yet.
+## H12 readiness invariants
 
-## Database Environments
+- Planned training is never realized training by itself.
+- No realized row means `unknown`, not zero exposure and not a missed workout.
+- Numeric zero is known only with explicit evidence; legacy/default zero may remain ambiguous.
+- Realized-training deduplication requires stable identity (persisted ID or explicit source + source activity ID); same date/metrics are insufficient.
+- Plan-versus-real comparison requires authoritative session linkage; do not infer it from date/title/workout similarity.
+- `RecentPreparationSummary` keeps volume, duration, D+, frequency, intensity evidence, long run and continuity as explicit dimensions with coverage/units.
+- `ReadinessPolicy` is versioned/configurable product policy, not medical truth or a universal readiness formula.
+- `insufficient_data` is a first-class result. Zero alerts means only that evaluated rules found no mismatch; it is not certification of readiness/fitness to compete.
+- H12 reuses H10 competition impact phases so deliberate taper/recovery reductions are not automatically interpreted as insufficient preparation.
+- Automatic assessment and coach review/acknowledgement are separate persisted facts.
+- H12 does not automatically mutate planning or enter H11's write-set.
+- H12 persistence uses `workout_log_evidence`, `readiness_evaluations`, `readiness_reviews`; Supabase verification inventory is 28 application tables and must verify RLS for all 28.
 
-- SQLite remains the active runtime database during local development.
-- Supabase/PostgreSQL is provisioned as a parallel target, but the application runtime has **not** been switched to PostgreSQL yet.
-- `SUPABASE_DIRECT_URL` is for migrations and direct verification (direct connection or session pooler on port 5432).
-- `SUPABASE_DATABASE_URL` is for the Vercel/serverless runtime (transaction pooler on port 6543, prepared statements disabled).
-- Both variables are server-only secrets. Never prefix them with `NEXT_PUBLIC_`, commit `.env.local`, or print their values.
-- The Supabase migration chain includes competition-calendar persistence from H9. `db:verify:supabase` must include `competition_entries` in its table/RLS inventory.
-- H11's real transaction probe uses connection-local temporary PostgreSQL tables; it does not imply a product schema migration or permanent idempotency/revision table.
-- SQLite server actions currently use synchronous query APIs. Moving runtime access to PostgreSQL requires an intentional asynchronous repository/data-access migration; do not swap the driver mechanically.
+## Data, security and persistence
 
-## Known Transitional Constraints
+- Every athlete/readiness boundary is isolated by team + athlete. Do not rely only on UI filters.
+- `workout_logs` has athlete scope; team ownership must be validated through the athlete relationship/repository boundary.
+- Generate Drizzle migrations; never hand-edit generated snapshot/journal metadata.
+- Review generated SQL before applying it. `db:check:supabase` does not prove the remote migration was applied; use the remote verifier.
+- Supabase Data API is currently disabled. The app's migration/verification flow uses direct PostgreSQL; do not enable PostgREST merely to silence `pg_pgrst_no_exposed_schemas` log noise.
+- `SUPABASE_DIRECT_URL` and `SUPABASE_DATABASE_URL` are server-only secrets. Never commit/print them or prefix with `NEXT_PUBLIC_`.
+- Do not spread fixed development identities (`team_1`, `profile_user_1`) or invent an authenticated coach actor before authentication/tenant resolution exists.
 
-- Development context still contains fixed IDs such as `team_1` and `profile_user_1`; do not spread additional hardcoded identity assumptions.
-- Seed dates are generated relative to the current date so Home and `/plan` remain testable over time.
-- Microcycles are consecutive, but session forms currently ask the coach to select one manually. Automatic microcycle inference belongs to the next planning-automation epic.
-- Intensity method defaults and propagation across groups are also future automation work; preserve the current manual override capability.
-- Keep individual session overrides out of the group plan until their dedicated domain design is implemented.
-- Cohort session prescriptions, race registration, and automatic cohort proposals remain future work; do not infer them from the H7/H9 foundations.
-- Legacy plans may still carry `goalType = race` and `Macrocycle.targetRace*` without `CompetitionEntry` rows. Compatibility is isolated in `lib/periodization/legacy-competition-context.ts`; do not expand that fallback into new domain authority or reintroduce legacy goal type as the primary competitive trigger.
-- Distance and elevation units must be explicit in newly modified domain contracts. Prefer names such as `distanceKm`, `elevationGainM`, `elevationLossM`, `durationMinutes`, and `achievedPeakElevationGainM`.
-- Do not reuse trail course-effort mathematics as a generic training-load formula. Volume and elevation remain separate training-load dimensions unless a future evidence-backed load model is introduced.
-- A competition reschedule, reprioritization or cancellation must produce a fresh local competitive proposal; it must not trigger whole-macrocycle regeneration by default.
-- Cancellation before race realization must not invent post-race recovery. Already-realized planning effects must not be silently erased.
-- The durable production PostgreSQL storage for H11 idempotency/revision locking is not yet an application-runtime table. Do not invent a migration until the PostgreSQL runtime adapter and its persistence contract are approved; KAN-239 validates semantics with temporary probe tables.
+## Product and code conventions
 
-## Key Conventions & Gotchas
+- New user-visible copy must be ES/EN in the same change.
+- Units must be explicit in touched domain contracts (`distanceKm`, `elevationGainM`, `durationMinutes`, etc.).
+- Preserve `unknown != 0`, absence != negative assertion, generated != manual.
+- Apply JSDoc incrementally to exported/non-obvious domain contracts and side effects; document intent/invariants, not trivial implementation.
+- Do not implement future-epic work as incidental refactoring. Record the gap instead.
+- Do not introduce a second policy/model where a durable boundary already exists.
 
-- **Styling:** Tailwind CSS v4 (`@tailwindcss/postcss`) combined with Shadcn UI primitives (`base-nova` style).
-- **Internationalization:** Uses `next-intl`. All new user-visible product copy must be added to both `messages/es.json` and `messages/en.json` in the same change. When substantially modifying an existing user-facing flow, migrate the directly affected hard-coded legacy copy progressively; do not broaden the task into unrelated translation cleanup. Treat missing `es`/`en` messages as incomplete implementation. See `docs/architecture/internationalization-policy.md`.
-- **Type Checking:** Run `pnpm exec tsc --noEmit` after modifying types or routes. `.next/types/` validates route parameters.
-- **Next.js documentation:** Preserve the generated rules block at the top of this file and consult the installed Next.js documentation before relying on remembered APIs.
-- **Date handling:** Store domain dates as ISO date strings where the schema expects them and avoid accidental UTC shifts in calendar views.
-- **Scope:** Do not implement work assigned to a future epic as an incidental refactor. Record it under known constraints instead.
+## Remote-first delivery workflow
 
-## Documentation Standard
+- Work in a story branch; keep commits aligned with the active Jira task.
+- Default to **remote-first** inspection/versioning and focused validation during implementation.
+- Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
+- Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
+- Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
+- Existing lint baseline is 0 errors / 11 warnings entering H12. New warnings are regressions unless explicitly accepted.
+- Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn exec tsc --noEmit`, `pn build`, plus relevant DB verifiers.
+- Perform the functional/manual walkthrough at story end unless earlier manual validation is required to continue.
+- For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
+- Keep Jira synchronized with real evidence. A task requiring environment evidence stays open until that evidence exists.
+- At story/epic closure consolidate durable decisions into architecture/history, remove superseded handoffs, and update README/docs indexes.
 
-- Apply JSDoc incrementally to new code and to existing code that receives a substantial modification. Do not pause feature work to document unrelated legacy code.
-- Document exported domain functions, important domain interfaces and types, and operations with persistence or other side effects when their contract is not fully evident from the signature.
-- State units and ranges for training values such as kilometers, elevation meters, minutes, and percentages.
-- Record relevant invariants, expected errors, and preservation rules, especially for load limits, deloads, manual coach changes, regeneration, and protected planning blocks.
-- Explain domain intent and non-obvious decisions. Do not add comments that merely restate the implementation, document trivial accessors, or duplicate information already expressed clearly by names and types.
-- Keep documentation synchronized in the same task when a documented contract changes.
-- TypeDoc and Storybook adoption, along with retrospective documentation of existing code, belongs to the dedicated documentation story in Epic 7.
+## Documentation policy
 
-## Delivery Workflow
+- `README.md` is the repository entry/index.
+- `docs/README.md` indexes durable documentation.
+- `docs/architecture/` describes current truth.
+- `docs/history/epic-N.md` consolidates meaningful evolution; do not maintain per-story history fragments after epic consolidation.
+- `docs/handoffs/` should contain only the current/recent operational handoff; do not use it as archive.
+- Jira owns task status/acceptance evidence.
+- Do not copy chat transcripts into repository docs.
 
-- Work in a story branch and keep commits aligned with the current task.
-- During implementation, prefer focused tests plus type checking and linting of the affected area where execution is available.
-- Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation.
-- Run `pnpm db:check:supabase` for stories that touch schema/persistence boundaries; for H11 also run `pnpm db:verify:supabase` and `pnpm db:verify:h11:supabase` against the connected project before story close.
-- Generate/apply a migration only when Drizzle or an approved production persistence design reveals a real schema delta.
-- Existing lint warnings should not be multiplied. New code must introduce no lint errors or new warnings.
-- Push the story branch, validate the Vercel deployment when quota permits, and only then merge it into `dashboard`.
-- Keep documentation-only changes in separate commits when practical.
+## Current closure context
+
+Epic 2 H12 (`KAN-242`) is the final story of Planning Automation. Supabase H12 migration is applied and verified at 28/28 tables + 28/28 RLS. Finish KAN-255/KAN-256, run the final local story gate and H12 walkthrough, then close/merge H12 and Epic 2. After that, review the originally proposed Epic 3 against the H6–H12 architecture before implementation.
