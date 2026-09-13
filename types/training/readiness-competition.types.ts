@@ -33,3 +33,21 @@ export type ReadinessCompetitionTargetResolution =
         | 'no_applicable_competition'
         | 'selected_competition_not_applicable'
     }
+
+export type ReadinessEvaluationPhase =
+  | 'preparation'
+  | 'taper'
+  | 'competition'
+  | 'acute_recovery'
+  | 'recovery'
+  | 'reentry'
+  | 'post_recovery'
+  | 'post_competition_unknown'
+
+export interface ReadinessEvaluationPhaseResolution {
+  readonly evaluationDate: string
+  readonly competitionDate: string
+  readonly phase: ReadinessEvaluationPhase
+  /** Positive before the race, zero on race day, negative after it. */
+  readonly daysUntilCompetition: number
+}
