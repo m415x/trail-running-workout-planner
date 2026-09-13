@@ -20,7 +20,7 @@
     "db:verify:h11:supabase": "tsx db/supabase/verify-planning-review-transaction.ts",
     "db:studio": "drizzle-kit studio",
     "db:seed:base": "tsx db/seed.ts",
-    "db:seed:race-catalog": "tsx db/seed-race-catalog.ts",
+    "db:seed:race-catalog": "tsx db/seed-race-catalog-fixtures.ts",
     "db:seed": "pn db:seed:base && pn db:seed:race-catalog"
   },
   "dependencies": {
