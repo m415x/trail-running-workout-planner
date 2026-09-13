@@ -74,9 +74,7 @@ function rangeForBlock(
   current: IntegralPlanningReview,
   proposed: IntegralPlanningReview,
 ): PlanningReviewReconciliationRange | null {
-  if (block.kind === 'plan') {
-    return planRange(proposed) ?? planRange(current)
-  }
+  if (block.kind === 'plan') return planRange(proposed) ?? planRange(current)
   if (block.kind === 'macrocycle') {
     return macrocycleRange(proposed, block.root.entityId)
       ?? macrocycleRange(current, block.root.entityId)
@@ -117,8 +115,8 @@ function isPlanningOperation({ entity }: PlanningReviewScopedOperation) {
  * Rebuilds the reviewed diff and emits the exact persistence-ready write set
  * selected by the coach. It deliberately performs no database mutation.
  *
- * The reconciliation carries the revision key of `current`, allowing the
- * persistence boundary to reject a decision made against stale planning state.
+ * Source/result revision keys provide the optimistic-concurrency boundary used
+ * by KAN-240 to reject stale decisions without silent last-write-wins.
  */
 export function reconcileAcceptedPlanningBlocks({
   current,
@@ -164,6 +162,7 @@ export function reconcileAcceptedPlanningBlocks({
   return {
     scope: proposed.scope,
     sourceRevisionKey: integralPlanningReviewRevisionKey(current),
+    resultRevisionKey: integralPlanningReviewRevisionKey(proposed),
     blocks: blocks.map(({ block, decision, items }) => ({
       blockId: block.id,
       root: block.root,
