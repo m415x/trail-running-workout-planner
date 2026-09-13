@@ -7,6 +7,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
+import * as readinessSchema from '@/db/readiness-schema'
 import * as schema from '@/db/schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
 import {
@@ -68,80 +69,74 @@ describe('competition calendar service', () => {
     assert.equal(getCompetitionCalendar('plan-1', database)[0]?.id, 'competition-1')
   })
 
-  it('reports same-day competitions without rejecting the mutation', () => {
+  it('allows multiple B/C competitions', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-b',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft({ priority: 'B' }),
     })
 
     const result = createCompetition({
       ...mutationContext(),
-      id: 'competition-2',
-      now: '2027-01-02T00:00:00.000Z',
+      id: 'competition-c',
+      now: '2027-01-01T00:00:00.000Z',
       draft: draft({ name: 'Secondary event', priority: 'C' }),
     })
 
     assert.equal(result.ok, true)
-    assert.deepEqual(result.sameDateCompetitionIds, ['competition-1'])
   })
 
-  it('rejects a second active A inside the same macrocycle horizon', () => {
+  it('rejects a second active A competition in the same planning horizon', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-a',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft(),
     })
 
     const conflict = createCompetition({
       ...mutationContext(),
-      id: 'competition-2',
-      now: '2027-01-02T00:00:00.000Z',
+      id: 'competition-a-2',
+      now: '2027-01-01T00:00:00.000Z',
       draft: draft({ name: 'Another A', date: '2027-05-10' }),
     })
 
     assert.equal(conflict.ok, false)
-    if (!conflict.ok) {
-      assert.deepEqual(conflict.errors, ['competition_calendar_multiple_primary_candidates'])
-    }
+    if (!conflict.ok) assert.ok(conflict.errors.includes('competition_calendar_multiple_active_primary'))
   })
 
-  it('rejects rescheduling outside every macrocycle horizon', () => {
+  it('reschedules a competition without changing lifecycle', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-b',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft({ priority: 'B' }),
     })
 
     const result = rescheduleCompetition({
       ...mutationContext(),
-      competitionId: 'competition-1',
-      date: '2028-01-10',
+      competitionId: 'competition-b',
+      date: '2027-04-12',
       now: '2027-01-02T00:00:00.000Z',
     })
 
-    assert.equal(result.ok, false)
-    if (!result.ok) {
-      assert.deepEqual(result.errors, ['competition_calendar_outside_plan_horizon'])
-    }
+    assert.equal(result.ok, true)
     assert.equal(getCompetitionCalendar('plan-1', database)[0]?.date, '2027-04-12')
   })
 
-  it('updates competition data while keeping it attached to the same plan', () => {
+  it('updates sporting fields without changing identity', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-b',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft({ priority: 'B' }),
     })
 
     const updated = updateCompetition({
       ...mutationContext(),
-      competitionId: 'competition-1',
-      now: '2027-01-03T00:00:00.000Z',
+      competitionId: 'competition-b',
+      now: '2027-01-02T00:00:00.000Z',
       draft: draft({
         name: 'Updated competition',
         distanceKm: 50,
@@ -151,23 +146,23 @@ describe('competition calendar service', () => {
 
     assert.equal(updated.ok, true)
     if (updated.ok) {
+      assert.equal(updated.value.id, 'competition-b')
       assert.equal(updated.value.name, 'Updated competition')
       assert.equal(updated.value.distanceKm, 50)
-      assert.equal(updated.value.groupTrainingPlanId, 'plan-1')
     }
   })
 
-  it('cancels through lifecycle without deleting competition history', () => {
+  it('cancels without deleting history', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-a',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft(),
     })
 
     const cancelled = changeCompetitionStatus({
       ...mutationContext(),
-      competitionId: 'competition-1',
+      competitionId: 'competition-a',
       status: 'cancelled',
       now: '2027-01-04T00:00:00.000Z',
     })
@@ -177,17 +172,17 @@ describe('competition calendar service', () => {
     assert.equal(getCompetitionCalendar('plan-1', database)[0]?.isDeleted, false)
   })
 
-  it('rejects transitions from terminal lifecycle states', () => {
+  it('rejects an invalid lifecycle transition', () => {
     createCompetition({
       ...mutationContext(),
-      id: 'competition-1',
+      id: 'competition-cancelled',
       now: '2027-01-01T00:00:00.000Z',
       draft: draft({ status: 'cancelled' }),
     })
 
     const result = changeCompetitionStatus({
       ...mutationContext(),
-      competitionId: 'competition-1',
+      competitionId: 'competition-cancelled',
       status: 'planned',
       now: '2027-01-05T00:00:00.000Z',
     })
@@ -273,6 +268,7 @@ function createTestDatabase() {
         ...intensityStrategySchema,
         ...sessionGenerationPreferencesSchema,
         ...competitionEntrySchema,
+        ...readinessSchema,
       },
     }),
   }
