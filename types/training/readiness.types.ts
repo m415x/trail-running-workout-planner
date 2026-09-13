@@ -181,7 +181,6 @@ export interface RecentPreparationSummary {
     readonly totalGainM: PreparationSummaryValue
     readonly averageWeeklyGainM: PreparationSummaryValue
   }
-  /** Frequency of recorded performed activities; missing logs are never inferred as missed sessions. */
   readonly frequency: {
     readonly recordedSessionsPerWeek: PreparationSummaryValue
   }
@@ -192,6 +191,7 @@ export interface RecentPreparationSummary {
   readonly longRun: {
     readonly longestDistanceKm: PreparationSummaryValue
     readonly longestDurationMin: PreparationSummaryValue
+    readonly peakElevationGainM: PreparationSummaryValue
   }
   readonly continuity: {
     readonly activeBucketRatio: PreparationSummaryValue
