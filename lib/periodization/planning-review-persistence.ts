@@ -1,5 +1,6 @@
 import { integralPlanningIdempotencyKey } from '@/lib/periodization/planning-review-idempotency'
 import type {
+  PersistAsyncIntegralPlanningReconciliationInput,
   PlanningReviewAtomicAuditRecord,
   PersistedIntegralPlanningReconciliation,
   PersistIntegralPlanningReconciliationInput,
@@ -132,24 +133,71 @@ function auditRecord(
   }
 }
 
-/**
- * Applies the exact KAN-232 write set and its audit records through one shared
- * async transaction. The persistence adapter owns the concrete database mutation
- * but cannot receive or commit any operation outside this transaction callback.
- */
-export async function persistIntegralPlanningReconciliation<TTransaction>({
+function committedResult(
+  reconciliation: PersistIntegralPlanningReconciliationInput<unknown>['reconciliation'],
+  idempotencyKey: string,
+  appliedOperationIdentities: readonly string[],
+  auditedOperationIdentities: readonly string[],
+): PersistedIntegralPlanningReconciliation {
+  return {
+    idempotencyKey,
+    outcome: 'committed',
+    scope: reconciliation.scope,
+    appliedOperationIdentities,
+    auditedOperationIdentities,
+    committedBlockIds: reconciliation.blocks.map(({ blockId }) => blockId),
+  }
+}
+
+/** Applies the exact KAN-232 write set through a synchronous transaction port. */
+export function persistIntegralPlanningReconciliation<TTransaction>({
   reconciliation,
   persistence,
-}: PersistIntegralPlanningReconciliationInput<TTransaction>): Promise<PersistedIntegralPlanningReconciliation> {
+}: PersistIntegralPlanningReconciliationInput<TTransaction>): PersistedIntegralPlanningReconciliation {
+  validateReconciliation(reconciliation)
+  const operations = orderedOperations(reconciliation.operations)
+  const idempotencyKey = integralPlanningIdempotencyKey(reconciliation)
+
+  return persistence.transaction((tx) => {
+    const previous = persistence.findCommittedResult(tx, idempotencyKey)
+    if (previous !== null) return { ...previous, outcome: 'already_committed' }
+
+    const appliedOperationIdentities: string[] = []
+    const auditedOperationIdentities: string[] = []
+
+    for (const operation of operations) {
+      persistence.applyOperation(tx, operation)
+      appliedOperationIdentities.push(operation.identity)
+      persistence.appendAuditRecord(tx, auditRecord(reconciliation.scope, operation))
+      auditedOperationIdentities.push(operation.identity)
+    }
+
+    const result = committedResult(
+      reconciliation,
+      idempotencyKey,
+      appliedOperationIdentities,
+      auditedOperationIdentities,
+    )
+    persistence.markCommitted(tx, idempotencyKey, result)
+    return result
+  })
+}
+
+/**
+ * Applies the same validated atomic write set through an asynchronous transaction
+ * port suitable for PostgreSQL/Supabase clients.
+ */
+export async function persistIntegralPlanningReconciliationAsync<TTransaction>({
+  reconciliation,
+  persistence,
+}: PersistAsyncIntegralPlanningReconciliationInput<TTransaction>): Promise<PersistedIntegralPlanningReconciliation> {
   validateReconciliation(reconciliation)
   const operations = orderedOperations(reconciliation.operations)
   const idempotencyKey = integralPlanningIdempotencyKey(reconciliation)
 
   return persistence.transaction(async (tx) => {
     const previous = await persistence.findCommittedResult(tx, idempotencyKey)
-    if (previous !== null) {
-      return { ...previous, outcome: 'already_committed' }
-    }
+    if (previous !== null) return { ...previous, outcome: 'already_committed' }
 
     const appliedOperationIdentities: string[] = []
     const auditedOperationIdentities: string[] = []
@@ -157,22 +205,16 @@ export async function persistIntegralPlanningReconciliation<TTransaction>({
     for (const operation of operations) {
       await persistence.applyOperation(tx, operation)
       appliedOperationIdentities.push(operation.identity)
-
-      await persistence.appendAuditRecord(
-        tx,
-        auditRecord(reconciliation.scope, operation),
-      )
+      await persistence.appendAuditRecord(tx, auditRecord(reconciliation.scope, operation))
       auditedOperationIdentities.push(operation.identity)
     }
 
-    const result: PersistedIntegralPlanningReconciliation = {
+    const result = committedResult(
+      reconciliation,
       idempotencyKey,
-      outcome: 'committed',
-      scope: reconciliation.scope,
       appliedOperationIdentities,
       auditedOperationIdentities,
-      committedBlockIds: reconciliation.blocks.map(({ blockId }) => blockId),
-    }
+    )
     await persistence.markCommitted(tx, idempotencyKey, result)
     return result
   })
