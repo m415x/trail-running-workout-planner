@@ -8,6 +8,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
+import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as schema from '@/db/schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
@@ -177,6 +178,7 @@ function createTestDatabase() {
         ...sessionGenerationPreferencesSchema,
         ...competitionEntrySchema,
         ...readinessSchema,
+        ...raceCatalogSchema,
       },
     }),
   }
