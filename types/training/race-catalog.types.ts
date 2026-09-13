@@ -27,6 +27,54 @@ export type RaceCourseModality =
   | { readonly code: KnownRaceCourseModalityCode }
   | { readonly code: 'other'; readonly label: string }
 
+/** Dimension described by one external classification record. */
+export type RaceCourseClassificationDimension =
+  | 'endurance_difficulty'
+  | 'distance_category'
+  | 'international_format'
+  | 'discipline'
+  | 'technical_level'
+  | 'other'
+
+/** How the classification was obtained for this course. */
+export type RaceCourseClassificationProvenance =
+  | 'declared_by_source'
+  | 'derived_from_source_rules'
+  | 'manual_reference'
+
+/**
+ * Versioned external classification attached to a concrete RaceCourse.
+ *
+ * The system is intentionally open-ended. Current examples include World
+ * Athletics, ITRA, ISF and UTMB, but those authorities/codes are not encoded as
+ * timeless TypeScript enums because their taxonomies may change independently.
+ */
+export interface RaceCourseClassification {
+  /** Stable product identifier for the external system, e.g. `itra.endurance_points`. */
+  readonly systemId: string
+  /** Human-readable authority/owner, e.g. `ITRA` or `World Athletics`. */
+  readonly authority: string
+  /** Semantic dimension represented by this classification. */
+  readonly dimension: RaceCourseClassificationDimension
+  /**
+   * Explicit ruleset/version/effective reference.
+   *
+   * This may be a formal version (`2026`) or a dated effective reference when
+   * the source does not publish semantic versions. It must never be omitted.
+   */
+  readonly versionRef: string
+  /** Source-specific code/value; never interpreted without system + version. */
+  readonly code: string
+  /** Optional display text from the external system. */
+  readonly label?: string | null
+  /** How this particular value was obtained. */
+  readonly provenance: RaceCourseClassificationProvenance
+  /** Primary/source reference used to assign or derive the classification. */
+  readonly sourceUrl?: string | null
+  /** ISO timestamp/date recording when this classification was assessed. */
+  readonly assessedAt?: string | null
+}
+
 /** Human-readable host location for one edition. */
 export interface RaceEditionLocation {
   /** City/locality when known. */
@@ -66,6 +114,12 @@ export interface RaceCourse extends BaseEntity {
   elevationGainM: number | null
   /** Explicit modality when known. `null` means not yet classified. */
   modality: RaceCourseModality | null
+  /**
+   * Zero or more versioned external classifications.
+   *
+   * Empty means unknown/not applicable; it must not trigger inferred defaults.
+   */
+  classifications: readonly RaceCourseClassification[]
   scheduledStartAt?: string | null
   startLocationLabel?: string | null
   notes?: string | null
