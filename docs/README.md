@@ -1,8 +1,8 @@
 # Project documentation
 
-This directory contains durable project context. It complements `AGENTS.md` and prevents implementation history from living only in long chat conversations.
+Este directorio contiene el contexto durable del proyecto. `README.md` es el índice de entrada del repositorio y `AGENTS.md` define las reglas operativas; aquí se separan arquitectura vigente, evolución histórica y handoff operacional.
 
-## Architecture
+## Architecture — fuente de verdad de dominio
 
 - [Automatic session generation](architecture/session-generation.md)
 - [Planning cohorts](architecture/planning-cohorts.md)
@@ -11,31 +11,31 @@ This directory contains durable project context. It complements `AGENTS.md` and 
 - [Competition calendar](architecture/competition-calendar.md)
 - [Competitive adjustment](architecture/competitive-adjustment.md)
 - [Integral planning review and safe persistence](architecture/planning-review-persistence.md)
+- [Individual readiness assessment](architecture/readiness-assessment.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 
-Architecture documents describe the current durable domain model and should be preferred when a task depends on how the system works now.
+Usa arquitectura cuando una tarea dependa de cómo funciona el sistema **ahora**. No reconstruyas contratos vigentes desde history o conversaciones antiguas.
 
-## History
+## History — evolución consolidada
 
 - [Epic 1 — Planning Core](history/epic-1.md)
-- [Epic 2 — Planning Automation (H1-H8)](history/epic-2.md)
-- [Epic 2 / H9 — Planning intent and competitive calendar](history/epic-2-h9.md)
-- [Epic 2 / H10 — Competitive adjustment](history/epic-2-h10.md)
-- [Epic 2 / H11 — Integral planning review and safe persistence](history/epic-2-h11.md)
+- [Epic 2 — Planning Automation](history/epic-2.md)
 
-History documents preserve how the product and domain model evolved: original assumptions, implementation outcomes, coach feedback, discovered limitations, and later refinements.
+Cada épica mantiene un único documento histórico consolidado. Los antiguos fragmentos `epic-2-h*.md` se eliminan una vez incorporados a `epic-2.md`.
 
-**Do not read project history by default when starting or continuing a story.** Use the current handoff and referenced architecture documents first. Consult `history/` only when historical rationale, a superseded decision, an apparent inconsistency, or the origin of a domain rule is relevant.
+No leas history por defecto al iniciar una tarea. Consúltalo para entender razones históricas, decisiones reemplazadas, incompatibilidades aparentes o el origen de una regla.
 
-## Handoffs
+## Handoffs — continuidad operativa
 
-- [Epic 2 / H11 — Planning review and safe persistence](handoffs/epic-2-h11.md)
+- [Epic 2 — closure handoff](handoffs/epic-2.md)
 
-H11 keeps the single active operational handoff until the real Supabase gate and final local story validation are complete. Once H11 closes, its durable rules live in architecture/history and the handoff may be replaced by the next active story.
-
-Handoffs are intentionally temporary and minimal. Keep only the handoff needed to resume the active/recent story; durable decisions belong in architecture/history and execution state belongs in Jira. Superseded handoffs should be removed once their durable information has been consolidated.
+Un handoff es breve y temporal: resume baseline, estado verificable, restricciones y siguiente punto de trabajo. No duplica arquitectura ni history y no conserva transcripciones. Al comenzar una nueva épica puede reemplazarse por el handoff operativo de esa épica.
 
 ## Maintenance rule
 
-Update architecture documents only when a durable domain decision changes. Consolidate meaningful product/domain evolution into the corresponding history document without turning it into a commit log. Keep the active handoff short and operational. Do not copy complete chat transcripts into this directory.
+- Cambios de contrato durable → actualizar `architecture/` en la misma historia.
+- Evolución significativa/cierre de épica → consolidar `history/<epic>.md`.
+- Estado de ejecución y criterios → Jira.
+- Continuidad inmediata → un único handoff relevante.
+- Índices/rutas → mantener sincronizados `README.md`, este archivo y `AGENTS.md`.

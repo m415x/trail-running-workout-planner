@@ -8,6 +8,7 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as competitionSchema from '@/db/competition-entry-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
+import * as readinessSchema from '@/db/readiness-schema'
 import * as schema from '@/db/schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
 import { groupTrainingPlans, macrocycles } from '@/db/schema'
@@ -55,12 +56,7 @@ describe('snapshot competitivo histórico del macrociclo', () => {
       },
     }).planning
 
-    // The H9 generator supplies the competition date in its immutable snapshot.
-    // The legacy preview used by this persistence fixture predates that boundary,
-    // so the date is added explicitly to exercise the new persisted field.
-    if (planning.race) {
-      planning.race.date = '2026-03-01'
-    }
+    if (planning.race) planning.race.date = '2026-03-01'
 
     persistProgression({
       groupTrainingPlanId: 'plan-1',
@@ -188,6 +184,7 @@ function createTestDatabase() {
         ...loadStrategySchema,
         ...intensityStrategySchema,
         ...sessionGenerationPreferencesSchema,
+        ...readinessSchema,
       },
     }),
   }

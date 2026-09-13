@@ -3,6 +3,7 @@ import postgres from 'postgres'
 
 import * as coreSchema from '@/db/supabase/schema'
 import * as competitionEntrySchema from '@/db/supabase/competition-entry-schema'
+import * as readinessSchema from '@/db/supabase/readiness-schema'
 
 const connectionString = process.env.SUPABASE_DATABASE_URL
 
@@ -20,5 +21,6 @@ export const supabaseDb = drizzle(supabaseClient, {
   schema: {
     ...coreSchema,
     ...competitionEntrySchema,
+    ...readinessSchema,
   },
 })
