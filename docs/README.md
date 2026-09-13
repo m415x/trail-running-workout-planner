@@ -9,6 +9,7 @@ Este directorio contiene el contexto durable del proyecto. `README.md` es el ín
 - [Category and competitive distance](architecture/category-race-distance.md)
 - [Planning intent and competition context](architecture/planning-intent-and-competition-context.md)
 - [Competition calendar](architecture/competition-calendar.md)
+- [Race catalog](architecture/race-catalog.md)
 - [Competitive adjustment](architecture/competitive-adjustment.md)
 - [Integral planning review and safe persistence](architecture/planning-review-persistence.md)
 - [Individual readiness assessment](architecture/readiness-assessment.md)
