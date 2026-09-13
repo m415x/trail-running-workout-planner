@@ -54,7 +54,7 @@ Mapping:
 
 Known distance is required because the current race-goal workflow requires a positive race distance. Unknown D+ remains unknown rather than becoming zero.
 
-## Catalog reference
+## Catalog reference and persistence
 
 The selection also returns:
 
@@ -65,9 +65,17 @@ RaceCourseReference
 - raceCourseId
 ```
 
-Persisting this optional reference is deferred to KAN-276 together with the catalog schema/migration.
+Persistence stores the optional link in:
 
-Legacy/manual race goals without a catalog reference remain valid. No migration may infer a catalog course from race name/date/distance similarity.
+```text
+training_goal_race_courses
+- training_goal_id PK/FK
+- race_course_id FK
+```
+
+Only `race_course_id` is persisted. Event/edition ancestry is resolved from the catalog hierarchy. Deleting a `TrainingGoal` cascades only its sidecar link; the catalog reference uses `ON DELETE RESTRICT` so a referenced course cannot be physically removed accidentally.
+
+Legacy/manual race goals without a catalog reference remain valid. No migration infers a catalog course from race name/date/distance similarity.
 
 ## Goal is not registration
 
@@ -83,7 +91,7 @@ It does **not** mean:
 - participation is confirmed;
 - a `RaceRegistration` record should be created.
 
-KAN-275 defines the future registration reference boundary separately.
+The future registration boundary is modeled separately in `race-registration-boundary.md`.
 
 ## Independence rules
 
@@ -110,12 +118,20 @@ Future RaceRegistration
 
 No one of these facts should be inferred automatically from another.
 
-## Persistence boundary
+## Interpretation limits
 
-KAN-274 introduces no database column. KAN-276 must preserve:
+A race goal is not evidence that the athlete can safely complete the event. The catalog profile contributes competitive context only.
 
-1. optional `raceCourseId` linkage for goals selected from catalog;
-2. existing snapshot fields as historical truth;
-3. legacy/manual goals with `raceCourseId = null`;
-4. no cascade from catalog deletion/archive into goal deletion;
-5. no automatic `RaceRegistration` side effect.
+- H8 category-distance compatibility remains advisory and separate.
+- H12 readiness requires realized athlete training evidence and can still return `insufficient_data`.
+- Absence of a catalog reference does not invalidate a manually entered goal.
+- A catalog classification or kilometer-effort value does not authorize competition or diagnose fitness.
+
+## Invariants
+
+1. Goal snapshots remain athlete-owned historical facts.
+2. Catalog linkage is optional and traceability-only.
+3. Later catalog edits do not silently rewrite accepted goal data.
+4. A `TrainingGoal` never implies `RaceRegistration`.
+5. Unknown D+ remains `null`, not zero.
+6. Catalog selection never mutates group/cohort/planning membership automatically.
