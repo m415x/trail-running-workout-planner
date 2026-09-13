@@ -1,6 +1,6 @@
 # Project documentation
 
-Este directorio contiene el contexto durable del proyecto. `README.md` es el índice de entrada del repositorio y `AGENTS.md` define las reglas operativas; aquí se separan arquitectura vigente, evolución histórica y handoff operacional.
+Este directorio contiene el contexto durable del proyecto. `README.md` es el índice de entrada del repositorio y `AGENTS.md` define las reglas operativas; aquí se separan arquitectura vigente, investigación verificable, evolución histórica y handoff operacional.
 
 ## Architecture — fuente de verdad de dominio
 
@@ -17,6 +17,12 @@ Este directorio contiene el contexto durable del proyecto. `README.md` es el ín
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 
 Usa arquitectura cuando una tarea dependa de cómo funciona el sistema **ahora**. No reconstruyas contratos vigentes desde history o conversaciones antiguas.
+
+## Research — evidencia externa versionada
+
+- [Race classification systems — 2026 snapshot](research/race-classification-systems-2026.md)
+
+Los documentos de `research/` registran fuentes externas y su fecha de consulta para decisiones que pueden cambiar con el tiempo. No son política de dominio por sí mismos: arquitectura/tipos deben adoptar explícitamente cualquier conclusión que pase a ser contrato del producto.
 
 ## History — evolución consolidada
 
@@ -36,6 +42,7 @@ Un handoff es breve y temporal: resume baseline, estado verificable, restriccion
 ## Maintenance rule
 
 - Cambios de contrato durable → actualizar `architecture/` en la misma historia.
+- Investigación externa temporal/versionable → registrar `research/` con fecha y fuentes.
 - Evolución significativa/cierre de épica → consolidar `history/<epic>.md`.
 - Estado de ejecución y criterios → Jira.
 - Continuidad inmediata → un único handoff relevante.
