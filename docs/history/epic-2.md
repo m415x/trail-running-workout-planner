@@ -1,6 +1,6 @@
 # Epic 2 — Planning Automation
 
-Status: closure validation.
+Status: complete.
 
 ## Purpose
 
@@ -210,8 +210,15 @@ Generated Drizzle migrations and metadata are versioned together. SQL is reviewe
 
 ## Closure state
 
-H1–H11 are complete. H12 implementation/tasks are complete except final regression/documentation closure evidence and the final local story gate/manual walkthrough required before transitioning `KAN-242` and Epic 2 to Finalizada.
+H1–H12 are complete.
 
-At the end of implementation, the Supabase H12 schema is applied and verified at **28/28 tables + 28/28 RLS**. The known lint baseline entering H12 is **0 errors / 11 warnings**.
+Final H12 evidence:
 
-Once the final H12 gate is recorded, Epic 2 can close and the next step is to re-review the originally proposed Epic 3 against this architecture rather than assuming its earlier scope is still correct.
+- Supabase H12 schema applied and verified at **28/28 tables + 28/28 RLS**;
+- `pn test`: **557/557 pass**, 104 suites, 0 fail;
+- `pn lint`: **0 errors / 11 warnings**, matching the approved baseline;
+- `pn exec tsc --noEmit`: **OK**;
+- `pn build`: **OK**;
+- functional/manual walkthrough: **confirmed satisfactory**.
+
+Epic 2 is closed. The next step is to re-review the originally proposed Epic 3 against the completed H6–H12 architecture rather than assuming its earlier scope is still correct.
