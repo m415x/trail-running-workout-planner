@@ -1,6 +1,6 @@
 import { index, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 
-import { athleteProfiles, baseColumns, users, workoutLogs } from '@/db/schema'
+import { athleteProfiles, baseColumns, teams, users, workoutLogs } from '@/db/schema'
 import { competitionEntries } from '@/db/competition-entry-schema'
 import type {
   ReadinessAssessment,
@@ -39,7 +39,9 @@ export const readinessEvaluations = sqliteTable(
   'readiness_evaluations',
   {
     ...baseColumns,
-    teamId: text('team_id').notNull(),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
     athleteId: text('athlete_id')
       .notNull()
       .references(() => athleteProfiles.id, { onDelete: 'cascade' }),
