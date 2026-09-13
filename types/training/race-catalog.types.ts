@@ -65,14 +65,24 @@ export interface RaceEdition extends BaseEntity {
  *
  * Example: the 42K course of Patagonia Run 2027. Planning and future athlete
  * registration reference this identity rather than RaceEvent/RaceEdition.
- * Distance, D+, modality and classification are introduced by later KAN-257
- * tasks; this contract already owns scheduling/notes that may differ among
- * courses of the same edition.
  */
 export interface RaceCourse extends BaseEntity {
   raceEditionId: string
   /** Human-facing course label such as "42K"; not a unique technical key. */
   label: string
+  /**
+   * Official/measured course distance in kilometers when known.
+   *
+   * `null` means unknown/unpublished. Zero is never a valid race distance.
+   */
+  distanceKm: number | null
+  /**
+   * Official/measured positive elevation gain in meters when known.
+   *
+   * `null` means unknown/unpublished. Zero is a valid known value for a flat
+   * course and must not be used as a replacement for missing data.
+   */
+  elevationGainM: number | null
   /** Concrete start date/time when known; allows courses on different edition days. */
   scheduledStartAt?: string | null
   /** Course-specific start/location label when it differs from the edition host location. */
@@ -80,6 +90,12 @@ export interface RaceCourse extends BaseEntity {
   /** Notes/instructions specific to this course. */
   notes?: string | null
   status: RaceCourseStatus
+}
+
+/** Editable original sporting profile fields owned by RaceCourse. */
+export interface RaceCourseOriginalProfile {
+  distanceKm: number | null
+  elevationGainM: number | null
 }
 
 /** Catalog aggregate used by read/application boundaries without persistence coupling. */
