@@ -6,6 +6,7 @@ import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
 import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as readinessSchema from '@/db/readiness-schema'
+import * as raceCatalogSchema from '@/db/race-catalog-schema'
 
 // Conexión a la base de datos local en un archivo sqlite.db
 const sqlite = new Database('sqlite.db')
@@ -19,5 +20,6 @@ export const db = drizzle(sqlite, {
     ...sessionGenerationPreferencesSchema,
     ...competitionEntrySchema,
     ...readinessSchema,
+    ...raceCatalogSchema,
   },
 })
