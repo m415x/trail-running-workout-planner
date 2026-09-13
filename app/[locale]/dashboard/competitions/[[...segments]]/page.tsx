@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import {
   Archive,
   ArrowLeft,
-  CalendarDays,
   ChevronRight,
   MapPin,
   Mountain,
@@ -44,6 +43,15 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   const metric = (value: number | null | undefined, unit: string) => value == null
     ? t('unknown')
     : `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(value)} ${unit}`
+  const scheduledStart = (value: string | null | undefined) => {
+    if (!value) return t('unknown')
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::\d{2})?([+-]\d{2}:\d{2}|Z)?$/)
+    if (!match) return value
+
+    const [, localDate, hours, minutes, offset] = match
+    const zone = offset === 'Z' ? 'UTC' : offset ? `UTC${offset}` : null
+    return [date(localDate), `${hours}:${minutes}`, zone].filter(Boolean).join(' · ')
+  }
   const sourceLabel = (record: { source?: { origin: string; provider?: string | null; externalId?: string | null } }) => (
     record.source?.origin === 'external'
       ? [t('external'), record.source.provider, record.source.externalId].filter(Boolean).join(' · ')
@@ -366,7 +374,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
             />
             <Metric label={t('density')} value={metric(derived.elevationDensityMPerKm, 'm+/km')} />
             <Metric label={t('effort')} value={metric(derived.kilometerEffortKm, 'km')} />
-            <Metric label={t('fields.scheduledStartAt')} value={course.scheduledStartAt ?? t('unknown')} />
+            <Metric label={t('fields.scheduledStartAt')} value={scheduledStart(course.scheduledStartAt)} />
             <Metric label={t('fields.startLocationLabel')} value={course.startLocationLabel ?? t('unknown')} />
           </dl>
         </CardContent>
@@ -388,7 +396,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
                 <div key={index} className='rounded-lg border p-4'>
                   <p className='font-medium'>{classification.authority} · {classification.label ?? classification.code}</p>
                   <p className='mt-1 text-sm text-muted-foreground'>
-                    {t('version')}: {classification.versionRef} · {classification.systemId} · {classification.code}
+                    {t('version')}: {classification.versionRef}
                   </p>
                   <div className='mt-3 flex flex-wrap gap-2'>
                     <Badge variant='secondary'>{t(`dimensions.${classification.dimension}`)}</Badge>
