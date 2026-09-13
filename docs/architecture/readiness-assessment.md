@@ -4,7 +4,7 @@
 
 Epic 2 / H12 (`KAN-242`) evaluates mismatches between an athlete's recent **realized** preparation and an applicable competition demand. It complements H8 category-distance compatibility, H9 competition context, H10 competitive adjustment, and H11 integral planning review. It does not certify fitness to compete and it never mutates planning automatically.
 
-This document starts with the KAN-243 audit of the data currently available for realized training. Later H12 tasks may extend the contracts, but must preserve the source-of-truth rules below.
+This document starts with the KAN-243 audit of the data currently available for realized training and records the KAN-244 normalization boundary. Later H12 tasks may extend the contracts, but must preserve the source-of-truth rules below.
 
 ## KAN-243 audit: current realized-training sources
 
@@ -44,7 +44,7 @@ The current database columns `distance_km`, `duration_min` and `elevation_gain` 
 
 For H12 this is semantically unsafe: `0` may mean a real zero, an omitted measurement, a UI default, or a legacy placeholder. Readiness calculations require `unknown` to remain distinct from numeric zero.
 
-KAN-244 must define a normalized domain contract where each optional realized metric can be known or unknown. A schema migration may be required before H12 persists new logs, but existing zero-valued records must not be reinterpreted as known measurements without evidence.
+Existing zero-valued records must not be reinterpreted as known measurements without evidence.
 
 ### Day status is not equivalent to measurements
 
@@ -68,7 +68,7 @@ If `session_id` is absent, H12 must not manufacture linkage from same date, titl
 
 The current schema has no explicit `source`/external activity identifier on `workout_logs`. The only implemented logging path is the manual in-app athlete dialog; integrations with Strava/Garmin/etc. are outside H12.
 
-KAN-244 must model source/provenance in the domain even if the initial supported source is only `manual`. Any future importer must provide its own stable source identity before automatic deduplication can be trusted.
+Any future importer must provide its own stable source identity before automatic deduplication can be trusted.
 
 ### Duplicate detection
 
@@ -90,6 +90,57 @@ H12 may derive intensity indicators only when the selected method has enough tru
 
 `workout_logs` carries `athlete_id`, not `team_id`. Team ownership is obtained through `athlete_profiles.team_id`. Every H12 repository/query boundary must therefore constrain the athlete by the accepted team and must not retrieve arbitrary logs by athlete ID without verifying team scope.
 
+## KAN-244 realized-training contract
+
+The H12 domain introduces `RawRealizedTrainingRecord` as the persistence-facing input and `RealizedTrainingRecord` as the normalized analysis input.
+
+Each numeric metric is represented as a discriminated `RealizedMetric`:
+
+```text
+known(value)
+unknown(not_recorded | legacy_zero_ambiguous | invalid_value)
+```
+
+This is intentionally more explicit than the current database row. `0` is a valid known value only when the writer has evidence that the field was explicitly supplied. For legacy rows without field-level evidence, a non-zero finite value is usable evidence but a zero remains ambiguous.
+
+Normalized records carry:
+
+- exact team + athlete scope;
+- optional authoritative Session linkage;
+- status and activity date;
+- normalized metrics;
+- source provenance;
+- quality classification;
+- machine-readable limitations.
+
+Initial quality classes are `usable`, `partial`, `non_exposure`, `explicit_missed`, and `ambiguous`.
+
+### Deduplication contract
+
+`deduplicateRealizedTrainingRecords()` only removes a duplicate when identity is trustworthy:
+
+1. the same persisted log ID; or
+2. the same explicit `source + sourceActivityId`.
+
+Date, distance, duration, D+, HR, RPE, Workout ID, or similar values are never used as automatic duplicate identity. An imported row without an external stable identity remains present and is marked ambiguous instead of being silently discarded.
+
+### Plan-versus-real contract
+
+`hasAuthoritativeSessionLink()` is true only for an explicit persisted Session reference. H12 v1 does not infer prescription linkage from date or Workout template. Indicators comparing prescribed and realized load must require this boundary.
+
+### Durable storage decision
+
+The domain contract is intentionally introduced before the schema migration. When H12 adds durable write/read support in KAN-254, new `workout_logs` persistence must preserve:
+
+- **nullable numeric metrics** so absence remains distinct from an observed zero; defaults of numeric zero must be removed for new writes;
+- explicit `source` (initially `manual`);
+- nullable stable `source_activity_id` for future importers;
+- enough field-level evidence to distinguish an explicitly entered zero from a legacy/default zero while legacy records still exist;
+- the existing explicit `session_id` linkage;
+- team isolation through the athlete relationship and repository boundary.
+
+The migration is deliberately deferred to KAN-254 so H12 introduces one coherent persistence change together with evaluation/review storage rather than speculative incremental migrations. Until then the pure normalizer is the compatibility boundary for legacy rows.
+
 ## Source-of-truth rules for H12
 
 1. A prescribed Session/Prescription/Workout/Microcycle is planned state, never realized state by itself.
@@ -104,21 +155,17 @@ H12 may derive intensity indicators only when the selected method has enough tru
 
 ## Initial quality interpretation
 
-KAN-244 will formalize the types, but the audit establishes these distinctions:
-
-- **usable realized record:** explicit performed status plus at least one trustworthy realized metric;
-- **partial record:** activity occurrence is credible but some requested dimensions are unknown;
+- **usable realized record:** explicit performed status with full trustworthy metric coverage required by the consumer;
+- **partial record:** activity occurrence is credible but one or more dimensions are unknown;
 - **non-exposure record:** pending/rest and other states that do not represent performed load;
 - **explicit missed assertion:** `missed`, distinct from missing data;
-- **ambiguous legacy record:** values such as default zeros whose known-ness cannot be proven.
+- **ambiguous legacy record:** no trustworthy realized metric can be established from the persisted evidence.
 
 An overall readiness evaluation may proceed only for indicators whose own sufficiency requirements are met. Missing one dimension does not necessarily invalidate every other dimension, but it must appear in coverage/limitations.
 
-## Required follow-up from the audit
+## Required follow-up
 
-KAN-244 must define the typed realized-training normalization, provenance, quality and deduplication contract and decide the durable storage change required for new logs.
-
-Subsequent tasks must then:
+Subsequent tasks must:
 
 - define data sufficiency/windows before computing summaries;
 - build individual recent-preparation summaries from normalized realized records only;
