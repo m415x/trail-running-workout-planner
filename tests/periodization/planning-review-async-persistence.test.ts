@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
-import { persistIntegralPlanningReconciliationAsync } from '@/lib/periodization/planning-review-persistence'
+import {
+  persistIntegralPlanningReconciliationAsync,
+  StalePlanningReviewError,
+} from '@/lib/periodization/planning-review-persistence'
 import type {
   AsyncPlanningReviewTransactionPort,
   PlanningReviewAtomicAuditRecord,
@@ -11,11 +14,13 @@ import type {
   IntegralPlanningReconciliation,
   PlanningReviewScopedOperation,
 } from '@/types/training/planning-review-reconciliation.types'
+import type { PlanningReviewScope } from '@/types/training/planning-review.types'
 
 interface State {
   applied: string[]
   audits: PlanningReviewAtomicAuditRecord[]
   journal: Record<string, PersistedIntegralPlanningReconciliation>
+  revision: string
 }
 
 const scope = {
@@ -34,23 +39,29 @@ const provenance = {
   reason: 'Async integration boundary',
 }
 
-function operation(identity: string): PlanningReviewScopedOperation {
+function operation(identity: string, proposedValue = 42): PlanningReviewScopedOperation {
   return {
     scope,
     identity,
     parentIdentity: null,
     entity: { entityType: 'microcycle', entityId: identity },
     operation: 'update',
-    changes: [{ field: 'targetVolumeKm', currentValue: 40, proposedValue: 42 }],
+    changes: [{ field: 'targetVolumeKm', currentValue: 40, proposedValue }],
     blockId: 'block-1',
     decisionProvenance: provenance,
   }
 }
 
-function reconciliation(): IntegralPlanningReconciliation {
-  const operations = [operation('microcycle-1')]
+function reconciliation(
+  sourceRevisionKey = 'revision-a',
+  resultRevisionKey = 'revision-b',
+  proposedValue = 42,
+): IntegralPlanningReconciliation {
+  const operations = [operation('microcycle-1', proposedValue)]
   return {
     scope,
+    sourceRevisionKey,
+    resultRevisionKey,
     blocks: [{
       blockId: 'block-1',
       root: { entityType: 'microcycle', entityId: 'microcycle-1' },
@@ -71,7 +82,7 @@ function reconciliation(): IntegralPlanningReconciliation {
 }
 
 class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
-  state: State = { applied: [], audits: [], journal: {} }
+  state: State = { applied: [], audits: [], journal: {}, revision: 'revision-a' }
 
   constructor(private readonly failAudit = false) {}
 
@@ -87,6 +98,10 @@ class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
 
   async findCommittedResult(tx: State, idempotencyKey: string) {
     return tx.journal[idempotencyKey] ?? null
+  }
+
+  async lockSourceRevision(_tx: State, _scope: PlanningReviewScope) {
+    return this.state.revision
   }
 
   async applyOperation(tx: State, current: PlanningReviewScopedOperation) {
@@ -105,13 +120,24 @@ class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
     idempotencyKey: string,
     result: PersistedIntegralPlanningReconciliation,
   ) {
-    await Promise.resolve()
     tx.journal[idempotencyKey] = result
+  }
+
+  async advanceSourceRevision(
+    tx: State,
+    _scope: PlanningReviewScope,
+    sourceRevisionKey: string,
+    resultRevisionKey: string,
+  ) {
+    if (tx.revision !== sourceRevisionKey) {
+      throw new Error('revision changed before advance')
+    }
+    tx.revision = resultRevisionKey
   }
 }
 
 describe('persistencia integral asíncrona', () => {
-  it('hace commit y suprime un replay equivalente', async () => {
+  it('hace commit, avanza la revisión y suprime un replay equivalente', async () => {
     const port = new AsyncMemoryPort()
     const input = reconciliation()
 
@@ -126,12 +152,36 @@ describe('persistencia integral asíncrona', () => {
 
     assert.equal(first.outcome, 'committed')
     assert.equal(replay.outcome, 'already_committed')
+    assert.equal(port.state.revision, 'revision-b')
     assert.equal(port.state.applied.length, 1)
     assert.equal(port.state.audits.length, 1)
     assert.equal(Object.keys(port.state.journal).length, 1)
   })
 
-  it('revierte la transacción asíncrona cuando falla la auditoría', async () => {
+  it('rechaza una entrega distinta basada en una revisión stale sin escribir', async () => {
+    const port = new AsyncMemoryPort()
+    await persistIntegralPlanningReconciliationAsync({
+      reconciliation: reconciliation('revision-a', 'revision-b', 42),
+      persistence: port,
+    })
+    const stateAfterFirst = structuredClone(port.state)
+
+    await assert.rejects(
+      persistIntegralPlanningReconciliationAsync({
+        reconciliation: reconciliation('revision-a', 'revision-c', 44),
+        persistence: port,
+      }),
+      (error) => (
+        error instanceof StalePlanningReviewError
+        && error.expectedRevisionKey === 'revision-a'
+        && error.actualRevisionKey === 'revision-b'
+      ),
+    )
+
+    assert.deepEqual(port.state, stateAfterFirst)
+  })
+
+  it('revierte writes, journal y revisión cuando falla la auditoría', async () => {
     const port = new AsyncMemoryPort(true)
 
     await assert.rejects(
@@ -142,6 +192,11 @@ describe('persistencia integral asíncrona', () => {
       /async audit failure/,
     )
 
-    assert.deepEqual(port.state, { applied: [], audits: [], journal: {} })
+    assert.deepEqual(port.state, {
+      applied: [],
+      audits: [],
+      journal: {},
+      revision: 'revision-a',
+    })
   })
 })
