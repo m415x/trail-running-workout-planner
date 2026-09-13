@@ -38,6 +38,8 @@ export interface PlanningReviewReconciledBlock {
 
 export interface IntegralPlanningReconciliation {
   readonly scope: PlanningReviewScope
+  /** Optimistic-concurrency token of the current review used for this decision. */
+  readonly sourceRevisionKey: string
   readonly blocks: readonly PlanningReviewReconciledBlock[]
   readonly operations: readonly PlanningReviewScopedOperation[]
   readonly planningOperations: readonly PlanningReviewScopedOperation[]
