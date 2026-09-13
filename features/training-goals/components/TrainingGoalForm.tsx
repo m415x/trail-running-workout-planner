@@ -28,6 +28,7 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
     ? `/dashboard/athletes/${athleteId}`
     : `/${locale}/dashboard/athletes/${athleteId}`
   const isRaceGoal = goalType === 'race'
+  const usesCatalogRace = isRaceGoal && selected !== null
   const fieldError = (name: string) => state.fieldErrors?.[name]?.[0]
   const catalogTitle = selected ? `${selected.event.name} — ${selected.course.label}` : ''
 
@@ -42,50 +43,44 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
         </div>
       )}
 
-      <div className='grid gap-4 sm:grid-cols-2'>
-        <div className='space-y-1.5'>
-          <label htmlFor='type' className='text-sm font-medium'>
-            {t('type')} <span className='text-destructive'>*</span>
-          </label>
-          <select
-            id='type'
-            name='type'
-            value={goalType}
-            onChange={(event) => {
-              setGoalType(event.target.value as TrainingGoalType)
-              setSelected(null)
-            }}
-            aria-invalid={Boolean(fieldError('type'))}
-            aria-describedby={fieldError('type') ? 'type-error' : undefined}
-            className='h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
-          >
-            {(['race', 'performance', 'base', 'maintenance', 'custom'] as const).map((value) => (
-              <option key={value} value={value}>{t(`types.${value}`)}</option>
-            ))}
-          </select>
-          <FieldError id='type-error' message={fieldError('type')} />
-        </div>
+      <div className='space-y-1.5'>
+        <label htmlFor='type' className='text-sm font-medium'>
+          {t('type')} <span className='text-destructive'>*</span>
+        </label>
+        <select
+          id='type'
+          name='type'
+          value={goalType}
+          onChange={(event) => {
+            setGoalType(event.target.value as TrainingGoalType)
+            setSelected(null)
+          }}
+          aria-invalid={Boolean(fieldError('type'))}
+          aria-describedby={fieldError('type') ? 'type-error' : undefined}
+          className='h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
+        >
+          {(['race', 'performance', 'base', 'maintenance', 'custom'] as const).map((value) => (
+            <option key={value} value={value}>{t(`types.${value}`)}</option>
+          ))}
+        </select>
+        <FieldError id='type-error' message={fieldError('type')} />
+      </div>
 
-        {(!isRaceGoal || !selected) && (
+      {!isRaceGoal && (
+        <div className='grid gap-4 sm:grid-cols-2'>
+          <Field
+            label={t('fields.title')}
+            name='title'
+            required
+            error={fieldError('title')}
+          />
           <Field
             label={t('fields.targetDate')}
             name='targetDate'
             type='date'
-            required={isRaceGoal}
             error={fieldError('targetDate')}
           />
-        )}
-      </div>
-
-      {selected && isRaceGoal ? (
-        <input type='hidden' name='title' value={catalogTitle} />
-      ) : (
-        <Field
-          label={t('fields.title')}
-          name='title'
-          required
-          error={fieldError('title')}
-        />
+        </div>
       )}
 
       <TextAreaField
@@ -105,8 +100,12 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
 
           <RaceCoursePicker selected={selected} onSelect={setSelected} />
 
-          {!selected && (
+          {usesCatalogRace ? (
+            <input type='hidden' name='title' value={catalogTitle} />
+          ) : (
             <div className='grid gap-4 border-t pt-4 sm:grid-cols-2'>
+              <Field label={t('fields.title')} name='title' required error={fieldError('title')} />
+              <Field label={t('fields.targetDate')} name='targetDate' type='date' required error={fieldError('targetDate')} />
               <Field label={t('fields.raceName')} name='raceName' required error={fieldError('raceName')} />
               <Field label={t('fields.raceDistanceKm')} name='raceDistanceKm' type='number' min='0.01' step='any' required error={fieldError('raceDistanceKm')} />
               <Field label={t('fields.raceElevationGain')} name='raceElevationGain' type='number' min='0' step='any' error={fieldError('raceElevationGain')} />
