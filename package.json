@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
+    "tsc": "tsc --noEmit",
     "db:push": "drizzle-kit push",
     "db:migrate:workout-templates:sqlite": "tsx scripts/migrate-workout-templates-sqlite.ts",
     "db:migrate:planning-cohorts:sqlite": "tsx scripts/migrate-planning-cohorts-sqlite.ts",
