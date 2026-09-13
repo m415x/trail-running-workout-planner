@@ -23,32 +23,32 @@ class MemoryTransactionPort implements PlanningReviewTransactionPort<MemoryState
 
   constructor(private readonly failAuditIdentity: string | null = null) {}
 
-  async transaction<TResult>(work: (tx: MemoryState) => Promise<TResult>): Promise<TResult> {
+  transaction<TResult>(work: (tx: MemoryState) => TResult): TResult {
     const snapshot = structuredClone(this.state)
     try {
-      return await work(this.state)
+      return work(this.state)
     } catch (error) {
       this.state = snapshot
       throw error
     }
   }
 
-  async findCommittedResult(tx: MemoryState, idempotencyKey: string) {
+  findCommittedResult(tx: MemoryState, idempotencyKey: string) {
     return tx.journal[idempotencyKey] ?? null
   }
 
-  async applyOperation(tx: MemoryState, operation: PlanningReviewScopedOperation) {
+  applyOperation(tx: MemoryState, operation: PlanningReviewScopedOperation) {
     tx.applied.push(operation.identity)
   }
 
-  async appendAuditRecord(tx: MemoryState, record: PlanningReviewAtomicAuditRecord) {
+  appendAuditRecord(tx: MemoryState, record: PlanningReviewAtomicAuditRecord) {
     if (record.identity === this.failAuditIdentity) {
       throw new Error(`audit failure: ${record.identity}`)
     }
     tx.audits.push(record)
   }
 
-  async markCommitted(
+  markCommitted(
     tx: MemoryState,
     idempotencyKey: string,
     result: PersistedIntegralPlanningReconciliation,
@@ -129,7 +129,7 @@ function reconciliation(
 }
 
 describe('persistencia atómica de la revisión integral', () => {
-  it('aplica operaciones y auditorías dentro de una única transacción', async () => {
+  it('aplica operaciones y auditorías dentro de una única transacción', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([
       operation('prescription-1', 'prescription'),
@@ -138,10 +138,7 @@ describe('persistencia atómica de la revisión integral', () => {
       operation('plan-1', 'plan'),
     ])
 
-    const result = await persistIntegralPlanningReconciliation({
-      reconciliation: input,
-      persistence: port,
-    })
+    const result = persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
 
     assert.deepEqual(port.state.applied, [
       'plan-1',
@@ -149,17 +146,14 @@ describe('persistencia atómica de la revisión integral', () => {
       'session-1',
       'prescription-1',
     ])
-    assert.deepEqual(
-      port.state.audits.map(({ identity }) => identity),
-      port.state.applied,
-    )
+    assert.deepEqual(port.state.audits.map(({ identity }) => identity), port.state.applied)
     assert.deepEqual(result.appliedOperationIdentities, port.state.applied)
     assert.deepEqual(result.auditedOperationIdentities, port.state.applied)
     assert.deepEqual(port.state.audits[0]?.decisionProvenance, provenance)
     assert.deepEqual(port.state.audits[0]?.scope, scope)
   })
 
-  it('ordena eliminaciones desde los hijos hacia sus padres', async () => {
+  it('ordena eliminaciones desde los hijos hacia sus padres', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([
       operation('plan-1', 'plan', 'remove'),
@@ -168,7 +162,7 @@ describe('persistencia atómica de la revisión integral', () => {
       operation('prescription-1', 'prescription', 'remove'),
     ])
 
-    await persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
+    persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
 
     assert.deepEqual(port.state.applied, [
       'prescription-1',
@@ -178,7 +172,7 @@ describe('persistencia atómica de la revisión integral', () => {
     ])
   })
 
-  it('revierte todo si falla una auditoría después de aplicar una operación', async () => {
+  it('revierte todo si falla una auditoría después de aplicar una operación', () => {
     const port = new MemoryTransactionPort('session-1')
     const input = reconciliation([
       operation('plan-1', 'plan'),
@@ -186,8 +180,8 @@ describe('persistencia atómica de la revisión integral', () => {
       operation('prescription-1', 'prescription'),
     ])
 
-    await assert.rejects(
-      persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port }),
+    assert.throws(
+      () => persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port }),
       /audit failure: session-1/,
     )
     assert.deepEqual(port.state.applied, [])
@@ -195,13 +189,13 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.deepEqual(port.state.journal, {})
   })
 
-  it('rechaza write sets que exceden la selección aceptada antes de abrir la transacción', async () => {
+  it('rechaza write sets que exceden la selección aceptada antes de abrir la transacción', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([operation('plan-1', 'plan')])
     const tampered = { ...input, acceptedItemIdentities: [] }
 
-    await assert.rejects(
-      persistIntegralPlanningReconciliation({ reconciliation: tampered, persistence: port }),
+    assert.throws(
+      () => persistIntegralPlanningReconciliation({ reconciliation: tampered, persistence: port }),
       /was not accepted by the coach/,
     )
     assert.deepEqual(port.state.applied, [])
@@ -209,7 +203,7 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.deepEqual(port.state.journal, {})
   })
 
-  it('rechaza una operación cuyo team/group/cohort/plan scope fue alterado', async () => {
+  it('rechaza una operación cuyo team/group/cohort/plan scope fue alterado', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([operation('plan-1', 'plan')])
     const tamperedOperation = {
@@ -222,8 +216,8 @@ describe('persistencia atómica de la revisión integral', () => {
       planningOperations: [tamperedOperation],
     }
 
-    await assert.rejects(
-      persistIntegralPlanningReconciliation({ reconciliation: tampered, persistence: port }),
+    assert.throws(
+      () => persistIntegralPlanningReconciliation({ reconciliation: tampered, persistence: port }),
       /crosses the accepted planning scope/,
     )
     assert.deepEqual(port.state.applied, [])
@@ -231,7 +225,7 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.deepEqual(port.state.journal, {})
   })
 
-  it('completa eliminaciones antes de altas o actualizaciones', async () => {
+  it('completa eliminaciones antes de altas o actualizaciones', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([
       operation('plan-new', 'plan', 'create'),
@@ -240,7 +234,7 @@ describe('persistencia atómica de la revisión integral', () => {
       operation('microcycle-new', 'microcycle', 'update'),
     ])
 
-    await persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
+    persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
 
     assert.deepEqual(port.state.applied, [
       'prescription-old',
@@ -250,7 +244,7 @@ describe('persistencia atómica de la revisión integral', () => {
     ])
   })
 
-  it('no reaplica ni vuelve a auditar una entrega integral equivalente', async () => {
+  it('no reaplica ni vuelve a auditar una entrega integral equivalente', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([
       operation('plan-1', 'plan'),
@@ -260,12 +254,9 @@ describe('persistencia atómica de la revisión integral', () => {
       operation('prescription-1', 'prescription'),
     ])
 
-    const first = await persistIntegralPlanningReconciliation({
-      reconciliation: input,
-      persistence: port,
-    })
+    const first = persistIntegralPlanningReconciliation({ reconciliation: input, persistence: port })
     const stateAfterFirst = structuredClone(port.state)
-    const repeated = await persistIntegralPlanningReconciliation({
+    const repeated = persistIntegralPlanningReconciliation({
       reconciliation: structuredClone(input),
       persistence: port,
     })
@@ -279,7 +270,7 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.equal(Object.keys(port.state.journal).length, 1)
   })
 
-  it('trata como equivalente el mismo write set aunque cambie el orden de entrada', async () => {
+  it('trata como equivalente el mismo write set aunque cambie el orden de entrada', () => {
     const port = new MemoryTransactionPort()
     const operations = [
       operation('plan-1', 'plan'),
@@ -289,11 +280,8 @@ describe('persistencia atómica de la revisión integral', () => {
     const firstInput = reconciliation(operations)
     const reorderedInput = reconciliation([...operations].reverse())
 
-    const first = await persistIntegralPlanningReconciliation({
-      reconciliation: firstInput,
-      persistence: port,
-    })
-    const repeated = await persistIntegralPlanningReconciliation({
+    const first = persistIntegralPlanningReconciliation({ reconciliation: firstInput, persistence: port })
+    const repeated = persistIntegralPlanningReconciliation({
       reconciliation: reorderedInput,
       persistence: port,
     })
