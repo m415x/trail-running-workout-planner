@@ -7,6 +7,12 @@ export interface ReadinessPolicy {
   readonly continuity: {
     readonly minimumActiveBucketRatio: number
   }
+  readonly competitionExposure: {
+    /** Product review criterion, not a universal race-distance readiness formula. */
+    readonly minimumLongestDistanceToRaceRatio: number
+    /** Product review criterion comparing known recent single-session D+ to race D+. */
+    readonly minimumPeakElevationToRaceRatio: number
+  }
   readonly planVsReal: {
     readonly minimumLinkedSessions: number
     readonly relativeDeviationThreshold: number
