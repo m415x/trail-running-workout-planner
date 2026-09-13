@@ -103,7 +103,9 @@ describe('competition calendar service', () => {
     })
 
     assert.equal(conflict.ok, false)
-    if (!conflict.ok) assert.ok(conflict.errors.includes('competition_calendar_multiple_active_primary'))
+    if (!conflict.ok) {
+      assert.ok(conflict.errors.includes('competition_calendar_multiple_primary_candidates'))
+    }
   })
 
   it('reschedules a competition without changing lifecycle', () => {
