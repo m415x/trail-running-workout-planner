@@ -16,10 +16,6 @@ function formatNumber(value: number) {
   return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(value)
 }
 
-function alertTitle(code: ReadinessAssessment['status'] extends 'assessed' ? never : never) {
-  return code
-}
-
 const ALERT_LABELS: Record<string, string> = {
   continuity_gap: 'Discontinuidad reciente',
   competition_distance_exposure_gap: 'Exposición reciente de distancia',
