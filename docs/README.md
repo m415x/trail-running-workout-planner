@@ -10,6 +10,7 @@ This directory contains durable project context. It complements `AGENTS.md` and 
 - [Planning intent and competition context](architecture/planning-intent-and-competition-context.md)
 - [Competition calendar](architecture/competition-calendar.md)
 - [Competitive adjustment](architecture/competitive-adjustment.md)
+- [Integral planning review and safe persistence](architecture/planning-review-persistence.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 
@@ -21,6 +22,7 @@ Architecture documents describe the current durable domain model and should be p
 - [Epic 2 — Planning Automation (H1-H8)](history/epic-2.md)
 - [Epic 2 / H9 — Planning intent and competitive calendar](history/epic-2-h9.md)
 - [Epic 2 / H10 — Competitive adjustment](history/epic-2-h10.md)
+- [Epic 2 / H11 — Integral planning review and safe persistence](history/epic-2-h11.md)
 
 History documents preserve how the product and domain model evolved: original assumptions, implementation outcomes, coach feedback, discovered limitations, and later refinements.
 
@@ -30,7 +32,7 @@ History documents preserve how the product and domain model evolved: original as
 
 - [Epic 2 / H11 — Planning review and safe persistence](handoffs/epic-2-h11.md)
 
-H10 is closed and its temporary handoff was removed after durable information was consolidated into architecture/history. H11 keeps the single active operational handoff on its story branch.
+H11 keeps the single active operational handoff until the real Supabase gate and final local story validation are complete. Once H11 closes, its durable rules live in architecture/history and the handoff may be replaced by the next active story.
 
 Handoffs are intentionally temporary and minimal. Keep only the handoff needed to resume the active/recent story; durable decisions belong in architecture/history and execution state belongs in Jira. Superseded handoffs should be removed once their durable information has been consolidated.
 
