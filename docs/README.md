@@ -20,6 +20,7 @@ Este directorio contiene el contexto durable del proyecto. `README.md` es el ín
 - [Individual readiness assessment](architecture/readiness-assessment.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
+- [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)
 
 Usa arquitectura cuando una tarea dependa de cómo funciona el sistema **ahora**. No reconstruyas contratos vigentes desde history o conversaciones antiguas.
 
