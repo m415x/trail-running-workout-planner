@@ -29,6 +29,7 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
     : `/${locale}/dashboard/athletes/${athleteId}`
   const isRaceGoal = goalType === 'race'
   const fieldError = (name: string) => state.fieldErrors?.[name]?.[0]
+  const catalogTitle = selected ? `${selected.event.name} — ${selected.course.label}` : ''
 
   return (
     <form action={formAction} className='space-y-6'>
@@ -76,12 +77,16 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
         )}
       </div>
 
-      <Field
-        label={t('fields.title')}
-        name='title'
-        required
-        error={fieldError('title')}
-      />
+      {selected && isRaceGoal ? (
+        <input type='hidden' name='title' value={catalogTitle} />
+      ) : (
+        <Field
+          label={t('fields.title')}
+          name='title'
+          required
+          error={fieldError('title')}
+        />
+      )}
 
       <TextAreaField
         label={t('fields.description')}
@@ -118,7 +123,9 @@ export function TrainingGoalForm({ athleteId, locale }: TrainingGoalFormProps) {
         error={fieldError('notes')}
       />
 
-      <div className='rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground'>{t('draftNotice')}</div>
+      <div className='rounded-lg bg-muted/50 p-3 text-sm text-muted-foreground'>
+        {t('draftNotice')}
+      </div>
 
       <div className='flex justify-end gap-2'>
         <Link href={athletePath} className={buttonVariants({ variant: 'outline' })}>{catalog('cancel')}</Link>
