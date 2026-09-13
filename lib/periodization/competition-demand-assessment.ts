@@ -1,3 +1,4 @@
+import { calculateKilometerEffortKm } from '@/lib/race-catalog/race-course-derived-profile'
 import type {
   CompetitionDemandAssessment,
   CompetitionDemandBand,
@@ -37,7 +38,7 @@ function resolveDemandBand(courseEffortKm: number): CompetitionDemandBand {
 /**
  * Assesses objective course demand from normalized course data.
  *
- * The baseline follows the trail-running km-effort convention:
+ * The baseline follows the shared kilometer-effort convention:
  * `distanceKm + elevationGainM / 100`. When D+ is unknown the function avoids
  * inventing it and returns an unknown demand band instead of silently treating
  * the course as flat.
@@ -61,7 +62,12 @@ export function assessCompetitionDemand(profile: CourseProfile): CompetitionDema
     technicalityKnown,
   }
 
-  if (!elevationGainKnown) {
+  const courseEffortKm = calculateKilometerEffortKm(
+    profile.distanceKm,
+    profile.elevationGainM,
+  )
+
+  if (courseEffortKm === null) {
     return {
       courseEffortKm: null,
       band: 'unknown',
@@ -71,7 +77,6 @@ export function assessCompetitionDemand(profile: CourseProfile): CompetitionDema
     }
   }
 
-  const courseEffortKm = profile.distanceKm + profile.elevationGainM / 100
   const enrichedSignals = [elevationLossKnown, altitudeProfileKnown, technicalityKnown]
     .filter(Boolean)
     .length
