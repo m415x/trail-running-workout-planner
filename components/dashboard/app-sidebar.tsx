@@ -1,6 +1,6 @@
 'use client'
 
-import { CalendarDays, CalendarRange, Dumbbell, GitBranch, LayoutDashboard, Mountain, Users, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarRange, Dumbbell, GitBranch, LayoutDashboard, Mountain, Trophy, Users, UsersRound } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { Link, usePathname } from '@/i18n/routing'
@@ -18,7 +18,6 @@ import {
 } from '@ui/sidebar'
 
 const navigationItems = [
-  { label: 'competitions', href: '/dashboard/competitions', icon: Mountain },
   {
     label: 'Resumen',
     href: '/dashboard',
@@ -43,6 +42,11 @@ const navigationItems = [
     label: 'Planificación',
     href: '/dashboard/planning',
     icon: CalendarRange,
+  },
+  {
+    label: 'competitions',
+    href: '/dashboard/competitions',
+    icon: Trophy,
   },
   {
     label: 'Sesiones',
@@ -82,7 +86,11 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
-                const label = item.label === 'templates' ? t('navigation') : item.label === 'competitions' ? catalog('navigation') : item.label
+                const label = item.label === 'templates'
+                  ? t('navigation')
+                  : item.label === 'competitions'
+                    ? catalog('navigation')
+                    : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>
