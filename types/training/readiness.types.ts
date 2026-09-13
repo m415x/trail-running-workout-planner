@@ -31,13 +31,6 @@ export type RealizedTrainingQuality =
   | 'explicit_missed'
   | 'ambiguous'
 
-/**
- * Raw persistence-facing shape consumed by the H12 normalization boundary.
- *
- * `knownMetricFields` is deliberate. Existing workout_logs rows cannot prove
- * whether a persisted zero was observed or merely came from a schema/UI default.
- * New writers must declare which numeric fields the athlete actually supplied.
- */
 export interface RawRealizedTrainingRecord {
   readonly id: string
   readonly teamId: string
@@ -99,10 +92,6 @@ export interface ReadinessAnalysisWindow {
   readonly bucketDays: number
 }
 
-/**
- * Product-policy inputs only. H12 does not claim these thresholds are medical
- * or universal; KAN-248 versions the concrete policy selected with the coach.
- */
 export interface ReadinessDataSufficiencyPolicy {
   readonly lookbackDays: number
   readonly bucketDays: number
@@ -145,3 +134,69 @@ export type ReadinessDataSufficiency =
       readonly coverage: ReadinessDataCoverage
       readonly reasons: readonly ReadinessDataInsufficiencyReason[]
     }
+
+export type PreparationSummaryUnit =
+  | 'km'
+  | 'km_per_week'
+  | 'min'
+  | 'min_per_week'
+  | 'm'
+  | 'm_per_week'
+  | 'sessions_per_week'
+  | 'ratio'
+  | 'bpm'
+  | 'rpe'
+
+export type PreparationSummaryValue =
+  | {
+      readonly state: 'known'
+      readonly value: number
+      readonly unit: PreparationSummaryUnit
+      readonly sampleSize: number
+      readonly coverageRatio: number
+    }
+  | {
+      readonly state: 'unknown'
+      readonly unit: PreparationSummaryUnit
+      readonly sampleSize: number
+      readonly coverageRatio: number
+      readonly reason: 'insufficient_data' | 'insufficient_metric_coverage'
+    }
+
+export interface RecentPreparationSummary {
+  readonly teamId: string
+  readonly athleteId: string
+  readonly window: ReadinessAnalysisWindow
+  readonly dataStatus: ReadinessDataSufficiency['status']
+  readonly performedRecords: number
+  readonly volume: {
+    readonly totalKm: PreparationSummaryValue
+    readonly averageWeeklyKm: PreparationSummaryValue
+  }
+  readonly duration: {
+    readonly totalMin: PreparationSummaryValue
+    readonly averageWeeklyMin: PreparationSummaryValue
+  }
+  readonly elevation: {
+    readonly totalGainM: PreparationSummaryValue
+    readonly averageWeeklyGainM: PreparationSummaryValue
+  }
+  /** Frequency of recorded performed activities; missing logs are never inferred as missed sessions. */
+  readonly frequency: {
+    readonly recordedSessionsPerWeek: PreparationSummaryValue
+  }
+  readonly intensity: {
+    readonly averageRpe: PreparationSummaryValue
+    readonly averageHrBpm: PreparationSummaryValue
+  }
+  readonly longRun: {
+    readonly longestDistanceKm: PreparationSummaryValue
+    readonly longestDurationMin: PreparationSummaryValue
+  }
+  readonly continuity: {
+    readonly activeBucketRatio: PreparationSummaryValue
+    readonly activeBuckets: number
+    readonly totalBuckets: number
+  }
+  readonly limitations: readonly string[]
+}
