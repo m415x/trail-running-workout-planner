@@ -96,6 +96,8 @@ function reconciliation(
   const identities = operations.map(({ identity }) => identity)
   return {
     scope,
+    sourceRevisionKey: 'revision-a',
+    resultRevisionKey: 'revision-b',
     blocks: [{
       blockId: 'block-1',
       root: { entityType: 'plan', entityId: 'plan-1' },
