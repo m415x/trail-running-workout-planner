@@ -24,7 +24,9 @@ function normalize(value: unknown): unknown {
  * because H11 stable macrocycle ordinals are semantically significant.
  */
 export function integralPlanningReviewRevisionKey(review: IntegralPlanningReview) {
-  const { issues: _issues, ...authoritativeReview } = review
+  const authoritativeReview = Object.fromEntries(
+    Object.entries(review).filter(([key]) => key !== 'issues'),
+  )
 
   return createHash('sha256')
     .update(JSON.stringify(normalize(authoritativeReview)))
