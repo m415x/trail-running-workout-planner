@@ -24,6 +24,18 @@ const ENTITY_ORDER: Readonly<Record<
   prescription: 5,
 }
 
+export class StalePlanningReviewError extends Error {
+  readonly code = 'stale_planning_review'
+
+  constructor(
+    readonly expectedRevisionKey: string,
+    readonly actualRevisionKey: string,
+  ) {
+    super('Planning review is stale and must be rebuilt before persistence')
+    this.name = 'StalePlanningReviewError'
+  }
+}
+
 function sameScope(first: PlanningReviewScope, second: PlanningReviewScope) {
   return first.teamId === second.teamId
     && first.groupId === second.groupId
@@ -52,6 +64,10 @@ function orderedOperations(
 function validateReconciliation(
   reconciliation: PersistIntegralPlanningReconciliationInput<unknown>['reconciliation'],
 ) {
+  if (!reconciliation.sourceRevisionKey || !reconciliation.resultRevisionKey) {
+    throw new Error('Atomic planning write set requires source and result revisions')
+  }
+
   const operationIdentities = reconciliation.operations.map(({ identity }) => identity)
   if (new Set(operationIdentities).size !== operationIdentities.length) {
     throw new Error('Atomic planning write set contains duplicate identities')
@@ -184,8 +200,11 @@ export function persistIntegralPlanningReconciliation<TTransaction>({
 }
 
 /**
- * Applies the same validated atomic write set through an asynchronous transaction
- * port suitable for PostgreSQL/Supabase clients.
+ * Applies the same write set through an asynchronous plan-serialized transaction.
+ *
+ * Equivalent double submits replay from the journal. A distinct submission based
+ * on a prior revision is rejected after acquiring the plan lock and before any
+ * domain write, preventing silent last-write-wins.
  */
 export async function persistIntegralPlanningReconciliationAsync<TTransaction>({
   reconciliation,
@@ -196,8 +215,24 @@ export async function persistIntegralPlanningReconciliationAsync<TTransaction>({
   const idempotencyKey = integralPlanningIdempotencyKey(reconciliation)
 
   return persistence.transaction(async (tx) => {
-    const previous = await persistence.findCommittedResult(tx, idempotencyKey)
-    if (previous !== null) return { ...previous, outcome: 'already_committed' }
+    const fastReplay = await persistence.findCommittedResult(tx, idempotencyKey)
+    if (fastReplay !== null) return { ...fastReplay, outcome: 'already_committed' }
+
+    const durableRevision = await persistence.lockSourceRevision(tx, reconciliation.scope)
+
+    // Recheck after the lock: an equivalent concurrent submit may have committed
+    // while this transaction was waiting.
+    const serializedReplay = await persistence.findCommittedResult(tx, idempotencyKey)
+    if (serializedReplay !== null) {
+      return { ...serializedReplay, outcome: 'already_committed' }
+    }
+
+    if (durableRevision !== reconciliation.sourceRevisionKey) {
+      throw new StalePlanningReviewError(
+        reconciliation.sourceRevisionKey,
+        durableRevision,
+      )
+    }
 
     const appliedOperationIdentities: string[] = []
     const auditedOperationIdentities: string[] = []
@@ -216,6 +251,12 @@ export async function persistIntegralPlanningReconciliationAsync<TTransaction>({
       auditedOperationIdentities,
     )
     await persistence.markCommitted(tx, idempotencyKey, result)
+    await persistence.advanceSourceRevision(
+      tx,
+      reconciliation.scope,
+      reconciliation.sourceRevisionKey,
+      reconciliation.resultRevisionKey,
+    )
     return result
   })
 }
