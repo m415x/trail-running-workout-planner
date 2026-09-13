@@ -195,6 +195,8 @@ function flattenReview(review: IntegralPlanningReview) {
 
         for (const sessionNode of microNode.sessions) {
           const { session, provenance } = sessionNode
+          const sessionProtectedFields = protectedFieldsFor(annotations, session.id)
+          sessionProtectedFields.add('id')
           addEntity(entities, {
             identity: stableSessionIdentity(session.id, provenance),
             entityType: 'session',
@@ -204,14 +206,16 @@ function flattenReview(review: IntegralPlanningReview) {
               ...normalize(session) as Readonly<Record<string, unknown>>,
               provenance: normalize(provenance),
             },
-            protectedFields: protectedFieldsFor(annotations, session.id),
+            protectedFields: sessionProtectedFields,
             protectWholeEntity: provenance.ownership !== 'generated',
             protectRemoval: provenance.ownership !== 'generated'
-              || protectedFieldsFor(annotations, session.id).size > 0,
+              || sessionProtectedFields.size > 1,
           })
 
           for (const prescriptionNode of sessionNode.prescriptions) {
             const { prescription, provenance: prescriptionProvenance } = prescriptionNode
+            const prescriptionProtectedFields = protectedFieldsFor(annotations, prescription.id)
+            prescriptionProtectedFields.add('id')
             addEntity(entities, {
               identity: stablePrescriptionIdentity(
                 prescription.id,
@@ -224,10 +228,10 @@ function flattenReview(review: IntegralPlanningReview) {
                 ...normalize(prescription) as Readonly<Record<string, unknown>>,
                 provenance: normalize(prescriptionProvenance),
               },
-              protectedFields: protectedFieldsFor(annotations, prescription.id),
+              protectedFields: prescriptionProtectedFields,
               protectWholeEntity: prescriptionProvenance.ownership !== 'generated',
               protectRemoval: prescriptionProvenance.ownership !== 'generated'
-                || protectedFieldsFor(annotations, prescription.id).size > 0,
+                || prescriptionProtectedFields.size > 1,
             })
           }
         }
