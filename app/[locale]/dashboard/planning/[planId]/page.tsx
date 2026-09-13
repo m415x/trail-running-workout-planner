@@ -1,3 +1,4 @@
+import { CatalogCompetitionForm } from '@/features/race-catalog/components/CatalogCompetitionForm'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
@@ -296,6 +297,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         </div>
       </div>
 
+      <CatalogCompetitionForm planId={planId} locale={locale} />
       <CompetitionCalendarSummary
         competitions={competitions}
         primaryCompetitionId={primaryCompetitionId}

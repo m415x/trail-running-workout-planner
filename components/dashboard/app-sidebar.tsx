@@ -18,6 +18,7 @@ import {
 } from '@ui/sidebar'
 
 const navigationItems = [
+  { label: 'competitions', href: '/dashboard/competitions', icon: Mountain },
   {
     label: 'Resumen',
     href: '/dashboard',
@@ -58,6 +59,7 @@ const navigationItems = [
 export function AppSidebar() {
   const pathname = usePathname()
   const t = useTranslations('WorkoutTemplates')
+  const catalog = useTranslations('RaceCatalog')
 
   return (
     <Sidebar collapsible='icon'>
@@ -80,7 +82,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
-                const label = item.label === 'templates' ? t('navigation') : item.label
+                const label = item.label === 'templates' ? t('navigation') : item.label === 'competitions' ? catalog('navigation') : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>

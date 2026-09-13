@@ -135,3 +135,18 @@ A race goal is not evidence that the athlete can safely complete the event. The 
 4. A `TrainingGoal` never implies `RaceRegistration`.
 5. Unknown D+ remains `null`, not zero.
 6. Catalog selection never mutates group/cohort/planning membership automatically.
+
+## Product selection (KAN-280)
+
+The new-goal form supports either manual race data or an explicit catalog course.
+When a course is selected, the server resolves its ancestry and calls
+`selectRaceCourseForTrainingGoal`; client-supplied race measurements are not the
+authority for that selection. The goal and optional sidecar are written
+atomically after the existing team/athlete access check. Unknown D+ and fractional
+measurements are preserved. Catalog revision changes require a fresh selection.
+
+The plan detail page also exposes an explicit add-from-catalog form. It calls
+`selectRaceCourseForCompetition` and the existing competition calendar service,
+including its audience, date and priority rules, then persists the sidecar in the
+same transaction. It creates a planned CompetitionEntry; it does not refresh
+an existing historical plan target or create a registration.

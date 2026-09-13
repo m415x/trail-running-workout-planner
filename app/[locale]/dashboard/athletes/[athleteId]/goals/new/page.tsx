@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
@@ -13,6 +14,7 @@ interface NewTrainingGoalPageProps {
 
 export default async function NewTrainingGoalPage({ params }: NewTrainingGoalPageProps) {
   const { locale, athleteId } = await params
+  const t = await getTranslations({ locale, namespace: 'TrainingGoalForm' })
   const athlete = await getAthleteById(athleteId)
 
   if (!athlete) {
@@ -29,14 +31,14 @@ export default async function NewTrainingGoalPage({ params }: NewTrainingGoalPag
       <div className='flex items-start gap-3'>
         <Link
           href={athletePath}
-          aria-label='Volver al detalle del atleta'
+          aria-label={t('back')}
           className={buttonVariants({ variant: 'ghost', size: 'icon' })}
         >
           <ArrowLeft />
         </Link>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Nuevo objetivo</h2>
-          <p className='text-muted-foreground'>Creá un objetivo de entrenamiento para {athleteName}.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('new')}</h2>
+          <p className='text-muted-foreground'>{t('intro', { name: athleteName })}</p>
         </div>
       </div>
 

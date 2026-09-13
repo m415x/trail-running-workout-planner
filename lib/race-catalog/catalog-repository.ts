@@ -445,3 +445,33 @@ export function linkTrainingGoalToRaceCourse(trainingGoalId: string, raceCourseI
     })
     .run()
 }
+
+/** Lists event identities, including events that do not yet have editions/courses. */
+export function listRaceEvents(query = '', includeArchived = false): RaceEvent[] {
+  const conditions = [eq(raceEvents.isDeleted, false)]
+  if (!includeArchived) conditions.push(eq(raceEvents.status, 'active'))
+  if (query.trim()) conditions.push(like(raceEvents.name, `%${query.trim()}%`))
+  return db.select().from(raceEvents).where(and(...conditions))
+    .orderBy(asc(raceEvents.name), asc(raceEvents.id)).all().map(mapEvent)
+}
+
+/** Lists children without requiring a course join; deleted identities stay historical. */
+export function listRaceEditions(raceEventId: string): RaceEdition[] {
+  return db.select().from(raceEditions).where(and(
+    eq(raceEditions.raceEventId, raceEventId), eq(raceEditions.isDeleted, false),
+  )).orderBy(asc(raceEditions.startDate), asc(raceEditions.id)).all().map(mapEdition)
+}
+
+export function listRaceCourses(raceEditionId: string): RaceCourse[] {
+  return db.select().from(raceCourses).where(and(
+    eq(raceCourses.raceEditionId, raceEditionId), eq(raceCourses.isDeleted, false),
+  )).orderBy(asc(raceCourses.label), asc(raceCourses.id)).all().map(mapCourse)
+}
+
+/** Resolves authoritative ancestry; callers must still apply the selection policy. */
+export function getRaceCourseSelectionContext(raceCourseId: string): RaceCourseSearchResult | null {
+  const course = getRaceCourse(raceCourseId)
+  const edition = course && getRaceEdition(course.raceEditionId)
+  const event = edition && getRaceEvent(edition.raceEventId)
+  return course && edition && event ? { event, edition, course } : null
+}

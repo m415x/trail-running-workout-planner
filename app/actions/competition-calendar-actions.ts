@@ -2,6 +2,9 @@
 
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
+import { getRaceCourseSelectionContext, linkCompetitionEntryToRaceCourse } from '@/lib/race-catalog/catalog-repository'
+import { selectRaceCourseForCompetition } from '@/lib/race-catalog/competition-entry-selection'
 
 import { db } from '@/db'
 import { groupTrainingPlans } from '@/db/schema'
@@ -107,9 +110,9 @@ function forbiddenResult<T>(): CompetitionCalendarActionResult<T> {
 }
 
 function revalidateCompetitionCalendar(locale: SupportedLocale, planId: string) {
-  const listPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
-  revalidatePath(listPath)
-  revalidatePath(planningPath(locale, planId))
+  // Invalidate destination routes, including the default locale hidden by rewrites.
+  revalidatePath(`/${locale}/dashboard/planning`)
+  revalidatePath(`/${locale}/dashboard/planning/${planId}`)
 }
 
 /**
@@ -222,4 +225,44 @@ export async function changeCompetitionStatusAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+}
+
+/** Creates a plan-scoped snapshot and optional catalog link atomically. */
+export async function createCompetitionFromCatalogAction(
+  _state: { error?: 'invalid' | 'unavailable' | 'stale' | 'calendarRejected' | 'saveFailed' },
+  formData: FormData,
+): Promise<{ error?: 'invalid' | 'unavailable' | 'stale' | 'calendarRejected' | 'saveFailed' }> {
+  const planId = String(formData.get('planId') ?? '')
+  const locale = formData.get('locale') === 'en' ? 'en' : 'es'
+  const priority = formData.get('priority')
+  if (priority !== 'A' && priority !== 'B' && priority !== 'C') return { error: 'invalid' }
+  const plan = requireAccessiblePlan(planId)
+  if (!plan) return { error: 'unavailable' }
+  try {
+    const error = db.transaction(() => {
+      const context = getRaceCourseSelectionContext(String(formData.get('raceCourseId') ?? ''))
+      if (!context) return 'unavailable' as const
+      if (JSON.stringify([context.event.updatedAt, context.edition.updatedAt, context.course.updatedAt])
+        !== formData.get('catalogRevision')) return 'stale' as const
+      const selection = selectRaceCourseForCompetition({
+        ...context, groupTrainingPlanId: plan.id, priority,
+      })
+      if (!selection.valid) return 'unavailable' as const
+      const result = createCompetition({
+        planId: plan.id,
+        planKind: resolvePlanKind(plan.planningCohortId),
+        coversEntirePlanAudience: true,
+        draft: selection.selection.competitionDraft,
+      })
+      if (!result.ok) return 'calendarRejected' as const
+      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id)
+      return null
+    })
+    if (error) return { error }
+  } catch (error) {
+    console.error('Catalog competition creation failed', error)
+    return { error: 'saveFailed' }
+  }
+  revalidateCompetitionCalendar(locale, plan.id)
+  redirect(planningPath(locale, plan.id))
 }

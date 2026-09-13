@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
+import { getRaceCourseSelectionContext, linkTrainingGoalToRaceCourse } from '@/lib/race-catalog/catalog-repository'
+import { selectRaceCourseForTrainingGoal } from '@/lib/race-catalog/training-goal-selection'
 import { db } from '@/db'
 import { athleteProfiles, trainingGoals } from '@/db/schema'
 
@@ -25,40 +27,40 @@ function isValidIsoDate(value: string) {
 }
 
 const trainingGoalFormSchema = z.object({
-  athleteId: z.string().trim().min(1, 'No se pudo identificar al atleta'),
-  type: z.enum(goalTypes, 'Seleccioná un tipo de objetivo'),
-  title: z.string().trim().min(3, 'Ingresá un título de al menos 3 caracteres').max(120, 'El título no puede superar los 120 caracteres'),
-  description: z.string().trim().max(1000, 'La descripción no puede superar los 1000 caracteres').optional(),
+  athleteId: z.string().trim().min(1, 'invalid'),
+  type: z.enum(goalTypes, 'invalid'),
+  title: z.string().trim().min(3, 'invalid').max(120, 'invalid'),
+  description: z.string().trim().max(1000, 'invalid').optional(),
   targetDate: z.string().trim().optional(),
-  raceName: z.string().trim().max(120, 'El nombre de la carrera no puede superar los 120 caracteres').optional(),
+  raceName: z.string().trim().max(403, 'invalid').optional(),
   raceDistanceKm: z.string().trim().optional(),
   raceElevationGain: z.string().trim().optional(),
-  notes: z.string().trim().max(2000, 'Las notas no pueden superar los 2000 caracteres').optional(),
+  notes: z.string().trim().max(2000, 'invalid').optional(),
   locale: z.enum(locales).default('es'),
 }).superRefine((data, context) => {
   if (data.targetDate && !isValidIsoDate(data.targetDate)) {
-    context.addIssue({ code: 'custom', path: ['targetDate'], message: 'Ingresá una fecha válida' })
+    context.addIssue({ code: 'custom', path: ['targetDate'], message: 'invalid' })
   }
 
   if (data.type !== 'race') return
 
   if (!data.raceName) {
-    context.addIssue({ code: 'custom', path: ['raceName'], message: 'Ingresá el nombre de la carrera' })
+    context.addIssue({ code: 'custom', path: ['raceName'], message: 'invalid' })
   }
 
   if (!data.targetDate) {
-    context.addIssue({ code: 'custom', path: ['targetDate'], message: 'Ingresá la fecha de la carrera' })
+    context.addIssue({ code: 'custom', path: ['targetDate'], message: 'invalid' })
   }
 
   const distance = Number(data.raceDistanceKm)
   if (!data.raceDistanceKm || !Number.isFinite(distance) || distance <= 0) {
-    context.addIssue({ code: 'custom', path: ['raceDistanceKm'], message: 'Ingresá una distancia mayor que cero' })
+    context.addIssue({ code: 'custom', path: ['raceDistanceKm'], message: 'invalid' })
   }
 
   if (data.raceElevationGain) {
     const elevationGain = Number(data.raceElevationGain)
-    if (!Number.isInteger(elevationGain) || elevationGain < 0) {
-      context.addIssue({ code: 'custom', path: ['raceElevationGain'], message: 'Ingresá un desnivel válido' })
+    if (!Number.isFinite(elevationGain) || elevationGain < 0) {
+      context.addIssue({ code: 'custom', path: ['raceElevationGain'], message: 'invalid' })
     }
   }
 })
@@ -77,54 +79,63 @@ export async function createTrainingGoal(
   _previousState: TrainingGoalFormState,
   formData: FormData,
 ): Promise<TrainingGoalFormState> {
-  const parsed = trainingGoalFormSchema.safeParse(Object.fromEntries(formData))
-
-  if (!parsed.success) {
-    return {
-      error: 'Revisá los campos marcados antes de continuar',
-      fieldErrors: z.flattenError(parsed.error).fieldErrors,
-    }
-  }
-
-  const data = parsed.data
-
+  let data: ReturnType<typeof trainingGoalFormSchema.parse>
   try {
-    const athlete = db.query.athleteProfiles.findFirst({
-      where: and(
-        eq(athleteProfiles.id, data.athleteId),
-        eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
-        eq(athleteProfiles.isDeleted, false),
-      ),
-    }).sync()
-
-    if (!athlete) {
-      return { error: 'Atleta no encontrado' }
-    }
-
-    const isRaceGoal = data.type === 'race'
-    const now = new Date().toISOString()
-
-    db.insert(trainingGoals).values({
-      id: randomUUID(),
-      athleteId: athlete.id,
-      type: data.type,
-      status: 'draft',
-      title: data.title,
-      description: data.description || null,
-      targetDate: data.targetDate || null,
-      raceName: isRaceGoal ? data.raceName || null : null,
-      raceDistanceKm: isRaceGoal ? Number(data.raceDistanceKm) : null,
-      raceElevationGain: isRaceGoal && data.raceElevationGain ? Number(data.raceElevationGain) : null,
-      notes: data.notes || null,
-      createdAt: now,
-      updatedAt: now,
-    }).run()
+    const result = db.transaction(() => {
+      const raw = Object.fromEntries(formData)
+      const raceCourseId = String(formData.get('raceCourseId') ?? '')
+      if (raceCourseId && raw.type !== 'race') return { error: 'invalid' }
+      if (raceCourseId) {
+        const context = getRaceCourseSelectionContext(raceCourseId)
+        if (!context) return { error: 'unavailable' }
+        if (JSON.stringify([context.event.updatedAt, context.edition.updatedAt, context.course.updatedAt])
+          !== formData.get('catalogRevision')) return { error: 'stale' }
+        const selection = selectRaceCourseForTrainingGoal(context)
+        if (!selection.valid) return { error: 'unavailable' }
+        const patch = selection.selection.goalPatch
+        Object.assign(raw, {
+          targetDate: patch.targetDate, raceName: patch.raceName,
+          raceDistanceKm: String(patch.raceDistanceKm),
+          raceElevationGain: patch.raceElevationGain === null ? '' : String(patch.raceElevationGain),
+        })
+      }
+      const parsed = trainingGoalFormSchema.safeParse(raw)
+      if (!parsed.success) return {
+        error: 'invalid',
+        fieldErrors: z.flattenError(parsed.error).fieldErrors,
+      }
+      const input = parsed.data
+      const athlete = db.query.athleteProfiles.findFirst({
+        where: and(
+          eq(athleteProfiles.id, input.athleteId),
+          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+          eq(athleteProfiles.isDeleted, false),
+        ),
+      }).sync()
+      if (!athlete) return { error: 'unavailable' }
+      const isRaceGoal = input.type === 'race'
+      const now = new Date().toISOString()
+      const id = randomUUID()
+      db.insert(trainingGoals).values({
+        id, athleteId: athlete.id, type: input.type, status: 'draft',
+        title: input.title, description: input.description || null,
+        targetDate: input.targetDate || null,
+        raceName: isRaceGoal ? input.raceName || null : null,
+        raceDistanceKm: isRaceGoal ? Number(input.raceDistanceKm) : null,
+        raceElevationGain: isRaceGoal && input.raceElevationGain ? Number(input.raceElevationGain) : null,
+        notes: input.notes || null, createdAt: now, updatedAt: now,
+      }).run()
+      if (raceCourseId) linkTrainingGoalToRaceCourse(id, raceCourseId)
+      return { data: input }
+    })
+    if ('error' in result) return { error: result.error, fieldErrors: result.fieldErrors }
+    data = result.data
   } catch (error) {
     console.error('Error creating training goal:', error)
-    return { error: 'No se pudo crear el objetivo de entrenamiento' }
+    return { error: 'saveFailed' }
   }
 
   const path = athleteDetailPath(data.locale, data.athleteId)
-  revalidatePath(path)
+  revalidatePath(`/${data.locale}/dashboard/athletes/${data.athleteId}`)
   redirect(path)
 }

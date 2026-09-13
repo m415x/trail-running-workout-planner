@@ -138,3 +138,33 @@ schema change
 ```
 
 Generated migration snapshots/journal are never handwritten. `db:check:supabase` proves migration-chain consistency; it does not prove that the remote database has applied the delta. Only the post-migrate verifier provides that evidence.
+
+## Product maintenance (KAN-280)
+
+Dashboard > Competitions exposes event search and the hierarchy under
+`/[locale]/dashboard/competitions`. Event listing does not depend on a course
+join: an empty event or edition remains discoverable while being built.
+
+The optional catch-all page recognizes only the event/edition/course detail,
+new, edit and archive routes. It validates the complete ancestry on reads.
+Server actions repeat those checks, validate form data and compare the submitted
+record revision before mutating in a SQLite transaction. Event archival uses
+`status = archived`; edition/course archival uses the existing logical deletion
+flag. No child or consumer is physically deleted. An archived event can be
+reactivated through its status editor; logically deleted children are historical.
+
+Maintenance edits original metadata, lifecycle and course profile. Existing
+classification records and external provenance are preserved, and versioned
+classifications are displayed on course detail. Derived descriptors use the
+existing pure profile helper. Blank metrics remain null; explicit D+ zero remains
+known. Editing an unchanged scheduled start preserves its original seconds/offset.
+
+The catalog remains shared product data under the existing application access
+baseline; this change does not introduce authentication, catalog roles or a
+fictional team owner. Consumer actions retain the existing team/athlete checks.
+
+The course picker searches published/selectable records and shows the concrete
+event/edition/course context before acceptance. Both consumer actions re-read
+the selected hierarchy and reject stale revisions or unavailable courses.
+Snapshot creation and sidecar insertion use one SQLite transaction; catalog
+maintenance never writes to consumer tables or accepted macrocycle snapshots.
