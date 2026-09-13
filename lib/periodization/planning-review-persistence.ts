@@ -7,6 +7,7 @@ import type {
 import type {
   PlanningReviewScopedOperation,
 } from '@/types/training/planning-review-reconciliation.types'
+import type { PlanningReviewScope } from '@/types/training/planning-review.types'
 
 const ENTITY_ORDER: Readonly<Record<
   PlanningReviewScopedOperation['entity']['entityType'],
@@ -20,6 +21,15 @@ const ENTITY_ORDER: Readonly<Record<
   competition_window: 2,
   session: 4,
   prescription: 5,
+}
+
+function sameScope(first: PlanningReviewScope, second: PlanningReviewScope) {
+  return first.teamId === second.teamId
+    && first.groupId === second.groupId
+    && first.groupTrainingPlanId === second.groupTrainingPlanId
+    && first.kind === second.kind
+    && first.planningCohortId === second.planningCohortId
+    && first.sourceGroupTrainingPlanId === second.sourceGroupTrainingPlanId
 }
 
 function orderedOperations(
@@ -48,6 +58,9 @@ function validateReconciliation(
 
   const acceptedIdentities = new Set(reconciliation.acceptedItemIdentities)
   for (const operation of reconciliation.operations) {
+    if (!sameScope(operation.scope, reconciliation.scope)) {
+      throw new Error(`Operation ${operation.identity} crosses the accepted planning scope`)
+    }
     if (!acceptedIdentities.has(operation.identity)) {
       throw new Error(`Operation ${operation.identity} was not accepted by the coach`)
     }
