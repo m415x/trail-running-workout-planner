@@ -2,11 +2,9 @@
 
 ## Purpose
 
-Define the domain identities for a reusable competitive catalog without duplicating one event per distance and without replacing the planning-specific `CompetitionEntry` model introduced in Epic 2.
+Define the domain contract for a reusable competitive catalog without duplicating one event per distance and without replacing the planning-specific `CompetitionEntry` model introduced in Epic 2.
 
-KAN-265 establishes only identity, hierarchy, lifecycle and reference boundaries. Sporting metadata such as distance, D+, modality, derived demand and official classifications is added by later KAN-257 tasks.
-
-## Aggregate hierarchy
+The hierarchy is:
 
 ```text
 RaceEvent
@@ -31,88 +29,117 @@ Patagonia Run                     RaceEvent
 
 The catalog must not persist `Patagonia Run 21K` and `Patagonia Run 42K` as unrelated event identities.
 
-## RaceEvent
+## Identity and lifecycle
 
-`RaceEvent` is the stable identity of the event across editions.
+All three catalog entities use opaque immutable technical IDs (`BaseEntity.id`). Names, labels/years, nominal distance and URL slugs are not stable identity.
 
-Minimal KAN-265 contract:
+### RaceEvent
+
+`RaceEvent` is the stable identity/brand across editions.
 
 ```text
 RaceEvent
 - id
 - name
+- websiteUrl?
+- description?
 - status: active | archived
-- entity metadata
 ```
 
-`name` is user-facing metadata and is not technical identity. Renaming an event must not create a new `RaceEvent` or break references.
+Archiving removes the event from normal active selection without erasing historical editions/courses or references.
 
-Archiving removes an event from normal active catalog selection without erasing historical editions/courses or references.
+### RaceEdition
 
-## RaceEdition
-
-`RaceEdition` is one temporal occurrence of a `RaceEvent`.
+`RaceEdition` is one temporal occurrence of an event.
 
 ```text
 RaceEdition
 - id
 - raceEventId
 - label
+- startDate
+- endDate?
+- organizerName?
+- location?
+- websiteUrl?
+- notes?
 - status: draft | published | completed | cancelled
-- entity metadata
 ```
 
-An edition label such as `2027` is presentation metadata, not a globally unique identity. The model must tolerate multiple editions whose labels are not sufficient to distinguish them by themselves.
+Edition lifecycle:
 
-Editing an edition later does not mutate the identity of courses that were already selected elsewhere.
-
-Lifecycle semantics:
-
-- `draft`: incomplete/not selectable as a public catalog edition;
+- `draft`: incomplete/not selectable;
 - `published`: available for catalog selection;
-- `completed`: historical edition retained for history/reference;
-- `cancelled`: edition retained historically but not an active competition target.
+- `completed`: historical edition retained for reference;
+- `cancelled`: historically retained but not an active target.
 
-This task defines the states, not the complete transition policy. Transition validation belongs to the application/domain policy work that follows persistence/CRUD design.
+### RaceCourse
 
-## RaceCourse
-
-`RaceCourse` is one concrete competitive course offered by a `RaceEdition`.
+`RaceCourse` is one concrete competitive course offered by an edition and is the selectable competitive identity for planning/future athlete registration.
 
 ```text
 RaceCourse
 - id
 - raceEditionId
 - label
+- scheduledStartAt?
+- startLocationLabel?
+- notes?
 - status: draft | published | cancelled
-- entity metadata
 ```
 
-It is the **selectable competitive identity** for planning and the future individual registration boundary.
+Course lifecycle intentionally has no `completed`: completion belongs to participation/result history, not to the reusable catalog course.
 
-A course label such as `21K` is not identity and does not imply a unique sporting profile. One edition may legitimately expose two courses with similar/identical nominal distance and different profiles.
+## Metadata ownership matrix
 
-Lifecycle semantics:
+The ownership rule is based on the **smallest domain level at which a value can legitimately vary**.
 
-- `draft`: incomplete/not selectable;
-- `published`: selectable;
-- `cancelled`: historically retained but not active for new selection.
+| Data | Owner | Rationale |
+| --- | --- | --- |
+| Stable public event name | `RaceEvent` | Brand/identity survives editions. |
+| Stable event homepage | `RaceEvent` | Canonical event-level link; edition may override with its own page. |
+| Stable catalog description | `RaceEvent` | Describes the event generally, not one year/course. |
+| Edition label/year | `RaceEdition` | Temporal presentation, not event identity. |
+| Edition start/end dates | `RaceEdition` | Can change every edition. |
+| Organizer | `RaceEdition` | Organizer/responsible entity may change over time. |
+| Host locality/region/country | `RaceEdition` | Venue can change between editions and must not rewrite event history. |
+| Edition-specific website/info/registration URL | `RaceEdition` | A yearly edition may have a dedicated page. |
+| Edition-wide notes | `RaceEdition` | Applies to all courses of that edition. |
+| Course/prueba label | `RaceCourse` | Distinguishes concrete offerings within an edition. |
+| Course scheduled start date/time | `RaceCourse` | Different distances may race on different days/times. |
+| Course-specific start location | `RaceCourse` | Courses in one edition may start from different places. |
+| Course notes/instructions | `RaceCourse` | Applies only to that route/prueba. |
+| Distance and D+ | `RaceCourse` | Sporting profile differs per course; introduced by KAN-267. |
+| Modality | `RaceCourse` | One edition may contain different modalities; introduced by KAN-268. |
+| Derived density/km-effort | `RaceCourse` derivation | Derived from course originals; introduced by KAN-269. |
+| Classification | `RaceCourse` assessment/reference | Classification applies to a concrete profile and is versioned; KAN-270/271. |
 
-A completed result belongs to participation/registration history rather than to the catalog course lifecycle itself; therefore KAN-265 does not add a `completed` course state.
+### Why organizer/location live on RaceEdition
 
-## Identity rules
+Treating organizer or location as stable `RaceEvent` data would make historical editions appear to have changed when the event moves venue or organization changes. They therefore belong to the edition snapshot.
 
-All three catalog entities use opaque immutable technical IDs (`BaseEntity.id`).
+`RaceEvent.websiteUrl` is allowed only for a canonical stable homepage. `RaceEdition.websiteUrl` carries an edition-specific page when one exists.
 
-The following values must **not** be used as stable identity:
+### Why scheduling can exist at both edition and course level
 
-- event name;
-- edition label/year;
-- course label;
-- nominal distance;
-- URL slug.
+An edition owns its overall date range (`startDate`/`endDate`). A concrete course may additionally own `scheduledStartAt` because multi-distance events often schedule different distances on different days or times.
 
-These values may change or collide while the underlying entity remains the same.
+The course schedule must fall within the edition range once validation is implemented; KAN-266 establishes ownership, not that policy implementation.
+
+## Location representation
+
+Edition host location is a structured value:
+
+```text
+RaceEditionLocation
+- locality?
+- region?
+- countryCode?  // ISO 3166-1 alpha-2 when known
+```
+
+Unknown components stay absent/null; they are never synthesized. A course may additionally have `startLocationLabel` when its start differs from the edition-wide host location. Precise geospatial coordinates are not introduced by this task.
+
+## Identity/reference rules
 
 Parent-child ancestry is explicit:
 
@@ -121,19 +148,22 @@ RaceEdition.raceEventId
 RaceCourse.raceEditionId
 ```
 
-Application boundaries that carry a course selection may use `RaceCourseReference` with all three IDs as scope evidence:
+Application boundaries that carry a course selection may use:
 
 ```text
-raceEventId
-raceEditionId
-raceCourseId
+RaceCourseReference
+- raceEventId
+- raceEditionId
+- raceCourseId
 ```
 
-The redundant parent IDs are not alternate ownership; they allow callers to reject mismatched event/edition/course combinations without inferring ancestry from labels.
+The parent IDs are scope evidence, not alternate ownership. They allow callers to reject mismatched event/edition/course combinations without inferring ancestry from labels.
+
+Re-parenting an existing edition/course is not ordinary editing because ancestry is part of domain identity.
 
 ## Reference boundary with Epic 2
 
-The catalog does not replace `CompetitionEntry`.
+The catalog does not replace `CompetitionEntry`:
 
 ```text
 RaceEvent
@@ -145,19 +175,15 @@ RaceEvent
        CompetitionEntry
 ```
 
-`RaceCourse` is the catalog source identity. `CompetitionEntry` remains the plan-owned competitive context with priority/lifecycle and a historical sporting snapshot.
+`RaceCourse` is the catalog source identity. `CompetitionEntry` remains plan-owned competitive context with A/B/C priority, planning lifecycle and a historical snapshot.
 
-KAN-265 defines only that planning may reference `RaceCourse`. KAN-273 will decide the exact `CompetitionEntry` reference/snapshot contract.
+The exact reference/snapshot fields are deferred to KAN-273, but this invariant is fixed:
 
-The important invariant is already fixed:
-
-> Updating catalog data later must never silently rewrite an accepted planning snapshot.
-
-`RaceEvent` and `RaceEdition` are browse/context identities and are not the concrete unit selected into planning.
+> Updating event/edition/course metadata later must never silently rewrite an accepted planning snapshot.
 
 ## Future athlete registration boundary
 
-Future athlete registration should also target the concrete course:
+Future registration targets the concrete course:
 
 ```text
 Athlete
@@ -165,38 +191,37 @@ Athlete
   `-- RaceRegistration --> RaceCourse
 ```
 
-KAN-265 intentionally does not create `RaceRegistration`. It establishes that neither `RaceEvent` nor `RaceEdition` alone is precise enough to represent what the athlete will run.
+Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlete will run. KAN-275 prepares this boundary without implementing registration.
 
 ## Cardinality and deletion semantics
 
 - One `RaceEvent` has zero or more editions.
 - One `RaceEdition` belongs to exactly one event and has zero or more courses.
 - One `RaceCourse` belongs to exactly one edition.
-- Re-parenting an existing edition/course is not normal editing; identity ancestry is part of its domain meaning.
 - Historical referenced entities should be archived/cancelled rather than physically deleted.
-- Persistence-level cascade/restrict behavior is deliberately deferred until KAN-276 because it must account for snapshots and references already stored by other domains.
+- Persistence-level FK/cascade/restrict behavior is deferred to KAN-276.
 
-## Independence from sporting profile metadata
+## Deliberately deferred after KAN-266
 
-KAN-265 deliberately does not decide:
+The identity and metadata ownership are now defined, but these remain separate tasks:
 
-- which location/organizer/date fields belong to event versus edition;
-- distance and elevation fields;
-- modality;
-- elevation density;
-- kilometer-effort;
-- official classification systems;
-- structural/profile validation thresholds.
+- distance/D+ originals — KAN-267;
+- modality — KAN-268;
+- elevation density and kilometer-effort — KAN-269;
+- official classification research/model — KAN-270/271;
+- profile coherence policies — KAN-272;
+- `CompetitionEntry` integration — KAN-273;
+- `TrainingGoal` integration — KAN-274;
+- future registration boundary — KAN-275;
+- persistence/CRUD/search — KAN-276.
 
-Those concerns belong to KAN-266 through KAN-272. Keeping them out of the first identity contract prevents accidental coupling of identity to mutable sporting metadata.
+## Core invariants
 
-## Core invariants established by KAN-265
-
-1. An event is not duplicated for each offered distance/course.
-2. An edition is a temporal child of one event.
-3. A course is the concrete selectable child of one edition.
-4. Names, years, labels and nominal distances are not technical identity.
-5. Planning/future athlete registration reference `RaceCourse`, not the event globally.
-6. Catalog edits never imply silent mutation of planning snapshots.
-7. Historical catalog entities remain addressable after archive/cancellation.
-8. Persistence details are deferred until the domain identity contract is stable.
+1. An event is not duplicated for each course/distance.
+2. Mutable/historical metadata lives at the narrowest level where it can vary.
+3. Event branding does not overwrite historical edition metadata.
+4. Different courses in the same edition may have different schedule/start location and later different sporting profiles/modalities.
+5. Names, years, labels and nominal distances are not technical identity.
+6. Planning/future registration reference `RaceCourse`, not the event globally.
+7. Catalog edits never imply silent mutation of planning snapshots.
+8. Missing metadata remains unknown rather than being invented or inherited implicitly.
