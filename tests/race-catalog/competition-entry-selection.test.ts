@@ -145,7 +145,7 @@ describe('race course -> CompetitionEntry selection', () => {
     if (!result.valid) assert.deepEqual(result.errors, ['race_catalog_course_distance_unknown'])
   })
 
-  it('copies nested catalog metadata so later live edits cannot mutate the accepted snapshot', () => {
+  it('copies catalog values so later live edits cannot mutate the accepted snapshot', () => {
     const liveCourse = course()
     const result = selectRaceCourseForCompetition({
       event: event(),
@@ -158,11 +158,13 @@ describe('race course -> CompetitionEntry selection', () => {
     assert.equal(result.valid, true)
     if (!result.valid) return
 
+    assert.notEqual(result.selection.snapshot.modality, liveCourse.modality)
+    assert.notEqual(
+      result.selection.snapshot.classifications[0],
+      liveCourse.classifications[0],
+    )
+
     liveCourse.modality = { code: 'road' }
-    liveCourse.classifications[0] = {
-      ...liveCourse.classifications[0],
-      code: '6',
-    }
     liveCourse.distanceKm = 50
 
     assert.equal(result.selection.snapshot.distanceKm, 42.2)
