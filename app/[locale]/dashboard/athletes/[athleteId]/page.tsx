@@ -4,6 +4,7 @@ import { ArrowLeft, CalendarRange, Mail, Pencil, Phone, ShieldAlert, Target, Use
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
+import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -46,12 +47,20 @@ function DetailItem({ label, value }: { label: string; value: string | null | un
   )
 }
 
+const GOAL_STATUS_LABELS: Record<string, string> = {
+  draft: 'Borrador',
+  active: 'Activo',
+  completed: 'Completado',
+  cancelled: 'Cancelado',
+}
+
 export default async function AthleteDetailPage({ params }: AthleteDetailPageProps) {
   const { locale, athleteId } = await params
   const today = todayInArgentina()
-  const [athlete, planningResult] = await Promise.all([
+  const [athlete, planningResult, goals] = await Promise.all([
     getAthleteById(athleteId),
     getAthletePlanningResolutionOnDate(athleteId, today),
+    getTrainingGoalsForAthlete(athleteId),
   ])
 
   if (!athlete) {
@@ -154,6 +163,67 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 <p className='font-medium'>{athlete.phone || 'No informado'}</p>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        <Card className='md:col-span-2'>
+          <CardHeader>
+            <div className='flex flex-wrap items-center justify-between gap-3'>
+              <CardTitle className='flex items-center gap-2'>
+                <Target className='size-5' />
+                Objetivos
+              </CardTitle>
+              <Link href={newGoalPath} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                Nuevo objetivo
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {goals.length === 0 ? (
+              <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
+                Este atleta todavía no tiene objetivos registrados.
+              </p>
+            ) : (
+              <div className='space-y-3'>
+                {goals.map((goal) => (
+                  <div key={goal.id} className='rounded-lg border p-4'>
+                    <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
+                      <div className='min-w-0'>
+                        <div className='flex flex-wrap items-center gap-2'>
+                          <p className='font-medium'>{goal.title}</p>
+                          <Badge variant={goal.status === 'draft' ? 'outline' : 'secondary'}>
+                            {GOAL_STATUS_LABELS[goal.status] ?? goal.status}
+                          </Badge>
+                        </div>
+                        {goal.type === 'race' && goal.raceName && (
+                          <p className='mt-1 text-sm text-muted-foreground'>{goal.raceName}</p>
+                        )}
+                        {goal.description && <p className='mt-2 text-sm'>{goal.description}</p>}
+                        {goal.notes && <p className='mt-2 text-sm text-muted-foreground'>{goal.notes}</p>}
+                      </div>
+                      <dl className='grid shrink-0 grid-cols-2 gap-x-4 gap-y-2 text-sm sm:text-right'>
+                        <div>
+                          <dt className='text-muted-foreground'>Fecha</dt>
+                          <dd className='font-medium'>{formatDate(goal.targetDate)}</dd>
+                        </div>
+                        {goal.type === 'race' && (
+                          <>
+                            <div>
+                              <dt className='text-muted-foreground'>Distancia</dt>
+                              <dd className='font-medium'>{goal.raceDistanceKm == null ? '—' : `${goal.raceDistanceKm} km`}</dd>
+                            </div>
+                            <div>
+                              <dt className='text-muted-foreground'>D+</dt>
+                              <dd className='font-medium'>{goal.raceElevationGain == null ? '—' : `+${goal.raceElevationGain} m`}</dd>
+                            </div>
+                          </>
+                        )}
+                      </dl>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
