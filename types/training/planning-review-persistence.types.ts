@@ -43,8 +43,12 @@ export interface PlanningReviewTransactionPort<TTransaction> {
 }
 
 /**
- * Async transaction port for PostgreSQL/Supabase adapters. The callback must be
- * committed only when it resolves normally and fully rolled back when it rejects.
+ * Async transaction port for PostgreSQL/Supabase adapters.
+ *
+ * `lockSourceRevision` must acquire a plan-scoped transactional lock and return
+ * the latest durable revision. `advanceSourceRevision` updates that same row in
+ * the transaction after all writes/audits succeed. This supports serialized
+ * double-submit handling without silent last-write-wins.
  */
 export interface AsyncPlanningReviewTransactionPort<TTransaction> {
   transaction<TResult>(work: (tx: TTransaction) => Promise<TResult>): Promise<TResult>
@@ -52,6 +56,10 @@ export interface AsyncPlanningReviewTransactionPort<TTransaction> {
     tx: TTransaction,
     idempotencyKey: string,
   ): Promise<PersistedIntegralPlanningReconciliation | null>
+  lockSourceRevision(
+    tx: TTransaction,
+    scope: PlanningReviewScope,
+  ): Promise<string>
   applyOperation(
     tx: TTransaction,
     operation: PlanningReviewScopedOperation,
@@ -64,6 +72,12 @@ export interface AsyncPlanningReviewTransactionPort<TTransaction> {
     tx: TTransaction,
     idempotencyKey: string,
     result: PersistedIntegralPlanningReconciliation,
+  ): Promise<void>
+  advanceSourceRevision(
+    tx: TTransaction,
+    scope: PlanningReviewScope,
+    sourceRevisionKey: string,
+    resultRevisionKey: string,
   ): Promise<void>
 }
 
