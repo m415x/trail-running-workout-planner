@@ -88,11 +88,13 @@ function rangeForBlock(
 }
 
 function operationFor(
+  scope: PlanningReviewScope,
   item: WriteItem,
   block: PlanningReviewDecisionBlock,
   decision: PlanningReviewBlockDecision,
 ): PlanningReviewScopedOperation {
   return {
+    scope,
     identity: item.identity,
     parentIdentity: item.parentIdentity,
     entity: item.entity,
@@ -115,7 +117,8 @@ function isPlanningOperation({ entity }: PlanningReviewScopedOperation) {
  * selected by the coach. It deliberately performs no database mutation.
  *
  * Unlike whole-macrocycle regeneration, unchanged descendants never appear in
- * the result. Group/cohort scope and coach provenance travel with every write.
+ * the result. Team/group/cohort/plan scope and coach provenance travel with
+ * every write so persistence adapters can enforce isolation transactionally.
  */
 export function reconcileAcceptedPlanningBlocks({
   current,
@@ -158,7 +161,7 @@ export function reconcileAcceptedPlanningBlocks({
 
   const operations = blocks
     .flatMap(({ block, decision, items }) => (
-      items.map((item) => operationFor(item, block, decision))
+      items.map((item) => operationFor(proposed.scope, item, block, decision))
     ))
     .sort((first, second) => first.identity.localeCompare(second.identity))
 
