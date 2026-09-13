@@ -41,16 +41,17 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `pnpm db:check:supabase` — Validate the Supabase migration journal
 - `pnpm db:migrate:supabase` — Apply pending migrations to Supabase
 - `pnpm db:verify:supabase` — Verify remote tables and RLS status
+- `pnpm db:verify:h11:supabase` — Verify H11 PostgreSQL transaction, rollback, idempotency, isolation and stale-review behavior using temporary probe tables
 
 ## Context-efficient workflow
 
 - Start with `docs/README.md` and the single current file under `docs/handoffs/` when one exists. Do not reconstruct completed stories from old chats or deleted handoffs when architecture/history/Jira already contain the durable context.
-- H10 (`KAN-204`) is completed and merged into `dashboard`. H11 (`KAN-224`) is the next active story; begin with `KAN-225`, auditing H6–H10 before implementing new integration or persistence behavior.
+- H10 (`KAN-204`) is completed and merged into `dashboard`. H11 (`KAN-224`) is in final validation on `h-20-planning-review-persistence`; read `docs/handoffs/epic-2-h11.md` and `docs/architecture/planning-review-persistence.md` before continuing.
 - Superseded handoffs are intentionally deleted once durable information is consolidated into `docs/history/` and `docs/architecture/`. Do not recreate completed-story handoffs merely for historical reference.
 - Use `rg` to locate symbols and read bounded sections of relevant files. Avoid rereading whole directories after a localized change.
 - Use `C:\Users\lahoz\.local\bin\rtk.exe` explicitly for noisy read-only commands such as `git status`, `git diff`, and focused test output when it preserves the information needed for review. Do not require RTK for contributors or CI.
 - Keep Codebase Memory optional. Never make builds, tests, or repository behavior depend on a local index or MCP server.
-- H11 must reuse and validate H6–H10 boundaries rather than reimplementing generation, cohorts, competitive context, taper/recovery, coach review, provenance or local competitive reconciliation.
+- H11 composes H6–H10 boundaries. Do not replace their generation ownership, cohort semantics, competitive context, taper/recovery, coach review or provenance with competing models.
 - Update durable architecture docs only when a domain decision changes. Keep the current handoff operational and concise; do not store full conversation transcripts.
 
 ## Architecture & Directory Structure
@@ -60,7 +61,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `features/` — Feature-driven modules (`workouts/`, `profile/`, etc.) containing components and feature hooks
 - `app/actions/` — Server actions for athletes, groups, goals, plans, sessions, and competition-calendar operations
 - `db/schema.ts` — SQLite schema used by the application runtime
-- `db/supabase/` — PostgreSQL schema, connection, and remote verification
+- `db/supabase/` — PostgreSQL schema, connection, remote verification and H11 transaction probe
 - `drizzle/supabase/` — Reviewed SQL migrations and Drizzle migration metadata
 - `lib/` — Core domain logic (physiology, periodization, session prescriptions, weather, GPX parsers)
 - `types/` — Shared TypeScript definitions
@@ -88,6 +89,10 @@ The current implementation is an authenticated-product prototype: user/team cont
 - `Session` is the shared training event. `GroupSessionPrescription` specifies what each assigned group performs in that session and links it to the relevant microcycle.
 - Never change a group's base plan to accommodate one athlete. Individual adjustments and dampened group-transition overrides are future domain features.
 - The coach retains manual control: generated planning may propose values, but must not silently overwrite deliberate edits.
+- H11 `IntegralPlanningReview` is the pure pre-persistence composition boundary. It validates hierarchy, scope, sessions/prescriptions, competitions and protected state as one aggregate before accepted writes are emitted.
+- H11 stable reconciliation identity is not the same as draft UUID identity. Macro/meso/micro use plan-scoped logical positions; generated Sessions and prescriptions retain H6 `sharedEventKey` / `generationKey`. Replacing an already-persisted Session/prescription UUID under the same H6 key is a conflict.
+- Every H11 reconciled write carries exact team/group/plan/cohort/lineage scope and must be rejected if it crosses the accepted review scope.
+- H11 async PostgreSQL persistence is optimistic-concurrency protected: source/result review revisions, idempotency journal lookup, plan-scoped revision lock, stale rejection, writes/audits and revision advance are one transaction boundary.
 
 ## Current Functional State
 
@@ -96,6 +101,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Training goals retain optional race data for individual and legacy compatibility, while new competitive planning uses `CompetitionEntry`/`CompetitionContext`.
 - Planning generation creates and persists macrocycles, mesocycles, microcycles and target loads. Legacy taper generation still exists as compatibility, while H10 competitive-adjustment policies provide the new pure/local domain path.
 - H10 supports course-demand assessment, reached pre-competition load context, taper duration in days, progressive volume/D+ reduction, intensity preservation, A/B/C proposals, race-week load separation, post-race recovery, overlap resolution, protected planning, coach review and local reconciliation/audit artifacts.
+- H11 provides integral review/summary/validation/diff, coherent block decisions, scoped reconciliation, atomic operation/audit persistence ports, end-to-end idempotency, team/group/cohort/plan isolation, cohort-first athlete resolution regression and stale/double-submit semantics for the async PostgreSQL boundary.
 - Persisted microcycles support volume, date, type, and notes edits.
 - Session create/edit requires at least one group prescription and preserves form data after validation errors.
 - Coach calendars provide monthly and weekly views, group filters, session cards, and session details.
@@ -109,10 +115,11 @@ The current implementation is an authenticated-product prototype: user/team cont
 
 - SQLite remains the active runtime database during local development.
 - Supabase/PostgreSQL is provisioned as a parallel target, but the application runtime has **not** been switched to PostgreSQL yet.
-- `SUPABASE_DIRECT_URL` is for migrations (direct connection or session pooler on port 5432).
+- `SUPABASE_DIRECT_URL` is for migrations and direct verification (direct connection or session pooler on port 5432).
 - `SUPABASE_DATABASE_URL` is for the Vercel/serverless runtime (transaction pooler on port 6543, prepared statements disabled).
 - Both variables are server-only secrets. Never prefix them with `NEXT_PUBLIC_`, commit `.env.local`, or print their values.
-- The current Supabase schema/migration chain contains 26 tables as of H9. Production policies and authentication/authorization still need to be designed before exposing data through the Data API.
+- The Supabase migration chain includes competition-calendar persistence from H9. `db:verify:supabase` must include `competition_entries` in its table/RLS inventory.
+- H11's real transaction probe uses connection-local temporary PostgreSQL tables; it does not imply a product schema migration or permanent idempotency/revision table.
 - SQLite server actions currently use synchronous query APIs. Moving runtime access to PostgreSQL requires an intentional asynchronous repository/data-access migration; do not swap the driver mechanically.
 
 ## Known Transitional Constraints
@@ -128,6 +135,7 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Do not reuse trail course-effort mathematics as a generic training-load formula. Volume and elevation remain separate training-load dimensions unless a future evidence-backed load model is introduced.
 - A competition reschedule, reprioritization or cancellation must produce a fresh local competitive proposal; it must not trigger whole-macrocycle regeneration by default.
 - Cancellation before race realization must not invent post-race recovery. Already-realized planning effects must not be silently erased.
+- The durable production PostgreSQL storage for H11 idempotency/revision locking is not yet an application-runtime table. Do not invent a migration until the PostgreSQL runtime adapter and its persistence contract are approved; KAN-239 validates semantics with temporary probe tables.
 
 ## Key Conventions & Gotchas
 
@@ -153,7 +161,8 @@ The current implementation is an authenticated-product prototype: user/team cont
 - Work in a story branch and keep commits aligned with the current task.
 - During implementation, prefer focused tests plus type checking and linting of the affected area where execution is available.
 - Run `pnpm test`, `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` before every story merge regardless of earlier task validation.
-- Run `pnpm db:check:supabase` for stories that touch schema/persistence boundaries; generate/apply a migration only when Drizzle reports a real schema delta.
+- Run `pnpm db:check:supabase` for stories that touch schema/persistence boundaries; for H11 also run `pnpm db:verify:supabase` and `pnpm db:verify:h11:supabase` against the connected project before story close.
+- Generate/apply a migration only when Drizzle or an approved production persistence design reveals a real schema delta.
 - Existing lint warnings should not be multiplied. New code must introduce no lint errors or new warnings.
 - Push the story branch, validate the Vercel deployment when quota permits, and only then merge it into `dashboard`.
 - Keep documentation-only changes in separate commits when practical.
