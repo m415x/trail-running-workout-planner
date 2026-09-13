@@ -36,21 +36,18 @@ describe('identidades estables de regeneración integral', () => {
   it('reutiliza las claves autoritativas H6 para sesiones y prescripciones', () => {
     assert.equal(
       stableSessionIdentity('random-id', {
-        ownership: 'generated',
         sharedEventKey: 'plan-1::micro-1::shared-tuesday',
       }),
       'session:generation:plan-1::micro-1::shared-tuesday',
     )
     assert.equal(
       stablePrescriptionIdentity('random-id', {
-        ownership: 'generated',
         generationKey: 'plan-1::micro-1::group-1::tuesday',
       }),
       'prescription:generation:plan-1::micro-1::group-1::tuesday',
     )
     assert.equal(
       stableSessionIdentity('manual-session', {
-        ownership: 'manual',
         sharedEventKey: null,
       }),
       'session:id:manual-session',
@@ -66,7 +63,6 @@ describe('identidades estables de regeneración integral', () => {
     )
     assert.throws(
       () => stableSessionIdentity('session-1', {
-        ownership: 'generated',
         sharedEventKey: ' ',
       }),
       /cannot be empty/,
