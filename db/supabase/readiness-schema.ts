@@ -1,0 +1,77 @@
+import { index, jsonb, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
+
+import { athleteProfiles, baseColumns, teams, users, workoutLogs } from '@/db/supabase/schema'
+import { competitionEntries } from '@/db/supabase/competition-entry-schema'
+import type {
+  ReadinessAssessment,
+  ReadinessCoachDecision,
+  ReadinessEvaluationPhaseResolution,
+  ReadinessPolicy,
+  RealizedMetricName,
+  RecentPreparationSummary,
+  RealizedTrainingSource,
+} from '@/types'
+
+export const workoutLogEvidence = pgTable(
+  'workout_log_evidence',
+  {
+    ...baseColumns,
+    workoutLogId: text('workout_log_id')
+      .notNull()
+      .references(() => workoutLogs.id, { onDelete: 'cascade' }),
+    source: text('source').$type<RealizedTrainingSource>().notNull().default('manual'),
+    sourceActivityId: text('source_activity_id'),
+    knownMetricFields: jsonb('known_metric_fields').$type<RealizedMetricName[]>().notNull(),
+  },
+  (table) => [
+    uniqueIndex('workout_log_evidence_log_unique').on(table.workoutLogId),
+    uniqueIndex('workout_log_evidence_source_activity_unique').on(table.source, table.sourceActivityId),
+  ],
+)
+
+export const readinessEvaluations = pgTable(
+  'readiness_evaluations',
+  {
+    ...baseColumns,
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    athleteId: text('athlete_id')
+      .notNull()
+      .references(() => athleteProfiles.id, { onDelete: 'cascade' }),
+    competitionEntryId: text('competition_entry_id')
+      .notNull()
+      .references(() => competitionEntries.id, { onDelete: 'restrict' }),
+    evaluatedAt: text('evaluated_at').notNull(),
+    analysisStartDate: text('analysis_start_date').notNull(),
+    analysisEndDate: text('analysis_end_date').notNull(),
+    policyVersion: text('policy_version').notNull(),
+    policySnapshot: jsonb('policy_snapshot').$type<ReadinessPolicy>().notNull(),
+    preparationSnapshot: jsonb('preparation_snapshot').$type<RecentPreparationSummary>().notNull(),
+    phaseSnapshot: jsonb('phase_snapshot').$type<ReadinessEvaluationPhaseResolution>().notNull(),
+    resultSnapshot: jsonb('result_snapshot').$type<ReadinessAssessment>().notNull(),
+  },
+  (table) => [
+    index('readiness_evaluations_team_athlete_date_idx').on(table.teamId, table.athleteId, table.evaluatedAt),
+    index('readiness_evaluations_competition_idx').on(table.competitionEntryId),
+  ],
+)
+
+export const readinessReviews = pgTable(
+  'readiness_reviews',
+  {
+    ...baseColumns,
+    readinessEvaluationId: text('readiness_evaluation_id')
+      .notNull()
+      .references(() => readinessEvaluations.id, { onDelete: 'cascade' }),
+    decision: text('decision').$type<ReadinessCoachDecision>().notNull(),
+    reviewedByUserId: text('reviewed_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    reviewedAt: text('reviewed_at').notNull(),
+    note: text('note'),
+  },
+  (table) => [
+    index('readiness_reviews_evaluation_date_idx').on(table.readinessEvaluationId, table.reviewedAt),
+  ],
+)
