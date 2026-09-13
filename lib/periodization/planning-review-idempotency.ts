@@ -20,12 +20,15 @@ function normalize(value: unknown): unknown {
 /**
  * Produces the semantic submission key stored by the atomic transaction port.
  * Projection arrays are sorted so caller ordering cannot create a second write.
+ * Source/result revisions bind a replay to the exact reviewed state transition.
  */
 export function integralPlanningIdempotencyKey(
   reconciliation: IntegralPlanningReconciliation,
 ) {
   const payload = {
     scope: reconciliation.scope,
+    sourceRevisionKey: reconciliation.sourceRevisionKey,
+    resultRevisionKey: reconciliation.resultRevisionKey,
     blocks: reconciliation.blocks
       .map((block) => ({
         ...block,
