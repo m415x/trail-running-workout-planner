@@ -1,7 +1,10 @@
 import { config } from 'dotenv'
 import postgres from 'postgres'
 
-import { persistIntegralPlanningReconciliationAsync } from '@/lib/periodization/planning-review-persistence'
+import {
+  persistIntegralPlanningReconciliationAsync,
+  StalePlanningReviewError,
+} from '@/lib/periodization/planning-review-persistence'
 import type {
   AsyncPlanningReviewTransactionPort,
   PlanningReviewAtomicAuditRecord,
@@ -11,6 +14,7 @@ import type {
   IntegralPlanningReconciliation,
   PlanningReviewScopedOperation,
 } from '@/types/training/planning-review-reconciliation.types'
+import type { PlanningReviewScope } from '@/types/training/planning-review.types'
 
 config({ path: '.env.local' })
 
@@ -33,23 +37,29 @@ const provenance = {
   reason: 'Supabase transaction probe',
 }
 
-function operation(): PlanningReviewScopedOperation {
+function operation(proposedValue = 42): PlanningReviewScopedOperation {
   return {
     scope,
     identity: 'microcycle:h11-probe',
     parentIdentity: 'mesocycle:h11-probe',
     entity: { entityType: 'microcycle', entityId: 'h11-probe-microcycle' },
     operation: 'update',
-    changes: [{ field: 'targetVolumeKm', currentValue: 40, proposedValue: 42 }],
+    changes: [{ field: 'targetVolumeKm', currentValue: 40, proposedValue }],
     blockId: 'h11-probe-block',
     decisionProvenance: provenance,
   }
 }
 
-function reconciliation(): IntegralPlanningReconciliation {
-  const current = operation()
+function reconciliation(
+  sourceRevisionKey = 'revision-a',
+  resultRevisionKey = 'revision-b',
+  proposedValue = 42,
+): IntegralPlanningReconciliation {
+  const current = operation(proposedValue)
   return {
     scope,
+    sourceRevisionKey,
+    resultRevisionKey,
     blocks: [{
       blockId: current.blockId,
       root: current.entity,
@@ -95,6 +105,17 @@ class SupabaseProbePort implements AsyncPlanningReviewTransactionPort<PostgresTr
       : null
   }
 
+  async lockSourceRevision(tx: PostgresTransaction, currentScope: PlanningReviewScope) {
+    const rows = await tx<{ revisionKey: string }[]>`
+      select revision_key as "revisionKey"
+      from h11_planning_review_revisions
+      where plan_id = ${currentScope.groupTrainingPlanId}
+      for update
+    `
+    if (!rows[0]) throw new Error('H11 probe revision row is missing')
+    return rows[0].revisionKey
+  }
+
   async applyOperation(tx: PostgresTransaction, current: PlanningReviewScopedOperation) {
     await tx`
       insert into h11_planning_review_operations (identity, scope, payload)
@@ -130,6 +151,21 @@ class SupabaseProbePort implements AsyncPlanningReviewTransactionPort<PostgresTr
       values (${idempotencyKey}, ${JSON.stringify(result)})
     `
   }
+
+  async advanceSourceRevision(
+    tx: PostgresTransaction,
+    currentScope: PlanningReviewScope,
+    sourceRevisionKey: string,
+    resultRevisionKey: string,
+  ) {
+    const result = await tx`
+      update h11_planning_review_revisions
+      set revision_key = ${resultRevisionKey}
+      where plan_id = ${currentScope.groupTrainingPlanId}
+        and revision_key = ${sourceRevisionKey}
+    `
+    if (result.count !== 1) throw new Error('H11 probe source revision changed before advance')
+  }
 }
 
 async function prepareProbeTables(sql: PostgresClient) {
@@ -153,10 +189,25 @@ async function prepareProbeTables(sql: PostgresClient) {
       result text not null
     ) on commit preserve rows
   `
+  await sql`
+    create temporary table if not exists h11_planning_review_revisions (
+      plan_id text primary key,
+      revision_key text not null
+    ) on commit preserve rows
+  `
 }
 
-async function resetProbeTables(sql: PostgresClient) {
-  await sql`truncate h11_planning_review_operations, h11_planning_review_audits, h11_planning_review_journal`
+async function resetProbeTables(sql: PostgresClient, revisionKey = 'revision-a') {
+  await sql`
+    truncate h11_planning_review_operations,
+      h11_planning_review_audits,
+      h11_planning_review_journal,
+      h11_planning_review_revisions
+  `
+  await sql`
+    insert into h11_planning_review_revisions (plan_id, revision_key)
+    values (${scope.groupTrainingPlanId}, ${revisionKey})
+  `
 }
 
 async function counts(sql: PostgresClient) {
@@ -174,6 +225,15 @@ async function counts(sql: PostgresClient) {
     audits: audits.count,
     journal: journal.count,
   }
+}
+
+async function currentRevision(sql: PostgresClient) {
+  const [row] = await sql<{ revisionKey: string }[]>`
+    select revision_key as "revisionKey"
+    from h11_planning_review_revisions
+    where plan_id = ${scope.groupTrainingPlanId}
+  `
+  return row?.revisionKey ?? null
 }
 
 async function verifyRequiredPlanningTables(sql: PostgresClient) {
@@ -247,8 +307,25 @@ async function main() {
       committedCounts.operations !== 1
       || committedCounts.audits !== 1
       || committedCounts.journal !== 1
+      || await currentRevision(sql) !== 'revision-b'
     ) {
-      throw new Error(`Unexpected committed probe counts: ${JSON.stringify(committedCounts)}`)
+      throw new Error(`Unexpected committed probe state: ${JSON.stringify(committedCounts)}`)
+    }
+
+    const beforeStale = await counts(sql)
+    let staleRejected = false
+    try {
+      await persistIntegralPlanningReconciliationAsync({
+        reconciliation: reconciliation('revision-a', 'revision-c', 44),
+        persistence: port,
+      })
+    } catch (error) {
+      staleRejected = error instanceof StalePlanningReviewError
+    }
+    if (!staleRejected) throw new Error('Expected stale Supabase submission rejection')
+    const afterStale = await counts(sql)
+    if (JSON.stringify(beforeStale) !== JSON.stringify(afterStale)) {
+      throw new Error('Stale Supabase submission changed persisted probe counts')
     }
 
     await resetProbeTables(sql)
@@ -265,7 +342,12 @@ async function main() {
     if (!rollbackFailed) throw new Error('Expected intentional Supabase rollback failure')
 
     const rollbackCounts = await counts(sql)
-    if (rollbackCounts.operations !== 0 || rollbackCounts.audits !== 0 || rollbackCounts.journal !== 0) {
+    if (
+      rollbackCounts.operations !== 0
+      || rollbackCounts.audits !== 0
+      || rollbackCounts.journal !== 0
+      || await currentRevision(sql) !== 'revision-a'
+    ) {
       throw new Error(`Supabase rollback left partial state: ${JSON.stringify(rollbackCounts)}`)
     }
 
@@ -291,12 +373,18 @@ async function main() {
     if (!isolationRejected) throw new Error('Cross-scope Supabase write was not rejected')
 
     const isolationCounts = await counts(sql)
-    if (isolationCounts.operations !== 0 || isolationCounts.audits !== 0 || isolationCounts.journal !== 0) {
+    if (
+      isolationCounts.operations !== 0
+      || isolationCounts.audits !== 0
+      || isolationCounts.journal !== 0
+      || await currentRevision(sql) !== 'revision-a'
+    ) {
       throw new Error(`Isolation rejection opened a write: ${JSON.stringify(isolationCounts)}`)
     }
 
     console.log('H11 Supabase planning transaction probe: OK')
     console.log('Commit/replay:', committedCounts)
+    console.log('Stale rejection:', afterStale)
     console.log('Rollback:', rollbackCounts)
     console.log('Isolation:', isolationCounts)
   } finally {
