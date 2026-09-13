@@ -91,3 +91,57 @@ export interface RealizedTrainingDeduplicationResult {
   readonly duplicateRecordIds: readonly string[]
   readonly ambiguousRecordIds: readonly string[]
 }
+
+export interface ReadinessAnalysisWindow {
+  readonly startDate: string
+  readonly endDate: string
+  readonly windowDays: number
+  readonly bucketDays: number
+}
+
+/**
+ * Product-policy inputs only. H12 does not claim these thresholds are medical
+ * or universal; KAN-248 versions the concrete policy selected with the coach.
+ */
+export interface ReadinessDataSufficiencyPolicy {
+  readonly lookbackDays: number
+  readonly bucketDays: number
+  readonly minimumPerformedSessions: number
+  readonly minimumActiveBuckets: number
+  readonly minimumMetricCoverageRatio: number
+}
+
+export type ReadinessDataInsufficiencyReason =
+  | 'no_performed_records'
+  | 'too_few_performed_sessions'
+  | 'too_few_active_buckets'
+  | 'metric_coverage_below_threshold'
+
+export interface RealizedMetricCoverage {
+  readonly metric: RealizedMetricName
+  readonly knownRecords: number
+  readonly performedRecords: number
+  readonly ratio: number
+  readonly sufficient: boolean
+}
+
+export interface ReadinessDataCoverage {
+  readonly window: ReadinessAnalysisWindow
+  readonly performedRecords: number
+  readonly activeBuckets: number
+  readonly totalBuckets: number
+  readonly explicitMissedRecords: number
+  readonly ambiguousRecords: number
+  readonly metrics: Readonly<Record<RealizedMetricName, RealizedMetricCoverage>>
+}
+
+export type ReadinessDataSufficiency =
+  | {
+      readonly status: 'sufficient'
+      readonly coverage: ReadinessDataCoverage
+    }
+  | {
+      readonly status: 'insufficient_data'
+      readonly coverage: ReadinessDataCoverage
+      readonly reasons: readonly ReadinessDataInsufficiencyReason[]
+    }
