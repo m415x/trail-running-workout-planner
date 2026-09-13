@@ -134,19 +134,19 @@ function auditRecord(
 
 /**
  * Applies the exact KAN-232 write set and its audit records through one shared
- * transaction. The persistence adapter owns the concrete database mutation but
- * cannot receive or commit any operation outside this transaction callback.
+ * async transaction. The persistence adapter owns the concrete database mutation
+ * but cannot receive or commit any operation outside this transaction callback.
  */
-export function persistIntegralPlanningReconciliation<TTransaction>({
+export async function persistIntegralPlanningReconciliation<TTransaction>({
   reconciliation,
   persistence,
-}: PersistIntegralPlanningReconciliationInput<TTransaction>): PersistedIntegralPlanningReconciliation {
+}: PersistIntegralPlanningReconciliationInput<TTransaction>): Promise<PersistedIntegralPlanningReconciliation> {
   validateReconciliation(reconciliation)
   const operations = orderedOperations(reconciliation.operations)
   const idempotencyKey = integralPlanningIdempotencyKey(reconciliation)
 
-  return persistence.transaction((tx) => {
-    const previous = persistence.findCommittedResult(tx, idempotencyKey)
+  return persistence.transaction(async (tx) => {
+    const previous = await persistence.findCommittedResult(tx, idempotencyKey)
     if (previous !== null) {
       return { ...previous, outcome: 'already_committed' }
     }
@@ -155,10 +155,10 @@ export function persistIntegralPlanningReconciliation<TTransaction>({
     const auditedOperationIdentities: string[] = []
 
     for (const operation of operations) {
-      persistence.applyOperation(tx, operation)
+      await persistence.applyOperation(tx, operation)
       appliedOperationIdentities.push(operation.identity)
 
-      persistence.appendAuditRecord(
+      await persistence.appendAuditRecord(
         tx,
         auditRecord(reconciliation.scope, operation),
       )
@@ -173,7 +173,7 @@ export function persistIntegralPlanningReconciliation<TTransaction>({
       auditedOperationIdentities,
       committedBlockIds: reconciliation.blocks.map(({ blockId }) => blockId),
     }
-    persistence.markCommitted(tx, idempotencyKey, result)
+    await persistence.markCommitted(tx, idempotencyKey, result)
     return result
   })
 }
