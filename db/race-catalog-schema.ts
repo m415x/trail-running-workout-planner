@@ -13,11 +13,13 @@ import type {
   RaceEventStatus,
 } from '@/types/training/race-catalog.types'
 
-const sourceColumns = {
-  sourceOrigin: text('source_origin').$type<RaceCatalogSourceOrigin>().notNull().default('product'),
-  sourceProvider: text('source_provider'),
-  externalId: text('external_id'),
-  sourceUrl: text('source_url'),
+function sourceColumns() {
+  return {
+    sourceOrigin: text('source_origin').$type<RaceCatalogSourceOrigin>().notNull().default('product'),
+    sourceProvider: text('source_provider'),
+    externalId: text('external_id'),
+    sourceUrl: text('source_url'),
+  }
 }
 
 export const raceEvents = sqliteTable(
@@ -28,7 +30,7 @@ export const raceEvents = sqliteTable(
     websiteUrl: text('website_url'),
     description: text('description'),
     status: text('status').$type<RaceEventStatus>().notNull().default('active'),
-    ...sourceColumns,
+    ...sourceColumns(),
   },
   (table) => [
     index('race_events_status_name_idx').on(table.status, table.name),
@@ -58,7 +60,7 @@ export const raceEditions = sqliteTable(
     websiteUrl: text('website_url'),
     notes: text('notes'),
     status: text('status').$type<RaceEditionStatus>().notNull().default('draft'),
-    ...sourceColumns,
+    ...sourceColumns(),
   },
   (table) => [
     index('race_editions_event_start_idx').on(table.raceEventId, table.startDate),
@@ -96,7 +98,7 @@ export const raceCourses = sqliteTable(
     startLocationLabel: text('start_location_label'),
     notes: text('notes'),
     status: text('status').$type<RaceCourseStatus>().notNull().default('draft'),
-    ...sourceColumns,
+    ...sourceColumns(),
   },
   (table) => [
     index('race_courses_edition_status_idx').on(table.raceEditionId, table.status),
