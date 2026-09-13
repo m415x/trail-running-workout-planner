@@ -9,8 +9,9 @@ const applicationTables = [
   'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'microcycle_intensity_targets', 'physiology_records',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
+  'readiness_evaluations', 'readiness_reviews',
   'sessions', 'shoes', 'teams',
-  'training_goals', 'training_locations', 'users', 'workout_logs', 'workouts',
+  'training_goals', 'training_locations', 'users', 'workout_log_evidence', 'workout_logs', 'workouts',
 ]
 
 async function main() {
