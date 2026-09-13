@@ -8,6 +8,7 @@ export default defineConfig({
     './db/session-generation-preferences-schema.ts',
     './db/competition-entry-schema.ts',
     './db/readiness-schema.ts',
+    './db/race-catalog-schema.ts',
   ],
   out: './drizzle',
   dialect: 'sqlite',
