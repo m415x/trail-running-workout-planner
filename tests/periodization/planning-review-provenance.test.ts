@@ -179,9 +179,7 @@ describe('provenance integral de planificación', () => {
     assert.equal(prescription?.provenance.ownership, 'generated')
     assert.equal(prescription?.replaceableByRegeneration, true)
     assert.equal(
-      prescription?.provenance.ownership === 'manual'
-        ? prescription.provenance.generationKey
-        : prescription?.provenance.generationKey,
+      prescription?.provenance.generationKey,
       'variant-plan-1::micro-1::group-1::tuesday',
     )
   })
