@@ -75,6 +75,27 @@ function athleteDetailPath(locale: string, athleteId: string) {
   return `${base}/${athleteId}`
 }
 
+export async function getTrainingGoalsForAthlete(athleteId: string) {
+  const athlete = db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, athleteId),
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+  }).sync()
+
+  if (!athlete) return []
+
+  return db.select()
+    .from(trainingGoals)
+    .where(and(
+      eq(trainingGoals.athleteId, athleteId),
+      eq(trainingGoals.isDeleted, false),
+    ))
+    .all()
+    .sort((first, second) => second.createdAt.localeCompare(first.createdAt))
+}
+
 export async function createTrainingGoal(
   _previousState: TrainingGoalFormState,
   formData: FormData,
