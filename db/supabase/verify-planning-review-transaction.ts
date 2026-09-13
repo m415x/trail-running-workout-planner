@@ -19,7 +19,8 @@ import type { PlanningReviewScope } from '@/types/training/planning-review.types
 config({ path: '.env.local' })
 
 type PostgresClient = ReturnType<typeof postgres>
-type PostgresTransaction = Parameters<Parameters<PostgresClient['begin']>[0]>[0]
+type BeginCallback = NonNullable<Parameters<PostgresClient['begin']>[1]>
+type PostgresTransaction = Parameters<BeginCallback>[0]
 
 const scope = {
   teamId: 'h11-probe-team',
@@ -89,8 +90,9 @@ class SupabaseProbePort implements AsyncPlanningReviewTransactionPort<PostgresTr
     private readonly failAuditIdentity: string | null = null,
   ) {}
 
-  transaction<TResult>(work: (tx: PostgresTransaction) => Promise<TResult>): Promise<TResult> {
-    return this.sql.begin(async (tx) => work(tx))
+  async transaction<TResult>(work: (tx: PostgresTransaction) => Promise<TResult>): Promise<TResult> {
+    const result = await this.sql.begin(async (tx) => work(tx))
+    return result as TResult
   }
 
   async findCommittedResult(tx: PostgresTransaction, idempotencyKey: string) {
