@@ -16,10 +16,7 @@ describe('race course modality', () => {
   })
 
   it('supports an explicit custom modality without changing the entity model', () => {
-    assert.deepEqual(
-      validateRaceCourseModality({ code: 'other', label: 'snow_running' }),
-      { valid: true },
-    )
+    assert.deepEqual(validateRaceCourseModality({ code: 'other', label: 'snow_running' }), { valid: true })
   })
 
   it('requires a label for custom modality', () => {
@@ -32,7 +29,7 @@ describe('race course modality', () => {
   })
 
   it('does not accept an unknown native code through an untrusted boundary', () => {
-    const invalid = { code: 'verticalish' } as RaceCourseModality
+    const invalid = { code: 'verticalish' } as unknown as RaceCourseModality
     const result = validateRaceCourseModality(invalid)
 
     assert.equal(result.valid, false)
