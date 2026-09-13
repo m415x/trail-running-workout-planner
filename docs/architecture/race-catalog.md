@@ -114,7 +114,7 @@ The ownership rule is based on the **smallest domain level at which a value can 
 | Course notes/instructions | `RaceCourse` | Applies only to that route/prueba. |
 | Distance and D+ | `RaceCourse` | Original editable sporting profile differs per course. |
 | Modality | `RaceCourse` | One edition may contain different modalities. |
-| Derived density/km-effort | `RaceCourse` derivation | Derived from course originals; introduced by KAN-269. |
+| Derived density/km-effort | `RaceCourse` derivation | Derived from course originals, never stored as independent truth. |
 | Classification | `RaceCourse` assessment/reference | Classification applies to a concrete profile and is versioned; KAN-270/271. |
 
 ### Why organizer/location live on RaceEdition
@@ -201,6 +201,47 @@ RaceCourseModality
 
 `validateRaceCourseModality` validates modality structure only. It does not derive modality from distance/D+ and does not decide whether a trail/skyrunning/vertical profile is coherent; those rules belong to KAN-272.
 
+## Derived course-demand descriptors
+
+The catalog derives two reproducible descriptors from the original `RaceCourse` measurements. They are **not independent editable fields** and should be recalculated from the originals whenever needed.
+
+```text
+elevationDensityMPerKm = elevationGainM / distanceKm
+kilometerEffortKm      = distanceKm + elevationGainM / 100
+```
+
+### Elevation density
+
+- unit: meters of positive elevation per kilometer (`m+/km`);
+- requires known distance and known D+;
+- explicit `0 m+` on a known flat course produces `0 m+/km`;
+- if either input is unknown, the derived value is `null`;
+- the domain performs no implicit rounding.
+
+Density describes how concentrated climbing is along the route. It does not determine modality by itself and must not automatically turn a course into `vertical_kilometer`, `skyrunning` or any other category.
+
+### Kilometer-effort
+
+The application uses the established convention:
+
+```text
+distanceKm + elevationGainM / 100
+```
+
+The value is expressed as `kilometerEffortKm` in the race catalog. Epic 2 H10 historically exposes the same value as `courseEffortKm`; both now consume the same pure `calculateKilometerEffortKm` primitive so the formula cannot drift between catalog and planning.
+
+Rules:
+
+- requires known distance and known D+;
+- explicit `0 m+` returns the original distance;
+- unknown D+ remains unknown rather than being interpreted as flat;
+- no implicit rounding is applied;
+- it is a **course-demand descriptor only**.
+
+It must not be reused as a universal training-load score, readiness formula, injury-risk model or proof of equivalent physiological cost between two routes. Technicality, altitude, descent and surface may alter actual demand without changing this simple descriptor.
+
+`deriveRaceCourseProfile` returns both descriptors together and preserves `null` when the source profile is incomplete.
+
 ## Location representation
 
 Edition host location is a structured value:
@@ -276,9 +317,8 @@ Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlet
 - Historical referenced entities should be archived/cancelled rather than physically deleted.
 - Persistence-level FK/cascade/restrict behavior is deferred to KAN-276.
 
-## Deliberately deferred after KAN-268
+## Deliberately deferred after KAN-269
 
-- elevation density and kilometer-effort — KAN-269;
 - official classification research/model — KAN-270/271;
 - profile coherence policies — KAN-272;
 - `CompetitionEntry` integration — KAN-273;
@@ -295,6 +335,7 @@ Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlet
 5. Distance and D+ are original measurements, not identities and not derived from each other.
 6. `null` means unknown; explicit zero D+ means known flat elevation gain.
 7. Modality is explicit; vertical kilometer is never inferred only from elevation density.
-8. Planning/future registration reference `RaceCourse`, not the event globally.
-9. Catalog edits never imply silent mutation of planning snapshots.
-10. Missing metadata remains unknown rather than being invented or inherited implicitly.
+8. Derived density and km-effort are recalculated descriptors, not editable truth or training-load formulas.
+9. Planning/future registration reference `RaceCourse`, not the event globally.
+10. Catalog edits never imply silent mutation of planning snapshots.
+11. Missing metadata remains unknown rather than being invented or inherited implicitly.
