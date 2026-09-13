@@ -1,3 +1,4 @@
+import { validateRaceCourseSelection } from '@/lib/race-catalog/race-course-selection-policy'
 import type {
   CompetitionEntryDraft,
   CompetitionPriority,
@@ -11,6 +12,7 @@ import type {
   RaceEdition,
   RaceEvent,
 } from '@/types/training/race-catalog.types'
+import type { RaceCourseSelectionErrorCode } from '@/lib/race-catalog/race-course-selection-policy'
 
 export interface RaceCoursePlanningSnapshot {
   readonly raceEventName: string
@@ -39,12 +41,7 @@ export interface SelectRaceCourseForCompetitionInput {
   readonly description?: string | null
 }
 
-export type RaceCourseCompetitionSelectionErrorCode =
-  | 'race_catalog_ancestry_mismatch'
-  | 'race_catalog_event_unavailable'
-  | 'race_catalog_edition_unavailable'
-  | 'race_catalog_course_unavailable'
-  | 'race_catalog_course_distance_unknown'
+export type RaceCourseCompetitionSelectionErrorCode = RaceCourseSelectionErrorCode
 
 export type RaceCourseCompetitionSelectionResult =
   | {
@@ -79,30 +76,17 @@ function cloneClassifications(
 export function selectRaceCourseForCompetition(
   input: SelectRaceCourseForCompetitionInput,
 ): RaceCourseCompetitionSelectionResult {
-  const errors: RaceCourseCompetitionSelectionErrorCode[] = []
+  const selectionPolicy = validateRaceCourseSelection(
+    input.event,
+    input.edition,
+    input.course,
+  )
+  if (!selectionPolicy.valid) return selectionPolicy
 
-  if (
-    input.edition.raceEventId !== input.event.id
-    || input.course.raceEditionId !== input.edition.id
-  ) {
-    errors.push('race_catalog_ancestry_mismatch')
-  }
-
-  if (input.event.status !== 'active' || input.event.isDeleted) {
-    errors.push('race_catalog_event_unavailable')
-  }
-  if (input.edition.status !== 'published' || input.edition.isDeleted) {
-    errors.push('race_catalog_edition_unavailable')
-  }
-  if (input.course.status !== 'published' || input.course.isDeleted) {
-    errors.push('race_catalog_course_unavailable')
-  }
-  if (input.course.distanceKm === null) {
-    errors.push('race_catalog_course_distance_unknown')
-  }
-
-  if (errors.length > 0 || input.course.distanceKm === null) {
-    return { valid: false, errors: [...new Set(errors)] }
+  // Selection policy guarantees known distance for any new cross-domain snapshot.
+  const distanceKm = input.course.distanceKm
+  if (distanceKm === null) {
+    return { valid: false, errors: ['race_catalog_course_distance_unknown'] }
   }
 
   const date = input.course.scheduledStartAt?.slice(0, 10) ?? input.edition.startDate
@@ -123,7 +107,7 @@ export function selectRaceCourseForCompetition(
         raceEditionLabel: input.edition.label,
         raceCourseLabel: input.course.label,
         date,
-        distanceKm: input.course.distanceKm,
+        distanceKm,
         elevationGainM: input.course.elevationGainM,
         modality,
         classifications,
@@ -132,7 +116,7 @@ export function selectRaceCourseForCompetition(
         groupTrainingPlanId: input.groupTrainingPlanId,
         name,
         date,
-        distanceKm: input.course.distanceKm,
+        distanceKm,
         elevationGainM: input.course.elevationGainM,
         priority: input.priority,
         status: input.status ?? 'planned',
