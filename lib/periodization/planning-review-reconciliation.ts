@@ -3,6 +3,7 @@ import {
   validatePlanningReviewBlockSelection,
 } from '@/lib/periodization/planning-review-blocks'
 import { buildIntegralPlanningDiff } from '@/lib/periodization/planning-review-diff'
+import { integralPlanningReviewRevisionKey } from '@/lib/periodization/planning-review-revision'
 import type {
   PlanningReviewBlockDecision,
   PlanningReviewDecisionBlock,
@@ -116,9 +117,8 @@ function isPlanningOperation({ entity }: PlanningReviewScopedOperation) {
  * Rebuilds the reviewed diff and emits the exact persistence-ready write set
  * selected by the coach. It deliberately performs no database mutation.
  *
- * Unlike whole-macrocycle regeneration, unchanged descendants never appear in
- * the result. Team/group/cohort/plan scope and coach provenance travel with
- * every write so persistence adapters can enforce isolation transactionally.
+ * The reconciliation carries the revision key of `current`, allowing the
+ * persistence boundary to reject a decision made against stale planning state.
  */
 export function reconcileAcceptedPlanningBlocks({
   current,
@@ -152,11 +152,7 @@ export function reconcileAcceptedPlanningBlocks({
       const items = block.items
         .filter(hasWriteOperation)
         .filter(({ identity }) => acceptedIdentitySet.has(identity))
-      return {
-        block,
-        decision,
-        items,
-      }
+      return { block, decision, items }
     })
 
   const operations = blocks
@@ -167,6 +163,7 @@ export function reconcileAcceptedPlanningBlocks({
 
   return {
     scope: proposed.scope,
+    sourceRevisionKey: integralPlanningReviewRevisionKey(current),
     blocks: blocks.map(({ block, decision, items }) => ({
       blockId: block.id,
       root: block.root,
