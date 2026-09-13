@@ -40,15 +40,15 @@ export interface IntegralPlanningDiffItem {
 }
 
 export interface IntegralPlanningDiffCounts {
-  readonly added: number
-  readonly updated: number
-  readonly preserved: number
-  readonly conflict: number
+  added: number
+  updated: number
+  preserved: number
+  conflict: number
 }
 
 export interface IntegralPlanningDiff {
   readonly items: readonly IntegralPlanningDiffItem[]
-  readonly counts: IntegralPlanningDiffCounts
+  readonly counts: Readonly<IntegralPlanningDiffCounts>
   readonly issues: readonly PlanningReviewIssue[]
   readonly hasConflicts: boolean
 }
