@@ -50,38 +50,21 @@ export type RaceCourseClassificationProvenance =
  * timeless TypeScript enums because their taxonomies may change independently.
  */
 export interface RaceCourseClassification {
-  /** Stable product identifier for the external system, e.g. `itra.endurance_points`. */
   readonly systemId: string
-  /** Human-readable authority/owner, e.g. `ITRA` or `World Athletics`. */
   readonly authority: string
-  /** Semantic dimension represented by this classification. */
   readonly dimension: RaceCourseClassificationDimension
-  /**
-   * Explicit ruleset/version/effective reference.
-   *
-   * This may be a formal version (`2026`) or a dated effective reference when
-   * the source does not publish semantic versions. It must never be omitted.
-   */
   readonly versionRef: string
-  /** Source-specific code/value; never interpreted without system + version. */
   readonly code: string
-  /** Optional display text from the external system. */
   readonly label?: string | null
-  /** How this particular value was obtained. */
   readonly provenance: RaceCourseClassificationProvenance
-  /** Primary/source reference used to assign or derive the classification. */
   readonly sourceUrl?: string | null
-  /** ISO timestamp/date recording when this classification was assessed. */
   readonly assessedAt?: string | null
 }
 
 /** Human-readable host location for one edition. */
 export interface RaceEditionLocation {
-  /** City/locality when known. */
   locality?: string | null
-  /** Province/state/region when known. */
   region?: string | null
-  /** ISO 3166-1 alpha-2 country code when known. */
   countryCode?: string | null
 }
 
@@ -112,13 +95,7 @@ export interface RaceCourse extends BaseEntity {
   label: string
   distanceKm: number | null
   elevationGainM: number | null
-  /** Explicit modality when known. `null` means not yet classified. */
   modality: RaceCourseModality | null
-  /**
-   * Zero or more versioned external classifications.
-   *
-   * Empty means unknown/not applicable; it must not trigger inferred defaults.
-   */
   classifications: readonly RaceCourseClassification[]
   scheduledStartAt?: string | null
   startLocationLabel?: string | null
@@ -147,4 +124,27 @@ export interface RaceCourseReference {
   raceEventId: string
   raceEditionId: string
   raceCourseId: string
+}
+
+/**
+ * Minimum tenant/athlete scope reserved for a future individual race entry.
+ *
+ * Team scope is explicit so registration persistence cannot later rely on UI
+ * filtering or infer tenancy only from a mutable athlete lookup.
+ */
+export interface FutureRaceRegistrationScope {
+  teamId: string
+  athleteProfileId: string
+}
+
+/**
+ * Extension point for the future RaceRegistration story.
+ *
+ * This is intentionally not a persistent entity and contains no lifecycle,
+ * payment, bib, qualification or result fields. It only fixes the two facts the
+ * future model cannot change: athlete scope + concrete RaceCourse identity.
+ */
+export interface FutureRaceRegistrationTarget {
+  scope: FutureRaceRegistrationScope
+  course: RaceCourseReference
 }
