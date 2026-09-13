@@ -185,43 +185,50 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               </p>
             ) : (
               <div className='space-y-3'>
-                {goals.map((goal) => (
-                  <div key={goal.id} className='rounded-lg border p-4'>
-                    <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
-                      <div className='min-w-0'>
-                        <div className='flex flex-wrap items-center gap-2'>
-                          <p className='font-medium'>{goal.title}</p>
-                          <Badge variant={goal.status === 'draft' ? 'outline' : 'secondary'}>
-                            {GOAL_STATUS_LABELS[goal.status] ?? goal.status}
-                          </Badge>
+                {goals.map((goal) => {
+                  const showRaceSubtitle = goal.type === 'race'
+                    && goal.raceName
+                    && goal.raceName !== goal.title
+
+                  return (
+                    <div key={goal.id} className='rounded-lg border p-4'>
+                      <div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start'>
+                        <div className='min-w-0'>
+                          <div className='flex flex-wrap items-center gap-2'>
+                            <p className='font-medium'>{goal.title}</p>
+                            <Badge variant={goal.status === 'draft' ? 'outline' : 'secondary'}>
+                              {GOAL_STATUS_LABELS[goal.status] ?? goal.status}
+                            </Badge>
+                          </div>
+                          {showRaceSubtitle && (
+                            <p className='mt-1 text-sm text-muted-foreground'>{goal.raceName}</p>
+                          )}
+                          {goal.description && <p className='mt-2 text-sm'>{goal.description}</p>}
+                          {goal.notes && <p className='mt-2 text-sm text-muted-foreground'>{goal.notes}</p>}
                         </div>
-                        {goal.type === 'race' && goal.raceName && (
-                          <p className='mt-1 text-sm text-muted-foreground'>{goal.raceName}</p>
-                        )}
-                        {goal.description && <p className='mt-2 text-sm'>{goal.description}</p>}
-                        {goal.notes && <p className='mt-2 text-sm text-muted-foreground'>{goal.notes}</p>}
+
+                        <dl className='grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:min-w-[24rem] lg:text-right'>
+                          <div>
+                            <dt className='text-muted-foreground'>Fecha</dt>
+                            <dd className='mt-0.5 font-medium'>{formatDate(goal.targetDate)}</dd>
+                          </div>
+                          {goal.type === 'race' && (
+                            <>
+                              <div>
+                                <dt className='text-muted-foreground'>Distancia</dt>
+                                <dd className='mt-0.5 font-medium'>{goal.raceDistanceKm == null ? '—' : `${goal.raceDistanceKm} km`}</dd>
+                              </div>
+                              <div>
+                                <dt className='text-muted-foreground'>D+</dt>
+                                <dd className='mt-0.5 font-medium'>{goal.raceElevationGain == null ? '—' : `+${goal.raceElevationGain} m`}</dd>
+                              </div>
+                            </>
+                          )}
+                        </dl>
                       </div>
-                      <dl className='grid shrink-0 grid-cols-2 gap-x-4 gap-y-2 text-sm sm:text-right'>
-                        <div>
-                          <dt className='text-muted-foreground'>Fecha</dt>
-                          <dd className='font-medium'>{formatDate(goal.targetDate)}</dd>
-                        </div>
-                        {goal.type === 'race' && (
-                          <>
-                            <div>
-                              <dt className='text-muted-foreground'>Distancia</dt>
-                              <dd className='font-medium'>{goal.raceDistanceKm == null ? '—' : `${goal.raceDistanceKm} km`}</dd>
-                            </div>
-                            <div>
-                              <dt className='text-muted-foreground'>D+</dt>
-                              <dd className='font-medium'>{goal.raceElevationGain == null ? '—' : `+${goal.raceElevationGain} m`}</dd>
-                            </div>
-                          </>
-                        )}
-                      </dl>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
