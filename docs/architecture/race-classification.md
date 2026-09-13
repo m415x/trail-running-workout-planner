@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define how `RaceCourse` stores external sporting classifications without treating one federation/ecosystem taxonomy as universal product truth.
+Define how `RaceCourse` stores and validates external sporting classifications without treating one federation/ecosystem taxonomy as universal product truth.
 
 Research basis: [`../research/race-classification-systems-2026.md`](../research/race-classification-systems-2026.md).
 
@@ -63,15 +63,12 @@ The normalized semantic dimension represented by the classification:
 
 ```text
 endurance_difficulty
-race_distance
 distance_category
 international_format
 discipline
 technical_level
 other
 ```
-
-The implementation currently uses `distance_category` (not a second `race_distance` alias); the list above describes semantics rather than source-specific code names.
 
 Different dimensions may coexist on the same course. For example:
 
@@ -138,6 +135,69 @@ there is a single active classification slot. Two different codes for that exact
 
 The same system/dimension with a different version is allowed so historical classification can remain reproducible.
 
+## Coherence validation policy
+
+`validateRaceCourseCoherence` separates hard invariants from source-dependent interpretation.
+
+### Hard errors
+
+The following are always invalid domain state:
+
+- invalid primitive distance/D+ values;
+- structurally invalid modality;
+- structurally invalid/duplicate classification records;
+- a classification marked `derived_from_source_rules` whose code contradicts the exact registered `systemId + dimension + versionRef` rule.
+
+The last case is a hard error because the product itself claims to have derived the value from that ruleset; keeping a contradictory code would make the record internally false.
+
+### Warnings
+
+A source-declared/manual classification that differs from a locally reproducible rule is preserved but flagged:
+
+```text
+race_course_external_classification_profile_mismatch
+```
+
+This is not automatically rewritten because official/catalog source measurements may differ from the values currently stored locally.
+
+If the exact registered rule exists but required profile inputs are unknown, the result is:
+
+```text
+race_course_classification_cannot_be_verified
+```
+
+Again this is a warning/limitation, not proof that the external classification is wrong.
+
+### No rule, no invented validation
+
+If the application has no implementation for the exact system/dimension/version, it does **not** guess whether the code is valid. The classification remains structurally valid external metadata.
+
+This is how historical taxonomies and future rule changes remain representable without accidentally applying today's thresholds to another version.
+
+### Versioned rules
+
+`RaceCourseClassificationRule` is the boundary for an implemented external policy:
+
+```text
+systemId
+dimension
+versionRef
+resolveCode(profile) -> code | null
+```
+
+KAN-272 includes `ITRA_ENDURANCE_POINTS_2026_09_13`, based on the current primary ITRA material researched in KAN-270. The date in `versionRef` is deliberate: the external taxonomy is living policy, not timeless source code.
+
+### Unusual is not invalid
+
+The generic coherence policy deliberately has no rules such as:
+
+- "too much D+ for road";
+- "too little D+ for trail";
+- "high m+/km means Vertical Kilometer";
+- "this distance cannot be skyrunning".
+
+Those statements are either context-dependent or belong to explicit external rules. A structurally valid but unusual profile remains valid unless a documented versioned policy says otherwise.
+
 ## No automatic universal mapping
 
 The domain does not contain a generic function such as:
@@ -148,16 +208,16 @@ kmEffort -> externalClassification
 
 because each system/version owns its own thresholds and applicability.
 
-A future policy may implement, for example:
+A versioned policy may implement, for example:
 
 ```text
-ITRA Endurance Points / version X
+ITRA Endurance Points / current-2026-09-13
   known distance + known D+
   -> km-effort
   -> source-version-specific code
 ```
 
-but the output must still record that exact system/version/provenance.
+but the output still records that exact system/version/provenance.
 
 ## Historical XXS–XXL
 
@@ -177,3 +237,5 @@ External classification belongs to the catalog course. When KAN-273 maps a `Race
 6. Modality, course-demand descriptors and external classification remain distinct.
 7. Historical codes remain reproducible through explicit version references.
 8. Derived official classifications require explicit versioned source rules and sufficient inputs.
+9. Source-declared mismatches are reviewable warnings, not silently rewritten data.
+10. Unusual profiles are not invalidated by undocumented heuristics.
