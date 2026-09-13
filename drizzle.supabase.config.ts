@@ -7,6 +7,7 @@ export default defineConfig({
   schema: [
     './db/supabase/schema.ts',
     './db/supabase/competition-entry-schema.ts',
+    './db/supabase/readiness-schema.ts',
   ],
   out: './drizzle/supabase',
   dialect: 'postgresql',
