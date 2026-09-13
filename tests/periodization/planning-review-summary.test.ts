@@ -232,41 +232,44 @@ describe('resumen integral de planificación', () => {
   })
 
   it('preserva alcance de variante de cohorte y ventanas competitivas', () => {
-    const review = buildReview()
-    review.competitions[0] = {
-      ...review.competitions[0],
-      impactWindow: {
-        competitionId: 'competition-b',
-        priority: 'B',
-        competitionDate: '2026-01-15',
-        pre: null,
-        race: {
+    const original = buildReview()
+    const review: IntegralPlanningReview = {
+      ...original,
+      competitions: [{
+        ...original.competitions[0],
+        impactWindow: {
+          competitionId: 'competition-b',
+          priority: 'B',
+          competitionDate: '2026-01-15',
+          pre: null,
+          race: {
+            startDate: '2026-01-15',
+            endDate: '2026-01-15',
+            durationDays: 1,
+          },
+          post: null,
           startDate: '2026-01-15',
           endDate: '2026-01-15',
-          durationDays: 1,
-        },
-        post: null,
-        startDate: '2026-01-15',
-        endDate: '2026-01-15',
-        recovery: {
-          priority: 'B',
-          demand: {
-            band: 'minimal',
-            confidence: 'high',
-            competitionDemandBand: 'very_low',
-            courseEffortKm: 21,
-            elevationLossM: null,
-            downhillLoadKnown: false,
-            technicalityKnown: false,
+          recovery: {
+            priority: 'B',
+            demand: {
+              band: 'minimal',
+              confidence: 'high',
+              competitionDemandBand: 'very_low',
+              courseEffortKm: 21,
+              elevationLossM: null,
+              downhillLoadKnown: false,
+              technicalityKnown: false,
+              requiresCoachReview: false,
+            },
+            planningProtection: 'contextual',
+            phases: [],
+            totalRecoveryDays: 0,
             requiresCoachReview: false,
+            reasonCodes: ['competition_demand'],
           },
-          planningProtection: 'contextual',
-          phases: [],
-          totalRecoveryDays: 0,
-          requiresCoachReview: false,
-          reasonCodes: ['competition_demand'],
         },
-      },
+      }, ...original.competitions.slice(1)],
     }
 
     const summary = buildIntegralPlanningReviewSummary(review)

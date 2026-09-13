@@ -110,7 +110,7 @@ class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
     return tx.journal[idempotencyKey] ?? null
   }
 
-  async lockSourceRevision(_tx: State, _scope: PlanningReviewScope) {
+  async lockSourceRevision() {
     return this.state.revision
   }
 
@@ -135,10 +135,11 @@ class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
 
   async advanceSourceRevision(
     tx: State,
-    _scope: PlanningReviewScope,
+    scopeToAdvance: PlanningReviewScope,
     sourceRevisionKey: string,
     resultRevisionKey: string,
   ) {
+    void scopeToAdvance
     if (tx.revision !== sourceRevisionKey) {
       throw new Error('revision changed before advance')
     }

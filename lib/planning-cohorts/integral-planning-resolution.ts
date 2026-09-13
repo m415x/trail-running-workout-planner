@@ -20,7 +20,7 @@ export type AthleteIntegralPlanningResolution =
       reason: 'resolved-review-count' | 'resolved-review-scope' | 'resolved-review-integrity'
       groupId: string
       conflictingIds: string[]
-      issues?: PlanningReviewIssue[]
+      issues?: readonly PlanningReviewIssue[]
     }
   | {
       status: 'resolved'
