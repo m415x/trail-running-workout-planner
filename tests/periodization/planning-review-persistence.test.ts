@@ -79,6 +79,7 @@ function operation(
   operationType: PlanningReviewScopedOperation['operation'] = 'create',
 ): PlanningReviewScopedOperation {
   return {
+    scope,
     identity,
     parentIdentity: null,
     entity: { entityType, entityId: `${entityType}-1` },
@@ -219,6 +220,32 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.deepEqual(port.state.audits, [])
     assert.deepEqual(port.state.journal, {})
   })
+
+  it('rechaza una operación cuyo team/group/cohort/plan scope fue alterado', () => {
+    const port = new MemoryTransactionPort()
+    const input = reconciliation([operation('plan-1', 'plan')])
+    const tamperedOperation = {
+      ...input.operations[0],
+      scope: { ...scope, teamId: 'team-2' },
+    }
+    const tampered = {
+      ...input,
+      operations: [tamperedOperation],
+      planningOperations: [tamperedOperation],
+    }
+
+    assert.throws(
+      () => persistIntegralPlanningReconciliation({
+        reconciliation: tampered,
+        persistence: port,
+      }),
+      /crosses the accepted planning scope/,
+    )
+    assert.deepEqual(port.state.applied, [])
+    assert.deepEqual(port.state.audits, [])
+    assert.deepEqual(port.state.journal, {})
+  })
+
   it('completa eliminaciones antes de altas o actualizaciones', () => {
     const port = new MemoryTransactionPort()
     const input = reconciliation([
@@ -294,5 +321,4 @@ describe('persistencia atómica de la revisión integral', () => {
     assert.equal(port.state.applied.length, 3)
     assert.equal(port.state.audits.length, 3)
   })
-
 })
