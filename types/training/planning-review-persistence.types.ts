@@ -22,27 +22,29 @@ export interface PlanningReviewAtomicAuditRecord {
 
 export interface PlanningReviewTransactionPort<TTransaction> {
   /**
-   * Must commit only when work returns normally and roll back every operation
-   * and audit append when work throws.
+   * Must commit only when work resolves normally and roll back every operation
+   * and audit append when work rejects. The async contract is required by
+   * PostgreSQL/Supabase transaction clients and remains compatible with in-memory
+   * test adapters that resolve immediately.
    */
-  transaction<TResult>(work: (tx: TTransaction) => TResult): TResult
+  transaction<TResult>(work: (tx: TTransaction) => Promise<TResult>): Promise<TResult>
   findCommittedResult(
     tx: TTransaction,
     idempotencyKey: string,
-  ): PersistedIntegralPlanningReconciliation | null
+  ): Promise<PersistedIntegralPlanningReconciliation | null>
   applyOperation(
     tx: TTransaction,
     operation: PlanningReviewScopedOperation,
-  ): void
+  ): Promise<void>
   appendAuditRecord(
     tx: TTransaction,
     record: PlanningReviewAtomicAuditRecord,
-  ): void
+  ): Promise<void>
   markCommitted(
     tx: TTransaction,
     idempotencyKey: string,
     result: PersistedIntegralPlanningReconciliation,
-  ): void
+  ): Promise<void>
 }
 
 export interface PersistIntegralPlanningReconciliationInput<TTransaction> {
