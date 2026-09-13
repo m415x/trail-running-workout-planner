@@ -4,14 +4,16 @@ import postgres from 'postgres'
 config({ path: '.env.local' })
 
 const applicationTables = [
-  'athlete_groups', 'athlete_profiles', 'competition_entries', 'group_history_records',
-  'group_session_prescriptions', 'group_training_plans', 'macrocycles',
-  'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
+  'athlete_groups', 'athlete_profiles', 'competition_entries', 'competition_entry_race_courses',
+  'group_history_records', 'group_session_prescriptions', 'group_training_plans',
+  'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'microcycle_intensity_targets', 'physiology_records',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
+  'race_courses', 'race_editions', 'race_events',
   'readiness_evaluations', 'readiness_reviews',
-  'sessions', 'shoes', 'teams',
-  'training_goals', 'training_locations', 'users', 'workout_log_evidence', 'workout_logs', 'workouts',
+  'session_generation_modification_records', 'sessions', 'shoes', 'teams',
+  'training_goal_race_courses', 'training_goals', 'training_locations', 'users',
+  'workout_log_evidence', 'workout_logs', 'workouts',
 ]
 
 async function main() {
