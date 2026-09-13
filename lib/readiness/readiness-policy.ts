@@ -29,6 +29,14 @@ export function validateReadinessPolicy(policy: ReadinessPolicy): ReadinessPolic
   }
   assertRatio('minimumMetricCoverageRatio', policy.dataSufficiency.minimumMetricCoverageRatio)
   assertRatio('minimumActiveBucketRatio', policy.continuity.minimumActiveBucketRatio)
+  assertRatio(
+    'minimumLongestDistanceToRaceRatio',
+    policy.competitionExposure.minimumLongestDistanceToRaceRatio,
+  )
+  assertRatio(
+    'minimumPeakElevationToRaceRatio',
+    policy.competitionExposure.minimumPeakElevationToRaceRatio,
+  )
   assertPositiveInteger('minimumLinkedSessions', policy.planVsReal.minimumLinkedSessions)
   assertRatio('relativeDeviationThreshold', policy.planVsReal.relativeDeviationThreshold)
   assertPositiveInteger(
@@ -65,6 +73,10 @@ export const H12_READINESS_POLICY_DRAFT_V1 = validateReadinessPolicy({
   },
   continuity: {
     minimumActiveBucketRatio: 0.75,
+  },
+  competitionExposure: {
+    minimumLongestDistanceToRaceRatio: 0.50,
+    minimumPeakElevationToRaceRatio: 0.50,
   },
   planVsReal: {
     minimumLinkedSessions: 4,
