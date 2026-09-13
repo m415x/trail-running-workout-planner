@@ -84,6 +84,7 @@ RaceCourse
 - label
 - distanceKm: number | null
 - elevationGainM: number | null
+- modality: RaceCourseModality | null
 - scheduledStartAt?
 - startLocationLabel?
 - notes?
@@ -112,7 +113,7 @@ The ownership rule is based on the **smallest domain level at which a value can 
 | Course-specific start location | `RaceCourse` | Courses in one edition may start from different places. |
 | Course notes/instructions | `RaceCourse` | Applies only to that route/prueba. |
 | Distance and D+ | `RaceCourse` | Original editable sporting profile differs per course. |
-| Modality | `RaceCourse` | One edition may contain different modalities; introduced by KAN-268. |
+| Modality | `RaceCourse` | One edition may contain different modalities. |
 | Derived density/km-effort | `RaceCourse` derivation | Derived from course originals; introduced by KAN-269. |
 | Classification | `RaceCourse` assessment/reference | Classification applies to a concrete profile and is versioned; KAN-270/271. |
 
@@ -155,7 +156,7 @@ RaceCourseOriginalProfile
 - `null` means unknown/unpublished and must not be converted to zero;
 - D+ is not inferred from distance, modality or a sibling course.
 
-The base validator `validateRaceCourseOriginalProfile` checks only these per-field invariants. It deliberately accepts both metrics as `null` because draft catalog records may exist before official measurements are published.
+`validateRaceCourseOriginalProfile` checks only these per-field invariants. It deliberately accepts both metrics as `null` because draft catalog records may exist before official measurements are published.
 
 Requirements such as "a published/selectable course must have enough sporting information" belong to a later publication/application policy, not to the primitive measurement validator.
 
@@ -166,6 +167,39 @@ The domain keeps both values as JavaScript/TypeScript `number` without applying 
 ### Same nominal distance does not identify a course
 
 Two courses may both report `21` km while having different D+, modality, route or start location. Distance is therefore profile data, never an identity key or uniqueness constraint.
+
+## Course modality
+
+Modality belongs to `RaceCourse`, not `RaceEvent` or `RaceEdition`. A single edition may contain routes with different sporting modality.
+
+Native v1 codes are:
+
+```text
+road
+trail
+skyrunning
+vertical_kilometer
+```
+
+The domain representation is explicit and extensible:
+
+```text
+RaceCourseModality
+= { code: KnownRaceCourseModalityCode }
+| { code: 'other', label: string }
+```
+
+`modality: null` means the modality is unknown/not classified yet and is valid for incomplete catalog data.
+
+### Vertical kilometer
+
+`vertical_kilometer` is an explicit modality. It must **never** be inferred only because a route has a high elevation-density value. Profile coherence rules may later validate whether a declared vertical-kilometer profile looks structurally plausible, but the modality remains an explicit catalog fact.
+
+### Extensibility
+
+`other + label` lets the catalog preserve a real modality that is not yet a first-class application code without changing entity identity or schema shape. If a future modality becomes important enough to receive native behavior, its code can be promoted into `KnownRaceCourseModalityCode` while historical course IDs remain unchanged.
+
+`validateRaceCourseModality` validates modality structure only. It does not derive modality from distance/D+ and does not decide whether a trail/skyrunning/vertical profile is coherent; those rules belong to KAN-272.
 
 ## Location representation
 
@@ -242,9 +276,8 @@ Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlet
 - Historical referenced entities should be archived/cancelled rather than physically deleted.
 - Persistence-level FK/cascade/restrict behavior is deferred to KAN-276.
 
-## Deliberately deferred after KAN-267
+## Deliberately deferred after KAN-268
 
-- modality — KAN-268;
 - elevation density and kilometer-effort — KAN-269;
 - official classification research/model — KAN-270/271;
 - profile coherence policies — KAN-272;
@@ -258,9 +291,10 @@ Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlet
 1. An event is not duplicated for each course/distance.
 2. Mutable/historical metadata lives at the narrowest level where it can vary.
 3. Event branding does not overwrite historical edition metadata.
-4. Different courses in the same edition may have different schedule/start location/profile.
+4. Different courses in the same edition may have different schedule/start location/profile/modality.
 5. Distance and D+ are original measurements, not identities and not derived from each other.
 6. `null` means unknown; explicit zero D+ means known flat elevation gain.
-7. Planning/future registration reference `RaceCourse`, not the event globally.
-8. Catalog edits never imply silent mutation of planning snapshots.
-9. Missing metadata remains unknown rather than being invented or inherited implicitly.
+7. Modality is explicit; vertical kilometer is never inferred only from elevation density.
+8. Planning/future registration reference `RaceCourse`, not the event globally.
+9. Catalog edits never imply silent mutation of planning snapshots.
+10. Missing metadata remains unknown rather than being invented or inherited implicitly.
