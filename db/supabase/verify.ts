@@ -28,12 +28,24 @@ async function main() {
         and c.relkind = 'r'
         and c.relname in ${sql(applicationTables)}
     `
+    const found = new Set(tables.map(({ tableName }) => tableName))
+    const missingTables = applicationTables.filter((table) => !found.has(table))
+    const unprotectedTables = tables
+      .filter(({ rlsEnabled }) => !rlsEnabled)
+      .map(({ tableName }) => tableName)
+      .sort()
     const protectedTables = tables.filter((table) => table.rlsEnabled)
 
     console.log(`Tablas de aplicación: ${tables.length}/${applicationTables.length}`)
     console.log(`Tablas con RLS: ${protectedTables.length}/${applicationTables.length}`)
+    if (missingTables.length > 0) {
+      console.log(`Tablas faltantes: ${missingTables.join(', ')}`)
+    }
+    if (unprotectedTables.length > 0) {
+      console.log(`Tablas sin RLS: ${unprotectedTables.join(', ')}`)
+    }
 
-    if (tables.length !== applicationTables.length || protectedTables.length !== applicationTables.length) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0) {
       process.exitCode = 1
     }
   } finally {
