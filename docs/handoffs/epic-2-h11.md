@@ -5,10 +5,10 @@
 - Story: `KAN-224` — H11: Revisión integral y persistencia segura del motor de planificación.
 - Branch: `h-20-planning-review-persistence`.
 - Base: `dashboard` after H10.
-- Completed in Jira: `KAN-225` through `KAN-238`, plus `KAN-240`.
-- In progress: `KAN-239` — real Supabase integration/rollback verification.
-- In progress: `KAN-241` — final durable documentation and handoff consolidation.
-- Delivery mode: remote-first. The complete local story gate remains mandatory before H11 closes or merges.
+- Completed in Jira: `KAN-225` through `KAN-241`.
+- Delivery mode: remote-first.
+- Technical story gate: complete and green.
+- Remaining before H11 closes: functional/manual walkthrough of the affected planning flow, final Jira evidence, final deployment validation, then merge into `dashboard`.
 
 ## Durable context
 
@@ -75,44 +75,43 @@ base plan
 
 KAN-240 adds revision-based stale and concurrency behavior. Focused async tests cover equivalent double submit, different simultaneous decisions, stale sequential submission and rollback after a partial failure.
 
-## KAN-239 — remaining real Supabase gate
+## Supabase evidence — complete
 
-The implementation is prepared but the task must not close until it runs against the connected project.
+Real PostgreSQL/Supabase validation completed successfully:
 
-Run with `.env.local` containing the existing direct Supabase connection:
-
-```bash
-pn db:check:supabase
-pn db:verify:supabase
-pn db:verify:h11:supabase
+```text
+pn db:check:supabase       -> OK
+pn db:migrate:supabase     -> migrations applied successfully
+pn db:verify:supabase      -> 25/25 application tables, 25/25 with RLS
+pn db:verify:h11:supabase  -> OK
 ```
 
-`db:verify:h11:supabase` uses connection-local temporary PostgreSQL tables. It validates:
+The H11 probe confirmed:
 
-- required H11 planning tables and CompetitionEntry -> GroupTrainingPlan FK;
-- async transaction commit;
-- equivalent replay/idempotency;
-- rollback after an intentional audit failure;
-- team/group/cohort/plan scope rejection with zero partial writes;
-- plan revision locking and stale-submission rejection.
+- commit/replay: 1 operation, 1 audit, 1 journal entry;
+- stale submission rejection with no additional writes;
+- intentional audit failure rolls back operations, audits and journal completely;
+- cross-scope rejection leaves zero partial writes;
+- plan revision advances only on successful commit.
 
-No H11 migration has been created merely for this probe. Generate/apply a migration only if Drizzle or the approved production concurrency adapter reveals a real persistent schema delta.
+The FK check validates the actual `competition_entries.group_training_plan_id -> group_training_plans.id` relation through PostgreSQL catalog metadata rather than relying on the generated constraint name, which PostgreSQL truncates to its identifier limit.
 
-## Final local story gate
+## Final local technical gate — complete
 
-After KAN-239 evidence and before closing `KAN-224`, pull the latest `h-20-planning-review-persistence` and run:
+The final technical gate is green:
 
-```bash
-pn test
-pn lint
-pn exec tsc --noEmit
-pn build
-pn db:check:supabase
+```text
+pn test               -> 518/518 pass, 0 fail
+pn lint               -> 0 errors, 11 known baseline warnings
+pn exec tsc --noEmit  -> 0 errors
+pn build              -> production build successful
 ```
 
-Expected lint baseline: 0 errors and the same 11 pre-existing warnings. New warnings are not accepted.
+If any code changes after this point, rerun the affected checks and then the complete gate before merge.
 
-Then run the functional walkthrough for the affected planning flow:
+## Remaining functional walkthrough
+
+Before closing `KAN-224`, run the manual walkthrough for the affected planning flow:
 
 1. inspect a base group plan and a cohort variant without mixed scope;
 2. verify competition calendar/provenance is visible in the correct plan;
@@ -122,16 +121,13 @@ Then run the functional walkthrough for the affected planning flow:
 6. verify an athlete in an applicable cohort resolves the variant and another/fallback date resolves the base plan;
 7. verify no console/runtime error in the reviewed flow.
 
-If any code changes after this gate, rerun the affected checks and then the complete gate before merge.
+Record the result in Jira. If the walkthrough reveals a code change, rerun the complete technical gate.
 
 ## Story close sequence
 
-1. Execute and record KAN-239 real Supabase evidence.
-2. Finish KAN-241 documentation review.
-3. Run the complete local gate and functional walkthrough.
-4. Record final evidence in Jira.
-5. Close `KAN-224` only after all checks are green.
-6. Validate final Vercel deployment.
-7. Merge/fast-forward `h-20-planning-review-persistence` into `dashboard` using the normal delivery workflow.
-
-Once H11 is closed and durable information is confirmed in architecture/history, replace/remove this temporary handoff when the next story starts.
+1. Complete the functional/manual walkthrough.
+2. Record final walkthrough evidence in Jira.
+3. Close `KAN-224` only after the walkthrough is green.
+4. Validate final Vercel deployment when quota permits.
+5. Merge/fast-forward `h-20-planning-review-persistence` into `dashboard` using the normal delivery workflow.
+6. Once H11 is closed and durable information is confirmed in architecture/history, replace/remove this temporary handoff when the next story starts.
