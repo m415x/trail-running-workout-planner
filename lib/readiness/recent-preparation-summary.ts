@@ -160,12 +160,7 @@ export function buildRecentPreparationSummary(input: {
 
   const sessionCoverageRatio = dataSufficient ? 1 : 0
   const frequency = dataSufficient
-    ? known(
-        scoped.length / (coverage.window.windowDays / 7),
-        'sessions_per_week',
-        scoped.length,
-        sessionCoverageRatio,
-      )
+    ? known(scoped.length / (coverage.window.windowDays / 7), 'sessions_per_week', scoped.length, sessionCoverageRatio)
     : unknown('sessions_per_week', scoped.length, sessionCoverageRatio, 'insufficient_data')
 
   const continuity = dataSufficient
@@ -239,6 +234,14 @@ export function buildRecentPreparationSummary(input: {
         sufficient: isMetricCoverageSufficient(coverage, 'durationMin'),
         dataSufficient,
         coverageRatio: coverage.metrics.durationMin.ratio,
+      }),
+      peakElevationGainM: maxMetric({
+        records: scoped,
+        metric: 'elevationGainM',
+        unit: 'm',
+        sufficient: isMetricCoverageSufficient(coverage, 'elevationGainM'),
+        dataSufficient,
+        coverageRatio: coverage.metrics.elevationGainM.ratio,
       }),
     },
     continuity: {
