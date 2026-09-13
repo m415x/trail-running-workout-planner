@@ -166,7 +166,6 @@ describe('aislamiento integral team/group/cohort/plan', () => {
   it('propaga conflictos de aislamiento al diff integral', () => {
     const current = buildReview()
     const proposed = structuredClone(current)
-    Object.assign(proposed.scope, { teamId: 'team-2' })
     Object.assign(microcycle(proposed).sessions[0].session, { teamId: 'team-2' })
 
     const diff = buildIntegralPlanningDiff(current, proposed)
