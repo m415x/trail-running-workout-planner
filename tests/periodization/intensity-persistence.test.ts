@@ -10,6 +10,7 @@ import * as intensitySchema from '@/db/intensity-strategy-schema'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import * as loadSchema from '@/db/load-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
+import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as sessionGenerationSchema from '@/db/session-generation-preferences-schema'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
@@ -132,6 +133,7 @@ function createTestDatabase() {
         ...intensitySchema,
         ...sessionGenerationSchema,
         ...readinessSchema,
+        ...raceCatalogSchema,
       },
     }),
   }
