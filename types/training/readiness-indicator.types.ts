@@ -43,7 +43,6 @@ export type PlannedRealizedMetricComparison =
       readonly comparableSessions: number
       readonly plannedTotal: number
       readonly realizedTotal: number
-      /** `(realized - planned) / planned`; negative means realized lower than prescribed. */
       readonly relativeDeviation: number
       readonly absoluteRelativeDeviation: number
       readonly threshold: number
@@ -55,4 +54,60 @@ export interface PlannedRealizedLoadComparison {
   readonly distanceKm: PlannedRealizedMetricComparison
   readonly durationMin: PlannedRealizedMetricComparison
   readonly elevationGainM: PlannedRealizedMetricComparison
+}
+
+export type ComparableSessionBasis = 'workout_id' | 'session_type' | 'coach_selected'
+
+export interface ComparableRealizedSessionSet {
+  readonly basis: ComparableSessionBasis
+  readonly records: readonly RealizedTrainingRecord[]
+}
+
+export type PredictedSessionJumpMetric =
+  | {
+      readonly status: 'insufficient_data'
+      readonly metric: PlanRealMetricName
+      readonly comparableSessions: number
+      readonly threshold: number
+    }
+  | {
+      readonly status: 'assessed'
+      readonly metric: PlanRealMetricName
+      readonly comparableSessions: number
+      readonly plannedValue: number
+      readonly recentReferenceMax: number
+      readonly increaseRatio: number
+      readonly threshold: number
+      readonly exceedsThreshold: boolean
+    }
+
+export interface PredictedSessionJumpAssessment {
+  readonly comparisonBasis: ComparableSessionBasis
+  readonly distanceKm: PredictedSessionJumpMetric
+  readonly durationMin: PredictedSessionJumpMetric
+  readonly elevationGainM: PredictedSessionJumpMetric
+}
+
+export type LongRunConcentrationMetric =
+  | {
+      readonly status: 'insufficient_data'
+      readonly metric: 'distanceKm' | 'durationMin'
+      readonly performedSessions: number
+      readonly minimumPerformedSessions: number
+      readonly threshold: number
+    }
+  | {
+      readonly status: 'assessed'
+      readonly metric: 'distanceKm' | 'durationMin'
+      readonly performedSessions: number
+      readonly weeklyTotal: number
+      readonly longestSessionValue: number
+      readonly ratio: number
+      readonly threshold: number
+      readonly exceedsThreshold: boolean
+    }
+
+export interface LongRunConcentrationAssessment {
+  readonly distance: LongRunConcentrationMetric
+  readonly duration: LongRunConcentrationMetric
 }
