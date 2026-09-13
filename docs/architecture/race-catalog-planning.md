@@ -69,9 +69,9 @@ classifications[]
 
 Nested modality/classification values are cloned. Updating the live `RaceCourse` later therefore cannot mutate an already-created in-memory selection/snapshot.
 
-## Stable catalog reference
+## Stable catalog reference and persistence
 
-The selection also carries:
+The selection carries:
 
 ```text
 RaceCourseReference
@@ -80,15 +80,25 @@ RaceCourseReference
 - raceCourseId
 ```
 
-This reference provides traceability back to the catalog. Persisting the reference belongs to KAN-276 because it requires schema/migration work.
+Persistence stores the optional catalog link in:
 
-The reference does **not** make live catalog data authoritative over the snapshot.
+```text
+competition_entry_race_courses
+- competition_entry_id PK/FK
+- race_course_id FK
+```
+
+Only `race_course_id` is persisted. Event/edition ancestry is resolved through `RaceCourse → RaceEdition → RaceEvent`; duplicating all three IDs in the sidecar would create a second ancestry invariant.
+
+The FK from the sidecar to `RaceCourse` uses `ON DELETE RESTRICT`, while deleting a `CompetitionEntry` cascades only its sidecar row. Catalog soft-delete/archive is therefore the normal lifecycle mechanism and never deletes planning history.
+
+The reference provides traceability back to the catalog. It does **not** make live catalog data authoritative over the snapshot.
 
 ## Legacy CompetitionEntry
 
 Existing Epic 2 entries have no catalog link. They remain valid first-class planning records.
 
-The persistence model introduced later must therefore make catalog linkage optional/null. No migration may fabricate `RaceCourse` identity from competition name/date/distance similarity.
+Catalog linkage is optional. No migration fabricates `RaceCourse` identity from competition name/date/distance similarity.
 
 ## Catalog changes after selection
 
@@ -112,13 +122,22 @@ Therefore H9/H10 planning remains deterministic if:
 - a catalog entity is archived;
 - a legacy `CompetitionEntry` has no catalog reference.
 
-## Persistence boundary
+## Interpretation limits
 
-KAN-273 intentionally introduces no database column. KAN-276 will decide how the optional `RaceCourse` reference and any additional snapshot metadata are stored after the catalog tables themselves exist.
+A selected catalog course describes competitive context; it does not prove that an athlete is prepared or registered.
 
-The persistence design must maintain:
+- Category-distance compatibility remains H8 advisory context.
+- Taper/recovery treatment remains H10 planning policy.
+- Individual preparation/readiness remains H12 and depends on realized athlete evidence.
+- `RaceCourseReference` does not imply athlete registration, payment, qualification, participation or result.
+- Catalog distance, D+, modality, density, kilometer-effort and external classifications are descriptive inputs; none is a medical or readiness certification.
 
-1. optional linkage for legacy/manual entries;
-2. historical snapshot independence;
-3. no cascade that deletes `CompetitionEntry` when a catalog entity is removed/archived;
-4. reproducible planning without a live catalog join.
+## Invariants
+
+1. Catalog selection requires valid live ancestry and enough data for a new `CompetitionEntry`.
+2. `CompetitionEntry` owns the accepted planning snapshot.
+3. Catalog linkage is optional and traceability-only.
+4. Later catalog edits do not silently rewrite planning history.
+5. Legacy/manual entries remain valid without a catalog reference.
+6. Planning remains reproducible without a live catalog join.
+7. Selecting a course never creates an athlete registration or readiness result.
