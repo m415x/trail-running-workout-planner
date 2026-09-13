@@ -82,6 +82,8 @@ RaceCourse
 - id
 - raceEditionId
 - label
+- distanceKm: number | null
+- elevationGainM: number | null
 - scheduledStartAt?
 - startLocationLabel?
 - notes?
@@ -109,7 +111,7 @@ The ownership rule is based on the **smallest domain level at which a value can 
 | Course scheduled start date/time | `RaceCourse` | Different distances may race on different days/times. |
 | Course-specific start location | `RaceCourse` | Courses in one edition may start from different places. |
 | Course notes/instructions | `RaceCourse` | Applies only to that route/prueba. |
-| Distance and D+ | `RaceCourse` | Sporting profile differs per course; introduced by KAN-267. |
+| Distance and D+ | `RaceCourse` | Original editable sporting profile differs per course. |
 | Modality | `RaceCourse` | One edition may contain different modalities; introduced by KAN-268. |
 | Derived density/km-effort | `RaceCourse` derivation | Derived from course originals; introduced by KAN-269. |
 | Classification | `RaceCourse` assessment/reference | Classification applies to a concrete profile and is versioned; KAN-270/271. |
@@ -125,6 +127,45 @@ Treating organizer or location as stable `RaceEvent` data would make historical 
 An edition owns its overall date range (`startDate`/`endDate`). A concrete course may additionally own `scheduledStartAt` because multi-distance events often schedule different distances on different days or times.
 
 The course schedule must fall within the edition range once validation is implemented; KAN-266 establishes ownership, not that policy implementation.
+
+## Original course profile metrics
+
+`distanceKm` and `elevationGainM` are original/editable measurements of `RaceCourse`. Neither is derived from the other.
+
+```text
+RaceCourseOriginalProfile
+- distanceKm: number | null
+- elevationGainM: number | null
+```
+
+### Distance
+
+- unit: kilometers;
+- finite numeric value when known;
+- must be strictly greater than zero;
+- decimal values are valid because an official/measured route does not need to be an integer number of kilometers;
+- `null` means unknown/unpublished and is valid for incomplete catalog data;
+- zero is never a valid substitute for unknown distance.
+
+### Positive elevation gain
+
+- unit: meters of positive elevation (`m+`);
+- finite non-negative numeric value when known;
+- `0` is a legitimate **known** value for a flat course;
+- `null` means unknown/unpublished and must not be converted to zero;
+- D+ is not inferred from distance, modality or a sibling course.
+
+The base validator `validateRaceCourseOriginalProfile` checks only these per-field invariants. It deliberately accepts both metrics as `null` because draft catalog records may exist before official measurements are published.
+
+Requirements such as "a published/selectable course must have enough sporting information" belong to a later publication/application policy, not to the primitive measurement validator.
+
+### Precision
+
+The domain keeps both values as JavaScript/TypeScript `number` without applying implicit rounding. Presentation may format them, but the catalog must preserve the supplied measurement. Persistence precision/storage type is decided with the schema in KAN-276.
+
+### Same nominal distance does not identify a course
+
+Two courses may both report `21` km while having different D+, modality, route or start location. Distance is therefore profile data, never an identity key or uniqueness constraint.
 
 ## Location representation
 
@@ -201,11 +242,8 @@ Neither `RaceEvent` nor `RaceEdition` alone says which route/distance the athlet
 - Historical referenced entities should be archived/cancelled rather than physically deleted.
 - Persistence-level FK/cascade/restrict behavior is deferred to KAN-276.
 
-## Deliberately deferred after KAN-266
+## Deliberately deferred after KAN-267
 
-The identity and metadata ownership are now defined, but these remain separate tasks:
-
-- distance/D+ originals — KAN-267;
 - modality — KAN-268;
 - elevation density and kilometer-effort — KAN-269;
 - official classification research/model — KAN-270/271;
@@ -220,8 +258,9 @@ The identity and metadata ownership are now defined, but these remain separate t
 1. An event is not duplicated for each course/distance.
 2. Mutable/historical metadata lives at the narrowest level where it can vary.
 3. Event branding does not overwrite historical edition metadata.
-4. Different courses in the same edition may have different schedule/start location and later different sporting profiles/modalities.
-5. Names, years, labels and nominal distances are not technical identity.
-6. Planning/future registration reference `RaceCourse`, not the event globally.
-7. Catalog edits never imply silent mutation of planning snapshots.
-8. Missing metadata remains unknown rather than being invented or inherited implicitly.
+4. Different courses in the same edition may have different schedule/start location/profile.
+5. Distance and D+ are original measurements, not identities and not derived from each other.
+6. `null` means unknown; explicit zero D+ means known flat elevation gain.
+7. Planning/future registration reference `RaceCourse`, not the event globally.
+8. Catalog edits never imply silent mutation of planning snapshots.
+9. Missing metadata remains unknown rather than being invented or inherited implicitly.
