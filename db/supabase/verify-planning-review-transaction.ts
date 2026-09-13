@@ -264,17 +264,47 @@ async function verifyRequiredPlanningTables(sql: PostgresClient) {
     throw new Error(`Missing H11 Supabase tables: ${missing.join(', ')}`)
   }
 
-  const constraints = await sql<{ constraintName: string }[]>`
-    select con.conname as "constraintName"
-    from pg_constraint con
-    join pg_class rel on rel.oid = con.conrelid
-    join pg_namespace n on n.oid = rel.relnamespace
-    where n.nspname = 'public'
-      and rel.relname = 'competition_entries'
+  const foreignKeys = await sql<{
+    sourceColumn: string
+    targetSchema: string
+    targetTable: string
+    targetColumn: string
+  }[]>`
+    select
+      source_attribute.attname as "sourceColumn",
+      target_namespace.nspname as "targetSchema",
+      target_table.relname as "targetTable",
+      target_attribute.attname as "targetColumn"
+    from pg_constraint constraint_definition
+    join pg_class source_table
+      on source_table.oid = constraint_definition.conrelid
+    join pg_namespace source_namespace
+      on source_namespace.oid = source_table.relnamespace
+    join pg_class target_table
+      on target_table.oid = constraint_definition.confrelid
+    join pg_namespace target_namespace
+      on target_namespace.oid = target_table.relnamespace
+    join lateral unnest(constraint_definition.conkey, constraint_definition.confkey)
+      with ordinality as key_pair(source_attribute_number, target_attribute_number, ordinal_position)
+      on true
+    join pg_attribute source_attribute
+      on source_attribute.attrelid = source_table.oid
+      and source_attribute.attnum = key_pair.source_attribute_number
+    join pg_attribute target_attribute
+      on target_attribute.attrelid = target_table.oid
+      and target_attribute.attnum = key_pair.target_attribute_number
+    where constraint_definition.contype = 'f'
+      and source_namespace.nspname = 'public'
+      and source_table.relname = 'competition_entries'
   `
-  if (!constraints.some(({ constraintName }) => (
-    constraintName === 'competition_entries_group_training_plan_id_group_training_plans_id_fk'
-  ))) {
+
+  const hasPlanForeignKey = foreignKeys.some((foreignKey) => (
+    foreignKey.sourceColumn === 'group_training_plan_id'
+    && foreignKey.targetSchema === 'public'
+    && foreignKey.targetTable === 'group_training_plans'
+    && foreignKey.targetColumn === 'id'
+  ))
+  if (!hasPlanForeignKey) {
     throw new Error('CompetitionEntry -> GroupTrainingPlan FK is missing')
   }
 }
