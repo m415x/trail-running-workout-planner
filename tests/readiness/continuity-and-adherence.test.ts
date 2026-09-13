@@ -71,6 +71,7 @@ function summary(activeRatio: number | null): RecentPreparationSummary {
     longRun: {
       longestDistanceKm: unknown,
       longestDurationMin: { ...unknown, unit: 'min' },
+      peakElevationGainM: { ...unknown, unit: 'm' },
     },
     continuity: {
       activeBucketRatio: activeRatio === null
