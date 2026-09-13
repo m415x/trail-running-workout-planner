@@ -83,16 +83,26 @@ function reconciliation(
 
 class AsyncMemoryPort implements AsyncPlanningReviewTransactionPort<State> {
   state: State = { applied: [], audits: [], journal: {}, revision: 'revision-a' }
+  private transactionQueue: Promise<void> = Promise.resolve()
 
   constructor(private readonly failAudit = false) {}
 
   async transaction<TResult>(work: (tx: State) => Promise<TResult>) {
+    const previous = this.transactionQueue
+    let release!: () => void
+    this.transactionQueue = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    await previous
+
     const snapshot = structuredClone(this.state)
     try {
       return await work(this.state)
     } catch (error) {
       this.state = snapshot
       throw error
+    } finally {
+      release()
     }
   }
 
@@ -153,6 +163,59 @@ describe('persistencia integral asíncrona', () => {
     assert.equal(first.outcome, 'committed')
     assert.equal(replay.outcome, 'already_committed')
     assert.equal(port.state.revision, 'revision-b')
+    assert.equal(port.state.applied.length, 1)
+    assert.equal(port.state.audits.length, 1)
+    assert.equal(Object.keys(port.state.journal).length, 1)
+  })
+
+  it('serializa doble submit equivalente como commit más replay', async () => {
+    const port = new AsyncMemoryPort()
+    const input = reconciliation()
+
+    const results = await Promise.all([
+      persistIntegralPlanningReconciliationAsync({ reconciliation: input, persistence: port }),
+      persistIntegralPlanningReconciliationAsync({
+        reconciliation: structuredClone(input),
+        persistence: port,
+      }),
+    ])
+
+    assert.deepEqual(
+      results.map(({ outcome }) => outcome).sort(),
+      ['already_committed', 'committed'],
+    )
+    assert.equal(port.state.applied.length, 1)
+    assert.equal(port.state.audits.length, 1)
+    assert.equal(port.state.revision, 'revision-b')
+  })
+
+  it('serializa decisiones concurrentes distintas y rechaza la segunda como stale', async () => {
+    const port = new AsyncMemoryPort()
+
+    const results = await Promise.allSettled([
+      persistIntegralPlanningReconciliationAsync({
+        reconciliation: reconciliation('revision-a', 'revision-b', 42),
+        persistence: port,
+      }),
+      persistIntegralPlanningReconciliationAsync({
+        reconciliation: reconciliation('revision-a', 'revision-c', 44),
+        persistence: port,
+      }),
+    ])
+
+    const fulfilled = results.filter(
+      (result): result is PromiseFulfilledResult<PersistedIntegralPlanningReconciliation> => (
+        result.status === 'fulfilled'
+      ),
+    )
+    const rejected = results.filter(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    )
+
+    assert.equal(fulfilled.length, 1)
+    assert.equal(fulfilled[0].value.outcome, 'committed')
+    assert.equal(rejected.length, 1)
+    assert.ok(rejected[0].reason instanceof StalePlanningReviewError)
     assert.equal(port.state.applied.length, 1)
     assert.equal(port.state.audits.length, 1)
     assert.equal(Object.keys(port.state.journal).length, 1)
