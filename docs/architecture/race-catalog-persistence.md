@@ -74,7 +74,7 @@ Only `race_course_id` is persisted in the sidecar. Event and edition IDs are res
 
 Re-parenting is intentionally absent from update inputs. `raceEventId` and `raceEditionId` are ancestry/identity boundaries, not ordinary mutable fields.
 
-Soft-deleting a parent does not cascade-delete children. Search and selection exclude soft-deleted ancestry; the historical records and FKs remain intact.
+Soft-deleting a parent does not cascade-delete children. Search and selection exclude soft-deleted ancestry; historical records and FKs remain intact.
 
 ## Search and selection
 
@@ -88,6 +88,53 @@ Soft-deleting a parent does not cascade-delete children. Search and selection ex
 
 That query is a discovery filter, not a replacement for `validateRaceCourseSelection`. Planning and TrainingGoal boundaries still run the domain selection policy before accepting a course.
 
+## Migration evidence
+
+The PostgreSQL delta is versioned as:
+
+```text
+drizzle/supabase/0013_bent_jackal.sql
+```
+
+It creates only the five KAN-276 tables:
+
+```text
+race_events
+race_editions
+race_courses
+competition_entry_race_courses
+training_goal_race_courses
+```
+
+No H1–H12 table is dropped or destructively rewritten. The migration was generated with Drizzle, inspected before application, applied successfully to Supabase and followed by the real schema/security verifier.
+
+Post-migration evidence:
+
+```text
+Tablas de aplicación: 34/34
+Tablas con RLS: 34/34
+```
+
+The verifier inventory includes all application tables, including the race catalog and sidecars. PostgreSQL notices about existing Drizzle metadata schema/table and truncation of long generated constraint names are informational only.
+
+## Security boundary
+
+All five new tables have RLS enabled in the deployed Supabase schema. RLS enablement is verified as infrastructure state; this does not by itself invent a tenant ownership model for the global catalog.
+
+The core catalog remains shared product data. Team/athlete isolation continues to live on consumers (`CompetitionEntry`, `TrainingGoal`, future `RaceRegistration`) and their existing ownership boundaries. If future policies allow direct client-side catalog writes, explicit RLS policies/roles must be reviewed for that access pattern rather than inferred from `ENABLE ROW LEVEL SECURITY` alone.
+
 ## Migration rule
 
-Both Drizzle configs include the new schema modules. Generated SQL, snapshots and migration journal entries must be produced by the repository's Drizzle tooling; they are not handwritten. Source/schema work is not considered migration-complete until that generation step and the normal repository gates have run.
+For future changes use the repository sequence:
+
+```text
+schema change
+→ drizzle generate
+→ inspect SQL + metadata
+→ db:check
+→ version generated artifacts
+→ apply migration
+→ db:verify:supabase
+```
+
+Generated migration snapshots/journal are never handwritten. `db:check:supabase` proves migration-chain consistency; it does not prove that the remote database has applied the delta. Only the post-migrate verifier provides that evidence.
