@@ -115,7 +115,9 @@ export async function createTrainingGoal(
         if (!selection.valid) return { error: 'unavailable' }
         const patch = selection.selection.goalPatch
         Object.assign(raw, {
-          targetDate: patch.targetDate, raceName: patch.raceName,
+          title: `${context.event.name} — ${context.course.label}`,
+          targetDate: patch.targetDate,
+          raceName: patch.raceName,
           raceDistanceKm: String(patch.raceDistanceKm),
           raceElevationGain: patch.raceElevationGain === null ? '' : String(patch.raceElevationGain),
         })
