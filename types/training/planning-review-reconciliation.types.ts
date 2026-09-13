@@ -18,6 +18,7 @@ export interface PlanningReviewReconciliationRange {
 }
 
 export interface PlanningReviewScopedOperation {
+  readonly scope: PlanningReviewScope
   readonly identity: string
   readonly parentIdentity: string | null
   readonly entity: PlanningReviewIssueReference
