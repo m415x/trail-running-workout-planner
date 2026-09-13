@@ -9,6 +9,22 @@ export type RaceEditionStatus = 'draft' | 'published' | 'completed' | 'cancelled
 /** Lifecycle of one concrete course offered by an edition. */
 export type RaceCourseStatus = 'draft' | 'published' | 'cancelled'
 
+/** Ownership of one persisted catalog record. */
+export type RaceCatalogSourceOrigin = 'product' | 'external'
+
+/**
+ * Provenance carried by persisted catalog records.
+ *
+ * Product-maintained records need no provider/external id. External records do;
+ * persistence enforces that pair so later imports can be idempotent.
+ */
+export interface RaceCatalogRecordProvenance {
+  readonly origin: RaceCatalogSourceOrigin
+  readonly provider?: string | null
+  readonly externalId?: string | null
+  readonly sourceUrl?: string | null
+}
+
 /** Core modalities understood natively by the application. */
 export type KnownRaceCourseModalityCode =
   | 'road'
@@ -74,6 +90,8 @@ export interface RaceEvent extends BaseEntity {
   websiteUrl?: string | null
   description?: string | null
   status: RaceEventStatus
+  /** Optional at pure-domain boundaries; persisted records always materialize it. */
+  source?: RaceCatalogRecordProvenance
 }
 
 /** One temporal occurrence of a RaceEvent. */
@@ -87,6 +105,7 @@ export interface RaceEdition extends BaseEntity {
   websiteUrl?: string | null
   notes?: string | null
   status: RaceEditionStatus
+  source?: RaceCatalogRecordProvenance
 }
 
 /** One concrete competitive course within a RaceEdition. */
@@ -101,6 +120,7 @@ export interface RaceCourse extends BaseEntity {
   startLocationLabel?: string | null
   notes?: string | null
   status: RaceCourseStatus
+  source?: RaceCatalogRecordProvenance
 }
 
 /** Editable original sporting profile fields owned by RaceCourse. */
