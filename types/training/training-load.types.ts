@@ -67,6 +67,15 @@ export interface TrainingLoadCoverage {
   readonly coverageRatio: number | null
 }
 
+export interface TrainingLoadEvidenceWindow {
+  readonly startDate: string
+  readonly endDate: string
+  readonly status: TrainingLoadSeriesStatus
+  readonly insufficientReasons: readonly TrainingLoadInsufficientReason[]
+  readonly coverage: TrainingLoadCoverage
+  readonly days: readonly DailyTrainingLoad[]
+}
+
 export interface TrainingLoadTrendPoint {
   readonly date: string
   readonly dailyLoadAu: number | null
