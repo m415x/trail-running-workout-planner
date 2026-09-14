@@ -8,6 +8,7 @@ import type {
   ReadinessEvaluationPhaseResolution,
   ReadinessPolicy,
   RealizedMetricName,
+  RealizedTrainingCorrectionSnapshot,
   RecentPreparationSummary,
   RealizedTrainingSource,
 } from '@/types'
@@ -32,6 +33,35 @@ export const workoutLogEvidence = sqliteTable(
   (table) => [
     uniqueIndex('workout_log_evidence_log_unique').on(table.workoutLogId),
     uniqueIndex('workout_log_evidence_source_activity_unique').on(table.source, table.sourceActivityId),
+  ],
+)
+
+/**
+ * Append-only audit trail for manual corrections. The live workout log is the
+ * current projection; before/after snapshots preserve exactly what was changed.
+ */
+export const workoutLogCorrections = sqliteTable(
+  'workout_log_corrections',
+  {
+    ...baseColumns,
+    workoutLogId: text('workout_log_id')
+      .notNull()
+      .references(() => workoutLogs.id, { onDelete: 'restrict' }),
+    correctedByUserId: text('corrected_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    correctedAt: text('corrected_at').notNull(),
+    reason: text('reason'),
+    beforeSnapshot: text('before_snapshot', { mode: 'json' })
+      .$type<RealizedTrainingCorrectionSnapshot>()
+      .notNull(),
+    afterSnapshot: text('after_snapshot', { mode: 'json' })
+      .$type<RealizedTrainingCorrectionSnapshot>()
+      .notNull(),
+  },
+  (table) => [
+    index('workout_log_corrections_log_date_idx').on(table.workoutLogId, table.correctedAt),
+    index('workout_log_corrections_actor_date_idx').on(table.correctedByUserId, table.correctedAt),
   ],
 )
 
