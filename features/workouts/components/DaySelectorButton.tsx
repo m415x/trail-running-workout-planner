@@ -1,6 +1,7 @@
 'use client'
 
 import { createElement } from 'react'
+import { useTranslations } from 'next-intl'
 import { WeekDay } from '@/types'
 import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { DayStatusIndicator } from '@workouts/components/DayStatusIndicator'
@@ -22,6 +23,7 @@ export function DaySelectorButton({
   hideStatusIndicators = false,
   onSelectDay,
 }: DaySelectorButtonProps) {
+  const t = useTranslations('Common')
   const icon = getWorkoutIcon(day.type ?? (day.isRest ? 'Rest' : 'Base'))
 
   return (
@@ -67,7 +69,7 @@ export function DaySelectorButton({
         </div>
       </button>
       {day.isToday && (
-        <span className='font-heading text-[10px] font-bold leading-none text-foreground/60'>HOY</span>
+        <span className='font-heading text-[10px] font-bold leading-none text-foreground/60'>{t('today').toUpperCase()}</span>
       )}
       {!day.isToday && <span className='h-2.5' />}
     </div>
