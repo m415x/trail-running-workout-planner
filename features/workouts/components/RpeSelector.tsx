@@ -8,12 +8,13 @@ import { CustomCardInside } from '@ui/custom/card-containers'
 import { RPE_LEVELS } from '@/lib/constants'
 
 export interface RpeSelectorProps {
-  value?: number
-  onChange: (val: number) => void
+  value?: number | null
+  onChange: (val: number | null) => void
 }
 
-export function RpeSelector({ value = 0, onChange }: RpeSelectorProps) {
-  const currentRpe = RPE_LEVELS.find((l) => l.value === value) ?? RPE_LEVELS[0]
+export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
+  const sliderValue = value ?? 0
+  const currentRpe = RPE_LEVELS.find((l) => l.value === sliderValue) ?? RPE_LEVELS[0]
 
   return (
     <div className='space-y-1.5'>
@@ -23,35 +24,36 @@ export function RpeSelector({ value = 0, onChange }: RpeSelectorProps) {
             Esfuerzo Percibido (RPE 1-10)
           </label>
 
-          {/* Fila del Badge, Título y Trigger alineados */}
           <div className='flex items-center justify-between mt-2 min-h-8'>
             <div className='flex items-center gap-2.5'>
               <span
                 className={cn(
                   'size-7 rounded-xl font-heading font-bold text-xs flex items-center justify-center shadow-xs transition-colors shrink-0',
-                  currentRpe.colorClass,
+                  value === null ? 'bg-muted text-muted-foreground' : currentRpe.colorClass,
                 )}
               >
-                {currentRpe.value}
+                {value === null ? '—' : currentRpe.value}
               </span>
               <div className='flex flex-col'>
-                <span className='font-heading font-bold text-xs text-foreground leading-tight'>{currentRpe.label}</span>
-                <span className='text-[10px] text-muted-foreground leading-tight'>{currentRpe.description}</span>
+                <span className='font-heading font-bold text-xs text-foreground leading-tight'>
+                  {value === null ? '—' : currentRpe.label}
+                </span>
+                {value !== null && (
+                  <span className='text-[10px] text-muted-foreground leading-tight'>{currentRpe.description}</span>
+                )}
               </div>
             </div>
 
-            {/* Trigger a la derecha, compacto y en color primary */}
-            {value !== 0 && (
+            {value !== null && value !== 0 && (
               <AccordionTrigger className='py-0 px-1 text-xs font-medium text-primary hover:text-primary/80 hover:no-underline gap-1'>
                 <span>Detalles</span>
               </AccordionTrigger>
             )}
           </div>
 
-          {/* Slider con recorrido continuo de 0 a 10 */}
           <div className='px-1 py-1.5'>
             <Slider
-              value={[value]}
+              value={[sliderValue]}
               onValueChange={(val) => {
                 const nextVal = Array.isArray(val) ? val[0] : val
                 if (typeof nextVal === 'number') onChange(nextVal)
@@ -62,15 +64,21 @@ export function RpeSelector({ value = 0, onChange }: RpeSelectorProps) {
               className='cursor-pointer py-1'
             />
 
-            <div className='flex justify-between text-[9px] text-muted-foreground font-medium mt-1 px-0.5'>
-              <span>Ninguno</span>
+            <div className='flex items-center justify-between text-[9px] text-muted-foreground font-medium mt-1 px-0.5'>
+              <div className='flex items-center gap-1'>
+                <button type='button' className='rounded px-1 hover:text-foreground' onClick={() => onChange(null)} aria-label='RPE no registrado'>
+                  —
+                </button>
+                <button type='button' className='rounded px-1 hover:text-foreground' onClick={() => onChange(0)} aria-label='RPE cero'>
+                  0
+                </button>
+              </div>
               <span>Máximo</span>
             </div>
           </div>
 
-          {/* Tarjeta de Detalles explicativos */}
           <AccordionContent className='pt-1 pb-0'>
-            {value !== 0 && currentRpe.details?.length > 0 && (
+            {value !== null && value !== 0 && currentRpe.details?.length > 0 && (
               <CustomCardInside className='p-2 rounded-lg bg-background/80 border border-border/40 text-xs space-y-1.5'>
                 <p className='font-semibold text-foreground text-[11px] flex items-center gap-1.5'>
                   <Info size={12} className='text-primary' />
