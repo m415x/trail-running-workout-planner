@@ -106,6 +106,7 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - A touched legacy file does not require unrelated refactoring, but newly exposed hard-coded copy, stale comments or unclear contracts in the modified area should be cleaned up in the same task whenever it can be done safely.
 - If full legacy cleanup would materially expand story scope, document the remaining debt in Jira/docs instead of silently leaving it untracked.
 - Units must be explicit in touched domain contracts (`distanceKm`, `elevationGainM`, `durationMinutes`, etc.).
+- User-facing times use the shared 24-hour formatter and the documented Argentina time-zone convention until user/team time-zone preferences exist; do not rely on runtime AM/PM defaults.
 - Preserve `unknown != 0`, absence != negative assertion, generated != manual.
 - Apply JSDoc incrementally to exported/non-obvious domain contracts and side effects; document intent/invariants, not trivial implementation.
 - Do not implement future-epic work as incidental refactoring. Record the gap instead.

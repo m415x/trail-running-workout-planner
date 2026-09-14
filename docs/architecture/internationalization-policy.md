@@ -129,6 +129,18 @@ Units that are stable domain notation, such as `km` or `m+`, may remain shared
 when their product meaning does not change by locale, while surrounding labels
 and explanatory copy remain localized.
 
+### Time presentation
+
+User-facing times use a 24-hour clock in every supported locale. Date-time values
+use a centered-dot separator between the short date and time; for example,
+`13/9/26 · 18:40 hs` in Spanish and `9/13/26 · 18:40 h` in English.
+
+Formatting must use the shared date-time formatter instead of relying on the
+runtime's default 12/24-hour preference. Until user or team time-zone preferences
+are modeled, operational date-times are presented in
+`America/Argentina/Buenos_Aires`. This convention is migrated progressively on
+touched surfaces; it does not authorize an unrelated all-screen rewrite.
+
 ## Definition of done rule
 
 For every new or substantially modified user-facing scope:

@@ -2,6 +2,8 @@ import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
+import { formatDateTime24Hour } from '@/lib/date-time/format-date-time-24-hour'
+
 import { Badge } from '@ui/badge'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import type {
@@ -23,14 +25,6 @@ function formatDate(value: string, locale: string) {
     month: 'numeric',
     year: 'numeric',
   }).format(new Date(`${value}T00:00:00Z`))
-}
-
-function formatDateTime(value: string | null | undefined, locale: string) {
-  if (!value) return '—'
-  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-AR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(new Date(value))
 }
 
 function metricValue(
@@ -149,11 +143,11 @@ export function RealizedTrainingHistory({
               <dl className='grid grid-cols-2 gap-x-5 gap-y-2 text-sm sm:text-right'>
                 <div>
                   <dt className='text-muted-foreground'>{t('performedAt')}</dt>
-                  <dd className='font-medium'>{formatDateTime(record.performedAt, language)}</dd>
+                  <dd className='font-medium'>{formatDateTime24Hour(record.performedAt, language)}</dd>
                 </div>
                 <div>
                   <dt className='text-muted-foreground'>{t('loggedAt')}</dt>
-                  <dd className='font-medium'>{formatDateTime(record.provenance.loggedAt, language)}</dd>
+                  <dd className='font-medium'>{formatDateTime24Hour(record.provenance.loggedAt, language)}</dd>
                 </div>
               </dl>
             </div>
@@ -192,7 +186,7 @@ export function RealizedTrainingHistory({
                     return (
                       <li key={correction.id} className='rounded-md bg-muted/40 p-3 text-xs'>
                         <div className='flex flex-wrap gap-x-4 gap-y-1'>
-                          <span><span className='text-muted-foreground'>{t('correctedAt')}:</span> {formatDateTime(correction.correctedAt, language)}</span>
+                          <span><span className='text-muted-foreground'>{t('correctedAt')}:</span> {formatDateTime24Hour(correction.correctedAt, language)}</span>
                           <span><span className='text-muted-foreground'>{t('correctedBy')}:</span> {correction.correctedByUserId}</span>
                         </div>
                         <p className='mt-1'>
