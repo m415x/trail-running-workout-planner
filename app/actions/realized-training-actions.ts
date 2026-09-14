@@ -63,7 +63,8 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
 
 /**
  * Coach-facing history boundary. Athlete lookup enforces the current team before
- * any realized evidence is returned, so an arbitrary athlete ID cannot cross teams.
+ * any realized evidence is returned, and the repository receives that same team
+ * scope as a second line of defense.
  */
 export async function getRealizedTrainingHistoryForAthleteAction(athleteId: string) {
   const athlete = await getAthleteById(athleteId)
@@ -71,7 +72,7 @@ export async function getRealizedTrainingHistoryForAthleteAction(athleteId: stri
 
   return {
     success: true as const,
-    data: listRealizedTrainingRecordsForAthlete(athlete.id),
+    data: listRealizedTrainingRecordsForAthlete(athlete.id, athlete.teamId),
   }
 }
 
