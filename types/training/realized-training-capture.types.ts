@@ -39,6 +39,9 @@ export interface ManualRealizedTrainingCaptureInput {
   readonly athleteNotes: string | null
 }
 
+/** Client-safe capture shape. Athlete ownership is resolved on the server. */
+export type ManualRealizedTrainingClientInput = Omit<ManualRealizedTrainingCaptureInput, 'athleteId'>
+
 export type RealizedTrainingCaptureField =
   | 'athleteId'
   | 'date'
