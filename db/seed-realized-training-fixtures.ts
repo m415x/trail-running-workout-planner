@@ -67,6 +67,7 @@ async function seedRealizedTrainingFixtures() {
     throw new Error('Ana Acosta must belong to a sporting group for prescribed fixtures.')
   }
 
+  const groupId = athlete.groupId
   const today = getCurrentDateInArgentina()
   const fixtureWeekStart = shiftISODate(getMondayFromISODate(today), -7)
   const completedDate = shiftISODate(fixtureWeekStart, 1)
@@ -83,7 +84,7 @@ async function seedRealizedTrainingFixtures() {
 
   await db.insert(groupTrainingPlans).values({
     id: historicalPlanId,
-    groupId: athlete.groupId,
+    groupId,
     planningCohortId: null,
     sourceGroupTrainingPlanId: null,
     title: 'KAN-297 — Historical realized-training walkthrough',
@@ -91,7 +92,7 @@ async function seedRealizedTrainingFixtures() {
     notes: 'Isolated historical plan for the realized-training walkthrough fixtures.',
   }).onConflictDoUpdate({
     target: groupTrainingPlans.id,
-    set: { groupId: athlete.groupId, status: 'active' },
+    set: { groupId, status: 'active' },
   }).run()
 
   await db.insert(macrocycles).values({
@@ -206,7 +207,7 @@ async function seedRealizedTrainingFixtures() {
       .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
       .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
       .where(and(
-        eq(groupTrainingPlans.groupId, athlete.groupId!),
+        eq(groupTrainingPlans.groupId, groupId),
         isNull(groupTrainingPlans.planningCohortId),
         lte(microcycles.startDate, date),
         gte(microcycles.endDate, date),
@@ -252,7 +253,7 @@ async function seedRealizedTrainingFixtures() {
     const prescription = {
       id: fixture.id,
       sessionId: fixture.sessionId,
-      groupId: athlete.groupId,
+      groupId,
       microcycleId: await resolveBaseMicrocycle(fixture.date),
       distanceKm: fixture.distanceKm,
       durationMin: fixture.durationMin,
@@ -350,31 +351,33 @@ async function seedRealizedTrainingFixtures() {
     }).run()
   }
 
+  const evidenceRows: Array<typeof workoutLogEvidence.$inferInsert> = [
+    {
+      id: `${FIXTURE_PREFIX}evidence_completed`,
+      workoutLogId: `${FIXTURE_PREFIX}log_completed`,
+      source: 'manual',
+      sourceActivityId: null,
+      knownMetricFields: ['distanceKm', 'durationMin', 'elevationGainM', 'avgHrBpm', 'rpe'],
+    },
+    {
+      id: `${FIXTURE_PREFIX}evidence_partial`,
+      workoutLogId: `${FIXTURE_PREFIX}log_partial`,
+      source: 'manual',
+      sourceActivityId: null,
+      knownMetricFields: ['distanceKm', 'durationMin', 'elevationGainM', 'rpe'],
+    },
+    {
+      id: `${FIXTURE_PREFIX}evidence_extra`,
+      workoutLogId: `${FIXTURE_PREFIX}log_extra`,
+      source: 'manual',
+      sourceActivityId: null,
+      knownMetricFields: ['distanceKm', 'durationMin', 'elevationGainM', 'rpe'],
+    },
+  ]
+
   await db
     .insert(workoutLogEvidence)
-    .values([
-      {
-        id: `${FIXTURE_PREFIX}evidence_completed`,
-        workoutLogId: `${FIXTURE_PREFIX}log_completed`,
-        source: 'manual',
-        sourceActivityId: null,
-        knownMetricFields: ['distanceKm', 'durationMin', 'elevationGain', 'avgHr', 'rpe'],
-      },
-      {
-        id: `${FIXTURE_PREFIX}evidence_partial`,
-        workoutLogId: `${FIXTURE_PREFIX}log_partial`,
-        source: 'manual',
-        sourceActivityId: null,
-        knownMetricFields: ['distanceKm', 'durationMin', 'elevationGain', 'rpe'],
-      },
-      {
-        id: `${FIXTURE_PREFIX}evidence_extra`,
-        workoutLogId: `${FIXTURE_PREFIX}log_extra`,
-        source: 'manual',
-        sourceActivityId: null,
-        knownMetricFields: ['distanceKm', 'durationMin', 'elevationGain', 'rpe'],
-      },
-    ])
+    .values(evidenceRows)
     .onConflictDoNothing()
     .run()
 
