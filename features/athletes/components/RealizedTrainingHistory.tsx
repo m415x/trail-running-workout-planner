@@ -1,4 +1,5 @@
-import { Activity, Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
+import type { ReactNode } from 'react'
+import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
 import { Badge } from '@ui/badge'
 import type {
@@ -169,7 +170,7 @@ export function RealizedTrainingHistory({ records, locale }: RealizedTrainingHis
   )
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Metric({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <div className='rounded-md bg-muted/40 p-3'>
       <dt className='flex items-center gap-2 text-xs text-muted-foreground'>
