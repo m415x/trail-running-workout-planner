@@ -76,7 +76,7 @@ export function RealizedTrainingCalendar({
             </div>
           </AccordionTrigger>
 
-          <AccordionContent className='px-6 pb-6'>
+          <AccordionContent className='px-6 pb-6 [&_a]:no-underline [&_a:hover]:no-underline'>
             <div className='grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground'>
               {dates.slice(0, 7).map(date => (
                 <div key={date} className='py-1'>
@@ -97,7 +97,7 @@ export function RealizedTrainingCalendar({
                     key={date}
                     className={cn(
                       'min-h-20 rounded-md border p-1.5 transition-colors',
-                      selected && 'border-primary bg-primary/5',
+                      selected && 'border-primary',
                     )}
                   >
                     <button
@@ -107,9 +107,8 @@ export function RealizedTrainingCalendar({
                       aria-label={formatSelectedDate(date)}
                       className={cn(
                         'flex size-6 items-center justify-center rounded-lg text-xs font-semibold transition-all',
-                        !selected && 'hover:bg-secondary/60',
-                        selected && 'bg-primary font-bold text-primary-foreground shadow-sm',
-                        isToday && !selected && 'ring-1 ring-primary font-bold text-primary',
+                        !isToday && 'hover:bg-secondary/60',
+                        isToday && 'bg-primary font-bold text-primary-foreground shadow-sm',
                       )}
                     >
                       {dayNumber}
@@ -123,7 +122,7 @@ export function RealizedTrainingCalendar({
                           </>
                         )
                         const className = cn(
-                          'flex items-center gap-1 rounded border px-1 py-0.5 text-[10px]',
+                          'flex items-center gap-1 rounded border px-1 py-0.5 text-[10px] no-underline hover:no-underline',
                           statusStyles[session.status],
                           session.recordId && 'hover:ring-2 hover:ring-primary/30',
                         )
@@ -157,7 +156,7 @@ export function RealizedTrainingCalendar({
                           key={recordId}
                           href={`#realized-training-${recordId}`}
                           title={t('openRecord')}
-                          className='flex items-center gap-1 rounded border border-violet-500/50 bg-violet-500/10 px-1 py-0.5 text-[10px] text-violet-700 hover:ring-2 hover:ring-primary/30 dark:text-violet-300'
+                          className='flex items-center gap-1 rounded border border-violet-500/50 bg-violet-500/10 px-1 py-0.5 text-[10px] text-violet-700 no-underline hover:no-underline hover:ring-2 hover:ring-primary/30 dark:text-violet-300'
                           onClick={() => setSelectedDate(date)}
                         >
                           <CirclePlus className='size-3.5' />
@@ -207,7 +206,7 @@ export function RealizedTrainingCalendar({
                         {session.recordId && (
                           <a
                             href={`#realized-training-${session.recordId}`}
-                            className='text-xs font-medium text-primary underline-offset-4 hover:underline'
+                            className='text-xs font-medium text-primary no-underline hover:no-underline'
                           >
                             {t('openRecord')}
                           </a>
@@ -222,7 +221,7 @@ export function RealizedTrainingCalendar({
                         </span>
                         <a
                           href={`#realized-training-${recordId}`}
-                          className='text-xs font-medium text-primary underline-offset-4 hover:underline'
+                          className='text-xs font-medium text-primary no-underline hover:no-underline'
                         >
                           {t('openRecord')}
                         </a>
