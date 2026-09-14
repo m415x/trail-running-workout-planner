@@ -4,11 +4,13 @@ import { useTranslations } from 'next-intl'
 import type {
   AthletePlanRealComparison,
   PlanRealMetricOperand,
+  PlanRealMetricUnit,
 } from '@/types'
+import { cn } from '@/lib/utils'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
-import { cn } from '@/lib/utils'
+import { Card } from '@ui/card'
 
 interface PlanRealComparisonProps {
   comparison: AthletePlanRealComparison
@@ -25,6 +27,30 @@ const stateStyles = {
   unknown: 'text-muted-foreground',
 } as const
 
+function formatUnit(unit: PlanRealMetricUnit, locale: string) {
+  const labels: Record<PlanRealMetricUnit, string> = locale === 'en'
+    ? {
+        km: 'km',
+        min: 'min',
+        m: 'm',
+        bpm: 'bpm',
+        rpe: 'RPE',
+        hr_zone: 'HR zone',
+        pam_percent: '% PAM',
+      }
+    : {
+        km: 'km',
+        min: 'min',
+        m: 'm',
+        bpm: 'ppm',
+        rpe: 'RPE',
+        hr_zone: 'Zona FC',
+        pam_percent: '% PAM',
+      }
+
+  return labels[unit]
+}
+
 function formatOperand(
   operand: PlanRealMetricOperand,
   locale: string,
@@ -36,16 +62,16 @@ function formatOperand(
         maximumFractionDigits: 2,
       }).format(operand.value)
     : operand.value
-  return `${value} ${operand.unit}`
+  return `${value} ${formatUnit(operand.unit, locale)}`
 }
 
-function formatDelta(value: number | null, unit: string | null, locale: string) {
+function formatDelta(value: number | null, unit: PlanRealMetricUnit | null, locale: string) {
   if (value === null || unit === null) return '—'
   const formatted = new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-AR', {
     maximumFractionDigits: 2,
     signDisplay: 'always',
   }).format(value)
-  return `${formatted} ${unit}`
+  return `${formatted} ${formatUnit(unit, locale)}`
 }
 
 export function PlanRealComparison({
@@ -57,120 +83,148 @@ export function PlanRealComparison({
   const t = useTranslations('PlanRealComparison')
   const plannedItems = comparison.items.filter(item => item.kind === 'planned_session')
   const unplannedItems = comparison.items.filter(item => item.kind === 'unplanned_realized')
+  const stateCounts = plannedItems.reduce(
+    (counts, item) => ({ ...counts, [item.state]: counts[item.state] + 1 }),
+    { matched: 0, deviation: 0, known_not_completed: 0, unknown: 0 },
+  )
 
   return (
-    <Card>
-      <CardHeader className='gap-3 sm:flex-row sm:items-start sm:justify-between'>
-        <div>
-          <CardTitle>{t('title')}</CardTitle>
-          <p className='mt-1 text-sm text-muted-foreground'>{t('description')}</p>
-        </div>
-        <div className='flex gap-2'>
-          <Link
-            href={weekHref}
-            className={buttonVariants({
-              variant: comparison.window.kind === 'week' ? 'default' : 'outline',
-              size: 'sm',
-            })}
-          >
-            {t('window.week')}
-          </Link>
-          <Link
-            href={monthHref}
-            className={buttonVariants({
-              variant: comparison.window.kind === 'month' ? 'default' : 'outline',
-              size: 'sm',
-            })}
-          >
-            {t('window.month')}
-          </Link>
-        </div>
-      </CardHeader>
-      <CardContent className='space-y-4'>
-        {comparison.planningLimitations.length > 0 && (
-          <div role='alert' className='rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
-            {t('planningLimitations', { count: comparison.planningLimitations.length })}
-          </div>
-        )}
-
-        {plannedItems.length === 0 && unplannedItems.length === 0 ? (
-          <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
-            {t('empty')}
-          </p>
-        ) : (
-          <div className='space-y-3'>
-            {plannedItems.map(item => (
-              <article key={item.sessionId} className='rounded-lg border p-4'>
-                <div className='flex flex-wrap items-start justify-between gap-3'>
-                  <div>
-                    <p className='font-medium'>{item.sessionTitle}</p>
-                    <p className='text-sm text-muted-foreground'>{item.date}</p>
-                  </div>
-                  <Badge variant='outline' className={stateStyles[item.state]}>
-                    {t(`state.${item.state}`)}
+    <Card className='py-0'>
+      <Accordion className='w-full'>
+        <AccordionItem value='plan-real-comparison' className='border-none'>
+          <AccordionTrigger className='px-6 py-5 hover:no-underline'>
+            <div className='min-w-0 space-y-3 pr-4'>
+              <div>
+                <h3 className='text-base font-semibold'>{t('title')}</h3>
+                <p className='mt-1 text-sm font-normal text-muted-foreground'>{t('description')}</p>
+              </div>
+              <div className='flex flex-wrap gap-1.5'>
+                {(['matched', 'deviation', 'known_not_completed', 'unknown'] as const).map(state => (
+                  stateCounts[state] > 0 && (
+                    <Badge key={state} variant='outline' className={cn('font-normal', stateStyles[state])}>
+                      {stateCounts[state]} · {t(`state.${state}`)}
+                    </Badge>
+                  )
+                ))}
+                {unplannedItems.length > 0 && (
+                  <Badge variant='outline' className={cn('font-normal', stateStyles.unplanned_realized)}>
+                    {unplannedItems.length} · {t('state.unplanned_realized')}
                   </Badge>
-                </div>
+                )}
+              </div>
+            </div>
+          </AccordionTrigger>
 
-                <div className='mt-4 grid gap-2 md:grid-cols-2'>
-                  {item.metrics.map(metric => {
-                    const evaluation = metric.evaluation
-                    const unit = evaluation.planned.unit ?? evaluation.realized.unit
-                    return (
-                      <div key={metric.name} className='rounded-md bg-muted/40 p-3 text-sm'>
-                        <div className='flex items-center justify-between gap-2'>
-                          <p className='font-medium'>{t(`metric.${metric.name}`)}</p>
-                          <span className={cn(
-                            'text-xs',
-                            evaluation.state === 'deviation' && 'text-amber-700 dark:text-amber-300',
-                            evaluation.state === 'not_evaluated' && 'text-muted-foreground',
-                          )}>
-                            {t(`evaluation.${evaluation.state}`)}
-                          </span>
+          <AccordionContent className='px-6 pb-6'>
+            <div className='mb-4 flex justify-end gap-2'>
+              <Link
+                href={weekHref}
+                className={buttonVariants({
+                  variant: comparison.window.kind === 'week' ? 'default' : 'outline',
+                  size: 'sm',
+                })}
+              >
+                {t('window.week')}
+              </Link>
+              <Link
+                href={monthHref}
+                className={buttonVariants({
+                  variant: comparison.window.kind === 'month' ? 'default' : 'outline',
+                  size: 'sm',
+                })}
+              >
+                {t('window.month')}
+              </Link>
+            </div>
+
+            <div className='space-y-4'>
+              {comparison.planningLimitations.length > 0 && (
+                <div role='alert' className='rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm'>
+                  {t('planningLimitations', { count: comparison.planningLimitations.length })}
+                </div>
+              )}
+
+              {plannedItems.length === 0 && unplannedItems.length === 0 ? (
+                <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
+                  {t('empty')}
+                </p>
+              ) : (
+                <div className='space-y-3'>
+                  {plannedItems.map(item => (
+                    <article key={item.sessionId} className='rounded-lg border p-4'>
+                      <div className='flex flex-wrap items-start justify-between gap-3'>
+                        <div>
+                          <p className='font-medium'>{item.sessionTitle}</p>
+                          <p className='text-sm text-muted-foreground'>{item.date}</p>
                         </div>
-                        <dl className='mt-2 grid grid-cols-3 gap-2 text-xs'>
-                          <div>
-                            <dt className='text-muted-foreground'>{t('planned')}</dt>
-                            <dd className='mt-0.5 font-medium'>
-                              {formatOperand(evaluation.planned, locale, t('unknown'))}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className='text-muted-foreground'>{t('realized')}</dt>
-                            <dd className='mt-0.5 font-medium'>
-                              {formatOperand(evaluation.realized, locale, t('unknown'))}
-                            </dd>
-                          </div>
-                          <div>
-                            <dt className='text-muted-foreground'>{t('difference')}</dt>
-                            <dd className='mt-0.5 font-medium'>
-                              {formatDelta(evaluation.absoluteDelta, unit, locale)}
-                            </dd>
-                          </div>
-                        </dl>
+                        <Badge variant='outline' className={stateStyles[item.state]}>
+                          {t(`state.${item.state}`)}
+                        </Badge>
                       </div>
-                    )
-                  })}
-                </div>
-              </article>
-            ))}
 
-            {unplannedItems.map(item => (
-              <article key={item.realized.recordId} className='rounded-lg border border-violet-500/30 p-4'>
-                <div className='flex flex-wrap items-center justify-between gap-3'>
-                  <div>
-                    <p className='font-medium'>{t('unplannedTitle')}</p>
-                    <p className='text-sm text-muted-foreground'>{item.date}</p>
-                  </div>
-                  <Badge variant='outline' className={stateStyles.unplanned_realized}>
-                    {t('state.unplanned_realized')}
-                  </Badge>
+                      <div className='mt-4 grid gap-2 md:grid-cols-2'>
+                        {item.metrics.map(metric => {
+                          const evaluation = metric.evaluation
+                          const unit = evaluation.planned.unit ?? evaluation.realized.unit
+                          return (
+                            <div key={metric.name} className='rounded-md bg-muted/40 p-3 text-sm'>
+                              <div className='flex items-center justify-between gap-2'>
+                                <p className='font-medium'>{t(`metric.${metric.name}`)}</p>
+                                <span className={cn(
+                                  'text-xs',
+                                  evaluation.state === 'deviation' && 'text-amber-700 dark:text-amber-300',
+                                  evaluation.state === 'not_evaluated' && 'text-muted-foreground',
+                                )}>
+                                  {t(`evaluation.${evaluation.state}`)}
+                                </span>
+                              </div>
+                              <dl className='mt-2 grid grid-cols-3 gap-2 text-xs'>
+                                <div>
+                                  <dt className='text-muted-foreground'>{t('planned')}</dt>
+                                  <dd className='mt-0.5 font-medium'>
+                                    {formatOperand(evaluation.planned, locale, t('unknown'))}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className='text-muted-foreground'>{t('realized')}</dt>
+                                  <dd className='mt-0.5 font-medium'>
+                                    {formatOperand(evaluation.realized, locale, t('unknown'))}
+                                  </dd>
+                                </div>
+                                <div>
+                                  <dt className='text-muted-foreground'>{t('difference')}</dt>
+                                  <dd className='mt-0.5 font-medium'>
+                                    {formatDelta(evaluation.absoluteDelta, unit, locale)}
+                                  </dd>
+                                </div>
+                              </dl>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </article>
+                  ))}
+
+                  {unplannedItems.map(item => (
+                    <article key={item.realized.recordId} className='rounded-lg border border-violet-500/30 p-4'>
+                      <div className='flex flex-wrap items-center justify-between gap-3'>
+                        <div>
+                          <p className='font-medium'>{t('unplannedTitle')}</p>
+                          <p className='text-sm text-muted-foreground'>{item.date}</p>
+                        </div>
+                        <Badge variant='outline' className={stateStyles.unplanned_realized}>
+                          {t('state.unplanned_realized')}
+                        </Badge>
+                      </div>
+                      <p className='mt-2 text-sm text-muted-foreground'>{t('unplannedDescription')}</p>
+                    </article>
+                  ))}
                 </div>
-                <p className='mt-2 text-sm text-muted-foreground'>{t('unplannedDescription')}</p>
-              </article>
-            ))}
-          </div>
-        )}
-      </CardContent>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </Card>
   )
 }
