@@ -4,7 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
-import type { ManualRealizedTrainingClientInput, TrackData, WeatherData, WorkoutCardProps } from '@/types'
+import type {
+  ManualRealizedTrainingClientInput,
+  RealizedTrainingRecord,
+  TrackData,
+  WeatherData,
+  WorkoutCardProps,
+} from '@/types'
 import {
   correctManualRealizedTrainingAction,
   createManualRealizedTrainingAction,
@@ -28,6 +34,7 @@ interface UseWorkoutCardParams {
   TrackData?: TrackData | null
   athletePamSec?: number
   isCompleted?: boolean
+  onRealizedTrainingSaved?: (record: RealizedTrainingRecord) => void
 }
 
 interface DurableCaptureState {
@@ -45,6 +52,7 @@ export function useWorkoutCard({
   TrackData,
   athletePamSec,
   isCompleted: initialIsCompleted = false,
+  onRealizedTrainingSaved,
 }: UseWorkoutCardParams) {
   const t = useTranslations('Workouts')
 
@@ -103,14 +111,10 @@ export function useWorkoutCard({
   }, [workout.zone, maxHr, restHr])
 
   const targetCoordinates = useMemo(() => {
-    if (TrackData?.startCoordinates) {
-      return TrackData.startCoordinates
-    }
-
+    if (TrackData?.startCoordinates) return TrackData.startCoordinates
     if (workout.locationKey && TRAINING_LOCATIONS[workout.locationKey]) {
       return TRAINING_LOCATIONS[workout.locationKey]
     }
-
     return DEFAULT_FALLBACK_LOCATION
   }, [TrackData, workout.locationKey])
 
@@ -141,7 +145,6 @@ export function useWorkoutCard({
     }
 
     loadWeather()
-
     return () => {
       isMounted = false
     }
@@ -202,6 +205,7 @@ export function useWorkoutCard({
         workoutLogId: captureState.workoutLogId,
         editableInput: data,
       })
+      onRealizedTrainingSaved?.(result.data)
       return true
     }
 
@@ -213,6 +217,7 @@ export function useWorkoutCard({
       workoutLogId: result.data.id,
       editableInput: data,
     })
+    onRealizedTrainingSaved?.(result.data)
     return true
   }
 
