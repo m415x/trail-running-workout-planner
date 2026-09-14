@@ -50,6 +50,16 @@ function realized(input: {
   }
 }
 
+function dates(startDate: string, count: number): string[] {
+  const values: string[] = []
+  const date = new Date(`${startDate}T00:00:00Z`)
+  for (let index = 0; index < count; index += 1) {
+    values.push(date.toISOString().slice(0, 10))
+    date.setUTCDate(date.getUTCDate() + 1)
+  }
+  return values
+}
+
 describe('training load evidence window', () => {
   it('counts known load, confirmed rest and gaps separately', () => {
     const result = buildTrainingLoadEvidenceWindow({
@@ -73,6 +83,7 @@ describe('training load evidence window', () => {
       unknownLoadDays: 0,
       noEvidenceDays: 1,
       usableDays: 2,
+      currentUsableStreakDays: 1,
       coverageRatio: 2 / 3,
     })
   })
@@ -88,25 +99,34 @@ describe('training load evidence window', () => {
     assert.ok(result.insufficientReasons.includes('no_reliable_evidence'))
   })
 
-  it('reports warming up before the configured long-term history is reached', () => {
-    const result = buildTrainingLoadEvidenceWindow({
-      startDate: '2026-09-05',
-      endDate: '2026-09-14',
-      records: [realized({ id: 'load', date: '2026-09-14' })],
-    })
-
-    assert.equal(result.status, 'warming_up')
-    assert.ok(result.insufficientReasons.includes('insufficient_history'))
-  })
-
-  it('becomes available after the configured warm-up horizon when reliable evidence exists', () => {
+  it('reports warming up while the current reliable streak is shorter than 42 days', () => {
     const result = buildTrainingLoadEvidenceWindow({
       startDate: '2026-08-04',
       endDate: '2026-09-14',
       records: [realized({ id: 'load', date: '2026-09-14' })],
     })
 
+    assert.equal(result.status, 'warming_up')
+    assert.equal(result.coverage.currentUsableStreakDays, 1)
+    assert.ok(result.insufficientReasons.includes('insufficient_history'))
+  })
+
+  it('becomes available after 42 consecutive reliable days', () => {
+    const reliableDates = dates('2026-08-04', 42)
+    const records = reliableDates.map((date, index) => realized({
+      id: `day-${index}`,
+      date,
+      ...(index === 41 ? {} : { status: 'rest' as const, durationMin: null, rpe: null }),
+    }))
+
+    const result = buildTrainingLoadEvidenceWindow({
+      startDate: reliableDates[0]!,
+      endDate: reliableDates[41]!,
+      records,
+    })
+
     assert.equal(result.days.length, 42)
+    assert.equal(result.coverage.currentUsableStreakDays, 42)
     assert.equal(result.status, 'available')
     assert.deepEqual(result.insufficientReasons, [])
   })
