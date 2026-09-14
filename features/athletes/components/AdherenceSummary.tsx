@@ -1,12 +1,15 @@
-import { Activity, CircleHelp, Gauge, TrendingDown, TrendingUp, Minus } from 'lucide-react'
+'use client'
+
+import { Activity, CircleHelp, Gauge, Minus, TrendingDown, TrendingUp } from 'lucide-react'
 
 import type {
   AthleteAdherence,
   AthleteAdherenceTrend,
   TrainingComparisonMetricName,
 } from '@/types'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
 import { Badge } from '@ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Card } from '@ui/card'
 
 interface AdherenceSummaryProps {
   adherence: AthleteAdherence
@@ -86,90 +89,118 @@ export function AdherenceSummary({ adherence, trend, locale }: AdherenceSummaryP
     ? labels[trend.direction]
     : labels.trendInsufficient
 
+  const frequencySummary = adherence.frequency.state === 'available'
+    ? percent(adherence.frequency.adherencePercent, language)
+    : labels.insufficient
+
   return (
-    <Card>
-      <CardHeader className='pb-3'>
-        <div className='flex flex-wrap items-start justify-between gap-3'>
-          <div>
-            <CardTitle className='flex items-center gap-2'>
-              <Activity className='size-5' />
-              {labels.title}
-            </CardTitle>
-            <p className='mt-1 text-sm text-muted-foreground'>{labels.description}</p>
-          </div>
-          <Badge variant='outline'>
-            {labels.rule}: {adherence.rule.ruleId} v{adherence.rule.version}
-          </Badge>
-        </div>
-      </CardHeader>
-
-      <CardContent className='space-y-4'>
-        <div className='grid gap-3 md:grid-cols-4'>
-          <div className='rounded-lg border p-4 md:col-span-1'>
-            <p className='text-xs text-muted-foreground'>{labels.frequency}</p>
-            <p className='mt-1 text-3xl font-bold'>
-              {adherence.frequency.state === 'available'
-                ? percent(adherence.frequency.adherencePercent, language)
-                : '—'}
-            </p>
-            {adherence.frequency.state === 'insufficient_data' && (
-              <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>{labels.insufficient}</p>
-            )}
-          </div>
-
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.coverage}</p>
-            <p className='mt-1 text-xl font-semibold'>{percent(adherence.coverage.coveragePercent, language)}</p>
-          </div>
-
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.denominator}</p>
-            <p className='mt-1 text-xl font-semibold'>
-              {adherence.frequency.counts.denominator} / {adherence.coverage.eligiblePlannedSessions}
-            </p>
-          </div>
-
-          <div className='rounded-lg border p-4'>
-            <p className='flex items-center gap-1 text-xs text-muted-foreground'>
-              {trendIcon}
-              {labels.trend}
-            </p>
-            <p className='mt-1 text-sm font-semibold'>{trendLabel}</p>
-            {trend.state === 'available' && (
-              <p className='text-xs text-muted-foreground'>
-                {trend.changePercentagePoints > 0 ? '+' : ''}{trend.changePercentagePoints.toFixed(0)} pp
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className='flex flex-wrap gap-2 text-xs'>
-          <Badge variant='outline'>{labels.unknown}: {adherence.coverage.unknownSessions}</Badge>
-          <Badge variant='outline'>{labels.extra}: {adherence.coverage.unplannedRealizedSessions}</Badge>
-        </div>
-
-        <div>
-          <p className='mb-2 flex items-center gap-2 text-sm font-medium'>
-            <Gauge className='size-4' />
-            {labels.dimensions}
-          </p>
-          <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
-            {adherence.dimensions.map(dimension => (
-              <div key={dimension.metric} className='rounded-md bg-muted/40 p-3'>
-                <p className='text-xs text-muted-foreground'>{metricLabels[language][dimension.metric]}</p>
-                <p className='mt-1 font-semibold'>
-                  {dimension.state === 'available'
-                    ? percent(dimension.adherencePercent, language)
-                    : labels.insufficient}
-                </p>
-                <p className='mt-1 text-[11px] text-muted-foreground'>
-                  {dimension.counts.comparableSessions} / {adherence.coverage.eligiblePlannedSessions}
-                </p>
+    <Card className='py-0'>
+      <Accordion className='w-full'>
+        <AccordionItem value='adherence-summary' className='border-none'>
+          <AccordionTrigger className='px-6 py-5 hover:no-underline'>
+            <div className='min-w-0 space-y-3 pr-4 text-left'>
+              <div>
+                <h3 className='flex items-center gap-2 text-base font-semibold'>
+                  <Activity className='size-5' />
+                  {labels.title}
+                </h3>
+                <p className='mt-1 text-sm font-normal text-muted-foreground'>{labels.description}</p>
               </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
+
+              <div className='flex flex-wrap gap-1.5'>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.frequency}: {frequencySummary}
+                </Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.coverage}: {percent(adherence.coverage.coveragePercent, language)}
+                </Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.denominator}: {adherence.frequency.counts.denominator} / {adherence.coverage.eligiblePlannedSessions}
+                </Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.trend}: {trendLabel}
+                </Badge>
+              </div>
+            </div>
+          </AccordionTrigger>
+
+          <AccordionContent className='px-6 pb-6'>
+            <div className='space-y-4'>
+              <div className='flex justify-end'>
+                <Badge variant='outline'>
+                  {labels.rule}: {adherence.rule.ruleId} v{adherence.rule.version}
+                </Badge>
+              </div>
+
+              <div className='grid gap-3 md:grid-cols-4'>
+                <div className='rounded-lg border p-4 md:col-span-1'>
+                  <p className='text-xs text-muted-foreground'>{labels.frequency}</p>
+                  <p className='mt-1 text-3xl font-bold'>
+                    {adherence.frequency.state === 'available'
+                      ? percent(adherence.frequency.adherencePercent, language)
+                      : '—'}
+                  </p>
+                  {adherence.frequency.state === 'insufficient_data' && (
+                    <p className='mt-1 text-xs text-amber-700 dark:text-amber-300'>{labels.insufficient}</p>
+                  )}
+                </div>
+
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.coverage}</p>
+                  <p className='mt-1 text-xl font-semibold'>{percent(adherence.coverage.coveragePercent, language)}</p>
+                </div>
+
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.denominator}</p>
+                  <p className='mt-1 text-xl font-semibold'>
+                    {adherence.frequency.counts.denominator} / {adherence.coverage.eligiblePlannedSessions}
+                  </p>
+                </div>
+
+                <div className='rounded-lg border p-4'>
+                  <p className='flex items-center gap-1 text-xs text-muted-foreground'>
+                    {trendIcon}
+                    {labels.trend}
+                  </p>
+                  <p className='mt-1 text-sm font-semibold'>{trendLabel}</p>
+                  {trend.state === 'available' && (
+                    <p className='text-xs text-muted-foreground'>
+                      {trend.changePercentagePoints > 0 ? '+' : ''}{trend.changePercentagePoints.toFixed(0)} pp
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className='flex flex-wrap gap-2 text-xs'>
+                <Badge variant='outline'>{labels.unknown}: {adherence.coverage.unknownSessions}</Badge>
+                <Badge variant='outline'>{labels.extra}: {adherence.coverage.unplannedRealizedSessions}</Badge>
+              </div>
+
+              <div>
+                <p className='mb-2 flex items-center gap-2 text-sm font-medium'>
+                  <Gauge className='size-4' />
+                  {labels.dimensions}
+                </p>
+                <div className='grid gap-2 sm:grid-cols-2 lg:grid-cols-4'>
+                  {adherence.dimensions.map(dimension => (
+                    <div key={dimension.metric} className='rounded-md bg-muted/40 p-3'>
+                      <p className='text-xs text-muted-foreground'>{metricLabels[language][dimension.metric]}</p>
+                      <p className='mt-1 font-semibold'>
+                        {dimension.state === 'available'
+                          ? percent(dimension.adherencePercent, language)
+                          : labels.insufficient}
+                      </p>
+                      <p className='mt-1 text-[11px] text-muted-foreground'>
+                        {dimension.counts.comparableSessions} / {adherence.coverage.eligiblePlannedSessions}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </Card>
   )
 }
