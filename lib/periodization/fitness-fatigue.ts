@@ -4,13 +4,13 @@ const CTL_TIME_CONSTANT = 42 // Días para forma física
 const ATL_TIME_CONSTANT = 7 // Días para fatiga aguda
 
 /**
- * Calcula el TSS diario estimado basado en Duración (min), RPE o FC media y factor de desnivel
+ * @deprecated KAN-261 replaces this heuristic with the versioned
+ * `session-RPE × duration` AU model in `lib/training-load`.
+ * This function is retained temporarily only for legacy compatibility and must
+ * not be used by new product code or presented as Training Stress Score (TSS).
  */
 export function calculateDailyTss({ durationMin, rpe, elevationGainM = 0 }: CalculateDailyTssParams): number {
-  // Factor de intensidad relativa derivado del RPE (1-10 -> 0.45 a 1.15)
   const intensityFactor = 0.45 + (rpe / 10) * 0.7
-
-  // En trail running, cada 100m de D+ añade estrés metabólico equivalente a ~1km llano
   const elevationTssMultiplier = 1 + (elevationGainM / 1000) * 0.15
 
   const baseTss = (durationMin * intensityFactor ** 2 * 100) / 60
@@ -18,7 +18,9 @@ export function calculateDailyTss({ durationMin, rpe, elevationGainM = 0 }: Calc
 }
 
 /**
- * Actualiza CTL, ATL y TSB día a día usando Exponential Moving Average (EMA)
+ * @deprecated KAN-261 replaces CTL/ATL/TSB product semantics with neutral,
+ * versioned short-/long-term estimated load in `lib/training-load`.
+ * Retained temporarily for legacy compatibility only.
  */
 export function computeNextDayStress(
   prevMetrics: Pick<DailyStressMetrics, 'ctl' | 'atl'>,
