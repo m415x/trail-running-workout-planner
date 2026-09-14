@@ -27,6 +27,7 @@ All repository documentation must be written and maintained in English.
 - [Realized training → readiness boundary](architecture/realized-training-readiness-boundary.md)
 - [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
 - [KAN-258 — realized training story validation and walkthrough](architecture/realized-training-story-validation.md)
+- [KAN-259 — plan-versus-realized comparison audit](architecture/plan-real-comparison-audit.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 - [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)
