@@ -1,22 +1,22 @@
 # Trail Running Workout Planner
 
-Aplicación full-stack para gestión de grupos de trail running, planificación periodizada, contexto competitivo y seguimiento individual. El profesor conserva el control: la automatización propone, explica y persiste decisiones revisadas sin sustituir el criterio humano.
+Full-stack application for trail-running group management, periodized planning, competitive context and individual tracking. The coach stays in control: automation proposes, explains and persists reviewed decisions without replacing human judgment.
 
-## Índice rápido
+## Quick index
 
-- [`AGENTS.md`](AGENTS.md) — reglas operativas, stack, comandos, invariantes y flujo de entrega del repositorio.
-- [`AGENTS_TEMPLATE.md`](AGENTS_TEMPLATE.md) — plantilla reutilizable de políticas de ingeniería para futuros proyectos.
-- [`docs/README.md`](docs/README.md) — índice de arquitectura, historia y handoff.
-- [`docs/architecture/`](docs/architecture/) — contratos e invariantes vigentes.
-- [`docs/history/epic-1.md`](docs/history/epic-1.md) — evolución consolidada de Épica 1.
-- [`docs/history/epic-2.md`](docs/history/epic-2.md) — evolución consolidada de Épica 2 / Planning Automation.
-- [`docs/handoffs/`](docs/handoffs/) — contexto operativo mínimo para retomar el estado reciente.
+- [`AGENTS.md`](AGENTS.md) — repository operating rules, stack, commands, invariants and delivery workflow.
+- [`AGENTS_TEMPLATE.md`](AGENTS_TEMPLATE.md) — reusable engineering policy template for future projects.
+- [`docs/README.md`](docs/README.md) — architecture, history and handoff index.
+- [`docs/architecture/`](docs/architecture/) — current contracts and invariants.
+- [`docs/history/epic-1.md`](docs/history/epic-1.md) — consolidated Epic 1 evolution.
+- [`docs/history/epic-2.md`](docs/history/epic-2.md) — consolidated Epic 2 / Planning Automation evolution.
+- [`docs/handoffs/`](docs/handoffs/) — minimal operational context for resuming recent work.
 
-## Estado del producto
+## Product status
 
-Épica 2 completa el dominio de automatización de planificación desde generación y ownership hasta cohortes, contexto competitivo, taper/recuperación, revisión/persistencia integral y evaluación individual de desajustes de preparación. Las decisiones durables se documentan en `docs/architecture/`; Jira conserva alcance y trazabilidad de ejecución.
+Epic 2 completes the planning automation domain, from generation and ownership through cohorts, competitive context, taper/recovery, integral review/persistence and individual assessment of preparation mismatches. Durable decisions are documented in `docs/architecture/`; Jira maintains scope and execution traceability.
 
-La evaluación individual de preparación es advisory: una evaluación sin alertas no certifica aptitud para competir, y datos insuficientes nunca se interpretan como preparación suficiente.
+Individual preparation assessment is advisory: an assessment without alerts does not certify readiness to compete, and insufficient data is never interpreted as sufficient preparation.
 
 ## Stack
 
@@ -24,13 +24,13 @@ La evaluación individual de preparación es advisory: una evaluación sin alert
 - Tailwind CSS + Shadcn UI
 - `next-intl` (ES/EN)
 - Drizzle ORM
-- SQLite para runtime local actual
-- PostgreSQL/Supabase como target paralelo y verificado
+- SQLite for the current local runtime
+- PostgreSQL/Supabase as a parallel, verified target
 - pnpm
 
-Consulta versiones y reglas exactas en `package.json`, lockfile y `AGENTS.md` en lugar de asumirlas.
+Check exact versions and rules in `package.json`, the lockfile and `AGENTS.md` rather than assuming them.
 
-## Comandos principales
+## Main commands
 
 ```bash
 pn dev
@@ -40,7 +40,7 @@ pn exec tsc --noEmit
 pn build
 ```
 
-Base de datos:
+Database:
 
 ```bash
 pn db:push
@@ -51,20 +51,22 @@ pn db:migrate:supabase
 pn db:verify:supabase
 ```
 
-Revisa siempre el SQL generado antes de aplicar una migración. `db:check:supabase` valida la cadena de migraciones; `db:verify:supabase` comprueba el estado real de tablas/RLS del proyecto conectado.
+Always review generated SQL before applying a migration. `db:check:supabase` validates the migration chain; `db:verify:supabase` checks the actual table/RLS state of the connected project.
 
-## Base de datos y secretos
+## Database and secrets
 
-SQLite continúa siendo la base local de desarrollo. El esquema PostgreSQL y las migraciones de Supabase viven en `db/supabase/` y `drizzle/supabase/`.
+SQLite remains the local development database. The PostgreSQL schema and Supabase migrations live in `db/supabase/` and `drizzle/supabase/`.
 
-- `SUPABASE_DIRECT_URL` se usa para migraciones/verificación directa.
-- `SUPABASE_DATABASE_URL` se reserva para runtime serverless/transaction pooler.
-- Son secretos de servidor: nunca usar `NEXT_PUBLIC_` ni versionar `.env.local`.
+- `SUPABASE_DIRECT_URL` is used for migrations and direct verification.
+- `SUPABASE_DATABASE_URL` is reserved for the serverless runtime/transaction pooler.
+- These are server-only secrets: never use `NEXT_PUBLIC_` or commit `.env.local`.
 
-La Data API de Supabase puede estar deshabilitada; el runtime actual no depende de PostgREST para el flujo de migraciones/verificación.
+The Supabase Data API may be disabled; the current migration/verification workflow does not depend on PostgREST.
 
-## Flujo de trabajo
+## Workflow
 
-El proyecto trabaja **remote-first**. Durante una historia se prefieren inspección remota y validaciones enfocadas; las ejecuciones locales se solicitan cuando son necesarias para desbloquear persistencia/infraestructura o para el gate final. Antes de cerrar una historia se ejecutan tests, lint, TypeScript, build, verificaciones de datos necesarias y walkthrough funcional/manual.
+The project works **remote-first**. During a story, prefer remote inspection and focused validation; local execution is requested when needed to unblock persistence/infrastructure or perform the final gate. Before closing a story, run tests, lint, TypeScript, build, required data verification and a functional/manual walkthrough.
 
-Para reglas completas de ramas, evidencia, migraciones, warnings, documentación y seguridad, consulta [`AGENTS.md`](AGENTS.md).
+All repository documentation must be written and maintained in English.
+
+For complete rules on branches, evidence, migrations, warnings, documentation and security, see [`AGENTS.md`](AGENTS.md).

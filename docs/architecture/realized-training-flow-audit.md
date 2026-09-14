@@ -1,138 +1,138 @@
-# Auditoría del flujo de entrenamiento realizado
+# Realized-training flow audit
 
-Historia: KAN-258 — Registrar entrenamiento realizado de forma durable  
-Task: KAN-284 — Auditar flujo legacy de registro  
-Rama: `h-23-realized-training`
+Story: KAN-258 — Record realized training durably  
+Task: KAN-284 — Audit the legacy logging flow  
+Branch: `h-23-realized-training`
 
-## Objetivo
+## Objective
 
-Identificar qué partes del flujo actual de registro de entrenamiento pueden reutilizarse y cuáles deben reemplazarse para que la evidencia realizada sea durable y compatible con el boundary H12/readiness.
+Identify which parts of the current workout logging flow can be reused and which must be replaced to make realized-training evidence durable and compatible with the H12/readiness boundary.
 
-## Flujo actual
+## Current flow
 
-El flujo visible parte de `WorkoutCard` y abre `LogWorkoutDialog` para una sesión del calendario. El diálogo delega estado y serialización en `useLogWorkoutDialog`.
+The visible flow starts at `WorkoutCard` and opens `LogWorkoutDialog` for a calendar session. The dialog delegates state and serialization to `useLogWorkoutDialog`.
 
-En el estado actual:
+At the time of this audit:
 
-1. `LogWorkoutDialog` captura distancia, duración, autoevaluación/RPE y notas sobre una sesión planificada.
-2. `useLogWorkoutDialog` inicializa varios valores desde el workout prescrito.
-3. `handleSave()` convierte inputs vacíos en `0` mediante `parseFloat(...) || 0`, `parseInt(...) || 0` y defaults equivalentes.
-4. El payload resultante usa el contrato legacy `LoggedWorkoutPayload`.
-5. `WorkoutCard` entrega ese payload a `useWorkoutCard.handleSaveSession()`.
-6. `handleSaveSession()` sólo ejecuta `setIsLogged(true)`; no existe server action ni escritura durable en este camino.
-7. Al recargar o reiniciar, el estado de “registrado” se pierde.
+1. `LogWorkoutDialog` captures distance, duration, self-assessment/RPE and notes for a planned session.
+2. `useLogWorkoutDialog` initializes several values from the prescribed workout.
+3. `handleSave()` converts empty inputs to `0` through `parseFloat(...) || 0`, `parseInt(...) || 0` and equivalent defaults.
+4. The resulting payload uses the legacy `LoggedWorkoutPayload` contract.
+5. `WorkoutCard` passes that payload to `useWorkoutCard.handleSaveSession()`.
+6. `handleSaveSession()` only calls `setIsLogged(true)`; this path has no server action or durable write.
+7. Reloading or restarting loses the “logged” state.
 
-Por lo tanto, hoy el flujo de producto simula localmente que una sesión fue registrada, pero no completa el boundary persistente `workout_logs` + `workout_log_evidence`.
+The product flow therefore locally simulates a logged session but does not complete the persistent `workout_logs` + `workout_log_evidence` boundary.
 
-## Contrato legacy vs H12
+## Legacy contract vs H12
 
 ### `LoggedWorkoutPayload`
 
-El contrato legacy exige o materializa como número:
+The legacy contract requires or materializes the following as numbers:
 
 - `distanceKm`
 - `durationMin`
 - `elevationGain`
 - `rpe`
 
-Esto impide distinguir de forma fiable:
+This prevents a reliable distinction between:
 
-- dato conocido igual a cero;
-- dato no registrado/unknown;
-- default derivado del formulario;
-- valor prescrito copiado como valor inicial pero no confirmado por el atleta.
+- a known value of zero;
+- an unrecorded/unknown value;
+- a form-derived default;
+- a prescribed value copied as an initial value but not confirmed by the athlete.
 
-### Boundary H12/readiness
+### H12/readiness boundary
 
-H12 ya dispone de:
+H12 already provides:
 
-- `RealizedMetric` con estados `known` / `unknown`;
-- `RealizedMetricName` para distancia, duración, D+, FC media y RPE;
+- `RealizedMetric` with `known` / `unknown` states;
+- `RealizedMetricName` for distance, duration, D+, average heart rate and RPE;
 - `RawRealizedTrainingRecord` / `RealizedTrainingRecord`;
-- provenance (`source`, `sourceActivityId`, `loggedAt`, linkage explícito a `Session`);
-- semántica legacy `legacy_zero_ambiguous`;
-- deduplicación sólo por identidad estable;
-- quality/limitations para datos parciales o ambiguos.
+- provenance (`source`, `sourceActivityId`, `loggedAt`, explicit `Session` linkage);
+- `legacy_zero_ambiguous` semantics;
+- deduplication by stable identity only;
+- quality/limitations for partial or ambiguous data.
 
-`workout_log_evidence` ya funciona como sidecar de `workout_logs` con `source`, `sourceActivityId` y `knownMetricFields`.
+`workout_log_evidence` already acts as a sidecar to `workout_logs`, with `source`, `sourceActivityId` and `knownMetricFields`.
 
-## Qué se reutiliza
+## What to reuse
 
-### UI y composición
+### UI and composition
 
-Se reutilizan como base:
+Reuse these as the foundation:
 
-- `WorkoutCard` como punto de entrada desde una sesión planificada;
-- `LogWorkoutDialog` como patrón visual/modal;
-- `SelfAssessment`, `RpeSelector` y controles existentes;
-- `ConfirmActionDialog` para acciones destructivas/correcciones cuando corresponda.
+- `WorkoutCard` as the entry point from a planned session;
+- `LogWorkoutDialog` as the visual/modal pattern;
+- `SelfAssessment`, `RpeSelector` and existing controls;
+- `ConfirmActionDialog` for destructive actions/corrections where appropriate.
 
-La UI debe adaptarse al nuevo contrato, no descartarse por completo.
+Adapt the UI to the new contract rather than discarding it entirely.
 
-### Persistencia y dominio
+### Persistence and domain
 
-Se reutilizan:
+Reuse:
 
-- `workout_logs` como entidad durable de entrenamiento realizado;
-- `workout_log_evidence` como evidencia/provenance y known-ness por métrica;
-- normalización H12 en `lib/readiness/realized-training.ts`;
-- `sessionId` como único linkage autoritativo con una sesión planificada;
-- semántica H12 para legacy/unknown/deduplicación.
+- `workout_logs` as the durable realized-training entity;
+- `workout_log_evidence` for evidence/provenance and per-metric known state;
+- H12 normalization in `lib/readiness/realized-training.ts`;
+- `sessionId` as the only authoritative link to a planned session;
+- H12 legacy/unknown/deduplication semantics.
 
-No se crea una segunda tabla/modelo paralelo de realized training.
+Do not create a second parallel realized-training table/model.
 
-## Qué debe reemplazarse o modificarse
+## What to replace or modify
 
-### 1. Persistencia sólo-local
+### 1. Local-only persistence
 
-`useWorkoutCard.isLogged` no puede ser la fuente de verdad. Debe derivarse del registro durable existente y actualizarse después de una operación persistente exitosa.
+`useWorkoutCard.isLogged` cannot be the source of truth. Derive it from the existing durable record and update it after a successful persistent operation.
 
-### 2. Serialización `empty -> 0`
+### 2. `empty -> 0` serialization
 
-Debe eliminarse la conversión automática de input vacío a cero. El contrato de captura debe transportar explícitamente known/unknown o una representación equivalente que permita construir `knownMetricFields` sin ambigüedad.
+Remove automatic conversion of empty inputs to zero. The capture contract must explicitly carry known/unknown state or an equivalent representation that allows unambiguous construction of `knownMetricFields`.
 
-### 3. Valores prescritos como supuesta evidencia
+### 3. Prescribed values treated as evidence
 
-Distancia, duración o D+ planificados pueden usarse como sugerencia visual, pero no deben convertirse en “realizados” sólo por estar precargados. La persistencia debe reflejar valores confirmados por el atleta.
+Planned distance, duration or D+ may serve as visual suggestions, but must not become “realized” merely because they were prefilled. Persistence must reflect values confirmed by the athlete.
 
-### 4. Linkage implícito
+### 4. Implicit linkage
 
-Abrir el diálogo desde una `Session` puede proporcionar un `sessionId` explícito. Para registros libres, `sessionId = null`. No se inferirá asociación por fecha, workout, título o similitud de métricas.
+Opening the dialog from a `Session` can supply an explicit `sessionId`. For unplanned records, `sessionId = null`. Do not infer associations from date, workout, title or metric similarity.
 
-### 5. Contrato `LoggedWorkoutPayload`
+### 5. `LoggedWorkoutPayload` contract
 
-Debe dejar de ser el contrato autoritativo de persistencia. Puede deprecarse o convertirse en un adapter temporal, pero el flujo nuevo debe usar un input durable alineado con H12.
+It must stop being the authoritative persistence contract. It may be deprecated or become a temporary adapter, but the new flow must use a durable input aligned with H12.
 
-### 6. Delete/reset legacy
+### 6. Legacy delete/reset
 
-“Restablecer registro” actualmente sólo modifica estado local. La historia debe definir edición/corrección durable y trazable antes de exponer una eliminación física como comportamiento normal.
+“Reset log” currently only changes local state. The story must define durable, traceable editing/correction before exposing physical deletion as normal behavior.
 
-## Riesgos detectados
+## Identified risks
 
-- Prellenar métricas planificadas puede producir falsa evidencia si se guardan sin confirmación.
-- El uso de `|| 0` destruye la distinción unknown/zero exigida por H12.
-- `isLogged` local puede mostrar una sesión como registrada sin que exista evidencia persistida.
-- `workoutId` identifica una plantilla/workout, no sustituye `sessionId` como linkage plan-real.
-- Deduplicar por fecha o métricas impediría dos entrenamientos reales el mismo día.
+- Prefilling planned metrics can create false evidence if saved without confirmation.
+- Using `|| 0` destroys the unknown/zero distinction required by H12.
+- Local `isLogged` state can show a session as logged without persisted evidence.
+- `workoutId` identifies a template/workout; it does not replace `sessionId` as the plan-to-realized link.
+- Deduplicating by date or metrics would prevent two real workouts on the same day.
 
-## Decisiones para las siguientes tasks
+## Decisions for subsequent tasks
 
-1. El nuevo flujo persistirá siempre `workout_logs` + `workout_log_evidence` de forma coherente/atómica.
-2. `source = manual` para la captura de esta historia.
-3. `sourceActivityId = null` para captura manual salvo que exista en el futuro una identidad estable externa.
-4. `knownMetricFields` será la fuente explícita de known-ness para nuevos registros.
-5. Un cero confirmado se guarda como valor `0` y el campo correspondiente se incluye en `knownMetricFields`.
-6. Un campo unknown no debe entrar en `knownMetricFields`; su representación persistente no se reinterpretará como cero conocido.
-7. El vínculo a planificación será exclusivamente `sessionId` explícito.
-8. Los registros libres son válidos con `sessionId = null`.
-9. Readiness seguirá consumiendo el boundary H12 existente; la historia debe alimentar ese boundary en lugar de duplicarlo.
+1. The new flow will always persist `workout_logs` + `workout_log_evidence` consistently/atomically.
+2. Use `source = manual` for capture in this story.
+3. Use `sourceActivityId = null` for manual capture unless a stable external identity exists in the future.
+4. `knownMetricFields` will explicitly identify known metrics for new records.
+5. Store a confirmed zero as `0` and include the corresponding field in `knownMetricFields`.
+6. An unknown field must not appear in `knownMetricFields`; its persisted representation must not be reinterpreted as known zero.
+7. Planning linkage will use only an explicit `sessionId`.
+8. Unplanned records are valid with `sessionId = null`.
+9. Readiness will continue consuming the existing H12 boundary; this story must feed that boundary rather than duplicate it.
 
-## Secuencia recomendada
+## Recommended sequence
 
-- KAN-285: contrato durable de captura known/unknown/zero.
-- KAN-286: persistencia SQLite/Supabase y atomicidad log + evidence.
-- KAN-287: repositorio/servicio durable.
-- KAN-288/KAN-289: linkage explícito y registros libres.
-- KAN-290: adaptar `LogWorkoutDialog` al contrato durable.
+- KAN-285: durable known/unknown/zero capture contract.
+- KAN-286: SQLite/Supabase persistence and log + evidence atomicity.
+- KAN-287: durable repository/service.
+- KAN-288/KAN-289: explicit linkage and unplanned records.
+- KAN-290: adapt `LogWorkoutDialog` to the durable contract.
 
-Esta auditoría no modifica todavía comportamiento de producto.
+This audit does not yet change product behavior.

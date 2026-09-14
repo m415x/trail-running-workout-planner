@@ -1,8 +1,10 @@
 # Project documentation
 
-Este directorio contiene el contexto durable del proyecto. `README.md` es el índice de entrada del repositorio y `AGENTS.md` define las reglas operativas; aquí se separan arquitectura vigente, investigación verificable, evolución histórica y handoff operacional.
+This directory contains durable project context. `README.md` is the repository entry index and `AGENTS.md` defines operating rules; this directory separates current architecture, verifiable research, historical evolution and operational handoffs.
 
-## Architecture — fuente de verdad de dominio
+All repository documentation must be written and maintained in English.
+
+## Architecture — domain source of truth
 
 - [Automatic session generation](architecture/session-generation.md)
 - [Planning cohorts](architecture/planning-cohorts.md)
@@ -22,34 +24,34 @@ Este directorio contiene el contexto durable del proyecto. `README.md` es el ín
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 - [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)
 
-Usa arquitectura cuando una tarea dependa de cómo funciona el sistema **ahora**. No reconstruyas contratos vigentes desde history o conversaciones antiguas.
+Use architecture documentation when a task depends on how the system works **now**. Do not reconstruct current contracts from history or old conversations.
 
-## Research — evidencia externa versionada
+## Research — versioned external evidence
 
 - [Race classification systems — 2026 snapshot](research/race-classification-systems-2026.md)
 
-Los documentos de `research/` registran fuentes externas y su fecha de consulta para decisiones que pueden cambiar con el tiempo. No son política de dominio por sí mismos: arquitectura/tipos deben adoptar explícitamente cualquier conclusión que pase a ser contrato del producto.
+Documents in `research/` record external sources and their access dates for decisions that may change over time. They are not domain policy on their own: architecture/types must explicitly adopt any conclusion that becomes a product contract.
 
-## History — evolución consolidada
+## History — consolidated evolution
 
 - [Epic 1 — Planning Core](history/epic-1.md)
 - [Epic 2 — Planning Automation](history/epic-2.md)
 
-Cada épica mantiene un único documento histórico consolidado. Los antiguos fragmentos `epic-2-h*.md` se eliminan una vez incorporados a `epic-2.md`.
+Each epic maintains one consolidated history document. Old `epic-2-h*.md` fragments are removed once incorporated into `epic-2.md`.
 
-No leas history por defecto al iniciar una tarea. Consúltalo para entender razones históricas, decisiones reemplazadas, incompatibilidades aparentes o el origen de una regla.
+Do not read history by default when starting a task. Consult it to understand historical rationale, superseded decisions, apparent inconsistencies or the origin of a rule.
 
-## Handoffs — continuidad operativa
+## Handoffs — operational continuity
 
 - [Epic 3 — KAN-257 closure handoff](handoffs/epic-3.md)
 
-Un handoff es breve y temporal: resume baseline, estado verificable, restricciones y siguiente punto de trabajo. No duplica arquitectura ni history y no conserva transcripciones. Al comenzar una nueva épica puede reemplazarse por el handoff operativo de esa épica.
+A handoff is brief and temporary: it summarizes the baseline, verifiable status, constraints and next work item. It does not duplicate architecture or history, or preserve transcripts. When a new epic begins, it may be replaced with that epic's operational handoff.
 
 ## Maintenance rule
 
-- Cambios de contrato durable → actualizar `architecture/` en la misma historia.
-- Investigación externa temporal/versionable → registrar `research/` con fecha y fuentes.
-- Evolución significativa/cierre de épica → consolidar `history/<epic>.md`.
-- Estado de ejecución y criterios → Jira.
-- Continuidad inmediata → un único handoff relevante.
-- Índices/rutas → mantener sincronizados `README.md`, este archivo y `AGENTS.md`.
+- Durable contract changes → update `architecture/` in the same story.
+- Time-sensitive/versioned external research → record it in `research/` with dates and sources.
+- Significant evolution/epic closure → consolidate `history/<epic>.md`.
+- Execution status and criteria → Jira.
+- Immediate continuity → one relevant handoff.
+- Indexes/paths → keep `README.md`, this file and `AGENTS.md` synchronized.

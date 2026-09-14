@@ -124,6 +124,9 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 
 ## Documentation policy
 
+- All repository documentation must be written and maintained in English, including README files, architecture, research, history, handoffs and agent instructions. Apply this rule to every new document and documentation update.
+- Product UI localization remains ES/EN; the documentation language rule does not replace that requirement.
+
 - `README.md` is the repository entry/index.
 - `docs/README.md` indexes durable documentation.
 - `docs/architecture/` describes current truth.
