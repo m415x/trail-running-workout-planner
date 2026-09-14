@@ -109,6 +109,6 @@ it('uses durable realized evidence and preserves legacy ambiguity', async () => 
     process.chdir(originalDirectory)
     closeRepository?.()
     sqlite.close()
-    rmSync(directory, { recursive: true, force: true })
+    rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
   }
 })
