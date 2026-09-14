@@ -26,6 +26,7 @@ All repository documentation must be written and maintained in English.
 - [Realized training isolation](architecture/realized-training-isolation.md)
 - [Realized training → readiness boundary](architecture/realized-training-readiness-boundary.md)
 - [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
+- [KAN-258 — realized training story validation and walkthrough](architecture/realized-training-story-validation.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 - [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)
@@ -49,7 +50,7 @@ Do not read history by default when starting a task. Consult it to understand hi
 
 ## Handoffs — operational continuity
 
-- [Epic 3 — KAN-257 closure handoff](handoffs/epic-3.md)
+- [Epic 3 — active handoff](handoffs/epic-3.md)
 
 A handoff is brief and temporary: it summarizes the baseline, verifiable status, constraints and next work item. It does not duplicate architecture or history, or preserve transcripts. When a new epic begins, it may be replaced with that epic's operational handoff.
 
