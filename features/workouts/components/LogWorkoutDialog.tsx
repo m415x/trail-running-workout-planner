@@ -15,10 +15,18 @@ export interface LogWorkoutDialogProps {
   onClose: () => void
   workout?: WorkoutProps | null
   dateStr?: string
+  initialInput?: ManualRealizedTrainingClientInput | null
   onSave?: (loggedData: ManualRealizedTrainingClientInput) => Promise<boolean>
 }
 
-export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
+export function LogWorkoutDialog({
+  isOpen,
+  onClose,
+  workout,
+  dateStr,
+  initialInput,
+  onSave,
+}: LogWorkoutDialogProps) {
   const t = useTranslations('Workouts')
   const {
     distance,
@@ -43,7 +51,7 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: 
     setPerformedLocal,
     saveError,
     resetForm,
-  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave })
+  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, initialInput, onSave })
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
