@@ -3,8 +3,12 @@ import { notFound } from 'next/navigation'
 import { Activity, ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
-import { getRealizedTrainingHistoryForAthleteAction } from '@/app/actions/realized-training-actions'
+import {
+  getRealizedTrainingCorrectionsAction,
+  getRealizedTrainingHistoryForAthleteAction,
+} from '@/app/actions/realized-training-actions'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
+import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 
@@ -25,6 +29,15 @@ export default async function AthleteTrainingPage({ params }: AthleteTrainingPag
   ])
 
   if (!athlete || !historyResult.success) notFound()
+
+  const correctionsEntries = await Promise.all(
+    historyResult.data.map(async (record) => {
+      const result = await getRealizedTrainingCorrectionsAction(athlete.id, record.id)
+      return [record.id, result.success ? result.data : []] as const
+    }),
+  )
+  const correctionsByWorkoutLogId: Readonly<Record<string, readonly RealizedTrainingCorrectionRecord[]>> =
+    Object.fromEntries(correctionsEntries)
 
   const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
   const detailPath = athletePath(locale, athlete.id)
@@ -64,7 +77,11 @@ export default async function AthleteTrainingPage({ params }: AthleteTrainingPag
           <CardTitle>{fullName}</CardTitle>
         </CardHeader>
         <CardContent>
-          <RealizedTrainingHistory records={historyResult.data} locale={locale} />
+          <RealizedTrainingHistory
+            records={historyResult.data}
+            correctionsByWorkoutLogId={correctionsByWorkoutLogId}
+            locale={locale}
+          />
         </CardContent>
       </Card>
     </div>
