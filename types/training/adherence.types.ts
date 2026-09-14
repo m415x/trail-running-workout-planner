@@ -20,6 +20,7 @@ export type AdherenceInsufficientDataReason =
   | 'insufficient_confirmed_outcomes'
   | 'insufficient_coverage'
   | 'planning_resolution_limited'
+  | 'insufficient_comparable_windows'
 
 /**
  * Coverage is deliberately separate from adherence. Unknown sessions remain
@@ -95,6 +96,10 @@ export interface AdherenceRuleConfiguration extends AdherenceRuleVersion {
   readonly minimumCoveragePercent: number
   /** Minimum comparable samples required to publish one metric dimension. */
   readonly minimumComparableSessionsPerDimension: number
+  /** Minimum available weekly windows required to publish a trend direction. */
+  readonly minimumComparableWindowsForTrend: number
+  /** Change smaller than this number of percentage points is considered stable. */
+  readonly trendStableBandPercentagePoints: number
 }
 
 /**
@@ -112,3 +117,28 @@ export interface AthleteAdherence {
   /** Planning-resolution limitations inherited from the comparison input. */
   readonly limitations: readonly string[]
 }
+
+export interface AdherenceTrendPoint {
+  readonly window: PlanRealComparisonWindow
+  readonly adherencePercent: number | null
+  readonly coveragePercent: number | null
+}
+
+export type AdherenceTrendDirection = 'improving' | 'stable' | 'declining'
+
+export type AthleteAdherenceTrend =
+  | {
+      readonly state: 'available'
+      readonly direction: AdherenceTrendDirection
+      readonly changePercentagePoints: number
+      readonly points: readonly AdherenceTrendPoint[]
+      readonly rule: AdherenceRuleConfiguration
+    }
+  | {
+      readonly state: 'insufficient_data'
+      readonly direction: null
+      readonly changePercentagePoints: null
+      readonly points: readonly AdherenceTrendPoint[]
+      readonly rule: AdherenceRuleConfiguration
+      readonly reasons: readonly AdherenceInsufficientDataReason[]
+    }
