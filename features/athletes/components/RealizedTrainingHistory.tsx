@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
+import { formatDurationMinutes } from '@/lib/formatters'
 import { Badge } from '@ui/badge'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import type {
@@ -36,13 +37,18 @@ const copy = {
     rpe: 'RPE',
     unknown: 'Sin dato',
     sourceActivity: 'ID de origen',
-    limitations: 'Limitaciones de los datos',
+    limitations: 'Calidad de los datos',
     corrections: 'Historial de correcciones',
     correctedAt: 'Corregido',
     correctedBy: 'Usuario',
     correctionReason: 'Motivo',
     noCorrectionReason: 'Sin motivo registrado',
     changedFields: 'Campos corregidos',
+    limitationLabels: {
+      no_authoritative_session_link: 'entrenamiento libre, sin sesión planificada vinculada',
+      partial_metric_coverage: 'faltan algunas métricas del entrenamiento',
+      legacy_record_without_metric_evidence: 'registro histórico sin evidencia de métricas campo por campo',
+    } as Record<string, string>,
     correctionFields: {
       sessionId: 'sesión vinculada',
       workoutId: 'entrenamiento vinculado',
@@ -83,13 +89,18 @@ const copy = {
     rpe: 'RPE',
     unknown: 'Unknown',
     sourceActivity: 'Source ID',
-    limitations: 'Data limitations',
+    limitations: 'Data quality',
     corrections: 'Correction history',
     correctedAt: 'Corrected',
     correctedBy: 'User',
     correctionReason: 'Reason',
     noCorrectionReason: 'No reason recorded',
     changedFields: 'Corrected fields',
+    limitationLabels: {
+      no_authoritative_session_link: 'free workout with no linked planned session',
+      partial_metric_coverage: 'some training metrics were not recorded',
+      legacy_record_without_metric_evidence: 'historical record without field-level metric evidence',
+    } as Record<string, string>,
     correctionFields: {
       sessionId: 'linked session',
       workoutId: 'linked workout',
@@ -113,8 +124,13 @@ const copy = {
 } as const
 
 function formatDate(value: string, locale: string) {
-  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-AR', { timeZone: 'UTC' })
-    .format(new Date(`${value}T00:00:00Z`))
+  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-AR', {
+    timeZone: 'UTC',
+    weekday: 'short',
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric',
+  }).format(new Date(`${value}T00:00:00Z`))
 }
 
 function formatDateTime(value: string | null | undefined, locale: string) {
@@ -138,6 +154,15 @@ function metricValue(
   return `${new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-AR', {
     maximumFractionDigits: 2,
   }).format(metric.value)}${unit}`
+}
+
+function durationValue(metric: RealizedMetric, locale: 'es' | 'en') {
+  const labels = copy[locale]
+  if (metric.state === 'unknown') {
+    return `${labels.unknown} · ${labels.unknownReasons[metric.reason]}`
+  }
+
+  return formatDurationMinutes(metric.value)
 }
 
 function correctionChangedFields(correction: RealizedTrainingCorrectionRecord) {
@@ -187,7 +212,7 @@ export function RealizedTrainingHistory({
             <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
               <div>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <p className='font-medium'>{formatDate(record.date, language)}</p>
+                  <p className='font-medium capitalize'>{formatDate(record.date, language)}</p>
                   <Badge variant={record.status === 'completed' ? 'secondary' : 'outline'}>
                     {statusLabel}
                   </Badge>
@@ -214,7 +239,7 @@ export function RealizedTrainingHistory({
 
             <dl className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
               <Metric icon={<Route className='size-4' />} label={labels.distance} value={metricValue(record.metrics.distanceKm, ' km', language)} />
-              <Metric icon={<Clock3 className='size-4' />} label={labels.duration} value={metricValue(record.metrics.durationMin, ' min', language)} />
+              <Metric icon={<Clock3 className='size-4' />} label={labels.duration} value={durationValue(record.metrics.durationMin, language)} />
               <Metric icon={<Mountain className='size-4' />} label={labels.elevation} value={metricValue(record.metrics.elevationGainM, ' m', language)} />
               <Metric icon={<HeartPulse className='size-4' />} label={labels.heartRate} value={metricValue(record.metrics.avgHrBpm, ' bpm', language)} />
               <Metric icon={<Gauge className='size-4' />} label={labels.rpe} value={metricValue(record.metrics.rpe, '', language)} />
@@ -226,7 +251,11 @@ export function RealizedTrainingHistory({
                   <p>{labels.sourceActivity}: {record.provenance.sourceActivityId}</p>
                 )}
                 {record.limitations.length > 0 && (
-                  <p className='mt-1'>{labels.limitations}: {record.limitations.join(' · ')}</p>
+                  <p className='mt-1'>
+                    {labels.limitations}: {record.limitations
+                      .map((limitation) => labels.limitationLabels[limitation] ?? limitation)
+                      .join(' · ')}
+                  </p>
                 )}
               </div>
             )}
