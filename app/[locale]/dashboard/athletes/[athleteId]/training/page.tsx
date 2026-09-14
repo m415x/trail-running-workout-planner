@@ -3,10 +3,7 @@ import { notFound } from 'next/navigation'
 import { Activity, ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
-import {
-  getAthleteAdherenceAction,
-  getAthleteAdherenceTrendAction,
-} from '@/app/actions/adherence-actions'
+import { getAthleteAdherenceTrendAction } from '@/app/actions/adherence-actions'
 import {
   getAthletePlanRealComparisonAction,
   getRealizedTrainingCalendarForAthleteAction,
@@ -17,6 +14,7 @@ import { AdherenceSummary } from '@/features/athletes/components/AdherenceSummar
 import { PlanRealComparison } from '@/features/athletes/components/PlanRealComparison'
 import { RealizedTrainingCalendar } from '@/features/athletes/components/RealizedTrainingCalendar'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
+import { deriveAthleteAdherence } from '@/lib/adherence/athlete-adherence'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
@@ -77,12 +75,11 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
   const { startDate, endDate } = calendarWindow(today)
   const comparisonKind = query.comparison === 'month' ? 'month' as const : 'week' as const
   const planRealWindow = comparisonWindow(today, comparisonKind)
-  const [athlete, historyResult, calendarResult, comparisonResult, adherenceResult, trendResult] = await Promise.all([
+  const [athlete, historyResult, calendarResult, comparisonResult, trendResult] = await Promise.all([
     getAthleteById(athleteId),
     getRealizedTrainingHistoryForAthleteAction(athleteId),
     getRealizedTrainingCalendarForAthleteAction(athleteId, startDate, endDate, today),
     getAthletePlanRealComparisonAction(athleteId, planRealWindow),
-    getAthleteAdherenceAction(athleteId, planRealWindow),
     getAthleteAdherenceTrendAction(athleteId, today),
   ])
 
@@ -91,10 +88,12 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
     || !historyResult.success
     || !calendarResult.success
     || !comparisonResult.success
-    || !adherenceResult.success
+    || !comparisonResult.data
     || !trendResult.success
+    || !trendResult.data
   ) notFound()
 
+  const adherence = deriveAthleteAdherence(comparisonResult.data)
   const correctionsEntries = await Promise.all(
     historyResult.data.map(async (record) => {
       const result = await getRealizedTrainingCorrectionsAction(athlete.id, record.id)
@@ -139,7 +138,7 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
       </div>
 
       <AdherenceSummary
-        adherence={adherenceResult.data}
+        adherence={adherence}
         trend={trendResult.data}
         locale={locale}
       />
