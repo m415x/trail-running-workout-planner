@@ -24,6 +24,7 @@ All repository documentation must be written and maintained in English.
 - [Realized training corrections](architecture/realized-training-corrections.md)
 - [Realized training deduplication](architecture/realized-training-deduplication.md)
 - [Realized training isolation](architecture/realized-training-isolation.md)
+- [Realized training → readiness boundary](architecture/realized-training-readiness-boundary.md)
 - [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
