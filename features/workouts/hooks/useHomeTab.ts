@@ -15,6 +15,7 @@ import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
 import type { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 
 import { parseISODate } from '@/lib/date-helpers'
+import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 import {
   hasUnplannedTrainingOnDate,
   reconcileTrainingDayStatus,
@@ -171,7 +172,7 @@ export function useHomeTab({
    * training remains unplanned evidence and is never attached to a session.
    */
   const weekDays = useMemo<WeekDay[]>(() => {
-    const todayISO = formatLocalISODate(new Date())
+    const todayISO = getCurrentISODateInTimeZone()
 
     return Array.from({ length: 7 }, (_, index) => {
       const currentDate = shiftDate(startOfWeek, index)
