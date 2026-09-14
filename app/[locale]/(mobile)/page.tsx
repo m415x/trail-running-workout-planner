@@ -25,7 +25,7 @@ function currentWeekRangeInArgentina() {
 
 export default async function MobileHomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const t = await getTranslations({ locale, namespace: 'MobileHome' })
+  const t = await getTranslations({ locale, namespace: 'RaceCatalog' })
   const range = currentWeekRangeInArgentina()
 
   const [athleteRes, scheduleRes, realizedRes] = await Promise.all([
@@ -37,7 +37,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
     return (
       <div className='flex h-screen items-center justify-center p-4 text-center text-red-500'>
-        <p>{t('loadError')}</p>
+        <p>{t('errors.saveFailed')}</p>
       </div>
     )
   }
