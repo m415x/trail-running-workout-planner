@@ -368,6 +368,40 @@
       "notes": "Notes"
     }
   },
+  "PlanRealComparison": {
+    "title": "Planned vs realized",
+    "description": "Explainable session comparison. Missing data remains unknown and does not count as non-compliance.",
+    "window": {
+      "week": "Week",
+      "month": "Month"
+    },
+    "empty": "There are no planned sessions or realized workouts in this period.",
+    "planningLimitations": "{count, plural, one {# date has unresolved planning} other {# dates have unresolved planning}}.",
+    "planned": "Planned",
+    "realized": "Realized",
+    "difference": "Difference",
+    "unknown": "Unknown",
+    "unplannedTitle": "Unplanned training",
+    "unplannedDescription": "This record remains independent evidence and is not forced against a prescribed session.",
+    "state": {
+      "matched": "Matched",
+      "deviation": "With differences",
+      "known_not_completed": "Confirmed not performed",
+      "unplanned_realized": "Extra training",
+      "unknown": "Insufficient evidence"
+    },
+    "evaluation": {
+      "matched": "Matched",
+      "deviation": "Difference",
+      "not_evaluated": "Not evaluated"
+    },
+    "metric": {
+      "distanceKm": "Distance",
+      "durationMin": "Duration",
+      "elevationGainM": "D+",
+      "intensity": "Intensity / effort"
+    }
+  },
   "RealizedTrainingHistory": {
     "empty": "No realized training has been recorded for this athlete yet.",
     "status": {
