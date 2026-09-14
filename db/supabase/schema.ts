@@ -596,7 +596,7 @@ export const workoutLogs = pgTable('workout_logs', {
 
   // Datos del entrenamiento realizado (si status es 'completed' o 'partial')
   distanceKm: doublePrecision('distance_km').notNull().default(0),
-  durationMin: integer('duration_min').notNull().default(0),
+  durationMin: doublePrecision('duration_min').notNull().default(0),
   elevationGain: integer('elevation_gain').notNull().default(0),
   avgHr: integer('avg_hr'),
 
@@ -605,6 +605,9 @@ export const workoutLogs = pgTable('workout_logs', {
   rpe: integer('rpe').default(0),
   athleteNotes: text('athlete_notes'),
 
+  // ISO UTC instant, matching the SQLite and existing timestamp storage contract.
+  // No default/backfill: legacy occurrence times are unknown.
+  performedAt: text('performed_at'),
   loggedAt: text('logged_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

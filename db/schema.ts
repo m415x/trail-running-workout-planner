@@ -535,7 +535,7 @@ export const workoutLogs = sqliteTable('workout_logs', {
 
   // Datos del entrenamiento realizado (si status es 'completed' o 'partial')
   distanceKm: real('distance_km').notNull().default(0),
-  durationMin: integer('duration_min').notNull().default(0),
+  durationMin: real('duration_min').notNull().default(0),
   elevationGain: integer('elevation_gain').notNull().default(0),
   avgHr: integer('avg_hr'),
 
@@ -544,6 +544,8 @@ export const workoutLogs = sqliteTable('workout_logs', {
   rpe: integer('rpe').default(0),
   athleteNotes: text('athlete_notes'),
 
+  // Actual occurrence, nullable for legacy rows; date remains the analysis day.
+  performedAt: text('performed_at'),
   loggedAt: text('logged_at')
     .notNull()
     .$defaultFn(() => new Date().toISOString()),
