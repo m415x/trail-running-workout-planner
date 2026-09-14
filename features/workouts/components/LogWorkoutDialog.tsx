@@ -1,10 +1,11 @@
 'use client'
 
-import { CheckCircle2, MapPin, Timer, MessageSquare, RotateCcw } from 'lucide-react'
+import { CheckCircle2, HeartPulse, MapPin, Mountain, Timer, MessageSquare, RotateCcw } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { ScrollArea } from '@ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog'
 import { PrimaryInput } from '@ui/custom/inputs'
-import { WorkoutProps, LoggedWorkoutPayload } from '@/types'
+import type { ManualRealizedTrainingClientInput, WorkoutProps } from '@/types'
 import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
 import { ConfirmActionDialog } from '@ui/custom/confirm-dialog'
 import { SelfAssessment } from '@workouts/components/SelfAssessment'
@@ -15,22 +16,28 @@ export interface LogWorkoutDialogProps {
   onClose: () => void
   workout?: WorkoutProps | null
   dateStr?: string
-  onSave?: (loggedData: LoggedWorkoutPayload) => void
+  onSave?: (loggedData: ManualRealizedTrainingClientInput) => Promise<boolean>
   onDelete?: () => void
 }
 
 export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
+  const t = useTranslations('Workouts')
   const {
     distance,
     timeMin,
     timeHr,
     timeSec,
+    gain,
+    avgHr,
     assessment,
     athleteNotes,
+    isSaving,
     setDistance,
     setTimeHr,
     handleMinutesChange,
     setTimeSec,
+    setGain,
+    setAvgHr,
     setAssessment,
     setAthleteNotes,
     handleSave,
@@ -40,90 +47,92 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className='max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
-        {/* Elemento oculto que captura el foco inicial de Base UI para que no salte al input */}
         <span tabIndex={0} aria-hidden='true' className='sr-only focus:outline-none' />
 
-        {/* ── 1. DialogHeader Fijo ── */}
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
             <CheckCircle2 size={20} className='text-primary' />
-            Registrar Entrenamiento
+            {t('dialog.title')}
           </DialogTitle>
           <p className='text-xs text-muted-foreground p-0'>
-            {dateStr ?? 'Hoy'} &bull; {workout?.title ?? 'Sesión completada'}
+            {dateStr ?? '—'} &bull; {workout?.title ?? '—'}
           </p>
         </DialogHeader>
 
-        {/* ── 2. ScrollArea Central (Única área con scroll) ── */}
         <ScrollArea className='flex-1 min-h-0 w-full'>
           <div className='space-y-4 pt-4 pb-1 px-0.5'>
-            {/* Métricas Numéricas Principales */}
             <div className='grid grid-cols-2 gap-2.5'>
-              {/* Columna 1: Distancia */}
               <div className='space-y-1'>
                 <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                  <MapPin size={11} /> Distancia (km)
+                  <MapPin size={11} /> {t('dialog.distance')}
                 </label>
                 <PrimaryInput
                   type='number'
                   step='0.01'
                   min='0'
-                  placeholder='0.00'
+                  placeholder={workout?.distance != null ? String(workout.distance) : '0.00'}
                   value={distance}
                   onChange={(e) => setDistance(e.target.value)}
                 />
               </div>
 
-              {/* Columna 2: Tiempo */}
               <div className='space-y-1'>
                 <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1 pl-1'>
-                  <Timer size={11} /> Tiempo (hr : min : seg)
+                  <Timer size={11} /> {t('dialog.time')}
                 </label>
 
                 <div className='grid grid-cols-3 gap-1.5'>
-                  <PrimaryInput
-                    type='number'
-                    min='0'
-                    placeholder='0'
-                    value={timeHr}
-                    onChange={(e) => setTimeHr(e.target.value)}
-                  />
-
-                  <PrimaryInput
-                    type='number'
-                    min='0'
-                    placeholder='0'
-                    value={timeMin}
-                    onChange={(e) => handleMinutesChange(e.target.value)}
-                  />
-
+                  <PrimaryInput type='number' min='0' placeholder='0' value={timeHr} onChange={(e) => setTimeHr(e.target.value)} />
+                  <PrimaryInput type='number' min='0' placeholder='0' value={timeMin} onChange={(e) => handleMinutesChange(e.target.value)} />
                   <PrimaryInput
                     type='number'
                     min='0'
                     max='59'
                     placeholder='0'
                     value={timeSec}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10)
-                      if (isNaN(val)) setTimeSec('')
-                      else if (val >= 0 && val <= 59) setTimeSec(e.target.value)
-                    }}
+                    onChange={(e) => setTimeSec(e.target.value)}
                   />
                 </div>
               </div>
+
+              <div className='space-y-1'>
+                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                  <Mountain size={11} /> {t('dialog.elevation')}
+                </label>
+                <PrimaryInput
+                  type='number'
+                  min='0'
+                  step='1'
+                  placeholder={workout?.gain != null ? String(workout.gain) : '0'}
+                  value={gain}
+                  onChange={(e) => setGain(e.target.value)}
+                />
+              </div>
+
+              <div className='space-y-1'>
+                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                  <HeartPulse size={11} /> {t('dialog.heartRate')}
+                </label>
+                <PrimaryInput
+                  type='number'
+                  min='0'
+                  step='1'
+                  placeholder='—'
+                  value={avgHr}
+                  onChange={(e) => setAvgHr(e.target.value)}
+                />
+              </div>
             </div>
 
-            {/* Autoevaluación del esfuerzo */}
             <SelfAssessment value={assessment} onChange={setAssessment} />
 
-            {/* Comentarios del Atleta para el Coach */}
             <div className='space-y-1'>
               <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
-                <MessageSquare size={11} /> Feedback para el entrenador
+                <MessageSquare size={11} /> {t('dialog.notes')}
               </label>
               <textarea
                 rows={3}
-                placeholder='¿Cómo te sentiste? ¿Molestias, clima, sensaciones en subidas?'
+                placeholder={t('dialog.notesPlaceholder')}
                 value={athleteNotes}
                 onChange={(e) => setAthleteNotes(e.target.value)}
                 className='bg-background rounded-xl p-3 border border-border w-full text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none'
@@ -132,7 +141,6 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
           </div>
         </ScrollArea>
 
-        {/* ── 3. DialogFooter Fijo ── */}
         <DialogFooter className='flex flex-row gap-2 py-3.5 border-t border-border/40 bg-card shrink-0 mt-0'>
           <ConfirmActionDialog
             title='¿Restablecer registro?'
@@ -147,10 +155,10 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
               </GlassOutlineButton>
             )}
           />
-          <GlassOutlineButton onClick={onClose} className='flex-4'>
+          <GlassOutlineButton onClick={onClose} className='flex-4' disabled={isSaving}>
             Cancelar
           </GlassOutlineButton>
-          <PrimaryFilledButton onClick={handleSave} className='flex-6'>
+          <PrimaryFilledButton onClick={() => void handleSave()} className='flex-6' disabled={isSaving}>
             Guardar
           </PrimaryFilledButton>
         </DialogFooter>
