@@ -1,6 +1,16 @@
 'use client'
 
-import { CalendarDays, CalendarRange, Dumbbell, GitBranch, LayoutDashboard, Mountain, Trophy, Users, UsersRound } from 'lucide-react'
+import {
+  CalendarDays,
+  CalendarRange,
+  Dumbbell,
+  GitBranch,
+  LayoutDashboard,
+  Mountain,
+  Trophy,
+  Users,
+  UsersRound,
+} from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 import { Link, usePathname } from '@/i18n/routing'
@@ -86,11 +96,12 @@ export function AppSidebar() {
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
-                const label = item.label === 'templates'
-                  ? t('navigation')
-                  : item.label === 'competitions'
-                    ? catalog('navigation')
-                    : item.label
+                const label =
+                  item.label === 'templates'
+                    ? t('navigation')
+                    : item.label === 'competitions'
+                      ? catalog('navigation')
+                      : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -107,7 +118,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <p className='px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>Fase 1 · Núcleo de planificación</p>
+        <p className='px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>
+          Fase 3 · Seguimiento individual, carga y catálogo competitivo
+        </p>
       </SidebarFooter>
     </Sidebar>
   )
