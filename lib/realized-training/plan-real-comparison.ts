@@ -1,7 +1,7 @@
 import { hasAuthoritativeSessionLink } from '@/lib/readiness/realized-training'
 import type {
   PlanRealMetricComparison,
-  PlanRealMetricName,
+  TrainingComparisonMetricName,
   PlanRealMetricOperand,
   PlanRealMetricUnit,
   PlanRealPlanningContext,
@@ -18,7 +18,7 @@ export interface PlannedSessionComparisonInput {
   readonly sessionId: string
   readonly sessionTitle: string
   readonly planning: PlanRealPlanningContext
-  readonly metrics: Readonly<Record<PlanRealMetricName, PlanRealMetricOperand>>
+  readonly metrics: Readonly<Record<TrainingComparisonMetricName, PlanRealMetricOperand>>
 }
 
 function realizedNumericOperand(
@@ -32,7 +32,7 @@ function realizedNumericOperand(
 
 function realizedOperand(
   record: RealizedTrainingRecord,
-  name: PlanRealMetricName,
+  name: TrainingComparisonMetricName,
 ): PlanRealMetricOperand {
   if (name === 'distanceKm') return realizedNumericOperand(record.metrics.distanceKm, 'km')
   if (name === 'durationMin') return realizedNumericOperand(record.metrics.durationMin, 'min')
@@ -53,7 +53,7 @@ function realizedOperand(
 }
 
 function notEvaluatedMetric(
-  name: PlanRealMetricName,
+  name: TrainingComparisonMetricName,
   planned: PlanRealMetricOperand,
   realized: PlanRealMetricOperand,
   reason: Extract<
@@ -75,7 +75,7 @@ function notEvaluatedMetric(
 }
 
 function compareMetric(
-  name: PlanRealMetricName,
+  name: TrainingComparisonMetricName,
   planned: PlanRealMetricOperand,
   realized: PlanRealMetricOperand,
 ): PlanRealMetricComparison {
@@ -126,7 +126,7 @@ function unavailableMetrics(
   planned: PlannedSessionComparisonInput['metrics'],
   reason: 'not_observed' | 'no_authoritative_session_link' | 'known_not_completed',
 ): readonly PlanRealMetricComparison[] {
-  return (Object.keys(planned) as PlanRealMetricName[]).map(name => {
+  return (Object.keys(planned) as TrainingComparisonMetricName[]).map(name => {
     const operand = planned[name]
     return notEvaluatedMetric(
       name,
@@ -215,7 +215,7 @@ export function comparePlannedSession(
     }
   }
 
-  const metrics = (Object.keys(planned.metrics) as PlanRealMetricName[])
+  const metrics = (Object.keys(planned.metrics) as TrainingComparisonMetricName[])
     .map(name => compareMetric(name, planned.metrics[name], realizedOperand(record, name)))
   const evaluated = metrics.filter(metric => metric.evaluation.state !== 'not_evaluated')
   const state = evaluated.length === 0
@@ -247,7 +247,7 @@ export function comparePlannedSession(
 export function projectUnplannedRealized(
   record: RealizedTrainingRecord,
 ): UnplannedRealizedComparison {
-  const names: readonly PlanRealMetricName[] = [
+  const names: readonly TrainingComparisonMetricName[] = [
     'distanceKm',
     'durationMin',
     'elevationGainM',
