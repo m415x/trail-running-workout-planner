@@ -99,7 +99,12 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
             />
           ))}
         </div>
-      ) : <RestCard />}
+      ) : (
+        <RestCard
+          date={selectedWeekDay?.fullDate}
+          onRealizedTrainingSaved={onRealizedTrainingSaved}
+        />
+      )}
 
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
 
