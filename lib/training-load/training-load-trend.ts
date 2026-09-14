@@ -1,14 +1,16 @@
 import {
   TRAINING_LOAD_RULE_CONFIG,
   type DailyTrainingLoad,
+  type TrainingLoadRuleConfig,
   type TrainingLoadTrendPoint,
 } from '@/types'
 
 export function deriveTrainingLoadTrend(
   days: readonly DailyTrainingLoad[],
+  rule: TrainingLoadRuleConfig = TRAINING_LOAD_RULE_CONFIG,
 ): TrainingLoadTrendPoint[] {
-  const shortAlpha = 1 - Math.exp(-1 / TRAINING_LOAD_RULE_CONFIG.shortTermTimeConstantDays)
-  const longAlpha = 1 - Math.exp(-1 / TRAINING_LOAD_RULE_CONFIG.longTermTimeConstantDays)
+  const shortAlpha = 1 - Math.exp(-1 / rule.shortTermTimeConstantDays)
+  const longAlpha = 1 - Math.exp(-1 / rule.longTermTimeConstantDays)
 
   let shortTermLoadAu: number | null = null
   let longTermLoadAu: number | null = null
@@ -16,9 +18,11 @@ export function deriveTrainingLoadTrend(
 
   return days.map((day) => {
     if (day.loadAu === null) {
-      shortTermLoadAu = null
-      longTermLoadAu = null
-      reliableStreakDays = 0
+      if (rule.resetOnUnknownEvidence) {
+        shortTermLoadAu = null
+        longTermLoadAu = null
+        reliableStreakDays = 0
+      }
 
       return {
         date: day.date,
@@ -46,7 +50,7 @@ export function deriveTrainingLoadTrend(
       shortTermLoadAu,
       longTermLoadAu,
       loadBalanceAu: longTermLoadAu - shortTermLoadAu,
-      status: reliableStreakDays >= TRAINING_LOAD_RULE_CONFIG.minimumWarmupDays
+      status: reliableStreakDays >= rule.minimumWarmupDays
         ? 'available'
         : 'warming_up',
     }
