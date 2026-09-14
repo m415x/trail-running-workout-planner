@@ -2,7 +2,6 @@ import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
-import { formatDurationMinutes } from '@/lib/formatters'
 import { Badge } from '@ui/badge'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import type {
@@ -57,7 +56,17 @@ function durationValue(
     return `${translate('unknown')} · ${translate(`unknownReasons.${metric.reason}`)}`
   }
 
-  return formatDurationMinutes(metric.value)
+  const totalSeconds = Math.round(metric.value * 60)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const parts: string[] = []
+
+  if (hours > 0) parts.push(`${hours} ${translate('durationUnits.hours')}`)
+  if (minutes > 0 || hours > 0) parts.push(`${minutes} ${translate('durationUnits.minutes')}`)
+  if (seconds > 0 || parts.length === 0) parts.push(`${seconds} ${translate('durationUnits.seconds')}`)
+
+  return parts.join(' ')
 }
 
 function correctionChangedFields(correction: RealizedTrainingCorrectionRecord) {
@@ -116,7 +125,11 @@ export function RealizedTrainingHistory({
         const corrections = correctionsByWorkoutLogId[record.id] ?? []
 
         return (
-          <article key={record.id} className='rounded-lg border p-4'>
+          <article
+            id={`realized-training-${record.id}`}
+            key={record.id}
+            className='scroll-mt-6 rounded-lg border p-4 transition-shadow target:border-primary target:ring-2 target:ring-primary/40'
+          >
             <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
               <div>
                 <div className='flex flex-wrap items-center gap-2'>

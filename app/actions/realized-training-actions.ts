@@ -104,13 +104,14 @@ export interface RealizedTrainingCalendarSession {
   readonly id: string
   readonly date: string
   readonly title: string
+  readonly recordId: string | null
   readonly status: 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
 }
 
 export interface RealizedTrainingCalendarDay {
   readonly date: string
   readonly sessions: readonly RealizedTrainingCalendarSession[]
-  readonly hasUnplannedTraining: boolean
+  readonly unplannedRecordIds: readonly string[]
 }
 
 /**
@@ -184,9 +185,12 @@ export async function getRealizedTrainingCalendarForAthleteAction(
     if (planIdByDate.get(session.date) !== session.planId) continue
 
     const linkedRecords = records.filter(record => record.sessionId === session.id)
-    const matchedEvidenceOutcome = linkedRecords.some(record => record.status === 'completed')
+    const matchedRecord = linkedRecords.find(record => record.status === 'completed')
+      ?? linkedRecords.find(record => record.status === 'partial')
+      ?? null
+    const matchedEvidenceOutcome = matchedRecord?.status === 'completed'
       ? 'completed' as const
-      : linkedRecords.some(record => record.status === 'partial')
+      : matchedRecord?.status === 'partial'
         ? 'partial' as const
         : null
     const entries = sessionsByDate.get(session.date) ?? []
@@ -194,6 +198,7 @@ export async function getRealizedTrainingCalendarForAthleteAction(
       id: session.id,
       date: session.date,
       title: session.title,
+      recordId: matchedRecord?.id ?? null,
       status: reconcileTrainingDayStatus({
         date: session.date,
         today,
@@ -212,7 +217,9 @@ export async function getRealizedTrainingCalendarForAthleteAction(
     data: calendarDates.map(date => ({
       date,
       sessions: sessionsByDate.get(date) ?? [],
-      hasUnplannedTraining: hasUnplannedTrainingOnDate(records, date),
+      unplannedRecordIds: hasUnplannedTrainingOnDate(records, date)
+        ? records.filter(record => record.date === date && record.sessionId === null).map(record => record.id)
+        : [],
     })),
   }
 }

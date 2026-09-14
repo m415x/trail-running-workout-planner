@@ -424,6 +424,11 @@
       "not_recorded": "not recorded",
       "legacy_zero_ambiguous": "ambiguous legacy zero",
       "invalid_value": "invalid value"
+    },
+    "durationUnits": {
+      "hours": "hr",
+      "minutes": "min",
+      "seconds": "sec"
     }
   },
   "RealizedTrainingCalendar": {
@@ -436,6 +441,7 @@
       "pending": "Pending",
       "rest": "Rest"
     },
-    "extra": "Extra training"
+    "extra": "Extra training",
+    "openRecord": "Open record in history"
   }
 }

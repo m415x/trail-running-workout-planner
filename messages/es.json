@@ -424,6 +424,11 @@
       "not_recorded": "no registrado",
       "legacy_zero_ambiguous": "cero legacy ambiguo",
       "invalid_value": "valor inválido"
+    },
+    "durationUnits": {
+      "hours": "h",
+      "minutes": "min",
+      "seconds": "seg"
     }
   },
   "RealizedTrainingCalendar": {
@@ -436,6 +441,7 @@
       "pending": "Pendiente",
       "rest": "Descanso"
     },
-    "extra": "Entrenamiento extra"
+    "extra": "Entrenamiento extra",
+    "openRecord": "Ver registro en el historial"
   }
 }

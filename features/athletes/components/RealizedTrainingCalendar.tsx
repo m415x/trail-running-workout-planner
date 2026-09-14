@@ -80,29 +80,53 @@ export function RealizedTrainingCalendar({
               >
                 <p className='text-xs font-semibold'>{dayNumber}</p>
                 <div className='mt-1 space-y-1'>
-                  {day?.sessions.map(session => (
-                    <div
-                      key={session.id}
-                      title={session.title}
-                      aria-label={`${session.title}: ${t(`status.${session.status}`)}`}
-                      className={cn(
-                        'flex items-center gap-1 rounded border px-1 py-0.5 text-[10px]',
-                        statusStyles[session.status],
-                      )}
-                    >
-                      <StatusIcon status={session.status} />
-                      <span className='truncate'>{t(`status.${session.status}`)}</span>
-                    </div>
-                  ))}
-                  {day?.hasUnplannedTraining && (
-                    <div
-                      title={t('extra')}
-                      className='flex items-center gap-1 rounded border border-violet-500/50 bg-violet-500/10 px-1 py-0.5 text-[10px] text-violet-700 dark:text-violet-300'
+                  {day?.sessions.map(session => {
+                    const content = (
+                      <>
+                        <StatusIcon status={session.status} />
+                        <span className='truncate'>{t(`status.${session.status}`)}</span>
+                      </>
+                    )
+                    const className = cn(
+                      'flex items-center gap-1 rounded border px-1 py-0.5 text-[10px]',
+                      statusStyles[session.status],
+                      session.recordId && 'hover:ring-2 hover:ring-primary/30',
+                    )
+
+                    return session.recordId ? (
+                      <a
+                        key={session.id}
+                        href={`#realized-training-${session.recordId}`}
+                        title={`${session.title} · ${t('openRecord')}`}
+                        aria-label={`${session.title}: ${t(`status.${session.status}`)}. ${t('openRecord')}`}
+                        className={className}
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      <div
+                        key={session.id}
+                        title={session.title}
+                        aria-label={`${session.title}: ${t(`status.${session.status}`)}`}
+                        className={className}
+                      >
+                        {content}
+                      </div>
+                    )
+                  })}
+                  {day?.unplannedRecordIds.map((recordId, index) => (
+                    <a
+                      key={recordId}
+                      href={`#realized-training-${recordId}`}
+                      title={t('openRecord')}
+                      className='flex items-center gap-1 rounded border border-violet-500/50 bg-violet-500/10 px-1 py-0.5 text-[10px] text-violet-700 hover:ring-2 hover:ring-primary/30 dark:text-violet-300'
                     >
                       <CirclePlus className='size-3.5' />
-                      <span className='truncate'>{t('extra')}</span>
-                    </div>
-                  )}
+                      <span className='truncate'>
+                        {day.unplannedRecordIds.length > 1 ? `${t('extra')} ${index + 1}` : t('extra')}
+                      </span>
+                    </a>
+                  ))}
                 </div>
               </div>
             )
