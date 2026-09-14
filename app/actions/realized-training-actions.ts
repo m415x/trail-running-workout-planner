@@ -1,10 +1,19 @@
 'use server'
 
-import { and, desc, eq, inArray } from 'drizzle-orm'
+import { and, desc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '@/db'
-import { workoutLogs } from '@/db/schema'
+import {
+  groupSessionPrescriptions,
+  groupTrainingPlans,
+  macrocycles,
+  mesocycles,
+  microcycles,
+  sessions,
+  workoutLogs,
+} from '@/db/schema'
 import { workoutLogEvidence } from '@/db/readiness-schema'
 import { getAthleteById } from '@/app/actions/athlete-actions'
+import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
 import {
   correctManualRealizedTrainingRecord,
@@ -15,6 +24,10 @@ import {
   listRealizedTrainingRecordsForAthlete,
   listRealizedTrainingRecordsForAthleteInDateRange,
 } from '@/lib/realized-training/realized-training-repository'
+import {
+  hasUnplannedTrainingOnDate,
+  reconcileTrainingDayStatus,
+} from '@/lib/realized-training/day-status-reconciliation'
 import { mapPersistenceToManualRealizedTrainingClientInput } from '@/lib/realized-training/persistence-mapping'
 import type { ManualRealizedTrainingClientInput } from '@/types/training/realized-training-capture.types'
 import type { ManualRealizedTrainingCorrectionClientInput } from '@/types/training/realized-training-correction.types'
@@ -83,6 +96,124 @@ export async function getCurrentAthleteRealizedTrainingRangeAction(startDate: st
       startDate,
       endDate,
     ),
+  }
+}
+
+
+export interface RealizedTrainingCalendarSession {
+  readonly id: string
+  readonly date: string
+  readonly title: string
+  readonly status: 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
+}
+
+export interface RealizedTrainingCalendarDay {
+  readonly date: string
+  readonly sessions: readonly RealizedTrainingCalendarSession[]
+  readonly hasUnplannedTraining: boolean
+}
+
+/**
+ * Builds the coach-facing calendar projection from applicable prescribed
+ * sessions and the same durable evidence used by history/readiness. A missing
+ * linked row can make a past prescribed session currently `missed`, but does
+ * not create realized evidence or infer a permanent athlete assertion.
+ */
+export async function getRealizedTrainingCalendarForAthleteAction(
+  athleteId: string,
+  startDate: string,
+  endDate: string,
+  today: string,
+) {
+  if (startDate > endDate) return { success: false as const, data: [] }
+
+  const athlete = await getAthleteById(athleteId)
+  if (!athlete) return { success: false as const, data: [] }
+
+  const [records, candidateSessions] = await Promise.all([
+    Promise.resolve(listRealizedTrainingRecordsForAthleteInDateRange(
+      athlete.id,
+      athlete.teamId,
+      startDate,
+      endDate,
+    )),
+    Promise.resolve(db
+      .select({
+        id: sessions.id,
+        date: sessions.date,
+        title: sessions.title,
+        planId: groupTrainingPlans.id,
+      })
+      .from(sessions)
+      .innerJoin(
+        groupSessionPrescriptions,
+        and(
+          eq(groupSessionPrescriptions.sessionId, sessions.id),
+          eq(groupSessionPrescriptions.isDeleted, false),
+        ),
+      )
+      .innerJoin(microcycles, eq(groupSessionPrescriptions.microcycleId, microcycles.id))
+      .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+      .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+      .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+      .where(and(
+        eq(sessions.teamId, athlete.teamId),
+        gte(sessions.date, startDate),
+        lte(sessions.date, endDate),
+        eq(sessions.isDeleted, false),
+        eq(microcycles.isDeleted, false),
+        eq(mesocycles.isDeleted, false),
+        eq(macrocycles.isDeleted, false),
+        eq(groupTrainingPlans.isDeleted, false),
+      ))
+      .all()),
+  ])
+
+  const dates = [...new Set(candidateSessions.map(session => session.date))]
+  const resolutions = await Promise.all(dates.map(async date => [
+    date,
+    await getAthletePlanningResolutionOnDate(athlete.id, date),
+  ] as const))
+  const planIdByDate = new Map(resolutions.map(([date, result]) => [
+    date,
+    result?.resolution.status === 'resolved' ? result.resolution.planId : null,
+  ]))
+
+  const sessionsByDate = new Map<string, RealizedTrainingCalendarSession[]>()
+  for (const session of candidateSessions) {
+    if (planIdByDate.get(session.date) !== session.planId) continue
+
+    const linkedRecords = records.filter(record => record.sessionId === session.id)
+    const matchedEvidenceOutcome = linkedRecords.some(record => record.status === 'completed')
+      ? 'completed' as const
+      : linkedRecords.some(record => record.status === 'partial')
+        ? 'partial' as const
+        : null
+    const entries = sessionsByDate.get(session.date) ?? []
+    entries.push({
+      id: session.id,
+      date: session.date,
+      title: session.title,
+      status: reconcileTrainingDayStatus({
+        date: session.date,
+        today,
+        hasPlannedSession: true,
+        matchedEvidenceOutcome,
+      }),
+    })
+    sessionsByDate.set(session.date, entries)
+  }
+
+  const datesWithEvidence = [...new Set(records.map(record => record.date))]
+  const calendarDates = [...new Set([...dates, ...datesWithEvidence])].sort()
+
+  return {
+    success: true as const,
+    data: calendarDates.map(date => ({
+      date,
+      sessions: sessionsByDate.get(date) ?? [],
+      hasUnplannedTraining: hasUnplannedTrainingOnDate(records, date),
+    })),
   }
 }
 

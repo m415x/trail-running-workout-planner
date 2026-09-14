@@ -1,8 +1,17 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gte, isNull, lte } from 'drizzle-orm'
 
 import { db } from '@/db/index'
 import { workoutLogEvidence } from '@/db/readiness-schema'
-import { athleteProfiles, sessions, workoutLogs } from '@/db/schema'
+import {
+  athleteProfiles,
+  groupSessionPrescriptions,
+  groupTrainingPlans,
+  macrocycles,
+  mesocycles,
+  microcycles,
+  sessions,
+  workoutLogs,
+} from '@/db/schema'
 
 const TEAM_ID = 'team_1'
 const ATHLETE_ID = 'profile_user_2'
@@ -38,7 +47,7 @@ async function seedRealizedTrainingFixtures() {
   console.log('🏃 Seeding realized-training walkthrough fixtures...')
 
   const athlete = await db
-    .select({ id: athleteProfiles.id })
+    .select({ id: athleteProfiles.id, groupId: athleteProfiles.groupId })
     .from(athleteProfiles)
     .where(and(eq(athleteProfiles.id, ATHLETE_ID), eq(athleteProfiles.teamId, TEAM_ID)))
     .get()
@@ -100,6 +109,78 @@ async function seedRealizedTrainingFixtures() {
   ]
 
   await db.insert(sessions).values(sessionRows).onConflictDoNothing().run()
+
+  if (!athlete.groupId) {
+    throw new Error('Ana Acosta must belong to a sporting group for prescribed fixtures.')
+  }
+
+  async function resolveBaseMicrocycle(date: string) {
+    const row = await db
+      .select({ id: microcycles.id })
+      .from(microcycles)
+      .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+      .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+      .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+      .where(and(
+        eq(groupTrainingPlans.groupId, athlete.groupId!),
+        isNull(groupTrainingPlans.planningCohortId),
+        lte(microcycles.startDate, date),
+        gte(microcycles.endDate, date),
+        eq(microcycles.isDeleted, false),
+        eq(mesocycles.isDeleted, false),
+        eq(macrocycles.isDeleted, false),
+        eq(groupTrainingPlans.isDeleted, false),
+      ))
+      .get()
+
+    if (!row) throw new Error(`No applicable base-plan microcycle found for ${date}.`)
+    return row.id
+  }
+
+  const prescribedFixtures = [
+    {
+      id: `${FIXTURE_PREFIX}prescription_completed`,
+      sessionId: `${FIXTURE_PREFIX}session_completed`,
+      date: completedDate,
+      distanceKm: 8,
+      durationMin: 53,
+      elevationGain: 320,
+    },
+    {
+      id: `${FIXTURE_PREFIX}prescription_partial`,
+      sessionId: `${FIXTURE_PREFIX}session_partial`,
+      date: partialDate,
+      distanceKm: 8,
+      durationMin: 55,
+      elevationGain: 300,
+    },
+    {
+      id: `${FIXTURE_PREFIX}prescription_missed`,
+      sessionId: `${FIXTURE_PREFIX}session_missed`,
+      date: missedDate,
+      distanceKm: 7,
+      durationMin: 48,
+      elevationGain: 220,
+    },
+  ]
+
+  await db.insert(groupSessionPrescriptions).values(await Promise.all(
+    prescribedFixtures.map(async fixture => ({
+      id: fixture.id,
+      sessionId: fixture.sessionId,
+      groupId: athlete.groupId!,
+      microcycleId: await resolveBaseMicrocycle(fixture.date),
+      distanceKm: fixture.distanceKm,
+      durationMin: fixture.durationMin,
+      elevationGain: fixture.elevationGain,
+      intensityMethod: null,
+      zone: null,
+      pamPercentage: null,
+      notes: 'KAN-297 walkthrough prescription.',
+      generationOwnership: 'manual' as const,
+      generationKey: null,
+    })),
+  )).onConflictDoNothing().run()
 
   const logRows = [
     {

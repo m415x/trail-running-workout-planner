@@ -425,5 +425,17 @@
       "legacy_zero_ambiguous": "cero legacy ambiguo",
       "invalid_value": "valor inválido"
     }
+  },
+  "RealizedTrainingCalendar": {
+    "title": "Calendario de entrenamiento",
+    "description": "Vista de cinco semanas con sesiones prescritas aplicables y evidencia realizada durable.",
+    "status": {
+      "completed": "Completado",
+      "partial": "Parcial",
+      "missed": "No realizado",
+      "pending": "Pendiente",
+      "rest": "Descanso"
+    },
+    "extra": "Entrenamiento extra"
   }
 }

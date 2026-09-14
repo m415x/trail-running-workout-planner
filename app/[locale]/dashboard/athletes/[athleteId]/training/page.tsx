@@ -4,9 +4,11 @@ import { Activity, ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import {
+  getRealizedTrainingCalendarForAthleteAction,
   getRealizedTrainingCorrectionsAction,
   getRealizedTrainingHistoryForAthleteAction,
 } from '@/app/actions/realized-training-actions'
+import { RealizedTrainingCalendar } from '@/features/athletes/components/RealizedTrainingCalendar'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import { buttonVariants } from '@ui/button'
@@ -16,6 +18,29 @@ interface AthleteTrainingPageProps {
   params: Promise<{ locale: string; athleteId: string }>
 }
 
+function formatISODate(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function calendarWindow(today: string) {
+  const current = new Date(`${today}T00:00:00Z`)
+  const mondayOffset = (current.getUTCDay() + 6) % 7
+  const start = new Date(current)
+  start.setUTCDate(current.getUTCDate() - mondayOffset - 21)
+  const end = new Date(start)
+  end.setUTCDate(start.getUTCDate() + 34)
+  return { startDate: formatISODate(start), endDate: formatISODate(end) }
+}
+
+function todayInArgentina() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 function athletePath(locale: string, athleteId: string) {
   const base = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
   return `${base}/${athleteId}`
@@ -23,12 +48,15 @@ function athletePath(locale: string, athleteId: string) {
 
 export default async function AthleteTrainingPage({ params }: AthleteTrainingPageProps) {
   const { locale, athleteId } = await params
-  const [athlete, historyResult] = await Promise.all([
+  const today = todayInArgentina()
+  const { startDate, endDate } = calendarWindow(today)
+  const [athlete, historyResult, calendarResult] = await Promise.all([
     getAthleteById(athleteId),
     getRealizedTrainingHistoryForAthleteAction(athleteId),
+    getRealizedTrainingCalendarForAthleteAction(athleteId, startDate, endDate, today),
   ])
 
-  if (!athlete || !historyResult.success) notFound()
+  if (!athlete || !historyResult.success || !calendarResult.success) notFound()
 
   const correctionsEntries = await Promise.all(
     historyResult.data.map(async (record) => {
@@ -71,6 +99,14 @@ export default async function AthleteTrainingPage({ params }: AthleteTrainingPag
           <p className='mt-1 max-w-3xl text-muted-foreground'>{labels.description}</p>
         </div>
       </div>
+
+      <RealizedTrainingCalendar
+        days={calendarResult.data}
+        startDate={startDate}
+        endDate={endDate}
+        today={today}
+        locale={locale}
+      />
 
       <Card>
         <CardHeader>

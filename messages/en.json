@@ -425,5 +425,17 @@
       "legacy_zero_ambiguous": "ambiguous legacy zero",
       "invalid_value": "invalid value"
     }
+  },
+  "RealizedTrainingCalendar": {
+    "title": "Training calendar",
+    "description": "Five-week view of applicable prescribed sessions and durable realized evidence.",
+    "status": {
+      "completed": "Completed",
+      "partial": "Partial",
+      "missed": "Missed",
+      "pending": "Pending",
+      "rest": "Rest"
+    },
+    "extra": "Extra training"
   }
 }

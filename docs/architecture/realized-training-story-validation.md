@@ -15,6 +15,7 @@ The story establishes durable realized training as evidence distinct from prescr
 - Deduplication requires stable persisted identity; metric/date similarity never invents identity.
 - History reads require both team and athlete scope.
 - Readiness consumes the durable realized-training boundary rather than prescribed sessions or client state.
+- The coach history includes a five-week calendar projection of applicable prescribed sessions plus unplanned realized training. The projection reuses explicit session linkage and never treats planning as realized evidence.
 - Day status is reconciliable: an expired session can be `missed` with the evidence currently available and later become `completed` or `partial` when late manual/imported evidence is linked.
 - A realized workout without an official session remains extra training and contributes to realized load/readiness without being assigned to a prescribed session.
 
@@ -29,7 +30,7 @@ It includes:
 3. an expired prescribed session without realized evidence, suitable for validating `missed` reconciliation;
 4. an extra realized workout with `sessionId = null` on a day without an official fixture session.
 
-Fixture IDs use the `kan297_` prefix and inserts are idempotent through stable IDs plus conflict-safe insertion.
+The three prescribed fixtures include group prescriptions attached to the applicable base-plan microcycle, so the calendar resolves them through the same planning hierarchy as production sessions. Fixture IDs use the `kan297_` prefix and inserts are idempotent through stable IDs plus conflict-safe insertion.
 
 The seed is representative, not exhaustive production data. Automated tests remain the authoritative coverage for edge cases such as stable imported identity, rollback, cross-team/cross-athlete isolation, legacy zero ambiguity and late evidence reconciliation.
 
