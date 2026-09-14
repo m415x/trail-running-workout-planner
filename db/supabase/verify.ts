@@ -18,7 +18,7 @@ const applicationTables = [
 
 async function main() {
   const connectionString = process.env.SUPABASE_DIRECT_URL
-  if (!connectionString) throw new Error('SUPABASE_DIRECT_URL no está configurada')
+  if (!connectionString) throw new Error('SUPABASE_DIRECT_URL is not configured')
 
   const sql = postgres(connectionString, { prepare: false, max: 1 })
 
@@ -52,13 +52,13 @@ async function main() {
       && ['date', 'logged_at'].every(name => timingColumns.some(column => column.column_name === name && column.is_nullable === 'NO'))
     console.log(`Workout log timing columns: ${timingValid ? 'OK' : 'FAIL'}`)
 
-    console.log(`Tablas de aplicación: ${tables.length}/${applicationTables.length}`)
-    console.log(`Tablas con RLS: ${protectedTables.length}/${applicationTables.length}`)
+    console.log(`Application tables: ${tables.length}/${applicationTables.length}`)
+    console.log(`Tables with RLS: ${protectedTables.length}/${applicationTables.length}`)
     if (missingTables.length > 0) {
-      console.log(`Tablas faltantes: ${missingTables.join(', ')}`)
+      console.log(`Missing tables: ${missingTables.join(', ')}`)
     }
     if (unprotectedTables.length > 0) {
-      console.log(`Tablas sin RLS: ${unprotectedTables.join(', ')}`)
+      console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
     if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid) {
