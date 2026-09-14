@@ -18,6 +18,7 @@ function capture(
     sessionId: null,
     workoutId: null,
     date: '2026-09-13',
+    performedAt: '2026-09-13T08:30:00-03:00',
     status: 'completed',
     metrics: {
       distanceKm: unknown,

@@ -20,6 +20,8 @@ All repository documentation must be written and maintained in English.
 - [Competitive adjustment](architecture/competitive-adjustment.md)
 - [Integral planning review and safe persistence](architecture/planning-review-persistence.md)
 - [Individual readiness assessment](architecture/readiness-assessment.md)
+- [Realized training timing and manual capture](architecture/realized-training-timing.md)
+- [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
 - [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)

@@ -101,18 +101,26 @@
       "estimatedTime": "Tiempo est.",
       "avgPace": "Ritmo medio",
       "avgSpeed": "Vel. media",
-      "restMessage": "Sin rutina programada. Aprovecha para recuperar."
+      "restMessage": "Sin rutina programada. Aprovecha para recuperar.",
+      "logged": "Entrenamiento registrado"
     },
     "dialog": {
       "title": "Registrar Entrenamiento",
       "distance": "Distancia (km)",
-      "time": "Tiempo (min : seg)",
+      "time": "Duración (h : min : seg)",
       "elevation": "Desnivel positivo (+m)",
       "bpm": "ppm",
       "heartRate": "FC Media (ppm)",
       "rpe": "Sensación de Esfuerzo (RPE)",
       "notes": "Comentarios o sensaciones",
-      "notesPlaceholder": "¿Cómo te sentiste? Terreno, clima, molestias..."
+      "notesPlaceholder": "¿Cómo te sentiste? Terreno, clima, molestias...",
+      "performedAt": "Fecha y hora de realización",
+      "localTimeHint": "Ingresá el inicio real en la hora local de tu dispositivo.",
+      "invalidPerformedAt": "Ingresá una fecha y hora de realización válida.",
+      "saveFailed": "No se pudo guardar el entrenamiento. Tus datos se conservaron; intentá nuevamente.",
+      "clear": "Limpiar formulario",
+      "cancel": "Cancelar",
+      "save": "Guardar"
     }
   },
   "Weather": {

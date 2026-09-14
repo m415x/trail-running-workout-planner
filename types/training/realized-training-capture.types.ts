@@ -33,6 +33,8 @@ export interface ManualRealizedTrainingCaptureInput {
   readonly sessionId: string | null
   readonly workoutId: string | null
   readonly date: string
+  /** Actual occurrence instant with an explicit UTC offset; never the entry time. */
+  readonly performedAt: string
   readonly status: ManualRealizedTrainingStatus
   readonly metrics: RealizedTrainingCaptureMetrics
   readonly feeling: string | null
@@ -45,6 +47,7 @@ export type ManualRealizedTrainingClientInput = Omit<ManualRealizedTrainingCaptu
 export type RealizedTrainingCaptureField =
   | 'athleteId'
   | 'date'
+  | 'performedAt'
   | 'status'
   | 'distanceKm'
   | 'durationMin'

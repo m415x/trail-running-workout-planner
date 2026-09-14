@@ -19,6 +19,7 @@ export interface WorkoutLogInsertValues {
   readonly sessionId: string | null
   readonly workoutId: string | null
   readonly date: string
+  readonly performedAt: string
   readonly status: ManualRealizedTrainingCaptureInput['status']
   readonly distanceKm: number
   readonly durationMin: number
@@ -85,6 +86,7 @@ export function mapManualCaptureToPersistenceRows(
       sessionId: input.sessionId,
       workoutId: input.workoutId,
       date: input.date,
+      performedAt: new Date(input.performedAt).toISOString(),
       status: input.status,
       distanceKm: numericFallback(input.metrics.distanceKm),
       durationMin: numericFallback(input.metrics.durationMin),
@@ -111,6 +113,7 @@ export interface PersistedWorkoutLogProjection {
   readonly sessionId: string | null
   readonly workoutId: string | null
   readonly date: string
+  readonly performedAt?: string | null
   readonly status: RawRealizedTrainingRecord['status']
   readonly distanceKm: number | null
   readonly durationMin: number | null
@@ -142,6 +145,7 @@ export function mapPersistenceToRawRealizedTrainingRecord(input: {
     sessionId: input.log.sessionId,
     workoutId: input.log.workoutId,
     date: input.log.date,
+    performedAt: input.log.performedAt ?? null,
     status: input.log.status,
     distanceKm: input.log.distanceKm,
     durationMin: input.log.durationMin,

@@ -1074,6 +1074,7 @@ async function seed() {
       athleteNotes: null,
 
       loggedAt: now,
+      performedAt: null, // Legacy fixtures have no observed occurrence time.
     }
   })
 

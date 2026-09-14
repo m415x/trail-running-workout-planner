@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
+import { captureLocalInstant, captureDuration } from '@/lib/realized-training/manual-capture-fields'
 import type {
   ManualRealizedTrainingClientInput,
   RealizedTrainingCaptureMetric,
@@ -12,7 +13,7 @@ function metricFromInput(value: string): RealizedTrainingCaptureMetric {
   return { state: 'known', value: Number(normalized) }
 }
 
-export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
+export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
   // Planned values are deliberately not copied into realized metrics. They can
   // be shown as placeholders by the UI, but an untouched input remains unknown.
   const initialValues = useMemo(() => ({
@@ -38,8 +39,13 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
   const [assessment, setAssessment] = useState<SelfAssessmentValues>(initialValues.assessment)
   const [athleteNotes, setAthleteNotes] = useState(initialValues.athleteNotes)
   const [isSaving, setIsSaving] = useState(false)
+  const saving = useRef(false)
+  const [performedLocal, setPerformedLocal] = useState('')
+  const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'saveFailed' | null>(null)
 
   const resetForm = useCallback(() => {
+    setPerformedLocal('')
+    setSaveError(null)
     setDistance(initialValues.distance)
     setGain(initialValues.gain)
     setTimeHr(initialValues.timeHr)
@@ -81,28 +87,24 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     }
   }
 
-  const durationMetric = (): RealizedTrainingCaptureMetric => {
-    const hasDuration = [timeHr, timeMin, timeSec].some((value) => value.trim() !== '')
-    if (!hasDuration) return { state: 'unknown' }
-
-    const hours = parseInt(timeHr, 10) || 0
-    const mins = parseInt(timeMin, 10) || 0
-    const secs = parseInt(timeSec, 10) || 0
-    const totalDurationMin = Number((hours * 60 + mins + secs / 60).toFixed(2))
-    return { state: 'known', value: totalDurationMin }
-  }
 
   const handleSave = async () => {
-    if (!dateStr || !onSave || isSaving) return
+    if (!dateStr || !onSave || saving.current) return
+    const performedAt = captureLocalInstant(performedLocal)
+    if (!performedAt) {
+      setSaveError('invalidPerformedAt')
+      return
+    }
 
     const payload: ManualRealizedTrainingClientInput = {
       sessionId: workout?.id?.toString() ?? null,
       workoutId: null,
       date: dateStr,
+      performedAt,
       status: 'completed',
       metrics: {
         distanceKm: metricFromInput(distance),
-        durationMin: durationMetric(),
+        durationMin: captureDuration(timeHr, timeMin, timeSec),
         elevationGainM: metricFromInput(gain),
         avgHrBpm: metricFromInput(avgHr),
         rpe: assessment.rpe === null || assessment.rpe === undefined
@@ -113,22 +115,25 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
       athleteNotes: athleteNotes.trim() || null,
     }
 
+    saving.current = true
+    setSaveError(null)
     setIsSaving(true)
     try {
       const saved = await onSave(payload)
-      if (!saved) return
+      if (!saved) {
+        setSaveError('saveFailed')
+        return
+      }
       resetForm()
       onClose()
+    } catch {
+      setSaveError('saveFailed')
     } finally {
+      saving.current = false
       setIsSaving(false)
     }
   }
 
-  const handleDelete = () => {
-    onDelete?.()
-    resetForm()
-    onClose()
-  }
 
   return {
     distance,
@@ -150,7 +155,9 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave, onDelet
     setAssessment,
     setAthleteNotes,
     handleSave,
-    handleDelete,
+    performedLocal,
+    setPerformedLocal,
+    saveError,
     resetForm,
   }
 }

@@ -86,6 +86,8 @@ Representative implementation anchors; the comparison above preserves the full s
 
 ## Next
 
+KAN-290 now has [timing/capture implementation and focused validation evidence](../architecture/realized-training-validation.md). SQLite migration and seed were verified locally; Supabase application/verification remains pending server-only connection configuration. This does not close KAN-258 or replace the catalog closure evidence above.
+
 Continue **KAN-258** on `h-23-realized-training`, preserving the existing realized-training boundary. The current [flow audit](../architecture/realized-training-flow-audit.md) and KAN-285 capture contract belong to that next story. Durable capture, evidence persistence and authoritative Session linkage must preserve H12's known/unknown/known-zero rules rather than create a parallel realized-training model.
 
 Relevant follow-ups retained after KAN-257:

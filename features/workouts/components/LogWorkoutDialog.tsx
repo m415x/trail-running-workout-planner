@@ -1,13 +1,12 @@
 'use client'
 
-import { CheckCircle2, HeartPulse, MapPin, Mountain, Timer, MessageSquare, RotateCcw } from 'lucide-react'
+import { CheckCircle2, HeartPulse, MapPin, Mountain, Timer, MessageSquare } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { ScrollArea } from '@ui/scroll-area'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@ui/dialog'
 import { PrimaryInput } from '@ui/custom/inputs'
 import type { ManualRealizedTrainingClientInput, WorkoutProps } from '@/types'
 import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
-import { ConfirmActionDialog } from '@ui/custom/confirm-dialog'
 import { SelfAssessment } from '@workouts/components/SelfAssessment'
 import { useLogWorkoutDialog } from '@workouts/hooks/useLogWorkoutDialog'
 
@@ -17,10 +16,9 @@ export interface LogWorkoutDialogProps {
   workout?: WorkoutProps | null
   dateStr?: string
   onSave?: (loggedData: ManualRealizedTrainingClientInput) => Promise<boolean>
-  onDelete?: () => void
 }
 
-export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete }: LogWorkoutDialogProps) {
+export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
   const t = useTranslations('Workouts')
   const {
     distance,
@@ -41,11 +39,14 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
     setAssessment,
     setAthleteNotes,
     handleSave,
-    handleDelete,
-  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, onDelete })
+    performedLocal,
+    setPerformedLocal,
+    saveError,
+    resetForm,
+  } = useLogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave })
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
       <DialogContent className='max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
         <span tabIndex={0} aria-hidden='true' className='sr-only focus:outline-none' />
 
@@ -61,6 +62,13 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
 
         <ScrollArea className='flex-1 min-h-0 w-full'>
           <div className='space-y-4 pt-4 pb-1 px-0.5'>
+            <label className='block space-y-1 text-xs'>
+              <span>{t('dialog.performedAt')}</span>
+              <PrimaryInput type='datetime-local' step='1' required value={performedLocal}
+                disabled={isSaving} onChange={(event) => setPerformedLocal(event.target.value)} />
+              <span className='text-muted-foreground'>{t('dialog.localTimeHint')}</span>
+            </label>
+            {saveError && <p role='alert' className='text-sm text-destructive'>{t(`dialog.${saveError}`)}</p>}
             <div className='grid grid-cols-2 gap-2.5'>
               <div className='space-y-1'>
                 <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
@@ -142,24 +150,12 @@ export function LogWorkoutDialog({ isOpen, onClose, workout, dateStr, onSave, on
         </ScrollArea>
 
         <DialogFooter className='flex flex-row gap-2 py-3.5 border-t border-border/40 bg-card shrink-0 mt-0'>
-          <ConfirmActionDialog
-            title='¿Restablecer registro?'
-            description='Se eliminarán las métricas ingresadas para esta sesión y volverá al estado original.'
-            confirmLabel='Restablecer'
-            cancelLabel='Cancelar'
-            variant='destructive'
-            onConfirm={handleDelete}
-            trigger={(open) => (
-              <GlassOutlineButton variant='destructive' title='Eliminar registro' onClick={open} className='flex-1'>
-                <RotateCcw className='size-4' />
-              </GlassOutlineButton>
-            )}
-          />
+          <GlassOutlineButton onClick={resetForm} disabled={isSaving}>{t('dialog.clear')}</GlassOutlineButton>
           <GlassOutlineButton onClick={onClose} className='flex-4' disabled={isSaving}>
-            Cancelar
+            {t('dialog.cancel')}
           </GlassOutlineButton>
           <PrimaryFilledButton onClick={() => void handleSave()} className='flex-6' disabled={isSaving}>
-            Guardar
+            {t('dialog.save')}
           </PrimaryFilledButton>
         </DialogFooter>
       </DialogContent>

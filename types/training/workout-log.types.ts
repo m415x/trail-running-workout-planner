@@ -7,6 +7,7 @@ import { FeelingValue } from '@workouts/components/FeelingSelector'
 export interface LoggedWorkoutPayload {
   workoutId?: string
   date?: string // 'YYYY-MM-DD'
+  performedAt?: string | null
   distanceKm: number
   durationMin: number
   elevationGain: number

@@ -38,6 +38,8 @@ export interface RawRealizedTrainingRecord {
   readonly sessionId: string | null
   readonly workoutId: string | null
   readonly date: string
+  /** Absent in legacy projections. Never inferred from date or loggedAt. */
+  readonly performedAt?: string | null
   readonly status: DayStatus
   readonly distanceKm: number | null
   readonly durationMin: number | null
@@ -72,6 +74,7 @@ export interface RealizedTrainingRecord {
   readonly sessionId: string | null
   readonly workoutId: string | null
   readonly date: string
+  readonly performedAt?: string | null
   readonly status: DayStatus
   readonly metrics: RealizedTrainingMetrics
   readonly provenance: RealizedTrainingProvenance

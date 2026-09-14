@@ -8,6 +8,16 @@ import type {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
+/** Reject timezone-free and calendar-normalized timestamps at the durable boundary. */
+export function isValidPerformedAt(value: unknown): value is string {
+  if (typeof value !== 'string') return false
+  const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-](\d{2}):(\d{2}))$/.exec(value)
+  if (!match || !isValidDateOnly(match[1])) return false
+  return Number(match[2]) < 24 && Number(match[3]) < 60 && Number(match[4]) < 60
+    && (!match[6] || (Number(match[6]) < 24 && Number(match[7]) < 60))
+    && Number.isFinite(Date.parse(value))
+}
+
 function isValidDateOnly(value: string): boolean {
   if (!DATE_PATTERN.test(value)) return false
   const parsed = new Date(`${value}T00:00:00Z`)
@@ -48,6 +58,10 @@ export function validateManualRealizedTrainingCapture(
 
   if (!isValidDateOnly(input.date)) {
     issues.push({ field: 'date', code: 'invalid_date' })
+  }
+
+  if (!isValidPerformedAt(input.performedAt)) {
+    issues.push({ field: 'performedAt', code: 'invalid_date' })
   }
 
   if (!['completed', 'partial', 'missed'].includes(input.status)) {

@@ -85,6 +85,7 @@ export function normalizeRealizedTrainingRecord(
     sessionId: raw.sessionId,
     workoutId: raw.workoutId,
     date: raw.date,
+    performedAt: raw.performedAt ?? null,
     status: raw.status,
     metrics,
     provenance: {

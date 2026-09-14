@@ -39,6 +39,19 @@ async function main() {
       .sort()
     const protectedTables = tables.filter((table) => table.rlsEnabled)
 
+    const timingColumns = await sql<{ column_name: string; data_type: string; is_nullable: string; column_default: string | null }[]>`
+      select column_name, data_type, is_nullable, column_default
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'workout_logs'
+        and column_name in ('date', 'performed_at', 'logged_at', 'duration_min')
+    `
+    const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
+    const duration = timingColumns.find(column => column.column_name === 'duration_min')
+    const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
+      && occurrence.column_default === null && duration?.data_type === 'double precision'
+      && ['date', 'logged_at'].every(name => timingColumns.some(column => column.column_name === name && column.is_nullable === 'NO'))
+    console.log(`Workout log timing columns: ${timingValid ? 'OK' : 'FAIL'}`)
+
     console.log(`Tablas de aplicación: ${tables.length}/${applicationTables.length}`)
     console.log(`Tablas con RLS: ${protectedTables.length}/${applicationTables.length}`)
     if (missingTables.length > 0) {
@@ -48,7 +61,7 @@ async function main() {
       console.log(`Tablas sin RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid) {
       process.exitCode = 1
     }
   } finally {

@@ -5,7 +5,7 @@ import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import type { ManualRealizedTrainingClientInput, TrackData, WeatherData, WorkoutCardProps } from '@/types'
-import { createManualRealizedTrainingAction } from '@/app/actions/realized-training-actions'
+import { createManualRealizedTrainingAction, getManualRealizedSessionStateAction } from '@/app/actions/realized-training-actions'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
@@ -40,7 +40,18 @@ export function useWorkoutCard({
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
-  const [isLogged, setIsLogged] = useState(initialIsCompleted)
+  const sessionId = String(workout.id)
+  const [captureState, setCaptureState] = useState<{ sessionId: string; captured: boolean } | null>(null)
+  const isCaptureReady = captureState?.sessionId === sessionId
+  const isLogged = isCaptureReady ? captureState.captured : initialIsCompleted
+
+  useEffect(() => {
+    let active = true
+    getManualRealizedSessionStateAction(sessionId).then(result => {
+      if (active && result.success) setCaptureState({ sessionId, captured: result.captured })
+    }).catch(() => { /* Keep capture disabled when persisted state cannot be verified. */ })
+    return () => { active = false }
+  }, [sessionId])
 
   const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
   const WorkoutIcon = getWorkoutIcon(workout.type)
@@ -156,11 +167,10 @@ export function useWorkoutCard({
   const handleSaveSession = async (data: ManualRealizedTrainingClientInput) => {
     const result = await createManualRealizedTrainingAction(data)
     if (!result.success) return false
-    setIsLogged(true)
+    setCaptureState({ sessionId, captured: true })
     return true
   }
 
-  const handleDeleteSession = () => setIsLogged(false)
 
   return {
     WorkoutIcon,
@@ -172,6 +182,7 @@ export function useWorkoutCard({
     isPast,
     isFuture,
     isLogged,
+    isCaptureReady,
     stats,
     zoneInfo,
     bpmRange,
@@ -181,6 +192,5 @@ export function useWorkoutCard({
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
-    handleDeleteSession,
   }
 }

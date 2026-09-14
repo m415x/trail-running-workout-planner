@@ -12,6 +12,7 @@ function input(overrides: Partial<ManualRealizedTrainingCaptureInput> = {}): Man
     sessionId: null,
     workoutId: null,
     date: '2026-09-13',
+    performedAt: '2026-09-13T08:30:00-03:00',
     status: 'completed',
     metrics: {
       distanceKm: unknown,
@@ -27,6 +28,13 @@ function input(overrides: Partial<ManualRealizedTrainingCaptureInput> = {}): Man
 }
 
 describe('manual realized training capture contract', () => {
+  it('rejects new captures without an occurrence instant instead of substituting loggedAt', () => {
+    for (const performedAt of ['', undefined, null, '2026-09-13T08:30:00']) {
+      const result = validateManualRealizedTrainingCapture(input({ performedAt: performedAt as string }))
+      assert.equal(result.ok, false)
+      if (!result.ok) assert.ok(result.issues.some(issue => issue.field === 'performedAt'))
+    }
+  })
   it('preserva unknown sin convertirlo en cero', () => {
     const value = input()
     const result = validateManualRealizedTrainingCapture(value)

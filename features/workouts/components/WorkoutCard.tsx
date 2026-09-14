@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { CheckCircleIcon, CoffeeIcon, NotePencilIcon } from '@phosphor-icons/react'
+import { CheckCircleIcon, CoffeeIcon } from '@phosphor-icons/react'
 import { WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
@@ -25,6 +25,7 @@ export function BaseWorkoutCard({
   showSubtitle = true,
   actionButtonLabel = 'Registrar entrenamiento',
 }: BaseWorkoutCardProps) {
+  const t = useTranslations('Workouts')
   const {
     WorkoutIcon,
     headerTitle,
@@ -35,13 +36,13 @@ export function BaseWorkoutCard({
     isPast,
     isFuture,
     isLogged,
+    isCaptureReady,
     stats,
     zoneInfo,
     bpmRange,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
-    handleDeleteSession,
   } = useWorkoutCard({ workout, date, TrackData })
 
   return (
@@ -89,12 +90,12 @@ export function BaseWorkoutCard({
         {!isFuture && (
           <>
             {isLogged ? (
-              <GlassFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
-                <NotePencilIcon />
-                <span>Editar registro</span>
+              <GlassFilledButton disabled className='rounded-xl text-xs active:scale-98'>
+                <CheckCircleIcon />
+                <span>{t('card.logged')}</span>
               </GlassFilledButton>
             ) : (
-              <PrimaryFilledButton onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+              <PrimaryFilledButton disabled={!isCaptureReady} onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
                 <CheckCircleIcon />
                 <span>{actionButtonLabel}</span>
               </PrimaryFilledButton>
@@ -111,7 +112,6 @@ export function BaseWorkoutCard({
         workout={workout}
         dateStr={date}
         onSave={handleSaveSession}
-        onDelete={handleDeleteSession}
       />
     </>
   )
