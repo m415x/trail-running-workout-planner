@@ -102,6 +102,9 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 ## Product and code conventions
 
 - New user-visible copy must be ES/EN in the same change.
+- When touching legacy UI/code, do not only patch the new line: bring the touched surface forward incrementally by moving user-visible copy into the existing ES/EN i18n system and by documenting exported/non-obvious behavior, invariants and side effects that the change depends on.
+- A touched legacy file does not require unrelated refactoring, but newly exposed hard-coded copy, stale comments or unclear contracts in the modified area should be cleaned up in the same task whenever it can be done safely.
+- If full legacy cleanup would materially expand story scope, document the remaining debt in Jira/docs instead of silently leaving it untracked.
 - Units must be explicit in touched domain contracts (`distanceKm`, `elevationGainM`, `durationMinutes`, etc.).
 - Preserve `unknown != 0`, absence != negative assertion, generated != manual.
 - Apply JSDoc incrementally to exported/non-obvious domain contracts and side effects; document intent/invariants, not trivial implementation.
@@ -115,7 +118,7 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
-- Existing lint baseline is 0 errors / 11 warnings entering H12. New warnings are regressions unless explicitly accepted.
+- Current lint baseline is 0 errors / 9 warnings after KAN-290. New warnings are regressions unless explicitly accepted.
 - Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn exec tsc --noEmit`, `pn build`, plus relevant DB verifiers.
 - Perform the functional/manual walkthrough at story end unless earlier manual validation is required to continue.
 - For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
@@ -137,4 +140,4 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 
 ## Current closure context
 
-Epic 2 is complete. Epic 3 Story 1 (KAN-257, competitive catalog) is complete at `18a01f1`. The operational handoff is `docs/handoffs/epic-3.md`; it distinguishes versioned implementation/DB evidence from unavailable final gate logs. Continue KAN-258 on `h-23-realized-training` from the existing realized-training audit and capture contract. KAN-282 UX action safety remains deferred.
+Epic 2 is complete. Epic 3 Story 1 (KAN-257, competitive catalog) is complete at `18a01f1`. The operational handoff is `docs/handoffs/epic-3.md`; it distinguishes versioned implementation/DB evidence from unavailable final gate logs. Continue KAN-258 on `h-23-realized-training` from the durable realized-training flow. KAN-282 UX action safety remains deferred.
