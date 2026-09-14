@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import type {
   IntensityZone,
@@ -70,6 +71,7 @@ export interface UseHomeTabProps {
   initialSchedule: SessionWithWorkout[]
   initialRealizedTraining: RealizedTrainingRecord[]
   initialAthlete: CurrentAthleteData
+  locale: string
   onWeekChange: (startDateIso: string) => Promise<SessionWithWorkout[]>
   onRealizedTrainingWeekChange: (startDateIso: string, endDateIso: string) => Promise<RealizedTrainingRecord[]>
 }
@@ -149,9 +151,11 @@ export function useHomeTab({
   initialSchedule,
   initialRealizedTraining,
   initialAthlete,
+  locale,
   onWeekChange,
   onRealizedTrainingWeekChange,
 }: UseHomeTabProps) {
+  const tPlanning = useTranslations('BasePlanning')
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
   const [schedule, setSchedule] = useState<SessionWithWorkout[]>(initialSchedule)
   const [realizedTraining, setRealizedTraining] = useState<RealizedTrainingRecord[]>(initialRealizedTraining)
@@ -180,7 +184,7 @@ export function useHomeTab({
         date: isoDate,
         fullDate: isoDate,
         day: DAY_LETTERS[index],
-        dayName: currentDate.toLocaleDateString('es-ES', { weekday: 'short' }),
+        dayName: currentDate.toLocaleDateString(locale, { weekday: 'short' }),
         dayNumber: currentDate.getDate(),
         isToday: isoDate === todayISO,
         hasUnplannedTraining,
@@ -224,7 +228,7 @@ export function useHomeTab({
         ),
       } as WeekDay
     })
-  }, [athleteGroup, realizedTraining, schedule, startOfWeek])
+  }, [athleteGroup, locale, realizedTraining, schedule, startOfWeek])
 
   const selectedDay = useMemo(() => {
     const selectedISODate = formatLocalISODate(selectedDate)
@@ -241,16 +245,20 @@ export function useHomeTab({
       (total, session) => total + (session.sessionPrescriptions[0]?.distanceKm ?? 0),
       0,
     )
+    const rangeFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' })
+    const title = mondayISO && sundayISO
+      ? `${rangeFormatter.format(parseISODate(mondayISO))}–${rangeFormatter.format(parseISODate(sundayISO))}`
+      : ''
 
     return {
       id: 'current',
-      title: `Semana del ${mondayISO}`,
-      phase: 'Desarrollo',
+      title,
+      phase: tPlanning('intents.development'),
       startDate: mondayISO,
       endDate: sundayISO,
       targetKm,
     }
-  }, [schedule, weekDays])
+  }, [locale, schedule, tPlanning, weekDays])
 
   const currentWorkouts = useMemo(() => {
     if (!selectedWeekDay || !athleteGroup) return []
@@ -357,6 +365,10 @@ export function useHomeTab({
     [loadWeek],
   )
 
+  const handleRealizedTrainingSaved = useCallback((record: RealizedTrainingRecord) => {
+    setRealizedTraining(current => [record, ...current.filter(candidate => candidate.id !== record.id)])
+  }, [])
+
   return {
     team: initialAthlete.athleteProfile.team,
     user: initialAthlete,
@@ -376,5 +388,6 @@ export function useHomeTab({
     onPrevWeek: handlePrevWeek,
     onNextWeek: handleNextWeek,
     onSelectDate: handleSelectDate,
+    onRealizedTrainingSaved: handleRealizedTrainingSaved,
   }
 }
