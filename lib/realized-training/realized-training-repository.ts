@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { and, desc, eq } from 'drizzle-orm'
+import { and, desc, eq, gte, lte } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { athleteProfiles, sessions, workoutLogs } from '@/db/schema'
@@ -123,6 +123,39 @@ export function listRealizedTrainingRecordsForAthlete(
     .where(and(
       eq(workoutLogs.athleteId, athleteId),
       eq(athleteProfiles.teamId, teamId),
+      eq(workoutLogs.isDeleted, false),
+      eq(athleteProfiles.isDeleted, false),
+    ))
+    .orderBy(desc(workoutLogs.date), desc(workoutLogs.loggedAt))
+    .all()
+
+  return rows.map(normalizePersistenceRow)
+}
+
+/**
+ * Week/range variant used by calendar read models. It consumes the same durable
+ * boundary as H12 and never infers realized training from planned sessions.
+ */
+export function listRealizedTrainingRecordsForAthleteInDateRange(
+  athleteId: string,
+  teamId: string,
+  startDate: string,
+  endDate: string,
+): RealizedTrainingRecord[] {
+  const rows = db
+    .select({
+      log: workoutLogs,
+      evidence: workoutLogEvidence,
+      teamId: athleteProfiles.teamId,
+    })
+    .from(workoutLogs)
+    .innerJoin(athleteProfiles, eq(workoutLogs.athleteId, athleteProfiles.id))
+    .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
+    .where(and(
+      eq(workoutLogs.athleteId, athleteId),
+      eq(athleteProfiles.teamId, teamId),
+      gte(workoutLogs.date, startDate),
+      lte(workoutLogs.date, endDate),
       eq(workoutLogs.isDeleted, false),
       eq(athleteProfiles.isDeleted, false),
     ))
