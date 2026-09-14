@@ -4,12 +4,14 @@ import {
   type RealizedTrainingRecord,
   type TrainingLoadEvidenceWindow,
   type TrainingLoadInsufficientReason,
+  type TrainingLoadRuleConfig,
 } from '@/types'
 
 export interface BuildTrainingLoadEvidenceWindowInput {
   readonly startDate: string
   readonly endDate: string
   readonly records: readonly RealizedTrainingRecord[]
+  readonly rule?: TrainingLoadRuleConfig
 }
 
 function enumerateDates(startDate: string, endDate: string): string[] {
@@ -40,6 +42,7 @@ function currentUsableStreakDays(days: TrainingLoadEvidenceWindow['days']): numb
 export function buildTrainingLoadEvidenceWindow(
   input: BuildTrainingLoadEvidenceWindowInput,
 ): TrainingLoadEvidenceWindow {
+  const rule = input.rule ?? TRAINING_LOAD_RULE_CONFIG
   const dates = enumerateDates(input.startDate, input.endDate)
   const days = dates.map(date => deriveDailyTrainingLoad(date, input.records))
 
@@ -53,13 +56,13 @@ export function buildTrainingLoadEvidenceWindow(
 
   const insufficientReasons: TrainingLoadInsufficientReason[] = []
   if (usableDays === 0) insufficientReasons.push('no_reliable_evidence')
-  if (usableStreakDays < TRAINING_LOAD_RULE_CONFIG.minimumWarmupDays) {
+  if (usableStreakDays < rule.minimumWarmupDays) {
     insufficientReasons.push('insufficient_history')
   }
 
   const status = usableDays === 0
     ? 'insufficient_data'
-    : usableStreakDays < TRAINING_LOAD_RULE_CONFIG.minimumWarmupDays
+    : usableStreakDays < rule.minimumWarmupDays
       ? 'warming_up'
       : 'available'
 
