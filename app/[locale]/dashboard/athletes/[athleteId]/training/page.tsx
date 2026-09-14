@@ -10,10 +10,12 @@ import {
   getRealizedTrainingCorrectionsAction,
   getRealizedTrainingHistoryForAthleteAction,
 } from '@/app/actions/realized-training-actions'
+import { getAthleteTrainingLoadAction } from '@/app/actions/training-load-actions'
 import { AdherenceSummary } from '@/features/athletes/components/AdherenceSummary'
 import { PlanRealComparison } from '@/features/athletes/components/PlanRealComparison'
 import { RealizedTrainingCalendar } from '@/features/athletes/components/RealizedTrainingCalendar'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
+import { TrainingLoadSummary } from '@/features/athletes/components/TrainingLoadSummary'
 import { deriveAthleteAdherence } from '@/lib/adherence/athlete-adherence'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import { buttonVariants } from '@ui/button'
@@ -36,6 +38,13 @@ function calendarWindow(today: string) {
   const end = new Date(start)
   end.setUTCDate(start.getUTCDate() + 34)
   return { startDate: formatISODate(start), endDate: formatISODate(end) }
+}
+
+function trainingLoadWindow(today: string) {
+  const end = new Date(`${today}T00:00:00Z`)
+  const start = new Date(end)
+  start.setUTCDate(end.getUTCDate() - 83)
+  return { startDate: formatISODate(start), endDate: today }
 }
 
 function comparisonWindow(today: string, kind: 'week' | 'month') {
@@ -73,14 +82,16 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
   const [{ locale, athleteId }, query] = await Promise.all([params, searchParams])
   const today = todayInArgentina()
   const { startDate, endDate } = calendarWindow(today)
+  const loadWindow = trainingLoadWindow(today)
   const comparisonKind = query.comparison === 'month' ? 'month' as const : 'week' as const
   const planRealWindow = comparisonWindow(today, comparisonKind)
-  const [athlete, historyResult, calendarResult, comparisonResult, trendResult] = await Promise.all([
+  const [athlete, historyResult, calendarResult, comparisonResult, trendResult, loadResult] = await Promise.all([
     getAthleteById(athleteId),
     getRealizedTrainingHistoryForAthleteAction(athleteId),
     getRealizedTrainingCalendarForAthleteAction(athleteId, startDate, endDate, today),
     getAthletePlanRealComparisonAction(athleteId, planRealWindow),
     getAthleteAdherenceTrendAction(athleteId, today),
+    getAthleteTrainingLoadAction(athleteId, loadWindow.startDate, loadWindow.endDate),
   ])
 
   if (
@@ -91,6 +102,8 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
     || !comparisonResult.data
     || !trendResult.success
     || !trendResult.data
+    || !loadResult.success
+    || !loadResult.data
   ) notFound()
 
   const adherence = deriveAthleteAdherence(comparisonResult.data)
@@ -136,6 +149,8 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
           <p className='mt-1 max-w-3xl text-muted-foreground'>{labels.description}</p>
         </div>
       </div>
+
+      <TrainingLoadSummary load={loadResult.data} locale={locale} />
 
       <AdherenceSummary
         adherence={adherence}
