@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { athleteProfiles, sessions, workoutLogs } from '@/db/schema'
@@ -66,6 +66,20 @@ function resolveCaptureScope(
   return resolveAuthoritativeSessionLink({ capture: input, athlete, session })
 }
 
+function normalizePersistenceRow(row: {
+  log: typeof workoutLogs.$inferSelect
+  evidence: typeof workoutLogEvidence.$inferSelect | null
+  teamId: string
+}): RealizedTrainingRecord {
+  return normalizeRealizedTrainingRecord(
+    mapPersistenceToRawRealizedTrainingRecord({
+      teamId: row.teamId,
+      log: row.log,
+      evidence: row.evidence,
+    }),
+  )
+}
+
 /**
  * Reads one realized-training record through the authoritative athlete -> team
  * relationship. The returned H12 record never trusts a caller-provided team id.
@@ -80,18 +94,36 @@ export function getRealizedTrainingRecord(id: string): RealizedTrainingRecord | 
     .from(workoutLogs)
     .innerJoin(athleteProfiles, eq(workoutLogs.athleteId, athleteProfiles.id))
     .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
-    .where(eq(workoutLogs.id, id))
+    .where(and(eq(workoutLogs.id, id), eq(workoutLogs.isDeleted, false), eq(athleteProfiles.isDeleted, false)))
     .get()
 
-  if (!row) return null
+  return row ? normalizePersistenceRow(row) : null
+}
 
-  return normalizeRealizedTrainingRecord(
-    mapPersistenceToRawRealizedTrainingRecord({
-      teamId: row.teamId,
-      log: row.log,
-      evidence: row.evidence,
-    }),
-  )
+/**
+ * Lists durable realized-training evidence for one athlete, newest analysis day
+ * first. Planned sessions are not returned unless an explicit realized row links
+ * to them; absence of a row therefore remains unknown rather than "missed".
+ */
+export function listRealizedTrainingRecordsForAthlete(athleteId: string): RealizedTrainingRecord[] {
+  const rows = db
+    .select({
+      log: workoutLogs,
+      evidence: workoutLogEvidence,
+      teamId: athleteProfiles.teamId,
+    })
+    .from(workoutLogs)
+    .innerJoin(athleteProfiles, eq(workoutLogs.athleteId, athleteProfiles.id))
+    .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
+    .where(and(
+      eq(workoutLogs.athleteId, athleteId),
+      eq(workoutLogs.isDeleted, false),
+      eq(athleteProfiles.isDeleted, false),
+    ))
+    .orderBy(desc(workoutLogs.date), desc(workoutLogs.loggedAt))
+    .all()
+
+  return rows.map(normalizePersistenceRow)
 }
 
 /**
