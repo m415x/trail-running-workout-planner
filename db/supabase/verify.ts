@@ -13,7 +13,7 @@ const applicationTables = [
   'readiness_evaluations', 'readiness_reviews',
   'session_generation_modification_records', 'sessions', 'shoes', 'teams',
   'training_goal_race_courses', 'training_goals', 'training_locations', 'users',
-  'workout_log_evidence', 'workout_logs', 'workouts',
+  'workout_log_corrections', 'workout_log_evidence', 'workout_logs', 'workouts',
 ]
 
 async function main() {
