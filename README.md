@@ -36,7 +36,7 @@ Check exact versions and rules in `package.json`, the lockfile and `AGENTS.md` r
 pn dev
 pn test
 pn lint
-pn exec tsc --noEmit
+pn tsc
 pn build
 ```
 
