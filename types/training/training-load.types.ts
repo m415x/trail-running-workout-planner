@@ -1,4 +1,4 @@
-import type { RealizedMetricName } from '@/types/training/realized-training-capture.types'
+import type { RealizedMetricName } from '@/types/training/readiness.types'
 
 export const TRAINING_LOAD_RULE_VERSION = 'srpe-duration-v1' as const
 
