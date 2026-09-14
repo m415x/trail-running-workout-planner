@@ -35,6 +35,7 @@ it('lists realized evidence only when athlete and team scopes both match', async
     const {
       createManualRealizedTrainingRecord,
       listRealizedTrainingRecordsForAthlete,
+      listRealizedTrainingRecordsForAthleteInDateRange,
     } = await import('@/lib/realized-training/realized-training-repository')
     const { db } = await import('@/db')
     closeRepository = () => db.$client.close()
@@ -73,6 +74,19 @@ it('lists realized evidence only when athlete and team scopes both match', async
     assert.deepEqual(history[0]?.metrics.distanceKm, { state: 'unknown', reason: 'not_recorded' })
     assert.deepEqual(history[1]?.metrics.distanceKm, { state: 'known', value: 0 })
     assert.equal(history.every((record) => record.athleteId === 'a1' && record.teamId === 't1'), true)
+
+    const calendarRange = listRealizedTrainingRecordsForAthleteInDateRange(
+      'a1',
+      't1',
+      '2026-09-11',
+      '2026-09-13',
+    )
+    assert.deepEqual(calendarRange.map(record => record.id), [newer.id])
+    assert.equal(calendarRange.every(record => record.athleteId === 'a1' && record.teamId === 't1'), true)
+    assert.deepEqual(
+      listRealizedTrainingRecordsForAthleteInDateRange('a1', 't2', '2026-09-01', '2026-09-30'),
+      [],
+    )
 
     assert.deepEqual(listRealizedTrainingRecordsForAthlete('a1', 't2'), [])
     assert.deepEqual(listRealizedTrainingRecordsForAthlete('a3', 't1'), [])
