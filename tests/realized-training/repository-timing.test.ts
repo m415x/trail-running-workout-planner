@@ -51,6 +51,8 @@ it('round-trips actual timing through the durable repository and rolls back a re
     process.chdir(originalDirectory)
     closeRepository?.()
     sqlite.close()
-    rmSync(directory,{recursive:true,force:true})
+    // Windows can keep a just-closed SQLite directory briefly locked. Retry the
+    // recursive removal instead of turning that filesystem race into a test failure.
+    rmSync(directory,{recursive:true,force:true,maxRetries:5,retryDelay:100})
   }
 })
