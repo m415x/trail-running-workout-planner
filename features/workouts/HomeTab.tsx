@@ -17,7 +17,7 @@ interface HomeTabProps {
   locale: string
 }
 
-export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining }: HomeTabProps) {
+export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale }: HomeTabProps) {
   const handleWeekChange = async (startDateIso: string) => {
     const result = await getWeeklySchedule(startDateIso)
     return result.success && result.data ? result.data : []
@@ -44,18 +44,20 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     onPrevWeek,
     onNextWeek,
     onSelectDate,
+    onRealizedTrainingSaved,
   } = useHomeTab({
     initialSchedule,
     initialRealizedTraining,
     initialAthlete,
+    locale,
     onWeekChange: handleWeekChange,
     onRealizedTrainingWeekChange: handleRealizedTrainingWeekChange,
   })
 
   const fallbackTeam: Team = {
     id: 'default',
-    name: 'Sin Equipo',
-    description: 'Atleta independiente',
+    name: '—',
+    description: '',
     avatarLight: '/default-avatar.png',
     avatarDark: '/default-avatar.png',
     createdAt: new Date().toISOString(),
@@ -81,13 +83,19 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
       {currentWorkouts.length > 0 ? (
         <div className='space-y-2'>
           {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
-            <RaceCard key={workout.id} date={selectedWeekDay?.fullDate} workout={workout} />
+            <RaceCard
+              key={workout.id}
+              date={selectedWeekDay?.fullDate}
+              workout={workout}
+              onRealizedTrainingSaved={onRealizedTrainingSaved}
+            />
           ) : (
             <TodayWorkoutCard
               key={workout.id}
               workout={workout}
               date={selectedWeekDay?.fullDate}
               TrackData={index === 0 ? TrackData : null}
+              onRealizedTrainingSaved={onRealizedTrainingSaved}
             />
           ))}
         </div>
