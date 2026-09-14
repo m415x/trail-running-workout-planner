@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
 import { Badge } from '@ui/badge'
+import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import type {
   RealizedMetric,
   RealizedMetricUnknownReason,
@@ -10,6 +11,7 @@ import type {
 
 interface RealizedTrainingHistoryProps {
   records: readonly RealizedTrainingRecord[]
+  correctionsByWorkoutLogId?: Readonly<Record<string, readonly RealizedTrainingCorrectionRecord[]>>
   locale: string
 }
 
@@ -35,6 +37,26 @@ const copy = {
     unknown: 'Sin dato',
     sourceActivity: 'ID de origen',
     limitations: 'Limitaciones de los datos',
+    corrections: 'Historial de correcciones',
+    correctedAt: 'Corregido',
+    correctedBy: 'Usuario',
+    correctionReason: 'Motivo',
+    noCorrectionReason: 'Sin motivo registrado',
+    changedFields: 'Campos corregidos',
+    correctionFields: {
+      sessionId: 'sesión vinculada',
+      workoutId: 'entrenamiento vinculado',
+      date: 'fecha',
+      performedAt: 'fecha/hora realizada',
+      status: 'estado',
+      distanceKm: 'distancia',
+      durationMin: 'duración',
+      elevationGainM: 'D+',
+      avgHrBpm: 'FC media',
+      rpe: 'RPE',
+      feeling: 'sensación',
+      athleteNotes: 'notas',
+    },
     unknownReasons: {
       not_recorded: 'no registrado',
       legacy_zero_ambiguous: 'cero legacy ambiguo',
@@ -62,6 +84,26 @@ const copy = {
     unknown: 'Unknown',
     sourceActivity: 'Source ID',
     limitations: 'Data limitations',
+    corrections: 'Correction history',
+    correctedAt: 'Corrected',
+    correctedBy: 'User',
+    correctionReason: 'Reason',
+    noCorrectionReason: 'No reason recorded',
+    changedFields: 'Corrected fields',
+    correctionFields: {
+      sessionId: 'linked session',
+      workoutId: 'linked workout',
+      date: 'date',
+      performedAt: 'performed date/time',
+      status: 'status',
+      distanceKm: 'distance',
+      durationMin: 'duration',
+      elevationGainM: 'elevation gain',
+      avgHrBpm: 'avg HR',
+      rpe: 'RPE',
+      feeling: 'feeling',
+      athleteNotes: 'notes',
+    },
     unknownReasons: {
       not_recorded: 'not recorded',
       legacy_zero_ambiguous: 'ambiguous legacy zero',
@@ -98,7 +140,31 @@ function metricValue(
   }).format(metric.value)}${unit}`
 }
 
-export function RealizedTrainingHistory({ records, locale }: RealizedTrainingHistoryProps) {
+function correctionChangedFields(correction: RealizedTrainingCorrectionRecord) {
+  const changed: Array<keyof typeof copy.es.correctionFields> = []
+  const { before, after } = correction
+
+  if (before.sessionId !== after.sessionId) changed.push('sessionId')
+  if (before.workoutId !== after.workoutId) changed.push('workoutId')
+  if (before.date !== after.date) changed.push('date')
+  if (before.performedAt !== after.performedAt) changed.push('performedAt')
+  if (before.status !== after.status) changed.push('status')
+  if (JSON.stringify(before.metrics.distanceKm) !== JSON.stringify(after.metrics.distanceKm)) changed.push('distanceKm')
+  if (JSON.stringify(before.metrics.durationMin) !== JSON.stringify(after.metrics.durationMin)) changed.push('durationMin')
+  if (JSON.stringify(before.metrics.elevationGainM) !== JSON.stringify(after.metrics.elevationGainM)) changed.push('elevationGainM')
+  if (JSON.stringify(before.metrics.avgHrBpm) !== JSON.stringify(after.metrics.avgHrBpm)) changed.push('avgHrBpm')
+  if (JSON.stringify(before.metrics.rpe) !== JSON.stringify(after.metrics.rpe)) changed.push('rpe')
+  if (before.feeling !== after.feeling) changed.push('feeling')
+  if (before.athleteNotes !== after.athleteNotes) changed.push('athleteNotes')
+
+  return changed
+}
+
+export function RealizedTrainingHistory({
+  records,
+  correctionsByWorkoutLogId = {},
+  locale,
+}: RealizedTrainingHistoryProps) {
   const language: 'es' | 'en' = locale === 'en' ? 'en' : 'es'
   const labels = copy[language]
 
@@ -114,6 +180,7 @@ export function RealizedTrainingHistory({ records, locale }: RealizedTrainingHis
     <div className='space-y-3'>
       {records.map((record) => {
         const statusLabel = labels[record.status]
+        const corrections = correctionsByWorkoutLogId[record.id] ?? []
 
         return (
           <article key={record.id} className='rounded-lg border p-4'>
@@ -161,6 +228,37 @@ export function RealizedTrainingHistory({ records, locale }: RealizedTrainingHis
                 {record.limitations.length > 0 && (
                   <p className='mt-1'>{labels.limitations}: {record.limitations.join(' · ')}</p>
                 )}
+              </div>
+            )}
+
+            {corrections.length > 0 && (
+              <div className='mt-4 border-t pt-3'>
+                <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
+                  {labels.corrections} ({corrections.length})
+                </p>
+                <ol className='mt-2 space-y-2'>
+                  {corrections.map((correction) => {
+                    const changedFields = correctionChangedFields(correction)
+                    return (
+                      <li key={correction.id} className='rounded-md bg-muted/40 p-3 text-xs'>
+                        <div className='flex flex-wrap gap-x-4 gap-y-1'>
+                          <span><span className='text-muted-foreground'>{labels.correctedAt}:</span> {formatDateTime(correction.correctedAt, language)}</span>
+                          <span><span className='text-muted-foreground'>{labels.correctedBy}:</span> {correction.correctedByUserId}</span>
+                        </div>
+                        <p className='mt-1'>
+                          <span className='text-muted-foreground'>{labels.correctionReason}:</span>{' '}
+                          {correction.reason ?? labels.noCorrectionReason}
+                        </p>
+                        {changedFields.length > 0 && (
+                          <p className='mt-1'>
+                            <span className='text-muted-foreground'>{labels.changedFields}:</span>{' '}
+                            {changedFields.map((field) => labels.correctionFields[field]).join(' · ')}
+                          </p>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ol>
               </div>
             )}
           </article>
