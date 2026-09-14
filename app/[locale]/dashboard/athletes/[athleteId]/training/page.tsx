@@ -4,11 +4,16 @@ import { Activity, ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import {
+  getAthleteAdherenceAction,
+  getAthleteAdherenceTrendAction,
+} from '@/app/actions/adherence-actions'
+import {
   getAthletePlanRealComparisonAction,
   getRealizedTrainingCalendarForAthleteAction,
   getRealizedTrainingCorrectionsAction,
   getRealizedTrainingHistoryForAthleteAction,
 } from '@/app/actions/realized-training-actions'
+import { AdherenceSummary } from '@/features/athletes/components/AdherenceSummary'
 import { PlanRealComparison } from '@/features/athletes/components/PlanRealComparison'
 import { RealizedTrainingCalendar } from '@/features/athletes/components/RealizedTrainingCalendar'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
@@ -72,14 +77,23 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
   const { startDate, endDate } = calendarWindow(today)
   const comparisonKind = query.comparison === 'month' ? 'month' as const : 'week' as const
   const planRealWindow = comparisonWindow(today, comparisonKind)
-  const [athlete, historyResult, calendarResult, comparisonResult] = await Promise.all([
+  const [athlete, historyResult, calendarResult, comparisonResult, adherenceResult, trendResult] = await Promise.all([
     getAthleteById(athleteId),
     getRealizedTrainingHistoryForAthleteAction(athleteId),
     getRealizedTrainingCalendarForAthleteAction(athleteId, startDate, endDate, today),
     getAthletePlanRealComparisonAction(athleteId, planRealWindow),
+    getAthleteAdherenceAction(athleteId, planRealWindow),
+    getAthleteAdherenceTrendAction(athleteId, today),
   ])
 
-  if (!athlete || !historyResult.success || !calendarResult.success || !comparisonResult.success) notFound()
+  if (
+    !athlete
+    || !historyResult.success
+    || !calendarResult.success
+    || !comparisonResult.success
+    || !adherenceResult.success
+    || !trendResult.success
+  ) notFound()
 
   const correctionsEntries = await Promise.all(
     historyResult.data.map(async (record) => {
@@ -123,6 +137,12 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
           <p className='mt-1 max-w-3xl text-muted-foreground'>{labels.description}</p>
         </div>
       </div>
+
+      <AdherenceSummary
+        adherence={adherenceResult.data}
+        trend={trendResult.data}
+        locale={locale}
+      />
 
       <PlanRealComparison
         comparison={comparisonResult.data}
