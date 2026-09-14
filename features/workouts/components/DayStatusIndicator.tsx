@@ -1,6 +1,6 @@
 'use client'
 
-import { CheckIcon, MinusCircleIcon, XIcon } from '@phosphor-icons/react'
+import { CheckIcon, MinusCircleIcon, PlusCircleIcon, XIcon } from '@phosphor-icons/react'
 import { WeekDay } from '@/types'
 import { getDayStatus } from '@/lib/date-helpers'
 import { cn } from '@/lib/utils'
@@ -10,10 +10,24 @@ export interface DayStatusIndicatorProps {
   isSelected?: boolean
 }
 
+/**
+ * Purely visual representation of the already-resolved calendar state.
+ * `hasUnplannedTraining` is orthogonal to planned-session compliance: the plus
+ * means durable training exists without an official session link.
+ */
 export function DayStatusIndicator({ day, isSelected }: DayStatusIndicatorProps) {
   const status = day.status ?? getDayStatus(day)
 
-  // Si está seleccionado, los íconos/puntos se pintan de blanco para dar contraste sobre el fondo naranja
+  if (status === 'rest' && day.hasUnplannedTraining) {
+    return (
+      <PlusCircleIcon
+        size={12}
+        weight='bold'
+        className={cn('transition-colors', isSelected ? 'text-white' : 'text-sky-500')}
+      />
+    )
+  }
+
   if (status === 'completed') {
     return <CheckIcon size={12} className={cn('transition-colors', isSelected ? 'text-white' : 'text-emerald-500')} />
   }
