@@ -156,7 +156,7 @@ export function RealizedTrainingHistory({
               <Metric icon={<Route className='size-4' />} label={t('distance')} value={metricValue(record.metrics.distanceKm, ' km', language, t)} />
               <Metric icon={<Clock3 className='size-4' />} label={t('duration')} value={durationValue(record.metrics.durationMin, t)} />
               <Metric icon={<Mountain className='size-4' />} label={t('elevation')} value={metricValue(record.metrics.elevationGainM, ' m', language, t)} />
-              <Metric icon={<HeartPulse className='size-4' />} label={t('heartRate')} value={metricValue(record.metrics.avgHrBpm, ' bpm', language, t)} />
+              <Metric icon={<HeartPulse className='size-4' />} label={t('heartRate')} value={metricValue(record.metrics.avgHrBpm, language === 'en' ? ' bpm' : ' ppm', language, t)} />
               <Metric icon={<Gauge className='size-4' />} label={t('rpe')} value={metricValue(record.metrics.rpe, '', language, t)} />
             </dl>
 
