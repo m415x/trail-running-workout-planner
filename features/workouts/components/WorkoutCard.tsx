@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { CheckCircleIcon, CoffeeIcon } from '@phosphor-icons/react'
-import type { RealizedTrainingRecord, WorkoutCardProps } from '@/types'
+import { CheckCircleIcon, CoffeeIcon, PlusCircleIcon } from '@phosphor-icons/react'
+import type { ManualRealizedTrainingClientInput, RealizedTrainingRecord, WorkoutCardProps } from '@/types'
+import { createManualRealizedTrainingAction } from '@/app/actions/realized-training-actions'
 import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { StatPill, ZonePill } from '@ui/custom/pills'
@@ -134,14 +136,55 @@ export function RaceCard(props: BaseWorkoutCardProps) {
   )
 }
 
-export function RestCard() {
+interface RestCardProps {
+  date?: string
+  onRealizedTrainingSaved?: (record: RealizedTrainingRecord) => void
+}
+
+/**
+ * Rest days can still contain realized training. A free capture is persisted with
+ * no Session/Workout link, so it contributes to athlete load/readiness without
+ * being misrepresented as compliance with an official session.
+ */
+export function RestCard({ date, onRealizedTrainingSaved }: RestCardProps = {}) {
   const t = useTranslations('Workouts')
+  const [isLogOpen, setIsLogOpen] = useState(false)
+  const today = new Date().toISOString().slice(0, 10)
+  const isFuture = Boolean(date && date > today)
+
+  const handleSaveFreeWorkout = async (input: ManualRealizedTrainingClientInput) => {
+    const result = await createManualRealizedTrainingAction({
+      ...input,
+      sessionId: null,
+      workoutId: null,
+    })
+    if (!result.success) return false
+    onRealizedTrainingSaved?.(result.data)
+    return true
+  }
 
   return (
-    <CustomCard className='items-center py-6'>
-      <CoffeeIcon className='text-muted-foreground' size={22} />
-      <p className='font-heading font-semibold text-foreground text-sm mt-1'>{t('types.Rest')}</p>
-      <p className='text-xs text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
-    </CustomCard>
+    <>
+      <CustomCard className='items-center py-6'>
+        <CoffeeIcon className='text-muted-foreground' size={22} />
+        <p className='font-heading font-semibold text-foreground text-sm mt-1'>{t('types.Rest')}</p>
+        <p className='text-xs text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
+        {date && !isFuture && (
+          <PrimaryFilledButton onClick={() => setIsLogOpen(true)} className='rounded-xl text-xs mt-3 active:scale-98'>
+            <PlusCircleIcon />
+            <span>{t('card.logWorkoutButton')}</span>
+          </PrimaryFilledButton>
+        )}
+      </CustomCard>
+
+      <LogWorkoutDialog
+        key={`free-${date ?? 'undated'}`}
+        isOpen={isLogOpen}
+        onClose={() => setIsLogOpen(false)}
+        workout={null}
+        dateStr={date}
+        onSave={handleSaveFreeWorkout}
+      />
+    </>
   )
 }
