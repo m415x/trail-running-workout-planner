@@ -12,7 +12,7 @@ export type PlanRealComparisonState =
   | 'unplanned_realized'
   | 'unknown'
 
-export type PlanRealMetricName =
+export type TrainingComparisonMetricName =
   | 'distanceKm'
   | 'durationMin'
   | 'elevationGainM'
@@ -71,7 +71,7 @@ export type PlanRealMetricEvaluation =
     }
 
 export interface PlanRealMetricComparison {
-  readonly name: PlanRealMetricName
+  readonly name: TrainingComparisonMetricName
   readonly evaluation: PlanRealMetricEvaluation
 }
 
