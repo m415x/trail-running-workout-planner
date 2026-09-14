@@ -99,15 +99,29 @@ export function normalizeRealizedTrainingRecord(
   }
 }
 
-function stableSourceKey(record: RealizedTrainingRecord): string | null {
-  const sourceActivityId = record.provenance.sourceActivityId
-  if (sourceActivityId === null) return null
+/**
+ * Returns the only cross-record identity accepted for imported evidence.
+ *
+ * A source activity ID must be explicit and non-blank. Manual records never
+ * acquire a synthetic stable identity, because date/metrics/session similarity
+ * is not proof that two observations represent the same performed activity.
+ * Future providers must namespace their sourceActivityId values if several
+ * providers share the generic `imported` source boundary.
+ */
+export function stableRealizedTrainingSourceKey(record: RealizedTrainingRecord): string | null {
+  if (record.provenance.source === 'manual') return null
+
+  const sourceActivityId = record.provenance.sourceActivityId?.trim()
+  if (!sourceActivityId) return null
+
   return `${record.provenance.source}:${sourceActivityId}`
 }
 
 /**
  * Deduplicates only with trustworthy identity: the persisted log ID itself or
- * an explicit stable source activity ID. Metric/date similarity is never used.
+ * an explicit stable source activity ID. Metric/date/session similarity is never
+ * used. Imported rows without stable identity remain visible and are marked
+ * ambiguous so downstream analysis can account for their provenance quality.
  */
 export function deduplicateRealizedTrainingRecords(
   input: readonly RealizedTrainingRecord[],
@@ -125,7 +139,7 @@ export function deduplicateRealizedTrainingRecords(
     }
     byId.add(record.id)
 
-    const key = stableSourceKey(record)
+    const key = stableRealizedTrainingSourceKey(record)
     if (key !== null) {
       const existing = bySource.get(key)
       if (existing !== undefined) {
