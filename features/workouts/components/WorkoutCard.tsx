@@ -23,9 +23,10 @@ export function BaseWorkoutCard({
   TrackData,
   cardClassName,
   showSubtitle = true,
-  actionButtonLabel = 'Registrar entrenamiento',
+  actionButtonLabel,
 }: BaseWorkoutCardProps) {
   const t = useTranslations('Workouts')
+  const common = useTranslations('Common')
   const {
     WorkoutIcon,
     headerTitle,
@@ -37,6 +38,8 @@ export function BaseWorkoutCard({
     isFuture,
     isLogged,
     isCaptureReady,
+    canEditLoggedWorkout,
+    editableCaptureInput,
     stats,
     zoneInfo,
     bpmRange,
@@ -48,12 +51,10 @@ export function BaseWorkoutCard({
   return (
     <>
       <CustomCard className={cardClassName}>
-        {/* Header row */}
         <CardHeader title={headerTitle} icon={WorkoutIcon}>
           <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
         </CardHeader>
 
-        {/* Main stat row */}
         <CustomCardInside className='flex items-center'>
           <div className='flex-1'>
             <div className='flex items-baseline gap-1.5'>
@@ -68,58 +69,54 @@ export function BaseWorkoutCard({
           <ZonePill zoneInfo={zoneInfo} bpmRange={bpmRange} />
         </CustomCardInside>
 
-        {/* Barra meteorológica */}
         {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
-        {/* Stats row */}
         <div className='grid grid-cols-3 gap-2'>
           {stats.map(({ icon: Icon, label, value, unit }) => (
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
         </div>
 
-        {/* Coach note */}
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
-            <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>Nota del Entrenador</p>
+            <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>{t('card.coachNote')}</p>
             <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
           </CustomCardInside>
         )}
 
-        {/* Botón para Registrar (Solo visible hoy o en el pasado) */}
         {!isFuture && (
           <>
             {isLogged ? (
-              <GlassFilledButton disabled className='rounded-xl text-xs active:scale-98'>
+              <GlassFilledButton
+                disabled={!canEditLoggedWorkout}
+                onClick={canEditLoggedWorkout ? openLogDialog : undefined}
+                className='rounded-xl text-xs active:scale-98'
+              >
                 <CheckCircleIcon />
-                <span>{t('card.logged')}</span>
+                <span>{canEditLoggedWorkout ? common('edit') : t('card.logged')}</span>
               </GlassFilledButton>
             ) : (
               <PrimaryFilledButton disabled={!isCaptureReady} onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
                 <CheckCircleIcon />
-                <span>{actionButtonLabel}</span>
+                <span>{actionButtonLabel ?? t('card.logWorkoutButton')}</span>
               </PrimaryFilledButton>
             )}
           </>
         )}
       </CustomCard>
 
-      {/* Modal de Registro */}
       <LogWorkoutDialog
         key={workout?.id ?? date}
         isOpen={isLogOpen}
         onClose={closeLogDialog}
         workout={workout}
         dateStr={date}
+        initialInput={editableCaptureInput}
         onSave={handleSaveSession}
       />
     </>
   )
 }
-
-/* -------------------------------------------------------------------------- */
-/* Componentes Especializados (Wrappers Livianos)                             */
-/* -------------------------------------------------------------------------- */
 
 export function TodayWorkoutCard(props: WorkoutCardProps) {
   return <BaseWorkoutCard {...props} />
@@ -131,7 +128,6 @@ export function RaceCard(props: WorkoutCardProps) {
       {...props}
       cardClassName='bg-emerald-500/10 border-emerald-500/20'
       showSubtitle={false}
-      actionButtonLabel='Registrar carrera'
     />
   )
 }
