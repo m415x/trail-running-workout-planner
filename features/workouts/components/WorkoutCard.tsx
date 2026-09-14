@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import { CheckCircleIcon, CoffeeIcon } from '@phosphor-icons/react'
-import { WorkoutCardProps } from '@/types'
+import type { RealizedTrainingRecord, WorkoutCardProps } from '@/types'
 import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { StatPill, ZonePill } from '@ui/custom/pills'
@@ -15,6 +15,7 @@ interface BaseWorkoutCardProps extends WorkoutCardProps {
   cardClassName?: string
   showSubtitle?: boolean
   actionButtonLabel?: string
+  onRealizedTrainingSaved?: (record: RealizedTrainingRecord) => void
 }
 
 export function BaseWorkoutCard({
@@ -24,6 +25,7 @@ export function BaseWorkoutCard({
   cardClassName,
   showSubtitle = true,
   actionButtonLabel,
+  onRealizedTrainingSaved,
 }: BaseWorkoutCardProps) {
   const t = useTranslations('Workouts')
   const common = useTranslations('Common')
@@ -46,7 +48,7 @@ export function BaseWorkoutCard({
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
-  } = useWorkoutCard({ workout, date, TrackData })
+  } = useWorkoutCard({ workout, date, TrackData, onRealizedTrainingSaved })
 
   return (
     <>
@@ -118,11 +120,11 @@ export function BaseWorkoutCard({
   )
 }
 
-export function TodayWorkoutCard(props: WorkoutCardProps) {
+export function TodayWorkoutCard(props: BaseWorkoutCardProps) {
   return <BaseWorkoutCard {...props} />
 }
 
-export function RaceCard(props: WorkoutCardProps) {
+export function RaceCard(props: BaseWorkoutCardProps) {
   return (
     <BaseWorkoutCard
       {...props}
