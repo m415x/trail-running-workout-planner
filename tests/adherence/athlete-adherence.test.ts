@@ -27,6 +27,11 @@ const metricNames: readonly TrainingComparisonMetricName[] = [
   'intensity',
 ]
 
+function assertApproximatelyEqual(actual: number | null, expected: number, epsilon = 1e-10) {
+  assert.notEqual(actual, null)
+  assert.ok(Math.abs(actual! - expected) < epsilon, `Expected ${actual} to be within ${epsilon} of ${expected}`)
+}
+
 function metric(name: TrainingComparisonMetricName, state: 'matched' | 'deviation' | 'not_evaluated'): PlanRealMetricComparison {
   if (state === 'not_evaluated') {
     return {
@@ -135,7 +140,7 @@ describe('athlete adherence', () => {
     ]))
 
     assert.equal(result.frequency.state, 'available')
-    assert.equal(result.frequency.adherencePercent, 200 / 3)
+    assertApproximatelyEqual(result.frequency.adherencePercent, 200 / 3)
     assert.equal(result.coverage.coveragePercent, 100)
     assert.equal(result.frequency.counts.denominator, 3)
   })
@@ -149,7 +154,7 @@ describe('athlete adherence', () => {
 
     assert.equal(result.frequency.state, 'insufficient_data')
     assert.equal(result.frequency.adherencePercent, null)
-    assert.equal(result.coverage.coveragePercent, 100 / 3)
+    assertApproximatelyEqual(result.coverage.coveragePercent, 100 / 3)
     assert.equal(result.coverage.unknownSessions, 2)
     assert.ok(result.frequency.reasons.includes('insufficient_coverage'))
   })
