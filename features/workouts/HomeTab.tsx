@@ -7,25 +7,29 @@ import { TodayWorkoutCard, RaceCard, RestCard } from '@workouts/components/Worko
 import { ElevationProfileCard } from '@workouts/components/ElevationProfileCard'
 import { RouteMapCard } from '@workouts/components/RouteMapCard'
 import { getWeeklySchedule } from '@/app/actions/dashboard-actions'
+import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { Team } from '@/types'
 
 interface HomeTabProps {
   initialAthlete: UseHomeTabProps['initialAthlete']
   initialSchedule: SessionWithWorkout[]
+  initialRealizedTraining: UseHomeTabProps['initialRealizedTraining']
   locale: string
 }
 
-export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
-  // 1. Definimos la función que se ejecutará al cambiar de semana
+export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining }: HomeTabProps) {
   const handleWeekChange = async (startDateIso: string) => {
-    const res = await getWeeklySchedule(startDateIso)
-    return res.success && res.data ? res.data : []
+    const result = await getWeeklySchedule(startDateIso)
+    return result.success && result.data ? result.data : []
   }
 
-  // 2. Pasamos handleWeekChange al hook
+  const handleRealizedTrainingWeekChange = async (startDateIso: string, endDateIso: string) => {
+    const result = await getCurrentAthleteRealizedTrainingRangeAction(startDateIso, endDateIso)
+    return result.success ? result.data : []
+  }
+
   const {
     team,
-    user,
     athlete,
     weeklyCycle,
     weekDays,
@@ -36,18 +40,17 @@ export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
     currentWorkouts,
     elevationChartData,
     TrackData,
-    isLoadingWeek,
     onSelectDay,
     onPrevWeek,
     onNextWeek,
     onSelectDate,
   } = useHomeTab({
     initialSchedule,
+    initialRealizedTraining,
     initialAthlete,
-    onWeekChange: handleWeekChange, // ✅ ¡Ahora sí está definido!
+    onWeekChange: handleWeekChange,
+    onRealizedTrainingWeekChange: handleRealizedTrainingWeekChange,
   })
-
-  // if (isLoadingWeek) return <div className='p-4'>Cargando semana...</div>
 
   const fallbackTeam: Team = {
     id: 'default',
@@ -62,10 +65,8 @@ export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
 
   return (
     <div className='space-y-2'>
-      {/* Header Superior */}
       <HomeHeader team={team || fallbackTeam} athlete={athlete} />
 
-      {/* Tarjeta de Calendario Semanal con Slider & Popover DatePicker */}
       <WeeklyCalendarCard
         cycle={weeklyCycle}
         weekDays={weekDays}
@@ -77,7 +78,6 @@ export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
         onSelectDate={onSelectDate}
       />
 
-      {/* Tarjeta del Día Seleccionado */}
       {currentWorkouts.length > 0 ? (
         <div className='space-y-2'>
           {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
@@ -93,10 +93,8 @@ export function HomeTab({ initialAthlete, initialSchedule }: HomeTabProps) {
         </div>
       ) : <RestCard />}
 
-      {/* Perfil de Elevación */}
       {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
 
-      {/* Mapa Interactivo del Track GPS */}
       {currentWorkout && elevationChartData && (
         <RouteMapCard
           title={currentWorkout.title}
