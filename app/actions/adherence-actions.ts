@@ -81,13 +81,14 @@ export async function getAthleteAdherenceTrendAction(
     startDate: first.startDate,
     endDate: last.endDate,
   }
-  const comparison = await getAthletePlanRealComparisonAction(athleteId, longitudinalWindow)
-  if (!comparison.success || !comparison.data) {
+  const comparisonResult = await getAthletePlanRealComparisonAction(athleteId, longitudinalWindow)
+  if (!comparisonResult.success || !comparisonResult.data) {
     return { success: false as const, data: null }
   }
+  const longitudinalComparison = comparisonResult.data
 
   const adherenceWindows = windows.map(window => (
-    deriveAthleteAdherence(sliceComparison(comparison.data, window))
+    deriveAthleteAdherence(sliceComparison(longitudinalComparison, window))
   ))
 
   return {
