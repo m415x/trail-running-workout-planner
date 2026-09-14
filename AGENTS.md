@@ -42,7 +42,7 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 1. Current code/schema/types and tests for actual behavior.
 2. `docs/architecture/` for durable domain contracts/invariants.
 3. Jira for scope, acceptance criteria and execution state.
-4. `docs/handoffs/epic-2.md` for immediate closure/resumption context.
+4. `docs/handoffs/epic-3.md` for immediate closure/resumption context.
 5. `docs/history/` only for historical rationale/evolution.
 
 Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
@@ -87,7 +87,7 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - H12 reuses H10 competition impact phases so deliberate taper/recovery reductions are not automatically interpreted as insufficient preparation.
 - Automatic assessment and coach review/acknowledgement are separate persisted facts.
 - H12 does not automatically mutate planning or enter H11's write-set.
-- H12 persistence uses `workout_log_evidence`, `readiness_evaluations`, `readiness_reviews`; Supabase verification inventory is 28 application tables and must verify RLS for all 28.
+- H12 persistence uses `workout_log_evidence`, `readiness_evaluations`, `readiness_reviews`; H12 closure verified 28 application tables with RLS. After KAN-257, the complete Supabase inventory is 34 application tables and must verify RLS for all 34.
 
 ## Data, security and persistence
 
@@ -134,4 +134,4 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 
 ## Current closure context
 
-Epic 2 H12 (`KAN-242`) is the final story of Planning Automation. Supabase H12 migration is applied and verified at 28/28 tables + 28/28 RLS. Finish KAN-255/KAN-256, run the final local story gate and H12 walkthrough, then close/merge H12 and Epic 2. After that, review the originally proposed Epic 3 against the H6–H12 architecture before implementation.
+Epic 2 is complete. Epic 3 Story 1 (KAN-257, competitive catalog) is complete at `18a01f1`. The operational handoff is `docs/handoffs/epic-3.md`; it distinguishes versioned implementation/DB evidence from unavailable final gate logs. Continue KAN-258 on `h-23-realized-training` from the existing realized-training audit and capture contract. KAN-282 UX action safety remains deferred.

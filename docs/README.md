@@ -41,7 +41,7 @@ No leas history por defecto al iniciar una tarea. Consúltalo para entender razo
 
 ## Handoffs — continuidad operativa
 
-- [Epic 2 — closure handoff](handoffs/epic-2.md)
+- [Epic 3 — KAN-257 closure handoff](handoffs/epic-3.md)
 
 Un handoff es breve y temporal: resume baseline, estado verificable, restricciones y siguiente punto de trabajo. No duplica arquitectura ni history y no conserva transcripciones. Al comenzar una nueva épica puede reemplazarse por el handoff operativo de esa épica.
 
