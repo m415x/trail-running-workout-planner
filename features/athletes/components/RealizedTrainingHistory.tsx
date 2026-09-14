@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslations } from 'next-intl'
 import { Clock3, Gauge, HeartPulse, Mountain, Route } from 'lucide-react'
 
 import { formatDurationMinutes } from '@/lib/formatters'
@@ -6,7 +7,6 @@ import { Badge } from '@ui/badge'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import type {
   RealizedMetric,
-  RealizedMetricUnknownReason,
   RealizedTrainingRecord,
 } from '@/types/training/readiness.types'
 
@@ -15,113 +15,6 @@ interface RealizedTrainingHistoryProps {
   correctionsByWorkoutLogId?: Readonly<Record<string, readonly RealizedTrainingCorrectionRecord[]>>
   locale: string
 }
-
-const copy = {
-  es: {
-    empty: 'Todavía no hay entrenamientos realizados registrados para este atleta.',
-    completed: 'Completado',
-    partial: 'Parcial',
-    missed: 'No realizado',
-    pending: 'Pendiente',
-    rest: 'Descanso',
-    manual: 'Carga manual',
-    imported: 'Importado',
-    linked: 'Vinculado a sesión planificada',
-    free: 'Entrenamiento libre',
-    performedAt: 'Realizado',
-    loggedAt: 'Registrado',
-    distance: 'Distancia',
-    duration: 'Duración',
-    elevation: 'D+',
-    heartRate: 'FC media',
-    rpe: 'RPE',
-    unknown: 'Sin dato',
-    sourceActivity: 'ID de origen',
-    limitations: 'Calidad de los datos',
-    corrections: 'Historial de correcciones',
-    correctedAt: 'Corregido',
-    correctedBy: 'Usuario',
-    correctionReason: 'Motivo',
-    noCorrectionReason: 'Sin motivo registrado',
-    changedFields: 'Campos corregidos',
-    limitationLabels: {
-      no_authoritative_session_link: 'entrenamiento libre, sin sesión planificada vinculada',
-      partial_metric_coverage: 'faltan algunas métricas del entrenamiento',
-      legacy_record_without_metric_evidence: 'registro histórico sin evidencia de métricas campo por campo',
-    } as Record<string, string>,
-    correctionFields: {
-      sessionId: 'sesión vinculada',
-      workoutId: 'entrenamiento vinculado',
-      date: 'fecha',
-      performedAt: 'fecha/hora realizada',
-      status: 'estado',
-      distanceKm: 'distancia',
-      durationMin: 'duración',
-      elevationGainM: 'D+',
-      avgHrBpm: 'FC media',
-      rpe: 'RPE',
-      feeling: 'sensación',
-      athleteNotes: 'notas',
-    },
-    unknownReasons: {
-      not_recorded: 'no registrado',
-      legacy_zero_ambiguous: 'cero legacy ambiguo',
-      invalid_value: 'valor inválido',
-    } satisfies Record<RealizedMetricUnknownReason, string>,
-  },
-  en: {
-    empty: 'No realized training has been recorded for this athlete yet.',
-    completed: 'Completed',
-    partial: 'Partial',
-    missed: 'Not performed',
-    pending: 'Pending',
-    rest: 'Rest',
-    manual: 'Manual entry',
-    imported: 'Imported',
-    linked: 'Linked to planned session',
-    free: 'Free workout',
-    performedAt: 'Performed',
-    loggedAt: 'Logged',
-    distance: 'Distance',
-    duration: 'Duration',
-    elevation: 'D+',
-    heartRate: 'Avg HR',
-    rpe: 'RPE',
-    unknown: 'Unknown',
-    sourceActivity: 'Source ID',
-    limitations: 'Data quality',
-    corrections: 'Correction history',
-    correctedAt: 'Corrected',
-    correctedBy: 'User',
-    correctionReason: 'Reason',
-    noCorrectionReason: 'No reason recorded',
-    changedFields: 'Corrected fields',
-    limitationLabels: {
-      no_authoritative_session_link: 'free workout with no linked planned session',
-      partial_metric_coverage: 'some training metrics were not recorded',
-      legacy_record_without_metric_evidence: 'historical record without field-level metric evidence',
-    } as Record<string, string>,
-    correctionFields: {
-      sessionId: 'linked session',
-      workoutId: 'linked workout',
-      date: 'date',
-      performedAt: 'performed date/time',
-      status: 'status',
-      distanceKm: 'distance',
-      durationMin: 'duration',
-      elevationGainM: 'elevation gain',
-      avgHrBpm: 'avg HR',
-      rpe: 'RPE',
-      feeling: 'feeling',
-      athleteNotes: 'notes',
-    },
-    unknownReasons: {
-      not_recorded: 'not recorded',
-      legacy_zero_ambiguous: 'ambiguous legacy zero',
-      invalid_value: 'invalid value',
-    } satisfies Record<RealizedMetricUnknownReason, string>,
-  },
-} as const
 
 function formatDate(value: string, locale: string) {
   return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-AR', {
@@ -145,10 +38,10 @@ function metricValue(
   metric: RealizedMetric,
   unit: string,
   locale: 'es' | 'en',
+  translate: (key: string) => string,
 ) {
-  const labels = copy[locale]
   if (metric.state === 'unknown') {
-    return `${labels.unknown} · ${labels.unknownReasons[metric.reason]}`
+    return `${translate('unknown')} · ${translate(`unknownReasons.${metric.reason}`)}`
   }
 
   return `${new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-AR', {
@@ -156,17 +49,32 @@ function metricValue(
   }).format(metric.value)}${unit}`
 }
 
-function durationValue(metric: RealizedMetric, locale: 'es' | 'en') {
-  const labels = copy[locale]
+function durationValue(
+  metric: RealizedMetric,
+  translate: (key: string) => string,
+) {
   if (metric.state === 'unknown') {
-    return `${labels.unknown} · ${labels.unknownReasons[metric.reason]}`
+    return `${translate('unknown')} · ${translate(`unknownReasons.${metric.reason}`)}`
   }
 
   return formatDurationMinutes(metric.value)
 }
 
 function correctionChangedFields(correction: RealizedTrainingCorrectionRecord) {
-  const changed: Array<keyof typeof copy.es.correctionFields> = []
+  const changed: Array<
+    | 'sessionId'
+    | 'workoutId'
+    | 'date'
+    | 'performedAt'
+    | 'status'
+    | 'distanceKm'
+    | 'durationMin'
+    | 'elevationGainM'
+    | 'avgHrBpm'
+    | 'rpe'
+    | 'feeling'
+    | 'athleteNotes'
+  > = []
   const { before, after } = correction
 
   if (before.sessionId !== after.sessionId) changed.push('sessionId')
@@ -191,12 +99,12 @@ export function RealizedTrainingHistory({
   locale,
 }: RealizedTrainingHistoryProps) {
   const language: 'es' | 'en' = locale === 'en' ? 'en' : 'es'
-  const labels = copy[language]
+  const t = useTranslations('RealizedTrainingHistory')
 
   if (records.length === 0) {
     return (
       <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
-        {labels.empty}
+        {t('empty')}
       </p>
     )
   }
@@ -204,7 +112,7 @@ export function RealizedTrainingHistory({
   return (
     <div className='space-y-3'>
       {records.map((record) => {
-        const statusLabel = labels[record.status]
+        const statusLabel = t(`status.${record.status}`)
         const corrections = correctionsByWorkoutLogId[record.id] ?? []
 
         return (
@@ -217,43 +125,43 @@ export function RealizedTrainingHistory({
                     {statusLabel}
                   </Badge>
                   <Badge variant='outline'>
-                    {record.sessionId ? labels.linked : labels.free}
+                    {record.sessionId ? t('linkage.linked') : t('linkage.free')}
                   </Badge>
                 </div>
                 <p className='mt-1 text-sm text-muted-foreground'>
-                  {record.provenance.source === 'manual' ? labels.manual : labels.imported}
+                  {record.provenance.source === 'manual' ? t('source.manual') : t('source.imported')}
                 </p>
               </div>
 
               <dl className='grid grid-cols-2 gap-x-5 gap-y-2 text-sm sm:text-right'>
                 <div>
-                  <dt className='text-muted-foreground'>{labels.performedAt}</dt>
+                  <dt className='text-muted-foreground'>{t('performedAt')}</dt>
                   <dd className='font-medium'>{formatDateTime(record.performedAt, language)}</dd>
                 </div>
                 <div>
-                  <dt className='text-muted-foreground'>{labels.loggedAt}</dt>
+                  <dt className='text-muted-foreground'>{t('loggedAt')}</dt>
                   <dd className='font-medium'>{formatDateTime(record.provenance.loggedAt, language)}</dd>
                 </div>
               </dl>
             </div>
 
             <dl className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-              <Metric icon={<Route className='size-4' />} label={labels.distance} value={metricValue(record.metrics.distanceKm, ' km', language)} />
-              <Metric icon={<Clock3 className='size-4' />} label={labels.duration} value={durationValue(record.metrics.durationMin, language)} />
-              <Metric icon={<Mountain className='size-4' />} label={labels.elevation} value={metricValue(record.metrics.elevationGainM, ' m', language)} />
-              <Metric icon={<HeartPulse className='size-4' />} label={labels.heartRate} value={metricValue(record.metrics.avgHrBpm, ' bpm', language)} />
-              <Metric icon={<Gauge className='size-4' />} label={labels.rpe} value={metricValue(record.metrics.rpe, '', language)} />
+              <Metric icon={<Route className='size-4' />} label={t('distance')} value={metricValue(record.metrics.distanceKm, ' km', language, t)} />
+              <Metric icon={<Clock3 className='size-4' />} label={t('duration')} value={durationValue(record.metrics.durationMin, t)} />
+              <Metric icon={<Mountain className='size-4' />} label={t('elevation')} value={metricValue(record.metrics.elevationGainM, ' m', language, t)} />
+              <Metric icon={<HeartPulse className='size-4' />} label={t('heartRate')} value={metricValue(record.metrics.avgHrBpm, ' bpm', language, t)} />
+              <Metric icon={<Gauge className='size-4' />} label={t('rpe')} value={metricValue(record.metrics.rpe, '', language, t)} />
             </dl>
 
             {(record.provenance.sourceActivityId || record.limitations.length > 0) && (
               <div className='mt-4 border-t pt-3 text-xs text-muted-foreground'>
                 {record.provenance.sourceActivityId && (
-                  <p>{labels.sourceActivity}: {record.provenance.sourceActivityId}</p>
+                  <p>{t('sourceActivity')}: {record.provenance.sourceActivityId}</p>
                 )}
                 {record.limitations.length > 0 && (
                   <p className='mt-1'>
-                    {labels.limitations}: {record.limitations
-                      .map((limitation) => labels.limitationLabels[limitation] ?? limitation)
+                    {t('limitations')}: {record.limitations
+                      .map((limitation) => t.has(`limitationLabels.${limitation}`) ? t(`limitationLabels.${limitation}`) : limitation)
                       .join(' · ')}
                   </p>
                 )}
@@ -263,7 +171,7 @@ export function RealizedTrainingHistory({
             {corrections.length > 0 && (
               <div className='mt-4 border-t pt-3'>
                 <p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>
-                  {labels.corrections} ({corrections.length})
+                  {t('corrections')} ({corrections.length})
                 </p>
                 <ol className='mt-2 space-y-2'>
                   {corrections.map((correction) => {
@@ -271,17 +179,17 @@ export function RealizedTrainingHistory({
                     return (
                       <li key={correction.id} className='rounded-md bg-muted/40 p-3 text-xs'>
                         <div className='flex flex-wrap gap-x-4 gap-y-1'>
-                          <span><span className='text-muted-foreground'>{labels.correctedAt}:</span> {formatDateTime(correction.correctedAt, language)}</span>
-                          <span><span className='text-muted-foreground'>{labels.correctedBy}:</span> {correction.correctedByUserId}</span>
+                          <span><span className='text-muted-foreground'>{t('correctedAt')}:</span> {formatDateTime(correction.correctedAt, language)}</span>
+                          <span><span className='text-muted-foreground'>{t('correctedBy')}:</span> {correction.correctedByUserId}</span>
                         </div>
                         <p className='mt-1'>
-                          <span className='text-muted-foreground'>{labels.correctionReason}:</span>{' '}
-                          {correction.reason ?? labels.noCorrectionReason}
+                          <span className='text-muted-foreground'>{t('correctionReason')}:</span>{' '}
+                          {correction.reason ?? t('noCorrectionReason')}
                         </p>
                         {changedFields.length > 0 && (
                           <p className='mt-1'>
-                            <span className='text-muted-foreground'>{labels.changedFields}:</span>{' '}
-                            {changedFields.map((field) => labels.correctionFields[field]).join(' · ')}
+                            <span className='text-muted-foreground'>{t('changedFields')}:</span>{' '}
+                            {changedFields.map((field) => t(`correctionFields.${field}`)).join(' · ')}
                           </p>
                         )}
                       </li>
