@@ -3,7 +3,7 @@ import { FEELING_OPTIONS, FeelingValue } from '@workouts/components/FeelingSelec
 
 export interface SelfAssessmentValues {
   feeling?: FeelingValue | null
-  rpe?: number
+  rpe?: number | null
 }
 
 export interface UseSelfAssessmentProps {
@@ -12,11 +12,9 @@ export interface UseSelfAssessmentProps {
 }
 
 export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = {}) {
-  // Estado interno de fallback
   const [internalFeeling, setInternalFeeling] = useState<FeelingValue | null>(value?.feeling ?? null)
-  const [internalRpe, setInternalRpe] = useState<number>(value?.rpe ?? 0)
+  const [internalRpe, setInternalRpe] = useState<number | null>(value?.rpe ?? null)
 
-  // Sincronizar estado interno si cambian las props de forma controlada
   useEffect(() => {
     if (value?.feeling !== undefined) {
       setInternalFeeling(value.feeling)
@@ -30,8 +28,8 @@ export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = 
   }, [value?.rpe])
 
   const feeling = value?.feeling !== undefined ? value.feeling : internalFeeling
-  const rpe = value?.rpe !== undefined ? (value.rpe ?? 0) : internalRpe
-  const hasData = Boolean(feeling || rpe > 0)
+  const rpe = value?.rpe !== undefined ? value.rpe : internalRpe
+  const hasData = Boolean(feeling || rpe !== null)
 
   const selectedFeelingOption = FEELING_OPTIONS.find((opt) => opt.value === feeling)
   const FeelingIcon = selectedFeelingOption?.icon
@@ -41,7 +39,7 @@ export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = 
     onChange?.({ feeling: newFeeling, rpe })
   }
 
-  const handleRpeChange = (newRpe: number) => {
+  const handleRpeChange = (newRpe: number | null) => {
     setInternalRpe(newRpe)
     onChange?.({ feeling, rpe: newRpe })
   }
