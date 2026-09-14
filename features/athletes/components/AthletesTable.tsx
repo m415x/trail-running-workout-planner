@@ -2,13 +2,20 @@
 
 import { useState, useTransition } from 'react'
 import Link from 'next/link'
-import { Eye, Pencil, Power, UsersRound } from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { EllipsisVertical, Eye, Pencil, Power, UsersRound } from 'lucide-react'
 
 import { setAthleteActiveState } from '@/app/actions/athlete-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
-import { Button, buttonVariants } from '@ui/button'
+import { Button } from '@ui/button'
 import { Card } from '@ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
 
 import type { AthleteCategoryCode, AthleteLevelCode } from '@/types'
@@ -41,6 +48,7 @@ function getInitials(firstName: string, lastName: string) {
 }
 
 export function AthletesTable({ athletes, locale }: AthletesTableProps) {
+  const t = useTranslations('AthleteActions')
   const [error, setError] = useState<string | null>(null)
   const [pendingAthleteId, setPendingAthleteId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -76,7 +84,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
               <TableHead>Contacto</TableHead>
               <TableHead>Grupo / cohorte</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className='w-36'><span className='sr-only'>Acciones</span></TableHead>
+              <TableHead className='w-16'><span className='sr-only'>{t('actions')}</span></TableHead>
             </TableRow>
           </TableHeader>
 
@@ -144,47 +152,43 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                     )}
                   </TableCell>
 
-                  <TableCell>
-                    <div className='flex justify-end gap-1'>
-                      <Link
-                        href={basePath}
-                        aria-label={`Ver detalle de ${fullName}`}
-                        title='Ver detalle'
-                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
+                  <TableCell className='text-right'>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger
+                        render={(
+                          <Button
+                            type='button'
+                            variant='ghost'
+                            size='icon-sm'
+                            aria-label={t('menuFor', { name: fullName })}
+                          />
+                        )}
                       >
-                        <Eye />
-                      </Link>
-
-                      <Button
-                        type='button'
-                        variant='ghost'
-                        size='icon-sm'
-                        disabled={isChangingState}
-                        aria-label={`${athlete.isActive ? 'Desactivar' : 'Activar'} ${fullName}`}
-                        title={athlete.isActive ? 'Desactivar atleta' : 'Activar atleta'}
-                        onClick={() => toggleActiveState(athlete)}
-                      >
-                        <Power />
-                      </Button>
-
-                      <Link
-                        href={groupPath}
-                        aria-label={`${groupCode ? 'Cambiar grupo de' : 'Asignar a grupo a'} ${fullName}`}
-                        title={groupCode ? 'Cambiar grupo' : 'Asignar grupo'}
-                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-                      >
-                        <UsersRound />
-                      </Link>
-
-                      <Link
-                        href={editPath}
-                        aria-label={`Editar ${fullName}`}
-                        title='Editar atleta'
-                        className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
-                      >
-                        <Pencil />
-                      </Link>
-                    </div>
+                        <EllipsisVertical />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align='end' className='w-52'>
+                        <DropdownMenuItem render={<Link href={basePath} />}>
+                          <Eye />
+                          {t('viewDetail')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant={athlete.isActive ? 'destructive' : 'default'}
+                          disabled={isChangingState}
+                          onClick={() => toggleActiveState(athlete)}
+                        >
+                          <Power />
+                          {athlete.isActive ? t('deactivate') : t('activate')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem render={<Link href={groupPath} />}>
+                          <UsersRound />
+                          {groupCode ? t('changeGroup') : t('assignGroup')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem render={<Link href={editPath} />}>
+                          <Pencil />
+                          {t('editAthlete')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               )

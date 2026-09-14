@@ -42,6 +42,17 @@ The guard should:
 - offer an explicit choice to remain editing or discard changes;
 - be reusable across feature modules instead of coupling the behavior to athlete forms.
 
+## Action density and menus
+
+When a row, card, or page header exposes three or more peer secondary actions,
+group them in the shared Shadcn `DropdownMenu`. Use an explicit “Actions”
+trigger on detail pages and an accessible ellipsis trigger in dense tables.
+
+A frequently used primary action may remain visible when the product hierarchy
+justifies it; the menu is not a reason to hide the only clear next step.
+Lifecycle/destructive entries must use destructive styling, but menu placement
+does not replace the confirmation required by this policy.
+
 ## Non-goals
 
 - Do not add confirmation to harmless navigation or read-only actions.
@@ -50,4 +61,4 @@ The guard should:
 
 ## Adoption
 
-KAN-282 should inventory current destructive actions and editable forms, establish the shared pattern, then migrate flows incrementally. Athlete deactivation and athlete edit navigation are the first known regression cases from the KAN-280 walkthrough.
+The athlete list and athlete detail header are the first adopted action-density examples. KAN-282 should inventory current destructive actions and editable forms, establish the shared pattern, then migrate flows incrementally. Athlete deactivation and athlete edit navigation are the first known regression cases from the KAN-280 walkthrough.

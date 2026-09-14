@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { Activity, ArrowLeft, CalendarRange, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
+import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
@@ -9,6 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@ui/dropdown-menu'
 
 interface AthleteDetailPageProps {
   params: Promise<{ locale: string; athleteId: string }>
@@ -56,6 +63,7 @@ const GOAL_STATUS_LABELS: Record<string, string> = {
 
 export default async function AthleteDetailPage({ params }: AthleteDetailPageProps) {
   const { locale, athleteId } = await params
+  const tActions = await getTranslations({ locale, namespace: 'AthleteActions' })
   const today = todayInArgentina()
   const [athlete, planningResult, goals] = await Promise.all([
     getAthleteById(athleteId),
@@ -108,24 +116,33 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
           </div>
         </div>
 
-        <div className='flex flex-wrap gap-2'>
-          <Link href={trainingPath} className={buttonVariants({ variant: 'outline' })}>
-            <Activity />
-            Entrenamiento realizado
-          </Link>
-          <Link href={newGoalPath} className={buttonVariants({ variant: 'outline' })}>
-            <Target />
-            Nuevo objetivo
-          </Link>
-          <Link href={groupPath} className={buttonVariants({ variant: 'outline' })}>
-            <UsersRound />
-            {athlete.groupId ? 'Cambiar grupo' : 'Asignar grupo'}
-          </Link>
-          <Link href={editPath} className={buttonVariants()}>
-            <Pencil />
-            Editar atleta
-          </Link>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={buttonVariants({ variant: 'outline' })}
+            aria-label={tActions('menuFor', { name: fullName })}
+          >
+            {tActions('actions')}
+            <EllipsisVertical />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' className='w-56'>
+            <DropdownMenuItem render={<Link href={trainingPath} />}>
+              <Activity />
+              {tActions('realizedTraining')}
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={newGoalPath} />}>
+              <Target />
+              {tActions('newGoal')}
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={groupPath} />}>
+              <UsersRound />
+              {athlete.groupId ? tActions('changeGroup') : tActions('assignGroup')}
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href={editPath} />}>
+              <Pencil />
+              {tActions('editAthlete')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
