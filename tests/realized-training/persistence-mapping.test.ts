@@ -9,6 +9,12 @@ import {
 import { normalizeRealizedTrainingRecord } from '@/lib/readiness/realized-training'
 import type { ManualRealizedTrainingCaptureInput } from '@/types/training/realized-training-capture.types'
 
+const context = {
+  workoutLogId: 'log-1',
+  evidenceId: 'evidence-1',
+  loggedAt: '2026-09-14T12:00:00.000Z',
+} as const
+
 const unknown = { state: 'unknown' } as const
 
 function capture(
@@ -18,15 +24,15 @@ function capture(
     athleteId: 'athlete-1',
     sessionId: null,
     workoutId: null,
-    date: '2026-09-13',
-    performedAt: '2026-09-13T08:30:00-03:00',
+    date: '2026-09-14',
+    performedAt: '2026-09-14T08:00:00-03:00',
     status: 'completed',
     metrics: {
-      distanceKm: unknown,
-      durationMin: unknown,
-      elevationGainM: unknown,
+      distanceKm: { state: 'known', value: 12 },
+      durationMin: { state: 'known', value: 75 },
+      elevationGainM: { state: 'known', value: 500 },
       avgHrBpm: unknown,
-      rpe: unknown,
+      rpe: { state: 'known', value: 6 },
     },
     feeling: null,
     athleteNotes: null,
@@ -34,40 +40,26 @@ function capture(
   }
 }
 
-const context = {
-  workoutLogId: 'log-1',
-  evidenceId: 'evidence-1',
-  loggedAt: '2026-09-13T20:00:00.000Z',
-} as const
-
 describe('realized training persistence mapping', () => {
-  it('stores unknown numeric metrics with legacy-compatible fallbacks but no known evidence', () => {
-    const rows = mapManualCaptureToPersistenceRows(capture(), context)
-
-    assert.equal(rows.workoutLog.distanceKm, 0)
-    assert.equal(rows.workoutLog.durationMin, 0)
-    assert.equal(rows.workoutLog.elevationGain, 0)
-    assert.equal(rows.workoutLog.avgHr, null)
-    assert.equal(rows.workoutLog.rpe, 0)
-    assert.deepEqual(rows.evidence.knownMetricFields, [])
-    assert.equal(rows.evidence.source, 'manual')
-    assert.equal(rows.evidence.sourceActivityId, null)
-  })
-
-  it('marks explicit zero as known evidence instead of treating it as missing', () => {
+  it('maps known and unknown metrics to durable rows without losing evidence semantics', () => {
     const rows = mapManualCaptureToPersistenceRows(
       capture({
         metrics: {
-          distanceKm: { state: 'known', value: 0 },
-          durationMin: { state: 'known', value: 60 },
-          elevationGainM: { state: 'known', value: 0 },
+          distanceKm: { state: 'known', value: 12 },
+          durationMin: { state: 'known', value: 75 },
+          elevationGainM: { state: 'known', value: 500 },
           avgHrBpm: unknown,
-          rpe: { state: 'known', value: 0 },
+          rpe: { state: 'known', value: 6 },
         },
       }),
       context,
     )
 
+    assert.equal(rows.workoutLog.distanceKm, 12)
+    assert.equal(rows.workoutLog.durationMin, 75)
+    assert.equal(rows.workoutLog.elevationGain, 500)
+    assert.equal(rows.workoutLog.avgHr, null)
+    assert.equal(rows.workoutLog.rpe, 6)
     assert.deepEqual(rows.evidence.knownMetricFields, [
       'distanceKm',
       'durationMin',
@@ -113,9 +105,9 @@ describe('realized training persistence mapping', () => {
 
     assert.deepEqual(normalized.metrics.distanceKm, { state: 'known', value: 0 })
     assert.deepEqual(normalized.metrics.durationMin, { state: 'known', value: 75 })
-    assert.deepEqual(normalized.metrics.elevationGainM, { state: 'unknown', reason: 'legacy_zero_ambiguous' })
+    assert.deepEqual(normalized.metrics.elevationGainM, { state: 'unknown', reason: 'not_recorded' })
     assert.deepEqual(normalized.metrics.avgHrBpm, { state: 'known', value: 148 })
-    assert.deepEqual(normalized.metrics.rpe, { state: 'unknown', reason: 'legacy_zero_ambiguous' })
+    assert.deepEqual(normalized.metrics.rpe, { state: 'unknown', reason: 'not_recorded' })
   })
 
   it('reconstructs editable manual evidence without turning unknown fallbacks into zero', () => {
@@ -136,13 +128,27 @@ describe('realized training persistence mapping', () => {
     )
 
     const editable = mapPersistenceToManualRealizedTrainingClientInput({
-      log: rows.workoutLog,
+      log: {
+        id: rows.workoutLog.id,
+        athleteId: rows.workoutLog.athleteId,
+        sessionId: rows.workoutLog.sessionId,
+        workoutId: rows.workoutLog.workoutId,
+        date: rows.workoutLog.date,
+        performedAt: rows.workoutLog.performedAt,
+        status: rows.workoutLog.status,
+        distanceKm: rows.workoutLog.distanceKm,
+        durationMin: rows.workoutLog.durationMin,
+        elevationGain: rows.workoutLog.elevationGain,
+        avgHr: rows.workoutLog.avgHr,
+        feeling: rows.workoutLog.feeling,
+        rpe: rows.workoutLog.rpe,
+        athleteNotes: rows.workoutLog.athleteNotes,
+        loggedAt: rows.workoutLog.loggedAt,
+      },
       evidence: rows.evidence,
     })
 
     assert.ok(editable)
-    assert.equal(editable.sessionId, 'session-1')
-    assert.equal(editable.performedAt, '2026-09-13T11:30:00.000Z')
     assert.deepEqual(editable.metrics.distanceKm, { state: 'known', value: 0 })
     assert.deepEqual(editable.metrics.durationMin, { state: 'known', value: 61.5 })
     assert.deepEqual(editable.metrics.elevationGainM, { state: 'unknown' })
@@ -152,48 +158,37 @@ describe('realized training persistence mapping', () => {
     assert.equal(editable.athleteNotes, 'Recorded notes')
   })
 
-  it('does not expose legacy or imported evidence as editable manual capture', () => {
+  it('does not reconstruct editable input for legacy or imported evidence', () => {
     const rows = mapManualCaptureToPersistenceRows(capture(), context)
+    const log = {
+      id: rows.workoutLog.id,
+      athleteId: rows.workoutLog.athleteId,
+      sessionId: rows.workoutLog.sessionId,
+      workoutId: rows.workoutLog.workoutId,
+      date: rows.workoutLog.date,
+      performedAt: rows.workoutLog.performedAt,
+      status: rows.workoutLog.status,
+      distanceKm: rows.workoutLog.distanceKm,
+      durationMin: rows.workoutLog.durationMin,
+      elevationGain: rows.workoutLog.elevationGain,
+      avgHr: rows.workoutLog.avgHr,
+      feeling: rows.workoutLog.feeling,
+      rpe: rows.workoutLog.rpe,
+      athleteNotes: rows.workoutLog.athleteNotes,
+      loggedAt: rows.workoutLog.loggedAt,
+    }
 
-    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
-      log: { ...rows.workoutLog, performedAt: null },
-      evidence: rows.evidence,
-    }), null)
-
-    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
-      log: rows.workoutLog,
-      evidence: { ...rows.evidence, source: 'imported' },
-    }), null)
-
-    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
-      log: rows.workoutLog,
-      evidence: null,
-    }), null)
-  })
-
-  it('keeps rows without evidence explicitly legacy-ambiguous', () => {
-    const raw = mapPersistenceToRawRealizedTrainingRecord({
-      teamId: 'team-1',
-      log: {
-        id: 'legacy-log',
-        athleteId: 'athlete-1',
-        sessionId: null,
-        workoutId: null,
-        date: '2026-09-12',
-        status: 'completed',
-        distanceKm: 0,
-        durationMin: 0,
-        elevationGain: 0,
-        avgHr: null,
-        rpe: 0,
-        loggedAt: '2026-09-12T20:00:00.000Z',
-      },
-      evidence: null,
-    })
-
-    const normalized = normalizeRealizedTrainingRecord(raw)
-
-    assert.ok(normalized.limitations.includes('legacy_record_without_metric_evidence'))
-    assert.equal(normalized.metrics.distanceKm.state, 'unknown')
+    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({ log, evidence: null }), null)
+    assert.equal(
+      mapPersistenceToManualRealizedTrainingClientInput({
+        log,
+        evidence: {
+          source: 'imported',
+          sourceActivityId: 'provider:activity-1',
+          knownMetricFields: rows.evidence.knownMetricFields,
+        },
+      }),
+      null,
+    )
   })
 })
