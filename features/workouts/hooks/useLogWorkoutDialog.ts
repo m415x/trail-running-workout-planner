@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef } from 'react'
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { captureLocalInstant, captureDuration } from '@/lib/realized-training/manual-capture-fields'
 import type {
   ManualRealizedTrainingClientInput,
@@ -13,10 +13,42 @@ function metricFromInput(value: string): RealizedTrainingCaptureMetric {
   return { state: 'known', value: Number(normalized) }
 }
 
-export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWorkoutDialogProps) {
+function inputFromMetric(metric: RealizedTrainingCaptureMetric | undefined): string {
+  return metric?.state === 'known' ? String(metric.value) : ''
+}
+
+function localDateTimeInput(value: string | null | undefined): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const pad = (part: number) => String(part).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function durationInputs(metric: RealizedTrainingCaptureMetric | undefined) {
+  if (!metric || metric.state !== 'known') return { timeHr: '', timeMin: '', timeSec: '' }
+  const totalSeconds = Math.max(0, Math.round(metric.value * 60))
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  return {
+    timeHr: String(hours),
+    timeMin: String(minutes),
+    timeSec: String(seconds),
+  }
+}
+
+export function useLogWorkoutDialog({
+  isOpen,
+  onClose,
+  workout,
+  dateStr,
+  onSave,
+  initialInput,
+}: LogWorkoutDialogProps) {
   // Planned values are deliberately not copied into realized metrics. They can
   // be shown as placeholders by the UI, but an untouched input remains unknown.
-  const initialValues = useMemo(() => ({
+  const emptyValues = useMemo(() => ({
     distance: '',
     gain: '',
     timeHr: '',
@@ -28,33 +60,60 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
       rpe: null,
     } as SelfAssessmentValues,
     athleteNotes: '',
+    performedLocal: '',
   }), [])
 
-  const [distance, setDistance] = useState(initialValues.distance)
-  const [timeHr, setTimeHr] = useState(initialValues.timeHr)
-  const [timeMin, setTimeMin] = useState(initialValues.timeMin)
-  const [timeSec, setTimeSec] = useState(initialValues.timeSec)
-  const [gain, setGain] = useState(initialValues.gain)
-  const [avgHr, setAvgHr] = useState(initialValues.avgHr)
-  const [assessment, setAssessment] = useState<SelfAssessmentValues>(initialValues.assessment)
-  const [athleteNotes, setAthleteNotes] = useState(initialValues.athleteNotes)
+  const valuesFromInput = useCallback((input: ManualRealizedTrainingClientInput | null | undefined) => {
+    if (!input) return emptyValues
+    const duration = durationInputs(input.metrics.durationMin)
+    return {
+      distance: inputFromMetric(input.metrics.distanceKm),
+      gain: inputFromMetric(input.metrics.elevationGainM),
+      ...duration,
+      avgHr: inputFromMetric(input.metrics.avgHrBpm),
+      assessment: {
+        feeling: input.feeling,
+        rpe: input.metrics.rpe.state === 'known' ? input.metrics.rpe.value : null,
+      } as SelfAssessmentValues,
+      athleteNotes: input.athleteNotes ?? '',
+      performedLocal: localDateTimeInput(input.performedAt),
+    }
+  }, [emptyValues])
+
+  const [distance, setDistance] = useState(emptyValues.distance)
+  const [timeHr, setTimeHr] = useState(emptyValues.timeHr)
+  const [timeMin, setTimeMin] = useState(emptyValues.timeMin)
+  const [timeSec, setTimeSec] = useState(emptyValues.timeSec)
+  const [gain, setGain] = useState(emptyValues.gain)
+  const [avgHr, setAvgHr] = useState(emptyValues.avgHr)
+  const [assessment, setAssessment] = useState<SelfAssessmentValues>(emptyValues.assessment)
+  const [athleteNotes, setAthleteNotes] = useState(emptyValues.athleteNotes)
   const [isSaving, setIsSaving] = useState(false)
   const saving = useRef(false)
-  const [performedLocal, setPerformedLocal] = useState('')
+  const [performedLocal, setPerformedLocal] = useState(emptyValues.performedLocal)
   const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'saveFailed' | null>(null)
 
-  const resetForm = useCallback(() => {
-    setPerformedLocal('')
+  const applyValues = useCallback((input: ManualRealizedTrainingClientInput | null | undefined) => {
+    const values = valuesFromInput(input)
+    setPerformedLocal(values.performedLocal)
     setSaveError(null)
-    setDistance(initialValues.distance)
-    setGain(initialValues.gain)
-    setTimeHr(initialValues.timeHr)
-    setTimeMin(initialValues.timeMin)
-    setTimeSec(initialValues.timeSec)
-    setAssessment(initialValues.assessment)
-    setAthleteNotes(initialValues.athleteNotes)
-    setAvgHr(initialValues.avgHr)
-  }, [initialValues])
+    setDistance(values.distance)
+    setGain(values.gain)
+    setTimeHr(values.timeHr)
+    setTimeMin(values.timeMin)
+    setTimeSec(values.timeSec)
+    setAssessment(values.assessment)
+    setAthleteNotes(values.athleteNotes)
+    setAvgHr(values.avgHr)
+  }, [valuesFromInput])
+
+  useEffect(() => {
+    if (isOpen) applyValues(initialInput)
+  }, [applyValues, initialInput, isOpen])
+
+  const resetForm = useCallback(() => {
+    applyValues(initialInput)
+  }, [applyValues, initialInput])
 
   const handleTimeSecChange = (value: string) => {
     if (value === '') {
@@ -87,7 +146,6 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
     }
   }
 
-
   const handleSave = async () => {
     if (!dateStr || !onSave || saving.current) return
     const performedAt = captureLocalInstant(performedLocal)
@@ -97,11 +155,11 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
     }
 
     const payload: ManualRealizedTrainingClientInput = {
-      sessionId: workout?.id?.toString() ?? null,
-      workoutId: null,
-      date: dateStr,
+      sessionId: workout?.id?.toString() ?? initialInput?.sessionId ?? null,
+      workoutId: initialInput?.workoutId ?? null,
+      date: initialInput?.date ?? dateStr,
       performedAt,
-      status: 'completed',
+      status: initialInput?.status ?? 'completed',
       metrics: {
         distanceKm: metricFromInput(distance),
         durationMin: captureDuration(timeHr, timeMin, timeSec),
@@ -124,7 +182,6 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
         setSaveError('saveFailed')
         return
       }
-      resetForm()
       onClose()
     } catch {
       setSaveError('saveFailed')
@@ -133,7 +190,6 @@ export function useLogWorkoutDialog({ onClose, workout, dateStr, onSave }: LogWo
       setIsSaving(false)
     }
   }
-
 
   return {
     distance,
