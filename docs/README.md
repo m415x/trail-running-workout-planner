@@ -23,6 +23,7 @@ All repository documentation must be written and maintained in English.
 - [Realized training timing and manual capture](architecture/realized-training-timing.md)
 - [Realized training corrections](architecture/realized-training-corrections.md)
 - [Realized training deduplication](architecture/realized-training-deduplication.md)
+- [Realized training isolation](architecture/realized-training-isolation.md)
 - [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
 - [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
 - [Progressive internationalization policy](architecture/internationalization-policy.md)
