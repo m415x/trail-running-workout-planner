@@ -2,12 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { IntensityZone, TrackData, WeekDay, WeeklyCycle, WorkoutType } from '@/types'
+import type {
+  IntensityZone,
+  RealizedTrainingRecord,
+  TrackData,
+  WeekDay,
+  WeeklyCycle,
+  WorkoutType,
+} from '@/types'
 import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
-
 import type { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 
 import { parseISODate } from '@/lib/date-helpers'
+import {
+  hasUnplannedTrainingOnDate,
+  reconcileTrainingDayStatus,
+  type PlannedSessionEvidenceOutcome,
+} from '@/lib/realized-training/day-status-reconciliation'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
 
 const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const
@@ -16,14 +27,11 @@ interface SessionWorkout {
   id: string
   title: string
   type: WorkoutType
-
   distance: number | null
   time: number | null
   gain: number | null
   pace: number | null
-
   zone: IntensityZone | null
-
   notes?: string | null
   trackPath?: string | null
   locationKey?: string | null
@@ -32,10 +40,8 @@ interface SessionWorkout {
 export interface SessionWithWorkout {
   id: string
   teamId: string
-
   date: string
   title: string
-
   workoutId?: string | null
   workout?: SessionWorkout | null
   location?: { name: string } | null
@@ -54,45 +60,43 @@ export interface SessionWithWorkout {
     pamPercentage: number | null
     notes: string | null
   }>
-
   locationKey?: string | null
   trackPath?: string | null
   notes?: string | null
-
   type: WorkoutType
 }
 
 export interface UseHomeTabProps {
   initialSchedule: SessionWithWorkout[]
-
+  initialRealizedTraining: RealizedTrainingRecord[]
   initialAthlete: CurrentAthleteData
-
   onWeekChange: (startDateIso: string) => Promise<SessionWithWorkout[]>
+  onRealizedTrainingWeekChange: (startDateIso: string, endDateIso: string) => Promise<RealizedTrainingRecord[]>
 }
 
 function formatLocalISODate(date: Date): string {
   const year = date.getFullYear()
-
   const month = String(date.getMonth() + 1).padStart(2, '0')
-
   const day = String(date.getDate()).padStart(2, '0')
-
   return `${year}-${month}-${day}`
 }
 
 function getMonday(date: Date): Date {
   const result = new Date(date)
   const day = result.getDay()
-
   const difference = result.getDate() - day + (day === 0 ? -6 : 1)
-
   result.setDate(difference)
   result.setHours(0, 0, 0, 0)
-
   return result
 }
 
-/** Construye la vista del atleta desde la prescripción de su grupo. */
+function shiftDate(date: Date, days: number): Date {
+  const shifted = new Date(date)
+  shifted.setDate(shifted.getDate() + days)
+  return shifted
+}
+
+/** Builds the athlete view from the prescription assigned to their group. */
 function resolveGroupWorkout(session: SessionWithWorkout) {
   const prescription = session.sessionPrescriptions[0]
   if (!prescription) return null
@@ -123,116 +127,116 @@ function resolveGroupWorkout(session: SessionWithWorkout) {
   }
 }
 
-export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: UseHomeTabProps) {
+/**
+ * Returns the best currently-known compliance outcome for sessions on one day.
+ * A realized row does not imply completion by itself: only explicit
+ * `completed`/`partial` outcomes are consumed here. The future plan-vs-realized
+ * evaluator remains responsible for deciding between those two states.
+ */
+function resolveMatchedEvidenceOutcome(
+  daySessions: readonly SessionWithWorkout[],
+  records: readonly RealizedTrainingRecord[],
+): PlannedSessionEvidenceOutcome {
+  const sessionIds = new Set(daySessions.map(session => session.id))
+  const linked = records.filter(record => record.sessionId !== null && sessionIds.has(record.sessionId))
+
+  if (linked.some(record => record.status === 'completed')) return 'completed'
+  if (linked.some(record => record.status === 'partial')) return 'partial'
+  return null
+}
+
+export function useHomeTab({
+  initialSchedule,
+  initialRealizedTraining,
+  initialAthlete,
+  onWeekChange,
+  onRealizedTrainingWeekChange,
+}: UseHomeTabProps) {
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
-
   const [schedule, setSchedule] = useState<SessionWithWorkout[]>(initialSchedule)
-
+  const [realizedTraining, setRealizedTraining] = useState<RealizedTrainingRecord[]>(initialRealizedTraining)
   const [isLoadingWeek, setIsLoadingWeek] = useState(false)
-
   const [trackData, setTrackData] = useState<TrackData | null>(null)
 
-  // -----------------------------------------------------------------------
-  // Grupo actual del atleta
-  // -----------------------------------------------------------------------
-
   const athleteGroup = initialAthlete.athleteProfile.group ?? null
-
-
-  // -----------------------------------------------------------------------
-  // Inicio de la semana seleccionada
-  // -----------------------------------------------------------------------
-
   const startOfWeek = useMemo(() => getMonday(selectedDate), [selectedDate])
 
-  // -----------------------------------------------------------------------
-  // Días de la semana
-  // -----------------------------------------------------------------------
-
+  /**
+   * Weekly calendar state is reconciled from two independent sources:
+   * prescribed sessions and durable realized-training evidence. Rest-day
+   * training remains unplanned evidence and is never attached to a session.
+   */
   const weekDays = useMemo<WeekDay[]>(() => {
     const todayISO = formatLocalISODate(new Date())
 
     return Array.from({ length: 7 }, (_, index) => {
-      const currentDate = new Date(startOfWeek)
-
-      currentDate.setDate(startOfWeek.getDate() + index)
-
+      const currentDate = shiftDate(startOfWeek, index)
       const isoDate = formatLocalISODate(currentDate)
-
-      const daySessions = schedule.filter((candidate) => candidate.date === isoDate)
+      const daySessions = schedule.filter(candidate => candidate.date === isoDate)
       const session = daySessions[0]
+      const hasUnplannedTraining = hasUnplannedTrainingOnDate(realizedTraining, isoDate)
 
       const baseDay = {
         date: isoDate,
         fullDate: isoDate,
-
         day: DAY_LETTERS[index],
-
-        dayName: currentDate.toLocaleDateString('es-ES', {
-          weekday: 'short',
-        }),
-
+        dayName: currentDate.toLocaleDateString('es-ES', { weekday: 'short' }),
         dayNumber: currentDate.getDate(),
         isToday: isoDate === todayISO,
+        hasUnplannedTraining,
       }
 
-      /*
-       * Si no hay una sesión para la fecha o el atleta todavía
-       * no tiene grupo, mostramos el día como descanso.
-       */
       if (!session || !athleteGroup) {
         return {
           ...baseDay,
-
           type: 'Rest',
           isRest: true,
+          status: 'rest',
         } as WeekDay
       }
 
       const resolvedWorkout = resolveGroupWorkout(session)
+      if (!resolvedWorkout || resolvedWorkout.type === 'Rest') {
+        return {
+          ...baseDay,
+          type: 'Rest',
+          isRest: true,
+          status: 'rest',
+        } as WeekDay
+      }
 
-      if (!resolvedWorkout) return { ...baseDay, type: 'Rest', isRest: true } as WeekDay
+      const status = reconcileTrainingDayStatus({
+        date: isoDate,
+        today: todayISO,
+        hasPlannedSession: true,
+        matchedEvidenceOutcome: resolveMatchedEvidenceOutcome(daySessions, realizedTraining),
+      })
 
       return {
         ...baseDay,
-
         type: resolvedWorkout.type,
-
-        isRest: resolvedWorkout.type === 'Rest',
-
+        isRest: false,
+        status,
         workoutId: session.workoutId ? Number(session.workoutId) : undefined,
-
         km: daySessions.reduce(
           (total, candidate) => total + (candidate.sessionPrescriptions[0]?.distanceKm ?? 0),
           0,
         ),
       } as WeekDay
     })
-  }, [athleteGroup, schedule, startOfWeek])
-
-  // -----------------------------------------------------------------------
-  // Día actualmente seleccionado
-  // -----------------------------------------------------------------------
+  }, [athleteGroup, realizedTraining, schedule, startOfWeek])
 
   const selectedDay = useMemo(() => {
     const selectedISODate = formatLocalISODate(selectedDate)
-
-    const index = weekDays.findIndex((day) => day.fullDate === selectedISODate)
-
+    const index = weekDays.findIndex(day => day.fullDate === selectedISODate)
     return index >= 0 ? index : 0
   }, [selectedDate, weekDays])
 
   const selectedWeekDay = weekDays[selectedDay]
 
-  // -----------------------------------------------------------------------
-  // Microciclo semanal utilizado por la UI
-  // -----------------------------------------------------------------------
-
   const weeklyCycle = useMemo<WeeklyCycle>(() => {
     const mondayISO = weekDays[0]?.fullDate ?? ''
-
     const sundayISO = weekDays[6]?.fullDate ?? ''
-
     const targetKm = schedule.reduce(
       (total, session) => total + (session.sessionPrescriptions[0]?.distanceKm ?? 0),
       0,
@@ -240,106 +244,68 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
     return {
       id: 'current',
-
       title: `Semana del ${mondayISO}`,
       phase: 'Desarrollo',
-
       startDate: mondayISO,
       endDate: sundayISO,
-
       targetKm,
     }
   }, [schedule, weekDays])
-
-  // -----------------------------------------------------------------------
-  // Workout del día seleccionado
-  // -----------------------------------------------------------------------
 
   const currentWorkouts = useMemo(() => {
     if (!selectedWeekDay || !athleteGroup) return []
 
     return schedule
-      .filter((candidate) => candidate.date === selectedWeekDay.fullDate)
+      .filter(candidate => candidate.date === selectedWeekDay.fullDate)
       .map(resolveGroupWorkout)
       .filter((workout): workout is NonNullable<typeof workout> => workout !== null)
   }, [athleteGroup, schedule, selectedWeekDay])
 
   const currentWorkout = currentWorkouts[0] ?? null
 
-  // -----------------------------------------------------------------------
-  // Carga del archivo GPX
-  // -----------------------------------------------------------------------
-
   useEffect(() => {
     let isMounted = true
 
     async function loadTrack() {
       if (!currentWorkout?.trackPath) {
-        if (isMounted) {
-          setTrackData(null)
-        }
-
+        if (isMounted) setTrackData(null)
         return
       }
 
       try {
         const parsedTrack = await parseTrackFromUrl(currentWorkout.trackPath)
-
-        if (isMounted) {
-          setTrackData(parsedTrack)
-        }
+        if (isMounted) setTrackData(parsedTrack)
       } catch (error) {
-        console.error('No se pudo cargar el track:', error)
-
-        if (isMounted) {
-          setTrackData(null)
-        }
+        console.error('Could not load workout track:', error)
+        if (isMounted) setTrackData(null)
       }
     }
 
     void loadTrack()
-
     return () => {
       isMounted = false
     }
   }, [currentWorkout?.trackPath])
 
-  // -----------------------------------------------------------------------
-  // Información de altimetría
-  // -----------------------------------------------------------------------
-
   const elevationChartData = useMemo<ElevationChartProps | null>(() => {
-    if (!currentWorkout || !trackData || trackData.elevationProfile.length === 0) {
-      return null
-    }
+    if (!currentWorkout || !trackData || trackData.elevationProfile.length === 0) return null
 
     const elevations = trackData.elevationProfile.map((point: { elev: number }) => point.elev)
-
     const elevationMin = Math.min(...elevations)
-
     const elevationMax = Math.max(...elevations)
 
     return {
       workout: {
         ...currentWorkout,
-
         km: trackData.distanceKm || currentWorkout.distance,
-
         gain: trackData.gainMeters || currentWorkout.gain,
       },
-
       elevData: trackData.elevationProfile,
-
       elevMin: elevationMin,
       elevMax: elevationMax,
-
       yDomain: [Math.floor(elevationMin - 30), Math.ceil(elevationMax + 30)],
     }
   }, [currentWorkout, trackData])
-
-  // -----------------------------------------------------------------------
-  // Navegación entre semanas
-  // -----------------------------------------------------------------------
 
   const loadWeek = useCallback(
     async (nextDate: Date) => {
@@ -348,47 +314,37 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
       try {
         const monday = getMonday(nextDate)
-
-        const newSchedule = await onWeekChange(formatLocalISODate(monday))
+        const sunday = shiftDate(monday, 6)
+        const startDateIso = formatLocalISODate(monday)
+        const endDateIso = formatLocalISODate(sunday)
+        const [newSchedule, newRealizedTraining] = await Promise.all([
+          onWeekChange(startDateIso),
+          onRealizedTrainingWeekChange(startDateIso, endDateIso),
+        ])
 
         setSchedule(newSchedule)
+        setRealizedTraining(newRealizedTraining)
       } catch (error) {
-        console.error('No se pudo cargar la semana:', error)
+        console.error('Could not load training week:', error)
       } finally {
         setIsLoadingWeek(false)
       }
     },
-    [onWeekChange],
+    [onRealizedTrainingWeekChange, onWeekChange],
   )
 
   const handlePrevWeek = useCallback(async () => {
-    const previousWeek = new Date(startOfWeek)
-
-    previousWeek.setDate(startOfWeek.getDate() - 7)
-
-    await loadWeek(previousWeek)
+    await loadWeek(shiftDate(startOfWeek, -7))
   }, [loadWeek, startOfWeek])
 
   const handleNextWeek = useCallback(async () => {
-    const nextWeek = new Date(startOfWeek)
-
-    nextWeek.setDate(startOfWeek.getDate() + 7)
-
-    await loadWeek(nextWeek)
+    await loadWeek(shiftDate(startOfWeek, 7))
   }, [loadWeek, startOfWeek])
-
-  // -----------------------------------------------------------------------
-  // Selección de día/fecha
-  // -----------------------------------------------------------------------
 
   const handleSelectDay = useCallback(
     (index: number) => {
       const targetDay = weekDays[index]
-
-      if (!targetDay?.fullDate) {
-        return
-      }
-
+      if (!targetDay?.fullDate) return
       setSelectedDate(parseISODate(targetDay.fullDate))
     },
     [weekDays],
@@ -396,41 +352,26 @@ export function useHomeTab({ initialSchedule, initialAthlete, onWeekChange }: Us
 
   const handleSelectDate = useCallback(
     async (date: Date | undefined) => {
-      if (date) {
-        await loadWeek(date)
-      }
+      if (date) await loadWeek(date)
     },
     [loadWeek],
   )
 
-  // -----------------------------------------------------------------------
-  // API pública del hook
-  // -----------------------------------------------------------------------
-
   return {
     team: initialAthlete.athleteProfile.team,
-
     user: initialAthlete,
-
     athlete: initialAthlete.athleteProfile,
-
     athleteGroup,
-
     weeklyCycle,
     weekDays,
-
     selectedDay,
     selectedDate,
     selectedWeekDay,
-
     currentWorkout,
     currentWorkouts,
     elevationChartData,
-
     TrackData: trackData,
-
     isLoadingWeek,
-
     onSelectDay: handleSelectDay,
     onPrevWeek: handlePrevWeek,
     onNextWeek: handleNextWeek,
