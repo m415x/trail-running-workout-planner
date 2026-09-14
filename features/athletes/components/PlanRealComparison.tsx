@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
@@ -83,10 +85,12 @@ export function PlanRealComparison({
   const t = useTranslations('PlanRealComparison')
   const plannedItems = comparison.items.filter(item => item.kind === 'planned_session')
   const unplannedItems = comparison.items.filter(item => item.kind === 'unplanned_realized')
-  const stateCounts = plannedItems.reduce(
-    (counts, item) => ({ ...counts, [item.state]: counts[item.state] + 1 }),
-    { matched: 0, deviation: 0, known_not_completed: 0, unknown: 0 },
-  )
+  const stateCounts = {
+    matched: plannedItems.filter(item => item.state === 'matched').length,
+    deviation: plannedItems.filter(item => item.state === 'deviation').length,
+    known_not_completed: plannedItems.filter(item => item.state === 'known_not_completed').length,
+    unknown: plannedItems.filter(item => item.state === 'unknown').length,
+  }
 
   return (
     <Card className='py-0'>
@@ -115,7 +119,7 @@ export function PlanRealComparison({
             </div>
           </AccordionTrigger>
 
-          <AccordionContent className='px-6 pb-6'>
+          <AccordionContent className='px-6 pb-6 [&_a]:no-underline'>
             <div className='mb-4 flex justify-end gap-2'>
               <Link
                 href={weekHref}
