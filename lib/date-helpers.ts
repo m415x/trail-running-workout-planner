@@ -1,34 +1,25 @@
 import { WeekDay, WeekDayRaw, DayStatus } from '@/types'
 import { DAYS_OF_WEEK, MONTHS_OF_YEAR } from '@/lib/constants'
 
-/** Parses YYYY-MM-DD as a local Date without UTC/local day shifting. */
+/**
+ * Normaliza una cadena YYYY-MM-DD a un objeto Date local sin desfases por timezones (UTC vs Local)
+ */
 export function parseISODate(dateStr: string): Date {
   const [year, month, day] = dateStr.split('-').map(Number)
   return new Date(year, month - 1, day)
 }
 
-/** Returns the current calendar date in YYYY-MM-DD for an explicit IANA timezone. */
-export function getCurrentISODateInTimeZone(
-  timeZone = 'America/Argentina/Buenos_Aires',
-  now = new Date(),
-): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(now)
-  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
-  return `${values.year}-${values.month}-${values.day}`
-}
-
-/** Maps JavaScript weekday index (Sun=0) to the app index (Mon=0). */
+/**
+ * Mapea el índice del día según JS (0=Dom, 1=Lun... 6=Sáb) al formato de app (0=Lun ... 6=Dom)
+ */
 function getNormalizedDayIndex(date: Date): number {
   const jsDay = date.getDay()
   return jsDay === 0 ? 6 : jsDay - 1
 }
 
-/** Resolves the visual status of a microcycle day from already-projected flags. */
+/**
+ * Evalúa el estado visual de un día del microciclo
+ */
 export function getDayStatus(day: WeekDay): DayStatus {
   if (day.isRest) return 'rest'
   if (day.isDone) return 'completed'
@@ -39,7 +30,8 @@ export function getDayStatus(day: WeekDay): DayStatus {
 }
 
 /**
- * Formats a compact date label.
+ * Formatea una fecha a versión corta
+ * Acepa tanto un objeto Date/ISO String como índices numéricos
  * @example formatShortDate('2026-08-11') -> "Mar, 11 Ago"
  * @example formatShortDate(1, 11, 7) -> "Mar, 11 Ago"
  */
@@ -63,7 +55,7 @@ export function formatShortDate(
 }
 
 /**
- * Formats a full date label.
+ * Formatea una fecha a versión completa
  * @example formatFullDate('2026-08-11') -> "Martes · 11 Agosto 2026"
  * @example formatFullDate(1, 11, 7) -> "Martes · 11 Agosto 2026"
  */
@@ -86,7 +78,10 @@ export function formatFullDate(
   return `${day} · ${dateObj.getDate()} ${month} ${dateObj.getFullYear()}`
 }
 
-/** Formats the compact weekly date range shown in the calendar header. */
+/**
+ * Formatea el rango de fechas para la cabecera del calendario
+ * @example formatDateRange('2026-08-10', '2026-08-16') -> "Ago 10–16"
+ */
 export function formatDateRange(startDateStr: string, endDateStr: string): string {
   const start = parseISODate(startDateStr)
   const end = parseISODate(endDateStr)
@@ -95,7 +90,9 @@ export function formatDateRange(startDateStr: string, endDateStr: string): strin
   return `${monthConfig.short} ${start.getDate()}–${end.getDate()}`
 }
 
-/** Maps raw database day data to the WeekDay shape consumed by the UI. */
+/**
+ * Transforma los datos crudos de la BD a objetos WeekDay listos para consumir en la UI
+ */
 export function formatRawWeekDay(rawDay: WeekDayRaw): WeekDay {
   const dateObj = parseISODate(rawDay.date)
   const dayIdx = getNormalizedDayIndex(dateObj)
@@ -111,23 +108,27 @@ export function formatRawWeekDay(rawDay: WeekDayRaw): WeekDay {
     ...rawDay,
     day: dayConfig?.short ?? '',
     dayName: dayConfig?.medium ?? '',
-    dayNumber: dateObj.getDate(),
-    fullDate: rawDay.date,
+    dayNumber: dateObj.getDate(), // ✅ Asignado a dayNumber (number)
+    fullDate: rawDay.date, // ✅ 'YYYY-MM-DD'
     isToday: rawDay.isToday ?? isToday,
   }
 }
 
-/** Returns the Monday containing the supplied date. */
+/**
+ * Obtiene el lunes de la semana para una fecha dada.
+ */
 export function getMondayOfWeek(d: Date): Date {
   const date = new Date(d)
   const day = date.getDay()
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1)
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1) // Lunes como primer día
   date.setDate(diff)
   date.setHours(0, 0, 0, 0)
   return date
 }
 
-/** Builds the seven calendar dates for the week containing `baseDate`. */
+/**
+ * Genera la estructura de 7 días (Lunes a Domingo) para cualquier semana.
+ */
 export function generateWeekRange(baseDate: Date) {
   const monday = getMondayOfWeek(baseDate)
   const days: Date[] = []
