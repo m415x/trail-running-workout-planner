@@ -9,6 +9,7 @@ export interface TrainingLoadRuleConfig {
   readonly shortTermTimeConstantDays: 7
   readonly longTermTimeConstantDays: 42
   readonly minimumWarmupDays: 42
+  readonly resetOnUnknownEvidence: true
   readonly requiredMetricFields: readonly ['durationMin', 'rpe']
 }
 
@@ -19,6 +20,7 @@ export const TRAINING_LOAD_RULE_CONFIG: TrainingLoadRuleConfig = {
   shortTermTimeConstantDays: 7,
   longTermTimeConstantDays: 42,
   minimumWarmupDays: 42,
+  resetOnUnknownEvidence: true,
   requiredMetricFields: ['durationMin', 'rpe'],
 }
 
@@ -46,11 +48,9 @@ export interface TrainingLoadExternalContext {
 export interface DailyTrainingLoad {
   readonly date: string
   readonly state: DailyTrainingLoadEvidenceState
-  /** Internal session load in arbitrary units: durationMin × session RPE. */
   readonly loadAu: number | null
   readonly durationMin: number | null
   readonly rpe: number | null
-  /** External trail context only; these values never multiply loadAu in v1. */
   readonly external: TrainingLoadExternalContext
   readonly missingRequiredMetrics: readonly Extract<RealizedMetricName, 'durationMin' | 'rpe'>[]
   readonly sourceRecordIds: readonly string[]
@@ -62,8 +62,8 @@ export interface TrainingLoadCoverage {
   readonly confirmedRestDays: number
   readonly unknownLoadDays: number
   readonly noEvidenceDays: number
-  /** Days that can safely enter the longitudinal series: known load + confirmed rest. */
   readonly usableDays: number
+  readonly currentUsableStreakDays: number
   readonly coverageRatio: number | null
 }
 
