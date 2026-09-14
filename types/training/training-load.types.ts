@@ -3,13 +3,13 @@ import type { RealizedMetricName } from '@/types/training/readiness.types'
 export const TRAINING_LOAD_RULE_VERSION = 'srpe-duration-v1' as const
 
 export interface TrainingLoadRuleConfig {
-  readonly version: typeof TRAINING_LOAD_RULE_VERSION
+  readonly version: string
   readonly method: 'session_rpe_duration'
   readonly unit: 'AU'
-  readonly shortTermTimeConstantDays: 7
-  readonly longTermTimeConstantDays: 42
-  readonly minimumWarmupDays: 42
-  readonly resetOnUnknownEvidence: true
+  readonly shortTermTimeConstantDays: number
+  readonly longTermTimeConstantDays: number
+  readonly minimumWarmupDays: number
+  readonly resetOnUnknownEvidence: boolean
   readonly requiredMetricFields: readonly ['durationMin', 'rpe']
 }
 
@@ -89,7 +89,7 @@ export interface AthleteTrainingLoadState {
   readonly athleteId: string
   readonly startDate: string
   readonly endDate: string
-  readonly ruleVersion: typeof TRAINING_LOAD_RULE_VERSION
+  readonly ruleVersion: string
   readonly status: TrainingLoadSeriesStatus
   readonly insufficientReasons: readonly TrainingLoadInsufficientReason[]
   readonly coverage: TrainingLoadCoverage
