@@ -46,7 +46,7 @@ it('lists only durable realized evidence for the requested athlete, newest first
       sessionId: null,
       workoutId: null,
       date,
-      performedAt: null,
+      performedAt: `${date}T08:00:00-03:00`,
       status: 'completed',
       metrics: {
         distanceKm,
