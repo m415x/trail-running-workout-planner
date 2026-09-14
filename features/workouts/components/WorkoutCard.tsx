@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { CheckCircleIcon, CoffeeIcon, PlusCircleIcon } from '@phosphor-icons/react'
 import type { ManualRealizedTrainingClientInput, RealizedTrainingRecord, WorkoutCardProps } from '@/types'
 import { createManualRealizedTrainingAction } from '@/app/actions/realized-training-actions'
+import { getCurrentISODateInTimeZone } from '@/lib/date-helpers'
 import { CustomCard, CustomCardInside } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { StatPill, ZonePill } from '@ui/custom/pills'
@@ -149,7 +150,7 @@ interface RestCardProps {
 export function RestCard({ date, onRealizedTrainingSaved }: RestCardProps = {}) {
   const t = useTranslations('Workouts')
   const [isLogOpen, setIsLogOpen] = useState(false)
-  const today = new Date().toISOString().slice(0, 10)
+  const today = getCurrentISODateInTimeZone()
   const isFuture = Boolean(date && date > today)
 
   const handleSaveFreeWorkout = async (input: ManualRealizedTrainingClientInput) => {
