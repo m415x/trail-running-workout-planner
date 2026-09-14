@@ -8,15 +8,19 @@ import type {
   TrainingComparisonMetricName,
 } from '@/types'
 
-export const DEFAULT_ADHERENCE_RULE: AdherenceRuleConfiguration = {
-  ruleId: 'plan-adherence',
-  version: 1,
-  minimumConfirmedOutcomes: 2,
-  minimumCoveragePercent: 60,
-  minimumComparableSessionsPerDimension: 2,
-  minimumComparableWindowsForTrend: 3,
-  trendStableBandPercentagePoints: 5,
+export const ADHERENCE_RULES: Readonly<Record<number, AdherenceRuleConfiguration>> = {
+  1: {
+    ruleId: 'plan-adherence',
+    version: 1,
+    minimumConfirmedOutcomes: 2,
+    minimumCoveragePercent: 60,
+    minimumComparableSessionsPerDimension: 2,
+    minimumComparableWindowsForTrend: 3,
+    trendStableBandPercentagePoints: 5,
+  },
 }
+
+export const DEFAULT_ADHERENCE_RULE = ADHERENCE_RULES[1]
 
 const METRICS: readonly TrainingComparisonMetricName[] = [
   'distanceKm',
