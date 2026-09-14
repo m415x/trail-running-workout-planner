@@ -64,7 +64,7 @@ export function LogWorkoutDialog({
             {t('dialog.title')}
           </DialogTitle>
           <p className='text-xs text-muted-foreground p-0'>
-            {dateStr ?? '—'} &bull; {workout?.title ?? '—'}
+            {dateStr ?? '—'}{workout?.title ? <> &bull; {workout.title}</> : null}
           </p>
         </DialogHeader>
 
