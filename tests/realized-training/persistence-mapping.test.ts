@@ -3,6 +3,7 @@ import { describe, it } from 'node:test'
 
 import {
   mapManualCaptureToPersistenceRows,
+  mapPersistenceToManualRealizedTrainingClientInput,
   mapPersistenceToRawRealizedTrainingRecord,
 } from '@/lib/realized-training/persistence-mapping'
 import { normalizeRealizedTrainingRecord } from '@/lib/readiness/realized-training'
@@ -115,6 +116,59 @@ describe('realized training persistence mapping', () => {
     assert.deepEqual(normalized.metrics.elevationGainM, { state: 'unknown', reason: 'legacy_zero_ambiguous' })
     assert.deepEqual(normalized.metrics.avgHrBpm, { state: 'known', value: 148 })
     assert.deepEqual(normalized.metrics.rpe, { state: 'unknown', reason: 'legacy_zero_ambiguous' })
+  })
+
+  it('reconstructs editable manual evidence without turning unknown fallbacks into zero', () => {
+    const rows = mapManualCaptureToPersistenceRows(
+      capture({
+        sessionId: 'session-1',
+        metrics: {
+          distanceKm: { state: 'known', value: 0 },
+          durationMin: { state: 'known', value: 61.5 },
+          elevationGainM: unknown,
+          avgHrBpm: { state: 'known', value: 145 },
+          rpe: unknown,
+        },
+        feeling: 'normal',
+        athleteNotes: 'Recorded notes',
+      }),
+      context,
+    )
+
+    const editable = mapPersistenceToManualRealizedTrainingClientInput({
+      log: rows.workoutLog,
+      evidence: rows.evidence,
+    })
+
+    assert.ok(editable)
+    assert.equal(editable.sessionId, 'session-1')
+    assert.equal(editable.performedAt, '2026-09-13T11:30:00.000Z')
+    assert.deepEqual(editable.metrics.distanceKm, { state: 'known', value: 0 })
+    assert.deepEqual(editable.metrics.durationMin, { state: 'known', value: 61.5 })
+    assert.deepEqual(editable.metrics.elevationGainM, { state: 'unknown' })
+    assert.deepEqual(editable.metrics.avgHrBpm, { state: 'known', value: 145 })
+    assert.deepEqual(editable.metrics.rpe, { state: 'unknown' })
+    assert.equal(editable.feeling, 'normal')
+    assert.equal(editable.athleteNotes, 'Recorded notes')
+  })
+
+  it('does not expose legacy or imported evidence as editable manual capture', () => {
+    const rows = mapManualCaptureToPersistenceRows(capture(), context)
+
+    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
+      log: { ...rows.workoutLog, performedAt: null },
+      evidence: rows.evidence,
+    }), null)
+
+    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
+      log: rows.workoutLog,
+      evidence: { ...rows.evidence, source: 'imported' },
+    }), null)
+
+    assert.equal(mapPersistenceToManualRealizedTrainingClientInput({
+      log: rows.workoutLog,
+      evidence: null,
+    }), null)
   })
 
   it('keeps rows without evidence explicitly legacy-ambiguous', () => {
