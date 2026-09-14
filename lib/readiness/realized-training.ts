@@ -27,14 +27,24 @@ function metric(
 
   if (knownFields?.has(name)) return { state: 'known', value }
 
-  // Existing workout_logs used zero defaults and did not persist field-level
-  // known-ness. Non-zero legacy values are evidence of an observation; a zero
-  // cannot be distinguished from an untouched default.
-  if (knownFields === null && value > 0) return { state: 'known', value }
+  // When a sidecar exists, field-level evidence is authoritative. Numeric zeros
+  // may only be storage fallbacks for an explicitly unknown metric and must not
+  // be reclassified as ambiguous legacy data.
+  if (knownFields !== null) {
+    return {
+      state: 'unknown',
+      reason: 'not_recorded',
+    }
+  }
+
+  // Legacy workout_logs predate field-level known-ness. A non-zero value is
+  // evidence of an observation; a zero cannot be distinguished from the old
+  // storage default and therefore remains ambiguous.
+  if (value > 0) return { state: 'known', value }
 
   return {
     state: 'unknown',
-    reason: value === 0 ? 'legacy_zero_ambiguous' : 'not_recorded',
+    reason: 'legacy_zero_ambiguous',
   }
 }
 
