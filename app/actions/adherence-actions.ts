@@ -3,7 +3,10 @@
 import { getAthletePlanRealComparisonAction } from '@/app/actions/realized-training-actions'
 import { deriveAthleteAdherence } from '@/lib/adherence/athlete-adherence'
 import { deriveAthleteAdherenceTrend } from '@/lib/adherence/adherence-trend'
-import type { PlanRealComparisonWindow } from '@/types'
+import type {
+  AthletePlanRealComparison,
+  PlanRealComparisonWindow,
+} from '@/types'
 
 function formatISODate(date: Date) {
   return date.toISOString().slice(0, 10)
@@ -31,6 +34,23 @@ function weeklyWindows(anchorDate: string, count: number): PlanRealComparisonWin
   })
 }
 
+function sliceComparison(
+  comparison: AthletePlanRealComparison,
+  window: PlanRealComparisonWindow,
+): AthletePlanRealComparison {
+  return {
+    teamId: comparison.teamId,
+    athleteId: comparison.athleteId,
+    window,
+    items: comparison.items.filter(item => (
+      item.date >= window.startDate && item.date <= window.endDate
+    )),
+    planningLimitations: comparison.planningLimitations.filter(limitation => (
+      limitation.date >= window.startDate && limitation.date <= window.endDate
+    )),
+  }
+}
+
 export async function getAthleteAdherenceAction(
   athleteId: string,
   window: PlanRealComparisonWindow,
@@ -52,16 +72,24 @@ export async function getAthleteAdherenceTrendAction(
   numberOfWeeks = 4,
 ) {
   const windows = weeklyWindows(anchorDate, numberOfWeeks)
-  if (windows.length === 0) return { success: false as const, data: null }
+  const first = windows[0]
+  const last = windows[windows.length - 1]
+  if (!first || !last) return { success: false as const, data: null }
 
-  const comparisons = await Promise.all(
-    windows.map(window => getAthletePlanRealComparisonAction(athleteId, window)),
-  )
-  if (comparisons.some(result => !result.success || !result.data)) {
+  const longitudinalWindow: PlanRealComparisonWindow = {
+    kind: 'month',
+    startDate: first.startDate,
+    endDate: last.endDate,
+  }
+  const comparison = await getAthletePlanRealComparisonAction(athleteId, longitudinalWindow)
+  if (!comparison.success || !comparison.data) {
     return { success: false as const, data: null }
   }
 
-  const adherenceWindows = comparisons.map(result => deriveAthleteAdherence(result.data!))
+  const adherenceWindows = windows.map(window => (
+    deriveAthleteAdherence(sliceComparison(comparison.data, window))
+  ))
+
   return {
     success: true as const,
     data: deriveAthleteAdherenceTrend(adherenceWindows),
