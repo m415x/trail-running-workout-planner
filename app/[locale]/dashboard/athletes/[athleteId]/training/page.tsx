@@ -4,10 +4,12 @@ import { Activity, ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import {
+  getAthletePlanRealComparisonAction,
   getRealizedTrainingCalendarForAthleteAction,
   getRealizedTrainingCorrectionsAction,
   getRealizedTrainingHistoryForAthleteAction,
 } from '@/app/actions/realized-training-actions'
+import { PlanRealComparison } from '@/features/athletes/components/PlanRealComparison'
 import { RealizedTrainingCalendar } from '@/features/athletes/components/RealizedTrainingCalendar'
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
@@ -16,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 
 interface AthleteTrainingPageProps {
   params: Promise<{ locale: string; athleteId: string }>
+  searchParams: Promise<{ comparison?: string }>
 }
 
 function formatISODate(date: Date) {
@@ -32,6 +35,23 @@ function calendarWindow(today: string) {
   return { startDate: formatISODate(start), endDate: formatISODate(end) }
 }
 
+function comparisonWindow(today: string, kind: 'week' | 'month') {
+  const current = new Date(`${today}T00:00:00Z`)
+
+  if (kind === 'month') {
+    const start = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth(), 1))
+    const end = new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + 1, 0))
+    return { kind, startDate: formatISODate(start), endDate: formatISODate(end) }
+  }
+
+  const mondayOffset = (current.getUTCDay() + 6) % 7
+  const start = new Date(current)
+  start.setUTCDate(current.getUTCDate() - mondayOffset)
+  const end = new Date(start)
+  end.setUTCDate(start.getUTCDate() + 6)
+  return { kind, startDate: formatISODate(start), endDate: formatISODate(end) }
+}
+
 function todayInArgentina() {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Argentina/Buenos_Aires',
@@ -46,17 +66,20 @@ function athletePath(locale: string, athleteId: string) {
   return `${base}/${athleteId}`
 }
 
-export default async function AthleteTrainingPage({ params }: AthleteTrainingPageProps) {
-  const { locale, athleteId } = await params
+export default async function AthleteTrainingPage({ params, searchParams }: AthleteTrainingPageProps) {
+  const [{ locale, athleteId }, query] = await Promise.all([params, searchParams])
   const today = todayInArgentina()
   const { startDate, endDate } = calendarWindow(today)
-  const [athlete, historyResult, calendarResult] = await Promise.all([
+  const comparisonKind = query.comparison === 'month' ? 'month' as const : 'week' as const
+  const planRealWindow = comparisonWindow(today, comparisonKind)
+  const [athlete, historyResult, calendarResult, comparisonResult] = await Promise.all([
     getAthleteById(athleteId),
     getRealizedTrainingHistoryForAthleteAction(athleteId),
     getRealizedTrainingCalendarForAthleteAction(athleteId, startDate, endDate, today),
+    getAthletePlanRealComparisonAction(athleteId, planRealWindow),
   ])
 
-  if (!athlete || !historyResult.success || !calendarResult.success) notFound()
+  if (!athlete || !historyResult.success || !calendarResult.success || !comparisonResult.success) notFound()
 
   const correctionsEntries = await Promise.all(
     historyResult.data.map(async (record) => {
@@ -69,6 +92,7 @@ export default async function AthleteTrainingPage({ params }: AthleteTrainingPag
 
   const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
   const detailPath = athletePath(locale, athlete.id)
+  const trainingPath = `${detailPath}/training`
   const labels = locale === 'en'
     ? {
         back: 'Back to athlete',
@@ -99,6 +123,13 @@ export default async function AthleteTrainingPage({ params }: AthleteTrainingPag
           <p className='mt-1 max-w-3xl text-muted-foreground'>{labels.description}</p>
         </div>
       </div>
+
+      <PlanRealComparison
+        comparison={comparisonResult.data}
+        locale={locale}
+        weekHref={`${trainingPath}?comparison=week`}
+        monthHref={`${trainingPath}?comparison=month`}
+      />
 
       <RealizedTrainingCalendar
         days={calendarResult.data}
