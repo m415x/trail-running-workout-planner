@@ -2,9 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { athleteProfiles, workoutLogs } from '@/db/schema'
+import { athleteProfiles, sessions, workoutLogs } from '@/db/schema'
 import { workoutLogEvidence } from '@/db/readiness-schema'
 import { normalizeRealizedTrainingRecord } from '@/lib/readiness/realized-training'
+import {
+  resolveAuthoritativeSessionLink,
+  type RealizedTrainingSessionLinkCandidate,
+} from '@/lib/realized-training/authoritative-session-link'
 import { validateManualRealizedTrainingCapture } from '@/lib/realized-training/capture-contract'
 import {
   mapManualCaptureToPersistenceRows,
@@ -30,6 +34,36 @@ export class InvalidRealizedTrainingCaptureError extends Error {
 
 function now() {
   return new Date().toISOString()
+}
+
+function resolveCaptureScope(
+  input: ManualRealizedTrainingCaptureInput,
+): ManualRealizedTrainingCaptureInput {
+  const athlete = db
+    .select({
+      id: athleteProfiles.id,
+      teamId: athleteProfiles.teamId,
+      isDeleted: athleteProfiles.isDeleted,
+    })
+    .from(athleteProfiles)
+    .where(eq(athleteProfiles.id, input.athleteId))
+    .get() ?? null
+
+  let session: RealizedTrainingSessionLinkCandidate | null = null
+  if (input.sessionId !== null) {
+    session = db
+      .select({
+        id: sessions.id,
+        teamId: sessions.teamId,
+        workoutId: sessions.workoutId,
+        isDeleted: sessions.isDeleted,
+      })
+      .from(sessions)
+      .where(eq(sessions.id, input.sessionId))
+      .get() ?? null
+  }
+
+  return resolveAuthoritativeSessionLink({ capture: input, athlete, session })
 }
 
 /**
@@ -71,8 +105,9 @@ export function createManualRealizedTrainingRecord(
   const validation = validateManualRealizedTrainingCapture(input)
   if (!validation.ok) throw new InvalidRealizedTrainingCaptureError(validation.issues)
 
+  const scopedCapture = resolveCaptureScope(validation.value)
   const timestamp = now()
-  const rows = mapManualCaptureToPersistenceRows(validation.value, {
+  const rows = mapManualCaptureToPersistenceRows(scopedCapture, {
     workoutLogId: randomUUID(),
     evidenceId: randomUUID(),
     loggedAt: timestamp,
