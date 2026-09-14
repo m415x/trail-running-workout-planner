@@ -1,5 +1,7 @@
 import type {
   ManualRealizedTrainingCaptureInput,
+  ManualRealizedTrainingClientInput,
+  ManualRealizedTrainingStatus,
   RealizedTrainingCaptureMetric,
 } from '@/types/training/realized-training-capture.types'
 import type {
@@ -119,7 +121,9 @@ export interface PersistedWorkoutLogProjection {
   readonly durationMin: number | null
   readonly elevationGain: number | null
   readonly avgHr: number | null
+  readonly feeling?: string | null
   readonly rpe: number | null
+  readonly athleteNotes?: string | null
   readonly loggedAt: string
 }
 
@@ -127,6 +131,57 @@ export interface PersistedWorkoutLogEvidenceProjection {
   readonly source: RawRealizedTrainingRecord['source']
   readonly sourceActivityId: string | null
   readonly knownMetricFields: readonly RealizedMetricName[]
+}
+
+function captureMetric(
+  name: RealizedMetricName,
+  value: number | null,
+  knownFields: readonly RealizedMetricName[],
+): RealizedTrainingCaptureMetric {
+  return knownFields.includes(name) && value !== null
+    ? { state: 'known', value }
+    : { state: 'unknown' }
+}
+
+function isManualCaptureStatus(status: RawRealizedTrainingRecord['status']): status is ManualRealizedTrainingStatus {
+  return status === 'completed' || status === 'partial' || status === 'missed'
+}
+
+/**
+ * Reconstructs the editable manual-capture contract from durable persistence.
+ * Legacy/imported rows that cannot be represented without inventing evidence
+ * return `null` and must use a source-specific correction workflow instead.
+ */
+export function mapPersistenceToManualRealizedTrainingClientInput(input: {
+  readonly log: PersistedWorkoutLogProjection
+  readonly evidence: PersistedWorkoutLogEvidenceProjection | null
+}): ManualRealizedTrainingClientInput | null {
+  if (
+    !input.evidence ||
+    input.evidence.source !== 'manual' ||
+    !input.log.performedAt ||
+    !isManualCaptureStatus(input.log.status)
+  ) {
+    return null
+  }
+
+  const knownFields = input.evidence.knownMetricFields
+  return {
+    sessionId: input.log.sessionId,
+    workoutId: input.log.workoutId,
+    date: input.log.date,
+    performedAt: input.log.performedAt,
+    status: input.log.status,
+    metrics: {
+      distanceKm: captureMetric('distanceKm', input.log.distanceKm, knownFields),
+      durationMin: captureMetric('durationMin', input.log.durationMin, knownFields),
+      elevationGainM: captureMetric('elevationGainM', input.log.elevationGain, knownFields),
+      avgHrBpm: captureMetric('avgHrBpm', input.log.avgHr, knownFields),
+      rpe: captureMetric('rpe', input.log.rpe, knownFields),
+    },
+    feeling: input.log.feeling ?? null,
+    athleteNotes: input.log.athleteNotes ?? null,
+  }
 }
 
 /**
