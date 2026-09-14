@@ -14,9 +14,7 @@ export type WorkoutType =
   | 'Rest'
   | 'Race'
 
-/**
- * Vista resuelta para la UI del atleta autenticado
- */
+/** Resolved workout view consumed by the authenticated athlete UI. */
 export interface WorkoutProps {
   id?: number | string
   title: string
@@ -32,9 +30,7 @@ export interface WorkoutProps {
   locationKey?: string
 }
 
-/**
- * Estructuras de navegación del calendario semanal
- */
+/** Weekly calendar navigation structures. */
 export interface WeeklyCycle {
   id: string
   title: string
@@ -54,6 +50,8 @@ export interface WeekDayRaw {
   isPartial?: boolean
   isMissed?: boolean
   status?: DayStatus
+  /** True when durable realized evidence exists without an official session link. */
+  hasUnplannedTraining?: boolean
   workoutId?: number
 }
 
