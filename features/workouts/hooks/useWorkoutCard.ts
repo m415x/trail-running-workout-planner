@@ -5,7 +5,11 @@ import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import type { ManualRealizedTrainingClientInput, TrackData, WeatherData, WorkoutCardProps } from '@/types'
-import { createManualRealizedTrainingAction, getManualRealizedSessionStateAction } from '@/app/actions/realized-training-actions'
+import {
+  correctManualRealizedTrainingAction,
+  createManualRealizedTrainingAction,
+  getManualRealizedSessionStateAction,
+} from '@/app/actions/realized-training-actions'
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
@@ -26,6 +30,13 @@ interface UseWorkoutCardParams {
   isCompleted?: boolean
 }
 
+interface DurableCaptureState {
+  readonly sessionId: string
+  readonly captured: boolean
+  readonly workoutLogId: string | null
+  readonly editableInput: ManualRealizedTrainingClientInput | null
+}
+
 export function useWorkoutCard({
   workout,
   maxHr = 190,
@@ -41,15 +52,27 @@ export function useWorkoutCard({
   const [weather, setWeather] = useState<WeatherData | null>(null)
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
   const sessionId = String(workout.id)
-  const [captureState, setCaptureState] = useState<{ sessionId: string; captured: boolean } | null>(null)
+  const [captureState, setCaptureState] = useState<DurableCaptureState | null>(null)
   const isCaptureReady = captureState?.sessionId === sessionId
   const isLogged = isCaptureReady ? captureState.captured : initialIsCompleted
+  const canEditLoggedWorkout = Boolean(
+    isCaptureReady && captureState?.captured && captureState.workoutLogId && captureState.editableInput,
+  )
 
   useEffect(() => {
     let active = true
     getManualRealizedSessionStateAction(sessionId).then(result => {
-      if (active && result.success) setCaptureState({ sessionId, captured: result.captured })
-    }).catch(() => { /* Keep capture disabled when persisted state cannot be verified. */ })
+      if (active && result.success) {
+        setCaptureState({
+          sessionId,
+          captured: result.captured,
+          workoutLogId: result.workoutLogId,
+          editableInput: result.editableInput,
+        })
+      }
+    }).catch(() => {
+      // Keep capture disabled when persisted state cannot be verified.
+    })
     return () => { active = false }
   }, [sessionId])
 
@@ -111,7 +134,7 @@ export function useWorkoutCard({
         const data = await fetchDailyWeather(-31.529822, -68.5440881, date)
         if (isMounted) setWeather(data)
       } catch (error) {
-        console.error('Error cargando clima:', error)
+        console.error('Error loading workout weather:', error)
       } finally {
         if (isMounted) setIsLoadingWeather(false)
       }
@@ -136,19 +159,19 @@ export function useWorkoutCard({
     () => [
       {
         icon: Clock,
-        label: 'Tiempo est.',
+        label: t('card.estimatedTime'),
         value: timeDisplay,
         unit: pamRange ? '\nmin' : 'min',
       },
-      { icon: Zap, label: 'Ritmo medio', value: paceDisplay, unit: pamRange ? '\nmin/km' : '/km' },
+      { icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: pamRange ? '\nmin/km' : '/km' },
       {
         icon: Gauge,
-        label: 'Vel. media',
+        label: t('card.avgSpeed'),
         value: speedDisplay,
         unit: pamRange ? '\nkm/h' : 'km/h',
       },
     ],
-    [timeDisplay, paceDisplay, speedDisplay, pamRange],
+    [timeDisplay, paceDisplay, speedDisplay, pamRange, t],
   )
 
   const todayStr = useMemo(() => {
@@ -164,13 +187,34 @@ export function useWorkoutCard({
   const openLogDialog = () => setIsLogOpen(true)
   const closeLogDialog = () => setIsLogOpen(false)
 
+  /** Creates the first durable capture or appends a traced correction to it. */
   const handleSaveSession = async (data: ManualRealizedTrainingClientInput) => {
+    if (captureState?.captured && captureState.workoutLogId && captureState.editableInput) {
+      const result = await correctManualRealizedTrainingAction({
+        workoutLogId: captureState.workoutLogId,
+        reason: null,
+        replacement: data,
+      })
+      if (!result.success) return false
+      setCaptureState({
+        sessionId,
+        captured: true,
+        workoutLogId: captureState.workoutLogId,
+        editableInput: data,
+      })
+      return true
+    }
+
     const result = await createManualRealizedTrainingAction(data)
     if (!result.success) return false
-    setCaptureState({ sessionId, captured: true })
+    setCaptureState({
+      sessionId,
+      captured: true,
+      workoutLogId: result.data.id,
+      editableInput: data,
+    })
     return true
   }
-
 
   return {
     WorkoutIcon,
@@ -183,6 +227,8 @@ export function useWorkoutCard({
     isFuture,
     isLogged,
     isCaptureReady,
+    canEditLoggedWorkout,
+    editableCaptureInput: captureState?.editableInput ?? null,
     stats,
     zoneInfo,
     bpmRange,
