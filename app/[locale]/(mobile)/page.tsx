@@ -3,16 +3,10 @@ import { getTranslations } from 'next-intl/server'
 import { getCurrentAthlete, getWeeklySchedule } from '@/app/actions/dashboard-actions'
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { HomeTabClient } from '@/app/[locale]/(mobile)/HomeTabClient'
+import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 
 function currentWeekRangeInArgentina() {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(new Date())
-  const values = Object.fromEntries(parts.map(part => [part.type, part.value]))
-  const today = new Date(`${values.year}-${values.month}-${values.day}T00:00:00Z`)
+  const today = new Date(`${getCurrentISODateInTimeZone()}T00:00:00Z`)
   const offset = (today.getUTCDay() + 6) % 7
   const monday = new Date(today)
   monday.setUTCDate(today.getUTCDate() - offset)
