@@ -102,10 +102,15 @@ export function getRealizedTrainingRecord(id: string): RealizedTrainingRecord | 
 
 /**
  * Lists durable realized-training evidence for one athlete, newest analysis day
- * first. Planned sessions are not returned unless an explicit realized row links
- * to them; absence of a row therefore remains unknown rather than "missed".
+ * first. Both athlete and team are required at this repository boundary so a
+ * future caller cannot bypass the team-scoped server action by supplying only an
+ * athlete ID. Planned sessions are not returned unless an explicit realized row
+ * links to them; absence of a row remains unknown rather than "missed".
  */
-export function listRealizedTrainingRecordsForAthlete(athleteId: string): RealizedTrainingRecord[] {
+export function listRealizedTrainingRecordsForAthlete(
+  athleteId: string,
+  teamId: string,
+): RealizedTrainingRecord[] {
   const rows = db
     .select({
       log: workoutLogs,
@@ -117,6 +122,7 @@ export function listRealizedTrainingRecordsForAthlete(athleteId: string): Realiz
     .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
     .where(and(
       eq(workoutLogs.athleteId, athleteId),
+      eq(athleteProfiles.teamId, teamId),
       eq(workoutLogs.isDeleted, false),
       eq(athleteProfiles.isDeleted, false),
     ))
