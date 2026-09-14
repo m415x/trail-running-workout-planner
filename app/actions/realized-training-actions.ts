@@ -35,6 +35,7 @@ import type { ManualRealizedTrainingCorrectionClientInput } from '@/types/traini
 import type {
   PlanRealComparisonWindow,
   PlanRealMetricOperand,
+  PlanRealPlanningResolutionLimitation,
 } from '@/types/training/plan-real-comparison.types'
 
 /**
@@ -348,24 +349,27 @@ export async function getAthletePlanRealComparisonAction(
     }]
   })
 
-  const planningLimitations = datedResolutions.flatMap(({ date, result }) => {
+  const planningLimitations: PlanRealPlanningResolutionLimitation[] = []
+  for (const { date, result } of datedResolutions) {
     const resolution = result?.resolution
-    if (!resolution || resolution.status === 'resolved') return []
+    if (!resolution || resolution.status === 'resolved') continue
 
-    return resolution.status === 'none'
-      ? [{
-          date,
-          status: 'none' as const,
-          reason: resolution.reason,
-          conflictingIds: [] as const,
-        }]
-      : [{
-          date,
-          status: 'conflict' as const,
-          reason: resolution.reason,
-          conflictingIds: resolution.conflictingIds,
-        }]
-  })
+    if (resolution.status === 'none') {
+      planningLimitations.push({
+        date,
+        status: 'none',
+        reason: resolution.reason,
+        conflictingIds: [],
+      })
+    } else {
+      planningLimitations.push({
+        date,
+        status: 'conflict',
+        reason: resolution.reason,
+        conflictingIds: resolution.conflictingIds,
+      })
+    }
+  }
 
   return {
     success: true as const,
