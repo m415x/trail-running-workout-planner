@@ -1,8 +1,11 @@
+'use client'
+
 import { Activity, CircleHelp, TrendingUp } from 'lucide-react'
 
 import type { AthleteTrainingLoadState } from '@/types'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
 import { Badge } from '@ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
+import { Card } from '@ui/card'
 
 interface TrainingLoadSummaryProps {
   load: AthleteTrainingLoadState
@@ -70,61 +73,83 @@ export function TrainingLoadSummary({ load, locale }: TrainingLoadSummaryProps) 
   const latest = load.latest
 
   return (
-    <Card>
-      <CardHeader className='pb-3'>
-        <div className='flex flex-wrap items-start justify-between gap-3'>
-          <div>
-            <CardTitle className='flex items-center gap-2'>
-              <TrendingUp className='size-5' />
-              {labels.title}
-            </CardTitle>
-            <p className='mt-1 max-w-3xl text-sm text-muted-foreground'>{labels.description}</p>
-          </div>
-          <div className='flex flex-wrap gap-2'>
-            <Badge variant='outline'>{statusLabel}</Badge>
-            <Badge variant='outline'>{load.ruleVersion}</Badge>
-          </div>
-        </div>
-      </CardHeader>
+    <Card className='py-0'>
+      <Accordion className='w-full'>
+        <AccordionItem value='training-load-summary' className='border-none'>
+          <AccordionTrigger className='px-6 py-5 hover:no-underline'>
+            <div className='min-w-0 space-y-3 pr-4 text-left'>
+              <div>
+                <h3 className='flex items-center gap-2 text-base font-semibold'>
+                  <TrendingUp className='size-5' />
+                  {labels.title}
+                </h3>
+                <p className='mt-1 max-w-3xl text-sm font-normal text-muted-foreground'>
+                  {labels.description}
+                </p>
+              </div>
 
-      <CardContent className='space-y-4'>
-        <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.daily}</p>
-            <p className='mt-1 text-xl font-semibold'>{au(latest?.dailyLoadAu ?? null, language)}</p>
-          </div>
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.short}</p>
-            <p className='mt-1 text-xl font-semibold'>{au(latest?.shortTermLoadAu ?? null, language)}</p>
-          </div>
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.long}</p>
-            <p className='mt-1 text-xl font-semibold'>{au(latest?.longTermLoadAu ?? null, language)}</p>
-          </div>
-          <div className='rounded-lg border p-4'>
-            <p className='text-xs text-muted-foreground'>{labels.balance}</p>
-            <p className='mt-1 text-xl font-semibold'>{au(latest?.loadBalanceAu ?? null, language)}</p>
-          </div>
-        </div>
+              <div className='flex flex-wrap gap-1.5'>
+                <Badge variant='outline' className='font-normal'>{statusLabel}</Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.daily}: {au(latest?.dailyLoadAu ?? null, language)}
+                </Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.coverage}: {percent(load.coverage.coverageRatio, language)}
+                </Badge>
+                <Badge variant='outline' className='font-normal'>
+                  {labels.streak}: {load.coverage.currentUsableStreakDays} {labels.days}
+                </Badge>
+              </div>
+            </div>
+          </AccordionTrigger>
 
-        <div className='flex flex-wrap gap-2 text-xs'>
-          <Badge variant='outline'>{labels.coverage}: {percent(load.coverage.coverageRatio, language)}</Badge>
-          <Badge variant='outline'>{labels.streak}: {load.coverage.currentUsableStreakDays} {labels.days}</Badge>
-          <Badge variant='outline'>{labels.method}: {labels.formula}</Badge>
-        </div>
+          <AccordionContent className='px-6 pb-6'>
+            <div className='space-y-4'>
+              <div className='flex flex-wrap justify-end gap-2'>
+                <Badge variant='outline'>{statusLabel}</Badge>
+                <Badge variant='outline'>{load.ruleVersion}</Badge>
+              </div>
 
-        <div className='flex gap-2 rounded-md bg-muted/40 p-3 text-xs text-muted-foreground'>
-          <CircleHelp className='mt-0.5 size-4 shrink-0' />
-          <span>{labels.caveat}</span>
-        </div>
+              <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.daily}</p>
+                  <p className='mt-1 text-xl font-semibold'>{au(latest?.dailyLoadAu ?? null, language)}</p>
+                </div>
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.short}</p>
+                  <p className='mt-1 text-xl font-semibold'>{au(latest?.shortTermLoadAu ?? null, language)}</p>
+                </div>
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.long}</p>
+                  <p className='mt-1 text-xl font-semibold'>{au(latest?.longTermLoadAu ?? null, language)}</p>
+                </div>
+                <div className='rounded-lg border p-4'>
+                  <p className='text-xs text-muted-foreground'>{labels.balance}</p>
+                  <p className='mt-1 text-xl font-semibold'>{au(latest?.loadBalanceAu ?? null, language)}</p>
+                </div>
+              </div>
 
-        {load.status !== 'available' && (
-          <div className='flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300'>
-            <Activity className='size-4' />
-            {statusLabel}
-          </div>
-        )}
-      </CardContent>
+              <div className='flex flex-wrap gap-2 text-xs'>
+                <Badge variant='outline'>{labels.coverage}: {percent(load.coverage.coverageRatio, language)}</Badge>
+                <Badge variant='outline'>{labels.streak}: {load.coverage.currentUsableStreakDays} {labels.days}</Badge>
+                <Badge variant='outline'>{labels.method}: {labels.formula}</Badge>
+              </div>
+
+              <div className='flex gap-2 rounded-md bg-muted/40 p-3 text-xs text-muted-foreground'>
+                <CircleHelp className='mt-0.5 size-4 shrink-0' />
+                <span>{labels.caveat}</span>
+              </div>
+
+              {load.status !== 'available' && (
+                <div className='flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300'>
+                  <Activity className='size-4' />
+                  {statusLabel}
+                </div>
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </Card>
   )
 }
