@@ -54,9 +54,9 @@ export type PlanRealMetricEvaluation =
       readonly planned: Extract<PlanRealMetricOperand, { state: 'known' }>
       readonly realized: Extract<PlanRealMetricOperand, { state: 'known' }>
       /** Realized minus planned, expressed in the shared operand unit. */
-      readonly absoluteDelta: number
+      readonly absoluteDelta: number | null
       /**
-       * Percentage relative to the planned operand. Null when the planned
+       * Percentage relative to the planned operand. Deltas are null for categorical metrics; the relative delta is also null when the planned
        * baseline is zero or when the metric is categorical.
        */
       readonly relativeDeltaPercent: number | null
