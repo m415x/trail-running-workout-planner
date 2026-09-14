@@ -30,7 +30,7 @@ It includes:
 3. an expired prescribed session without realized evidence, suitable for validating `missed` reconciliation;
 4. an extra realized workout with `sessionId = null` on a day without an official fixture session.
 
-The three prescribed fixtures include group prescriptions attached to the applicable base-plan microcycle, so the calendar resolves them through the same planning hierarchy as production sessions. Fixture IDs use the `kan297_` prefix and inserts are idempotent through stable IDs plus conflict-safe insertion.
+The three prescribed fixtures include group prescriptions attached to a dedicated historical base-plan week. That isolated week is placed immediately before the current week, avoids overlap with the main S2 demonstration plan, and lets the calendar resolve past completed/partial/missed states through the same planning hierarchy as production sessions regardless of the current weekday. Fixture IDs use the `kan297_` prefix and inserts are idempotent through stable IDs plus conflict-safe insertion.
 
 The seed is representative, not exhaustive production data. Automated tests remain the authoritative coverage for edge cases such as stable imported identity, rollback, cross-team/cross-athlete isolation, legacy zero ambiguity and late evidence reconciliation.
 

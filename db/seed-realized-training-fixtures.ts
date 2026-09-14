@@ -31,6 +31,13 @@ function shiftISODate(value: string, days: number) {
   return formatISODate(date)
 }
 
+function getMondayFromISODate(value: string) {
+  const date = new Date(`${value}T00:00:00Z`)
+  const offset = (date.getUTCDay() + 6) % 7
+  date.setUTCDate(date.getUTCDate() - offset)
+  return formatISODate(date)
+}
+
 function getCurrentDateInArgentina() {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Argentina/Buenos_Aires',
@@ -56,12 +63,83 @@ async function seedRealizedTrainingFixtures() {
     throw new Error('Run `pn db:seed:base` first: the Ana Acosta fixture is required.')
   }
 
+  if (!athlete.groupId) {
+    throw new Error('Ana Acosta must belong to a sporting group for prescribed fixtures.')
+  }
+
   const today = getCurrentDateInArgentina()
-  const completedDate = shiftISODate(today, -4)
-  const partialDate = shiftISODate(today, -3)
-  const missedDate = shiftISODate(today, -2)
-  const extraDate = shiftISODate(today, -1)
+  const fixtureWeekStart = shiftISODate(getMondayFromISODate(today), -7)
+  const completedDate = shiftISODate(fixtureWeekStart, 1)
+  const partialDate = shiftISODate(fixtureWeekStart, 2)
+  const missedDate = shiftISODate(fixtureWeekStart, 3)
+  const extraDate = shiftISODate(fixtureWeekStart, 4)
   const now = new Date().toISOString()
+
+  const historicalPlanId = `${FIXTURE_PREFIX}plan`
+  const historicalMacrocycleId = `${FIXTURE_PREFIX}macrocycle`
+  const historicalMesocycleId = `${FIXTURE_PREFIX}mesocycle`
+  const historicalMicrocycleId = `${FIXTURE_PREFIX}microcycle`
+  const fixtureWeekEnd = shiftISODate(fixtureWeekStart, 6)
+
+  await db.insert(groupTrainingPlans).values({
+    id: historicalPlanId,
+    groupId: athlete.groupId,
+    planningCohortId: null,
+    sourceGroupTrainingPlanId: null,
+    title: 'KAN-297 — Historical realized-training walkthrough',
+    status: 'active',
+    notes: 'Isolated historical plan for the realized-training walkthrough fixtures.',
+  }).onConflictDoUpdate({
+    target: groupTrainingPlans.id,
+    set: { groupId: athlete.groupId, status: 'active' },
+  }).run()
+
+  await db.insert(macrocycles).values({
+    id: historicalMacrocycleId,
+    title: 'KAN-297 — Historical walkthrough week',
+    groupTrainingPlanId: historicalPlanId,
+    startDate: fixtureWeekStart,
+    endDate: fixtureWeekEnd,
+    taperingWeeksCount: 0,
+    targetRaceName: null,
+    targetRaceDate: null,
+    targetRaceDistanceKm: null,
+    targetRaceElevationGain: null,
+    notes: null,
+  }).onConflictDoUpdate({
+    target: macrocycles.id,
+    set: { startDate: fixtureWeekStart, endDate: fixtureWeekEnd },
+  }).run()
+
+  await db.insert(mesocycles).values({
+    id: historicalMesocycleId,
+    macrocycleId: historicalMacrocycleId,
+    title: 'KAN-297 — Historical walkthrough block',
+    number: 1,
+    period: 'specific_preparatory',
+    objective: 'Validate prescribed and realized day-state projection.',
+  }).onConflictDoUpdate({
+    target: mesocycles.id,
+    set: { macrocycleId: historicalMacrocycleId },
+  }).run()
+
+  await db.insert(microcycles).values({
+    id: historicalMicrocycleId,
+    mesocycleId: historicalMesocycleId,
+    weekNumber: 1,
+    type: 'development',
+    startDate: fixtureWeekStart,
+    endDate: fixtureWeekEnd,
+    targetVolumeKm: 24,
+    targetVolumeSource: 'generated',
+    targetElevationGain: 840,
+    targetElevationSource: 'generated',
+    targetDurationMin: null,
+    notes: 'Dedicated past week for a stable walkthrough regardless of the current weekday.',
+  }).onConflictDoUpdate({
+    target: microcycles.id,
+    set: { startDate: fixtureWeekStart, endDate: fixtureWeekEnd },
+  }).run()
 
   const sessionRows = [
     {
@@ -108,10 +186,16 @@ async function seedRealizedTrainingFixtures() {
     },
   ]
 
-  await db.insert(sessions).values(sessionRows).onConflictDoNothing().run()
-
-  if (!athlete.groupId) {
-    throw new Error('Ana Acosta must belong to a sporting group for prescribed fixtures.')
+  for (const session of sessionRows) {
+    await db.insert(sessions).values(session).onConflictDoUpdate({
+      target: sessions.id,
+      set: {
+        date: session.date,
+        title: session.title,
+        type: session.type,
+        notes: session.notes,
+      },
+    }).run()
   }
 
   async function resolveBaseMicrocycle(date: string) {
@@ -164,11 +248,11 @@ async function seedRealizedTrainingFixtures() {
     },
   ]
 
-  await db.insert(groupSessionPrescriptions).values(await Promise.all(
-    prescribedFixtures.map(async fixture => ({
+  for (const fixture of prescribedFixtures) {
+    const prescription = {
       id: fixture.id,
       sessionId: fixture.sessionId,
-      groupId: athlete.groupId!,
+      groupId: athlete.groupId,
       microcycleId: await resolveBaseMicrocycle(fixture.date),
       distanceKm: fixture.distanceKm,
       durationMin: fixture.durationMin,
@@ -179,8 +263,18 @@ async function seedRealizedTrainingFixtures() {
       notes: 'KAN-297 walkthrough prescription.',
       generationOwnership: 'manual' as const,
       generationKey: null,
-    })),
-  )).onConflictDoNothing().run()
+    }
+    await db.insert(groupSessionPrescriptions).values(prescription).onConflictDoUpdate({
+      target: groupSessionPrescriptions.id,
+      set: {
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+        distanceKm: prescription.distanceKm,
+        durationMin: prescription.durationMin,
+        elevationGain: prescription.elevationGain,
+      },
+    }).run()
+  }
 
   const logRows = [
     {
@@ -236,7 +330,25 @@ async function seedRealizedTrainingFixtures() {
     },
   ]
 
-  await db.insert(workoutLogs).values(logRows).onConflictDoNothing().run()
+  for (const log of logRows) {
+    await db.insert(workoutLogs).values(log).onConflictDoUpdate({
+      target: workoutLogs.id,
+      set: {
+        sessionId: log.sessionId,
+        date: log.date,
+        status: log.status,
+        distanceKm: log.distanceKm,
+        durationMin: log.durationMin,
+        elevationGain: log.elevationGain,
+        avgHr: log.avgHr,
+        feeling: log.feeling,
+        rpe: log.rpe,
+        athleteNotes: log.athleteNotes,
+        performedAt: log.performedAt,
+        loggedAt: log.loggedAt,
+      },
+    }).run()
+  }
 
   await db
     .insert(workoutLogEvidence)
