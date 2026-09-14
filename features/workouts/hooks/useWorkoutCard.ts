@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { isBefore, startOfDay, parseISO } from 'date-fns'
 import { useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import type {
@@ -19,7 +18,7 @@ import {
 import { TRAINING_LOCATIONS, DEFAULT_FALLBACK_LOCATION } from '@/data/data'
 import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
-import { formatShortDate } from '@/lib/date-helpers'
+import { formatShortDate, getCurrentISODateInTimeZone } from '@/lib/date-helpers'
 import { getWorkoutIcon, getWorkoutTypeLabel } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
@@ -86,15 +85,10 @@ export function useWorkoutCard({
 
   const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
   const WorkoutIcon = getWorkoutIcon(workout.type)
-
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
-
-  const isPast = useMemo(() => {
-    if (!date) return false
-    const workoutDay = startOfDay(parseISO(date))
-    const today = startOfDay(new Date())
-    return isBefore(workoutDay, today)
-  }, [date])
+  const todayStr = useMemo(() => getCurrentISODateInTimeZone(), [])
+  const isPast = Boolean(date && date < todayStr)
+  const isFuture = Boolean(date && date > todayStr)
 
   const zoneInfo: HrZoneConfig = useMemo(() => {
     return HR_ZONES[workout.zone] ?? HR_ZONES.Z1
@@ -176,16 +170,6 @@ export function useWorkoutCard({
     ],
     [timeDisplay, paceDisplay, speedDisplay, pamRange, t],
   )
-
-  const todayStr = useMemo(() => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }, [])
-
-  const isFuture = date ? date > todayStr : false
 
   const openLogDialog = () => setIsLogOpen(true)
   const closeLogDialog = () => setIsLogOpen(false)
