@@ -13,6 +13,7 @@ import {
 import {
   createManualRealizedTrainingRecord,
   listRealizedTrainingRecordsForAthlete,
+  listRealizedTrainingRecordsForAthleteInDateRange,
 } from '@/lib/realized-training/realized-training-repository'
 import { mapPersistenceToManualRealizedTrainingClientInput } from '@/lib/realized-training/persistence-mapping'
 import type { ManualRealizedTrainingClientInput } from '@/types/training/realized-training-capture.types'
@@ -58,6 +59,30 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
       log: row.log,
       evidence: row.evidence,
     }),
+  }
+}
+
+/**
+ * Athlete-facing calendar boundary for one explicit date range. The current
+ * athlete/team are resolved on the server and records come from the same durable
+ * repository used by readiness; planned sessions are never treated as realized
+ * evidence here.
+ */
+export async function getCurrentAthleteRealizedTrainingRangeAction(startDate: string, endDate: string) {
+  if (startDate > endDate) return { success: false as const, data: [] }
+
+  const current = await getCurrentAthlete()
+  const athlete = current.success ? current.data?.athleteProfile : null
+  if (!athlete || athlete.isDeleted) return { success: false as const, data: [] }
+
+  return {
+    success: true as const,
+    data: listRealizedTrainingRecordsForAthleteInDateRange(
+      athlete.id,
+      athlete.teamId,
+      startDate,
+      endDate,
+    ),
   }
 }
 
