@@ -5,6 +5,7 @@ import {
   deduplicateRealizedTrainingRecords,
   hasAuthoritativeSessionLink,
   normalizeRealizedTrainingRecord,
+  stableRealizedTrainingSourceKey,
 } from '@/lib/readiness/realized-training'
 import type { RawRealizedTrainingRecord } from '@/types'
 
@@ -33,7 +34,7 @@ function raw(
 }
 
 describe('realized training normalization', () => {
-  it('preserva un cero explícitamente informado como valor conocido', () => {
+  it('preserves an explicitly reported zero as a known value', () => {
     const record = normalizeRealizedTrainingRecord(raw({
       elevationGainM: 0,
       knownMetricFields: ['distanceKm', 'durationMin', 'elevationGainM', 'rpe'],
@@ -45,7 +46,7 @@ describe('realized training normalization', () => {
     assert.equal(record.quality, 'partial')
   })
 
-  it('no interpreta un cero legacy sin evidencia como entrenamiento medido', () => {
+  it('does not interpret a legacy zero without evidence as measured training', () => {
     const record = normalizeRealizedTrainingRecord(raw({
       distanceKm: 0,
       durationMin: 0,
@@ -63,7 +64,7 @@ describe('realized training normalization', () => {
     assert.ok(record.limitations.includes('legacy_record_without_metric_evidence'))
   })
 
-  it('distingue missed explícito de ausencia de datos', () => {
+  it('distinguishes an explicit missed session from absence of data', () => {
     const record = normalizeRealizedTrainingRecord(raw({
       status: 'missed',
       distanceKm: null,
@@ -77,7 +78,7 @@ describe('realized training normalization', () => {
     assert.equal(record.quality, 'explicit_missed')
   })
 
-  it('sólo habilita plan-vs-real con vínculo explícito a Session', () => {
+  it('enables plan-vs-real comparison only with an explicit Session link', () => {
     const linked = normalizeRealizedTrainingRecord(raw())
     const unlinked = normalizeRealizedTrainingRecord(raw({ sessionId: null }))
 
@@ -85,16 +86,16 @@ describe('realized training normalization', () => {
     assert.equal(hasAuthoritativeSessionLink(unlinked), false)
   })
 
-  it('deduplica sólo por identidad persistida o sourceActivityId estable', () => {
+  it('deduplicates only by persisted identity or stable sourceActivityId', () => {
     const first = normalizeRealizedTrainingRecord(raw({
       id: 'log-a',
       source: 'imported',
-      sourceActivityId: 'external-1',
+      sourceActivityId: 'provider:external-1',
     }))
     const duplicateSource = normalizeRealizedTrainingRecord(raw({
       id: 'log-b',
       source: 'imported',
-      sourceActivityId: 'external-1',
+      sourceActivityId: 'provider:external-1',
     }))
     const sameMetricsButDistinct = normalizeRealizedTrainingRecord(raw({
       id: 'log-c',
@@ -113,7 +114,40 @@ describe('realized training normalization', () => {
     assert.deepEqual(result.ambiguousRecordIds, [])
   })
 
-  it('marca un importado sin identidad externa como ambiguo en vez de deduplicarlo por heurística', () => {
+  it('never collapses similar manual records from the same day', () => {
+    const first = normalizeRealizedTrainingRecord(raw({
+      id: 'manual-a',
+      source: 'manual',
+      sourceActivityId: null,
+    }))
+    const second = normalizeRealizedTrainingRecord(raw({
+      id: 'manual-b',
+      source: 'manual',
+      sourceActivityId: null,
+    }))
+
+    const result = deduplicateRealizedTrainingRecords([first, second])
+
+    assert.deepEqual(result.records.map(({ id }) => id), ['manual-a', 'manual-b'])
+    assert.deepEqual(result.duplicateRecordIds, [])
+    assert.deepEqual(result.ambiguousRecordIds, [])
+  })
+
+  it('treats blank imported sourceActivityId as ambiguous rather than stable identity', () => {
+    const imported = normalizeRealizedTrainingRecord(raw({
+      id: 'log-imported-blank',
+      source: 'imported',
+      sourceActivityId: '   ',
+    }))
+
+    assert.equal(stableRealizedTrainingSourceKey(imported), null)
+
+    const result = deduplicateRealizedTrainingRecords([imported])
+    assert.deepEqual(result.records.map(({ id }) => id), ['log-imported-blank'])
+    assert.deepEqual(result.ambiguousRecordIds, ['log-imported-blank'])
+  })
+
+  it('marks an imported record without external identity as ambiguous instead of using heuristics', () => {
     const imported = normalizeRealizedTrainingRecord(raw({
       id: 'log-imported',
       source: 'imported',
