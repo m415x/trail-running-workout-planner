@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CalendarRange, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
+import { Activity, ArrowLeft, CalendarRange, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
@@ -74,6 +74,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const listPath = athletePath(locale)
   const editPath = athletePath(locale, `/${athlete.id}/edit`)
   const groupPath = athletePath(locale, `/${athlete.id}/group`)
+  const trainingPath = athletePath(locale, `/${athlete.id}/training`)
   const newGoalPath = athletePath(locale, `/${athlete.id}/goals/new`)
   const planningBasePath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
@@ -108,6 +109,10 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         </div>
 
         <div className='flex flex-wrap gap-2'>
+          <Link href={trainingPath} className={buttonVariants({ variant: 'outline' })}>
+            <Activity />
+            Entrenamiento realizado
+          </Link>
           <Link href={newGoalPath} className={buttonVariants({ variant: 'outline' })}>
             <Target />
             Nuevo objetivo
