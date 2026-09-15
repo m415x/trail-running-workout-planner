@@ -1,0 +1,14 @@
+{
+  "AthleteActions": {
+    "actions": "Acciones",
+    "menuFor": "Acciones para {name}",
+    "viewDetail": "Ver detalle",
+    "deactivate": "Desactivar",
+    "activate": "Activar",
+    "changeGroup": "Cambiar grupo",
+    "assignGroup": "Asignar grupo",
+    "editAthlete": "Editar atleta",
+    "realizedTraining": "Entrenamiento realizado",
+    "newGoal": "Nuevo objetivo"
+  }
+}

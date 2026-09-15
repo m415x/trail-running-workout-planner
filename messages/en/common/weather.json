@@ -1,0 +1,8 @@
+{
+  "Weather": {
+    "loading": "Checking weather conditions...",
+    "wind": "Wind",
+    "rainProb": "Rain Prob.",
+    "snowAccum": "Snow"
+  }
+}

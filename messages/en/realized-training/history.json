@@ -1,0 +1,65 @@
+{
+  "RealizedTrainingHistory": {
+    "empty": "No realized training has been recorded for this athlete yet.",
+    "status": {
+      "completed": "Completed",
+      "partial": "Partial",
+      "missed": "Not performed",
+      "pending": "Pending",
+      "rest": "Rest"
+    },
+    "source": {
+      "manual": "Manual entry",
+      "imported": "Imported"
+    },
+    "linkage": {
+      "linked": "Linked to planned session",
+      "free": "Free workout"
+    },
+    "performedAt": "Performed",
+    "loggedAt": "Logged",
+    "distance": "Distance",
+    "duration": "Duration",
+    "elevation": "D+",
+    "heartRate": "Avg HR",
+    "rpe": "RPE",
+    "unknown": "Unknown",
+    "sourceActivity": "Source ID",
+    "limitations": "Data quality",
+    "corrections": "Correction history",
+    "correctedAt": "Corrected",
+    "correctedBy": "User",
+    "correctionReason": "Reason",
+    "noCorrectionReason": "No reason recorded",
+    "changedFields": "Corrected fields",
+    "limitationLabels": {
+      "no_authoritative_session_link": "free workout with no linked planned session",
+      "partial_metric_coverage": "some training metrics were not recorded",
+      "legacy_record_without_metric_evidence": "historical record without field-level metric evidence"
+    },
+    "correctionFields": {
+      "sessionId": "linked session",
+      "workoutId": "linked workout",
+      "date": "date",
+      "performedAt": "performed date/time",
+      "status": "status",
+      "distanceKm": "distance",
+      "durationMin": "duration",
+      "elevationGainM": "elevation gain",
+      "avgHrBpm": "avg HR",
+      "rpe": "RPE",
+      "feeling": "feeling",
+      "athleteNotes": "notes"
+    },
+    "unknownReasons": {
+      "not_recorded": "not recorded",
+      "legacy_zero_ambiguous": "ambiguous legacy zero",
+      "invalid_value": "invalid value"
+    },
+    "durationUnits": {
+      "hours": "hr",
+      "minutes": "min",
+      "seconds": "sec"
+    }
+  }
+}

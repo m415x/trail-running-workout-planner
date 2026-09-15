@@ -1,0 +1,8 @@
+{
+  "Weather": {
+    "loading": "Consultando condiciones meteorológicas...",
+    "wind": "Viento",
+    "rainProb": "Prob. Lluvia",
+    "snowAccum": "Nieve"
+  }
+}

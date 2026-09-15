@@ -1,0 +1,11 @@
+{
+  "DomainGlossary": {
+    "planningIntent": {
+      "title": "Intención de planificación",
+      "summary": "Indica la dirección general del entrenamiento, independientemente de las carreras.",
+      "development": "Desarrollo: mejorar progresivamente las capacidades del grupo.",
+      "base": "Base aeróbica: construir o recuperar capacidad general con una progresión conservadora.",
+      "maintenance": "Mantenimiento: conservar la capacidad actual sin una progresión importante."
+    }
+  }
+}

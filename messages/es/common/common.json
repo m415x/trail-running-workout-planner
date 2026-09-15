@@ -1,0 +1,12 @@
+{
+  "Common": {
+    "today": "Hoy",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "km": "km",
+    "min": "min",
+    "paceUnit": "/km",
+    "speedUnit": "km/h"
+  }
+}

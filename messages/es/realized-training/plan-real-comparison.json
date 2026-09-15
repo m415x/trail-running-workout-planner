@@ -1,0 +1,36 @@
+{
+  "PlanRealComparison": {
+    "title": "Planificado vs realizado",
+    "description": "Comparación explicable por sesión. Los datos ausentes permanecen desconocidos y no cuentan como incumplimiento.",
+    "window": {
+      "week": "Semana",
+      "month": "Mes"
+    },
+    "empty": "No hay sesiones planificadas ni entrenamientos realizados en este período.",
+    "planningLimitations": "Hay {count, plural, one {# fecha cuya planificación no pudo resolverse} other {# fechas cuya planificación no pudo resolverse}}.",
+    "planned": "Planificado",
+    "realized": "Realizado",
+    "difference": "Diferencia",
+    "unknown": "Desconocido",
+    "unplannedTitle": "Entrenamiento no planificado",
+    "unplannedDescription": "Este registro se conserva como evidencia independiente y no se fuerza contra una sesión prescrita.",
+    "state": {
+      "matched": "Coincide",
+      "deviation": "Con diferencias",
+      "known_not_completed": "No realizado confirmado",
+      "unplanned_realized": "Entrenamiento extra",
+      "unknown": "Sin evidencia suficiente"
+    },
+    "evaluation": {
+      "matched": "Coincide",
+      "deviation": "Diferencia",
+      "not_evaluated": "No evaluado"
+    },
+    "metric": {
+      "distanceKm": "Distancia",
+      "durationMin": "Duración",
+      "elevationGainM": "D+",
+      "intensity": "Intensidad / esfuerzo"
+    }
+  }
+}
