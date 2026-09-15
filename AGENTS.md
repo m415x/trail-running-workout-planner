@@ -22,6 +22,15 @@ Full-stack trail-running group management and planning application. The coach re
 
 Use these canonical identifiers for remote-first project inspection and delivery. Do not duplicate credentials, tokens, or other secrets in repository documentation.
 
+## Git branch strategy
+
+- `main` is the stable/production branch. Story work must not target `main` unless an explicit release/integration decision says otherwise.
+- `dev` is the canonical development integration branch.
+- Create every new story/feature branch from the current `dev` head.
+- Merge completed story/feature branches back into `dev` after the required verification and Jira closure evidence.
+- Legacy branches such as `dashboard` and already-referenced historical story branches may remain for Jira/history traceability. Their continued existence does not make them valid bases for new work.
+- Do not rename application routes or domain concepts containing the word `dashboard`; the Git branch migration is independent from the product dashboard route.
+
 ## Technology baseline
 
 - Next.js 16 App Router, React 19, TypeScript, pnpm.
@@ -123,7 +132,8 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 
 ## Remote-first delivery workflow
 
-- Work in a story branch; keep commits aligned with the active Jira task.
+- Work in a story branch created from `dev`; keep commits aligned with the active Jira task.
+- Merge completed story branches into `dev`, not `main` and not the legacy `dashboard` branch.
 - Default to **remote-first** inspection/versioning and focused validation during implementation.
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
