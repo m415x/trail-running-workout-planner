@@ -1,5 +1,7 @@
+import { buildSystematicVolumePlanningContext } from '@/lib/systematic-volume/systematic-volume-context'
 import type {
   AthletePlanRealComparison,
+  CompetitionImpactWindowResolution,
   Microcycle,
   PlanRealComparisonItem,
   PlanRealMetricComparison,
@@ -58,6 +60,7 @@ export function buildSystematicVolumeMicrocycleEvidence(
   comparison: AthletePlanRealComparison,
   microcycle: Microcycle,
   dimension: SystematicVolumeDimension,
+  competitionResolution?: CompetitionImpactWindowResolution | null,
 ): SystematicVolumeMicrocycleEvidence {
   const items = comparison.items.filter(item => inMicrocycle(item, microcycle))
   const plannedItems = items.filter(item => item.kind === 'planned_session')
@@ -68,8 +71,8 @@ export function buildSystematicVolumeMicrocycleEvidence(
   let comparableSessions = 0
   let unknownSessions = 0
   const plannedSessionIds: string[] = []
-  const realizedRecordIds: string[] = []
-  const unplannedRecordIds: string[] = []
+  const realizedRecordIds = new Set<string>()
+  const unplannedRecordIds = new Set<string>()
   const insufficientReasons: SystematicVolumeInsufficientReason[] = []
 
   for (const item of plannedItems) {
@@ -78,7 +81,7 @@ export function buildSystematicVolumeMicrocycleEvidence(
     const realizedValue = knownNumber(metric, 'realized')
 
     plannedSessionIds.push(item.sessionId)
-    if (item.realized) realizedRecordIds.push(item.realized.recordId)
+    if (item.realized) realizedRecordIds.add(item.realized.recordId)
 
     if (plannedValue === null) {
       unknownSessions += 1
@@ -99,10 +102,17 @@ export function buildSystematicVolumeMicrocycleEvidence(
   }
 
   for (const item of unplannedItems) {
+    const recordId = item.realized.recordId
+
+    // The authoritative plan-real projection should already prevent this. Keep
+    // the guard here so malformed/duplicated projections cannot double-count a
+    // realized record as both linked and unplanned evidence.
+    if (realizedRecordIds.has(recordId)) continue
+
     const metric = metricFor(item, dimension)
     const realizedValue = knownNumber(metric, 'realized')
-    unplannedRecordIds.push(item.realized.recordId)
-    realizedRecordIds.push(item.realized.recordId)
+    unplannedRecordIds.add(recordId)
+    realizedRecordIds.add(recordId)
 
     if (realizedValue === null) {
       unknownSessions += 1
@@ -121,7 +131,7 @@ export function buildSystematicVolumeMicrocycleEvidence(
     plannedItems.length,
     comparableSessions,
     unknownSessions,
-    unplannedItems.length,
+    unplannedRecordIds.size,
   )
   const evaluable =
     plannedItems.length > 0
@@ -147,20 +157,27 @@ export function buildSystematicVolumeMicrocycleEvidence(
         }
       : null,
     coverage,
+    context: buildSystematicVolumePlanningContext(microcycle, competitionResolution),
     insufficientReasons: [...new Set(insufficientReasons)],
     contributingPlannedSessionIds: plannedSessionIds,
-    contributingRealizedSessionIds: realizedRecordIds,
-    unplannedRealizedSessionIds: unplannedRecordIds,
+    contributingRealizedSessionIds: [...realizedRecordIds],
+    unplannedRealizedSessionIds: [...unplannedRecordIds],
   }
 }
 
 export function buildSystematicVolumeSeries(
   comparison: AthletePlanRealComparison,
   microcycles: readonly Microcycle[],
+  competitionResolution?: CompetitionImpactWindowResolution | null,
 ): readonly SystematicVolumeMicrocycleEvidence[] {
   return [...microcycles]
     .sort((first, second) => first.startDate.localeCompare(second.startDate))
     .flatMap(microcycle => SYSTEMATIC_VOLUME_RULE_CONFIG.dimensions.map(dimension => (
-      buildSystematicVolumeMicrocycleEvidence(comparison, microcycle, dimension)
+      buildSystematicVolumeMicrocycleEvidence(
+        comparison,
+        microcycle,
+        dimension,
+        competitionResolution,
+      )
     )))
 }
