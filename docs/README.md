@@ -1,65 +1,48 @@
-# Project documentation
+# Documentation
 
-This directory contains durable project context. `README.md` is the repository entry index and `AGENTS.md` defines operating rules; this directory separates current architecture, verifiable research, historical evolution and operational handoffs.
+This directory contains the project's durable technical, product, research, historical, and handoff documentation.
 
-All repository documentation must be written and maintained in English.
+All versioned GitHub documentation is written in English. Localized product help belongs in the application's message catalogs.
 
-## Architecture — domain source of truth
+## Structure
 
-- [Automatic session generation](architecture/session-generation.md)
-- [Planning cohorts](architecture/planning-cohorts.md)
-- [Category and competitive distance](architecture/category-race-distance.md)
-- [Planning intent and competition context](architecture/planning-intent-and-competition-context.md)
-- [Competition calendar](architecture/competition-calendar.md)
-- [Race catalog](architecture/race-catalog.md)
-- [Race catalog persistence](architecture/race-catalog-persistence.md)
-- [Race course classification](architecture/race-classification.md)
-- [Race catalog → planning](architecture/race-catalog-planning.md)
-- [Race catalog → TrainingGoal](architecture/race-catalog-training-goals.md)
-- [Future RaceRegistration boundary](architecture/race-registration-boundary.md)
-- [Competitive adjustment](architecture/competitive-adjustment.md)
-- [Integral planning review and safe persistence](architecture/planning-review-persistence.md)
-- [Individual readiness assessment](architecture/readiness-assessment.md)
-- [Realized training timing and manual capture](architecture/realized-training-timing.md)
-- [Realized training corrections](architecture/realized-training-corrections.md)
-- [Realized training deduplication](architecture/realized-training-deduplication.md)
-- [Realized training isolation](architecture/realized-training-isolation.md)
-- [Realized training → readiness boundary](architecture/realized-training-readiness-boundary.md)
-- [KAN-290 — focused implementation evidence](architecture/realized-training-validation.md)
-- [KAN-258 — realized training story validation and walkthrough](architecture/realized-training-story-validation.md)
-- [KAN-259 — plan-versus-realized comparison audit](architecture/plan-real-comparison-audit.md)
-- [Product help and domain glossary](architecture/product-help-and-domain-glossary.md)
-- [Progressive internationalization policy](architecture/internationalization-policy.md)
-- [UX action safety — pending cross-cutting policy](architecture/ux-action-safety.md)
+### `architecture/`
+Current technical and domain architecture, organized by durable functional area rather than Jira story number:
 
-Use architecture documentation when a task depends on how the system works **now**. Do not reconstruct current contracts from history or old conversations.
+- `planning/`
+- `competitions/`
+- `realized-training/`
+- `monitoring/`
+- `platform/`
 
-## Research — versioned external evidence
+See [`architecture/README.md`](architecture/README.md).
 
-- [Race classification systems — 2026 snapshot](research/race-classification-systems-2026.md)
+### `glossary/`
+English-only technical/domain terminology, split by semantic domain. See [`glossary/README.md`](glossary/README.md).
 
-Documents in `research/` record external sources and their access dates for decisions that may change over time. They are not domain policy on their own: architecture/types must explicitly adopt any conclusion that becomes a product contract.
+The technical glossary is not the localized product glossary. User-facing help is maintained under `DomainGlossary` in `messages/en.json` and `messages/es.json`.
 
-## History — consolidated evolution
+### `research/`
+Scientific and methodological research supporting product and architecture decisions. Research documents must distinguish evidence from product heuristics and must state important limits of interpretation.
 
-- [Epic 1 — Planning Core](history/epic-1.md)
-- [Epic 2 — Planning Automation](history/epic-2.md)
+### `product/`
+Durable product principles that are not implementation-specific.
 
-Each epic maintains one consolidated history document. Old `epic-2-h*.md` fragments are removed once incorporated into `epic-2.md`.
+### `history/`
+Historical epic summaries and superseded context retained for traceability.
 
-Do not read history by default when starting a task. Consult it to understand historical rationale, superseded decisions, apparent inconsistencies or the origin of a rule.
+### `handoffs/`
+Implementation handoffs and story-level operational summaries. These are useful for continuity but are not the primary architecture source of truth.
 
-## Handoffs — operational continuity
+### `superpowers/`
+Development plans produced by the engineering workflow.
 
-- [Epic 3 — active handoff](handoffs/epic-3.md)
+## Documentation policy
 
-A handoff is brief and temporary: it summarizes the baseline, verifiable status, constraints and next work item. It does not duplicate architecture or history, or preserve transcripts. When a new epic begins, it may be replaced with that epic's operational handoff.
-
-## Maintenance rule
-
-- Durable contract changes → update `architecture/` in the same story.
-- Time-sensitive/versioned external research → record it in `research/` with dates and sources.
-- Significant evolution/epic closure → consolidate `history/<epic>.md`.
-- Execution status and criteria → Jira.
-- Immediate continuity → one relevant handoff.
-- Indexes/paths → keep `README.md`, this file and `AGENTS.md` synchronized.
+1. GitHub documentation is English-only.
+2. Jira may remain in Spanish for project tracking and discussion.
+3. Architecture documents describe current durable behavior, not ticket chronology.
+4. Research documents provide scientific/methodological support and clearly label operational heuristics.
+5. New or materially changed terminology requires a glossary review.
+6. Localized user help must be maintained in both `messages/en.json` and `messages/es.json`.
+7. When files move, update repository references in the same change so documentation navigation remains valid.
