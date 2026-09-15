@@ -3,6 +3,7 @@ import { projectCompetitionAnalytics } from '@/lib/analytics/competition/competi
 import { projectLoadAnalytics } from '@/lib/analytics/load/load-analytics'
 import { summarizeRealizedTraining } from '@/lib/analytics/training/training-analytics'
 import { compareRealizedTraining } from '@/lib/analytics/training/training-evolution'
+import { projectRealizedTrainingSeries } from '@/lib/analytics/training/training-series'
 import type { AthleteStatsProjectionInput } from '@/lib/athlete-stats/athlete-stats-projections'
 import type { AthleteStatsSubject } from '@/lib/athlete-stats/athlete-stats-read-service'
 import type { AthleteAdherence } from '@/types/training/adherence.types'
@@ -30,11 +31,7 @@ function previousPeriod(period: { readonly startDate: string; readonly endDate: 
   previousEnd.setUTCDate(previousEnd.getUTCDate() - 1)
   const previousStart = new Date(previousEnd)
   previousStart.setUTCDate(previousEnd.getUTCDate() - durationDays + 1)
-
-  return {
-    startDate: previousStart.toISOString().slice(0, 10),
-    endDate: previousEnd.toISOString().slice(0, 10),
-  }
+  return { startDate: previousStart.toISOString().slice(0, 10), endDate: previousEnd.toISOString().slice(0, 10) }
 }
 
 /** Composes KAN-351 analytics strictly from their existing authoritative sources. */
@@ -62,6 +59,7 @@ export async function loadAthleteStatsProjectionInput(
     period,
     training,
     trainingEvolution: compareRealizedTraining(training, previousTraining),
+    trainingSeries: projectRealizedTrainingSeries(currentRecords),
     load: projectLoadAnalytics(load),
     adherence: projectAdherenceAnalytics(adherence),
     competition: projectCompetitionAnalytics(competition),
