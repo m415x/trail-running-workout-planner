@@ -4,6 +4,7 @@ import {
   type TrainingResponseContributor,
   type TrainingResponseEvidenceWindow,
   type TrainingResponseLimitation,
+  type TrainingResponseReason,
   type TrainingResponseReview,
   type TrainingResponseTemporalCompatibility,
 } from '@/types'
@@ -42,6 +43,46 @@ function standaloneAttention(contributor: TrainingResponseContributor): Training
   }
 
   return 'none'
+}
+
+function reasonForContributor(
+  contributor: TrainingResponseContributor,
+): TrainingResponseReason | null {
+  if (contributor.domain === 'systematic_volume' && contributor.role === 'evidence') {
+    if (contributor.signal === 'systematic_excess') return 'systematic_volume_excess'
+    if (contributor.signal === 'isolated_excess') return 'isolated_systematic_volume_excess'
+  }
+
+  if (
+    contributor.domain === 'internal_load' &&
+    contributor.role === 'evidence' &&
+    contributor.signal === 'recent_load_above_baseline'
+  ) {
+    return 'recent_internal_load_above_baseline'
+  }
+
+  if (
+    contributor.domain === 'adherence' &&
+    contributor.role === 'context' &&
+    contributor.signal === 'declining'
+  ) {
+    return 'declining_adherence_context'
+  }
+
+  return null
+}
+
+function reasonsForContributors(
+  contributors: readonly TrainingResponseContributor[],
+): TrainingResponseReason[] {
+  const reasons: TrainingResponseReason[] = []
+
+  for (const contributor of contributors) {
+    const reason = reasonForContributor(contributor)
+    if (reason !== null && !reasons.includes(reason)) reasons.push(reason)
+  }
+
+  return reasons
 }
 
 function maxAttention(contributors: readonly TrainingResponseContributor[]): TrainingResponseAttention {
@@ -91,6 +132,7 @@ export function composeTrainingResponseReview(
   const contributors = sortContributors(input.contributors)
   let attention = maxAttention(contributors)
   let limitations: readonly TrainingResponseLimitation[] = [...input.limitations]
+  const reasons = reasonsForContributors(contributors)
 
   const systematicExcess = contributors.find(
     ({ domain, role, signal }) =>
@@ -111,6 +153,7 @@ export function composeTrainingResponseReview(
 
     if (temporalCompatibility === 'compatible') {
       attention = 'priority'
+      reasons.push('compatible_independent_evidence')
     } else if (temporalCompatibility === 'not_compatible') {
       limitations = withLimitation(limitations, 'evidence_not_temporally_compatible')
     } else {
@@ -121,6 +164,7 @@ export function composeTrainingResponseReview(
   return {
     attention,
     contributors,
+    reasons,
     limitations,
     temporalCompatibility,
     convergenceRuleVersion: TRAINING_RESPONSE_CONVERGENCE_RULE_VERSION,
