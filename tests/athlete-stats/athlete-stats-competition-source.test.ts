@@ -19,11 +19,11 @@ const competition = {
   distanceKm: 21,
   elevationGainM: 900,
   priority: 'A',
-  status: 'scheduled',
+  status: 'planned',
   isDeleted: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
-} as CompetitionEntry
+} satisfies CompetitionEntry
 
 describe('athlete stats competition source', () => {
   it('reads only the calendar of the plan applicable at the stats period end', async () => {
@@ -31,7 +31,17 @@ describe('athlete stats competition source', () => {
     const source = createAthleteStatsCompetitionSource({
       getAthletePlanningResolutionOnDate: async (athleteId, date) => {
         calls.push(`${athleteId}:${date}`)
-        return { resolution: { status: 'resolved', planId: 'plan-1' } }
+        return {
+          resolution: {
+            status: 'resolved',
+            source: 'group',
+            groupId: 'group-1',
+            planId: 'plan-1',
+            cohortId: null,
+          },
+          planTitle: 'Plan 1',
+          cohortName: null,
+        }
       },
       getCompetitionCalendar: planId => {
         calls.push(planId)
@@ -49,7 +59,9 @@ describe('athlete stats competition source', () => {
     let calendarRead = false
     const source = createAthleteStatsCompetitionSource({
       getAthletePlanningResolutionOnDate: async () => ({
-        resolution: { status: 'none', reason: 'no-applicable-plan' },
+        resolution: { status: 'none', reason: 'no-applicable-plan', groupId: 'group-1' },
+        planTitle: null,
+        cohortName: null,
       }),
       getCompetitionCalendar: () => { calendarRead = true; return [competition] },
     })
@@ -63,7 +75,14 @@ describe('athlete stats competition source', () => {
   it('fails closed on ambiguous planning instead of mixing calendars', async () => {
     const source = createAthleteStatsCompetitionSource({
       getAthletePlanningResolutionOnDate: async () => ({
-        resolution: { status: 'conflict', reason: 'multiple-base-plans' },
+        resolution: {
+          status: 'conflict',
+          reason: 'multiple-base-plans',
+          groupId: 'group-1',
+          conflictingIds: ['plan-1', 'plan-2'],
+        },
+        planTitle: null,
+        cohortName: null,
       }),
       getCompetitionCalendar: () => [competition],
     })
