@@ -4,6 +4,16 @@ This directory contains the project's durable technical, product, research, hist
 
 All versioned GitHub documentation is written in English. Localized product help belongs in the application's message catalogs.
 
+## Development branch workflow
+
+`dev` is the canonical development integration branch.
+
+- Create new story and feature branches from the current `dev` head.
+- After story verification and Jira closure evidence, merge completed branches back into `dev`.
+- `main` remains the stable/production branch and is not the normal target for story integration.
+- Legacy branches such as `dashboard` and historical story branches may remain because Jira and historical records reference them. They are retained for traceability only and must not be used as the base or merge target for new work.
+- The Git branch name `dashboard` is unrelated to application routes such as `app/[locale]/dashboard`; product route names are not part of this branch migration.
+
 ## Structure
 
 ### `architecture/`
