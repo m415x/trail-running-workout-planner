@@ -1,3 +1,5 @@
+import type { MicrocycleLoadFocus, MicrocycleType } from '@/types/training/periodization.types'
+
 export const SYSTEMATIC_VOLUME_RULE_VERSION = 'systematic-volume-v1' as const
 
 export type SystematicVolumeDimension = 'distanceKm' | 'durationMin' | 'elevationGainM'
@@ -16,6 +18,8 @@ export type SystematicVolumeInsufficientReason =
   | 'incompatible_units'
   | 'insufficient_microcycle_coverage'
   | 'planning_resolution'
+
+export type SystematicVolumeCompetitionPhase = 'pre' | 'race' | 'post'
 
 export interface SystematicVolumeRuleConfig {
   readonly version: typeof SYSTEMATIC_VOLUME_RULE_VERSION
@@ -50,6 +54,14 @@ export interface SystematicVolumeCoverage {
   readonly coverageRatio: number | null
 }
 
+export interface SystematicVolumePlanningContext {
+  readonly microcycleType: MicrocycleType
+  readonly loadFocus: MicrocycleLoadFocus | null
+  readonly competitionPhases: readonly SystematicVolumeCompetitionPhase[]
+  readonly competitionIds: readonly string[]
+  readonly requiresCoachReview: boolean
+}
+
 export interface SystematicVolumeMicrocycleEvidence {
   readonly microcycleId: string
   readonly startDate: string
@@ -58,6 +70,7 @@ export interface SystematicVolumeMicrocycleEvidence {
   readonly evaluable: boolean
   readonly magnitude: SystematicVolumeMagnitude | null
   readonly coverage: SystematicVolumeCoverage
+  readonly context: SystematicVolumePlanningContext
   readonly insufficientReasons: readonly SystematicVolumeInsufficientReason[]
   readonly contributingPlannedSessionIds: readonly string[]
   readonly contributingRealizedSessionIds: readonly string[]
