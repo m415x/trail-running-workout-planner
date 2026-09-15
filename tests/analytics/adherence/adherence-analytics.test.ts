@@ -7,7 +7,7 @@ import type { AthleteAdherence } from '@/types/training/adherence.types'
 const base: AthleteAdherence = {
   teamId: 'team-1',
   athleteId: 'athlete-1',
-  window: { startDate: '2026-09-01', endDate: '2026-09-07' },
+  window: { kind: 'week', startDate: '2026-09-01', endDate: '2026-09-07' },
   rule: {
     ruleId: 'plan-adherence',
     version: 1,
