@@ -1,6 +1,7 @@
 import type { RealizedMetricName } from '@/types/training/readiness.types'
 
 export const TRAINING_LOAD_RULE_VERSION = 'srpe-duration-v1' as const
+export const TRAINING_LOAD_SIGNAL_RULE_VERSION = 'internal-load-signal-v1' as const
 
 export interface TrainingLoadRuleConfig {
   readonly version: string
@@ -38,6 +39,11 @@ export type TrainingLoadInsufficientReason =
   | 'missing_rpe'
   | 'ambiguous_rest'
   | 'insufficient_history'
+
+export type InternalLoadSignalState =
+  | 'recent_load_above_baseline'
+  | 'stable_or_lower'
+  | 'insufficient_data'
 
 export interface TrainingLoadExternalContext {
   readonly distanceM: number | null
@@ -85,6 +91,19 @@ export interface TrainingLoadTrendPoint {
   readonly status: TrainingLoadSeriesStatus
 }
 
+/**
+ * Versioned semantic boundary consumed by cross-domain review logic.
+ * Consumers must use `state` instead of reinterpreting `loadBalanceAu`.
+ */
+export interface InternalLoadSignal {
+  readonly state: InternalLoadSignalState
+  readonly startDate: string
+  readonly endDate: string
+  readonly sourceRuleVersion: string
+  readonly signalRuleVersion: typeof TRAINING_LOAD_SIGNAL_RULE_VERSION
+  readonly insufficientReasons: readonly TrainingLoadInsufficientReason[]
+}
+
 export interface AthleteTrainingLoadState {
   readonly athleteId: string
   readonly startDate: string
@@ -96,4 +115,5 @@ export interface AthleteTrainingLoadState {
   readonly days: readonly DailyTrainingLoad[]
   readonly trend: readonly TrainingLoadTrendPoint[]
   readonly latest: TrainingLoadTrendPoint | null
+  readonly semanticSignal: InternalLoadSignal
 }
