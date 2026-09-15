@@ -1,35 +1,24 @@
 import type { AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 
+type SummaryMetricKey = 'distance' | 'duration' | 'elevation' | 'sessions'
+
 interface SummaryMetricView {
-  readonly label: string
+  readonly key: SummaryMetricKey
   readonly state: 'available' | 'unknown'
-  readonly displayValue: string | null
+  readonly value: number | null
+  readonly unit: string
 }
 
 export interface AthleteStatsSummaryView {
   readonly period: AthleteStatsSummary['period']
   readonly training: { readonly href: '/stats/training'; readonly metrics: readonly SummaryMetricView[] }
-  readonly load: { readonly href: '/stats/load'; readonly state: 'available' | 'insufficient_data'; readonly displayValue: string | null }
-  readonly adherence: { readonly href: '/stats/adherence'; readonly state: 'available' | 'insufficient_data'; readonly displayValue: string | null }
+  readonly load: { readonly href: '/stats/load'; readonly state: 'available' | 'insufficient_data'; readonly value: number | null; readonly unit: 'AU' }
+  readonly adherence: { readonly href: '/stats/adherence'; readonly state: 'available' | 'insufficient_data'; readonly value: number | null; readonly unit: '%' }
   readonly competition: { readonly href: '/stats/competition'; readonly state: 'available' | 'none'; readonly name: string | null; readonly date: string | null }
 }
 
-function metric(label: string, source: AthleteStatsSummary['training']['distance'] | AthleteStatsSummary['training']['frequency']): SummaryMetricView {
-  return {
-    label,
-    state: source.state,
-    displayValue: source.state === 'available' ? `${source.value} ${source.unit}` : null,
-  }
-}
-
-function frequencyMetric(source: AthleteStatsSummary['training']['frequency']): SummaryMetricView {
-  return {
-    label: 'Sesiones',
-    state: source.state,
-    displayValue: source.state === 'available'
-      ? `${source.value} ${source.value === 1 ? 'sesión' : 'sesiones'}`
-      : null,
-  }
+function metric(key: Exclude<SummaryMetricKey, 'sessions'>, source: AthleteStatsSummary['training']['distance']): SummaryMetricView {
+  return { key, state: source.state, value: source.state === 'available' ? source.value : null, unit: source.unit }
 }
 
 export function buildAthleteStatsSummaryView(summary: AthleteStatsSummary): AthleteStatsSummaryView {
@@ -38,25 +27,23 @@ export function buildAthleteStatsSummaryView(summary: AthleteStatsSummary): Athl
     training: {
       href: '/stats/training',
       metrics: [
-        metric('Distancia', summary.training.distance),
-        metric('Duración', summary.training.duration),
-        metric('Desnivel', summary.training.elevation),
-        frequencyMetric(summary.training.frequency),
+        metric('distance', summary.training.distance),
+        metric('duration', summary.training.duration),
+        metric('elevation', summary.training.elevation),
+        { key: 'sessions', state: summary.training.frequency.state, value: summary.training.frequency.state === 'available' ? summary.training.frequency.value : null, unit: summary.training.frequency.unit },
       ],
     },
     load: {
       href: '/stats/load',
       state: summary.load.state,
-      displayValue: summary.load.state === 'available' && summary.load.shortTermLoadAu !== null
-        ? `${summary.load.shortTermLoadAu} AU`
-        : null,
+      value: summary.load.state === 'available' ? summary.load.shortTermLoadAu : null,
+      unit: 'AU',
     },
     adherence: {
       href: '/stats/adherence',
       state: summary.adherence.state,
-      displayValue: summary.adherence.state === 'available' && summary.adherence.value !== null
-        ? `${summary.adherence.value}%`
-        : null,
+      value: summary.adherence.state === 'available' ? summary.adherence.value : null,
+      unit: '%',
     },
     competition: summary.competition
       ? { href: '/stats/competition', state: 'available', name: summary.competition.name, date: summary.competition.date }
