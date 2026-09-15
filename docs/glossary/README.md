@@ -13,5 +13,5 @@ This directory is the English-only technical glossary for domain and architectur
 ## Index
 
 - [Training](training.md) — training prescription, adherence, external/internal load, and session-RPE.
-- [Load](load.md) — load models, EWMA-derived concepts, volume excess, and ACWR boundary.
-- [Readiness](readiness.md) — evidence sufficiency, convergence, review priority, and triage terminology.
+- [Load](load.md) — load models, semantic internal-load signals, volume excess, training-response convergence, evidence windows, review priority, and the ACWR boundary.
+- [Readiness](readiness.md) — readiness evidence sufficiency, review priority, and triage terminology.
