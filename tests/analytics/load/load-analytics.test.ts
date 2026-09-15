@@ -2,11 +2,12 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { projectLoadAnalytics } from '@/lib/analytics/load/load-analytics'
-import type { AthleteTrainingLoadState } from '@/types/training/training-load.types'
+import type { AthleteTrainingLoadState, TrainingLoadTrendPoint } from '@/types/training/training-load.types'
 
 function state(
   status: AthleteTrainingLoadState['status'],
   latest: AthleteTrainingLoadState['latest'],
+  trend: readonly TrainingLoadTrendPoint[] = latest ? [latest] : [],
 ): AthleteTrainingLoadState {
   return {
     athleteId: 'athlete-1',
@@ -26,7 +27,7 @@ function state(
       coverageRatio: 40 / 46,
     },
     days: [],
-    trend: latest ? [latest] : [],
+    trend,
     latest,
     semanticSignal: {
       state: status === 'available' ? 'stable_or_lower' : 'insufficient_data',
@@ -57,11 +58,35 @@ describe('load analytics', () => {
     assert.equal(result.ruleVersion, 'srpe-duration-v1')
   })
 
+  it('preserves the existing genuine load trend for descriptive detail views', () => {
+    const first: TrainingLoadTrendPoint = {
+      date: '2026-09-14',
+      dailyLoadAu: 240,
+      shortTermLoadAu: 260,
+      longTermLoadAu: 245,
+      loadBalanceAu: -15,
+      status: 'available',
+    }
+    const latest: TrainingLoadTrendPoint = {
+      date: '2026-09-15',
+      dailyLoadAu: 320,
+      shortTermLoadAu: 280,
+      longTermLoadAu: 250,
+      loadBalanceAu: -30,
+      status: 'available',
+    }
+
+    const result = projectLoadAnalytics(state('available', latest, [first, latest]))
+
+    assert.deepEqual(result.trend, [first, latest])
+  })
+
   it('preserves insufficient evidence as non-evaluable', () => {
     const result = projectLoadAnalytics(state('warming_up', null))
 
     assert.equal(result.state, 'insufficient_data')
     assert.deepEqual(result.reasons, ['insufficient_history'])
     assert.equal(result.latest, null)
+    assert.deepEqual(result.trend, [])
   })
 })
