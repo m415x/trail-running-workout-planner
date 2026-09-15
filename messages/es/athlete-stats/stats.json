@@ -1,0 +1,42 @@
+{
+  "stats": {
+    "title": "Estadísticas",
+    "training": "Entrenamiento",
+    "load": "Carga",
+    "adherence": "Adherencia",
+    "competition": "Competencias",
+    "insufficientData": "Datos insuficientes",
+    "noData": "Sin datos",
+    "coverage": "Cobertura",
+    "backToStats": "Estadísticas",
+    "trainingDetail": {
+      "activityRecorded": "Actividad registrada",
+      "noActivity": "No hay actividad realizada registrada en este período.",
+      "distance": "Distancia",
+      "duration": "Duración",
+      "elevation": "Desnivel",
+      "sessions": "Sesiones",
+      "noComparison": "Sin comparación disponible"
+    },
+    "loadDetail": {
+      "shortTerm": "Carga de corto plazo",
+      "longTerm": "Carga de largo plazo",
+      "balance": "Balance de carga",
+      "recordedEvolution": "Evolución registrada"
+    },
+    "adherenceDetail": {
+      "confirmed": "Adherencia confirmada",
+      "eligible": "Sesiones planificadas elegibles",
+      "confirmedOutcomes": "Resultados confirmados",
+      "unknownOutcome": "Resultado desconocido",
+      "unknownExplanation": "Las sesiones con resultado desconocido se muestran separadas y no se cuentan como sesiones no completadas."
+    },
+    "competitionDetail": {
+      "context": "Contexto competitivo registrado",
+      "primary": "Competencia principal",
+      "intermediate": "Competencias intermedias",
+      "noPrimary": "No hay una competencia principal planificada.",
+      "elevationUnavailable": "Desnivel sin datos"
+    }
+  }
+}
