@@ -18,8 +18,11 @@ const input = {
     duration: { state: 'not_evaluable', currentValue: 60, previousValue: null, absoluteDelta: null, relativeDeltaPercent: null, direction: 'unknown', reason: 'previous_unknown' },
     elevation: { state: 'not_evaluable', currentValue: 500, previousValue: null, absoluteDelta: null, relativeDeltaPercent: null, direction: 'unknown', reason: 'previous_unknown' },
   },
+  trainingSeries: [
+    { date: '2026-09-14', sessions: 1, distanceKm: 10, durationMin: 60, elevationGainM: 500 },
+  ],
   load: {
-    state: 'insufficient_data', startDate: '2026-09-01', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: 0.4, reasons: ['insufficient_history'], latest: null,
+    state: 'insufficient_data', startDate: '2026-09-01', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: 0.4, reasons: ['insufficient_history'], latest: null, trend: [],
   },
   adherence: {
     window: { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
@@ -38,13 +41,9 @@ describe('athlete stats read service', () => {
       { startDate: '2026-09-01', endDate: '2026-09-14', view: 'summary' },
       {
         resolveCurrentAthlete: async () => ({ athleteId: 'athlete-1', teamId: 'team-1' }),
-        loadProjectionInput: async subject => {
-          requestedSubject = subject
-          return input
-        },
+        loadProjectionInput: async subject => { requestedSubject = subject; return input },
       },
     )
-
     assert.deepEqual(requestedSubject, { athleteId: 'athlete-1', teamId: 'team-1' })
     assert.equal(result.status, 'success')
   })
@@ -57,7 +56,6 @@ describe('athlete stats read service', () => {
         loadProjectionInput: async () => { throw new Error('must not load') },
       },
     )
-
     assert.deepEqual(result, { status: 'error', code: 'current_athlete_unavailable' })
   })
 
@@ -69,7 +67,6 @@ describe('athlete stats read service', () => {
         loadProjectionInput: async () => input,
       },
     )
-
     assert.equal(result.status, 'success')
     if (result.status !== 'success') assert.fail('expected success')
     assert.equal(result.data.load.state, 'insufficient_data')
@@ -86,7 +83,6 @@ describe('athlete stats read service', () => {
         loadProjectionInput: async () => input,
       },
     )
-
     assert.equal(resolved, false)
     assert.deepEqual(result, { status: 'error', code: 'invalid_period' })
   })
