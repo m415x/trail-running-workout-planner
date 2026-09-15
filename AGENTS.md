@@ -14,6 +14,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 Full-stack trail-running group management and planning application. The coach remains the decision owner: automation generates/reviews evidence and proposals but must not silently replace deliberate coach state.
 
+## Project services
+
+- Jira site: `https://trail-running-workout-planning.atlassian.net/`
+- Jira project key: `KAN`
+- GitHub repository: `m415x/trail-running-workout-planner`
+
+Use these canonical identifiers for remote-first project inspection and delivery. Do not duplicate credentials, tokens, or other secrets in repository documentation.
+
 ## Technology baseline
 
 - Next.js 16 App Router, React 19, TypeScript, pnpm.
