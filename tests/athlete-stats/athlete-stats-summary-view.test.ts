@@ -30,6 +30,11 @@ describe('athlete stats summary view', () => {
     assert.equal(view.competition.state, 'none')
   })
 
+  it('renders the frequency unit in athlete-facing Spanish', () => {
+    const view = buildAthleteStatsSummaryView(summary)
+    assert.equal(view.training.metrics[3]?.displayValue, '4 sesiones')
+  })
+
   it('exposes one drill-down target for each summary domain', () => {
     const view = buildAthleteStatsSummaryView(summary)
 
