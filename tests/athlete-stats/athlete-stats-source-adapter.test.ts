@@ -1,24 +1,53 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
+import { DEFAULT_ADHERENCE_RULE } from '@/lib/adherence/athlete-adherence'
 import { loadAthleteStatsProjectionInput } from '@/lib/athlete-stats/athlete-stats-source-adapter'
 import type { AthleteStatsSourceDependencies } from '@/lib/athlete-stats/athlete-stats-source-adapter'
+import { TRAINING_LOAD_SIGNAL_RULE_VERSION } from '@/types/training/training-load.types'
+import type { AthleteAdherence } from '@/types/training/adherence.types'
 
 const unknownAdherence = {
-  window: { kind: 'week' as const, startDate: '2026-09-08', endDate: '2026-09-14' },
-  rule: { ruleId: 'plan-adherence', version: 1 },
-  coverage: { eligiblePlannedSessions: 0, confirmedOutcomeSessions: 0, unknownSessions: 0, unplannedRealizedSessions: 0, coveragePercent: 0 },
-  frequency: { state: 'insufficient_data' as const, counts: { confirmedCompleted: 0, confirmedNotCompleted: 0, denominator: 0 }, adherencePercent: null, reasons: ['insufficient_confirmed_outcomes' as const] },
+  teamId: 'team-1',
+  athleteId: 'athlete-1',
+  window: { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
+  rule: DEFAULT_ADHERENCE_RULE,
+  coverage: { eligiblePlannedSessions: 0, confirmedOutcomeSessions: 0, unknownSessions: 0, unplannedRealizedSessions: 0, coveragePercent: null },
+  frequency: { state: 'insufficient_data', counts: { confirmedCompleted: 0, confirmedNotCompleted: 0, denominator: 0 }, adherencePercent: null, reasons: ['no_eligible_planned_sessions', 'insufficient_confirmed_outcomes'] },
   dimensions: [], limitations: [],
-}
+} satisfies AthleteAdherence
 
 function dependencies(overrides: Partial<AthleteStatsSourceDependencies> = {}): AthleteStatsSourceDependencies {
   return {
     listRealizedTraining: async () => [],
     getTrainingLoad: async ({ athleteId, startDate, endDate }) => ({
-      athleteId, startDate, endDate, ruleVersion: 'srpe-duration-v1', status: 'insufficient_data',
-      insufficientReasons: ['insufficient_history'], coverage: { observedDays: 0, loadKnownDays: 0, coverageRatio: 0 },
-      days: [], trend: [], latest: null, semanticSignal: { state: 'unknown', reason: 'insufficient_data' },
+      athleteId,
+      startDate,
+      endDate,
+      ruleVersion: 'srpe-duration-v1',
+      status: 'insufficient_data',
+      insufficientReasons: ['insufficient_history'],
+      coverage: {
+        observedDays: 0,
+        knownLoadDays: 0,
+        confirmedRestDays: 0,
+        unknownLoadDays: 0,
+        noEvidenceDays: 7,
+        usableDays: 0,
+        currentUsableStreakDays: 0,
+        coverageRatio: 0,
+      },
+      days: [],
+      trend: [],
+      latest: null,
+      semanticSignal: {
+        state: 'insufficient_data',
+        startDate,
+        endDate,
+        sourceRuleVersion: 'srpe-duration-v1',
+        signalRuleVersion: TRAINING_LOAD_SIGNAL_RULE_VERSION,
+        insufficientReasons: ['insufficient_history'],
+      },
     }),
     getAdherence: async () => unknownAdherence,
     getCompetitionContext: async () => ({ primaryCompetition: null, intermediateCompetitions: [] }),
@@ -57,7 +86,10 @@ describe('athlete stats source adapter', () => {
           subjects.push({ athleteId, teamId })
           return dependencies().getTrainingLoad({ athleteId, teamId, startDate, endDate })
         },
-        getAdherence: async ({ athleteId, teamId }) => { subjects.push({ athleteId, teamId }); return unknownAdherence },
+        getAdherence: async ({ athleteId, teamId }) => {
+          subjects.push({ athleteId, teamId })
+          return { ...unknownAdherence, athleteId, teamId }
+        },
         getCompetitionContext: async ({ athleteId, teamId }) => { subjects.push({ athleteId, teamId }); return { primaryCompetition: null, intermediateCompetitions: [] } },
       }),
     )
