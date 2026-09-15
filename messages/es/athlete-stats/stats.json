@@ -1,0 +1,61 @@
+{
+  "stats": {
+    "title": "Estadísticas",
+    "training": "Entrenamiento",
+    "load": "Carga",
+    "adherence": "Adherencia",
+    "competition": "Competencias",
+    "insufficientData": "Datos insuficientes",
+    "unknownData": "Sin datos suficientes",
+    "noData": "Sin datos",
+    "coverage": "Cobertura",
+    "backToStats": "Estadísticas",
+    "loadError": "No pudimos cargar el detalle de carga.",
+    "adherenceError": "No pudimos cargar el detalle de adherencia.",
+    "trainingError": "No pudimos cargar el detalle de entrenamiento.",
+    "competitionError": "No pudimos cargar el calendario competitivo.",
+    "summary": {
+      "period": "Últimos 28 días",
+      "error": "No pudimos cargar tus estadísticas en este momento.",
+      "viewDetail": "Ver detalle",
+      "explore": "Profundizar",
+      "nextCompetition": "Próxima competencia",
+      "viewCalendar": "Ver calendario"
+    },
+    "trainingDetail": {
+      "activityRecorded": "Actividad registrada",
+      "noActivity": "No hay actividad realizada registrada en este período.",
+      "distance": "Distancia",
+      "duration": "Duración",
+      "elevation": "Desnivel",
+      "sessions": "Sesiones",
+      "session": "sesión",
+      "sessionsUnit": "sesiones",
+      "noComparison": "Sin comparación disponible",
+      "previousDelta": "{delta} respecto del período anterior"
+    },
+    "loadDetail": {
+      "shortTerm": "Carga de corto plazo",
+      "longTerm": "Carga de largo plazo",
+      "balance": "Balance de carga",
+      "recordedEvolution": "Evolución registrada",
+      "daily": "Diaria",
+      "short": "Corto",
+      "long": "Largo"
+    },
+    "adherenceDetail": {
+      "confirmed": "Adherencia confirmada",
+      "eligible": "Sesiones planificadas elegibles",
+      "confirmedOutcomes": "Resultados confirmados",
+      "unknownOutcome": "Resultado desconocido",
+      "unknownExplanation": "Las sesiones con resultado desconocido se muestran separadas y no se cuentan como sesiones no completadas."
+    },
+    "competitionDetail": {
+      "context": "Contexto competitivo registrado",
+      "primary": "Competencia principal",
+      "intermediate": "Competencias intermedias",
+      "noPrimary": "No hay una competencia principal planificada.",
+      "elevationUnavailable": "Desnivel sin datos"
+    }
+  }
+}
