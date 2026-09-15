@@ -21,18 +21,22 @@ describe('athlete stats summary view', () => {
   it('preserves unknown and insufficient states instead of rendering zeros', () => {
     const view = buildAthleteStatsSummaryView(summary)
 
-    assert.equal(view.training.metrics[0]?.displayValue, '42 km')
-    assert.equal(view.training.metrics[1]?.displayValue, null)
+    assert.equal(view.training.metrics[0]?.value, 42)
+    assert.equal(view.training.metrics[0]?.unit, 'km')
+    assert.equal(view.training.metrics[1]?.value, null)
     assert.equal(view.training.metrics[1]?.state, 'unknown')
     assert.equal(view.load.state, 'insufficient_data')
-    assert.equal(view.load.displayValue, null)
-    assert.equal(view.adherence.displayValue, null)
+    assert.equal(view.load.value, null)
+    assert.equal(view.adherence.value, null)
     assert.equal(view.competition.state, 'none')
   })
 
-  it('renders the frequency unit in athlete-facing Spanish', () => {
+  it('exposes locale-neutral metric identifiers and values', () => {
     const view = buildAthleteStatsSummaryView(summary)
-    assert.equal(view.training.metrics[3]?.displayValue, '4 sesiones')
+
+    assert.deepEqual(view.training.metrics.map(metric => metric.key), ['distance', 'duration', 'elevation', 'sessions'])
+    assert.deepEqual(view.training.metrics.map(metric => metric.value), [42, null, 1600, 4])
+    assert.equal(JSON.stringify(view).match(/Distancia|Duración|Desnivel|Sesiones|sesión|sesiones/g), null)
   })
 
   it('exposes one drill-down target for each summary domain', () => {
