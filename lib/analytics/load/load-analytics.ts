@@ -12,6 +12,7 @@ export type LoadAnalyticsProjection =
       readonly ruleVersion: string
       readonly coverageRatio: number | null
       readonly latest: TrainingLoadTrendPoint
+      readonly trend: readonly TrainingLoadTrendPoint[]
     }
   | {
       readonly state: 'insufficient_data'
@@ -21,6 +22,7 @@ export type LoadAnalyticsProjection =
       readonly coverageRatio: number | null
       readonly reasons: readonly TrainingLoadInsufficientReason[]
       readonly latest: null
+      readonly trend: readonly TrainingLoadTrendPoint[]
     }
 
 /**
@@ -39,6 +41,7 @@ export function projectLoadAnalytics(
       coverageRatio: source.coverage.coverageRatio,
       reasons: source.insufficientReasons,
       latest: null,
+      trend: [],
     }
   }
 
@@ -49,5 +52,6 @@ export function projectLoadAnalytics(
     ruleVersion: source.ruleVersion,
     coverageRatio: source.coverage.coverageRatio,
     latest: source.latest,
+    trend: source.trend,
   }
 }
