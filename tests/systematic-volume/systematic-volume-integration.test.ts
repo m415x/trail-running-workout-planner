@@ -53,6 +53,20 @@ function metric(
   }
 }
 
+function realizedContext(recordId: string, date: string) {
+  return {
+    recordId,
+    provenance: {
+      source: 'manual' as const,
+      sourceActivityId: null,
+      loggedAt: `${date}T12:00:00Z`,
+      sessionLink: 'explicit' as const,
+    },
+    quality: 'usable' as const,
+    limitations: [] as readonly string[],
+  }
+}
+
 function planned(
   id: string,
   date: string,
@@ -67,7 +81,7 @@ function planned(
     sessionId: id,
     sessionTitle: id,
     planning: { source: 'group', teamId: 'team-1', groupId: 'group-1', planId: 'plan-1', cohortId: null },
-    realized: { recordId: `realized-${id}`, provenance: 'manual', quality: 'complete', limitations: [] },
+    realized: realizedContext(`realized-${id}`, date),
     metrics: dimensions.map(name => metric(name, ...values[name])),
     limitations: [],
   }
@@ -84,7 +98,13 @@ function unplanned(
     teamId: 'team-1',
     athleteId: 'athlete-1',
     date,
-    realized: { recordId: id, provenance: 'manual', quality: 'complete', limitations: [] },
+    realized: {
+      ...realizedContext(id, date),
+      provenance: {
+        ...realizedContext(id, date).provenance,
+        sessionLink: 'none',
+      },
+    },
     metrics: dimensions.map(name => ({
       name,
       evaluation: {
@@ -103,8 +123,8 @@ function unplanned(
 function microcycle(id: string, startDate: string, endDate: string, type: Microcycle['type'] = 'base'): Microcycle {
   return {
     id,
-    createdAt: new Date(`${startDate}T00:00:00Z`),
-    updatedAt: new Date(`${startDate}T00:00:00Z`),
+    createdAt: `${startDate}T00:00:00Z`,
+    updatedAt: `${startDate}T00:00:00Z`,
     mesocycleId: 'meso-1',
     weekNumber: Number(id.split('-').at(-1) ?? 1),
     type,
