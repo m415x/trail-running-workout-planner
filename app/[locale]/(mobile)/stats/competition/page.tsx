@@ -11,9 +11,11 @@ function CompetitionCard({ competition, title }: { competition: { name: string; 
 export default async function CompetitionStatsPage() {
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'details' })
-  if (result.status !== 'success' || !('primaryCompetition' in result.data.competition)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>No pudimos cargar el calendario competitivo.</p>
+  if (result.status !== 'success') return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>No pudimos cargar el calendario competitivo.</p>
 
-  const { competition } = result.data
+  const competition = result.data.competition
+  if (competition === null || !('primaryCompetition' in competition)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>No pudimos cargar el calendario competitivo.</p>
+
   return <section className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-8'>
     <Link href='/stats' className='mb-5 inline-flex items-center gap-2 text-sm font-semibold text-primary'><ArrowLeft className='size-4' />Estadísticas</Link>
     <header className='mb-6'><Mountain className='mb-2 size-5' /><h1 className='font-heading text-2xl font-bold sm:text-3xl'>Competencias</h1><p className='mt-1 text-sm text-muted-foreground'>Contexto competitivo registrado</p></header>
