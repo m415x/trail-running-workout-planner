@@ -1,6 +1,7 @@
 import type {
   TrainingResponseAttention,
   TrainingResponseContributor,
+  TrainingResponseDomain,
   TrainingResponseLimitation,
   TrainingResponseReason,
   TrainingResponseReview,
@@ -8,6 +9,12 @@ import type {
 } from '@/types'
 
 export type TrainingResponseProjectionStatus = TrainingResponseAttention | 'unknown'
+export type TrainingResponseCoverageState = 'available' | 'insufficient' | 'known_without_contributor'
+
+export interface TrainingResponseDomainCoverage {
+  readonly domain: TrainingResponseDomain
+  readonly state: TrainingResponseCoverageState
+}
 
 export interface TrainingResponseCompactProjection {
   readonly status: TrainingResponseProjectionStatus
@@ -21,8 +28,23 @@ export interface TrainingResponseDetailProjection {
   readonly reasons: readonly TrainingResponseReason[]
   readonly contributors: readonly TrainingResponseContributor[]
   readonly unknowns: readonly TrainingResponseLimitation[]
+  readonly coverage: readonly TrainingResponseDomainCoverage[]
   readonly temporalCompatibility: TrainingResponseTemporalCompatibility | null
   readonly ruleVersion: string
+}
+
+const DOMAINS: readonly TrainingResponseDomain[] = [
+  'systematic_volume',
+  'internal_load',
+  'adherence',
+]
+
+const INSUFFICIENT_LIMITATION_BY_DOMAIN: Readonly<
+  Record<TrainingResponseDomain, TrainingResponseLimitation>
+> = {
+  systematic_volume: 'systematic_volume_insufficient_data',
+  internal_load: 'internal_load_insufficient_data',
+  adherence: 'adherence_insufficient_data',
 }
 
 function projectionStatus(review: TrainingResponseReview): TrainingResponseProjectionStatus {
@@ -31,6 +53,20 @@ function projectionStatus(review: TrainingResponseReview): TrainingResponseProje
     return 'unknown'
   }
   return review.attention
+}
+
+function projectCoverage(review: TrainingResponseReview): TrainingResponseDomainCoverage[] {
+  return DOMAINS.map(domain => {
+    if (review.contributors.some(contributor => contributor.domain === domain)) {
+      return { domain, state: 'available' }
+    }
+
+    if (review.limitations.includes(INSUFFICIENT_LIMITATION_BY_DOMAIN[domain])) {
+      return { domain, state: 'insufficient' }
+    }
+
+    return { domain, state: 'known_without_contributor' }
+  })
 }
 
 export function projectTrainingResponseCompact(
@@ -52,6 +88,7 @@ export function projectTrainingResponseDetail(
     reasons: [...review.reasons],
     contributors: [...review.contributors],
     unknowns: [...review.limitations],
+    coverage: projectCoverage(review),
     temporalCompatibility: review.temporalCompatibility,
     ruleVersion: review.convergenceRuleVersion,
   }
