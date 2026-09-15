@@ -1,0 +1,11 @@
+{
+  "DomainGlossary": {
+    "planningIntent": {
+      "title": "Planning intent",
+      "summary": "Describes the general training direction, independently of races.",
+      "development": "Development: progressively improve the group's capabilities.",
+      "base": "Aerobic base: build or rebuild general capacity with conservative progression.",
+      "maintenance": "Maintenance: preserve current capacity without significant progression."
+    }
+  }
+}

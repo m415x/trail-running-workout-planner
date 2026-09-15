@@ -1,3 +1,4 @@
+import { deriveInternalLoadSignal } from '@/lib/training-load/internal-load-signal'
 import { buildTrainingLoadEvidenceWindow } from '@/lib/training-load/training-load-evidence'
 import { deriveTrainingLoadTrend } from '@/lib/training-load/training-load-trend'
 import {
@@ -27,8 +28,7 @@ export function buildAthleteTrainingLoadState(
   })
   const trend = deriveTrainingLoadTrend(evidence.days, rule)
   const latest = trend.length > 0 ? trend[trend.length - 1]! : null
-
-  return {
+  const stateWithoutSignal = {
     athleteId: input.athleteId,
     startDate: input.startDate,
     endDate: input.endDate,
@@ -39,5 +39,10 @@ export function buildAthleteTrainingLoadState(
     days: evidence.days,
     trend,
     latest,
+  }
+
+  return {
+    ...stateWithoutSignal,
+    semanticSignal: deriveInternalLoadSignal(stateWithoutSignal),
   }
 }

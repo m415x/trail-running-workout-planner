@@ -1,0 +1,15 @@
+export const messageFragmentPaths = [
+  'common/common',
+  'common/weather',
+  'planning/base-planning',
+  'planning/training-goals',
+  'planning/workout-templates',
+  'competitions/race-distance-policy',
+  'competitions/race-catalog',
+  'realized-training/workouts',
+  'realized-training/plan-real-comparison',
+  'realized-training/history',
+  'realized-training/calendar',
+  'athletes/actions',
+  'glossary/planning',
+] as const

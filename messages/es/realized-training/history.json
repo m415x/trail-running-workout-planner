@@ -1,0 +1,65 @@
+{
+  "RealizedTrainingHistory": {
+    "empty": "Todavía no hay entrenamientos realizados registrados para este atleta.",
+    "status": {
+      "completed": "Completado",
+      "partial": "Parcial",
+      "missed": "No realizado",
+      "pending": "Pendiente",
+      "rest": "Descanso"
+    },
+    "source": {
+      "manual": "Carga manual",
+      "imported": "Importado"
+    },
+    "linkage": {
+      "linked": "Vinculado a sesión planificada",
+      "free": "Entrenamiento libre"
+    },
+    "performedAt": "Realizado",
+    "loggedAt": "Registrado",
+    "distance": "Distancia",
+    "duration": "Duración",
+    "elevation": "D+",
+    "heartRate": "FC media",
+    "rpe": "RPE",
+    "unknown": "Sin dato",
+    "sourceActivity": "ID de origen",
+    "limitations": "Calidad de los datos",
+    "corrections": "Historial de correcciones",
+    "correctedAt": "Corregido",
+    "correctedBy": "Usuario",
+    "correctionReason": "Motivo",
+    "noCorrectionReason": "Sin motivo registrado",
+    "changedFields": "Campos corregidos",
+    "limitationLabels": {
+      "no_authoritative_session_link": "entrenamiento libre, sin sesión planificada vinculada",
+      "partial_metric_coverage": "faltan algunas métricas del entrenamiento",
+      "legacy_record_without_metric_evidence": "registro histórico sin evidencia de métricas campo por campo"
+    },
+    "correctionFields": {
+      "sessionId": "sesión vinculada",
+      "workoutId": "entrenamiento vinculado",
+      "date": "fecha",
+      "performedAt": "fecha/hora realizada",
+      "status": "estado",
+      "distanceKm": "distancia",
+      "durationMin": "duración",
+      "elevationGainM": "D+",
+      "avgHrBpm": "FC media",
+      "rpe": "RPE",
+      "feeling": "sensación",
+      "athleteNotes": "notas"
+    },
+    "unknownReasons": {
+      "not_recorded": "no registrado",
+      "legacy_zero_ambiguous": "cero legacy ambiguo",
+      "invalid_value": "valor inválido"
+    },
+    "durationUnits": {
+      "hours": "h",
+      "minutes": "min",
+      "seconds": "seg"
+    }
+  }
+}

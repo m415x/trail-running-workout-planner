@@ -1,0 +1,27 @@
+{
+  "TrainingGoalForm": {
+    "new": "New goal",
+    "back": "Back to athlete",
+    "intro": "Create a training goal for {name}.",
+    "type": "Goal type",
+    "create": "Create goal",
+    "manualRace": "Enter race manually",
+    "draftNotice": "The goal will be saved as a draft.",
+    "types": {
+      "race": "Prepare for a race",
+      "performance": "Improve performance",
+      "base": "Build aerobic base",
+      "maintenance": "Maintain fitness",
+      "custom": "Other goal"
+    },
+    "fields": {
+      "title": "Title",
+      "description": "Description",
+      "targetDate": "Target date",
+      "raceName": "Race name",
+      "raceDistanceKm": "Distance (km)",
+      "raceElevationGain": "Elevation gain (m+)",
+      "notes": "Notes"
+    }
+  }
+}

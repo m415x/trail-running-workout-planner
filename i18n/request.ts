@@ -1,17 +1,15 @@
 import { getRequestConfig } from 'next-intl/server'
-import { routing, type Locale } from '@/i18n/routing'
+import { loadMessages, type SupportedLocale } from './messages'
 
-function isValidLocale(locale: string): locale is Locale {
-  return routing.locales.includes(locale as Locale)
-}
+const supportedLocales = new Set<SupportedLocale>(['en', 'es'])
 
 export default getRequestConfig(async ({ requestLocale }) => {
-  const requestedLocale = await requestLocale
-
-  const locale = requestedLocale && isValidLocale(requestedLocale) ? requestedLocale : routing.defaultLocale
+  const requested = await requestLocale
+  const locale: SupportedLocale =
+    requested && supportedLocales.has(requested as SupportedLocale) ? (requested as SupportedLocale) : 'es'
 
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: await loadMessages(locale),
   }
 })

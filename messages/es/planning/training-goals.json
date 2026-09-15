@@ -1,0 +1,27 @@
+{
+  "TrainingGoalForm": {
+    "new": "Nuevo objetivo",
+    "back": "Volver al atleta",
+    "intro": "Creá un objetivo de entrenamiento para {name}.",
+    "type": "Tipo de objetivo",
+    "create": "Crear objetivo",
+    "manualRace": "Ingresar carrera manualmente",
+    "draftNotice": "El objetivo se guardará como borrador.",
+    "types": {
+      "race": "Preparar una carrera",
+      "performance": "Mejorar rendimiento",
+      "base": "Desarrollar base aeróbica",
+      "maintenance": "Mantener condición",
+      "custom": "Otro objetivo"
+    },
+    "fields": {
+      "title": "Título",
+      "description": "Descripción",
+      "targetDate": "Fecha objetivo",
+      "raceName": "Nombre de la carrera",
+      "raceDistanceKm": "Distancia (km)",
+      "raceElevationGain": "Desnivel positivo (m+)",
+      "notes": "Notas"
+    }
+  }
+}
