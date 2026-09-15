@@ -2,7 +2,7 @@ import { ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Gauge, Mountain,
 
 import { getCurrentAthleteStatsAction } from '@/app/actions/athlete-stats-actions'
 import { Link } from '@/i18n/routing'
-import type { AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
+import type { AthleteStatsDetails, AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 import { athleteStatsSummaryPeriod } from '@/lib/athlete-stats/athlete-stats-summary-period'
 import { buildAthleteStatsSummaryView } from '@/lib/athlete-stats/athlete-stats-summary-view'
 
@@ -19,8 +19,8 @@ function DomainLink({ href, children }: { href: '/stats/training' | '/stats/load
   )
 }
 
-function isSummary(data: AthleteStatsSummary | unknown): data is AthleteStatsSummary {
-  return typeof data === 'object' && data !== null && 'competition' in data && !('primaryCompetition' in (data as object))
+function isSummary(data: AthleteStatsSummary | AthleteStatsDetails): data is AthleteStatsSummary {
+  return data.competition === null || !('primaryCompetition' in data.competition)
 }
 
 export default async function StatsPage() {
