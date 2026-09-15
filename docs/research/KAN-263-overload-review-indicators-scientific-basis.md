@@ -1,168 +1,168 @@
-# KAN-263 — Base científica para indicadores de carga/respuesta que requieren revisión
+# KAN-263 — Scientific basis for training-load/response review indicators
 
-Fecha de revisión: 2026-09-14
+Review date: 2026-09-14
 
-## Pregunta de producto
+## Product question
 
-¿Los datos actualmente disponibles permiten detectar de forma responsable una "posible sobrecarga" o conviene modelar una señal más conservadora de carga/respuesta que requiere revisión del coach?
+Do the currently available data responsibly support detecting "possible overload", or should the product model a more conservative signal indicating that an athlete's training load/response requires coach review?
 
-## Conclusión ejecutiva
+## Executive conclusion
 
-La evidencia respalda monitorizar carga externa, carga interna y respuestas subjetivas de forma longitudinal y contextual. No respalda convertir una métrica aislada, una regla porcentual universal o una combinación simple de cargas en un diagnóstico de fatiga, overtraining o riesgo de lesión.
+The evidence supports longitudinal and contextual monitoring of external load, internal load, and subjective responses. It does not support turning an isolated metric, a universal percentage rule, or a simple combination of loads into a diagnosis of fatigue, overtraining, or injury risk.
 
-Para KAN-263 se recomienda modelar **prioridad de revisión humana basada en convergencia de señales independientes**, no un clasificador de "sobrecarga" clínica. El dominio debe conservar qué señales contribuyeron, cobertura, ventana temporal, contexto de planificación y versión de regla.
+KAN-263 should therefore model **human review priority based on convergence of independent signals**, not a clinical "overload" classifier. The domain must preserve contributing signals, coverage, time window, planning context, and rule version.
 
-## Hallazgos significativos
+## Significant findings
 
-### 1. El overload es necesario para adaptar; overload + recuperación insuficiente puede ser problemático
+### 1. Overload is necessary for adaptation; overload plus insufficient recovery can become problematic
 
-El consenso conjunto ECSS/ACSM distingue functional overreaching, non-functional overreaching y overtraining syndrome (OTS). El entrenamiento exitoso requiere overload, mientras que el problema aparece cuando el estímulo excesivo se combina con recuperación insuficiente. La distinción entre NFOR y OTS es difícil y depende del resultado clínico y de diagnóstico por exclusión.
+The joint ECSS/ACSM consensus distinguishes functional overreaching, non-functional overreaching, and overtraining syndrome (OTS). Successful training requires overload, while problems may arise when excessive stimulus is combined with insufficient recovery. Distinguishing NFOR from OTS is difficult and depends on clinical outcome and exclusion of other diagnoses.
 
-**Implicación:** una carga alta o un exceso respecto del plan no puede etiquetarse automáticamente como estado patológico. KAN-263 debe señalar evidencia para revisión, no diagnosticar OTS/NFOR.
+**Implication:** high load or excess relative to plan cannot automatically be labelled pathological. KAN-263 should surface evidence for review, not diagnose OTS/NFOR.
 
-Fuente: Meeusen et al. (2013), ECSS/ACSM joint consensus statement. PubMed PMID 23247672. DOI 10.1249/MSS.0b013e318279a10a.
+Source: Meeusen et al. (2013), ECSS/ACSM joint consensus statement. PubMed PMID 23247672. DOI 10.1249/MSS.0b013e318279a10a.
 
-### 2. Las medidas subjetivas son útiles para monitorización, pero no equivalen a diagnóstico
+### 2. Subjective measures are useful for monitoring, but are not diagnoses
 
-La revisión sistemática de Saw, Main y Gastin incluyó 56 estudios y encontró que las medidas subjetivas de bienestar respondían a cambios agudos y crónicos de carga con mayor sensibilidad y consistencia que muchas medidas objetivas comunes. El bienestar subjetivo tendía a deteriorarse al aumentar la carga y a mejorar al reducirla. Sin embargo, las medidas subjetivas y objetivas no mostraban asociación consistente.
+The systematic review by Saw, Main, and Gastin included 56 studies and found that subjective wellbeing measures responded to acute and chronic load changes with greater sensitivity and consistency than many commonly used objective measures. Subjective wellbeing tended to worsen as load increased and improve as load decreased. However, subjective and objective measures did not show a consistent association.
 
-**Implicación:** RPE/Feeling/wellness son información valiosa y complementaria. La falta de correlación con una medida objetiva no invalida automáticamente la señal subjetiva, pero tampoco autoriza a interpretar un valor aislado como lesión o fatiga clínica. Esto refuerza la futura KAN-342 y una composición multimodal posterior.
+**Implication:** RPE/Feeling/wellness are valuable complementary information. Lack of correlation with an objective measure does not automatically invalidate a subjective signal, but an isolated value cannot be interpreted as injury or clinical fatigue. This supports future KAN-342 and later multimodal composition.
 
-Fuente: Saw AE, Main LC, Gastin PB (2016), British Journal of Sports Medicine. PMID 26423706. PMCID PMC4789708.
+Source: Saw AE, Main LC, Gastin PB (2016), British Journal of Sports Medicine. PMID 26423706. PMCID PMC4789708.
 
-### 3. session-RPE es una herramienta válida de carga interna
+### 3. Session-RPE is a valid internal-load monitoring method
 
-La revisión del método session-RPE encontró evidencia de validez, fiabilidad y consistencia interna en múltiples deportes, edades y niveles. La carga se obtiene combinando percepción de esfuerzo de la sesión y duración. También se recomienda considerar factores que pueden alterar el RPE y, según el contexto, combinarlo con otras medidas.
+Reviews of the session-RPE method report evidence of validity, reliability, and practical usefulness across multiple sports, ages, and competitive levels. Load is obtained by combining perceived session exertion with duration. Contextual factors that can alter RPE should also be considered, and other measures may be useful depending on the setting.
 
-**Implicación:** KAN-261 constituye una señal de carga interna defendible para monitorización. En KAN-263 debe conservarse como dominio independiente; no debe reinterpretarse como probabilidad de lesión.
+**Implication:** KAN-261 provides a defensible internal-load monitoring signal. KAN-263 must preserve it as an independent domain and must not reinterpret it as injury probability.
 
-Fuentes: Foster et al. (2001), J Strength Cond Res, PMID 11708692; Haddad et al. (2017), Session-RPE Method for Training Load Monitoring, PMCID PMC5673663.
+Sources: Foster et al. (2001), J Strength Cond Res, PMID 11708692; Haddad et al. (2017), Session-RPE Method for Training Load Monitoring, PMCID PMC5673663.
 
-### 4. Carga y lesión: asociación plausible, predicción individual limitada
+### 4. Load and injury: plausible association, limited individual prediction
 
-El consenso IOC sobre carga y riesgo de lesión sostiene que una gestión inadecuada de carga puede contribuir al riesgo, dentro de un fenómeno multifactorial. Sin embargo, esto no implica que exista un umbral universal capaz de predecir lesión en un atleta individual.
+The IOC consensus on load and injury risk states that inappropriate load management can contribute to risk within a multifactorial phenomenon. This does not imply a universal threshold capable of predicting injury in an individual athlete.
 
-En corredores, una revisión sistemática de cambios de carga encontró evidencia muy limitada. Tres de cuatro estudios incluidos observaron alguna asociación con aumentos de carga, pero no se encontró respaldo para la conocida "regla del 10 %" y no se pudo establecer un umbral peligroso bien definido.
+In runners, a systematic review of training-load changes found very limited evidence. Three of four included studies observed some association with load increases, but the commonly cited "10% rule" was not supported and no well-defined hazardous threshold could be established.
 
-Una revisión posterior con 36 estudios prospectivos y 23.047 corredores concluyó que la evidencia que relaciona distancia, duración, frecuencia, intensidad o cambios recientes con lesión era conflictiva. Recomienda cautela al prescribir progresiones supuestamente óptimas y destaca la naturaleza multifactorial de las lesiones.
+A later review of 36 prospective studies and 23,047 runners concluded that evidence linking distance, duration, frequency, intensity, or recent changes to injury was conflicting. It recommends caution when prescribing supposedly optimal progression and emphasizes the multifactorial nature of running injuries.
 
-**Implicación:** no implementar en KAN-263 reglas del tipo `>10 % = riesgo`, `>30 % = lesión probable` ni equivalentes. Un exceso de volumen puede contribuir a una señal de revisión, pero no es un estimador clínico de lesión.
+**Implication:** KAN-263 must not implement rules such as `>10% = risk`, `>30% = probable injury`, or equivalents. Volume excess may contribute to a review signal, but it is not a clinical injury-risk estimator.
 
-Fuentes: Soligard et al. (2016), IOC consensus, PMID 27535989; Damsted et al. (2018), PMID 30534459 / PMCID PMC6253751; Fredette et al. (2022), PMCID PMC9528699.
+Sources: Soligard et al. (2016), IOC consensus, PMID 27535989; Damsted et al. (2018), PMID 30534459 / PMCID PMC6253751; Fredette et al. (2022), PMCID PMC9528699.
 
-### 5. La respuesta individual y el contexto importan
+### 5. Individual response and context matter
 
-La literatura de monitorización subraya variabilidad intra- e interindividual, además de influencias de sueño, estrés, recuperación, ambiente, hidratación y otros factores. La misma carga externa no implica necesariamente la misma respuesta interna entre atletas ni dentro del mismo atleta en momentos diferentes.
+Training-monitoring literature emphasizes intra- and inter-individual variability, as well as influences from sleep, stress, recovery, environment, hydration, and other factors. The same external load does not necessarily imply the same internal response between athletes or within the same athlete at different times.
 
-**Implicación:** cuando sea posible, las señales longitudinales deben privilegiar evolución intra-atleta y contexto sobre thresholds poblacionales rígidos. KAN-263 debe componer estados ya interpretados por sus dominios, no normalizar indiscriminadamente magnitudes heterogéneas.
+**Implication:** when possible, longitudinal signals should favour within-athlete evolution and context over rigid population thresholds. KAN-263 should compose states already interpreted by their source domains rather than indiscriminately normalizing heterogeneous magnitudes.
 
-### 6. Single-item wellness tiene utilidad práctica pero relaciones heterogéneas
+### 6. Single-item wellness measures have practical value but heterogeneous relationships
 
-Una revisión sistemática de medidas single-item en atletas encontró que fatiga, soreness, sueño, estrés y mood mostraban relaciones con carga desde nulas hasta grandes, predominantemente triviales a moderadas en estudios con más observaciones. Los autores piden estudiar propiedades de medición y relación con outcomes clínicamente relevantes.
+A systematic review of single-item athlete wellbeing measures found relationships between fatigue, soreness, sleep, stress, mood, and training load ranging from null to large, with predominantly trivial-to-moderate associations in studies with more observations. The authors call for further work on measurement properties and relationships with clinically meaningful outcomes.
 
-**Implicación:** un `FeelingSelector` simple puede ser útil como señal longitudinal práctica, pero su semántica y escala deben investigarse antes de incorporarlo a reglas de triage. No debe añadirse apresuradamente a KAN-263; corresponde a KAN-342.
+**Implication:** a simple `FeelingSelector` may be useful as a practical longitudinal signal, but its semantics and scale must be investigated before it is incorporated into triage rules. It should not be rushed into KAN-263; that work belongs to KAN-342.
 
-Fuente: Duignan et al. (2020), Single-Item Self-Report Measures of Team-Sport Athlete Wellbeing..., PMCID PMC7534939.
+Source: Duignan et al. (2020), Single-Item Self-Report Measures of Team-Sport Athlete Wellbeing..., PMCID PMC7534939.
 
-## Decisiones que la evidencia NO justifica
+## Decisions the evidence does NOT justify
 
-1. Diagnosticar fatiga, lesión, NFOR u OTS desde los datos actuales.
-2. Predecir lesión individual a partir de volumen, sRPE o adherencia aislados.
-3. Adoptar la regla semanal del 10 % como límite científico universal.
-4. Usar un único threshold de carga para todos los atletas y fases del plan.
-5. Interpretar ausencia de datos como estado normal.
-6. Sumar magnitudes heterogéneas (km, minutos, D+, sRPE) en un score sin modelo validado.
-7. Considerar `acknowledged` como resolución fisiológica de una señal.
+1. Diagnosing fatigue, injury, NFOR, or OTS from the currently available data.
+2. Predicting individual injury from volume, sRPE, or adherence in isolation.
+3. Adopting the weekly 10% rule as a universal scientific limit.
+4. Applying a single load threshold to every athlete and planning phase.
+5. Treating missing data as a normal state.
+6. Adding heterogeneous magnitudes (km, minutes, elevation gain, sRPE) into an unvalidated score.
+7. Treating `acknowledged` as physiological resolution of a signal.
 
-## Diseño recomendado para KAN-263
+## Recommended design for KAN-263
 
-### Semántica
+### Semantics
 
-Usar una denominación operacional como **`training_response_review` / "respuesta de entrenamiento que requiere revisión"**. La historia de Jira puede conservar su nombre histórico "posible sobrecarga", pero el contrato de dominio no debería afirmar sobrecarga clínica.
+Use an operational domain name such as **`training_response_review`**. The contract must describe a training response/load state that requires human review rather than assert clinical overload.
 
-### Entradas v1
+### v1 inputs
 
-Componer únicamente dominios ya implementados y con semántica estable:
+Compose only implemented domains with stable semantics:
 
-- KAN-260: adherencia;
-- KAN-261: carga interna longitudinal;
-- KAN-262: exceso sistemático de volumen externo;
-- contexto de microciclo/competencia ya disponible.
+- KAN-260: adherence;
+- KAN-261: longitudinal internal load;
+- KAN-262: systematic external-volume excess;
+- existing microcycle/competition context.
 
-KAN-342 (RPE/Feeling longitudinal) se incorporará sólo después de su investigación y diseño independiente.
+KAN-342 (longitudinal RPE/Feeling) should be incorporated only after its own research and independent design are complete.
 
-### Salida v1
+### v1 output
 
-La composición debe producir prioridad operativa de revisión, por ejemplo:
+The composition should produce an operational review priority, for example:
 
-- `none`: ninguna evidencia convergente que requiera revisión;
-- `info`: una señal aislada/informativa;
-- `review`: evidencia suficiente para que el coach revise al atleta;
-- `priority`: múltiples señales independientes relevantes convergen y justifican revisar antes, sin significado clínico.
+- `none`: no convergent evidence requiring review;
+- `info`: an isolated/informational signal;
+- `review`: sufficient evidence for coach review;
+- `priority`: multiple relevant independent signals converge and justify earlier review, without clinical meaning.
 
-`priority` significa **orden/prioridad de trabajo del coach**, nunca severidad médica.
+`priority` means **coach work-order/review priority**, never medical severity.
 
-### Principio de convergencia
+### Convergence principle
 
-No sumar puntos arbitrarios. Conservar cada señal fuente y aplicar reglas explícitas/versionadas de convergencia. Ejemplo conceptual, sujeto a diseño y tests:
+Do not add arbitrary points. Preserve each source signal and apply explicit, versioned convergence rules. Conceptual example, subject to design and tests:
 
 ```text
 systematic external-volume excess
               +
-adverse internal-load trend
+internal-load direction above baseline
               |
               v
 priority review candidate
 ```
 
-La adherencia puede aportar contexto importante, pero debe distinguirse entre baja adherencia por sesiones omitidas y comportamiento que incrementa carga; no toda baja adherencia es sobrecarga.
+Adherence can provide important context, but low adherence caused by omitted sessions must be distinguished from behaviour that increases load; not all low adherence indicates overload.
 
-### Unknown y cobertura
+### Unknown evidence and coverage
 
-Si una fuente no es evaluable, debe permanecer `unknown`/insufficient y reducir la confianza/cobertura de la composición. La ausencia de una señal no puede contarse como evidencia negativa cuando en realidad faltan datos.
+If a source is not evaluable, it must remain `unknown`/insufficient and reduce composition coverage. Absence of a signal cannot count as negative evidence when the underlying data are actually missing.
 
-### Explicabilidad
+### Explainability
 
-Toda salida debe permitir responder:
+Every output must make it possible to answer:
 
-- ¿qué señales contribuyeron?;
-- ¿qué período se evaluó?;
-- ¿qué datos faltaron?;
-- ¿qué contexto de planificación/competencia existía?;
-- ¿qué versión de regla produjo la prioridad?;
-- ¿qué revisó/reconoció el coach?
+- Which signals contributed?
+- What period was evaluated?
+- What data were missing?
+- What planning/competition context was present?
+- Which rule version produced the priority?
+- What did the coach review/acknowledge?
 
-## Opciones arquitectónicas a discutir
+## Architectural options considered
 
-### A. Score numérico compuesto
+### A. Composite numeric score
 
-Asignar puntos a adherencia, carga interna y exceso externo y producir thresholds.
+Assign points to adherence, internal load, and external excess, then apply thresholds.
 
-**Ventaja:** fácil de ordenar y mostrar.
+**Advantage:** easy to sort and display.
 
-**Problema:** los pesos y thresholds serían difíciles de defender científicamente con los datos actuales; oculta heterogeneidad y puede generar falsa precisión.
+**Problem:** weights and thresholds would be difficult to defend scientifically with the current data; the score hides heterogeneity and can create false precision.
 
-**Recomendación:** no usar para v1.
+**Recommendation:** do not use for v1.
 
-### B. Reglas explícitas de convergencia — recomendada
+### B. Explicit convergence rules — recommended
 
-Cada dominio conserva su señal. Una capa de triage evalúa combinaciones explícitas y versionadas y devuelve `none/info/review/priority`, junto con contributors y unknowns.
+Each domain retains its signal. A triage layer evaluates explicit, versioned combinations and returns `none/info/review/priority` together with contributors and unknowns.
 
-**Ventajas:** explicable, auditable, testeable, extensible a KAN-342 y evita falsa precisión.
+**Advantages:** explainable, auditable, testable, extensible to KAN-342, and avoids false precision.
 
-**Costo:** requiere diseñar cuidadosamente combinaciones y precedencias.
+**Cost:** combinations and precedence must be designed carefully.
 
-### C. Mostrar señales sin composición
+### C. Display signals without composition
 
-El dashboard presenta KAN-260/261/262 por separado y el coach integra mentalmente.
+The dashboard presents KAN-260/261/262 separately and the coach integrates them mentally.
 
-**Ventaja:** mínima inferencia algorítmica.
+**Advantage:** minimal algorithmic inference.
 
-**Problema:** no resuelve el objetivo de triage rápido cuando existen muchos atletas.
+**Problem:** it does not solve rapid triage when many athletes must be reviewed.
 
-**Recomendación:** útil como fallback/detalle, insuficiente como objetivo final de KAN-263.
+**Recommendation:** useful as a fallback/detail view, insufficient as the final KAN-263 objective.
 
-## Referencias principales
+## Main references
 
 - Meeusen R, et al. Prevention, diagnosis, and treatment of the overtraining syndrome. Med Sci Sports Exerc. 2013;45(1):186-205. PMID 23247672. DOI 10.1249/MSS.0b013e318279a10a.
 - Saw AE, Main LC, Gastin PB. Monitoring the athlete training response: subjective self-reported measures trump commonly used objective measures: a systematic review. Br J Sports Med. 2016. PMID 26423706. PMCID PMC4789708.
@@ -173,6 +173,6 @@ El dashboard presenta KAN-260/261/262 por separado y el coach integra mentalment
 - Fredette A, et al. The Association Between Running Injuries and Training Parameters: A Systematic Review. J Athl Train. 2022;57(7):650-671. PMCID PMC9528699.
 - Duignan C, et al. Single-Item Self-Report Measures of Team-Sport Athlete Wellbeing and Their Relationship With Training Load: A Systematic Review. Sports Med Open. 2020. PMCID PMC7534939.
 
-## Estado de la decisión
+## Decision status
 
-La evidencia favorece **Opción B: reglas explícitas y versionadas de convergencia para priorizar revisión humana**, manteniendo las señales fuente separadas y explicables. Antes de implementar debe aprobarse el diseño de combinaciones, tratamiento de unknown y alcance exacto de KAN-263.
+The evidence supports **Option B: explicit, versioned convergence rules that prioritize human review**, while keeping source signals separate and explainable. The approved implementation direction is to define an operational interpretation of KAN-261 first, then design the KAN-345 convergence matrix before implementing the triage engine.
