@@ -1,0 +1,42 @@
+{
+  "stats": {
+    "title": "Stats",
+    "training": "Training",
+    "load": "Load",
+    "adherence": "Adherence",
+    "competition": "Competitions",
+    "insufficientData": "Insufficient data",
+    "noData": "No data",
+    "coverage": "Coverage",
+    "backToStats": "Stats",
+    "trainingDetail": {
+      "activityRecorded": "Recorded activity",
+      "noActivity": "No completed activity is recorded for this period.",
+      "distance": "Distance",
+      "duration": "Duration",
+      "elevation": "Elevation gain",
+      "sessions": "Sessions",
+      "noComparison": "No comparison available"
+    },
+    "loadDetail": {
+      "shortTerm": "Short-term load",
+      "longTerm": "Long-term load",
+      "balance": "Load balance",
+      "recordedEvolution": "Recorded evolution"
+    },
+    "adherenceDetail": {
+      "confirmed": "Confirmed adherence",
+      "eligible": "Eligible planned sessions",
+      "confirmedOutcomes": "Confirmed outcomes",
+      "unknownOutcome": "Unknown outcome",
+      "unknownExplanation": "Sessions with an unknown outcome are shown separately and are not counted as incomplete sessions."
+    },
+    "competitionDetail": {
+      "context": "Recorded competition context",
+      "primary": "Primary competition",
+      "intermediate": "Intermediate competitions",
+      "noPrimary": "No primary competition is planned.",
+      "elevationUnavailable": "Elevation gain unavailable"
+    }
+  }
+}
