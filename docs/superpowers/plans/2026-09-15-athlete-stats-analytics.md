@@ -1,148 +1,137 @@
-# Athlete Stats Analytics Implementation Plan
+# Athlete Stats Analytics Implementation Plan — Completed
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> Historical implementation record for **KAN-264 / Historia 8**. Completed and verified on 2026-09-15. This file is no longer an active task list; use `docs/architecture/monitoring/athlete-stats-analytics.md` as the durable architectural baseline for subsequent work.
 
-**Goal:** Build a navigable athlete-facing Stats hub and detail experience backed by consumer-neutral Training Analytics and explicit athlete-safe projections.
+**Goal achieved:** A navigable athlete-facing Stats hub and detail experience backed by consumer-neutral Training Analytics and explicit athlete-safe projections.
 
-**Architecture:** Use incremental C+B layering: existing domain evidence feeds small domain-specific consumer-neutral analytics modules, which feed allowlisted Athlete Stats projections and then athlete-facing application/UI boundaries. Preserve domain independence and evidence semantics; do not reuse coach projections as athlete contracts.
+**Architecture delivered:** Incremental C+B layering: existing domain evidence feeds domain-specific consumer-neutral analytics, which feed allowlisted Athlete Stats projections and then athlete-facing application/UI boundaries. Coach projections are not reused as Athlete contracts.
 
 **Tech Stack:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Shadcn UI, next-intl ES/EN, Node test runner via tsx.
 
-**Spec:** `docs/architecture/monitoring/athlete-stats-analytics.md`
+**Durable spec/baseline:** `docs/architecture/monitoring/athlete-stats-analytics.md`
 
-## Global Constraints
+## Completion evidence
 
-- Work from `h-28-athlete-stats-analytics`, created from `dev`; merge the completed story back into `dev`.
-- Athlete Stats is mobile-first: mobile portrait primary, then mobile landscape, tablet and desktop.
+- KAN-350 — consumer-neutral analytics primitives — completed.
+- KAN-351 — domain-specific Training Analytics — completed.
+- KAN-352 — Athlete Stats projections/disclosure — completed.
+- KAN-356 — Athlete-facing actions and subject-scope boundary — completed.
+- KAN-353 — Stats summary hub — completed.
+- KAN-354 — Stats detail routes — completed.
+- KAN-355 — cross-layer integration, i18n and responsive verification — completed.
+- KAN-357 — real Athlete shell/responsive contract, incorporated into KAN-264 scope during implementation — completed.
+- KAN-264 — Historia 8 — completed in Jira after evidence review.
+
+Final local gate reported by the developer:
+
+```text
+pn test                 790/790 PASS (157 suites, 0 failures)
+pn lint                 PASS
+pn exec tsc --noEmit    PASS
+pn build                PASS
+pn i18n:check           PASS (452 aligned message leaves)
+```
+
+The final focused regressions additionally covered locale-neutral Stats summary presentation, Stats routes consuming the real `next-intl` namespace, ES/EN structural equivalence, known-zero/unknown/insufficient semantics, valid empty competition and exclusion of coach-only interpretation from Athlete projections.
+
+## Delivered module map
+
+The implementation follows these responsibility boundaries:
+
+- `lib/analytics/shared/*` — explicit windows, comparisons and neutral shared analytics primitives.
+- `lib/analytics/training/*` — realized distance/duration/elevation/frequency analytics and factual series.
+- `lib/analytics/load/*` — descriptive load analytics over existing neutral evidence.
+- `lib/analytics/adherence/*` — adherence composition preserving authoritative linkage/evidence semantics.
+- `lib/analytics/competition/*` — factual competition context.
+- `lib/athlete-stats/*` — explicit athlete-safe summary/detail projections and locale-neutral presentation models.
+- `app/actions/*` — Athlete Stats application/read boundary.
+- `app/[locale]/(mobile)/stats/*` — Stats hub plus Training, Load, Adherence and Competition details.
+- `messages/en/athlete-stats/*`, `messages/es/athlete-stats/*` — localized Stats copy loaded through the real message-fragment registry.
+- `tests/analytics/*`, `tests/athlete-stats/*` — focused, projection, route/i18n and semantic integration regressions.
+
+## Constraints preserved
+
+- Athlete Stats remains mobile-first.
 - `unknown != 0`; missing evidence is not negative evidence; known zero remains zero.
-- Analytics exposes neutral mathematical direction, never `improving/worsening` unless an existing domain contract explicitly establishes that semantic.
-- Athlete projections use allowlists and must not expose coach-only Training Response/Readiness semantics.
-- New/touched user-visible copy is symmetric ES/EN.
-- Do not add a monolithic AnalyticsService, new training-load formula, prediction, diagnosis, injury-risk claim or automatic athlete recommendation.
-- Do not invent authenticated current-athlete identity if the current platform cannot resolve it.
-- During implementation use focused remote-first validation; request the complete local gate only at story end unless an earlier run is required to unblock work.
+- Analytics direction remains mathematical rather than evaluative.
+- Athlete projections are allowlists and exclude coach-only Training Response/Readiness semantics.
+- User-visible Stats copy is symmetric ES/EN and presentation models remain locale-neutral.
+- No monolithic AnalyticsService, new training-load formula, prediction, diagnosis, injury-risk claim or automatic athlete recommendation was introduced.
+- Subject authorization remains distinct from semantic disclosure.
 
----
-
-## File/Module Map
-
-Exact filenames should follow existing repository naming conventions discovered immediately before each task. The intended responsibilities are:
-
-- `lib/analytics/shared/*` — explicit windows, comparisons, neutral trends/evidence primitives where existing durable types cannot be reused.
-- `lib/analytics/training/*` — realized distance/duration/D+/frequency analytics.
-- `lib/analytics/load/*` — descriptive load evolution over existing neutral load evidence.
-- `lib/analytics/adherence/*` — adherence and plan-vs-real analytical composition without redefining linkage semantics.
-- `lib/analytics/competition/*` — factual relevant/upcoming competition context.
-- `lib/athlete-stats/*` or established equivalent — allowlisted summary/detail projections.
-- `app/actions/*` — athlete-facing read/action boundary following existing project conventions.
-- `app/[locale]/(mobile)/stats/*` — summary hub and detail routes.
-- `messages/en/*`, `messages/es/*` — localized athlete-facing Stats copy.
-- `tests/analytics/*`, `tests/athlete-stats/*` or established equivalent — focused and semantic E2E regressions.
-
-Do not create a file solely because it appears in this map; first inspect analogous current files and reuse established structure when it preserves the responsibilities above.
-
----
+## Task record
 
 ### Task 1: Consumer-neutral analytics primitives — KAN-350
 
-**Interfaces:**
-- Consumes: existing evidence/coverage semantics and explicit domain units.
-- Produces: explicit current/previous windows, neutral comparisons and trend/evidence primitives required by domain analytics.
-
-- [ ] Inspect existing evidence-state, date-window and comparison types before introducing any new contract.
-- [ ] Write focused failing tests for current+previous comparison, missing previous evidence, insufficient evidence and known explicit zero.
-- [ ] Implement the minimum shared primitives required by those tests.
-- [ ] Ensure trend direction remains mathematical (`increasing/stable/decreasing/unknown` or existing equivalent), not evaluative.
-- [ ] Run only the focused primitive tests if remote execution is available; otherwise defer execution unless blocked.
-- [ ] Commit with KAN-350 scope and record implementation/evidence in Jira.
+- [x] Inspected existing evidence-state, date-window and comparison types before introducing contracts.
+- [x] Added focused regressions for comparison, missing previous evidence, insufficient evidence and known explicit zero.
+- [x] Implemented the minimum shared primitives required by Stats.
+- [x] Kept trend direction neutral/mathematical.
+- [x] Recorded implementation/evidence in Jira and finalized KAN-350.
 
 ### Task 2: Domain-specific Training Analytics — KAN-351
 
-**Interfaces:**
-- Consumes: Task 1 primitives plus existing realized-training, load, adherence/plan-vs-real and competition domain contracts.
-- Produces: consumer-neutral analytics for Training, Load, Adherence and Competition.
-
-- [ ] Inspect current source contracts/actions/tests for each domain and document which are authoritative inputs.
-- [ ] Write focused tests for realized distance, duration, D+, frequency and comparison semantics.
-- [ ] Implement Training analytics without treating absent realized rows as missed workouts.
-- [ ] Write focused tests for neutral load evolution and implement it without a new load formula or Training Response triage.
-- [ ] Write focused tests for adherence/plan-vs-real and preserve authoritative linkage semantics.
-- [ ] Write focused tests for factual competition context, including valid no-competition empty state.
-- [ ] Run focused analytics tests if available/necessary; do not run the full suite yet.
-- [ ] Commit with KAN-351 scope and record evidence in Jira.
+- [x] Reused authoritative realized-training, load, adherence/plan-vs-real and competition inputs.
+- [x] Implemented Training metrics and comparison semantics without treating absent realized rows as missed workouts.
+- [x] Preserved the existing neutral load model; no new load formula or Training Response triage.
+- [x] Preserved adherence linkage/evidence semantics.
+- [x] Implemented factual competition context including valid no-competition state.
+- [x] Added focused analytics regressions and finalized KAN-351.
 
 ### Task 3: Athlete Stats projections — KAN-352
 
-**Interfaces:**
-- Consumes: Task 2 consumer-neutral analytics.
-- Produces: allowlisted `AthleteStatsSummary` and detail projection contracts (exact names aligned to repository conventions).
-
-- [ ] Write projection contract tests first, including explicit exclusion of coach-only fields/semantics.
-- [ ] Implement summary projection for Training, Load, Adherence and Competition.
-- [ ] Implement detail projections for each domain.
-- [ ] Preserve periods, units, evidence state and athlete-useful explanation inputs without exposing internal coach rule codes.
-- [ ] Verify that extending a coach-facing object cannot automatically extend athlete output.
-- [ ] Run focused projection tests if available/necessary.
-- [ ] Commit with KAN-352 scope and record evidence in Jira.
+- [x] Added projection contract tests including exclusion of coach-only semantics.
+- [x] Implemented explicit summary and detail Athlete projections.
+- [x] Preserved periods, units and evidence states without exposing internal coach rule semantics.
+- [x] Protected the allowlist against structural spreading/leakage.
+- [x] Finalized KAN-352.
 
 ### Task 4: Athlete-facing actions and subject scope — KAN-356
 
-**Interfaces:**
-- Consumes: Task 3 athlete projections and existing identity/team/repository boundaries.
-- Produces: application/server read APIs for the Stats hub and detail routes.
-
-- [ ] Inspect current athlete/mobile identity and team-scope resolution before designing action signatures.
-- [ ] Write focused tests for the strongest subject isolation the current infrastructure can actually guarantee.
-- [ ] Implement summary/detail read boundaries without allowing UI access to repositories/domain internals.
-- [ ] Separate technical failures from valid unknown/insufficient/empty results.
-- [ ] If current-athlete authentication is not resolvable, document the exact limitation instead of inventing an actor.
-- [ ] Run focused boundary tests if available/necessary.
-- [ ] Commit with KAN-356 scope and record evidence/limitations in Jira.
+- [x] Inspected and preserved the strongest subject-scope boundary available in the current infrastructure.
+- [x] Added focused boundary tests.
+- [x] Implemented summary/detail read boundaries without UI access to repositories/domain internals.
+- [x] Kept technical failure separate from valid unknown/insufficient/empty results.
+- [x] Finalized KAN-356.
 
 ### Task 5: Stats summary hub — KAN-353
 
-**Interfaces:**
-- Consumes: Task 4 summary read boundary.
-- Produces: `/stats` mobile-first summary/navigation UI.
-
-- [ ] Replace the legacy placeholder with a server/client composition consistent with current mobile routes.
-- [ ] Add ES/EN message keys before hard-coding any new user-visible copy.
-- [ ] Render the visible default period and Training, Load, Adherence and Competition cards.
-- [ ] Each card must expose current value/state, comparison/trend only when evaluable, evidence state and detail navigation.
-- [ ] Implement distinct loading, available, empty/unknown/insufficient and technical-error presentation.
-- [ ] Add behavioral tests for card presence, navigation and evidence semantics; avoid brittle Tailwind-class assertions.
-- [ ] Check mobile-first structure in code; defer full manual responsive walkthrough to story closure.
-- [ ] Commit with KAN-353 scope and record evidence in Jira.
+- [x] Replaced the Stats placeholder with the mobile-first summary/navigation hub.
+- [x] Added Training, Load, Adherence and Competition summaries with explicit evidence states.
+- [x] Added detail navigation and behavioral regressions.
+- [x] Migrated Athlete-facing copy to the real ES/EN i18n boundary.
+- [x] Finalized KAN-353.
 
 ### Task 6: Stats detail routes — KAN-354
 
-**Interfaces:**
-- Consumes: Task 4 detail read boundaries.
-- Produces: `/stats/training`, `/stats/load`, `/stats/adherence`, `/stats/competition`.
-
-- [ ] Implement Training detail with realized metrics/comparisons and only genuine temporal series supported by source evidence.
-- [ ] Implement Load detail as descriptive evolution without triage or physiological interpretation.
-- [ ] Implement Adherence detail using existing adherence and authoritative plan-vs-real semantics.
-- [ ] Implement Competition detail as factual context with a valid no-competition empty state.
-- [ ] Provide natural navigation back to `/stats` and accessible textual meaning for arrows/charts/visual trends.
-- [ ] Keep all copy symmetric ES/EN.
-- [ ] Add focused route/component behavior tests.
-- [ ] Commit with KAN-354 scope and record evidence in Jira.
+- [x] Implemented Training detail with factual metrics/comparisons/series.
+- [x] Implemented descriptive Load detail without physiological interpretation.
+- [x] Implemented Adherence detail preserving unknown outcomes separately from confirmed failures.
+- [x] Implemented factual Competition detail with valid empty state.
+- [x] Added navigation, textual meaning and focused route tests.
+- [x] Finalized KAN-354.
 
 ### Task 7: Cross-layer verification and closure — KAN-355
 
-**Interfaces:**
-- Consumes: Tasks 1-6.
-- Produces: semantic E2E evidence, durable documentation, final responsive evidence and story closure.
+- [x] Added durable semantic integration fixtures/regressions.
+- [x] Covered known zero, unknown, insufficient, missing previous period and valid empty competition.
+- [x] Proved coach-only Training Response/Readiness semantics are absent from Athlete projections.
+- [x] Added ES/EN structural-equivalence and route-i18n regressions.
+- [x] Made the Stats summary view-model locale-neutral and moved labels/pluralization to `next-intl`.
+- [x] Verified the real Athlete shell/responsive behavior, including KAN-357 scope.
+- [x] Ran and recorded the final local gate.
+- [x] Finalized KAN-350..KAN-356, verified KAN-357, and finalized KAN-264.
 
-- [ ] Add semantic E2E fixtures/tests for `domain evidence -> analytics -> athlete projection`.
-- [ ] Cover known zero, unknown, insufficient, missing previous period and valid empty competition.
-- [ ] Prove coach-only Training Response/Readiness semantics are absent from athlete-facing contracts/output.
-- [ ] Add/extend ES/EN structural-equivalence tests and sensitive wording assertions where useful.
-- [ ] Update durable architecture/docs with implementation reality and any discovered limitation.
-- [ ] Request the final local gate: `pn test`, `pn lint`, `pn exec tsc --noEmit`, `pn build` plus any relevant verifier discovered during implementation.
-- [ ] Record exact local results in Jira; do not claim commands that were not run.
-- [ ] Perform final manual responsive walkthrough: mobile portrait first, then mobile landscape, tablet and desktop.
-- [ ] Resolve all KAN-350..KAN-356 subtasks only when their evidence is complete.
-- [ ] Resolve KAN-264 only after all acceptance evidence is recorded.
-- [ ] Create the story PR targeting `dev`, verify mergeability, and merge only after the final gate/closure evidence is green.
+## Handoff / next-story baseline
+
+A subsequent story should start from the architectural baseline rather than reopening this implementation plan. It may rely on:
+
+1. consumer-neutral Analytics separated from Athlete disclosure;
+2. explicit Athlete allowlist projections;
+3. established `/stats` summary and four detail routes;
+4. durable evidence semantics (`known zero`, `unknown`, `insufficient`, valid empty);
+5. real ES/EN message-fragment integration and locale-neutral Stats presentation models;
+6. mobile-first Athlete shell behavior;
+7. regression protection against coach-only semantic leakage.
+
+Follow-up product/UX work discovered during Historia 8 is intentionally separate from completion of this plan: desktop BottomNavigationBar vs sidebar evaluation, user-controlled text scaling/accessibility settings, future custom Stats periods, and any Athlete-facing Training Response/Readiness disclosure.
