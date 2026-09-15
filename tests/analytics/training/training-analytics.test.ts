@@ -47,10 +47,20 @@ describe('realized training analytics', () => {
     ])
 
     assert.equal(result.frequency.state, 'available')
+    if (result.frequency.state !== 'available') assert.fail('frequency should be available')
     assert.equal(result.frequency.value, 2)
+
+    assert.equal(result.distance.state, 'available')
+    if (result.distance.state !== 'available') assert.fail('distance should be available')
     assert.equal(result.distance.value, 10)
     assert.equal(result.distance.knownRecords, 2)
+
+    assert.equal(result.duration.state, 'available')
+    if (result.duration.state !== 'available') assert.fail('duration should be available')
     assert.equal(result.duration.value, 105)
+
+    assert.equal(result.elevation.state, 'available')
+    if (result.elevation.state !== 'available') assert.fail('elevation should be available')
     assert.equal(result.elevation.value, 500)
     assert.equal(result.elevation.knownRecords, 1)
   })
