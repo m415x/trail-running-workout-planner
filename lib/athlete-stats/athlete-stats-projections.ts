@@ -52,9 +52,9 @@ export interface AthleteTrainingStatsProjection {
 export type AthleteLoadSummaryProjection =
   | {
       readonly state: 'available'
-      readonly shortTermLoadAu: number
-      readonly longTermLoadAu: number
-      readonly loadBalanceAu: number
+      readonly shortTermLoadAu: number | null
+      readonly longTermLoadAu: number | null
+      readonly loadBalanceAu: number | null
       readonly coverageRatio: number | null
     }
   | {
@@ -68,7 +68,7 @@ export type AthleteLoadSummaryProjection =
 export interface AthleteAdherenceSummaryProjection {
   readonly state: 'available' | 'insufficient_data'
   readonly value: number | null
-  readonly coveragePercent: number
+  readonly coveragePercent: number | null
 }
 
 export interface AthleteCompetitionSummaryProjection {
