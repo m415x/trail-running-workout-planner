@@ -115,7 +115,7 @@ export function adaptAdherenceTrend(
         startDate: first.window.startDate,
         endDate: last.window.endDate,
       },
-      sourceRuleVersion: trend.rule.version,
+      sourceRuleVersion: `${trend.rule.ruleId}-v${trend.rule.version}`,
     }],
     limitations: [],
   }
