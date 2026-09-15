@@ -119,6 +119,9 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 ## Product and code conventions
 
 - New user-visible copy must be ES/EN in the same change.
+- Athlete-facing product surfaces are **mobile-first**. Design from mobile portrait as the primary composition, then provide deliberate responsive behavior for tablet, mobile landscape, and desktop without creating a separate information architecture.
+- Coach-facing product surfaces are **desktop-first**. Design for dense desktop workflows first, then provide deliberate responsive behavior for tablet, mobile landscape, and mobile portrait while preserving decision context and action safety.
+- Responsive behavior is role-driven, not route-name-driven: shared components must support the consuming surface's athlete/coach composition rather than assuming one global breakpoint strategy.
 - When touching legacy UI/code, do not only patch the new line: bring the touched surface forward incrementally by moving user-visible copy into the existing ES/EN i18n system and by documenting exported/non-obvious behavior, invariants and side effects that the change depends on.
 - A touched legacy file does not require unrelated refactoring, but newly exposed hard-coded copy, stale comments or unclear contracts in the modified area should be cleaned up in the same task whenever it can be done safely.
 - If full legacy cleanup would materially expand story scope, document the remaining debt in Jira/docs instead of silently leaving it untracked.
