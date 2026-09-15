@@ -1,81 +1,81 @@
-# KAN-344 — Interpretación operacional de carga interna para triage
+# KAN-344 — Operational interpretation of internal load for triage
 
-Fecha de revisión: 2026-09-14
+Review date: 2026-09-14
 
-## Pregunta
+## Question
 
-¿Qué significado puede aportar responsablemente KAN-261 a KAN-263 a partir de la serie sRPE × duración, sus EWMAs de corto/largo plazo y `loadBalanceAu`, sin transformar esa información en ACWR, diagnóstico de fatiga ni predictor de lesión?
+What meaning can KAN-261 responsibly contribute to KAN-263 from the sRPE × duration series, its short- and long-term EWMAs, and `loadBalanceAu`, without turning that information into ACWR, a fatigue diagnosis, or an injury predictor?
 
-## Qué calcula realmente KAN-261 hoy
+## What KAN-261 currently calculates
 
-KAN-261 calcula carga diaria como session-RPE × duración en unidades arbitrarias (AU). Sobre la serie diaria aplica dos EWMAs con constantes temporales de 7 y 42 días:
+KAN-261 calculates daily load as session-RPE × duration in arbitrary units (AU). It applies two EWMAs to the daily series, with 7- and 42-day time constants:
 
 ```text
 alpha = 1 - exp(-1 / tau)
 EWMA_t = EWMA_(t-1) + alpha * (load_t - EWMA_(t-1))
 ```
 
-Luego define:
+It then defines:
 
 ```text
 loadBalanceAu = longTermLoadAu - shortTermLoadAu
 ```
 
-Por lo tanto:
+Therefore:
 
-- `loadBalanceAu < 0`: la carga suavizada de corto plazo está por encima de la de largo plazo;
-- `loadBalanceAu > 0`: la carga suavizada de corto plazo está por debajo de la de largo plazo;
-- `loadBalanceAu ≈ 0`: ambas escalas son similares.
+- `loadBalanceAu < 0`: smoothed short-term load is above smoothed long-term load;
+- `loadBalanceAu > 0`: smoothed short-term load is below smoothed long-term load;
+- `loadBalanceAu ≈ 0`: both timescales are similar.
 
-Este balance es una **diferencia en AU**, no un ratio y no es ACWR. Su magnitud depende del nivel absoluto de carga del atleta: `-100 AU` no tiene necesariamente el mismo significado relativo para dos atletas con historiales muy distintos.
+This balance is an **AU difference**, not a ratio and not ACWR. Its magnitude depends on the athlete's absolute load level: `-100 AU` does not necessarily have the same relative meaning for two athletes with very different histories.
 
-El contrato exige 42 días de warm-up y reinicia ambas EWMAs ante evidencia diaria desconocida. Esto evita interpolar una tendencia a través de huecos que podrían contener carga no observada.
+The contract requires a 42-day warm-up and resets both EWMAs when daily evidence is unknown. This prevents a trend from being interpolated through gaps that could contain unobserved load.
 
-## Hallazgos de la literatura
+## Findings from the literature
 
-### 1. EWMA es útil como técnica de suavizado, no como diagnóstico
+### 1. EWMA is useful as a smoothing technique, not as a diagnosis
 
-Las EWMAs ponderan más los datos recientes y permiten representar cambios de carga sin dar el mismo peso a todas las observaciones de una ventana. Se han utilizado en investigación de training load y en modelos de carga aguda/crónica.
+EWMAs weight recent observations more heavily and can represent load changes without assigning equal weight to every observation in a window. They have been used in training-load research and acute/chronic load models.
 
-Sin embargo, los períodos de corto/largo plazo no son constantes fisiológicas universales. Revisiones prácticas de monitorización señalan que los decay rates de fitness/fatigue pueden variar entre atletas y deportes, y que ventanas comunes como 7/28 o 7/42 días pueden ser arbitrarias para un individuo determinado.
+However, short- and long-term periods are not universal physiological constants. Training-monitoring literature notes that fitness/fatigue decay rates may vary between athletes and sports, and commonly used windows such as 7/28 or 7/42 days should not be treated as individually validated physiological constants.
 
-**Implicación:** mantener 7/42 como parámetros versionados del modelo MVP, no presentarlos como tiempos fisiológicos individuales validados.
+**Implication:** keep 7/42 as versioned MVP model parameters, not as validated individual physiological timescales.
 
-### 2. No convertir la diferencia EWMA en ACWR
+### 2. Do not convert the EWMA difference into ACWR
 
-La literatura histórica utilizó ratios entre carga aguda y crónica, incluyendo variantes EWMA, y algunos estudios encontraron asociaciones con lesión en poblaciones específicas. Sin embargo, críticas metodológicas posteriores señalan problemas conceptuales y estadísticos importantes del ACWR y concluyen que no existe evidencia para usarlo como herramienta causal de gestión destinada a reducir lesiones.
+Historical literature used ratios between acute and chronic load, including EWMA variants, and some studies found associations with injury in specific populations. Later methodological critiques identify important conceptual and statistical problems with ACWR and do not support using it as a causal load-management tool intended to reduce injury.
 
-**Implicación:** KAN-344 no debe crear `short/long`, `acute/chronic` ni bandas de “sweet spot”. El balance diferencial existente es preferible como descriptor de dirección de la carga reciente, pero tampoco debe interpretarse causalmente.
+**Implication:** KAN-344 must not create `short/long`, `acute/chronic`, or "sweet spot" ratio bands. The existing difference is preferable as a descriptor of recent-load direction, but it must not be interpreted causally either.
 
-### 3. El contexto running refuerza la cautela
+### 3. Running evidence reinforces the need for caution
 
-La evidencia en corredores no sostiene un umbral semanal universal de progresión. Un gran estudio prospectivo reciente de corredores encontró asociación entre aumentos de distancia en una sesión individual y lesión, mientras que ACWR semanal y cambios week-to-week no mostraron la asociación esperada.
+Evidence in runners does not support a universal weekly progression threshold. A large prospective cohort found an association between single-session distance increases and injury, while weekly ACWR and week-to-week changes did not show the expected association.
 
-**Implicación:** una tendencia de carga interna suavizada puede contribuir al triage, pero no debe producir mensajes como “riesgo de lesión” ni prescripciones automáticas de reducción de carga.
+**Implication:** a smoothed internal-load trend may contribute to triage, but it must not produce messages such as "injury risk" or automatically prescribe load reduction.
 
-### 4. Session-RPE sigue siendo una entrada defendible
+### 4. Session-RPE remains a defensible input
 
-sRPE × duración es una medida práctica y ampliamente utilizada de carga interna. La limitación está en la interpretación posterior: una carga interna elevada puede reflejar entrenamiento deliberadamente exigente, competición, cambio de fase, estrés no deportivo u otros factores. Una tendencia no determina por sí sola una respuesta patológica.
+sRPE × duration is a practical and widely used measure of internal training load. The limitation lies in downstream interpretation: high internal load may reflect deliberately demanding training, competition, a phase change, non-sport stress, or other factors. A trend alone does not determine a pathological response.
 
-**Implicación:** KAN-344 debe describir **dirección/cambio de carga interna reciente**, no “fatiga” ni “sobrecarga”.
+**Implication:** KAN-344 should describe **recent internal-load direction/change**, not "fatigue" or "overload".
 
-## Problema con usar `loadBalanceAu` absoluto como threshold
+## Why an absolute `loadBalanceAu` threshold is problematic
 
-Una regla como:
+A rule such as:
 
 ```text
 loadBalanceAu < -100 => review
 ```
 
-sería difícil de defender porque el valor está en AU absolutos y escala con la carga habitual del atleta. Introducir un threshold global generaría comparaciones inter-atleta poco interpretables.
+would be difficult to defend because the value is expressed in absolute AU and scales with the athlete's habitual load. A global threshold would create poorly interpretable between-athlete comparisons.
 
-Tampoco se recomienda normalizarlo mediante `shortTerm / longTerm`, porque eso recrearía conceptualmente un ACWR.
+Normalizing it as `shortTerm / longTerm` is also not recommended because that would conceptually recreate an ACWR.
 
-## Recomendación para KAN-344
+## Recommendation for KAN-344
 
-### Semántica
+### Semantics
 
-Crear una señal de **dirección de carga interna** y no una señal de riesgo:
+Create an **internal-load direction** signal rather than a risk signal:
 
 ```text
 insufficient_data
@@ -83,15 +83,15 @@ stable_or_lower
 recent_load_above_baseline
 ```
 
-`recent_load_above_baseline` significa exclusivamente:
+`recent_load_above_baseline` means only:
 
-> La carga interna suavizada de corto plazo se encuentra por encima de la carga suavizada de largo plazo con evidencia suficiente.
+> Smoothed short-term internal load is above smoothed long-term internal load with sufficient evidence.
 
-No significa fatiga, sobrecarga, lesión ni mala adaptación.
+It does not mean fatigue, overload, injury, or maladaptation.
 
-### Regla v1 propuesta
+### Proposed v1 rule
 
-No utilizar un threshold AU global. Para la primera versión, interpretar únicamente el **signo** del balance una vez que la serie está `available`:
+Do not use a global AU threshold. In the first version, interpret only the **sign** of the balance once the series is `available`:
 
 ```text
 latest.status != available
@@ -107,98 +107,98 @@ loadBalanceAu >= 0
   => stable_or_lower
 ```
 
-El signo es matemáticamente equivalente a preguntar si `shortTermLoadAu > longTermLoadAu`, sin convertir las magnitudes a ratio.
+The sign is mathematically equivalent to asking whether `shortTermLoadAu > longTermLoadAu`, without converting the magnitudes into a ratio.
 
-### Por qué no elevar directamente a `review`
+### Why this signal does not independently escalate to `review`
 
-Un balance negativo aislado puede ser completamente intencional durante una semana de carga. Por eso esta señal no debería tener por sí misma semántica `review`. Debe funcionar como **contributor contextual de carga interna** para KAN-263.
+A negative balance in isolation can be completely intentional during a loading week. Therefore this signal should not independently carry `review` semantics. It should act as a **contextual internal-load contributor** for KAN-263.
 
-Ejemplo:
+Example:
 
 ```text
 KAN-261 semantic signal:
 recent_load_above_baseline
 
-por sí sola
-=> información descriptiva
+by itself
+=> descriptive information
 
-+ KAN-262 systematic_excess contemporáneo
-=> KAN-263 puede considerar convergencia para elevar prioridad de revisión
++ contemporaneous KAN-262 systematic_excess
+=> KAN-263 may consider convergence and elevate review priority
 ```
 
-La elevación pertenece a la matriz KAN-345, no a KAN-344.
+The escalation belongs to the KAN-345 convergence matrix, not KAN-344.
 
-## Magnitud explicable
+## Explainable magnitude
 
-Aunque la clasificación v1 use sólo dirección, conservar:
+Although v1 classification uses direction only, preserve:
 
 - `shortTermLoadAu`;
 - `longTermLoadAu`;
 - `loadBalanceAu`;
-- ventana de evidencia;
-- cobertura;
-- ruleVersion de KAN-261;
-- ruleVersion de interpretación KAN-344.
+- evidence window;
+- coverage;
+- KAN-261 `ruleVersion`;
+- KAN-344 interpretation `ruleVersion`.
 
-Esto permite al coach inspeccionar magnitud sin que el producto afirme que existe un cutoff clínico.
+This lets the coach inspect magnitude without the product claiming a clinical cutoff exists.
 
-## Unknown, warm-up y discontinuidad
+## Unknown evidence, warm-up, and discontinuity
 
-La semántica debe heredar las protecciones actuales:
+The semantics must inherit the current protections:
 
 - `warming_up` => `insufficient_data`;
 - `insufficient_data` => `insufficient_data`;
 - `latest === null` => `insufficient_data`;
 - `loadBalanceAu === null` => `insufficient_data`;
-- hueco con carga desconocida => las EWMAs se reinician y requieren nuevo warm-up antes de volver a ser interpretables.
+- a gap with unknown load resets the EWMAs and requires a new warm-up before the trend becomes interpretable again.
 
-No se debe etiquetar como `stable_or_lower` una serie que simplemente carece de evidencia.
+A series that merely lacks evidence must never be labelled `stable_or_lower`.
 
-## Versionado recomendado
+## Recommended versioning
 
-Separar la versión de cálculo de KAN-261 de la versión semántica de KAN-344:
+Keep the KAN-261 calculation version separate from the KAN-344 semantic version:
 
 ```text
 sourceRuleVersion = srpe-duration-v1
 interpretationRuleVersion = internal-load-direction-v1
 ```
 
-Así puede evolucionar la interpretación sin reescribir la evidencia histórica ni fingir que cambió el cálculo original.
+This allows interpretation to evolve without rewriting historical evidence or pretending the original calculation changed.
 
-## Decisiones descartadas
+## Rejected decisions
 
-- ACWR o EWMA ratio.
-- “sweet spot” de carga.
-- threshold absoluto global en AU.
-- percentiles poblacionales sin dataset validado.
+- ACWR or EWMA ratio.
+- Load "sweet spot".
+- Global absolute AU threshold.
+- Population percentiles without a validated dataset.
 - `recent_load_above_baseline = fatigue`.
 - `recent_load_above_baseline = injury risk`.
-- usar una señal durante warm-up o tras discontinuidad unknown.
-- modificar automáticamente el plan.
+- Using a signal during warm-up or after an unknown discontinuity.
+- Automatically modifying the training plan.
 
-## Consecuencia para KAN-345
+## Consequence for KAN-345
 
-La matriz de convergencia debería consumir una entrada semántica como:
+The convergence matrix should consume a semantic input such as:
 
 ```text
 internalLoad.direction = recent_load_above_baseline
 internalLoad.status = available
 ```
 
-junto con evidencia explicable, en lugar de leer directamente `loadBalanceAu` y aplicar thresholds ocultos.
+together with explainable evidence, rather than reading `loadBalanceAu` directly and applying hidden thresholds.
 
-Esto mantiene KAN-263 como compositor de dominios y evita que duplique o contamine la lógica de KAN-261.
+This keeps KAN-263 as a domain compositor and prevents it from duplicating or contaminating KAN-261 logic.
 
-## Referencias
+## References
 
 - Foster C, et al. A new approach to monitoring exercise training. J Strength Cond Res. 2001;15(1):109-115. PMID 11708692.
 - Haddad M, et al. Session-RPE Method for Training Load Monitoring: Validity, Ecological Usefulness, and Influencing Factors. Front Neurosci. 2017. PMCID PMC5673663.
-- Williams S, et al. Better way to determine the acute:chronic workload ratio? Br J Sports Med. 2017. Trabajo que popularizó ponderación EWMA en este contexto.
+- Williams S, et al. Better way to determine the acute:chronic workload ratio? Br J Sports Med. 2017. Work that helped popularize EWMA weighting in this context.
 - Impellizzeri FM, Tenan MS, Kempton T, Novak A, Coutts AJ. Acute:Chronic Workload Ratio: Conceptual Issues and Fundamental Pitfalls. Int J Sports Physiol Perform. 2020;15(6):907-913. PMID 32502973. DOI 10.1123/ijspp.2019-0864.
 - Bourdon PC, et al. Monitoring Athlete Training Loads: Consensus Statement. Int J Sports Physiol Perform. 2017.
-- Coyne JOC, et al. The Current State of Subjective Training Load Monitoring—a Practical Perspective and Call to Action. Sports Med Open / related review literature on load modelling and individual decay assumptions.
-- Nielsen/colleagues et al. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. Br J Sports Med. 2025;59:1203ff. DOI 10.1136/bjsports-2024-109380.
+- Coyne JOC, et al. The Current State of Subjective Training Load Monitoring—a Practical Perspective and Call to Action. Related review literature on load modelling and individual decay assumptions.
+- Nielsen and colleagues. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. Br J Sports Med. 2025;59:1203ff. DOI 10.1136/bjsports-2024-109380.
 
-## Decisión recomendada
+## Recommended decision
 
-Adoptar `internal-load-direction-v1` como una **interpretación descriptiva y versionada de dirección de carga interna**, basada sólo en una serie KAN-261 disponible. Usar `recent_load_above_baseline` como contributor de convergencia, nunca como diagnóstico ni como alerta clínica independiente.
+Adopt `internal-load-direction-v1` as a **descriptive, versioned interpretation of internal-load direction**, based only on an available KAN-261 series. Use `recent_load_above_baseline` as a convergence contributor, never as a diagnosis or independent clinical alert.
