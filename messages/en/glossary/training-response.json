@@ -1,0 +1,16 @@
+{
+  "DomainGlossary": {
+    "trainingResponseReview": {
+      "title": "Training response review",
+      "summary": "Combines independent training-response signals to help the coach decide what deserves attention first. It is a review aid, not a diagnosis.",
+      "priority": "Priority review: independent external-volume and internal-load evidence converge over overlapping evidence periods. This does not diagnose fatigue, overload, injury risk, or overtraining.",
+      "review": "Review: a known signal already warrants coach review, without enough independent convergent evidence for priority.",
+      "info": "Information: useful training context is present but does not independently require review.",
+      "convergence": "Signal convergence: independent evidence domains support increased review attention over compatible evidence periods.",
+      "contributor": "Contributor: a traceable source signal used as evidence or context in the review result.",
+      "evidenceWindow": "Evidence window: the time period represented by a source signal. Signals must overlap in time before they can establish priority convergence.",
+      "insufficientData": "Insufficient data: the available evidence cannot safely establish the source state. It is not interpreted as normality.",
+      "context": "Context: information that helps explain the athlete's situation but cannot independently establish overload or priority."
+    }
+  }
+}
