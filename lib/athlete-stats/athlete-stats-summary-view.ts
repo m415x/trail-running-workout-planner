@@ -22,6 +22,16 @@ function metric(label: string, source: AthleteStatsSummary['training']['distance
   }
 }
 
+function frequencyMetric(source: AthleteStatsSummary['training']['frequency']): SummaryMetricView {
+  return {
+    label: 'Sesiones',
+    state: source.state,
+    displayValue: source.state === 'available'
+      ? `${source.value} ${source.value === 1 ? 'sesión' : 'sesiones'}`
+      : null,
+  }
+}
+
 export function buildAthleteStatsSummaryView(summary: AthleteStatsSummary): AthleteStatsSummaryView {
   return {
     period: summary.period,
@@ -31,7 +41,7 @@ export function buildAthleteStatsSummaryView(summary: AthleteStatsSummary): Athl
         metric('Distancia', summary.training.distance),
         metric('Duración', summary.training.duration),
         metric('Desnivel', summary.training.elevation),
-        metric('Sesiones', summary.training.frequency),
+        frequencyMetric(summary.training.frequency),
       ],
     },
     load: {
