@@ -51,43 +51,25 @@ const load: LoadAnalyticsProjection = {
   ruleVersion: 'srpe-duration-v1',
   coverageRatio: 0.9,
   latest: {
-    date: '2026-09-14',
-    dailyLoadAu: 300,
-    shortTermLoadAu: 280,
-    longTermLoadAu: 250,
-    loadBalanceAu: 30,
-    status: 'available',
+    date: '2026-09-14', dailyLoadAu: 300, shortTermLoadAu: 280,
+    longTermLoadAu: 250, loadBalanceAu: 30, status: 'available',
   },
+  trend: [
+    { date: '2026-09-13', dailyLoadAu: 250, shortTermLoadAu: 270, longTermLoadAu: 245, loadBalanceAu: 25, status: 'available' },
+    { date: '2026-09-14', dailyLoadAu: 300, shortTermLoadAu: 280, longTermLoadAu: 250, loadBalanceAu: 30, status: 'available' },
+  ],
 }
 
 const adherence: AdherenceAnalyticsProjection = {
   window: { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
   rule: { ruleId: 'plan-adherence', version: 1 },
-  coverage: {
-    eligiblePlannedSessions: 5,
-    confirmedOutcomeSessions: 4,
-    unknownSessions: 1,
-    unplannedRealizedSessions: 0,
-    coveragePercent: 80,
-  },
-  frequency: {
-    state: 'available',
-    counts: { confirmedCompleted: 4, confirmedNotCompleted: 0, denominator: 4 },
-    adherencePercent: 100,
-  },
-  dimensions: [],
-  limitations: [],
+  coverage: { eligiblePlannedSessions: 5, confirmedOutcomeSessions: 4, unknownSessions: 1, unplannedRealizedSessions: 0, coveragePercent: 80 },
+  frequency: { state: 'available', counts: { confirmedCompleted: 4, confirmedNotCompleted: 0, denominator: 4 }, adherencePercent: 100 },
+  dimensions: [], limitations: [],
 }
 
 const competition: CompetitionAnalyticsProjection = {
-  primaryCompetition: {
-    id: 'race-a',
-    name: 'Trail 21K',
-    date: '2026-10-03',
-    distanceKm: 21,
-    elevationGain: 1200,
-    priority: 'A',
-  },
+  primaryCompetition: { id: 'race-a', name: 'Trail 21K', date: '2026-10-03', distanceKm: 21, elevationGain: 1200, priority: 'A' },
   intermediateCompetitions: [],
 }
 
@@ -95,6 +77,10 @@ const input = {
   period: { startDate: '2026-09-01', endDate: '2026-09-14' },
   training,
   trainingEvolution: evolution,
+  trainingSeries: [
+    { date: '2026-09-13', sessions: 2, distanceKm: 18, durationMin: 150, elevationGainM: 900 },
+    { date: '2026-09-14', sessions: 1, distanceKm: null, durationMin: 90, elevationGainM: 500 },
+  ],
   load,
   adherence,
   competition,
@@ -103,7 +89,6 @@ const input = {
 describe('athlete stats projections', () => {
   it('builds the summary from an explicit athlete-safe allowlist', () => {
     const result = projectAthleteStatsSummary(input)
-
     assert.deepEqual(result.period, input.period)
     assert.equal(result.training.distance.value, 42)
     assert.equal(result.training.distance.unit, 'km')
@@ -114,9 +99,7 @@ describe('athlete stats projections', () => {
   })
 
   it('does not expose analytics internals or coach-only disclosure semantics', () => {
-    const result = projectAthleteStatsSummary(input) as unknown as Record<string, unknown>
-    const serialized = JSON.stringify(result)
-
+    const serialized = JSON.stringify(projectAthleteStatsSummary(input))
     for (const forbidden of ['priority', 'reasonCodes', 'acknowledgement', 'contributors', 'ruleVersion', 'readiness', 'recommendation', 'prediction']) {
       assert.equal(serialized.includes(`\"${forbidden}\"`), false, `must not expose ${forbidden}`)
     }
@@ -124,7 +107,6 @@ describe('athlete stats projections', () => {
 
   it('provides allowlisted detail projections without changing neutral meaning', () => {
     const result = projectAthleteStatsDetails(input)
-
     assert.equal(result.training.distance.unit, 'km')
     assert.equal(result.training.elevation.unit, 'm')
     assert.equal(result.training.duration.unit, 'min')
@@ -134,30 +116,24 @@ describe('athlete stats projections', () => {
     assert.equal(result.competition.primaryCompetition?.name, 'Trail 21K')
   })
 
-  it('represents no competition as a valid empty state', () => {
-    const result = projectAthleteStatsSummary({
-      ...input,
-      competition: { primaryCompetition: null, intermediateCompetitions: [] },
-    })
+  it('exposes only factual training and load series through athlete details', () => {
+    const result = projectAthleteStatsDetails(input)
+    assert.deepEqual(result.training.series, input.trainingSeries)
+    assert.deepEqual(result.load.trend, load.trend)
+    assert.equal(result.training.series[1]?.distanceKm, null)
+  })
 
+  it('represents no competition as a valid empty state', () => {
+    const result = projectAthleteStatsSummary({ ...input, competition: { primaryCompetition: null, intermediateCompetitions: [] } })
     assert.equal(result.competition, null)
   })
 
   it('preserves unknown training evidence and non-evaluable comparison without inventing zero', () => {
     const result = projectAthleteStatsSummary({
       ...input,
-      training: {
-        ...training,
-        distance: {
-          state: 'unknown',
-          reason: 'metric_not_observed',
-          knownRecords: 0,
-          observedRecords: 4,
-        },
-      },
+      training: { ...training, distance: { state: 'unknown', reason: 'metric_not_observed', knownRecords: 0, observedRecords: 4 } },
       trainingEvolution: { ...evolution, distance: unknownComparison },
     })
-
     assert.equal(result.training.distance.state, 'unknown')
     assert.equal(result.training.distance.value, null)
     assert.equal(result.training.distance.evidence.observedRecords, 4)
@@ -168,28 +144,12 @@ describe('athlete stats projections', () => {
   it('preserves insufficient load and adherence as distinct athlete-visible evidence states', () => {
     const result = projectAthleteStatsDetails({
       ...input,
-      load: {
-        state: 'insufficient_data',
-        startDate: '2026-09-01',
-        endDate: '2026-09-14',
-        ruleVersion: 'srpe-duration-v1',
-        coverageRatio: 0.4,
-        reasons: ['insufficient_history'],
-        latest: null,
-      },
-      adherence: {
-        ...adherence,
-        frequency: {
-          state: 'insufficient_data',
-          counts: { confirmedCompleted: 0, confirmedNotCompleted: 0, denominator: 0 },
-          adherencePercent: null,
-          reasons: ['insufficient_confirmed_outcomes'],
-        },
-      },
+      load: { state: 'insufficient_data', startDate: '2026-09-01', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: 0.4, reasons: ['insufficient_history'], latest: null, trend: [] },
+      adherence: { ...adherence, frequency: { state: 'insufficient_data', counts: { confirmedCompleted: 0, confirmedNotCompleted: 0, denominator: 0 }, adherencePercent: null, reasons: ['insufficient_confirmed_outcomes'] } },
     })
-
     assert.equal(result.load.state, 'insufficient_data')
     assert.equal(result.load.coverageRatio, 0.4)
+    assert.deepEqual(result.load.trend, [])
     assert.equal(result.adherence.state, 'insufficient_data')
     assert.equal(result.adherence.value, null)
     assert.equal(result.adherence.coveragePercent, 80)
@@ -202,12 +162,8 @@ describe('athlete stats projections', () => {
       ...input,
       load: { ...load, recommendation: 'reduce-load', readiness: 'low' },
       adherence: { ...adherence, reasonCodes: ['coach-only'] },
-      competition: {
-        ...competition,
-        primaryCompetition: { ...competition.primaryCompetition!, prediction: 'finish-time' },
-      },
+      competition: { ...competition, primaryCompetition: { ...competition.primaryCompetition!, prediction: 'finish-time' } },
     }
-
     const serialized = JSON.stringify(projectAthleteStatsDetails(extended))
     assert.equal(serialized.includes('recommendation'), false)
     assert.equal(serialized.includes('readiness'), false)
