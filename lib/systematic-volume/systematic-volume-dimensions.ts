@@ -1,7 +1,7 @@
 import type {
   PlanRealMetricComparison,
-  PlanRealMetricName,
   PlanRealMetricOperand,
+  TrainingComparisonMetricName,
 } from '@/types/training/plan-real-comparison.types'
 import type {
   SystematicVolumeDimension,
@@ -27,7 +27,7 @@ function readKnownNumber(operand: PlanRealMetricOperand): number | null {
 }
 
 export function isSystematicVolumeDimension(
-  metric: PlanRealMetricName,
+  metric: TrainingComparisonMetricName,
 ): metric is SystematicVolumeDimension {
   return metric === 'distanceKm' || metric === 'durationMin' || metric === 'elevationGainM'
 }
@@ -38,25 +38,27 @@ export function evaluateSystematicVolumeDimension(
   if (!isSystematicVolumeDimension(comparison.name)) return null
 
   const dimension = comparison.name
-  const planned = readKnownNumber(comparison.planned)
-  const realized = readKnownNumber(comparison.realized)
+  const plannedOperand = comparison.evaluation.planned
+  const realizedOperand = comparison.evaluation.realized
+  const planned = readKnownNumber(plannedOperand)
+  const realized = readKnownNumber(realizedOperand)
   const insufficientReasons: SystematicVolumeInsufficientReason[] = []
 
   if (planned === null) insufficientReasons.push('missing_planned_value')
   if (realized === null) insufficientReasons.push('missing_realized_value')
 
   if (
-    comparison.planned.unit !== null &&
-    comparison.realized.unit !== null &&
-    comparison.planned.unit !== comparison.realized.unit
+    plannedOperand.unit !== null &&
+    realizedOperand.unit !== null &&
+    plannedOperand.unit !== realizedOperand.unit
   ) {
     insufficientReasons.push('incompatible_units')
   }
 
   const expectedUnit = DIMENSION_UNITS[dimension]
   if (
-    (comparison.planned.unit !== null && comparison.planned.unit !== expectedUnit) ||
-    (comparison.realized.unit !== null && comparison.realized.unit !== expectedUnit)
+    (plannedOperand.unit !== null && plannedOperand.unit !== expectedUnit) ||
+    (realizedOperand.unit !== null && realizedOperand.unit !== expectedUnit)
   ) {
     insufficientReasons.push('incompatible_units')
   }
