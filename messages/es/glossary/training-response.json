@@ -1,0 +1,16 @@
+{
+  "DomainGlossary": {
+    "trainingResponseReview": {
+      "title": "Revisión de respuesta al entrenamiento",
+      "summary": "Combina señales independientes de respuesta al entrenamiento para ayudar al entrenador a decidir qué merece atención primero. Es una ayuda para la revisión, no un diagnóstico.",
+      "priority": "Revisión prioritaria: convergen evidencias independientes de volumen externo y carga interna durante períodos de evidencia superpuestos. Esto no diagnostica fatiga, sobrecarga, riesgo de lesión ni sobreentrenamiento.",
+      "review": "Revisión: una señal conocida ya justifica la revisión del entrenador, sin suficiente evidencia convergente e independiente para considerarla prioritaria.",
+      "info": "Información: existe contexto útil del entrenamiento, pero no requiere por sí solo una revisión.",
+      "convergence": "Convergencia de señales: dominios de evidencia independientes respaldan una mayor atención de revisión durante períodos de evidencia compatibles.",
+      "contributor": "Contribuidor: señal de origen trazable utilizada como evidencia o contexto en el resultado de revisión.",
+      "evidenceWindow": "Ventana de evidencia: período temporal representado por una señal de origen. Las señales deben superponerse en el tiempo antes de establecer una convergencia prioritaria.",
+      "insufficientData": "Datos insuficientes: la evidencia disponible no permite establecer con seguridad el estado de origen. No se interpreta como normalidad.",
+      "context": "Contexto: información que ayuda a explicar la situación del atleta, pero no puede establecer por sí sola sobrecarga ni prioridad."
+    }
+  }
+}
