@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Gauge, Mountain, Route } from 'lucide-react'
 
 import { getCurrentAthleteStatsAction } from '@/app/actions/athlete-stats-actions'
+import { Link } from '@/i18n/routing'
 import type { AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 import { athleteStatsSummaryPeriod } from '@/lib/athlete-stats/athlete-stats-summary-period'
 import { buildAthleteStatsSummaryView } from '@/lib/athlete-stats/athlete-stats-summary-view'
@@ -11,7 +11,7 @@ const stateText = {
   insufficient_data: 'Datos insuficientes',
 } as const
 
-function DomainLink({ href, children }: { href: string; children: React.ReactNode }) {
+function DomainLink({ href, children }: { href: '/stats/training' | '/stats/load' | '/stats/adherence' | '/stats/competition'; children: React.ReactNode }) {
   return (
     <Link href={href} className='inline-flex items-center gap-1 text-sm font-semibold text-primary'>
       {children}<ArrowRight className='size-4' />
@@ -19,11 +19,15 @@ function DomainLink({ href, children }: { href: string; children: React.ReactNod
   )
 }
 
+function isSummary(data: AthleteStatsSummary | unknown): data is AthleteStatsSummary {
+  return typeof data === 'object' && data !== null && 'competition' in data && !('primaryCompetition' in (data as object))
+}
+
 export default async function StatsPage() {
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'summary' })
 
-  if (result.status !== 'success') {
+  if (result.status !== 'success' || !isSummary(result.data)) {
     return (
       <section className='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6'>
         <h1 className='font-heading text-2xl font-bold'>Estadísticas</h1>
@@ -34,7 +38,7 @@ export default async function StatsPage() {
     )
   }
 
-  const view = buildAthleteStatsSummaryView(result.data as AthleteStatsSummary)
+  const view = buildAthleteStatsSummaryView(result.data)
 
   return (
     <section className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-8'>
