@@ -4,11 +4,14 @@ import type { CompetitionAnalyticsProjection } from '@/lib/analytics/competition
 import type { LoadAnalyticsProjection } from '@/lib/analytics/load/load-analytics'
 import type { RealizedTrainingSummary } from '@/lib/analytics/training/training-analytics'
 import type { RealizedTrainingEvolution } from '@/lib/analytics/training/training-evolution'
+import type { RealizedTrainingSeriesPoint } from '@/lib/analytics/training/training-series'
+import type { TrainingLoadTrendPoint } from '@/types/training/training-load.types'
 
 export interface AthleteStatsProjectionInput {
   readonly period: AnalyticsWindow
   readonly training: RealizedTrainingSummary
   readonly trainingEvolution: RealizedTrainingEvolution
+  readonly trainingSeries: readonly RealizedTrainingSeriesPoint[]
   readonly load: LoadAnalyticsProjection
   readonly adherence: AdherenceAnalyticsProjection
   readonly competition: CompetitionAnalyticsProjection
@@ -22,20 +25,8 @@ interface AthleteMetricEvidence {
 }
 
 type AthleteMetric =
-  | {
-      readonly state: 'available'
-      readonly value: number
-      readonly unit: AthleteMetricUnit
-      readonly evidence: AthleteMetricEvidence
-      readonly comparison: AnalyticsMetricComparison
-    }
-  | {
-      readonly state: 'unknown'
-      readonly value: null
-      readonly unit: AthleteMetricUnit
-      readonly evidence: AthleteMetricEvidence
-      readonly comparison: AnalyticsMetricComparison
-    }
+  | { readonly state: 'available'; readonly value: number; readonly unit: AthleteMetricUnit; readonly evidence: AthleteMetricEvidence; readonly comparison: AnalyticsMetricComparison }
+  | { readonly state: 'unknown'; readonly value: null; readonly unit: AthleteMetricUnit; readonly evidence: AthleteMetricEvidence; readonly comparison: AnalyticsMetricComparison }
 
 export interface AthleteTrainingStatsProjection {
   readonly distance: AthleteMetric
@@ -50,20 +41,8 @@ export interface AthleteTrainingStatsProjection {
 }
 
 export type AthleteLoadSummaryProjection =
-  | {
-      readonly state: 'available'
-      readonly shortTermLoadAu: number | null
-      readonly longTermLoadAu: number | null
-      readonly loadBalanceAu: number | null
-      readonly coverageRatio: number | null
-    }
-  | {
-      readonly state: 'insufficient_data'
-      readonly shortTermLoadAu: null
-      readonly longTermLoadAu: null
-      readonly loadBalanceAu: null
-      readonly coverageRatio: number | null
-    }
+  | { readonly state: 'available'; readonly shortTermLoadAu: number | null; readonly longTermLoadAu: number | null; readonly loadBalanceAu: number | null; readonly coverageRatio: number | null }
+  | { readonly state: 'insufficient_data'; readonly shortTermLoadAu: null; readonly longTermLoadAu: null; readonly loadBalanceAu: null; readonly coverageRatio: number | null }
 
 export interface AthleteAdherenceSummaryProjection {
   readonly state: 'available' | 'insufficient_data'
@@ -88,8 +67,12 @@ export interface AthleteStatsSummary {
 
 export interface AthleteStatsDetails {
   readonly period: AnalyticsWindow
-  readonly training: AthleteTrainingStatsProjection
-  readonly load: AthleteLoadSummaryProjection
+  readonly training: AthleteTrainingStatsProjection & {
+    readonly series: readonly RealizedTrainingSeriesPoint[]
+  }
+  readonly load: AthleteLoadSummaryProjection & {
+    readonly trend: readonly TrainingLoadTrendPoint[]
+  }
   readonly adherence: AthleteAdherenceSummaryProjection & {
     readonly eligiblePlannedSessions: number
     readonly confirmedOutcomeSessions: number
@@ -101,25 +84,14 @@ export interface AthleteStatsDetails {
   }
 }
 
-function metric(
-  source: RealizedTrainingSummary['distance'],
-  comparison: AnalyticsMetricComparison,
-  unit: Exclude<AthleteMetricUnit, 'sessions'>,
-): AthleteMetric {
-  const evidence = {
-    knownRecords: source.knownRecords,
-    observedRecords: source.observedRecords,
-  }
-
+function metric(source: RealizedTrainingSummary['distance'], comparison: AnalyticsMetricComparison, unit: Exclude<AthleteMetricUnit, 'sessions'>): AthleteMetric {
+  const evidence = { knownRecords: source.knownRecords, observedRecords: source.observedRecords }
   return source.state === 'available'
     ? { state: 'available', value: source.value, unit, evidence, comparison }
     : { state: 'unknown', value: null, unit, evidence, comparison }
 }
 
-function frequencyMetric(
-  source: RealizedTrainingSummary['frequency'],
-  comparison: AnalyticsMetricComparison,
-): AthleteTrainingStatsProjection['frequency'] {
+function frequencyMetric(source: RealizedTrainingSummary['frequency'], comparison: AnalyticsMetricComparison): AthleteTrainingStatsProjection['frequency'] {
   return source.state === 'available'
     ? { state: 'available', value: source.value, unit: 'sessions', comparison }
     : { state: 'unknown', value: null, unit: 'sessions', comparison }
@@ -135,52 +107,22 @@ function trainingProjection(input: AthleteStatsProjectionInput): AthleteTraining
 }
 
 function loadProjection(source: LoadAnalyticsProjection): AthleteLoadSummaryProjection {
-  if (source.state !== 'available') {
-    return {
-      state: 'insufficient_data',
-      shortTermLoadAu: null,
-      longTermLoadAu: null,
-      loadBalanceAu: null,
-      coverageRatio: source.coverageRatio,
-    }
-  }
-
-  return {
-    state: 'available',
-    shortTermLoadAu: source.latest.shortTermLoadAu,
-    longTermLoadAu: source.latest.longTermLoadAu,
-    loadBalanceAu: source.latest.loadBalanceAu,
-    coverageRatio: source.coverageRatio,
-  }
+  if (source.state !== 'available') return { state: 'insufficient_data', shortTermLoadAu: null, longTermLoadAu: null, loadBalanceAu: null, coverageRatio: source.coverageRatio }
+  return { state: 'available', shortTermLoadAu: source.latest.shortTermLoadAu, longTermLoadAu: source.latest.longTermLoadAu, loadBalanceAu: source.latest.loadBalanceAu, coverageRatio: source.coverageRatio }
 }
 
 function adherenceProjection(source: AdherenceAnalyticsProjection): AthleteAdherenceSummaryProjection {
-  return {
-    state: source.frequency.state,
-    value: source.frequency.adherencePercent,
-    coveragePercent: source.coverage.coveragePercent,
-  }
+  return { state: source.frequency.state, value: source.frequency.adherencePercent, coveragePercent: source.coverage.coveragePercent }
 }
 
-function competitionEntry(
-  source: CompetitionAnalyticsProjection['primaryCompetition'],
-): AthleteCompetitionSummaryProjection | null {
+function competitionEntry(source: CompetitionAnalyticsProjection['primaryCompetition']): AthleteCompetitionSummaryProjection | null {
   if (source === null) return null
-
-  return {
-    name: source.name,
-    date: source.date,
-    distanceKm: source.distanceKm,
-    elevationGainM: source.elevationGain ?? null,
-  }
+  return { name: source.name, date: source.date, distanceKm: source.distanceKm, elevationGainM: source.elevationGain ?? null }
 }
 
 export function projectAthleteStatsSummary(input: AthleteStatsProjectionInput): AthleteStatsSummary {
   return {
-    period: {
-      startDate: input.period.startDate,
-      endDate: input.period.endDate,
-    },
+    period: { startDate: input.period.startDate, endDate: input.period.endDate },
     training: trainingProjection(input),
     load: loadProjection(input.load),
     adherence: adherenceProjection(input.adherence),
@@ -190,30 +132,19 @@ export function projectAthleteStatsSummary(input: AthleteStatsProjectionInput): 
 
 export function projectAthleteStatsDetails(input: AthleteStatsProjectionInput): AthleteStatsDetails {
   const adherence = adherenceProjection(input.adherence)
-
   return {
-    period: {
-      startDate: input.period.startDate,
-      endDate: input.period.endDate,
-    },
-    training: trainingProjection(input),
-    load: loadProjection(input.load),
+    period: { startDate: input.period.startDate, endDate: input.period.endDate },
+    training: { ...trainingProjection(input), series: input.trainingSeries.map(point => ({ ...point })) },
+    load: { ...loadProjection(input.load), trend: input.load.trend.map(point => ({ ...point })) },
     adherence: {
-      state: adherence.state,
-      value: adherence.value,
-      coveragePercent: adherence.coveragePercent,
+      state: adherence.state, value: adherence.value, coveragePercent: adherence.coveragePercent,
       eligiblePlannedSessions: input.adherence.coverage.eligiblePlannedSessions,
       confirmedOutcomeSessions: input.adherence.coverage.confirmedOutcomeSessions,
       unknownSessions: input.adherence.coverage.unknownSessions,
     },
     competition: {
       primaryCompetition: competitionEntry(input.competition.primaryCompetition),
-      intermediateCompetitions: input.competition.intermediateCompetitions.map(entry => ({
-        name: entry.name,
-        date: entry.date,
-        distanceKm: entry.distanceKm,
-        elevationGainM: entry.elevationGain ?? null,
-      })),
+      intermediateCompetitions: input.competition.intermediateCompetitions.map(entry => ({ name: entry.name, date: entry.date, distanceKm: entry.distanceKm, elevationGainM: entry.elevationGain ?? null })),
     },
   }
 }
