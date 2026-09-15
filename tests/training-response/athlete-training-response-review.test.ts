@@ -93,7 +93,7 @@ function adherence(
 }
 
 describe('integrated athlete training response review', () => {
-  it('produces priority from compatible independent evidence and preserves adherence as context', () => {
+  it('produces priority from compatible independent evidence and preserves its explanation', () => {
     const result = buildAthleteTrainingResponseReview({
       systematicVolume: volumeAssessment('systematic_excess'),
       internalLoad: internalLoad('recent_load_above_baseline'), adherence: adherence(),
@@ -102,19 +102,26 @@ describe('integrated athlete training response review', () => {
     assert.equal(result.temporalCompatibility, 'compatible')
     assert.deepEqual(result.contributors.map(({ domain }) => domain), ['systematic_volume', 'internal_load', 'adherence'])
     assert.equal(result.contributors.find(({ domain }) => domain === 'adherence')?.role, 'context')
+    assert.deepEqual(result.reasons, [
+      'systematic_volume_excess',
+      'recent_internal_load_above_baseline',
+      'declining_adherence_context',
+      'compatible_independent_evidence',
+    ])
   })
 
-  it('preserves known review evidence when another domain is insufficient', () => {
+  it('preserves known review evidence and explanation when another domain is insufficient', () => {
     const result = buildAthleteTrainingResponseReview({
       systematicVolume: volumeAssessment('systematic_excess'),
       internalLoad: internalLoad('insufficient_data'), adherence: adherence('insufficient_data'),
     })
     assert.equal(result.attention, 'review')
+    assert.deepEqual(result.reasons, ['systematic_volume_excess'])
     assert.ok(result.limitations.includes('internal_load_insufficient_data'))
     assert.ok(result.limitations.includes('adherence_insufficient_data'))
   })
 
-  it('does not let declining adherence elevate otherwise normal evidence', () => {
+  it('keeps declining adherence contextual in both attention and explanation', () => {
     const result = buildAthleteTrainingResponseReview({
       systematicVolume: volumeAssessment('within_plan'),
       internalLoad: internalLoad('stable_or_lower'), adherence: adherence('available', 'declining'),
@@ -123,5 +130,6 @@ describe('integrated athlete training response review', () => {
     assert.equal(result.contributors.length, 1)
     assert.equal(result.contributors[0]?.domain, 'adherence')
     assert.equal(result.contributors[0]?.role, 'context')
+    assert.deepEqual(result.reasons, ['declining_adherence_context'])
   })
 })
