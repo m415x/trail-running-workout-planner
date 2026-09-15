@@ -18,7 +18,8 @@ const projectionInput = {
     duration: { state: 'not_evaluable', currentValue: null, previousValue: null, absoluteDelta: null, relativeDeltaPercent: null, direction: 'unknown', reason: 'current_unknown' },
     elevation: { state: 'not_evaluable', currentValue: null, previousValue: null, absoluteDelta: null, relativeDeltaPercent: null, direction: 'unknown', reason: 'current_unknown' },
   },
-  load: { state: 'insufficient_data', startDate: '2026-09-08', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: 0, reasons: ['insufficient_history'], latest: null },
+  trainingSeries: [],
+  load: { state: 'insufficient_data', startDate: '2026-09-08', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: 0, reasons: ['insufficient_history'], latest: null, trend: [] },
   adherence: {
     window: { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
     rule: { ruleId: 'plan-adherence', version: 1 },
@@ -36,9 +37,7 @@ describe('athlete stats action wiring', () => {
       getCurrentAthlete: async () => ({ success: true, data: { athleteProfile: { id: 'athlete-1', teamId: 'team-1', isDeleted: false } } }),
       loadProjectionInput: async subject => { loadedSubject = subject; return projectionInput },
     })
-
     const result = await action({ startDate: '2026-09-08', endDate: '2026-09-14', view: 'summary' })
-
     assert.equal(result.status, 'success')
     assert.deepEqual(loadedSubject, { athleteId: 'athlete-1', teamId: 'team-1' })
   })
@@ -49,9 +48,7 @@ describe('athlete stats action wiring', () => {
       getCurrentAthlete: async () => ({ success: false, error: 'not found' }),
       loadProjectionInput: async () => { loaded = true; return projectionInput },
     })
-
     const result = await action({ startDate: '2026-09-08', endDate: '2026-09-14', view: 'details' })
-
     assert.deepEqual(result, { status: 'error', code: 'current_athlete_unavailable' })
     assert.equal(loaded, false)
   })
