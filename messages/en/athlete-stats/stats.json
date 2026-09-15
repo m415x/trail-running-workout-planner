@@ -6,9 +6,22 @@
     "adherence": "Adherence",
     "competition": "Competitions",
     "insufficientData": "Insufficient data",
+    "unknownData": "Not enough data",
     "noData": "No data",
     "coverage": "Coverage",
     "backToStats": "Stats",
+    "loadError": "We couldn't load the load details.",
+    "adherenceError": "We couldn't load the adherence details.",
+    "trainingError": "We couldn't load the training details.",
+    "competitionError": "We couldn't load the competition calendar.",
+    "summary": {
+      "period": "Last 28 days",
+      "error": "We couldn't load your stats right now.",
+      "viewDetail": "View details",
+      "explore": "Explore",
+      "nextCompetition": "Next competition",
+      "viewCalendar": "View calendar"
+    },
     "trainingDetail": {
       "activityRecorded": "Recorded activity",
       "noActivity": "No completed activity is recorded for this period.",
@@ -16,13 +29,19 @@
       "duration": "Duration",
       "elevation": "Elevation gain",
       "sessions": "Sessions",
-      "noComparison": "No comparison available"
+      "session": "session",
+      "sessionsUnit": "sessions",
+      "noComparison": "No comparison available",
+      "previousDelta": "{delta} compared with the previous period"
     },
     "loadDetail": {
       "shortTerm": "Short-term load",
       "longTerm": "Long-term load",
       "balance": "Load balance",
-      "recordedEvolution": "Recorded evolution"
+      "recordedEvolution": "Recorded evolution",
+      "daily": "Daily",
+      "short": "Short",
+      "long": "Long"
     },
     "adherenceDetail": {
       "confirmed": "Confirmed adherence",
