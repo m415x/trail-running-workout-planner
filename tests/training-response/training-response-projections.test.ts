@@ -38,13 +38,35 @@ describe('training response coach projections', () => {
     assert.equal(result.primaryReason, 'declining_adherence_context')
   })
 
-  it('projects traceable detail and limitations as unknowns', () => {
+  it('projects traceable detail, unknowns, and domain evidence coverage', () => {
     const result = projectTrainingResponseDetail({ ...priorityReview, limitations: ['adherence_insufficient_data'] })
     assert.equal(result.status, 'priority')
     assert.deepEqual(result.reasons, priorityReview.reasons)
     assert.deepEqual(result.unknowns, ['adherence_insufficient_data'])
     assert.deepEqual(result.contributors.map(item => item.domain), ['systematic_volume', 'internal_load'])
+    assert.deepEqual(result.coverage, [
+      { domain: 'systematic_volume', state: 'available' },
+      { domain: 'internal_load', state: 'available' },
+      { domain: 'adherence', state: 'insufficient' },
+    ])
     assert.equal(result.temporalCompatibility, 'compatible')
     assert.equal(result.ruleVersion, 'training-response-convergence-v1')
+  })
+
+  it('does not invent quantitative coverage when a domain is known but has no contributor', () => {
+    const result = projectTrainingResponseDetail({
+      ...priorityReview,
+      attention: 'none',
+      contributors: [],
+      reasons: [],
+      limitations: [],
+      temporalCompatibility: null,
+    })
+
+    assert.deepEqual(result.coverage, [
+      { domain: 'systematic_volume', state: 'known_without_contributor' },
+      { domain: 'internal_load', state: 'known_without_contributor' },
+      { domain: 'adherence', state: 'known_without_contributor' },
+    ])
   })
 })
