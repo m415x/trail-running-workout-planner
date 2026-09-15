@@ -1,8 +1,25 @@
 # Athlete Stats Analytics
 
+## Status
+
+**KAN-264 / Historia 8 completed and verified on 2026-09-15.**
+
+The implementation establishes the athlete-facing Stats baseline described below. KAN-350 through KAN-356 are complete. KAN-357, incorporated into KAN-264 scope during implementation for the real Athlete shell/responsive contract, is also complete.
+
+Final reported local verification:
+
+- `pn test` — 790/790 tests passed across 157 suites, 0 failures.
+- `pn lint` — passed.
+- `pn exec tsc --noEmit` — passed.
+- `pn build` — passed.
+- `pn i18n:check` — passed; 452 message leaves aligned ES/EN.
+- Athlete responsive walkthrough — approved across the target form factors exercised during the story.
+
+This document is now the durable baseline for subsequent Athlete Stats work rather than an implementation proposal.
+
 ## Purpose
 
-KAN-264 introduces an athlete-facing Stats experience without turning coach decision models into athlete UI contracts. The architecture uses an incremental **C+B** approach:
+KAN-264 established an athlete-facing Stats experience without turning coach decision models into athlete UI contracts. The architecture uses an incremental **C+B** approach:
 
 1. **C — consumer-neutral Training Analytics** derives longitudinal aggregations, comparisons, trends, series and evidence availability from existing domain evidence.
 2. **B — Athlete Stats Projections** explicitly allowlist which analytical information is appropriate for athlete-facing surfaces.
@@ -38,16 +55,13 @@ Coach-specific models remain a separate consumer path. Athlete projections must 
 - Training Analytics may be consumer-neutral without being directly user-safe; athlete disclosure occurs at the Athlete Stats Projection boundary.
 - Technical failure is distinct from valid `unknown`, `insufficient`, or empty domain state.
 
-## Incremental analytics scope
+These invariants are regression-protected by focused analytics/projection tests and the semantic Athlete Stats integration fixture.
 
-KAN-264 adds only the analytical capabilities required by Stats v1. It must not introduce a monolithic `AnalyticsService` or attempt to anticipate a complete future analytics platform.
+## Implemented analytics scope
 
-Shared primitives should cover only genuinely common semantics such as:
+Stats v1 contains the analytical capabilities required by Historia 8. It does not introduce a monolithic `AnalyticsService` or attempt to anticipate a complete future analytics platform.
 
-- explicit current and previous analysis windows;
-- neutral metric comparison;
-- mathematical trend direction;
-- evidence availability/coverage, reusing durable existing semantics where possible.
+Shared primitives cover genuinely common semantics such as explicit current/previous analysis windows, neutral metric comparison, mathematical trend direction and evidence availability/coverage.
 
 Domain-specific modules remain independent:
 
@@ -62,11 +76,11 @@ Units remain explicit in domain-facing contracts.
 
 Stats v1 uses a product-defined default period in the UI. The UI does not expose arbitrary period selection yet.
 
-Analytics nevertheless receives explicit windows rather than embedding assumptions such as "last 7 days" inside metric calculators. Current and previous windows must be identifiable so a future period selector can reuse the same analytical contracts.
+Analytics receives explicit windows rather than embedding assumptions such as "last 7 days" inside metric calculators. Current and previous windows remain identifiable so a future period selector can reuse the analytical contracts without redesigning the calculation boundary.
 
 ## Evidence semantics
 
-Analytics and projections must preserve distinctions among:
+Analytics and projections preserve distinctions among:
 
 - **available:** a value or comparison is evaluable from known evidence;
 - **insufficient:** some evidence exists but the requested comparison/trend cannot be responsibly evaluated;
@@ -74,9 +88,9 @@ Analytics and projections must preserve distinctions among:
 - **empty:** a domain may validly have no entity, for example no upcoming competition;
 - **error:** the application failed to retrieve or compute the result for technical reasons.
 
-Exact enum/type names must be aligned with existing durable contracts before adding new ones. KAN-264 must not create a competing evidence-state model.
+No realized row is automatically a missed workout. A missing previous period does not become a `-100%` comparison. Known zero does not become unknown.
 
-No realized row is not automatically a missed workout. A missing previous period must not become a `-100%` comparison. Known zero must not become unknown.
+The semantic integration regression explicitly protects known zero, unknown metrics, insufficient load/adherence evidence, missing previous-period comparison and valid empty competition.
 
 ## Athlete disclosure boundary
 
@@ -90,7 +104,7 @@ Athlete Stats Projections define explicit read contracts for:
 
 Athlete-safe v1 information includes factual realized metrics, neutral comparisons/directions, evidence state, analysis period, factual adherence/plan-vs-real information, and factual competition context.
 
-The following must not cross automatically into athlete-facing contracts:
+The following do not cross automatically into athlete-facing contracts:
 
 - Training Response `priority`, `review`, triage or internal reason codes;
 - coach acknowledgement/review state or private notes;
@@ -99,19 +113,17 @@ The following must not cross automatically into athlete-facing contracts:
 - automatic training modifications or recommendations;
 - diagnostic, injury-risk or probabilistic claims.
 
-Athlete-facing Training Response and Readiness are intentionally deferred to KAN-349 for separate product/scientific review.
+Athlete-facing Training Response and Readiness remain outside this baseline and require their own product/scientific disclosure review before reuse.
 
 ## Subject scope and authorization
 
-Semantic disclosure and identity authorization are separate concerns.
+Semantic disclosure and identity authorization remain separate concerns.
 
-Athlete projections decide what kind of information is athlete-facing. The application/repository boundary must also decide which athlete the current subject is authorized to read. Do not trust an arbitrary client-provided athlete identifier when existing infrastructure can resolve stronger scope.
-
-If authenticated current-athlete resolution is not yet available, KAN-264 must document and preserve that limitation rather than inventing a fixed or fictional authenticated actor.
+Athlete projections decide what kind of information is athlete-facing. The application/actions boundary decides which subject the current caller may read. Subsequent stories must preserve this separation and must not weaken subject scope by accepting an arbitrary client-provided athlete identifier where a stronger server-side scope exists.
 
 ## Stats information architecture
 
-`/stats` is a summary and navigation hub, not a dense all-in-one dashboard.
+`/stats` is implemented as a summary and navigation hub rather than a dense all-in-one dashboard.
 
 ```text
 /stats
@@ -121,75 +133,91 @@ If authenticated current-athlete resolution is not yet available, KAN-264 must d
 └── /stats/competition
 ```
 
-The summary communicates, where meaningful:
-
-1. current value/state;
-2. comparison or mathematical trend;
-3. evidence availability;
-4. navigation to deeper context.
-
-Detail surfaces provide progressive disclosure and must not merely repeat enlarged summary cards.
+The summary communicates current value/state and evidence availability, with comparison/trend only where evaluable, and provides navigation to deeper context.
 
 ### Training detail
 
-Explains realized distance, duration, D+, frequency, period comparisons and genuine temporal series when the underlying evidence supports a series. Do not invent charts from aggregate-only values.
+Shows realized distance, duration, elevation gain, frequency, period comparisons and factual temporal series where source evidence supports a series. Charts are not fabricated from aggregate-only values.
 
 ### Load detail
 
-Shows descriptive load evolution, comparison and evidence gaps. It must not expose Training Response priority/review or turn load evidence into physiological conclusions.
+Shows descriptive load evolution and evidence gaps without exposing Training Response priority/review or turning load evidence into physiological conclusions.
 
 ### Adherence detail
 
-Combines adherence with plan-vs-real where existing contracts support it. Authoritative session linkage remains required; absence of a workout log is not automatically non-adherence.
+Uses adherence and authoritative plan-vs-real semantics. Unknown outcomes remain distinct and are not counted as confirmed failures.
 
 ### Competition detail
 
-Shows factual relevant/upcoming competition context. No readiness assessment, predicted performance, expected finish time or race-fitness conclusion is introduced by Stats v1.
+Shows factual competition context and treats no competition as a valid empty state. Stats v1 does not add readiness assessment, predicted performance, expected finish time or race-fitness conclusions.
 
-## Localization and explanation
+## Localization boundary
 
-Analytics produces structured semantic data, not localized strings. Athlete projections preserve athlete-safe structured semantics. ES/EN message catalogs own localized explanation and UI owns rendering.
+Analytics and Athlete Stats projections produce structured semantic data, not localized strings. The summary view-model is locale-neutral (`key`, `value`, `unit`, state). ES/EN message catalogs own localized labels, explanations and session pluralization; Stats routes consume the `stats` namespace through `next-intl`.
 
-Athlete wording must not add interpretation that the source did not establish. For example, a neutral increasing trend may be rendered as "increased" but not automatically as "improved".
+The message-fragment loader registers `athlete-stats/stats` explicitly for both locales. Structural equivalence and non-interpretive wording are regression-protected, and the final i18n gate reported 452 aligned message leaves.
 
 ## Responsive product strategy
 
 Responsive composition is role-driven:
 
-- **Athlete-facing surfaces are mobile-first.** Mobile portrait is the primary composition; behavior must deliberately adapt to mobile landscape, tablet and desktop without introducing a separate information architecture.
-- **Coach-facing surfaces are desktop-first.** Dense desktop workflows are primary; they must deliberately adapt to tablet, mobile landscape and mobile portrait while preserving decision context and action safety.
+- **Athlete-facing surfaces are mobile-first.** Mobile portrait is the primary composition; mobile landscape, tablet and desktop adapt the same information architecture.
+- **Coach-facing surfaces are desktop-first.** Dense desktop workflows are primary and adapt downward while preserving decision context and action safety.
 
-KAN-264 is athlete-facing, so `/stats` and all detail routes use the mobile-first strategy.
+KAN-264 implemented the Athlete shell and Stats surfaces using the mobile-first strategy. KAN-357 was folded into the story scope to ensure the real Athlete shell participated in the responsive walkthrough rather than validating isolated Stats cards only.
 
-Visual meaning must never depend exclusively on color, arrows or charts. Textual values/explanations remain available and accessible.
+Visual meaning does not depend exclusively on color, arrows or charts; textual values/explanations remain available.
 
-## Verification strategy
+## Verification baseline
 
-Testing is layered:
+The completed test strategy is layered:
 
 1. focused analytics tests prove neutral calculations and evidence semantics;
 2. athlete-projection tests prove allowlisted disclosure and exclusion of coach-only semantics;
 3. contract tests preserve zero/unknown/insufficient/error distinctions;
-4. semantic E2E tests exercise `domain fixtures -> analytics -> athlete projection`;
-5. UI/i18n tests verify navigation, states, ES/EN equivalence and non-interpretive wording;
-6. final manual responsive walkthrough starts with mobile portrait, then mobile landscape, tablet and desktop.
+4. semantic integration tests exercise the Athlete projection boundary with durable edge-state fixtures;
+5. UI/i18n tests verify Stats navigation, locale-neutral view models, ES/EN equivalence and non-interpretive wording;
+6. manual responsive walkthrough validates the Athlete composition across target form factors.
 
-Remote-first implementation uses focused validation while tasks are in progress. Unless an earlier run is required to unblock implementation, the complete local gate is requested once KAN-264 implementation is complete:
+Final Historia 8 gate reported on 2026-09-15:
 
 ```text
-pn test
-pn lint
-pn exec tsc --noEmit
-pn build
+pn test                 790/790 PASS (157 suites)
+pn lint                 PASS
+pn exec tsc --noEmit    PASS
+pn build                PASS
+pn i18n:check           PASS (452 aligned message leaves)
 ```
 
-Additional environment-specific verification is added only if implementation discovers a relevant boundary.
+Future changes to Analytics, Athlete projections, Stats i18n or Athlete shell responsiveness should treat this as the regression baseline.
 
-## Out of scope
+## Handoff to subsequent stories
 
-KAN-264 does not include:
+Subsequent work may assume the following foundations exist and are stable unless deliberately changed with tests and documentation:
 
-- athlete-facing Training Response or Readiness (KAN-349);
+- consumer-neutral domain analytics are separate from athlete disclosure;
+- Athlete Stats projections are explicit allowlists;
+- `/stats` plus Training, Load, Adherence and Competition details are established routes;
+- evidence states preserve known zero, unknown, insufficient and valid empty semantics;
+- Stats localization is ES/EN through the real message-fragment loader;
+- Stats presentation/view models do not own localized copy;
+- Athlete composition is mobile-first and uses the real Athlete shell;
+- coach-only interpretation must not leak through structural spreading or reuse of coach projections.
+
+Deliberately deferred/non-blocking follow-up areas discovered during Historia 8 include:
+
+- evaluate whether the desktop Athlete shell should continue using `BottomNavigationBar` or evolve to a sidebar/navigation pattern;
+- provide an Accessibility settings area capable of user-controlled text scaling instead of relying on global/mobile CSS compensation;
+- expose arbitrary/custom Stats period selection only in a dedicated future product slice;
+- any Athlete-facing Training Response/Readiness interpretation requires separate disclosure/product/scientific design rather than being inferred from the neutral analytics added here.
+
+These are follow-up concerns, not incomplete acceptance criteria for KAN-264.
+
+## Historical out-of-scope boundary
+
+Historia 8 intentionally did not include:
+
+- athlete-facing Training Response or Readiness;
 - arbitrary/custom period selection in Stats UI;
 - new physiological metrics or training-load formulas;
 - global performance/readiness scores;
