@@ -67,14 +67,22 @@ export default async function StatsPage() {
         <article className='rounded-2xl border bg-card p-5 shadow-sm'>
           <Gauge className='mb-2 size-5' />
           <h2 className='font-heading text-lg font-bold'>Carga</h2>
-          <p className='my-3 text-2xl font-bold'>{view.load.displayValue ?? stateText.insufficient_data}</p>
+          {view.load.displayValue ? (
+            <p className='my-3 text-2xl font-bold'>{view.load.displayValue}</p>
+          ) : (
+            <p className='my-3 text-base font-semibold text-muted-foreground'>{stateText.insufficient_data}</p>
+          )}
           <DomainLink href={view.load.href}>Profundizar</DomainLink>
         </article>
 
         <article className='rounded-2xl border bg-card p-5 shadow-sm'>
           <ChartNoAxesColumnIncreasing className='mb-2 size-5' />
           <h2 className='font-heading text-lg font-bold'>Adherencia</h2>
-          <p className='my-3 text-2xl font-bold'>{view.adherence.displayValue ?? stateText.insufficient_data}</p>
+          {view.adherence.displayValue ? (
+            <p className='my-3 text-2xl font-bold'>{view.adherence.displayValue}</p>
+          ) : (
+            <p className='my-3 text-base font-semibold text-muted-foreground'>{stateText.insufficient_data}</p>
+          )}
           <DomainLink href={view.adherence.href}>Profundizar</DomainLink>
         </article>
 
