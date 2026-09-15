@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { readFile } from 'node:fs/promises'
 import { describe, it } from 'node:test'
 
+import { loadMessages } from '@/i18n/messages'
 import { projectAthleteStatsDetails, projectAthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 import { athleteStatsSemanticFixture } from '@/tests/fixtures/athlete-stats-semantic.fixture'
 
@@ -36,12 +36,14 @@ describe('athlete stats semantic integration', () => {
   })
 
   it('keeps ES and EN Stats structures equivalent and athlete wording non-interpretive', async () => {
-    const [esRaw, enRaw] = await Promise.all([readFile('messages/es.json', 'utf8'), readFile('messages/en.json', 'utf8')])
-    const es = JSON.parse(esRaw)
-    const en = JSON.parse(enRaw)
+    const [es, en] = await Promise.all([loadMessages('es'), loadMessages('en')])
+    const esStats = (es as Record<string, unknown>).stats
+    const enStats = (en as Record<string, unknown>).stats
 
-    assert.deepEqual(Object.keys(es.stats).sort(), Object.keys(en.stats).sort())
-    assert.doesNotMatch(JSON.stringify(es.stats), /readiness|fatiga|riesgo|recomend/i)
-    assert.doesNotMatch(JSON.stringify(en.stats), /readiness|fatigue|risk|recommend/i)
+    assert.ok(esStats, 'expected ES stats messages to be registered')
+    assert.ok(enStats, 'expected EN stats messages to be registered')
+    assert.deepEqual(Object.keys(esStats as object).sort(), Object.keys(enStats as object).sort())
+    assert.doesNotMatch(JSON.stringify(esStats), /readiness|fatiga|riesgo|recomend/i)
+    assert.doesNotMatch(JSON.stringify(enStats), /readiness|fatigue|risk|recommend/i)
   })
 })
