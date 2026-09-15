@@ -16,17 +16,24 @@ export interface AthleteStatsProjectionInput {
 
 type AthleteMetricUnit = 'km' | 'min' | 'm' | 'sessions'
 
+interface AthleteMetricEvidence {
+  readonly knownRecords: number
+  readonly observedRecords: number
+}
+
 type AthleteMetric =
   | {
       readonly state: 'available'
       readonly value: number
       readonly unit: AthleteMetricUnit
+      readonly evidence: AthleteMetricEvidence
       readonly comparison: AnalyticsMetricComparison
     }
   | {
       readonly state: 'unknown'
       readonly value: null
       readonly unit: AthleteMetricUnit
+      readonly evidence: AthleteMetricEvidence
       readonly comparison: AnalyticsMetricComparison
     }
 
@@ -34,7 +41,12 @@ export interface AthleteTrainingStatsProjection {
   readonly distance: AthleteMetric
   readonly duration: AthleteMetric
   readonly elevation: AthleteMetric
-  readonly frequency: AthleteMetric
+  readonly frequency: {
+    readonly state: 'available' | 'unknown'
+    readonly value: number | null
+    readonly unit: 'sessions'
+    readonly comparison: AnalyticsMetricComparison
+  }
 }
 
 export type AthleteLoadSummaryProjection =
@@ -92,17 +104,22 @@ export interface AthleteStatsDetails {
 function metric(
   source: RealizedTrainingSummary['distance'],
   comparison: AnalyticsMetricComparison,
-  unit: AthleteMetricUnit,
+  unit: Exclude<AthleteMetricUnit, 'sessions'>,
 ): AthleteMetric {
+  const evidence = {
+    knownRecords: source.knownRecords,
+    observedRecords: source.observedRecords,
+  }
+
   return source.state === 'available'
-    ? { state: 'available', value: source.value, unit, comparison }
-    : { state: 'unknown', value: null, unit, comparison }
+    ? { state: 'available', value: source.value, unit, evidence, comparison }
+    : { state: 'unknown', value: null, unit, evidence, comparison }
 }
 
 function frequencyMetric(
   source: RealizedTrainingSummary['frequency'],
   comparison: AnalyticsMetricComparison,
-): AthleteMetric {
+): AthleteTrainingStatsProjection['frequency'] {
   return source.state === 'available'
     ? { state: 'available', value: source.value, unit: 'sessions', comparison }
     : { state: 'unknown', value: null, unit: 'sessions', comparison }
@@ -160,7 +177,10 @@ function competitionEntry(
 
 export function projectAthleteStatsSummary(input: AthleteStatsProjectionInput): AthleteStatsSummary {
   return {
-    period: { ...input.period },
+    period: {
+      startDate: input.period.startDate,
+      endDate: input.period.endDate,
+    },
     training: trainingProjection(input),
     load: loadProjection(input.load),
     adherence: adherenceProjection(input.adherence),
@@ -172,11 +192,16 @@ export function projectAthleteStatsDetails(input: AthleteStatsProjectionInput): 
   const adherence = adherenceProjection(input.adherence)
 
   return {
-    period: { ...input.period },
+    period: {
+      startDate: input.period.startDate,
+      endDate: input.period.endDate,
+    },
     training: trainingProjection(input),
     load: loadProjection(input.load),
     adherence: {
-      ...adherence,
+      state: adherence.state,
+      value: adherence.value,
+      coveragePercent: adherence.coveragePercent,
       eligiblePlannedSessions: input.adherence.coverage.eligiblePlannedSessions,
       confirmedOutcomeSessions: input.adherence.coverage.confirmedOutcomeSessions,
       unknownSessions: input.adherence.coverage.unknownSessions,
