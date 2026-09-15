@@ -20,6 +20,16 @@ const comparison = (currentValue: number, previousValue: number) => ({
   direction: currentValue > previousValue ? 'increasing' as const : currentValue < previousValue ? 'decreasing' as const : 'stable' as const,
 })
 
+const unknownComparison = {
+  state: 'not_evaluable' as const,
+  currentValue: null,
+  previousValue: null,
+  absoluteDelta: null,
+  relativeDeltaPercent: null,
+  direction: 'unknown' as const,
+  reason: 'current_unknown' as const,
+}
+
 const training: RealizedTrainingSummary = {
   frequency: { state: 'available', value: 4 },
   distance: { state: 'available', value: 42, knownRecords: 4, observedRecords: 4 },
@@ -131,5 +141,77 @@ describe('athlete stats projections', () => {
     })
 
     assert.equal(result.competition, null)
+  })
+
+  it('preserves unknown training evidence and non-evaluable comparison without inventing zero', () => {
+    const result = projectAthleteStatsSummary({
+      ...input,
+      training: {
+        ...training,
+        distance: {
+          state: 'unknown',
+          reason: 'metric_not_observed',
+          knownRecords: 0,
+          observedRecords: 4,
+        },
+      },
+      trainingEvolution: { ...evolution, distance: unknownComparison },
+    })
+
+    assert.equal(result.training.distance.state, 'unknown')
+    assert.equal(result.training.distance.value, null)
+    assert.equal(result.training.distance.evidence.observedRecords, 4)
+    assert.equal(result.training.distance.evidence.knownRecords, 0)
+    assert.equal(result.training.distance.comparison.state, 'not_evaluable')
+  })
+
+  it('preserves insufficient load and adherence as distinct athlete-visible evidence states', () => {
+    const result = projectAthleteStatsDetails({
+      ...input,
+      load: {
+        state: 'insufficient_data',
+        startDate: '2026-09-01',
+        endDate: '2026-09-14',
+        ruleVersion: 'srpe-duration-v1',
+        coverageRatio: 0.4,
+        reasons: ['insufficient_history'],
+        latest: null,
+      },
+      adherence: {
+        ...adherence,
+        frequency: {
+          state: 'insufficient_data',
+          counts: { confirmedCompleted: 0, confirmedNotCompleted: 0, denominator: 0 },
+          adherencePercent: null,
+          reasons: ['insufficient_confirmed_outcomes'],
+        },
+      },
+    })
+
+    assert.equal(result.load.state, 'insufficient_data')
+    assert.equal(result.load.coverageRatio, 0.4)
+    assert.equal(result.adherence.state, 'insufficient_data')
+    assert.equal(result.adherence.value, null)
+    assert.equal(result.adherence.coveragePercent, 80)
+    assert.equal(JSON.stringify(result).includes('insufficient_history'), false)
+    assert.equal(JSON.stringify(result).includes('insufficient_confirmed_outcomes'), false)
+  })
+
+  it('does not leak newly attached coach-facing properties through structural spreading', () => {
+    const extended = {
+      ...input,
+      load: { ...load, recommendation: 'reduce-load', readiness: 'low' },
+      adherence: { ...adherence, reasonCodes: ['coach-only'] },
+      competition: {
+        ...competition,
+        primaryCompetition: { ...competition.primaryCompetition!, prediction: 'finish-time' },
+      },
+    }
+
+    const serialized = JSON.stringify(projectAthleteStatsDetails(extended))
+    assert.equal(serialized.includes('recommendation'), false)
+    assert.equal(serialized.includes('readiness'), false)
+    assert.equal(serialized.includes('reasonCodes'), false)
+    assert.equal(serialized.includes('prediction'), false)
   })
 })
