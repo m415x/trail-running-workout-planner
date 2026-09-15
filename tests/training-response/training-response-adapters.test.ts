@@ -50,7 +50,7 @@ function volumeSignal(
         unplannedRealizedSessions: 0, coverageRatio: 1,
       },
       context: {
-        microcycleType: 'load', loadFocus: null, competitionPhases: [],
+        microcycleType: 'development', loadFocus: null, competitionPhases: [],
         competitionIds: [], requiresCoachReview: false,
       },
       insufficientReasons: [],
