@@ -30,11 +30,13 @@ describe('race registration SQLite repository', () => {
   it('round-trips registration, snapshot, participation and result facts', () => {
     const { event, edition, course } = catalog()
     const id = randomUUID()
+    const teamId = `team-${randomUUID()}`
+    const athleteProfileId = `athlete-${randomUUID()}`
 
     createRaceRegistration({
       id,
-      teamId: `team-${randomUUID()}`,
-      athleteProfileId: `athlete-${randomUUID()}`,
+      teamId,
+      athleteProfileId,
       course: { raceEventId: event.id, raceEditionId: edition.id, raceCourseId: course.id },
       registrationStatus: 'registered',
       participationStatus: 'finished',
@@ -51,8 +53,8 @@ describe('race registration SQLite repository', () => {
 
     assert.deepEqual(getRaceRegistration(id), {
       id,
-      teamId: assert.match,
-      athleteProfileId: assert.match,
+      teamId,
+      athleteProfileId,
       course: { raceEventId: event.id, raceEditionId: edition.id, raceCourseId: course.id },
       registrationStatus: 'registered',
       participationStatus: 'finished',
