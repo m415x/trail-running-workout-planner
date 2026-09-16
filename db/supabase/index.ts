@@ -5,6 +5,7 @@ import * as coreSchema from '@/db/supabase/schema'
 import * as competitionEntrySchema from '@/db/supabase/competition-entry-schema'
 import * as readinessSchema from '@/db/supabase/readiness-schema'
 import * as raceCatalogSchema from '@/db/supabase/race-catalog-schema'
+import * as raceRegistrationSchema from '@/db/supabase/race-registration-schema'
 
 const connectionString = process.env.SUPABASE_DATABASE_URL
 
@@ -24,5 +25,6 @@ export const supabaseDb = drizzle(supabaseClient, {
     ...competitionEntrySchema,
     ...readinessSchema,
     ...raceCatalogSchema,
+    ...raceRegistrationSchema,
   },
 })
