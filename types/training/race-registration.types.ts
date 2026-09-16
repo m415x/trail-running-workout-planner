@@ -45,3 +45,10 @@ export interface RaceRegistrationDraft {
   course: RaceCourseReference
   registrationStatus: RaceRegistrationStatus
 }
+
+/** Complete durable factual state owned by race-registration persistence. */
+export interface RaceRegistrationPersistenceInput extends RaceRegistrationDraft {
+  participationStatus: RaceParticipationStatus
+  snapshot: RaceRegistrationSnapshot
+  result: RaceResult | null
+}
