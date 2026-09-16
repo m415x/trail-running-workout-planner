@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { raceRegistrations } from '@/db/race-registration-schema'
@@ -43,6 +43,28 @@ function mapRegistration(row: typeof raceRegistrations.$inferSelect): RaceRegist
 export function getRaceRegistration(id: string): RaceRegistrationPersistenceInput | null {
   const row = db.select().from(raceRegistrations).where(eq(raceRegistrations.id, id)).get()
   return row ? mapRegistration(row) : null
+}
+
+export function findRaceRegistrationInEdition(input: {
+  teamId: string
+  athleteProfileId: string
+  raceEditionId: string
+}) {
+  const row = db
+    .select({
+      registrationId: raceRegistrations.id,
+      courseLabel: raceRegistrations.snapshotCourseLabel,
+      registrationStatus: raceRegistrations.registrationStatus,
+    })
+    .from(raceRegistrations)
+    .where(and(
+      eq(raceRegistrations.teamId, input.teamId),
+      eq(raceRegistrations.athleteProfileId, input.athleteProfileId),
+      eq(raceRegistrations.raceEditionId, input.raceEditionId),
+    ))
+    .get()
+
+  return row ?? null
 }
 
 export function createRaceRegistration(
