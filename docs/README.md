@@ -30,6 +30,12 @@ Use handoffs to reconstruct the transition between completed stories; architectu
 - [`handoffs/kan-261-training-load.md`](handoffs/kan-261-training-load.md) — training-load v1 boundary.
 - [`handoffs/kan-260-adherence.md`](handoffs/kan-260-adherence.md) — adherence boundary.
 
+## Agent harness
+
+- [`agent-harness.md`](agent-harness.md) — `harness-eval-v1` context/tool discipline, behavioral evals and the two-story evaluation protocol. `AGENTS.md` remains the operational authority.
+
+The final two Epic 3 stories intentionally use the same harness version. Record observations at story closure; do not tune v1 between stories unless a rule creates a blocking safety/correctness failure.
+
 ## Current story transition
 
 Stories KAN-257 through KAN-264 are complete. The next Epic 3 story is **KAN-281 — Registrar inscripciones y participación histórica en carreras**.
@@ -42,7 +48,7 @@ Before KAN-281 implementation, the accepted MVP clarification is:
 - absence of explicit participation/result evidence remains unknown;
 - `TrainingGoal` and `CompetitionEntry` remain independent and do not create registrations automatically.
 
-The complete KAN-281 contract still needs to be designed before Jira implementation tasks are created.
+The KAN-281 contract and Jira task breakdown were designed before implementation; current implementation truth must be reconciled with Jira and the competition architecture as the story advances.
 
 ## Other documentation
 
@@ -54,4 +60,4 @@ The complete KAN-281 contract still needs to be designed before Jira implementat
 
 ## Reading rule
 
-For a new story, read `AGENTS.md`, this index, the relevant architecture documents and the latest completed-story handoff; then reconcile them with current code/tests and the complete Jira story before designing implementation tasks.
+For a new story, read `AGENTS.md`, this index, the current epic handoff and only the relevant durable domain documents; then reconcile them with focused current code/tests and the complete Jira story. Retrieve additional detail just in time instead of preloading the repository or relying on chat history.
