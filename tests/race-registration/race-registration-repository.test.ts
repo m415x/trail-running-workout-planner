@@ -5,6 +5,7 @@ import { describe, it } from 'node:test'
 import { createRaceCourse, createRaceEdition, createRaceEvent } from '@/lib/race-catalog/catalog-repository'
 import {
   createRaceRegistration,
+  findRaceRegistrationInEdition,
   getRaceRegistration,
 } from '@/lib/competitions/race-registration-repository'
 
@@ -68,6 +69,42 @@ describe('race registration SQLite repository', () => {
       },
       result: { actualDistanceKm: 30.4, elapsedTimeSeconds: 10_800 },
     })
+  })
+
+  it('finds the current registration by team + athlete + edition', () => {
+    const { event, edition, course } = catalog()
+    const teamId = `team-${randomUUID()}`
+    const athleteProfileId = `athlete-${randomUUID()}`
+    const id = randomUUID()
+
+    createRaceRegistration({
+      id,
+      teamId,
+      athleteProfileId,
+      course: { raceEventId: event.id, raceEditionId: edition.id, raceCourseId: course.id },
+      registrationStatus: 'registered',
+      participationStatus: 'unknown',
+      snapshot: {
+        eventName: event.name,
+        editionLabel: edition.label,
+        editionDate: edition.startDate,
+        courseLabel: course.label,
+        nominalDistanceKm: course.distanceKm,
+        nominalElevationGainM: course.elevationGainM,
+      },
+      result: null,
+    })
+
+    assert.deepEqual(findRaceRegistrationInEdition({ teamId, athleteProfileId, raceEditionId: edition.id }), {
+      registrationId: id,
+      courseLabel: '30K',
+      registrationStatus: 'registered',
+    })
+    assert.equal(findRaceRegistrationInEdition({
+      teamId,
+      athleteProfileId,
+      raceEditionId: `${edition.id}-other`,
+    }), null)
   })
 
   it('rejects a registration whose supplied ancestry does not match the selected catalog course', () => {
