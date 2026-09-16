@@ -6,6 +6,12 @@ export type RaceRegistrationStatus = 'registered' | 'cancelled'
 /** Factual participation evidence; `unknown` means no participation fact is known. */
 export type RaceParticipationStatus = 'unknown' | 'started' | 'finished' | 'dnf' | 'dns'
 
+/** Minimal factual competitive result. `null` means unknown; zero remains a known value. */
+export interface RaceResult {
+  actualDistanceKm: number | null
+  elapsedTimeSeconds: number | null
+}
+
 /** Historical competitive context accepted by one registration. */
 export interface RaceRegistrationSnapshot {
   eventName: string
