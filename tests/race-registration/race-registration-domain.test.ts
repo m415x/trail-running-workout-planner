@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import {
+  findRaceRegistrationEditionConflicts,
   raceRegistrationEditionKey,
   validateRaceRegistrationDraft,
 } from '@/lib/competitions/race-registration'
@@ -70,6 +71,54 @@ describe('race registration domain', () => {
           },
         }),
       ),
+    )
+  })
+
+  it('detects duplicate effective registrations for the same team + athlete + edition even when course changes', () => {
+    const registrations = [
+      draft(),
+      draft({
+        id: 'registration_2',
+        course: {
+          raceEventId: 'event_1',
+          raceEditionId: 'edition_2026',
+          raceCourseId: 'course_42k',
+        },
+      }),
+      draft({ id: 'registration_3', athleteProfileId: 'athlete_2' }),
+      draft({
+        id: 'registration_4',
+        course: {
+          raceEventId: 'event_1',
+          raceEditionId: 'edition_2027',
+          raceCourseId: 'course_30k',
+        },
+      }),
+    ]
+
+    assert.deepEqual(findRaceRegistrationEditionConflicts(registrations), [
+      {
+        key: raceRegistrationEditionKey(registrations[0]),
+        registrationIds: ['registration_1', 'registration_2'],
+      },
+    ])
+  })
+
+  it('does not report a conflict when athlete or edition differs', () => {
+    assert.deepEqual(
+      findRaceRegistrationEditionConflicts([
+        draft(),
+        draft({ id: 'registration_2', athleteProfileId: 'athlete_2' }),
+        draft({
+          id: 'registration_3',
+          course: {
+            raceEventId: 'event_1',
+            raceEditionId: 'edition_2027',
+            raceCourseId: 'course_30k',
+          },
+        }),
+      ]),
+      [],
     )
   })
 
