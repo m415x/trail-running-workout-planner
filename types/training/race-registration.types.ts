@@ -3,6 +3,9 @@ import type { RaceCourseReference } from '@/types/training/race-catalog.types'
 /** Effective lifecycle of an athlete's individual registration for one race edition. */
 export type RaceRegistrationStatus = 'registered' | 'cancelled'
 
+/** Factual participation evidence; `unknown` means no participation fact is known. */
+export type RaceParticipationStatus = 'unknown' | 'started' | 'finished' | 'dnf' | 'dns'
+
 /**
  * Minimum individual race-registration fact.
  *
