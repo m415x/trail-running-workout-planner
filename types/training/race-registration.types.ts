@@ -6,6 +6,24 @@ export type RaceRegistrationStatus = 'registered' | 'cancelled'
 /** Factual participation evidence; `unknown` means no participation fact is known. */
 export type RaceParticipationStatus = 'unknown' | 'started' | 'finished' | 'dnf' | 'dns'
 
+/** Historical competitive context accepted by one registration. */
+export interface RaceRegistrationSnapshot {
+  eventName: string
+  editionLabel: string
+  /** Reuses RaceEdition.startDate rather than introducing parallel temporal semantics. */
+  editionDate: string
+  courseLabel: string
+  nominalDistanceKm: number | null
+  nominalElevationGainM: number | null
+}
+
+/** Course-dependent registration facts that must move together on an ordinary course change. */
+export interface RaceRegistrationCourseState {
+  course: RaceCourseReference
+  snapshot: RaceRegistrationSnapshot
+  participationStatus: RaceParticipationStatus
+}
+
 /**
  * Minimum individual race-registration fact.
  *
