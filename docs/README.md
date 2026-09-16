@@ -1,58 +1,57 @@
-# Documentation
+# Documentation index
 
-This directory contains the project's durable technical, product, research, historical, and handoff documentation.
+Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
-All versioned GitHub documentation is written in English. Localized product help belongs in the application's message catalogs.
+## Architecture
 
-## Development branch workflow
+Domain and technical contracts that current implementation should preserve unless a story explicitly changes them.
 
-`dev` is the canonical development integration branch.
+- [`architecture/README.md`](architecture/README.md) — architecture index.
+- [`architecture/competitions/`](architecture/competitions/) — competitive catalog, classification, planning/goal integration, persistence and future registration boundary.
+- [`architecture/realized-training/`](architecture/realized-training/) — durable realized-training evidence and capture contracts.
+- [`architecture/monitoring/`](architecture/monitoring/) — adherence/load/monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
+- [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
+- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts.
 
-- Create new story and feature branches from the current `dev` head.
-- After story verification and Jira closure evidence, merge completed branches back into `dev`.
-- `main` remains the stable/production branch and is not the normal target for story integration.
-- Legacy branches such as `dashboard` and historical story branches may remain because Jira and historical records reference them. They are retained for traceability only and must not be used as the base or merge target for new work.
-- The Git branch name `dashboard` is unrelated to application routes such as `app/[locale]/dashboard`; product route names are not part of this branch migration.
+### Current monitoring baseline
 
-## Structure
+- [`architecture/monitoring/athlete-stats-analytics.md`](architecture/monitoring/athlete-stats-analytics.md) — KAN-264 completed Athlete Stats architecture and final verification baseline.
 
-### `architecture/`
-Current technical and domain architecture, organized by durable functional area rather than Jira story number:
+### Current competitive-registration starting point
 
-- `planning/`
-- `competitions/`
-- `realized-training/`
-- `monitoring/`
-- `platform/`
+- [`architecture/competitions/race-registration-boundary.md`](architecture/competitions/race-registration-boundary.md) — minimum target reserved by KAN-275. Lifecycle, participation/result evidence, snapshot and persistence are intentionally deferred to KAN-281.
 
-See [`architecture/README.md`](architecture/README.md).
+## Handoffs
 
-### `glossary/`
-English-only technical/domain terminology, split by semantic domain. See [`glossary/README.md`](glossary/README.md).
+Use handoffs to reconstruct the transition between completed stories; architecture remains the durable domain authority.
 
-The technical glossary is not the localized product glossary. User-facing help is maintained under `DomainGlossary` in `messages/en/glossary/` and `messages/es/glossary/`.
+- [`handoffs/epic-3.md`](handoffs/epic-3.md) — current Epic 3 operational baseline and next-story pointer.
+- [`handoffs/kan-264-athlete-stats.md`](handoffs/kan-264-athlete-stats.md) — completed Historia 8 baseline for KAN-281.
+- [`handoffs/kan-261-training-load.md`](handoffs/kan-261-training-load.md) — training-load v1 boundary.
+- [`handoffs/kan-260-adherence.md`](handoffs/kan-260-adherence.md) — adherence boundary.
 
-### `research/`
-Scientific and methodological research supporting product and architecture decisions. Research documents must distinguish evidence from product heuristics and must state important limits of interpretation.
+## Current story transition
 
-### `product/`
-Durable product principles that are not implementation-specific.
+Stories KAN-257 through KAN-264 are complete. The next Epic 3 story is **KAN-281 — Registrar inscripciones y participación histórica en carreras**.
 
-### `history/`
-Historical epic summaries and superseded context retained for traceability.
+Before KAN-281 implementation, the accepted MVP clarification is:
 
-### `handoffs/`
-Implementation handoffs and story-level operational summaries. These are useful for continuity but are not the primary architecture source of truth.
+- `RaceRegistration` starts from an effective individual registration, not a mere intention to register;
+- registration lifecycle is separate from participation/result evidence;
+- being registered does not imply started/finished/DNS/DNF;
+- absence of explicit participation/result evidence remains unknown;
+- `TrainingGoal` and `CompetitionEntry` remain independent and do not create registrations automatically.
 
-### `superpowers/`
-Development plans produced by the engineering workflow.
+The complete KAN-281 contract still needs to be designed before Jira implementation tasks are created.
 
-## Documentation policy
+## Other documentation
 
-1. GitHub documentation is English-only.
-2. Jira may remain in Spanish for project tracking and discussion.
-3. Architecture documents describe current durable behavior, not ticket chronology.
-4. Research documents provide scientific/methodological support and clearly label operational heuristics.
-5. New or materially changed terminology requires a glossary review.
-6. Localized user help must be maintained symmetrically under `messages/en/` and `messages/es/`.
-7. When files move, update repository references in the same change so documentation navigation remains valid.
+- [`research/`](research/) — scientific/product research and rationale. Research informs contracts but is not automatically implementation scope.
+- [`product/`](product/) — product-facing documentation.
+- [`glossary/`](glossary/) — terminology.
+- [`history/`](history/) — superseded/completed historical material retained for traceability.
+- [`superpowers/`](superpowers/) — implementation plans/workflow artifacts; completed plans must be clearly treated as historical rather than pending work.
+
+## Reading rule
+
+For a new story, read `AGENTS.md`, this index, the relevant architecture documents and the latest completed-story handoff; then reconcile them with current code/tests and the complete Jira story before designing implementation tasks.
