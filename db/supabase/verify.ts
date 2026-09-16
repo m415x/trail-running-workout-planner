@@ -9,7 +9,7 @@ const applicationTables = [
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'microcycle_intensity_targets', 'physiology_records',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
-  'race_courses', 'race_editions', 'race_events',
+  'race_courses', 'race_editions', 'race_events', 'race_registrations',
   'readiness_evaluations', 'readiness_reviews',
   'session_generation_modification_records', 'sessions', 'shoes', 'teams',
   'training_goal_race_courses', 'training_goals', 'training_locations', 'users',
