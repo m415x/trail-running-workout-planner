@@ -32,3 +32,5 @@ ALTER TABLE "race_registrations" ADD CONSTRAINT "race_registrations_race_course_
 CREATE UNIQUE INDEX "race_registrations_team_athlete_edition_unique" ON "race_registrations" USING btree ("team_id","athlete_profile_id","race_edition_id");--> statement-breakpoint
 CREATE INDEX "race_registrations_team_athlete_idx" ON "race_registrations" USING btree ("team_id","athlete_profile_id");--> statement-breakpoint
 CREATE INDEX "race_registrations_course_idx" ON "race_registrations" USING btree ("race_course_id");
+--> statement-breakpoint
+ALTER TABLE "race_registrations" ENABLE ROW LEVEL SECURITY;
