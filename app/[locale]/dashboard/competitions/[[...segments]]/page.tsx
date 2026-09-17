@@ -397,7 +397,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
         </CardContent>
       </Card>
 
-      <CourseRegistration event={event} edition={edition} course={course} interaction={interaction} />
+      <CourseRegistration event={event} edition={edition} course={course} interaction={interaction} locale={locale} />
 
       <Card>
         <CardHeader>
@@ -439,11 +439,11 @@ function DetailHeader({ backPath, backLabel, title, children }: {
   children?: React.ReactNode
 }) {
   return (
-    <div className='space-y-2'>
-      <Link href={backPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-        <ArrowLeft /> {backLabel}
+    <div className='space-y-3'>
+      <Link href={backPath} className='inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground'>
+        <ArrowLeft className='size-4' /> {backLabel}
       </Link>
-      <div className='flex flex-wrap items-center gap-2'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
         <h2 className='text-3xl font-bold tracking-tight'>{title}</h2>
         {children}
       </div>
@@ -458,13 +458,8 @@ function FormPage({ title, backPath, backLabel, children }: {
   children: React.ReactNode
 }) {
   return (
-    <div className='mx-auto w-full max-w-2xl space-y-6'>
-      <div className='space-y-2'>
-        <Link href={backPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-          <ArrowLeft /> {backLabel}
-        </Link>
-        <h2 className='text-3xl font-bold tracking-tight'>{title}</h2>
-      </div>
+    <div className='space-y-6'>
+      <DetailHeader backPath={backPath} backLabel={backLabel} title={title} />
       {children}
     </div>
   )
@@ -472,9 +467,9 @@ function FormPage({ title, backPath, backLabel, children }: {
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className='rounded-lg bg-muted/50 p-3'>
+    <div>
       <dt className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{label}</dt>
-      <dd className='mt-1 font-semibold'>{value}</dd>
+      <dd className='mt-1 font-medium'>{value}</dd>
     </div>
   )
 }
