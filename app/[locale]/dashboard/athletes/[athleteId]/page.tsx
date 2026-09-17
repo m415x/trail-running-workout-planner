@@ -112,6 +112,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 </p>
               ) : (
                 <form action={registerAthleteForRaceCourseAction} className='grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end'>
+                  <input type='hidden' name='locale' value={locale} />
                   <input type='hidden' name='athleteProfileId' value={athleteId} />
                   <label className='grid gap-1'>
                     <span className='text-xs text-muted-foreground'>{es ? 'Edición' : 'Edition'}</span>
