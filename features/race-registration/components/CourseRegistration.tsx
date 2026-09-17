@@ -67,6 +67,7 @@ export function CourseRegistration({ event, edition, course, interaction, locale
               <span className='ml-2 text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
             </div>
             <form action={changeRaceRegistrationCourseAction}>
+              <input type='hidden' name='locale' value={locale} />
               <input type='hidden' name='registrationId' value={athlete.registrationId} />
               <input type='hidden' name='raceCourseId' value={course.id} />
               <button type='submit' className='rounded-md border px-2 py-1 text-xs font-medium'>
