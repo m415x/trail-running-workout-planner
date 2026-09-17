@@ -45,6 +45,22 @@ export function getRaceRegistration(id: string): RaceRegistrationPersistenceInpu
   return row ? mapRegistration(row) : null
 }
 
+export function getRaceRegistrationForTeam(input: {
+  teamId: string
+  registrationId: string
+}): RaceRegistrationPersistenceInput | null {
+  const row = db
+    .select()
+    .from(raceRegistrations)
+    .where(and(
+      eq(raceRegistrations.id, input.registrationId),
+      eq(raceRegistrations.teamId, input.teamId),
+    ))
+    .get()
+
+  return row ? mapRegistration(row) : null
+}
+
 export function listRaceRegistrationsInEdition(input: {
   teamId: string
   raceEditionId: string
