@@ -13,6 +13,7 @@ import {
 
 import { CatalogForm } from '@/features/race-catalog/components/CatalogForm'
 import { CourseRegistration } from '@/features/race-registration/components/CourseRegistration'
+import { EditionRegistrations } from '@/features/race-registration/components/EditionRegistrations'
 import { Link } from '@/i18n/routing'
 import {
   getRaceCourse,
@@ -23,11 +24,13 @@ import {
   listRaceEvents,
 } from '@/lib/race-catalog/catalog-repository'
 import { deriveRaceCourseProfile } from '@/lib/race-catalog/race-course-derived-profile'
+import { projectRaceEditionRegistrations } from '@/lib/competitions/race-registration-application'
 import { loadCourseRegistrationData } from '@/lib/competitions/race-registration-course-query'
 import {
   listActiveCourseRegistrationAthletes,
   listEffectiveCourseRegistrationsInEdition,
 } from '@/lib/competitions/race-registration-course-sources'
+import { listRaceRegistrationsInEdition } from '@/lib/competitions/race-registration-repository'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -251,6 +254,11 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   if (segments.length === 3) {
     const courses = listRaceCourses(edition.id)
     const location = [edition.location?.locality, edition.location?.region, edition.location?.countryCode].filter(Boolean).join(' · ')
+    const editionRegistrations = listRaceRegistrationsInEdition({
+      teamId: 'team_1',
+      raceEditionId: edition.id,
+    })
+    const editionRegistrationGroups = projectRaceEditionRegistrations(editionRegistrations)
 
     return (
       <div className='space-y-6'>
@@ -283,6 +291,8 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
             <p className='text-muted-foreground'>{t('source')}: {sourceLabel(edition)}</p>
           </CardContent>
         </Card>
+
+        <EditionRegistrations editionRegistrationGroups={editionRegistrationGroups} />
 
         <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
