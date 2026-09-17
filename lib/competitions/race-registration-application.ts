@@ -14,6 +14,7 @@ export interface CourseRegistrationEligibilityProjection { eligible: AthleteRegi
 export interface BulkRaceRegistrationSuccess { athleteProfileId: string; registrationId: string }
 export interface BulkRaceRegistrationFailure { athleteProfileId: string; reason: 'already_registered_in_edition'; existingCourseLabel: string }
 export interface BulkRaceRegistrationResult { requested: number; succeeded: number; failed: number; registrations: BulkRaceRegistrationSuccess[]; failures: BulkRaceRegistrationFailure[] }
+type EditionRegistrationInput = RaceRegistrationPersistenceInput & { athleteName?: string | null }
 
 function projectSnapshot(registration: RaceRegistrationPersistenceInput): AthleteRaceRegistrationProjection {
   return { eventName: registration.snapshot.eventName, editionLabel: registration.snapshot.editionLabel, editionDate: registration.snapshot.editionDate, courseLabel: registration.snapshot.courseLabel, nominalDistanceKm: registration.snapshot.nominalDistanceKm, nominalElevationGainM: registration.snapshot.nominalElevationGainM }
@@ -28,7 +29,7 @@ export function projectAthleteRaceCompetition(registrations: readonly RaceRegist
 }
 
 export function projectRaceEditionRegistrations(
-  registrations: readonly RaceRegistrationPersistenceInput[],
+  registrations: readonly EditionRegistrationInput[],
   athletes: readonly AthleteRegistrationCandidate[] = [],
 ): EditionCourseRegistrationsProjection[] {
   const athleteNames = new Map(athletes.map((athlete) => [athlete.athleteProfileId, athlete.athleteName]))
@@ -41,7 +42,7 @@ export function projectRaceEditionRegistrations(
       group = { raceCourseId, courseLabel: registration.snapshot.courseLabel, nominalDistanceKm: registration.snapshot.nominalDistanceKm, nominalElevationGainM: registration.snapshot.nominalElevationGainM, registrations: [] }
       groups.set(raceCourseId, group)
     }
-    group.registrations.push({ registrationId: registration.id, athleteProfileId: registration.athleteProfileId, athleteName: athleteNames.get(registration.athleteProfileId) ?? null, participationStatus: registration.participationStatus, actualDistanceKm: registration.result?.actualDistanceKm ?? null, elapsedTimeSeconds: registration.result?.elapsedTimeSeconds ?? null })
+    group.registrations.push({ registrationId: registration.id, athleteProfileId: registration.athleteProfileId, athleteName: registration.athleteName ?? athleteNames.get(registration.athleteProfileId) ?? null, participationStatus: registration.participationStatus, actualDistanceKm: registration.result?.actualDistanceKm ?? null, elapsedTimeSeconds: registration.result?.elapsedTimeSeconds ?? null })
   }
   return [...groups.values()]
 }
