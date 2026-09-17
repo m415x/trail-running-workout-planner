@@ -24,6 +24,13 @@ import { updateRaceParticipation } from '@/lib/competitions/race-registration-se
 import type { RaceParticipationStatus } from '@/types/training/race-registration.types'
 
 const CURRENT_TEAM_ID = 'team_1'
+const PARTICIPATION_STATUSES: readonly RaceParticipationStatus[] = [
+  'unknown',
+  'started',
+  'finished',
+  'dnf',
+  'dns',
+]
 
 const dependencies = buildRaceRegistrationActionDependencies({
   getRaceCourse,
@@ -50,6 +57,13 @@ function nullableNumber(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function parseRaceParticipationStatus(value: FormDataEntryValue | null): RaceParticipationStatus | null {
+  if (typeof value !== 'string') return null
+  return PARTICIPATION_STATUSES.includes(value as RaceParticipationStatus)
+    ? (value as RaceParticipationStatus)
+    : null
+}
+
 export async function registerAthletesForRaceCourse(formData: FormData) {
   return executeRaceRegistrationServerAction(formData, {
     teamId: CURRENT_TEAM_ID,
@@ -60,9 +74,9 @@ export async function registerAthletesForRaceCourse(formData: FormData) {
 
 export async function updateRaceParticipationAction(formData: FormData) {
   const registrationId = String(formData.get('registrationId') ?? '')
-  const participationStatus = String(
-    formData.get('participationStatus') ?? 'unknown',
-  ) as RaceParticipationStatus
+  const participationStatus = parseRaceParticipationStatus(formData.get('participationStatus'))
+  if (!registrationId || !participationStatus) return { ok: false as const, reason: 'invalid_input' as const }
+
   const actualDistanceKm = nullableNumber(formData.get('actualDistanceKm'))
   const elapsedTimeSeconds = nullableNumber(formData.get('elapsedTimeSeconds'))
 
