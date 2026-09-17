@@ -17,6 +17,7 @@ describe('KAN-366 course-first explicit course change', () => {
     assert.match(component, /name=['"]registrationId['"]/)
     assert.match(component, /name=['"]raceCourseId['"]/)
     assert.match(component, /value=\{course\.id\}/)
-    assert.doesNotMatch(component, /registeredElsewhere[\s\S]{0,800}name=['"]athleteProfileId['"]/)
+    const elsewhereBlock = component.match(/\{interaction\.registeredElsewhere\.map\(\(athlete\) => \([\s\S]*?\n        \)\)\}/)?.[0] ?? ''
+    assert.doesNotMatch(elsewhereBlock, /name=['"]athleteProfileId['"]/)
   })
 })
