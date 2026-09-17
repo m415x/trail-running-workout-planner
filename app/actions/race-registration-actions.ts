@@ -83,6 +83,43 @@ function parseRaceRegistrationStatus(value: FormDataEntryValue | null): RaceRegi
   return null
 }
 
+export async function registerAthleteForRaceCourseAction(formData: FormData) {
+  const athleteProfileId = String(formData.get('athleteProfileId') ?? '')
+  const raceCourseId = String(formData.get('raceCourseId') ?? '')
+  if (!athleteProfileId || !raceCourseId) {
+    return { ok: false as const, reason: 'invalid_input' as const }
+  }
+
+  const athlete = db.query.athleteProfiles.findFirst({
+    columns: { id: true },
+    where: and(
+      eq(athleteProfiles.id, athleteProfileId),
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+  })
+  if (!athlete) return { ok: false as const, reason: 'athlete_not_found' as const }
+
+  try {
+    const result = await runBulkRaceRegistrationAction(
+      {
+        teamId: CURRENT_TEAM_ID,
+        raceCourseId,
+        submittedAthleteProfileIds: [athleteProfileId],
+      },
+      dependencies,
+    )
+    revalidatePath('/dashboard/athletes')
+    revalidatePath('/dashboard/competitions')
+    return { ok: true as const, result }
+  } catch (error) {
+    if (error instanceof Error && error.message === 'No eligible athletes remain selected for registration') {
+      return { ok: false as const, reason: 'already_registered_in_edition' as const }
+    }
+    throw error
+  }
+}
+
 export async function registerAthletesForRaceCourse(formData: FormData) {
   return executeRaceRegistrationServerAction(formData, {
     teamId: CURRENT_TEAM_ID,
