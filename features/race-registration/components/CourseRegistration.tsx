@@ -3,14 +3,14 @@
 import { useActionState, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-import { registerAthletesForRaceCourse } from '@/app/actions/race-registration-actions'
+import { changeRaceRegistrationCourseAction, registerAthletesForRaceCourse } from '@/app/actions/race-registration-actions'
 import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
 import type { RaceCourse, RaceEdition, RaceEvent } from '@/types/training/race-catalog.types'
 
 type RegistrationInteraction = {
   eligible: Array<{ athleteProfileId: string; athleteName: string }>
-  registeredHere: Array<{ athleteProfileId: string; athleteName: string; courseLabel: string }>
-  registeredElsewhere: Array<{ athleteProfileId: string; athleteName: string; courseLabel: string }>
+  registeredHere: Array<{ athleteProfileId: string; athleteName: string; registrationId: string; courseLabel: string }>
+  registeredElsewhere: Array<{ athleteProfileId: string; athleteName: string; registrationId: string; courseLabel: string }>
 }
 
 type RegistrationResult = Awaited<ReturnType<typeof registerAthletesForRaceCourse>> | null
@@ -61,9 +61,18 @@ export function CourseRegistration({ event, edition, course, interaction, locale
         ))}
 
         {interaction.registeredElsewhere.map((athlete) => (
-          <div key={athlete.athleteProfileId} className='flex items-center justify-between gap-2'>
-            <span>{athlete.athleteName}</span>
-            <span className='text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
+          <div key={athlete.athleteProfileId} className='flex flex-wrap items-center justify-between gap-2'>
+            <div>
+              <span>{athlete.athleteName}</span>
+              <span className='ml-2 text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
+            </div>
+            <form action={changeRaceRegistrationCourseAction}>
+              <input type='hidden' name='registrationId' value={athlete.registrationId} />
+              <input type='hidden' name='raceCourseId' value={course.id} />
+              <button type='submit' className='rounded-md border px-2 py-1 text-xs font-medium'>
+                {t('changeCourse')}
+              </button>
+            </form>
           </div>
         ))}
 
