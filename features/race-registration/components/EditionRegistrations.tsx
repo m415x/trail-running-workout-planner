@@ -36,7 +36,7 @@ export function EditionRegistrations({
               {group.registrations.map((registration) => (
                 <div key={registration.registrationId} className='rounded-lg border p-3 text-sm'>
                   <div className='flex flex-wrap items-center justify-between gap-2'>
-                    <span className='font-medium'>{registration.athleteProfileId}</span>
+                    <span className='font-medium'>{registration.athleteName ?? registration.athleteProfileId}</span>
                     <Badge variant='outline'>{registration.participationStatus}</Badge>
                   </div>
 
