@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 
 import { raceRegistrationAction } from '@/app/actions/race-registration-actions'
 import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
@@ -11,6 +11,8 @@ type RegistrationInteraction = {
   registeredHere: Array<{ athleteProfileId: string; athleteName: string; courseLabel: string }>
   registeredElsewhere: Array<{ athleteProfileId: string; athleteName: string; courseLabel: string }>
 }
+
+type RegistrationResult = Awaited<ReturnType<typeof raceRegistrationAction>> | null
 
 export function CourseRegistration({
   event,
@@ -27,6 +29,10 @@ export function CourseRegistration({
 }) {
   const formRef = useRef<HTMLFormElement>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<string[]>([])
+  const [result, formAction] = useActionState<RegistrationResult, FormData>(
+    async (_previousResult, formData) => raceRegistrationAction(formData),
+    null,
+  )
   const selectedAthletes = interaction.eligible.filter((athlete) => (
     selectedAthleteIds.includes(athlete.athleteProfileId)
   ))
@@ -47,7 +53,7 @@ export function CourseRegistration({
         {interaction.eligible.length} disponibles · {interaction.registeredHere.length} inscriptos aquí · {interaction.registeredElsewhere.length} en otro recorrido
       </p>
 
-      <form ref={formRef} action={raceRegistrationAction} className='mt-4 space-y-2'>
+      <form ref={formRef} action={formAction} className='mt-4 space-y-2'>
         <input type='hidden' name='courseId' value={course.id} />
         <input type='hidden' name='locale' value={locale} />
 
@@ -99,6 +105,19 @@ export function CourseRegistration({
           />
         )}
       </form>
+
+      {result && (
+        <div className='mt-4 rounded-md border p-3 text-sm' role='status'>
+          <p>
+            Solicitadas: {result.requested} · Exitosas: {result.succeeded} · Fallidas: {result.failed}
+          </p>
+          {result.failures.map((failure) => (
+            <p key={failure.athleteProfileId} className='mt-1 text-muted-foreground'>
+              {failure.athleteProfileId}: ya tiene una inscripción en {failure.existingCourseLabel}
+            </p>
+          ))}
+        </div>
+      )}
     </section>
   )
 }
