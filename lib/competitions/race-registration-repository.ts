@@ -45,6 +45,21 @@ export function getRaceRegistration(id: string): RaceRegistrationPersistenceInpu
   return row ? mapRegistration(row) : null
 }
 
+export function listRaceRegistrationsInEdition(input: {
+  teamId: string
+  raceEditionId: string
+}): RaceRegistrationPersistenceInput[] {
+  return db
+    .select()
+    .from(raceRegistrations)
+    .where(and(
+      eq(raceRegistrations.teamId, input.teamId),
+      eq(raceRegistrations.raceEditionId, input.raceEditionId),
+    ))
+    .all()
+    .map(mapRegistration)
+}
+
 export function findRaceRegistrationInEdition(input: {
   teamId: string
   athleteProfileId: string
