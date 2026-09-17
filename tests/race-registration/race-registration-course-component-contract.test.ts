@@ -26,4 +26,14 @@ describe('course registration component contract', () => {
     assert.match(component, /name='locale'/)
     assert.match(component, /type='submit'/)
   })
+
+  it('requires Level 2 confirmation with concrete athletes and edition/course context before bulk execution', () => {
+    assert.match(component, /ConfirmActionDialog/)
+    assert.match(component, /selectedAthleteIds/)
+    assert.match(component, /selectedAthletes/)
+    assert.match(component, /athlete\.athleteName/)
+    assert.match(component, /edition\.label/)
+    assert.match(component, /course\.label/)
+    assert.match(component, /requestSubmit/)
+  })
 })
