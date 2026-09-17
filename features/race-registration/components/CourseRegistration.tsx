@@ -1,3 +1,4 @@
+import { raceRegistrationAction } from '@/app/actions/race-registration-actions'
 import type { RaceCourse, RaceEdition, RaceEvent } from '@/types/training/race-catalog.types'
 
 type RegistrationInteraction = {
@@ -11,11 +12,13 @@ export function CourseRegistration({
   edition,
   course,
   interaction,
+  locale,
 }: {
   event: RaceEvent
   edition: RaceEdition
   course: RaceCourse
   interaction: RegistrationInteraction
+  locale: string
 }) {
   return (
     <section aria-label='Race registration' className='rounded-lg border p-4'>
@@ -27,7 +30,10 @@ export function CourseRegistration({
         {interaction.eligible.length} disponibles · {interaction.registeredHere.length} inscriptos aquí · {interaction.registeredElsewhere.length} en otro recorrido
       </p>
 
-      <div className='mt-4 space-y-2'>
+      <form action={raceRegistrationAction} className='mt-4 space-y-2'>
+        <input type='hidden' name='courseId' value={course.id} />
+        <input type='hidden' name='locale' value={locale} />
+
         {interaction.eligible.map((athlete) => (
           <label key={athlete.athleteProfileId} className='flex items-center gap-2'>
             <input
@@ -52,7 +58,13 @@ export function CourseRegistration({
             <span className='text-sm text-muted-foreground'>Inscripto en {athlete.courseLabel}</span>
           </div>
         ))}
-      </div>
+
+        {interaction.eligible.length > 0 && (
+          <button type='submit' className='rounded-md border px-3 py-2 text-sm font-medium'>
+            Inscribir seleccionados
+          </button>
+        )}
+      </form>
     </section>
   )
 }
