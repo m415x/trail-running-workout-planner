@@ -17,4 +17,13 @@ describe('course registration component contract', () => {
     assert.match(component, /Inscripto en este recorrido/)
     assert.match(component, /Inscripto en .*courseLabel/)
   })
+
+  it('submits selected athletes through the existing race registration action boundary', () => {
+    assert.match(component, /raceRegistrationAction/)
+    assert.match(component, /<form[^>]+action=/)
+    assert.match(component, /name='courseId'/)
+    assert.match(component, /value=\{course\.id\}/)
+    assert.match(component, /name='locale'/)
+    assert.match(component, /type='submit'/)
+  })
 })
