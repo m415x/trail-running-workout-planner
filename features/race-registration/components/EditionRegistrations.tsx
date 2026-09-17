@@ -1,6 +1,9 @@
+import { updateRaceParticipationAction } from '@/app/actions/race-registration-actions'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import { Badge } from '@ui/badge'
+import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import { Input } from '@ui/input'
 
 export function EditionRegistrations({
   editionRegistrationGroups,
@@ -36,9 +39,51 @@ export function EditionRegistrations({
                     <span className='font-medium'>{registration.athleteProfileId}</span>
                     <Badge variant='outline'>{registration.participationStatus}</Badge>
                   </div>
-                  <p className='mt-2 text-muted-foreground'>
-                    Distancia real: {registration.actualDistanceKm == null ? 'desconocida' : `${registration.actualDistanceKm} km`}
-                  </p>
+
+                  <form action={updateRaceParticipationAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
+                    <input type='hidden' name='registrationId' value={registration.registrationId} />
+
+                    <label className='grid gap-1'>
+                      <span className='text-xs text-muted-foreground'>Participación</span>
+                      <select
+                        name='participationStatus'
+                        defaultValue={registration.participationStatus}
+                        className='h-9 rounded-md border border-input bg-background px-3'
+                      >
+                        <option value='unknown'>Desconocida</option>
+                        <option value='started'>Inició</option>
+                        <option value='finished'>Finalizó</option>
+                        <option value='dnf'>DNF</option>
+                        <option value='dns'>DNS</option>
+                      </select>
+                    </label>
+
+                    <label className='grid gap-1'>
+                      <span className='text-xs text-muted-foreground'>Distancia real (km)</span>
+                      <Input
+                        name='actualDistanceKm'
+                        type='number'
+                        min='0'
+                        step='any'
+                        defaultValue={registration.actualDistanceKm ?? ''}
+                      />
+                    </label>
+
+                    <label className='grid gap-1'>
+                      <span className='text-xs text-muted-foreground'>Tiempo transcurrido (s)</span>
+                      <Input
+                        name='elapsedTimeSeconds'
+                        type='number'
+                        min='0'
+                        step='1'
+                        defaultValue={registration.elapsedTimeSeconds ?? ''}
+                      />
+                    </label>
+
+                    <div className='flex items-end'>
+                      <Button type='submit' size='sm'>Guardar resultado</Button>
+                    </div>
+                  </form>
                 </div>
               ))}
             </CardContent>
