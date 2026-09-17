@@ -169,8 +169,17 @@ export function updateRaceRegistration(
 
   db.update(raceRegistrations)
     .set({
+      raceEventId: record.raceEventId,
+      raceEditionId: record.raceEditionId,
+      raceCourseId: record.raceCourseId,
       registrationStatus: record.registrationStatus,
       participationStatus: record.participationStatus,
+      snapshotEventName: record.snapshot.eventName,
+      snapshotEditionLabel: record.snapshot.editionLabel,
+      snapshotEditionDate: record.snapshot.editionDate,
+      snapshotCourseLabel: record.snapshot.courseLabel,
+      snapshotNominalDistanceKm: record.snapshot.nominalDistanceKm,
+      snapshotNominalElevationGainM: record.snapshot.nominalElevationGainM,
       resultActualDistanceKm: record.result?.actualDistanceKm ?? null,
       resultElapsedTimeSeconds: record.result?.elapsedTimeSeconds ?? null,
       updatedAt: timestamp,
