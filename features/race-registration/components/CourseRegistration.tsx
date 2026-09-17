@@ -26,6 +26,33 @@ export function CourseRegistration({
       <p className='mt-2 text-sm text-muted-foreground'>
         {interaction.eligible.length} disponibles · {interaction.registeredHere.length} inscriptos aquí · {interaction.registeredElsewhere.length} en otro recorrido
       </p>
+
+      <div className='mt-4 space-y-2'>
+        {interaction.eligible.map((athlete) => (
+          <label key={athlete.athleteProfileId} className='flex items-center gap-2'>
+            <input
+              type='checkbox'
+              name='athleteProfileId'
+              value={athlete.athleteProfileId}
+            />
+            <span>{athlete.athleteName}</span>
+          </label>
+        ))}
+
+        {interaction.registeredHere.map((athlete) => (
+          <div key={athlete.athleteProfileId} className='flex items-center justify-between gap-2'>
+            <span>{athlete.athleteName}</span>
+            <span className='text-sm text-muted-foreground'>Inscripto en este recorrido</span>
+          </div>
+        ))}
+
+        {interaction.registeredElsewhere.map((athlete) => (
+          <div key={athlete.athleteProfileId} className='flex items-center justify-between gap-2'>
+            <span>{athlete.athleteName}</span>
+            <span className='text-sm text-muted-foreground'>Inscripto en {athlete.courseLabel}</span>
+          </div>
+        ))}
+      </div>
     </section>
   )
 }
