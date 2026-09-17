@@ -1,7 +1,12 @@
 import { getTranslations } from 'next-intl/server'
 
-import { updateRaceParticipationAction } from '@/app/actions/race-registration-actions'
+import {
+  changeRaceRegistrationCourseAction,
+  updateRaceParticipationAction,
+  updateRaceRegistrationLifecycleAction,
+} from '@/app/actions/race-registration-actions'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
+import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -9,8 +14,10 @@ import { Input } from '@ui/input'
 
 export async function EditionRegistrations({
   editionRegistrationGroups,
+  availableCourses,
 }: {
   editionRegistrationGroups: EditionCourseRegistrationsProjection[]
+  availableCourses: RaceCourse[]
 }) {
   if (editionRegistrationGroups.length === 0) return null
 
@@ -41,6 +48,38 @@ export async function EditionRegistrations({
                     <span className='font-medium'>{registration.athleteName ?? registration.athleteProfileId}</span>
                     <Badge variant='outline'>{t(`participationStatuses.${registration.participationStatus}`)}</Badge>
                   </div>
+
+                  {registration.participationStatus === 'unknown' && (
+                    <div className='mt-3 grid gap-3 sm:grid-cols-2'>
+                      <form action={updateRaceRegistrationLifecycleAction}>
+                        <input type='hidden' name='registrationId' value={registration.registrationId} />
+                        <input
+                          type='hidden'
+                          name='registrationStatus'
+                          value={registration.registrationStatus === 'registered' ? 'cancelled' : 'registered'}
+                        />
+                        <Button type='submit' size='sm' variant='outline'>
+                          {registration.registrationStatus === 'registered' ? t('cancelRegistration') : t('reactivateRegistration')}
+                        </Button>
+                      </form>
+
+                      {registration.registrationStatus === 'registered' && (
+                        <form action={changeRaceRegistrationCourseAction} className='flex gap-2'>
+                          <input type='hidden' name='registrationId' value={registration.registrationId} />
+                          <select
+                            name='raceCourseId'
+                            defaultValue={registration.raceCourseId}
+                            className='h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3'
+                          >
+                            {availableCourses.map((course) => (
+                              <option key={course.id} value={course.id}>{course.label}</option>
+                            ))}
+                          </select>
+                          <Button type='submit' size='sm' variant='outline'>{t('changeCourse')}</Button>
+                        </form>
+                      )}
+                    </div>
+                  )}
 
                   <form action={updateRaceParticipationAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
                     <input type='hidden' name='registrationId' value={registration.registrationId} />
