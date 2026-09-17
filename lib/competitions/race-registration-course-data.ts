@@ -4,6 +4,7 @@ type Athlete = {
 }
 
 type Registration = {
+  registrationId: string
   athleteProfileId: string
   raceCourseId: string
   courseLabel: string
@@ -18,8 +19,8 @@ export function buildCourseRegistrationData(input: {
     input.registrations.map((registration) => [registration.athleteProfileId, registration]),
   )
   const eligible: Athlete[] = []
-  const registeredHere: Array<Athlete & { courseLabel: string }> = []
-  const registeredElsewhere: Array<Athlete & { courseLabel: string }> = []
+  const registeredHere: Array<Athlete & { registrationId: string; courseLabel: string }> = []
+  const registeredElsewhere: Array<Athlete & { registrationId: string; courseLabel: string }> = []
 
   for (const athlete of input.athletes) {
     const registration = registrationsByAthlete.get(athlete.athleteProfileId)
@@ -30,6 +31,7 @@ export function buildCourseRegistrationData(input: {
 
     const registeredAthlete = {
       ...athlete,
+      registrationId: registration.registrationId,
       courseLabel: registration.courseLabel,
     }
 
