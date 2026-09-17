@@ -41,6 +41,24 @@ interface BulkRegistrationDependencies {
   ) => Promise<CreateRegistrationResult> | CreateRegistrationResult
 }
 
+interface UpdateRaceParticipationInput {
+  teamId: string
+  registrationId: string
+  participationStatus: RaceParticipationStatus
+  actualDistanceKm: number | null
+  elapsedTimeSeconds: number | null
+}
+
+export interface UpdateRaceParticipationDependencies {
+  getRegistration: (input: {
+    teamId: string
+    registrationId: string
+  }) => Promise<RaceRegistrationPersistenceInput | null> | RaceRegistrationPersistenceInput | null
+  updateRegistration: (
+    input: RaceRegistrationPersistenceInput,
+  ) => Promise<RaceRegistrationPersistenceInput | null> | RaceRegistrationPersistenceInput | null
+}
+
 export async function bulkRegisterAthletes(
   input: BulkRegistrationInput,
   dependencies: BulkRegistrationDependencies,
@@ -142,4 +160,32 @@ export function applyRaceParticipationCorrection(
     participationStatus,
     result: raceResultForParticipation(participationStatus, result),
   }
+}
+
+export async function updateRaceParticipation(
+  input: UpdateRaceParticipationInput,
+  dependencies: UpdateRaceParticipationDependencies,
+): Promise<
+  | { ok: true; registration: RaceRegistrationPersistenceInput }
+  | { ok: false; reason: 'not_found' }
+> {
+  const registration = await dependencies.getRegistration({
+    teamId: input.teamId,
+    registrationId: input.registrationId,
+  })
+
+  if (!registration) return { ok: false, reason: 'not_found' }
+
+  const corrected = applyRaceParticipationCorrection(
+    registration,
+    input.participationStatus,
+    {
+      actualDistanceKm: input.actualDistanceKm,
+      elapsedTimeSeconds: input.elapsedTimeSeconds,
+    },
+  )
+  const persisted = await dependencies.updateRegistration(corrected)
+
+  if (!persisted) return { ok: false, reason: 'not_found' }
+  return { ok: true, registration: persisted }
 }
