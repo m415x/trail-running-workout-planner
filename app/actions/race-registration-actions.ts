@@ -20,8 +20,15 @@ import {
 } from '@/lib/competitions/race-registration-repository'
 import { executeRaceRegistrationServerAction } from '@/lib/competitions/race-registration-server-action-execution'
 import { buildRaceRegistrationActionDependencies } from '@/lib/competitions/race-registration-server-action-wiring'
-import { updateRaceParticipation } from '@/lib/competitions/race-registration-service'
-import type { RaceParticipationStatus } from '@/types/training/race-registration.types'
+import {
+  applyRaceRegistrationCourseChange,
+  applyRaceRegistrationLifecycle,
+  updateRaceParticipation,
+} from '@/lib/competitions/race-registration-service'
+import type {
+  RaceParticipationStatus,
+  RaceRegistrationStatus,
+} from '@/types/training/race-registration.types'
 
 const CURRENT_TEAM_ID = 'team_1'
 const PARTICIPATION_STATUSES: readonly RaceParticipationStatus[] = [
@@ -71,12 +78,70 @@ function parseRaceParticipationStatus(value: FormDataEntryValue | null): RacePar
   }
 }
 
+function parseRaceRegistrationStatus(value: FormDataEntryValue | null): RaceRegistrationStatus | null {
+  if (value === 'registered' || value === 'cancelled') return value
+  return null
+}
+
 export async function registerAthletesForRaceCourse(formData: FormData) {
   return executeRaceRegistrationServerAction(formData, {
     teamId: CURRENT_TEAM_ID,
     runBulkRegistration: (input) => runBulkRaceRegistrationAction(input, dependencies),
     revalidatePath,
   })
+}
+
+export async function changeRaceRegistrationCourseAction(formData: FormData) {
+  const registrationId = String(formData.get('registrationId') ?? '')
+  const raceCourseId = String(formData.get('raceCourseId') ?? '')
+  if (!registrationId || !raceCourseId) return { ok: false as const, reason: 'invalid_input' as const }
+
+  const registration = getRaceRegistrationForTeam({
+    teamId: CURRENT_TEAM_ID,
+    registrationId,
+  })
+  if (!registration) return { ok: false as const, reason: 'not_found' as const }
+  if (registration.registrationStatus !== 'registered' || registration.participationStatus !== 'unknown') {
+    return { ok: false as const, reason: 'course_change_not_allowed' as const }
+  }
+
+  const course = getRaceCourse(raceCourseId)
+  if (!course || course.isDeleted || course.raceEditionId !== registration.course.raceEditionId) {
+    return { ok: false as const, reason: 'invalid_course' as const }
+  }
+  const edition = getRaceEdition(course.raceEditionId)
+  if (!edition || edition.isDeleted) return { ok: false as const, reason: 'invalid_course' as const }
+  const event = getRaceEvent(edition.raceEventId)
+  if (!event || event.isDeleted) return { ok: false as const, reason: 'invalid_course' as const }
+
+  const changed = applyRaceRegistrationCourseChange(registration, { event, edition, course })
+  const persisted = updateRaceRegistration(changed)
+  if (!persisted) return { ok: false as const, reason: 'not_found' as const }
+
+  revalidatePath('/dashboard/competitions')
+  return { ok: true as const, registration: persisted }
+}
+
+export async function updateRaceRegistrationLifecycleAction(formData: FormData) {
+  const registrationId = String(formData.get('registrationId') ?? '')
+  const registrationStatus = parseRaceRegistrationStatus(formData.get('registrationStatus'))
+  if (!registrationId || !registrationStatus) return { ok: false as const, reason: 'invalid_input' as const }
+
+  const registration = getRaceRegistrationForTeam({
+    teamId: CURRENT_TEAM_ID,
+    registrationId,
+  })
+  if (!registration) return { ok: false as const, reason: 'not_found' as const }
+  if (registration.participationStatus !== 'unknown') {
+    return { ok: false as const, reason: 'lifecycle_change_not_allowed' as const }
+  }
+
+  const changed = applyRaceRegistrationLifecycle(registration, registrationStatus)
+  const persisted = updateRaceRegistration(changed)
+  if (!persisted) return { ok: false as const, reason: 'not_found' as const }
+
+  revalidatePath('/dashboard/competitions')
+  return { ok: true as const, registration: persisted }
 }
 
 export async function updateRaceParticipationAction(formData: FormData) {
