@@ -2,12 +2,15 @@ import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { raceRegistrations } from '@/db/race-registration-schema'
+import { athleteProfiles, users } from '@/db/schema'
 import { getRaceCourseReference } from '@/lib/race-catalog/catalog-repository'
 import {
   assertPersistableRaceRegistration,
   toRaceRegistrationPersistenceRecord,
 } from '@/lib/competitions/race-registration-persistence'
 import type { RaceRegistrationPersistenceInput } from '@/types/training/race-registration.types'
+
+export type EditionRaceRegistration = RaceRegistrationPersistenceInput & { athleteName: string | null }
 
 function mapRegistration(row: typeof raceRegistrations.$inferSelect): RaceRegistrationPersistenceInput {
   const hasResult = row.resultActualDistanceKm !== null || row.resultElapsedTimeSeconds !== null
@@ -79,16 +82,29 @@ export function listRaceRegistrationsForAthlete(input: {
 export function listRaceRegistrationsInEdition(input: {
   teamId: string
   raceEditionId: string
-}): RaceRegistrationPersistenceInput[] {
-  return db
-    .select()
+}): EditionRaceRegistration[] {
+  const rows = db
+    .select({
+      registration: raceRegistrations,
+      firstName: users.firstName,
+      lastName: users.lastName,
+    })
     .from(raceRegistrations)
+    .leftJoin(athleteProfiles, eq(athleteProfiles.id, raceRegistrations.athleteProfileId))
+    .leftJoin(users, eq(users.id, athleteProfiles.userId))
     .where(and(
       eq(raceRegistrations.teamId, input.teamId),
       eq(raceRegistrations.raceEditionId, input.raceEditionId),
     ))
     .all()
-    .map(mapRegistration)
+
+  return rows.map((row) => {
+    const athleteName = [row.firstName, row.lastName].filter(Boolean).join(' ').trim()
+    return {
+      ...mapRegistration(row.registration),
+      athleteName: athleteName || null,
+    }
+  })
 }
 
 export function findRaceRegistrationInEdition(input: {
