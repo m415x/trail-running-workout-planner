@@ -15,9 +15,11 @@ import { Input } from '@ui/input'
 export async function EditionRegistrations({
   editionRegistrationGroups,
   availableCourses,
+  locale,
 }: {
   editionRegistrationGroups: EditionCourseRegistrationsProjection[]
   availableCourses: RaceCourse[]
+  locale: string
 }) {
   if (editionRegistrationGroups.length === 0) return null
 
@@ -52,6 +54,7 @@ export async function EditionRegistrations({
                   {registration.participationStatus === 'unknown' && (
                     <div className='mt-3 grid gap-3 sm:grid-cols-2'>
                       <form action={updateRaceRegistrationLifecycleAction}>
+                        <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
                         <input
                           type='hidden'
@@ -65,7 +68,8 @@ export async function EditionRegistrations({
 
                       {registration.registrationStatus === 'registered' && (
                         <form action={changeRaceRegistrationCourseAction} className='flex gap-2'>
-                          <input type='hidden' name='registrationId' value={registration.registrationId} />
+                          <input type='hidden' name='locale' value={locale} />
+                        <input type='hidden' name='registrationId' value={registration.registrationId} />
                           <select
                             name='raceCourseId'
                             defaultValue={registration.raceCourseId}
@@ -82,7 +86,8 @@ export async function EditionRegistrations({
                   )}
 
                   <form action={updateRaceParticipationAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
-                    <input type='hidden' name='registrationId' value={registration.registrationId} />
+                    <input type='hidden' name='locale' value={locale} />
+                        <input type='hidden' name='registrationId' value={registration.registrationId} />
 
                     <label className='grid gap-1'>
                       <span className='text-xs text-muted-foreground'>{t('participation')}</span>
