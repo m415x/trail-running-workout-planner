@@ -69,7 +69,10 @@
         "finished": "Finalizó",
         "dnf": "DNF",
         "dns": "DNS"
-      }
+      },
+      "cancelRegistration": "Cancelar inscripción",
+      "reactivateRegistration": "Reactivar inscripción",
+      "changeCourse": "Cambiar recorrido"
     },
     "errors": {
       "invalid": "Revisá los campos marcados: nombres, fechas, URLs y valores numéricos deben ser válidos.",
