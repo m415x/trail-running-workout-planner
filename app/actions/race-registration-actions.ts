@@ -19,6 +19,7 @@ import {
   updateRaceRegistration,
 } from '@/lib/competitions/race-registration-repository'
 import { executeRaceRegistrationServerAction } from '@/lib/competitions/race-registration-server-action-execution'
+import { raceRegistrationRevalidationPaths } from '@/lib/competitions/race-registration-server-action'
 import { buildRaceRegistrationActionDependencies } from '@/lib/competitions/race-registration-server-action-wiring'
 import {
   applyRaceRegistrationCourseChange,
@@ -78,15 +79,24 @@ function parseRaceParticipationStatus(value: FormDataEntryValue | null): RacePar
   }
 }
 
+function parseLocale(value: FormDataEntryValue | null): 'es' | 'en' | null {
+  return value === 'es' || value === 'en' ? value : null
+}
+
+function revalidateRaceRegistrationPaths(locale: 'es' | 'en') {
+  for (const path of raceRegistrationRevalidationPaths(locale)) revalidatePath(path)
+}
+
 function parseRaceRegistrationStatus(value: FormDataEntryValue | null): RaceRegistrationStatus | null {
   if (value === 'registered' || value === 'cancelled') return value
   return null
 }
 
 export async function registerAthleteForRaceCourseAction(formData: FormData) {
+  const locale = parseLocale(formData.get('locale'))
   const athleteProfileId = String(formData.get('athleteProfileId') ?? '')
   const raceCourseId = String(formData.get('raceCourseId') ?? '')
-  if (!athleteProfileId || !raceCourseId) {
+  if (!locale || !athleteProfileId || !raceCourseId) {
     return { ok: false as const, reason: 'invalid_input' as const }
   }
 
@@ -109,8 +119,7 @@ export async function registerAthleteForRaceCourseAction(formData: FormData) {
       },
       dependencies,
     )
-    revalidatePath('/dashboard/athletes')
-    revalidatePath('/dashboard/competitions')
+    revalidateRaceRegistrationPaths(locale)
     return { ok: true as const, result }
   } catch (error) {
     if (error instanceof Error && error.message === 'No eligible athletes remain selected for registration') {
@@ -129,9 +138,10 @@ export async function registerAthletesForRaceCourse(formData: FormData) {
 }
 
 export async function changeRaceRegistrationCourseAction(formData: FormData) {
+  const locale = parseLocale(formData.get('locale'))
   const registrationId = String(formData.get('registrationId') ?? '')
   const raceCourseId = String(formData.get('raceCourseId') ?? '')
-  if (!registrationId || !raceCourseId) return { ok: false as const, reason: 'invalid_input' as const }
+  if (!locale || !registrationId || !raceCourseId) return { ok: false as const, reason: 'invalid_input' as const }
 
   const registration = getRaceRegistrationForTeam({
     teamId: CURRENT_TEAM_ID,
@@ -155,14 +165,15 @@ export async function changeRaceRegistrationCourseAction(formData: FormData) {
   const persisted = updateRaceRegistration(changed)
   if (!persisted) return { ok: false as const, reason: 'not_found' as const }
 
-  revalidatePath('/dashboard/competitions')
+  revalidateRaceRegistrationPaths(locale)
   return { ok: true as const, registration: persisted }
 }
 
 export async function updateRaceRegistrationLifecycleAction(formData: FormData) {
+  const locale = parseLocale(formData.get('locale'))
   const registrationId = String(formData.get('registrationId') ?? '')
   const registrationStatus = parseRaceRegistrationStatus(formData.get('registrationStatus'))
-  if (!registrationId || !registrationStatus) return { ok: false as const, reason: 'invalid_input' as const }
+  if (!locale || !registrationId || !registrationStatus) return { ok: false as const, reason: 'invalid_input' as const }
 
   const registration = getRaceRegistrationForTeam({
     teamId: CURRENT_TEAM_ID,
@@ -177,14 +188,15 @@ export async function updateRaceRegistrationLifecycleAction(formData: FormData) 
   const persisted = updateRaceRegistration(changed)
   if (!persisted) return { ok: false as const, reason: 'not_found' as const }
 
-  revalidatePath('/dashboard/competitions')
+  revalidateRaceRegistrationPaths(locale)
   return { ok: true as const, registration: persisted }
 }
 
 export async function updateRaceParticipationAction(formData: FormData) {
+  const locale = parseLocale(formData.get('locale'))
   const registrationId = String(formData.get('registrationId') ?? '')
   const participationStatus = parseRaceParticipationStatus(formData.get('participationStatus'))
-  if (!registrationId || !participationStatus) return { ok: false as const, reason: 'invalid_input' as const }
+  if (!locale || !registrationId || !participationStatus) return { ok: false as const, reason: 'invalid_input' as const }
 
   const actualDistanceKm = nullableNumber(formData.get('actualDistanceKm'))
   const elapsedTimeSeconds = nullableNumber(formData.get('elapsedTimeSeconds'))
@@ -203,6 +215,6 @@ export async function updateRaceParticipationAction(formData: FormData) {
     },
   )
 
-  if (result.ok) revalidatePath('/dashboard/competitions')
+  if (result.ok) revalidateRaceRegistrationPaths(locale)
   return result
 }
