@@ -36,4 +36,14 @@ describe('course registration component contract', () => {
     assert.match(component, /course\.label/)
     assert.match(component, /requestSubmit/)
   })
+
+  it('renders structured partial-success feedback from the race registration action result', () => {
+    assert.match(component, /useActionState/)
+    assert.match(component, /result\.requested/)
+    assert.match(component, /result\.succeeded/)
+    assert.match(component, /result\.failed/)
+    assert.match(component, /result\.failures\.map/)
+    assert.match(component, /failure\.athleteProfileId/)
+    assert.match(component, /failure\.existingCourseLabel/)
+  })
 })
