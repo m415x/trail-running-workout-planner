@@ -292,7 +292,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
           </CardContent>
         </Card>
 
-        <EditionRegistrations editionRegistrationGroups={editionRegistrationGroups} />
+        <EditionRegistrations editionRegistrationGroups={editionRegistrationGroups} availableCourses={courses} />
 
         <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
           <div>
