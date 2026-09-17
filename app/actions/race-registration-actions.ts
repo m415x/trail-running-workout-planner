@@ -58,7 +58,7 @@ function nullableNumber(value: FormDataEntryValue | null): number | null {
 }
 
 function parseRaceParticipationStatus(value: FormDataEntryValue | null): RaceParticipationStatus | null {
-  if (typeof value !== 'string' || !PARTICIPATION_STATUSES.includes(value)) return null
+  if (typeof value !== 'string') return null
   switch (value) {
     case 'unknown':
     case 'started':
