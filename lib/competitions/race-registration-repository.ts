@@ -113,3 +113,35 @@ export function createRaceRegistration(
 
   return getRaceRegistration(input.id)!
 }
+
+export function updateRaceRegistration(
+  input: RaceRegistrationPersistenceInput,
+): RaceRegistrationPersistenceInput | null {
+  const record = toRaceRegistrationPersistenceRecord(input)
+  const timestamp = new Date().toISOString()
+
+  db.update(raceRegistrations)
+    .set({
+      registrationStatus: record.registrationStatus,
+      participationStatus: record.participationStatus,
+      resultActualDistanceKm: record.result?.actualDistanceKm ?? null,
+      resultElapsedTimeSeconds: record.result?.elapsedTimeSeconds ?? null,
+      updatedAt: timestamp,
+    })
+    .where(and(
+      eq(raceRegistrations.id, input.id),
+      eq(raceRegistrations.teamId, input.teamId),
+    ))
+    .run()
+
+  const row = db
+    .select()
+    .from(raceRegistrations)
+    .where(and(
+      eq(raceRegistrations.id, input.id),
+      eq(raceRegistrations.teamId, input.teamId),
+    ))
+    .get()
+
+  return row ? mapRegistration(row) : null
+}
