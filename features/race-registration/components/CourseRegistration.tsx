@@ -1,8 +1,9 @@
 'use client'
 
 import { useActionState, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
-import { raceRegistrationAction } from '@/app/actions/race-registration-actions'
+import { registerAthletesForRaceCourse } from '@/app/actions/race-registration-actions'
 import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
 import type { RaceCourse, RaceEdition, RaceEvent } from '@/types/training/race-catalog.types'
 
@@ -12,7 +13,7 @@ type RegistrationInteraction = {
   registeredElsewhere: Array<{ athleteProfileId: string; athleteName: string; courseLabel: string }>
 }
 
-type RegistrationResult = Awaited<ReturnType<typeof raceRegistrationAction>> | null
+type RegistrationResult = Awaited<ReturnType<typeof registerAthletesForRaceCourse>> | null
 
 export function CourseRegistration({
   event,
@@ -27,10 +28,11 @@ export function CourseRegistration({
   interaction: RegistrationInteraction
   locale: string
 }) {
+  const t = useTranslations('RaceCatalog.registrations')
   const formRef = useRef<HTMLFormElement>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<string[]>([])
   const [result, formAction] = useActionState<RegistrationResult, FormData>(
-    async (_previousResult, formData) => raceRegistrationAction(formData),
+    async (_previousResult, formData) => registerAthletesForRaceCourse(formData),
     null,
   )
   const selectedAthletes = interaction.eligible.filter((athlete) => (
@@ -45,12 +47,16 @@ export function CourseRegistration({
 
   return (
     <section aria-label='Race registration' className='rounded-lg border p-4'>
-      <h3 className='text-lg font-semibold'>Atletas inscriptos</h3>
+      <h3 className='text-lg font-semibold'>{t('title')}</h3>
       <p className='text-sm text-muted-foreground'>
         {event.name} · {edition.label} · {course.label}
       </p>
       <p className='mt-2 text-sm text-muted-foreground'>
-        {interaction.eligible.length} disponibles · {interaction.registeredHere.length} inscriptos aquí · {interaction.registeredElsewhere.length} en otro recorrido
+        {t('summary', {
+          eligible: interaction.eligible.length,
+          here: interaction.registeredHere.length,
+          elsewhere: interaction.registeredElsewhere.length,
+        })}
       </p>
 
       <form ref={formRef} action={formAction} className='mt-4 space-y-2'>
@@ -73,24 +79,28 @@ export function CourseRegistration({
         {interaction.registeredHere.map((athlete) => (
           <div key={athlete.athleteProfileId} className='flex items-center justify-between gap-2'>
             <span>{athlete.athleteName}</span>
-            <span className='text-sm text-muted-foreground'>Inscripto en este recorrido</span>
+            <span className='text-sm text-muted-foreground'>{t('registeredHere')}</span>
           </div>
         ))}
 
         {interaction.registeredElsewhere.map((athlete) => (
           <div key={athlete.athleteProfileId} className='flex items-center justify-between gap-2'>
             <span>{athlete.athleteName}</span>
-            <span className='text-sm text-muted-foreground'>Inscripto en {athlete.courseLabel}</span>
+            <span className='text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
           </div>
         ))}
 
         {interaction.eligible.length > 0 && (
           <ConfirmActionDialog
             variant='primary'
-            title='Confirmar inscripciones'
-            description={`Vas a inscribir en ${edition.label} · ${course.label}: ${selectedAthletes.map((athlete) => athlete.athleteName).join(', ')}`}
-            confirmLabel='Inscribir'
-            cancelLabel='Cancelar'
+            title={t('confirmTitle')}
+            description={t('confirmDescription', {
+              edition: edition.label,
+              course: course.label,
+              athletes: selectedAthletes.map((athlete) => athlete.athleteName).join(', '),
+            })}
+            confirmLabel={t('confirm')}
+            cancelLabel={t('cancel')}
             onConfirm={() => formRef.current?.requestSubmit()}
             trigger={(openDialog) => (
               <button
@@ -99,7 +109,7 @@ export function CourseRegistration({
                 onClick={openDialog}
                 className='rounded-md border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50'
               >
-                Inscribir seleccionados
+                {t('submitSelected')}
               </button>
             )}
           />
@@ -109,11 +119,11 @@ export function CourseRegistration({
       {result && (
         <div className='mt-4 rounded-md border p-3 text-sm' role='status'>
           <p>
-            Solicitadas: {result.requested} · Exitosas: {result.succeeded} · Fallidas: {result.failed}
+            {t('requested', { count: result.requested })} · {t('succeeded', { count: result.succeeded })} · {t('failed', { count: result.failed })}
           </p>
           {result.failures.map((failure) => (
             <p key={failure.athleteProfileId} className='mt-1 text-muted-foreground'>
-              {failure.athleteProfileId}: ya tiene una inscripción en {failure.existingCourseLabel}
+              {t('alreadyRegistered', { athlete: failure.athleteProfileId, course: failure.existingCourseLabel })}
             </p>
           ))}
         </div>
