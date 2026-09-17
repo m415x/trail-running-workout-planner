@@ -58,10 +58,17 @@ function nullableNumber(value: FormDataEntryValue | null): number | null {
 }
 
 function parseRaceParticipationStatus(value: FormDataEntryValue | null): RaceParticipationStatus | null {
-  if (typeof value !== 'string') return null
-  return PARTICIPATION_STATUSES.includes(value as RaceParticipationStatus)
-    ? (value as RaceParticipationStatus)
-    : null
+  if (typeof value !== 'string' || !PARTICIPATION_STATUSES.includes(value)) return null
+  switch (value) {
+    case 'unknown':
+    case 'started':
+    case 'finished':
+    case 'dnf':
+    case 'dns':
+      return value
+    default:
+      return null
+  }
 }
 
 export async function registerAthletesForRaceCourse(formData: FormData) {
