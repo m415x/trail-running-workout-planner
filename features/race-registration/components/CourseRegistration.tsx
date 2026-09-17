@@ -1,4 +1,9 @@
+'use client'
+
+import { useRef, useState } from 'react'
+
 import { raceRegistrationAction } from '@/app/actions/race-registration-actions'
+import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
 import type { RaceCourse, RaceEdition, RaceEvent } from '@/types/training/race-catalog.types'
 
 type RegistrationInteraction = {
@@ -20,6 +25,18 @@ export function CourseRegistration({
   interaction: RegistrationInteraction
   locale: string
 }) {
+  const formRef = useRef<HTMLFormElement>(null)
+  const [selectedAthleteIds, setSelectedAthleteIds] = useState<string[]>([])
+  const selectedAthletes = interaction.eligible.filter((athlete) => (
+    selectedAthleteIds.includes(athlete.athleteProfileId)
+  ))
+
+  const toggleAthlete = (athleteProfileId: string, checked: boolean) => {
+    setSelectedAthleteIds((current) => checked
+      ? [...current, athleteProfileId]
+      : current.filter((id) => id !== athleteProfileId))
+  }
+
   return (
     <section aria-label='Race registration' className='rounded-lg border p-4'>
       <h3 className='text-lg font-semibold'>Atletas inscriptos</h3>
@@ -30,7 +47,7 @@ export function CourseRegistration({
         {interaction.eligible.length} disponibles · {interaction.registeredHere.length} inscriptos aquí · {interaction.registeredElsewhere.length} en otro recorrido
       </p>
 
-      <form action={raceRegistrationAction} className='mt-4 space-y-2'>
+      <form ref={formRef} action={raceRegistrationAction} className='mt-4 space-y-2'>
         <input type='hidden' name='courseId' value={course.id} />
         <input type='hidden' name='locale' value={locale} />
 
@@ -40,6 +57,8 @@ export function CourseRegistration({
               type='checkbox'
               name='athleteProfileId'
               value={athlete.athleteProfileId}
+              checked={selectedAthleteIds.includes(athlete.athleteProfileId)}
+              onChange={(event) => toggleAthlete(athlete.athleteProfileId, event.target.checked)}
             />
             <span>{athlete.athleteName}</span>
           </label>
@@ -60,9 +79,24 @@ export function CourseRegistration({
         ))}
 
         {interaction.eligible.length > 0 && (
-          <button type='submit' className='rounded-md border px-3 py-2 text-sm font-medium'>
-            Inscribir seleccionados
-          </button>
+          <ConfirmActionDialog
+            variant='primary'
+            title='Confirmar inscripciones'
+            description={`Vas a inscribir en ${edition.label} · ${course.label}: ${selectedAthletes.map((athlete) => athlete.athleteName).join(', ')}`}
+            confirmLabel='Inscribir'
+            cancelLabel='Cancelar'
+            onConfirm={() => formRef.current?.requestSubmit()}
+            trigger={(openDialog) => (
+              <button
+                type='button'
+                disabled={selectedAthleteIds.length === 0}
+                onClick={openDialog}
+                className='rounded-md border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50'
+              >
+                Inscribir seleccionados
+              </button>
+            )}
+          />
         )}
       </form>
     </section>
