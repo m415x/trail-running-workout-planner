@@ -55,7 +55,24 @@
       "primary": "Competencia principal",
       "intermediate": "Competencias intermedias",
       "noPrimary": "No hay una competencia principal planificada.",
-      "elevationUnavailable": "Desnivel sin datos"
+      "elevationUnavailable": "Desnivel sin datos",
+      "registrations": {
+        "upcoming": "Próximas inscripciones",
+        "history": "Historial de carreras",
+        "noUpcoming": "No hay inscripciones próximas.",
+        "noHistory": "No hay participaciones históricas registradas.",
+        "participation": "Participación",
+        "actualDistance": "Distancia real",
+        "elapsedTime": "Tiempo",
+        "unknown": "Desconocido",
+        "participationStatuses": {
+          "unknown": "Desconocido",
+          "started": "Inició",
+          "finished": "Finalizó",
+          "dnf": "DNF",
+          "dns": "DNS"
+        }
+      }
     }
   }
 }
