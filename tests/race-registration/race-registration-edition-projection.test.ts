@@ -6,7 +6,8 @@ import type { RaceRegistrationPersistenceInput } from '../../types/training/race
 
 const registration = (overrides: Partial<RaceRegistrationPersistenceInput> = {}): RaceRegistrationPersistenceInput => ({
   id: 'registration-1',
-  scope: { teamId: 'team-1', athleteProfileId: 'athlete-1' },
+  teamId: 'team-1',
+  athleteProfileId: 'athlete-1',
   course: { raceEventId: 'event-1', raceEditionId: 'edition-1', raceCourseId: 'course-1' },
   snapshot: {
     eventName: 'Andes Trail',
@@ -28,13 +29,13 @@ describe('race edition registration projection', () => {
       registration(),
       registration({
         id: 'registration-2',
-        scope: { teamId: 'team-1', athleteProfileId: 'athlete-2' },
+        athleteProfileId: 'athlete-2',
         participationStatus: 'finished',
         result: { actualDistanceKm: 28.4, elapsedTimeSeconds: 10800 },
       }),
       registration({
         id: 'registration-3',
-        scope: { teamId: 'team-1', athleteProfileId: 'athlete-3' },
+        athleteProfileId: 'athlete-3',
         course: { raceEventId: 'event-1', raceEditionId: 'edition-1', raceCourseId: 'course-2' },
         snapshot: {
           eventName: 'Andes Trail',
