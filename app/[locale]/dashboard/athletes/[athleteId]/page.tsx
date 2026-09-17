@@ -4,9 +4,11 @@ import { getTranslations } from 'next-intl/server'
 import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
+import { registerAthleteForRaceCourseAction } from '@/app/actions/race-registration-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
+import { listRaceCourses, listRaceEditions, listRaceEvents } from '@/lib/race-catalog/catalog-repository'
 import { listRaceRegistrationsForAthlete } from '@/lib/competitions/race-registration-repository'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
@@ -64,6 +66,9 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   if (!athlete) notFound()
 
   const raceCompetition = projectAthleteRaceCompetition(listRaceRegistrationsForAthlete({ teamId: athlete.teamId, athleteProfileId: athleteId }))
+  const raceEvents = listRaceEvents()
+  const raceEditions = raceEvents.flatMap((event) => listRaceEditions(event.id))
+  const raceCourses = raceEditions.flatMap((edition) => listRaceCourses(edition.id))
   const upcomingRegistrations = raceCompetition.upcomingRegistrations
   const history = raceCompetition.history
   const es = locale === 'es'
@@ -99,6 +104,37 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         <Card className='md:col-span-2'>
           <CardHeader><CardTitle className='flex items-center gap-2'><Flag className='size-5' />{es ? 'Competencias' : 'Competitions'}</CardTitle></CardHeader>
           <CardContent className='space-y-6'>
+            <section className='space-y-3'>
+              <h3 className='font-medium'>{es ? 'Registrar inscripción' : 'Register athlete'}</h3>
+              {raceCourses.length === 0 ? (
+                <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
+                  {es ? 'No hay ediciones con recorridos disponibles.' : 'There are no editions with available courses.'}
+                </p>
+              ) : (
+                <form action={registerAthleteForRaceCourseAction} className='grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end'>
+                  <input type='hidden' name='athleteProfileId' value={athleteId} />
+                  <label className='grid gap-1'>
+                    <span className='text-xs text-muted-foreground'>{es ? 'Edición' : 'Edition'}</span>
+                    <select name='raceEditionId' className='h-9 rounded-md border border-input bg-background px-3'>
+                      {raceEditions.map((edition) => (
+                        <option key={edition.id} value={edition.id}>{edition.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className='grid gap-1'>
+                    <span className='text-xs text-muted-foreground'>{es ? 'Recorrido' : 'Course'}</span>
+                    <select name='raceCourseId' className='h-9 rounded-md border border-input bg-background px-3'>
+                      {raceCourses.map((course) => (
+                        <option key={course.id} value={course.id}>{course.label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button type='submit' className={buttonVariants({ size: 'sm' })}>
+                    {es ? 'Registrar' : 'Register'}
+                  </button>
+                </form>
+              )}
+            </section>
             <section className='space-y-3'>
               <h3 className='font-medium'>{es ? 'Inscripciones próximas' : 'Upcoming registrations'}</h3>
               {upcomingRegistrations.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay inscripciones efectivas pendientes de participación.' : 'There are no effective registrations awaiting participation.'}</p> : upcomingRegistrations.map((registration) => <div key={`${registration.editionDate}-${registration.courseLabel}`} className='rounded-lg border p-4'><p className='font-medium'>{registration.eventName} · {registration.editionLabel}</p><p className='mt-1 text-sm text-muted-foreground'>{registration.courseLabel} · {formatDate(registration.editionDate, locale)}</p><div className='mt-2 flex flex-wrap gap-3 text-sm'><span>{es ? 'Distancia nominal' : 'Nominal distance'}: {registration.nominalDistanceKm == null ? '—' : `${registration.nominalDistanceKm} km`}</span><span>D+: {registration.nominalElevationGainM == null ? '—' : `+${registration.nominalElevationGainM} m`}</span></div></div>)}
