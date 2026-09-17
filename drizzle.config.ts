@@ -11,7 +11,7 @@ export default defineConfig({
     './db/race-catalog-schema.ts',
     './db/race-registration-schema.ts',
   ],
-  out: './drizzle',
+  out: './drizzle/sqlite',
   dialect: 'sqlite',
   dbCredentials: {
     url: 'sqlite.db',
