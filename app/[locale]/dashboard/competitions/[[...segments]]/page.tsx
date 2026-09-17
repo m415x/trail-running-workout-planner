@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { CatalogForm } from '@/features/race-catalog/components/CatalogForm'
+import { CourseRegistration } from '@/features/race-registration/components/CourseRegistration'
 import { Link } from '@/i18n/routing'
 import {
   getRaceCourse,
@@ -379,6 +380,8 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
           </dl>
         </CardContent>
       </Card>
+
+      <CourseRegistration event={event} edition={edition} course={course} />
 
       <Card>
         <CardHeader>
