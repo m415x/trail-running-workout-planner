@@ -15,9 +15,13 @@ import { runBulkRaceRegistrationAction } from '@/lib/competitions/race-registrat
 import {
   createRaceRegistration,
   findRaceRegistrationInEdition,
+  getRaceRegistrationForTeam,
+  updateRaceRegistration,
 } from '@/lib/competitions/race-registration-repository'
 import { executeRaceRegistrationServerAction } from '@/lib/competitions/race-registration-server-action-execution'
 import { buildRaceRegistrationActionDependencies } from '@/lib/competitions/race-registration-server-action-wiring'
+import { updateRaceParticipation } from '@/lib/competitions/race-registration-service'
+import type { RaceParticipationStatus } from '@/types/training/race-registration.types'
 
 const CURRENT_TEAM_ID = 'team_1'
 
@@ -40,10 +44,42 @@ const dependencies = buildRaceRegistrationActionDependencies({
   createId: () => randomUUID(),
 })
 
+function nullableNumber(value: FormDataEntryValue | null): number | null {
+  if (typeof value !== 'string' || value.trim() === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
 export async function registerAthletesForRaceCourse(formData: FormData) {
   return executeRaceRegistrationServerAction(formData, {
     teamId: CURRENT_TEAM_ID,
     runBulkRegistration: (input) => runBulkRaceRegistrationAction(input, dependencies),
     revalidatePath,
   })
+}
+
+export async function updateRaceParticipationAction(formData: FormData) {
+  const registrationId = String(formData.get('registrationId') ?? '')
+  const participationStatus = String(
+    formData.get('participationStatus') ?? 'unknown',
+  ) as RaceParticipationStatus
+  const actualDistanceKm = nullableNumber(formData.get('actualDistanceKm'))
+  const elapsedTimeSeconds = nullableNumber(formData.get('elapsedTimeSeconds'))
+
+  const result = await updateRaceParticipation(
+    {
+      teamId: CURRENT_TEAM_ID,
+      registrationId,
+      participationStatus,
+      actualDistanceKm,
+      elapsedTimeSeconds,
+    },
+    {
+      getRegistration: getRaceRegistrationForTeam,
+      updateRegistration: updateRaceRegistration,
+    },
+  )
+
+  if (result.ok) revalidatePath('/dashboard/competitions')
+  return result
 }
