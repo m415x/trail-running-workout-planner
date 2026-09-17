@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import { describe, it } from 'node:test'
+
+const component = readFileSync(
+  'features/race-registration/components/CourseRegistration.tsx',
+  'utf8',
+)
+
+describe('course registration component contract', () => {
+  it('renders eligible athletes as selectable and existing registrations as contextual rows', () => {
+    assert.match(component, /interaction\.eligible\.map/)
+    assert.match(component, /type='checkbox'/)
+    assert.match(component, /name='athleteProfileId'/)
+    assert.match(component, /interaction\.registeredHere\.map/)
+    assert.match(component, /interaction\.registeredElsewhere\.map/)
+    assert.match(component, /Inscripto en este recorrido/)
+    assert.match(component, /Inscripto en .*courseLabel/)
+  })
+})
