@@ -23,6 +23,11 @@ import {
   listRaceEvents,
 } from '@/lib/race-catalog/catalog-repository'
 import { deriveRaceCourseProfile } from '@/lib/race-catalog/race-course-derived-profile'
+import { loadCourseRegistrationData } from '@/lib/competitions/race-registration-course-query'
+import {
+  listActiveCourseRegistrationAthletes,
+  listEffectiveCourseRegistrationsInEdition,
+} from '@/lib/competitions/race-registration-course-sources'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -344,6 +349,17 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
 
   if (segments.length !== 5) notFound()
   const derived = deriveRaceCourseProfile(course)
+  const interaction = await loadCourseRegistrationData(
+    {
+      teamId: 'team_1',
+      raceEditionId: edition.id,
+      raceCourseId: course.id,
+    },
+    {
+      listActiveAthletes: listActiveCourseRegistrationAthletes,
+      listEffectiveRegistrationsInEdition: listEffectiveCourseRegistrationsInEdition,
+    },
+  )
 
   return (
     <div className='space-y-6'>
@@ -381,7 +397,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
         </CardContent>
       </Card>
 
-      <CourseRegistration event={event} edition={edition} course={course} />
+      <CourseRegistration event={event} edition={edition} course={course} interaction={interaction} />
 
       <Card>
         <CardHeader>
