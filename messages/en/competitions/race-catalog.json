@@ -69,7 +69,10 @@
         "finished": "Finished",
         "dnf": "DNF",
         "dns": "DNS"
-      }
+      },
+      "cancelRegistration": "Cancel registration",
+      "reactivateRegistration": "Reactivate registration",
+      "changeCourse": "Change course"
     },
     "errors": {
       "invalid": "Check the marked fields: names, dates, URLs and numeric values must be valid.",
