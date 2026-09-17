@@ -9,7 +9,8 @@ describe('KAN-366 locale-aware race registration mutation revalidation', () => {
   it('uses the established locale-aware revalidation contract for individual registration', () => {
     assert.match(actions, /raceRegistrationRevalidationPaths/)
     assert.match(actions, /formData\.get\(['"]locale['"]\)/)
-    assert.match(actions, /registerAthleteForRaceCourseAction[\s\S]*raceRegistrationRevalidationPaths/)
+    assert.match(actions, /function revalidateRaceRegistrationPaths[\s\S]*raceRegistrationRevalidationPaths/)
+    assert.match(actions, /registerAthleteForRaceCourseAction[\s\S]*revalidateRaceRegistrationPaths\(locale\)/)
     assert.doesNotMatch(actions, /registerAthleteForRaceCourseAction[\s\S]*revalidatePath\(['"]\/dashboard\/competitions['"]\)/)
   })
 
@@ -25,7 +26,7 @@ describe('KAN-366 locale-aware race registration mutation revalidation', () => {
       const next = actions.indexOf('export async function ', start + 1)
       const body = actions.slice(start, next === -1 ? undefined : next)
       assert.match(body, /formData\.get\(['"]locale['"]\)/)
-      assert.match(body, /raceRegistrationRevalidationPaths/)
+      assert.match(body, /revalidateRaceRegistrationPaths\(locale\)/)
       assert.doesNotMatch(body, /revalidatePath\(['"]\/dashboard\/competitions['"]\)/)
     }
   })
