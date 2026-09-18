@@ -5,7 +5,6 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -49,32 +48,36 @@ export function DirtyFormGuardProvider({
   stayLabel,
   discardLabel,
 }: DirtyFormGuardProviderProps) {
-  const currentRef = useRef(currentValue)
-  currentRef.current = currentValue
+  const [controller] = useState(() => {
+    let latestValue = currentValue
+    const guardController = createDirtyFormGuardController(initialValue, () => latestValue)
 
-  const controllerRef = useRef<ReturnType<typeof createDirtyFormGuardController> | null>(null)
-  if (!controllerRef.current) {
-    controllerRef.current = createDirtyFormGuardController(initialValue, () => currentRef.current)
-  }
+    return {
+      guardController,
+      setCurrentValue(value: DirtyFormValue) {
+        latestValue = value
+      },
+    }
+  })
+  controller.setCurrentValue(currentValue)
 
-  const controller = controllerRef.current
   const [confirmationOpen, setConfirmationOpen] = useState(false)
 
   const guardNavigation = useCallback(
     (navigate: () => void) => {
-      controller.guardNavigation(navigate)
-      setConfirmationOpen(controller.hasPendingNavigation())
+      controller.guardController.guardNavigation(navigate)
+      setConfirmationOpen(controller.guardController.hasPendingNavigation())
     },
     [controller],
   )
 
   const markSaved = useCallback(() => {
-    controller.markSaved()
+    controller.guardController.markSaved()
   }, [controller])
 
   useEffect(() => {
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      applyBeforeUnloadProtection(controller.isDirty(), event)
+      applyBeforeUnloadProtection(controller.guardController.isDirty(), event)
     }
 
     window.addEventListener('beforeunload', handleBeforeUnload)
@@ -82,12 +85,12 @@ export function DirtyFormGuardProvider({
   }, [controller])
 
   const stay = () => {
-    controller.stay()
+    controller.guardController.stay()
     setConfirmationOpen(false)
   }
 
   const discard = () => {
-    controller.discard()
+    controller.guardController.discard()
     setConfirmationOpen(false)
   }
 
