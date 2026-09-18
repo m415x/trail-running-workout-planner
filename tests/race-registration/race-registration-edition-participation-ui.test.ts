@@ -9,7 +9,7 @@ const component = readFileSync(
 
 describe('coach RaceEdition participation editor', () => {
   it('submits explicit participation and factual result fields through the server action', () => {
-    assert.match(component, /updateRaceParticipationAction/)
+    assert.match(component, /updateRaceParticipationFormAction/)
     assert.match(component, /name=['"]registrationId['"]/)
     assert.match(component, /name=['"]participationStatus['"]/)
     assert.match(component, /name=['"]actualDistanceKm['"]/)
