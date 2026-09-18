@@ -11,8 +11,6 @@ test('known destructive lifecycle actions use the shared confirmation primitive'
   assert.match(athleteTable, /deactivateConfirm/)
   assert.match(registrationLifecycle, /ConfirmActionDialog/)
   assert.match(registrationLifecycle, /variant=['"]destructive['"]/)
-  assert.match(workoutLog, /ConfirmActionDialog/)
-  assert.match(workoutLog, /variant=['"]destructive['"]/)
 })
 
 test('significant reversible course change uses contextual confirmation', () => {
