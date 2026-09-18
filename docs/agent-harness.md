@@ -103,3 +103,22 @@ After both remaining Epic 3 stories are complete, compare their evaluation recor
 - **new failure mode** — recurring problem not addressed by v1.
 
 Only then publish a `harness-eval-v2` change. Avoid optimizing solely for fewer tokens; correctness and human intervention remain counter-metrics.
+
+
+## Story evaluations
+
+### KAN-281 — harness-eval-v1
+
+- Redundant/repeated tool calls: observed; notable cases included asking for already-pasted test/typecheck evidence and some repeated source/test inspection during reconciliation.
+- Unnecessary large/full-source reloads: observed but not precisely counted; large TypeScript/test output was later reduced through filtered extraction and partitioned race-registration batches.
+- Equivalent failed-operation loops: observed in SQLite/Supabase schema-reflection and Drizzle DB-typing attempts; retry discipline eventually changed strategy rather than continuing the same mechanism.
+- Context/source-of-truth mistakes: at least one implementation fixture initially used the conceptual nested scope shape instead of the current top-level persistence shape; current code/types corrected it.
+- Durable information unnecessarily requested from human: at least one repeated gate/evidence request after the user had already supplied it.
+- Premature task/branch creation or reopened settled decisions: none observed; the existing story branch remained canonical.
+- Unnecessary local/full-gate requests during implementation: some redundant requests occurred, then verification was partitioned/focused; the final complete gate was correctly reserved for closure.
+- Unsupported verification claims: none retained as closure evidence; stale gates were explicitly marked stale after later production changes.
+- Missed acceptance criteria attributable to workflow/context handling: automated structural coverage did not catch several runtime/IA defects before manual validation.
+- Corrective human interventions attributable to harness behavior: the human flagged repeated evidence requests, athlete-first edition/course filtering, Stats-vs-Plan information architecture, RaceEdition density and stale participation-editor state.
+- Durable documentation/handoff complete: yes for KAN-281; architecture, glossary, indexes, handoff and next-story baseline were consolidated by KAN-367.
+- Evidence that reduced context/tool usage harmed correctness: structural source tests and narrow static inspection gave false confidence around independent edition/course selects, a form-field contract mismatch and RSC/client state synchronization; manual runtime validation materially improved correctness.
+- Notes for post-experiment v2 (do not change v1 yet): retain source-of-truth ordering, manual closure walkthrough and focused/partitioned verification. Review how structural source tests are weighted, how already-supplied human evidence is tracked, and how retry limits are enforced for type-system/schema experiments.
