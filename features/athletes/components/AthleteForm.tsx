@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef, useState } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -62,22 +62,17 @@ function AthleteEditGuard({
   children: React.ReactNode
 }) {
   const { register, update, unregister } = useDashboardDirtyFormGuard()
-  const [currentValue, setCurrentValue] = useState(initialValue)
 
   useEffect(() => {
     register(initialValue)
     return unregister
   }, [initialValue, register, unregister])
 
-  useEffect(() => {
-    update(currentValue)
-  }, [currentValue, update])
-
   return (
     <div
       onInput={(event) => {
         const form = (event.target as HTMLElement).closest('form')
-        if (form) setCurrentValue(athleteFormDirtyValuesFromFormData(new FormData(form)))
+        if (form) update(athleteFormDirtyValuesFromFormData(new FormData(form)))
       }}
     >
       {children}
