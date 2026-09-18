@@ -4,7 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
-import { registerAthleteForRaceCourseAction } from '@/app/actions/race-registration-actions'
+import { registerAthleteForRaceCourseFormAction } from '@/app/actions/race-registration-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
@@ -111,7 +111,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                   {es ? 'No hay ediciones con recorridos disponibles.' : 'There are no editions with available courses.'}
                 </p>
               ) : (
-                <form action={registerAthleteForRaceCourseAction} className='grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end'>
+                <form action={registerAthleteForRaceCourseFormAction} className='grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end'>
                   <input type='hidden' name='locale' value={locale} />
                   <input type='hidden' name='athleteProfileId' value={athleteId} />
                   <label className='grid gap-1'>
