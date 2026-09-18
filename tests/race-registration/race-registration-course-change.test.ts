@@ -15,8 +15,8 @@ const event: RaceEvent = {
   id: 'event_1',
   name: 'Ansilta XK',
   status: 'active',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-  updatedAt: new Date('2026-01-01T00:00:00Z'),
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
 }
 
 const edition: RaceEdition = {
@@ -25,8 +25,8 @@ const edition: RaceEdition = {
   label: 'Ansilta XK 2026',
   startDate: '2026-10-18',
   status: 'published',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-  updatedAt: new Date('2026-01-01T00:00:00Z'),
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
 }
 
 const course30k: RaceCourse = {
@@ -38,8 +38,8 @@ const course30k: RaceCourse = {
   modality: { code: 'trail' },
   classifications: [],
   status: 'published',
-  createdAt: new Date('2026-01-01T00:00:00Z'),
-  updatedAt: new Date('2026-01-01T00:00:00Z'),
+  createdAt: '2026-01-01T00:00:00Z',
+  updatedAt: '2026-01-01T00:00:00Z',
 }
 
 const course42k: RaceCourse = {
