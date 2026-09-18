@@ -1,0 +1,8 @@
+{
+  "AthleteEditForm": {
+    "unsavedTitle": "¿Descartar cambios sin guardar?",
+    "unsavedDescription": "Los cambios de este atleta todavía no se guardaron. ¿Querés descartarlos y salir de esta página?",
+    "stay": "Seguir editando",
+    "discard": "Descartar cambios"
+  }
+}
