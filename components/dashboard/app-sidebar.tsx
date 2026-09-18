@@ -13,7 +13,8 @@ import {
 } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
-import { Link, usePathname } from '@/i18n/routing'
+import { Link, usePathname, useRouter } from '@/i18n/routing'
+import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
 import {
   Sidebar,
   SidebarContent,
@@ -72,6 +73,8 @@ const navigationItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const { guardNavigation } = useDashboardDirtyFormGuard()
   const t = useTranslations('WorkoutTemplates')
   const catalog = useTranslations('RaceCatalog')
 
@@ -105,7 +108,19 @@ export function AppSidebar() {
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton render={<Link href={item.href} />} isActive={isActive} tooltip={label}>
+                    <SidebarMenuButton
+                      render={
+                        <Link
+                          href={item.href}
+                          onNavigate={(event) => {
+                            event.preventDefault()
+                            guardNavigation(() => router.push(item.href))
+                          }}
+                        />
+                      }
+                      isActive={isActive}
+                      tooltip={label}
+                    >
                       <item.icon />
                       <span>{label}</span>
                     </SidebarMenuButton>

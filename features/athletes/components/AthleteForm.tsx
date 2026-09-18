@@ -1,13 +1,22 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 import {
   createAthlete,
   updateAthlete,
   type AthleteFormState,
 } from '@/app/actions/athlete-actions'
+import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
+import {
+  athleteFormDirtyValues,
+  athleteFormDirtyValuesFromFormData,
+  type AthleteFormDirtyValues,
+} from '@/features/athletes/lib/athlete-form-dirty-values'
+import { shouldMarkAthleteEditSaved } from '@/features/athletes/lib/athlete-edit-submit-guard'
 import { buttonVariants, Button } from '@ui/button'
 import { Input } from '@ui/input'
 
@@ -32,6 +41,47 @@ interface AthleteFormProps {
 const initialState: AthleteFormState = {}
 
 export function AthleteForm({ locale, athlete }: AthleteFormProps) {
+  if (!athlete) {
+    return <AthleteFormContent locale={locale} />
+  }
+
+  const initialValue = athleteFormDirtyValues(athlete)
+
+  return (
+    <AthleteEditGuard initialValue={initialValue}>
+      <AthleteFormContent locale={locale} athlete={athlete} />
+    </AthleteEditGuard>
+  )
+}
+
+function AthleteEditGuard({
+  initialValue,
+  children,
+}: {
+  initialValue: AthleteFormDirtyValues
+  children: React.ReactNode
+}) {
+  const { register, update, unregister } = useDashboardDirtyFormGuard()
+
+  useEffect(() => {
+    register(initialValue)
+    return unregister
+  }, [initialValue, register, unregister])
+
+  return (
+    <div
+      onInput={(event) => {
+        const form = (event.target as HTMLElement).closest('form')
+        if (form) update(athleteFormDirtyValuesFromFormData(new FormData(form)))
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
+  const t = useTranslations('AthleteForm')
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
@@ -41,6 +91,8 @@ export function AthleteForm({ locale, athlete }: AthleteFormProps) {
       <input type='hidden' name='locale' value={locale} />
       {athlete?.id && <input type='hidden' name='athleteId' value={athlete.id} />}
 
+      {athlete && <AthleteEditSubmitGuard pending={pending} error={state.error} />}
+
       {state.error && (
         <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>
           {state.error}
@@ -48,36 +100,84 @@ export function AthleteForm({ locale, athlete }: AthleteFormProps) {
       )}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label='Nombre' name='firstName' defaultValue={athlete?.firstName} required />
-        <Field label='Apellido' name='lastName' defaultValue={athlete?.lastName} required />
-        <Field label='Email' name='email' type='email' defaultValue={athlete?.email} required />
-        <Field label='DNI' name='dni' defaultValue={athlete?.dni} required />
-        <Field label='Apodo' name='nickName' defaultValue={athlete?.nickName} />
-        <Field label='Fecha de nacimiento' name='birthday' type='date' defaultValue={athlete?.birthday} />
-        <Field label='Teléfono' name='phone' type='tel' defaultValue={athlete?.phone} />
+        <Field label={t('firstName')} name='firstName' defaultValue={athlete?.firstName} required />
+        <Field label={t('lastName')} name='lastName' defaultValue={athlete?.lastName} required />
+        <Field label={t('email')} name='email' type='email' defaultValue={athlete?.email} required />
+        <Field label={t('dni')} name='dni' defaultValue={athlete?.dni} required />
+        <Field label={t('nickName')} name='nickName' defaultValue={athlete?.nickName} />
+        <Field label={t('birthday')} name='birthday' type='date' defaultValue={athlete?.birthday} />
+        <Field label={t('phone')} name='phone' type='tel' defaultValue={athlete?.phone} />
       </div>
 
       <div className='space-y-4 rounded-xl border p-4'>
         <div>
-          <h3 className='font-medium'>Contacto de emergencia</h3>
-          <p className='text-sm text-muted-foreground'>Opcional. Puede completarse o modificarse más adelante.</p>
+          <h3 className='font-medium'>{t('emergencyTitle')}</h3>
+          <p className='text-sm text-muted-foreground'>{t('emergencyDescription')}</p>
         </div>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <Field label='Nombre del contacto' name='emergencyContact' defaultValue={athlete?.emergencyContact} />
-          <Field label='Teléfono de emergencia' name='emergencyPhone' type='tel' defaultValue={athlete?.emergencyPhone} />
+          <Field label={t('emergencyContact')} name='emergencyContact' defaultValue={athlete?.emergencyContact} />
+          <Field label={t('emergencyPhone')} name='emergencyPhone' type='tel' defaultValue={athlete?.emergencyPhone} />
         </div>
       </div>
 
       <div className='flex justify-end gap-2'>
-        <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
-          Cancelar
-        </Link>
+        {athlete ? (
+          <AthleteEditCancelLink href={athletesPath} />
+        ) : (
+          <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
+            {t('cancel')}
+          </Link>
+        )}
         <Button type='submit' disabled={pending}>
-          {pending ? 'Guardando…' : athlete ? 'Guardar cambios' : 'Crear atleta'}
+          {pending ? t('saving') : athlete ? t('saveChanges') : t('createAthlete')}
         </Button>
       </div>
     </form>
   )
+}
+
+function AthleteEditCancelLink({ href }: { href: string }) {
+  const { guardNavigation } = useDashboardDirtyFormGuard()
+  const router = useRouter()
+  const t = useTranslations('AthleteForm')
+
+  return (
+    <Link
+      href={href}
+      className={buttonVariants({ variant: 'outline' })}
+      onNavigate={(event) => {
+        event.preventDefault()
+        guardNavigation(() => router.push(href))
+      }}
+    >
+      {t('cancel')}
+    </Link>
+  )
+}
+
+function AthleteEditSubmitGuard({
+  pending,
+  error,
+}: {
+  pending: boolean
+  error?: string
+}) {
+  const { markSaved } = useDashboardDirtyFormGuard()
+  const wasPending = useRef(false)
+
+  useEffect(() => {
+    if (pending) {
+      wasPending.current = true
+      return
+    }
+
+    if (shouldMarkAthleteEditSaved({ pending, error, wasPending: wasPending.current })) {
+      markSaved()
+      wasPending.current = false
+    }
+  }, [error, markSaved, pending])
+
+  return null
 }
 
 interface FieldProps {

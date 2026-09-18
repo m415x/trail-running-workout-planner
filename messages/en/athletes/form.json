@@ -1,0 +1,23 @@
+{
+  "AthleteForm": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "dni": "DNI",
+    "nickName": "Nickname",
+    "birthday": "Date of birth",
+    "phone": "Phone",
+    "emergencyTitle": "Emergency contact",
+    "emergencyDescription": "Optional. It can be completed or changed later.",
+    "emergencyContact": "Contact name",
+    "emergencyPhone": "Emergency phone",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "createAthlete": "Create athlete"
+  },
+  "AthleteEditPage": {
+    "title": "Edit athlete",
+    "description": "Update the athlete's personal and contact information."
+  }
+}

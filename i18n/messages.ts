@@ -56,6 +56,10 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/realized-training/calendar.json')).default
       case 'athletes/actions':
         return (await import('@/messages/en/athletes/actions.json')).default
+      case 'athletes/form':
+        return (await import('@/messages/en/athletes/form.json')).default
+      case 'forms/dirty-form-guard':
+        return (await import('@/messages/en/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/en/athlete-stats/stats.json')).default
       case 'glossary/planning':
@@ -87,6 +91,10 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/realized-training/calendar.json')).default
       case 'athletes/actions':
         return (await import('@/messages/es/athletes/actions.json')).default
+      case 'athletes/form':
+        return (await import('@/messages/es/athletes/form.json')).default
+      case 'forms/dirty-form-guard':
+        return (await import('@/messages/es/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/es/athlete-stats/stats.json')).default
       case 'glossary/planning':

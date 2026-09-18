@@ -72,7 +72,15 @@
       },
       "cancelRegistration": "Cancel registration",
       "reactivateRegistration": "Reactivate registration",
-      "changeCourse": "Change course"
+      "changeCourse": "Change course",
+      "cancelConfirmTitle": "Cancel race registration?",
+      "cancelConfirmDescription": "This cancels {athlete}'s registration for {course}. It does not record DNS or any other participation result. You can reactivate the registration later while participation remains unknown.",
+      "cancelConfirmAction": "Cancel registration",
+      "cancelConfirmKeep": "Keep registration",
+      "changeCourseConfirmTitle": "Change race course?",
+      "changeCourseConfirmDescription": "Move this registration from {currentCourse} to {newCourse}? The athlete will appear under the new course after the change.",
+      "changeCourseConfirmAction": "Change course",
+      "changeCourseConfirmKeep": "Keep current course"
     },
     "errors": {
       "invalid": "Check the marked fields: names, dates, URLs and numeric values must be valid.",

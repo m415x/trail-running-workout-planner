@@ -2,7 +2,7 @@
 
 ## Current status
 
-Epic 3 Stories 1–9 are implemented through **KAN-281**. KAN-281 adds effective individual race registration, participation evidence and factual competitive history. The next story is **KAN-282 — Historia 10: Proteger acciones sensibles y cambios sin guardar en la UI**.
+Epic 3 Stories 1–10 are implemented through **KAN-282**. KAN-282 completes the epic with cross-cutting confirmation semantics and reusable unsaved-change protection.
 
 Use current architecture and code/tests as authority. The durable KAN-281 contract is [`race-registration.md`](../architecture/competitions/race-registration.md); the older boundary document is the historical KAN-275 reservation.
 
@@ -47,10 +47,4 @@ Fresh after the final production/UI changes and test reconciliation:
 - Coach desktop manual walkthrough: functional registration, course change, lifecycle and participation/result flows validated after runtime fixes.
 - Athlete mobile manual walkthrough: Plan/Competition and Stats/Competition separation validated with no functional errors reported.
 
-## Next story baseline — KAN-282
-
-KAN-282 is the final Epic 3 story and owns cross-cutting UI action safety and unsaved-change protection. Start from [`ux-action-safety.md`](../architecture/platform/ux-action-safety.md). Reuse `ConfirmActionDialog`, the three-level action-safety policy and KAN-366 bulk registration as the first explicit Level 2 adoption.
-
-KAN-282 should inventory sensitive lifecycle actions, apply consistent confirmation semantics, and design a reusable dirty-form/navigation guard. Race-registration lifecycle actions are part of the inventory surface, but KAN-282 should not reopen KAN-281 domain semantics.
-
-Because KAN-282 is the second `harness-eval-v1` story, keep the harness unchanged and compare its closure trace with the KAN-281 evaluation before proposing v2.
+## KAN-282 closure baseline\n\nKAN-282 establishes the shared three-level action-safety policy and reusable dirty-form/navigation guard documented in [`ux-action-safety.md`](../architecture/platform/ux-action-safety.md). Athlete deactivation and race-registration cancellation use Level 3 confirmation; activation/reactivation remain lower-risk direct transitions. Race-registration course change uses Level 2 contextual confirmation. Athlete Edit is the first end-to-end dirty-form adoption at dashboard scope.\n\nFresh KAN-373 closure evidence: focused action-safety/dirty-form regression tests green; `pnpm test` green; `pnpm lint` green; `pnpm exec tsc --noEmit` green; `pnpm build` green. Task-level manual walkthroughs validated Athlete Edit dirty/unchanged/restored/saved behavior, athlete deactivate/activate, registration cancel/reactivate, and course-change confirmation. Browser-native `beforeunload` UI remains browser-controlled; KAN-369 runtime instrumentation established that the dirty handler fired and applied the browser protection contract.\n\nFollow-up debt discovered during the walkthrough remains deliberately outside KAN-282: **KAN-374** owns future-date-of-birth validation and **KAN-375** owns ES/EN migration on untouched legacy athlete surfaces.\n\nKAN-282 is the second and final `harness-eval-v1` story. Compare its record with KAN-281 in `docs/agent-harness.md` before changing the harness.

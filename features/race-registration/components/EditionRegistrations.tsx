@@ -5,6 +5,7 @@ import {
 } from '@/app/actions/race-registration-actions'
 import { RaceRegistrationCourseChange } from '@/features/race-registration/components/RaceRegistrationCourseChange'
 import { RaceParticipationEditor } from '@/features/race-registration/components/RaceParticipationEditor'
+import { RaceRegistrationLifecycleControl } from '@/features/race-registration/components/RaceRegistrationLifecycleControl'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
@@ -52,18 +53,21 @@ export async function EditionRegistrations({
 
                   {registration.participationStatus === 'unknown' && (
                     <div className='flex flex-wrap items-center gap-2'>
-                      <form action={updateRaceRegistrationLifecycleFormAction}>
-                        <input type='hidden' name='locale' value={locale} />
-                        <input type='hidden' name='registrationId' value={registration.registrationId} />
-                        <input
-                          type='hidden'
-                          name='registrationStatus'
-                          value={registration.registrationStatus === 'registered' ? 'cancelled' : 'registered'}
-                        />
-                        <Button type='submit' size='sm' variant='outline'>
-                          {registration.registrationStatus === 'registered' ? t('cancelRegistration') : t('reactivateRegistration')}
-                        </Button>
-                      </form>
+                      <RaceRegistrationLifecycleControl
+                        locale={locale}
+                        registrationId={registration.registrationId}
+                        registrationStatus={registration.registrationStatus}
+                        athleteName={registration.athleteName ?? registration.athleteProfileId}
+                        courseLabel={group.courseLabel}
+                        labels={{
+                          cancelRegistration: t('cancelRegistration'),
+                          reactivateRegistration: t('reactivateRegistration'),
+                          cancelConfirmTitle: t('cancelConfirmTitle'),
+                          cancelConfirmDescription: t.raw('cancelConfirmDescription'),
+                          cancelConfirmAction: t('cancelConfirmAction'),
+                          cancelConfirmKeep: t('cancelConfirmKeep'),
+                        }}
+                      />
 
                       {registration.registrationStatus === 'registered' && (
                         <RaceRegistrationCourseChange

@@ -72,7 +72,15 @@
       },
       "cancelRegistration": "Cancelar inscripción",
       "reactivateRegistration": "Reactivar inscripción",
-      "changeCourse": "Cambiar recorrido"
+      "changeCourse": "Cambiar recorrido",
+      "cancelConfirmTitle": "¿Cancelar inscripción a la carrera?",
+      "cancelConfirmDescription": "Esto cancela la inscripción de {athlete} en {course}. No registra DNS ni ningún otro resultado de participación. Podés reactivar la inscripción más adelante mientras la participación siga desconocida.",
+      "cancelConfirmAction": "Cancelar inscripción",
+      "cancelConfirmKeep": "Mantener inscripción",
+      "changeCourseConfirmTitle": "¿Cambiar recorrido?",
+      "changeCourseConfirmDescription": "¿Mover esta inscripción de {currentCourse} a {newCourse}? El atleta aparecerá en el nuevo recorrido después del cambio.",
+      "changeCourseConfirmAction": "Cambiar recorrido",
+      "changeCourseConfirmKeep": "Mantener recorrido actual"
     },
     "errors": {
       "invalid": "Revisá los campos marcados: nombres, fechas, URLs y valores numéricos deben ser válidos.",

@@ -122,3 +122,28 @@ Only then publish a `harness-eval-v2` change. Avoid optimizing solely for fewer 
 - Durable documentation/handoff complete: yes for KAN-281; architecture, glossary, indexes, handoff and next-story baseline were consolidated by KAN-367.
 - Evidence that reduced context/tool usage harmed correctness: structural source tests and narrow static inspection gave false confidence around independent edition/course selects, a form-field contract mismatch and RSC/client state synchronization; manual runtime validation materially improved correctness.
 - Notes for post-experiment v2 (do not change v1 yet): retain source-of-truth ordering, manual closure walkthrough and focused/partitioned verification. Review how structural source tests are weighted, how already-supplied human evidence is tracked, and how retry limits are enforced for type-system/schema experiments.
+
+
+### KAN-282 — harness-eval-v1
+
+- Redundant/repeated tool calls: observed; notable cases were repeated edits of the KAN-372 inventory test and repeated hypotheses while diagnosing browser/dialog behavior.
+- Unnecessary large/full-source reloads: none material retained as closure evidence; focused source retrieval and log-tail commands were generally used.
+- Equivalent failed-operation loops: observed; retry budget was not consistently respected. Six Jira subtask creates used the wrong issue-type name before switching strategy, KAN-370 went through event-handler and timer hypotheses before structural diagnosis, and the KAN-372 inventory edit required repeated correction.
+- Context/source-of-truth mistakes: observed. A local command initially assumed PowerShell despite the human using Bash; an early remote RED request omitted `git pull`; and the KAN-372 inventory initially relied on stale/default-branch workout evidence rather than the story branch.
+- Durable information unnecessarily requested from human: none material after the Bash workflow was made durable in `AGENTS.md`.
+- Premature task/branch creation or reopened settled decisions: none after story understanding/decomposition approval; branch and Jira subtasks were created only after the requested approvals.
+- Unnecessary local/full-gate requests during implementation: no complete project gate was required before KAN-373; focused verification was used per task and the full gate was reserved for story closure.
+- Unsupported verification claims: none retained. The native `beforeunload` dialog was not claimed after the browser suppressed it; runtime instrumentation established only that the handler fired and applied `preventDefault`/`returnValue`.
+- Missed acceptance criteria attributable to workflow/context handling: structural tests did not catch dropdown-owned dialog unmounting, the RSC/client event-handler boundary, or implicit form submission around the registration cancellation dialog. Manual task walkthroughs caught these before closure.
+- Corrective human interventions attributable to harness behavior: observed. The human corrected the shell assumption, exposed the missing-pull RED failure, reported the KAN-370 disappearing dialog, reported the KAN-371 RSC runtime and implicit-submit defects, and surfaced course-change confirmation plus legacy athlete i18n/future-DOB follow-up debt.
+- Durable documentation/handoff complete: yes; action-safety architecture, Epic 3 handoff, Bash shell rule, Jira evidence and follow-up issues are durable.
+- Evidence that reduced context/tool usage harmed correctness: source-regex/structural tests alone gave false confidence around client ownership and browser runtime behavior. Manual walkthroughs and targeted instrumentation were necessary; reduced source loading itself was not shown to be the cause.
+- Notes for post-experiment v2 (do not change v1 yet): keep source-of-truth ordering, focused verification, story-level full gates, manual runtime walkthroughs and durable handoffs. Revise retry enforcement, branch-aware search discipline and tracking of already-known shell/evidence state. Treat structural source tests as regression hints, not runtime proof.
+
+## Post-experiment comparison — KAN-281 vs KAN-282
+
+Both stories support keeping the durable source-of-truth order, focused implementation gates, final full gate, manual closure walkthrough and story handoff. In both, structural/static tests missed runtime interaction defects, so they should not be treated as substitutes for behavioral validation.
+
+KAN-282 improved task sizing and deferred the complete project gate until closure, but retry discipline remained the clearest weakness: repeated Jira creation attempts, dialog hypotheses and the inventory-test edit exceeded the intended two-attempt strategy. KAN-282 also exposed branch-aware source retrieval and durable shell state as explicit failure modes.
+
+For a future v2, classify the current observations as follows: **keep** source-of-truth ordering, focused verification, manual walkthrough and closure documentation; **revise** retry-budget enforcement and evidence-state tracking; **new failure mode** branch/default-branch search ambiguity and transient-component ownership not represented by structural tests. No v2 rules are published by this record.
