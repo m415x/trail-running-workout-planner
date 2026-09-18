@@ -11,8 +11,8 @@ describe('Athlete Stats Competition race registration surface', () => {
   it('loads the athlete-safe registration projection alongside existing competition planning context', () => {
     assert.match(page, /getCurrentAthleteRaceRegistrationsAction/)
     assert.match(page, /today/)
-    assert.match(page, /raceRegistrations\.upcoming/)
-    assert.match(page, /raceRegistrations\.history/)
+    assert.match(page, /raceRegistrationData\.upcoming/)
+    assert.match(page, /raceRegistrationData\.history/)
     assert.match(page, /primaryCompetition/)
   })
 
