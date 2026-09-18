@@ -45,14 +45,14 @@ export async function EditionRegistrations({
             </CardHeader>
             <CardContent className='space-y-2'>
               {group.registrations.map((registration) => (
-                <div key={registration.registrationId} className='grid gap-2 rounded-lg border p-3 text-sm xl:grid-cols-[minmax(10rem,1fr)_auto_minmax(18rem,1.4fr)_minmax(28rem,2fr)] xl:items-end'>
+                <div key={registration.registrationId} className='grid gap-3 rounded-lg border p-3 text-sm xl:grid-cols-[minmax(10rem,1fr)_minmax(12rem,auto)_minmax(34rem,2fr)] xl:items-center'>
                   <div className='flex min-w-0 flex-wrap items-center gap-2'>
                     <span className='font-medium'>{registration.athleteName ?? registration.athleteProfileId}</span>
                     <Badge variant='outline'>{t(`participationStatuses.${registration.participationStatus}`)}</Badge>
                   </div>
 
                   {registration.participationStatus === 'unknown' && (
-                    <div className='grid gap-2 sm:grid-cols-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
                       <form action={updateRaceRegistrationLifecycleFormAction}>
                         <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
@@ -67,7 +67,7 @@ export async function EditionRegistrations({
                       </form>
 
                       {registration.registrationStatus === 'registered' && (
-                        <form action={changeRaceRegistrationCourseFormAction} className='flex gap-2'>
+                        <form action={changeRaceRegistrationCourseFormAction} className='flex min-w-[18rem] flex-1 gap-2'>
                           <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
                           <select
@@ -85,7 +85,7 @@ export async function EditionRegistrations({
                     </div>
                   )}
 
-                  <form action={updateRaceParticipationFormAction} className='grid gap-2 sm:grid-cols-4'>
+                  <form action={updateRaceParticipationFormAction} className='grid min-w-0 gap-2 sm:grid-cols-[minmax(9rem,1.2fr)_minmax(7rem,0.8fr)_minmax(7rem,0.8fr)_auto] sm:items-end'>
                     <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
 
