@@ -1,16 +1,15 @@
 import { getTranslations } from 'next-intl/server'
 
 import {
-  updateRaceParticipationFormAction,
   updateRaceRegistrationLifecycleFormAction,
 } from '@/app/actions/race-registration-actions'
 import { RaceRegistrationCourseChange } from '@/features/race-registration/components/RaceRegistrationCourseChange'
+import { RaceParticipationEditor } from '@/features/race-registration/components/RaceParticipationEditor'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
-import { Input } from '@ui/input'
 
 export async function EditionRegistrations({
   editionRegistrationGroups,
@@ -78,51 +77,26 @@ export async function EditionRegistrations({
                     </div>
                   )}
 
-                  <form action={updateRaceParticipationFormAction} className='grid min-w-0 gap-2 sm:grid-cols-[minmax(9rem,1.2fr)_minmax(7rem,0.8fr)_minmax(7rem,0.8fr)_auto] sm:items-end'>
-                    <input type='hidden' name='locale' value={locale} />
-                        <input type='hidden' name='registrationId' value={registration.registrationId} />
-
-                    <label className='grid min-w-0 gap-1'>
-                      <span className='text-xs text-muted-foreground'>{t('participation')}</span>
-                      <select
-                        name='participationStatus'
-                        defaultValue={registration.participationStatus}
-                        className='h-9 rounded-md border border-input bg-background px-3'
-                      >
-                        <option value='unknown'>{t('participationStatuses.unknown')}</option>
-                        <option value='started'>{t('participationStatuses.started')}</option>
-                        <option value='finished'>{t('participationStatuses.finished')}</option>
-                        <option value='dnf'>{t('participationStatuses.dnf')}</option>
-                        <option value='dns'>{t('participationStatuses.dns')}</option>
-                      </select>
-                    </label>
-
-                    <label className='grid gap-1'>
-                      <span className='text-xs text-muted-foreground'>{t('actualDistance')}</span>
-                      <Input
-                        name='actualDistanceKm'
-                        type='number'
-                        min='0'
-                        step='any'
-                        defaultValue={registration.actualDistanceKm ?? ''}
-                      />
-                    </label>
-
-                    <label className='grid gap-1'>
-                      <span className='text-xs text-muted-foreground'>{t('elapsedTime')}</span>
-                      <Input
-                        name='elapsedTimeSeconds'
-                        type='number'
-                        min='0'
-                        step='1'
-                        defaultValue={registration.elapsedTimeSeconds ?? ''}
-                      />
-                    </label>
-
-                    <div className='flex items-end'>
-                      <Button type='submit' size='sm'>{t('saveResult')}</Button>
-                    </div>
-                  </form>
+                  <RaceParticipationEditor
+                    locale={locale}
+                    registrationId={registration.registrationId}
+                    participationStatus={registration.participationStatus}
+                    actualDistanceKm={registration.actualDistanceKm}
+                    elapsedTimeSeconds={registration.elapsedTimeSeconds}
+                    labels={{
+                      participation: t('participation'),
+                      actualDistance: t('actualDistance'),
+                      elapsedTime: t('elapsedTime'),
+                      saveResult: t('saveResult'),
+                      statuses: {
+                        unknown: t('participationStatuses.unknown'),
+                        started: t('participationStatuses.started'),
+                        finished: t('participationStatuses.finished'),
+                        dnf: t('participationStatuses.dnf'),
+                        dns: t('participationStatuses.dns'),
+                      },
+                    }}
+                  />
                 </div>
               ))}
             </CardContent>
