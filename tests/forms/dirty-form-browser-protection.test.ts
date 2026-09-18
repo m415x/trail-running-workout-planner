@@ -32,7 +32,7 @@ test('browser protection reads dirty state when beforeunload fires', () => {
   assert.equal(listeners.size, 1)
   for (const listener of listeners) listener(event)
   assert.equal(prevented, true)
-  assert.equal(event.returnValue, true)
+  assert.equal(event.returnValue, 'Unsaved changes')
 
   protection.stop()
   assert.equal(listeners.size, 0)
