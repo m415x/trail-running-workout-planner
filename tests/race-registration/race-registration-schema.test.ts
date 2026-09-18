@@ -47,7 +47,10 @@ describe('race registration SQLite schema', () => {
 
   it('keeps concrete catalog foreign keys for event, edition and course', () => {
     const foreignKeys = config().foreignKeys
-    const referencedTables = foreignKeys.map((foreignKey) => foreignKey.reference().foreignTable[Symbol.for('drizzle:Name') as keyof typeof foreignKey.reference().foreignTable])
+    const referencedTables = foreignKeys.map((foreignKey) => {
+      const table = foreignKey.reference().foreignTable as unknown as Record<symbol, unknown>
+      return table[Symbol.for('drizzle:Name')]
+    })
 
     assert.ok(referencedTables.includes('race_events'))
     assert.ok(referencedTables.includes('race_editions'))
