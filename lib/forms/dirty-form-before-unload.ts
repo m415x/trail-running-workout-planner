@@ -10,5 +10,5 @@ export function applyBeforeUnloadProtection(
   if (!isDirty) return
 
   event.preventDefault()
-  event.returnValue = 'Unsaved changes'
+  event.returnValue = true
 }
