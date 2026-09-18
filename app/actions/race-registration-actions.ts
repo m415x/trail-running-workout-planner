@@ -210,3 +210,20 @@ export async function updateRaceParticipationAction(formData: FormData) {
   if (result.ok) revalidateRaceRegistrationPaths(locale)
   return result
 }
+
+/** Form-compatible adapters discard mutation result objects after server-side handling. */
+export async function registerAthleteForRaceCourseFormAction(formData: FormData): Promise<void> {
+  await registerAthleteForRaceCourseAction(formData)
+}
+
+export async function changeRaceRegistrationCourseFormAction(formData: FormData): Promise<void> {
+  await changeRaceRegistrationCourseAction(formData)
+}
+
+export async function updateRaceRegistrationLifecycleFormAction(formData: FormData): Promise<void> {
+  await updateRaceRegistrationLifecycleAction(formData)
+}
+
+export async function updateRaceParticipationFormAction(formData: FormData): Promise<void> {
+  await updateRaceParticipationAction(formData)
+}
