@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@ui/alert-dialog'
-import { applyBeforeUnloadProtection } from '@/lib/forms/dirty-form-before-unload'
+import { createDirtyFormBrowserProtection } from '@/lib/forms/dirty-form-browser-protection'
 import { createDashboardDirtyFormGuard } from '@/lib/forms/dashboard-dirty-form-guard'
 import { useTranslations } from 'next-intl'
 import type { DirtyFormValue } from '@/lib/forms/dirty-form'
@@ -52,12 +52,18 @@ export function DashboardDirtyFormGuardProvider({
   )
 
   useEffect(() => {
-    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      applyBeforeUnloadProtection(guard.isDirty(), event)
-    }
+    const protection = createDirtyFormBrowserProtection(
+      () => guard.isDirty(),
+      (handler) => {
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => handler(event)
+        window.addEventListener('beforeunload', handleBeforeUnload)
 
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+      },
+    )
+
+    protection.start()
+    return () => protection.stop()
   }, [guard])
 
   const stay = () => {
