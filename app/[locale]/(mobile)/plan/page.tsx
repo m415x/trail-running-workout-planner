@@ -1,4 +1,6 @@
-import { CalendarDays } from 'lucide-react'
+import { CalendarDays, Flag } from 'lucide-react'
+
+import { Link } from '@/i18n/routing'
 
 import { getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
 import { AthleteSessionCard } from '@/features/athlete-planning/components/AthleteSessionCard'
@@ -26,6 +28,8 @@ export default async function PlanPage() {
         </div>
         <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(startDate, endDate)}</p>
       </header>
+
+      <Link href='/plan/competition' className='flex items-center justify-between rounded-2xl border bg-card p-4 text-sm font-semibold'><span className='flex items-center gap-2'><Flag className='size-4' />Competencias</span><span className='text-primary'>Ver inscripciones</span></Link>
 
       {!groupCode && <Card><CardContent className='py-6 text-center text-sm text-muted-foreground'>Todavía no tenés un grupo asignado. Consultá con tu entrenador para acceder a tu planificación.</CardContent></Card>}
 
