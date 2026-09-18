@@ -24,12 +24,7 @@ import type {
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
-type CompetitionDatabase = CompetitionRepositoryDatabase & {
-  readonly query: CompetitionRepositoryDatabase['query'] & Pick<
-    typeof db.query,
-    'groupTrainingPlans' | 'macrocycles'
-  >
-}
+type CompetitionDatabase = CompetitionRepositoryDatabase
 
 export type CompetitionCalendarServiceErrorCode =
   | CompetitionCalendarPolicyErrorCode
