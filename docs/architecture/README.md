@@ -8,11 +8,10 @@ Architecture documents are the durable contracts for current domain and technica
 
 `competitions/` owns competitive identity and catalog-related consumer boundaries.
 
-Key starting documents for current work:
+Key competition documents:
 
-- `competitions/race-registration-boundary.md` — KAN-275 minimum future registration target: explicit team + athlete scope bound to one concrete `RaceCourseReference`. It intentionally does not define registration lifecycle, participation/result semantics, snapshot fields or persistence.
-
-KAN-281 is the story responsible for turning that reserved boundary into an actual durable individual registration/history model. The accepted MVP clarification is that `RaceRegistration` represents an effective registration, not competitive intent; participation/result evidence remains a separate concern and missing evidence remains unknown.
+- `competitions/race-registration.md` — implemented KAN-281 contract for effective registration, lifecycle, participation/result evidence, historical snapshots, persistence/isolation and Coach/Athlete disclosure.
+- `competitions/race-registration-boundary.md` — KAN-275 historical reservation that established the minimum concrete RaceCourse target before KAN-281.
 
 ### Realized training
 
