@@ -12,6 +12,7 @@ export const messageFragmentPaths = [
   'realized-training/calendar',
   'athletes/actions',
   'athletes/edit-form',
+  'forms/dirty-form-guard',
   'athlete-stats/stats',
   'glossary/planning',
 ] as const
