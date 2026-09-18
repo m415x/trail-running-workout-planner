@@ -1,7 +1,6 @@
 import { and, asc, eq } from 'drizzle-orm'
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
-import { db, databaseSchema } from '@/db'
+import { db } from '@/db'
 import { competitionEntries } from '@/db/competition-entry-schema'
 import type {
   CompetitionEntry,
@@ -9,7 +8,11 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 
-export type CompetitionDatabase = BetterSQLite3Database<typeof databaseSchema>
+export type CompetitionDatabase = unknown
+
+function resolveCompetitionDatabase(database: CompetitionDatabase): typeof db {
+  return database as typeof db
+}
 
 export interface CreateCompetitionRecord {
   readonly id: string
@@ -28,7 +31,8 @@ export function listCompetitionsByPlan(
   groupTrainingPlanId: string,
   database: CompetitionDatabase = db,
 ): CompetitionEntry[] {
-  return database.query.competitionEntries.findMany({
+  const resolvedDatabase = resolveCompetitionDatabase(database)
+  return resolvedDatabase.query.competitionEntries.findMany({
     where: and(
       eq(competitionEntries.groupTrainingPlanId, groupTrainingPlanId),
       eq(competitionEntries.isDeleted, false),
@@ -42,7 +46,8 @@ export function getCompetitionById(
   id: string,
   database: CompetitionDatabase = db,
 ): CompetitionEntry | null {
-  return database.query.competitionEntries.findFirst({
+  const resolvedDatabase = resolveCompetitionDatabase(database)
+  return resolvedDatabase.query.competitionEntries.findFirst({
     where: and(
       eq(competitionEntries.id, id),
       eq(competitionEntries.isDeleted, false),
@@ -65,7 +70,7 @@ export function createCompetitionRecord(
     updatedAt: input.createdAt,
   }
 
-  database.insert(competitionEntries).values(record).run()
+  resolveCompetitionDatabase(database).insert(competitionEntries).values(record).run()
   return record
 }
 
@@ -77,7 +82,7 @@ export function updateCompetitionRecord(
   const existing = getCompetitionById(input.id, database)
   if (!existing) return null
 
-  database.update(competitionEntries).set({
+  resolveCompetitionDatabase(database).update(competitionEntries).set({
     groupTrainingPlanId: input.draft.groupTrainingPlanId,
     name: input.draft.name,
     date: input.draft.date,
@@ -105,7 +110,7 @@ export function rescheduleCompetitionRecord(
   const existing = getCompetitionById(id, database)
   if (!existing) return null
 
-  database.update(competitionEntries).set({ date, updatedAt }).where(and(
+  resolveCompetitionDatabase(database).update(competitionEntries).set({ date, updatedAt }).where(and(
     eq(competitionEntries.id, id),
     eq(competitionEntries.isDeleted, false),
   )).run()
@@ -123,7 +128,7 @@ export function updateCompetitionStatusRecord(
   const existing = getCompetitionById(id, database)
   if (!existing) return null
 
-  database.update(competitionEntries).set({ status, updatedAt }).where(and(
+  resolveCompetitionDatabase(database).update(competitionEntries).set({ status, updatedAt }).where(and(
     eq(competitionEntries.id, id),
     eq(competitionEntries.isDeleted, false),
   )).run()
