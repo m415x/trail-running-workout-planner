@@ -64,8 +64,8 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 1. Current code/schema/types and tests for actual behavior.
 2. `docs/architecture/` for durable domain contracts/invariants.
 3. Jira for scope, acceptance criteria and execution state.
-4. `docs/handoffs/epic-3.md` for immediate closure/resumption context.
-5. `docs/history/` only for historical rationale/evolution.
+4. The current epic/story handoff when one exists for immediate resumption context.
+5. `docs/history/epic-3.md` and earlier epic histories for completed evolution/rationale.
 
 Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
 
@@ -225,32 +225,28 @@ Every story includes a final documentation/handoff task. It is part of delivery,
 - The final handoff must state: delivered behavior, current contracts/invariants, reusable infrastructure, limitations/deferred work, verified evidence, and the exact baseline the next story may assume.
 - Only record verification that actually ran. Jira remains the authority for task status and acceptance evidence.
 
-## Harness evaluation — Epic 3 closing stories
+## Harness evaluation — Epic 3 closure record
 
-The story workflow above is **harness-eval-v1**. Keep its operational rules stable through the final two Epic 3 stories unless a rule causes a blocking/safety/correctness failure. Record observations rather than tuning the harness mid-experiment.
+The KAN-281/KAN-282 story workflow experiment used **harness-eval-v1** and is complete. Its published protocol, observations and post-experiment conclusions live in `docs/agent-harness.md`.
 
-Evaluate observable behavior, not subjective impressions or token count alone. At each story closure record a compact evaluation covering:
-
-- redundant/repeated tool calls or unnecessary full-file reloads;
-- equivalent failed attempts and whether the retry budget stopped loops;
-- context/source-of-truth mistakes or requests to repeat durable information;
-- premature task/branch creation or reopened settled decisions;
-- unnecessary local/full-gate requests during implementation;
-- claims of verification without evidence;
-- missed acceptance criteria or corrective human interventions attributable to workflow/context handling;
-- durable-documentation/handoff completeness;
-- any case where lower context/tool usage reduced correctness.
-
-Do not change harness-eval-v1 merely to improve the second story's score. After both stories, compare the two traces and decide which rules to keep, remove or revise for v2.
+Preserve the source-of-truth ordering, focused verification, final full gate, manual runtime walkthrough, durable handoff and fresh-chat-capable boundaries established by that evaluation. Do not modify the published harness as incidental feature work. Potential v2 changes require an explicit workflow decision based on the recorded evidence.
 
 ## Current closure context
 
-Epic 2 is complete. Epic 3 Stories 1–9 are implemented through KAN-281. The current operational handoff is `docs/handoffs/epic-3.md`; the durable registration contract is `docs/architecture/competitions/race-registration.md`.
+Epic 2 and Epic 3 are complete at the functional/story level. Epic 3 is consolidated in `docs/history/epic-3.md`; current domain authority remains the relevant `docs/architecture/` contracts plus current code/tests.
 
-KAN-281 establishes effective individual `RaceRegistration` with explicit team + athlete scope and concrete RaceCourse identity. Registration lifecycle (`registered | cancelled`) is separate from explicit participation evidence (`unknown | started | finished | dnf | dns`). Historical snapshots preserve event/edition/course facts; nominal distance remains distinct from actual covered distance; registration/result does not become realized training, readiness, authorization or performance interpretation.
+Epic 3 established durable realized training, plan-real comparison, evidence-qualified adherence/load monitoring, systematic-volume and Training Response triage, Athlete Stats analytics/disclosure, the normalized competitive catalog, effective race registration/history, and shared action-safety semantics.
 
-Athlete presentation is split intentionally: Plan -> Competition contains upcoming effective registrations, while Stats -> Competition contains historical factual participation/results. This is information architecture only and does not couple registration to TrainingGoal or CompetitionEntry.
+Preserve these boundaries in subsequent work:
 
-The next and final Epic 3 story is KAN-282 — Historia 10: protect sensitive actions and unsaved UI changes. Start from `docs/architecture/platform/ux-action-safety.md`; reuse `ConfirmActionDialog` and the three-level policy. KAN-366 bulk race registration is the first explicit Level 2 adoption. Keep `harness-eval-v1` unchanged through KAN-282, then compare both story evaluations before proposing v2.
+- monitoring/Training Response is operational review evidence, not measured physiology or diagnosis;
+- planned, realized, registered, participated and derived analytical states remain distinct facts;
+- `unknown != 0` and missing evidence is not a negative assertion;
+- derived rules expose version/provenance and do not silently mutate planning;
+- athlete-facing analytics use explicit disclosure projections rather than filtered coach projections;
+- team/athlete isolation remains end-to-end;
+- the temporary development identity is not an authentication model.
 
-KAN-281 final reported gate: 908/908 tests across 202 suites, TypeScript clean, lint 0 errors / 7 warnings, build green, Supabase migration check green and 36/36 application tables with RLS. Coach desktop and Athlete mobile functional walkthroughs passed after final runtime fixes. KAN-360, rankings/positions and purely aesthetic UI polish remain deferred.
+Known deferred work includes KAN-342, KAN-349, KAN-360, KAN-374 and KAN-375. These are not retroactive Epic 3 acceptance blockers unless Jira explicitly re-scopes them.
+
+Before starting a later epic, reconstruct its stories from the current `dev` baseline, relevant architecture, completed epic history and Jira. Do not assume an old preliminary epic outline still matches the delivered system.
