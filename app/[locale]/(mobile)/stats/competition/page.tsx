@@ -46,8 +46,9 @@ export default async function CompetitionStatsPage() {
     getCurrentAthleteStatsAction({ ...period, view: 'details' }),
     getCurrentAthleteRaceRegistrationsAction({ today }),
   ])
-  if (result.status !== 'success') return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
+  if (result.status !== 'success' || raceRegistrations.status !== 'success') return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
 
+  const raceRegistrationData = raceRegistrations.data
   const competition = result.data.competition
   if (competition === null || !('primaryCompetition' in competition)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
   const elevationUnavailable = t('competitionDetail.elevationUnavailable')
@@ -74,15 +75,15 @@ export default async function CompetitionStatsPage() {
     <div className='mt-8 space-y-6'>
       <section>
         <h2 className='mb-3 font-heading text-lg font-bold'>{t('competitionDetail.registrations.upcoming')}</h2>
-        {raceRegistrations.upcoming.length === 0
+        {raceRegistrationData.upcoming.length === 0
           ? <p className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>{t('competitionDetail.registrations.noUpcoming')}</p>
-          : <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>{raceRegistrations.upcoming.map(item => <RaceRegistrationCard key={item.registrationId} item={item} labels={registrationLabels} />)}</div>}
+          : <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>{raceRegistrationData.upcoming.map(item => <RaceRegistrationCard key={item.registrationId} item={item} labels={registrationLabels} />)}</div>}
       </section>
       <section>
         <h2 className='mb-3 font-heading text-lg font-bold'>{t('competitionDetail.registrations.history')}</h2>
-        {raceRegistrations.history.length === 0
+        {raceRegistrationData.history.length === 0
           ? <p className='rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>{t('competitionDetail.registrations.noHistory')}</p>
-          : <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>{raceRegistrations.history.map(item => <RaceRegistrationCard key={item.registrationId} item={item} labels={registrationLabels} />)}</div>}
+          : <div className='grid grid-cols-1 gap-3 md:grid-cols-2'>{raceRegistrationData.history.map(item => <RaceRegistrationCard key={item.registrationId} item={item} labels={registrationLabels} />)}</div>}
       </section>
     </div>
   </section>
