@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { getTableConfig } from 'drizzle-orm/sqlite-core'
+import { getTableConfig, getTableName } from 'drizzle-orm/sqlite-core'
 
 import { raceRegistrations } from '@/db/race-registration-schema'
 
@@ -47,7 +47,7 @@ describe('race registration SQLite schema', () => {
 
   it('keeps concrete catalog foreign keys for event, edition and course', () => {
     const foreignKeys = config().foreignKeys
-    const referencedTables = foreignKeys.map((foreignKey) => foreignKey.reference().foreignTable._.name)
+    const referencedTables = foreignKeys.map((foreignKey) => getTableName(foreignKey.reference().foreignTable))
 
     assert.ok(referencedTables.includes('race_events'))
     assert.ok(referencedTables.includes('race_editions'))
