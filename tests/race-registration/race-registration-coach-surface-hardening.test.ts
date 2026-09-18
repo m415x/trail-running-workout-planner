@@ -11,8 +11,8 @@ describe('KAN-366 Coach surface hardening', () => {
     assert.match(course, /registerAthletesForRaceCourse/)
     assert.doesNotMatch(course, /raceRegistrationAction/)
 
-    assert.match(actions, /PARTICIPATION_STATUSES|participationStatuses|raceParticipationStatuses/)
-    assert.match(actions, /includes\(|safeParse|parseRaceParticipationStatus/)
+    assert.match(actions, /function parseRaceParticipationStatus/)
+    assert.match(actions, /case ['"]unknown['"][\s\S]*case ['"]started['"][\s\S]*case ['"]finished['"][\s\S]*case ['"]dnf['"][\s\S]*case ['"]dns['"]/)
     assert.doesNotMatch(actions, /as RaceParticipationStatus/)
   })
 
