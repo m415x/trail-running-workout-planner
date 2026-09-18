@@ -4,14 +4,16 @@ import { createDirtyFormBrowserProtection } from '../../lib/forms/dirty-form-bro
 
 test('browser protection reads dirty state when beforeunload fires', () => {
   let dirty = false
-  let listener: ((event: { preventDefault(): void; returnValue: string | boolean }) => void) | null = null
+  const listeners = new Set<
+    (event: { preventDefault(): void; returnValue: string | boolean }) => void
+  >()
 
   const protection = createDirtyFormBrowserProtection(
     () => dirty,
     (handler) => {
-      listener = handler
+      listeners.add(handler)
       return () => {
-        listener = null
+        listeners.delete(handler)
       }
     },
   )
@@ -27,11 +29,11 @@ test('browser protection reads dirty state when beforeunload fires', () => {
     returnValue: false as string | boolean,
   }
 
-  assert.ok(listener)
-  listener(event)
+  assert.equal(listeners.size, 1)
+  for (const listener of listeners) listener(event)
   assert.equal(prevented, true)
   assert.equal(event.returnValue, true)
 
   protection.stop()
-  assert.equal(listener, null)
+  assert.equal(listeners.size, 0)
 })
