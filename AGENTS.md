@@ -40,6 +40,11 @@ Use these canonical identifiers for remote-first project inspection and delivery
 
 Confirm exact versions from `package.json`/lockfile and installed docs before relying on remembered APIs.
 
+## Shell environment
+
+- The project's human-operated local shell is **Bash**. When asking the human to run local commands, provide Bash-compatible commands by default.
+- Do not provide PowerShell/CMD syntax unless the human explicitly requests it. This avoids command failures caused by assuming the wrong shell.
+
 ## Commands
 
 - `pn dev` — local development
