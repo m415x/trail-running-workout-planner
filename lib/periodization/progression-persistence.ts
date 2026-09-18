@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
-import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import {
   groupTrainingPlans,
   macrocycles,
@@ -16,7 +15,7 @@ const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
 
 export type CompetitionSnapshotPersistenceMode = 'replace' | 'preserve'
 
-type ProgressionDatabase = BetterSQLite3Database<any>
+type ProgressionDatabase = typeof db | any
 
 export interface PersistProgressionParams {
   groupTrainingPlanId: string
