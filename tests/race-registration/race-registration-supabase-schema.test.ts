@@ -35,7 +35,7 @@ describe('race registration Supabase schema', () => {
 
   it('references the concrete catalog event, edition and course hierarchy', () => {
     const referencedTables = config().foreignKeys.map(
-      (foreignKey) => foreignKey.reference().foreignTable[Symbol.for('drizzle:Name')],
+      (foreignKey) => foreignKey.reference().foreignTable._.name,
     )
 
     assert.ok(referencedTables.includes('race_events'))
