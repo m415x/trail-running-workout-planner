@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { db } from '@/db'
 import { groupTrainingPlans, macrocycles } from '@/db/schema'
 import { and, eq } from 'drizzle-orm'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import {
   createCompetitionRecord,
   getCompetitionById,
@@ -23,7 +24,7 @@ import type {
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
-type CompetitionDatabase = typeof db
+type CompetitionDatabase = BetterSQLite3Database<any>
 
 export type CompetitionCalendarServiceErrorCode =
   | CompetitionCalendarPolicyErrorCode
