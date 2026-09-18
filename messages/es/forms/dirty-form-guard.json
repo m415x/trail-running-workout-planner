@@ -1,0 +1,8 @@
+{
+  "DirtyFormGuard": {
+    "title": "¿Descartar cambios sin guardar?",
+    "description": "Los cambios todavía no se guardaron. ¿Querés descartarlos y salir de esta página?",
+    "stay": "Seguir editando",
+    "discard": "Descartar cambios"
+  }
+}
