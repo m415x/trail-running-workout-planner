@@ -1,13 +1,22 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import {
   createAthlete,
   updateAthlete,
   type AthleteFormState,
 } from '@/app/actions/athlete-actions'
+import { DirtyFormGuardProvider, useDirtyFormGuard } from '@/components/forms/dirty-form-guard'
+import { GuardedLink } from '@/components/forms/guarded-link'
+import {
+  athleteFormDirtyValues,
+  athleteFormDirtyValuesFromFormData,
+  type AthleteFormDirtyValues,
+} from '@/features/athletes/lib/athlete-form-dirty-values'
+import { shouldMarkAthleteEditSaved } from '@/features/athletes/lib/athlete-edit-submit-guard'
 import { buttonVariants, Button } from '@ui/button'
 import { Input } from '@ui/input'
 
@@ -32,6 +41,65 @@ interface AthleteFormProps {
 const initialState: AthleteFormState = {}
 
 export function AthleteForm({ locale, athlete }: AthleteFormProps) {
+  if (!athlete) {
+    return <AthleteFormContent locale={locale} />
+  }
+
+  const initialValue = athleteFormDirtyValues(athlete)
+
+  return (
+    <AthleteEditGuard initialValue={initialValue}>
+      <AthleteFormContent locale={locale} athlete={athlete} />
+    </AthleteEditGuard>
+  )
+}
+
+function AthleteEditGuard({
+  initialValue,
+  children,
+}: {
+  initialValue: AthleteFormDirtyValues
+  children: React.ReactNode
+}) {
+  const t = useTranslations('AthleteEditForm')
+  const [currentValue, setCurrentValue] = useState(initialValue)
+
+  return (
+    <DirtyFormGuardProvider
+      initialValue={initialValue}
+      currentValue={currentValue}
+      title={t('unsavedTitle')}
+      description={t('unsavedDescription')}
+      stayLabel={t('stay')}
+      discardLabel={t('discard')}
+    >
+      <AthleteEditGuardBridge setCurrentValue={setCurrentValue}>
+        {children}
+      </AthleteEditGuardBridge>
+    </DirtyFormGuardProvider>
+  )
+}
+
+function AthleteEditGuardBridge({
+  setCurrentValue,
+  children,
+}: {
+  setCurrentValue(value: AthleteFormDirtyValues): void
+  children: React.ReactNode
+}) {
+  return (
+    <div
+      onInput={(event) => {
+        const form = (event.target as HTMLElement).closest('form')
+        if (form) setCurrentValue(athleteFormDirtyValuesFromFormData(new FormData(form)))
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
+function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
@@ -40,6 +108,8 @@ export function AthleteForm({ locale, athlete }: AthleteFormProps) {
     <form action={formAction} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {athlete?.id && <input type='hidden' name='athleteId' value={athlete.id} />}
+
+      {athlete && <AthleteEditSubmitGuard pending={pending} error={state.error} />}
 
       {state.error && (
         <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>
@@ -69,15 +139,46 @@ export function AthleteForm({ locale, athlete }: AthleteFormProps) {
       </div>
 
       <div className='flex justify-end gap-2'>
-        <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
-          Cancelar
-        </Link>
+        {athlete ? (
+          <GuardedLink href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
+            Cancelar
+          </GuardedLink>
+        ) : (
+          <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
+            Cancelar
+          </Link>
+        )}
         <Button type='submit' disabled={pending}>
           {pending ? 'Guardando…' : athlete ? 'Guardar cambios' : 'Crear atleta'}
         </Button>
       </div>
     </form>
   )
+}
+
+function AthleteEditSubmitGuard({
+  pending,
+  error,
+}: {
+  pending: boolean
+  error?: string
+}) {
+  const { markSaved } = useDirtyFormGuard()
+  const wasPending = useRef(false)
+
+  useEffect(() => {
+    if (pending) {
+      wasPending.current = true
+      return
+    }
+
+    if (shouldMarkAthleteEditSaved({ pending, error, wasPending: wasPending.current })) {
+      markSaved()
+      wasPending.current = false
+    }
+  }, [error, markSaved, pending])
+
+  return null
 }
 
 interface FieldProps {
