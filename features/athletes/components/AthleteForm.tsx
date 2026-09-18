@@ -139,6 +139,7 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
 function AthleteEditCancelLink({ href }: { href: string }) {
   const { guardNavigation } = useDashboardDirtyFormGuard()
   const router = useRouter()
+  const t = useTranslations('AthleteForm')
 
   return (
     <Link
@@ -149,7 +150,7 @@ function AthleteEditCancelLink({ href }: { href: string }) {
         guardNavigation(() => router.push(href))
       }}
     >
-      {useTranslations('AthleteForm')('cancel')}
+      {t('cancel')}
     </Link>
   )
 }
