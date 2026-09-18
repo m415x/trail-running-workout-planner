@@ -3,12 +3,13 @@ import { describe, it } from 'node:test'
 
 import { runBulkRaceRegistrationAction } from '@/lib/competitions/race-registration-action-service'
 
-const event = { id: 'event-1', name: 'Ansilta XK' }
+const event = { id: 'event-1', name: 'Ansilta XK', status: 'active' as const }
 const edition = {
   id: 'edition-1',
   raceEventId: 'event-1',
   label: 'Ansilta XK 2026',
   startDate: '2026-10-18',
+  status: 'published' as const,
 }
 const course = {
   id: 'course-21k',
@@ -16,6 +17,9 @@ const course = {
   label: '21K',
   distanceKm: 21,
   elevationGainM: 950,
+  modality: null,
+  classifications: [],
+  status: 'published' as const,
 }
 
 describe('bulk race registration action orchestration', () => {
