@@ -38,3 +38,25 @@ export function athleteFormDirtyValues(
     emergencyPhone: source.emergencyPhone ?? '',
   }
 }
+
+
+function formDataString(formData: FormData, name: string): string {
+  const value = formData.get(name)
+  return typeof value === 'string' ? value : ''
+}
+
+export function athleteFormDirtyValuesFromFormData(
+  formData: FormData,
+): AthleteFormDirtyValues {
+  return athleteFormDirtyValues({
+    firstName: formDataString(formData, 'firstName'),
+    lastName: formDataString(formData, 'lastName'),
+    email: formDataString(formData, 'email'),
+    dni: formDataString(formData, 'dni'),
+    nickName: formDataString(formData, 'nickName'),
+    birthday: formDataString(formData, 'birthday'),
+    phone: formDataString(formData, 'phone'),
+    emergencyContact: formDataString(formData, 'emergencyContact'),
+    emergencyPhone: formDataString(formData, 'emergencyPhone'),
+  })
+}
