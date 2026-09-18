@@ -13,8 +13,8 @@ describe('course registration data', () => {
         { athleteProfileId: 'athlete-3', athleteName: 'Pedro' },
       ],
       registrations: [
-        { athleteProfileId: 'athlete-2', raceCourseId: 'course-21k', courseLabel: '21K' },
-        { athleteProfileId: 'athlete-3', raceCourseId: 'course-42k', courseLabel: '42K' },
+        { registrationId: 'registration-2', athleteProfileId: 'athlete-2', raceCourseId: 'course-21k', courseLabel: '21K' },
+        { registrationId: 'registration-3', athleteProfileId: 'athlete-3', raceCourseId: 'course-42k', courseLabel: '42K' },
       ],
     })
 
@@ -23,10 +23,10 @@ describe('course registration data', () => {
         { athleteProfileId: 'athlete-1', athleteName: 'Ana' },
       ],
       registeredHere: [
-        { athleteProfileId: 'athlete-2', athleteName: 'Juan', courseLabel: '21K' },
+        { athleteProfileId: 'athlete-2', athleteName: 'Juan', registrationId: 'registration-2', courseLabel: '21K' },
       ],
       registeredElsewhere: [
-        { athleteProfileId: 'athlete-3', athleteName: 'Pedro', courseLabel: '42K' },
+        { athleteProfileId: 'athlete-3', athleteName: 'Pedro', registrationId: 'registration-3', courseLabel: '42K' },
       ],
     })
   })
