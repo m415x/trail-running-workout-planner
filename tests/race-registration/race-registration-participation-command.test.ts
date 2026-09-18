@@ -55,9 +55,11 @@ describe('race participation correction command', () => {
     )
 
     assert.equal(result.ok, true)
-    assert.equal(persisted?.participationStatus, 'dnf')
-    assert.equal(persisted?.result?.actualDistanceKm, 0)
-    assert.equal(persisted?.result?.elapsedTimeSeconds, null)
+    assert.ok(persisted)
+    const persistedRegistration = persisted as RaceRegistrationPersistenceInput
+    assert.equal(persistedRegistration.participationStatus, 'dnf')
+    assert.equal(persistedRegistration.result?.actualDistanceKm, 0)
+    assert.equal(persistedRegistration.result?.elapsedTimeSeconds, null)
   })
 
   it('returns not_found without writing when the scoped registration is absent', async () => {
