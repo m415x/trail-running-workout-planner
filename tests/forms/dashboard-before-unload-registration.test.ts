@@ -18,5 +18,5 @@ test('registered dirty athlete form protects browser unload', () => {
   applyBeforeUnloadProtection(guard.isDirty(), event)
 
   assert.equal(prevented, true)
-  assert.equal(event.returnValue, true)
+  assert.equal(event.returnValue, 'Unsaved changes')
 })
