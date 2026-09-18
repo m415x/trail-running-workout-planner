@@ -7,7 +7,7 @@ export interface AthleteRegistrationCandidate { athleteProfileId: string; athlet
 export interface AthleteRaceRegistrationProjection { eventName: string; editionLabel: string; editionDate: string; courseLabel: string; nominalDistanceKm: number | null; nominalElevationGainM: number | null }
 export interface AthleteRaceHistoryProjection extends AthleteRaceRegistrationProjection { participationStatus: RaceParticipationStatus; actualDistanceKm: number | null; elapsedTimeSeconds: number | null }
 export interface AthleteRaceCompetitionProjection { upcomingRegistrations: AthleteRaceRegistrationProjection[]; history: AthleteRaceHistoryProjection[] }
-export interface EditionRegistrationProjection { registrationId: string; athleteProfileId: string; athleteName: string | null; participationStatus: RaceParticipationStatus; actualDistanceKm: number | null; elapsedTimeSeconds: number | null }
+export interface EditionRegistrationProjection { registrationId: string; athleteProfileId: string; athleteName: string | null; raceCourseId: string; registrationStatus: RaceRegistrationPersistenceInput['registrationStatus']; participationStatus: RaceParticipationStatus; actualDistanceKm: number | null; elapsedTimeSeconds: number | null }
 export interface EditionCourseRegistrationsProjection { raceCourseId: string; courseLabel: string; nominalDistanceKm: number | null; nominalElevationGainM: number | null; registrations: EditionRegistrationProjection[] }
 export interface CourseRegisteredAthlete extends AthleteRegistrationCandidate { courseLabel: string }
 export interface CourseRegistrationEligibilityProjection { eligible: AthleteRegistrationCandidate[]; registeredHere: CourseRegisteredAthlete[]; registeredElsewhere: CourseRegisteredAthlete[] }
@@ -35,14 +35,13 @@ export function projectRaceEditionRegistrations(
   const athleteNames = new Map(athletes.map((athlete) => [athlete.athleteProfileId, athlete.athleteName]))
   const groups = new Map<string, EditionCourseRegistrationsProjection>()
   for (const registration of registrations) {
-    if (registration.registrationStatus !== 'registered') continue
     const raceCourseId = registration.course.raceCourseId
     let group = groups.get(raceCourseId)
     if (!group) {
       group = { raceCourseId, courseLabel: registration.snapshot.courseLabel, nominalDistanceKm: registration.snapshot.nominalDistanceKm, nominalElevationGainM: registration.snapshot.nominalElevationGainM, registrations: [] }
       groups.set(raceCourseId, group)
     }
-    group.registrations.push({ registrationId: registration.id, athleteProfileId: registration.athleteProfileId, athleteName: registration.athleteName ?? athleteNames.get(registration.athleteProfileId) ?? null, participationStatus: registration.participationStatus, actualDistanceKm: registration.result?.actualDistanceKm ?? null, elapsedTimeSeconds: registration.result?.elapsedTimeSeconds ?? null })
+    group.registrations.push({ registrationId: registration.id, athleteProfileId: registration.athleteProfileId, athleteName: registration.athleteName ?? athleteNames.get(registration.athleteProfileId) ?? null, raceCourseId, registrationStatus: registration.registrationStatus, participationStatus: registration.participationStatus, actualDistanceKm: registration.result?.actualDistanceKm ?? null, elapsedTimeSeconds: registration.result?.elapsedTimeSeconds ?? null })
   }
   return [...groups.values()]
 }
