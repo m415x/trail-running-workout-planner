@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 import {
@@ -9,8 +10,7 @@ import {
   updateAthlete,
   type AthleteFormState,
 } from '@/app/actions/athlete-actions'
-import { DirtyFormGuardProvider, useDirtyFormGuard } from '@/components/forms/dirty-form-guard'
-import { GuardedLink } from '@/components/forms/guarded-link'
+import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
 import {
   athleteFormDirtyValues,
   athleteFormDirtyValuesFromFormData,
@@ -61,32 +61,18 @@ function AthleteEditGuard({
   initialValue: AthleteFormDirtyValues
   children: React.ReactNode
 }) {
-  const t = useTranslations('AthleteEditForm')
+  const { register, update, unregister } = useDashboardDirtyFormGuard()
   const [currentValue, setCurrentValue] = useState(initialValue)
 
-  return (
-    <DirtyFormGuardProvider
-      initialValue={initialValue}
-      currentValue={currentValue}
-      title={t('unsavedTitle')}
-      description={t('unsavedDescription')}
-      stayLabel={t('stay')}
-      discardLabel={t('discard')}
-    >
-      <AthleteEditGuardBridge setCurrentValue={setCurrentValue}>
-        {children}
-      </AthleteEditGuardBridge>
-    </DirtyFormGuardProvider>
-  )
-}
+  useEffect(() => {
+    register(initialValue)
+    return unregister
+  }, [initialValue, register, unregister])
 
-function AthleteEditGuardBridge({
-  setCurrentValue,
-  children,
-}: {
-  setCurrentValue(value: AthleteFormDirtyValues): void
-  children: React.ReactNode
-}) {
+  useEffect(() => {
+    update(currentValue)
+  }, [currentValue, update])
+
   return (
     <div
       onInput={(event) => {
@@ -140,9 +126,7 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
 
       <div className='flex justify-end gap-2'>
         {athlete ? (
-          <GuardedLink href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
-            Cancelar
-          </GuardedLink>
+          <AthleteEditCancelLink href={athletesPath} />
         ) : (
           <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
             Cancelar
@@ -156,6 +140,24 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
   )
 }
 
+function AthleteEditCancelLink({ href }: { href: string }) {
+  const { guardNavigation } = useDashboardDirtyFormGuard()
+  const router = useRouter()
+
+  return (
+    <Link
+      href={href}
+      className={buttonVariants({ variant: 'outline' })}
+      onNavigate={(event) => {
+        event.preventDefault()
+        guardNavigation(() => router.push(href))
+      }}
+    >
+      Cancelar
+    </Link>
+  )
+}
+
 function AthleteEditSubmitGuard({
   pending,
   error,
@@ -163,7 +165,7 @@ function AthleteEditSubmitGuard({
   pending: boolean
   error?: string
 }) {
-  const { markSaved } = useDirtyFormGuard()
+  const { markSaved } = useDashboardDirtyFormGuard()
   const wasPending = useRef(false)
 
   useEffect(() => {
