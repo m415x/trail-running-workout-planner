@@ -46,6 +46,7 @@ describe('race registration server action execution', () => {
     invalid.set('locale', 'es')
     invalid.set('raceCourseId', '')
     const revalidated: string[] = []
+    const recordRevalidation = (path: string) => { revalidated.push(path) }
 
     await assert.rejects(
       () => executeRaceRegistrationServerAction(invalid, {
@@ -53,7 +54,7 @@ describe('race registration server action execution', () => {
         runBulkRegistration: async () => {
           throw new Error('must not execute')
         },
-        revalidatePath: (path) => revalidated.push(path),
+        revalidatePath: recordRevalidation,
       }),
       /invalid registration request/i,
     )
@@ -65,7 +66,7 @@ describe('race registration server action execution', () => {
         runBulkRegistration: async () => {
           throw new Error('mutation failed')
         },
-        revalidatePath: (path) => revalidated.push(path),
+        revalidatePath: recordRevalidation,
       }),
       /mutation failed/i,
     )
