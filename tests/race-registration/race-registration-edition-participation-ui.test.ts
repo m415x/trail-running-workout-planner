@@ -2,10 +2,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 
-const edition = readFileSync(
-  'features/race-registration/components/EditionRegistrations.tsx',
-  'utf8',
-)
 const editor = readFileSync(
   'features/race-registration/components/RaceParticipationEditor.tsx',
   'utf8',
