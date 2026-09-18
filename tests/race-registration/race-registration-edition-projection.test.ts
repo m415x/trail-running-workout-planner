@@ -24,7 +24,7 @@ const registration = (overrides: Partial<RaceRegistrationPersistenceInput> = {})
 })
 
 describe('race edition registration projection', () => {
-  it('groups effective registrations by course and preserves explicit participation/result facts', () => {
+  it('groups registrations by course and preserves lifecycle plus explicit participation/result facts', () => {
     const projected = projectRaceEditionRegistrations([
       registration(),
       registration({
@@ -50,6 +50,7 @@ describe('race edition registration projection', () => {
       }),
       registration({
         id: 'cancelled',
+        athleteProfileId: 'athlete-4',
         registrationStatus: 'cancelled',
       }),
     ])
@@ -57,10 +58,13 @@ describe('race edition registration projection', () => {
     assert.equal(projected.length, 2)
     assert.equal(projected[0]?.raceCourseId, 'course-1')
     assert.equal(projected[0]?.courseLabel, '30K')
-    assert.equal(projected[0]?.registrations.length, 2)
+    assert.equal(projected[0]?.registrations.length, 3)
     assert.deepEqual(projected[0]?.registrations[0], {
       registrationId: 'registration-1',
       athleteProfileId: 'athlete-1',
+      athleteName: null,
+      raceCourseId: 'course-1',
+      registrationStatus: 'registered',
       participationStatus: 'unknown',
       actualDistanceKm: null,
       elapsedTimeSeconds: null,
@@ -68,9 +72,22 @@ describe('race edition registration projection', () => {
     assert.deepEqual(projected[0]?.registrations[1], {
       registrationId: 'registration-2',
       athleteProfileId: 'athlete-2',
+      athleteName: null,
+      raceCourseId: 'course-1',
+      registrationStatus: 'registered',
       participationStatus: 'finished',
       actualDistanceKm: 28.4,
       elapsedTimeSeconds: 10800,
+    })
+    assert.deepEqual(projected[0]?.registrations[2], {
+      registrationId: 'cancelled',
+      athleteProfileId: 'athlete-4',
+      athleteName: null,
+      raceCourseId: 'course-1',
+      registrationStatus: 'cancelled',
+      participationStatus: 'unknown',
+      actualDistanceKm: null,
+      elapsedTimeSeconds: null,
     })
     assert.equal(projected[1]?.raceCourseId, 'course-2')
     assert.equal(projected[1]?.registrations[0]?.participationStatus, 'dnf')
