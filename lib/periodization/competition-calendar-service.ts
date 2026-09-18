@@ -23,7 +23,7 @@ import type {
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
-type CompetitionDatabase = Pick<typeof db, 'query' | 'insert' | 'update'>
+type CompetitionDatabase = typeof db | any
 
 export type CompetitionCalendarServiceErrorCode =
   | CompetitionCalendarPolicyErrorCode
