@@ -9,6 +9,10 @@
     "assignGroup": "Assign group",
     "editAthlete": "Edit athlete",
     "realizedTraining": "Realized training",
-    "newGoal": "New goal"
+    "newGoal": "New goal",
+    "deactivateConfirmTitle": "Deactivate athlete?",
+    "deactivateConfirmDescription": "The athlete will become inactive and will no longer be treated as active in the team. You can activate them again later.",
+    "deactivateConfirmAction": "Deactivate",
+    "deactivateConfirmCancel": "Keep active"
   }
 }
