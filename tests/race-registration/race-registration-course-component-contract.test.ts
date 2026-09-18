@@ -14,12 +14,12 @@ describe('course registration component contract', () => {
     assert.match(component, /name='athleteProfileId'/)
     assert.match(component, /interaction\.registeredHere\.map/)
     assert.match(component, /interaction\.registeredElsewhere\.map/)
-    assert.match(component, /Inscripto en este recorrido/)
-    assert.match(component, /Inscripto en .*courseLabel/)
+    assert.match(component, /t\('registeredHere'\)/)
+    assert.match(component, /t\('registeredElsewhere'/)
   })
 
   it('submits selected athletes through the existing race registration action boundary', () => {
-    assert.match(component, /raceRegistrationAction/)
+    assert.match(component, /registerAthletesForRaceCourse/)
     assert.match(component, /<form[^>]+action=/)
     assert.match(component, /name='courseId'/)
     assert.match(component, /value=\{course\.id\}/)
