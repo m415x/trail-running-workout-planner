@@ -16,7 +16,7 @@ describe('KAN-366 Coach athlete-first registration management', () => {
   })
 
   it('integrates registration management into the existing Coach athlete competition context', () => {
-    assert.match(page, /registerAthleteForRaceCourseAction/)
+    assert.match(page, /registerAthleteForRaceCourseFormAction/)
     assert.match(page, /listRaceEvents/)
     assert.match(page, /listRaceEditions/)
     assert.match(page, /listRaceCourses/)
