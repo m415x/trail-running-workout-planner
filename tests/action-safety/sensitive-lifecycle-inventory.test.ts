@@ -5,7 +5,6 @@ import test from 'node:test'
 const athleteTable = readFileSync('features/athletes/components/AthletesTable.tsx', 'utf8')
 const registrationLifecycle = readFileSync('features/race-registration/components/RaceRegistrationLifecycleControl.tsx', 'utf8')
 const courseChange = readFileSync('features/race-registration/components/RaceRegistrationCourseChange.tsx', 'utf8')
-const workoutLog = readFileSync('features/workouts/components/LogWorkoutDialog.tsx', 'utf8')
 
 test('known destructive lifecycle actions use the shared confirmation primitive', () => {
   assert.match(athleteTable, /ConfirmActionDialog/)
