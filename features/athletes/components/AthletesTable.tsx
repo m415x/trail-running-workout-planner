@@ -189,8 +189,9 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                               <DropdownMenuItem
                                 variant='destructive'
                                 disabled={isChangingState}
-                                onClick={() => {
-                                  openDialog()
+                                onClick={(event) => {
+                                  event.preventDefault()
+                                  window.setTimeout(openDialog, 0)
                                 }}
                               >
                                 <Power />
