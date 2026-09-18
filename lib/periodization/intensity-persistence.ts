@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
 
 import { db } from '@/db'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
@@ -13,11 +14,13 @@ import { resolveWeeklySessionCount } from '@/lib/session-generation/weekly-gener
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
 import type { WeeklySessionFrequency } from '@/types/training/session-generation.types'
 
+type IntensityDatabase = BetterSQLite3Database<any>
+
 export interface PersistIntensityPlanningParams {
   groupTrainingPlanId: string
   strategy: IntensityStrategyDraft
   targets: Array<{ microcycleId: string; target: MicrocycleIntensityTargetDraft }>
-  database?: typeof db
+  database?: IntensityDatabase
 }
 
 /** Persists one strategy and its weekly targets atomically after ownership checks. */
