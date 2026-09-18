@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 
 const edition = readFileSync('features/race-registration/components/EditionRegistrations.tsx', 'utf8')
+const courseChange = readFileSync('features/race-registration/components/RaceRegistrationCourseChange.tsx', 'utf8')
 const page = readFileSync('app/[locale]/dashboard/competitions/[[...segments]]/page.tsx', 'utf8')
 
 describe('KAN-366 Coach registration lifecycle UI', () => {
@@ -14,8 +15,8 @@ describe('KAN-366 Coach registration lifecycle UI', () => {
   })
 
   it('offers explicit same-edition course changes without treating a second registration as the change', () => {
-    assert.match(edition, /changeRaceRegistrationCourseFormAction/)
-    assert.match(edition, /name=['"]raceCourseId['"]/)
+    assert.match(courseChange, /changeRaceRegistrationCourseFormAction/)
+    assert.match(courseChange, /name=['"]raceCourseId['"]/)
     assert.match(edition, /availableCourses/)
     assert.match(page, /availableCourses=\{courses\}/)
     assert.doesNotMatch(edition, /registerAthletesForRaceCourse/)
