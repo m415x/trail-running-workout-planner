@@ -10,7 +10,9 @@ describe('KAN-366 Coach registration lifecycle UI', () => {
   it('wires explicit cancel/reactivate controls for effective edition registrations', () => {
     assert.match(edition, /updateRaceRegistrationLifecycleFormAction/)
     assert.match(edition, /name=['"]registrationStatus['"]/)
-    assert.match(edition, /registration\.registrationStatus\s*===\s*['"]registered['"]\s*\?\s*['"]cancelled['"]\s*:\s*['"]registered['"]/)
+    assert.match(edition, /registration\.registrationStatus\s*===\s*['"]registered['"]/)
+    assert.match(edition, /formData\.set\(['"]registrationStatus['"],\s*['"]cancelled['"]\)/)
+    assert.match(edition, /name=['"]registrationStatus['"]\s+value=['"]registered['"]/)
     assert.match(edition, /registration\.registrationStatus/)
   })
 
