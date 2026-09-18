@@ -1,4 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import { db } from '@/db'
 import { competitionEntries } from '@/db/competition-entry-schema'
@@ -8,7 +9,7 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 
-type CompetitionDatabase = typeof db
+type CompetitionDatabase = BetterSQLite3Database<any>
 
 export interface CreateCompetitionRecord {
   readonly id: string
