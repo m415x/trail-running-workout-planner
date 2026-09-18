@@ -1,10 +1,10 @@
 import { getTranslations } from 'next-intl/server'
 
 import {
-  changeRaceRegistrationCourseFormAction,
   updateRaceParticipationFormAction,
   updateRaceRegistrationLifecycleFormAction,
 } from '@/app/actions/race-registration-actions'
+import { RaceRegistrationCourseChange } from '@/features/race-registration/components/RaceRegistrationCourseChange'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
@@ -67,20 +67,13 @@ export async function EditionRegistrations({
                       </form>
 
                       {registration.registrationStatus === 'registered' && (
-                        <form action={changeRaceRegistrationCourseFormAction} className='flex min-w-[18rem] flex-1 gap-2'>
-                          <input type='hidden' name='locale' value={locale} />
-                        <input type='hidden' name='registrationId' value={registration.registrationId} />
-                          <select
-                            name='raceCourseId'
-                            defaultValue={registration.raceCourseId}
-                            className='h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3'
-                          >
-                            {availableCourses.map((course) => (
-                              <option key={course.id} value={course.id}>{course.label}</option>
-                            ))}
-                          </select>
-                          <Button type='submit' size='sm' variant='outline'>{t('changeCourse')}</Button>
-                        </form>
+                        <RaceRegistrationCourseChange
+                          locale={locale}
+                          registrationId={registration.registrationId}
+                          currentRaceCourseId={registration.raceCourseId}
+                          courses={availableCourses.map((course) => ({ id: course.id, label: course.label }))}
+                          label={t('changeCourse')}
+                        />
                       )}
                     </div>
                   )}
