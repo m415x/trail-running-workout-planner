@@ -4,12 +4,13 @@ import { describe, it } from 'node:test'
 import { executeBulkRaceRegistration } from '@/lib/competitions/race-registration-command'
 
 const target = {
-  event: { id: 'event-1', name: 'Ansilta XK' },
+  event: { id: 'event-1', name: 'Ansilta XK', status: 'active' as const },
   edition: {
     id: 'edition-1',
     raceEventId: 'event-1',
     label: 'Ansilta XK 2026',
     startDate: '2026-10-18',
+    status: 'published' as const,
   },
   course: {
     id: 'course-21k',
@@ -17,6 +18,9 @@ const target = {
     label: '21K',
     distanceKm: 21,
     elevationGainM: 950,
+    modality: null,
+    classifications: [],
+    status: 'published' as const,
   },
 }
 
