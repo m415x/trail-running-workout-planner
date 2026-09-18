@@ -43,7 +43,7 @@ export function CourseRegistration({ event, edition, course, interaction, locale
       <p className='mt-2 text-sm text-muted-foreground'>{t('summary', { eligible: interaction.eligible.length, here: interaction.registeredHere.length, elsewhere: interaction.registeredElsewhere.length })}</p>
 
       <form ref={formRef} action={formAction} className='mt-4 space-y-2'>
-        <input type='hidden' name='courseId' value={course.id} />
+        <input type='hidden' name='raceCourseId' value={course.id} />
         <input type='hidden' name='locale' value={locale} />
 
         {interaction.eligible.map((athlete) => (
