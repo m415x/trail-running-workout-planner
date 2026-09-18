@@ -2,7 +2,7 @@
 
 ## Status
 
-Pending cross-cutting UX/technical debt. Tracked in Jira as **KAN-282**. This work is intentionally deferred from the KAN-257/KAN-280 race-catalog closure, while feature work may adopt the policy incrementally when a concrete flow requires it.
+Implemented by **KAN-282** as the shared UI action-safety contract. New or touched flows should reuse these primitives and semantics rather than introducing feature-specific confirmation or dirty-form policies.
 
 ## Problem
 
@@ -98,4 +98,4 @@ The athlete list and athlete detail header are the first adopted action-density 
 
 KAN-366 race registration is the first explicit Level 2 adoption: course-first multi-select registration must provide a contextual review/confirmation before committing the bulk operation.
 
-Athlete deactivation and athlete edit navigation remain known regression cases from the KAN-280 walkthrough; the former belongs to explicit action confirmation and the latter to unsaved-change protection.
+KAN-282 completed the known regression cases: athlete deactivation uses Level 3 confirmation; race-registration cancellation uses Level 3 confirmation while reactivation remains direct; race-registration course change uses Level 2 contextual confirmation; and Athlete Edit uses the reusable dashboard-scoped dirty-form guard. The inventory did not establish another exposed archive/isDeleted lifecycle action requiring speculative implementation.\n\nThe dirty-form implementation lives in `lib/forms/dirty-form*.ts` plus the shared form guard components. It compares normalized current state with a mutable saved baseline, avoids prompts for unchanged/restored values, resets after successful save, and covers supported app navigation plus `beforeunload`. Native reload/close warning presentation remains browser-controlled.\n\nTwo structural rules are now regression-relevant: confirmation ownership must survive transient dropdown content unmounting, and confirmation triggers must not sit inside mutation forms when dialog interaction can implicitly submit the form. Confirmed `requestSubmit()` should be the sole mutation path in that pattern.
