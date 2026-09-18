@@ -56,6 +56,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/realized-training/calendar.json')).default
       case 'athletes/actions':
         return (await import('@/messages/en/athletes/actions.json')).default
+      case 'athletes/edit-form':
+        return (await import('@/messages/en/athletes/edit-form.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/en/athlete-stats/stats.json')).default
       case 'glossary/planning':
@@ -87,6 +89,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/realized-training/calendar.json')).default
       case 'athletes/actions':
         return (await import('@/messages/es/athletes/actions.json')).default
+      case 'athletes/edit-form':
+        return (await import('@/messages/es/athletes/edit-form.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/es/athlete-stats/stats.json')).default
       case 'glossary/planning':
