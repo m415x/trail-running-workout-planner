@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq } from 'drizzle-orm'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
-import { db } from '@/db'
+import { db, databaseSchema } from '@/db'
 import {
   groupTrainingPlans,
   macrocycles,
@@ -15,7 +16,7 @@ const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
 
 export type CompetitionSnapshotPersistenceMode = 'replace' | 'preserve'
 
-type ProgressionDatabase = Omit<typeof db, '$client'>
+type ProgressionDatabase = BetterSQLite3Database<typeof databaseSchema>
 
 export interface PersistProgressionParams {
   groupTrainingPlanId: string
@@ -113,7 +114,7 @@ export function persistProgression({
   }
   const now = new Date().toISOString()
 
-  database.transaction((tx: typeof db) => {
+  database.transaction((tx) => {
     for (const proposedMesocycle of planning.mesocycles) {
       const existingMesocycle = existingMesocyclesByNumber.get(proposedMesocycle.number)
       const mesocycleId = existingMesocycle?.id ?? randomUUID()
