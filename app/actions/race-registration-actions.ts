@@ -32,14 +32,6 @@ import type {
 } from '@/types/training/race-registration.types'
 
 const CURRENT_TEAM_ID = 'team_1'
-const PARTICIPATION_STATUSES: readonly RaceParticipationStatus[] = [
-  'unknown',
-  'started',
-  'finished',
-  'dnf',
-  'dns',
-]
-
 const dependencies = buildRaceRegistrationActionDependencies({
   getRaceCourse,
   getRaceEdition,
@@ -100,7 +92,7 @@ export async function registerAthleteForRaceCourseAction(formData: FormData) {
     return { ok: false as const, reason: 'invalid_input' as const }
   }
 
-  const athlete = db.query.athleteProfiles.findFirst({
+  const athlete = await db.query.athleteProfiles.findFirst({
     columns: { id: true },
     where: and(
       eq(athleteProfiles.id, athleteProfileId),
