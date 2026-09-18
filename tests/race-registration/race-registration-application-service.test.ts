@@ -41,12 +41,13 @@ function registration(
 }
 
 const target = {
-  event: { id: 'event-1', name: 'Ansilta XK' },
+  event: { id: 'event-1', name: 'Ansilta XK', status: 'active' as const },
   edition: {
     id: 'edition-1',
     raceEventId: 'event-1',
     label: 'Ansilta XK 2026',
     startDate: '2026-10-18',
+    status: 'published' as const,
   },
   course: {
     id: 'course-30k',
@@ -54,6 +55,9 @@ const target = {
     label: '30K',
     distanceKm: 30,
     elevationGainM: 1650,
+    modality: null,
+    classifications: [],
+    status: 'published' as const,
   },
 }
 
