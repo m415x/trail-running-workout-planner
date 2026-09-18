@@ -81,6 +81,7 @@ function AthleteEditGuard({
 }
 
 function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
+  const t = useTranslations('AthleteForm')
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
@@ -99,23 +100,23 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
       )}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label='Nombre' name='firstName' defaultValue={athlete?.firstName} required />
-        <Field label='Apellido' name='lastName' defaultValue={athlete?.lastName} required />
-        <Field label='Email' name='email' type='email' defaultValue={athlete?.email} required />
-        <Field label='DNI' name='dni' defaultValue={athlete?.dni} required />
-        <Field label='Apodo' name='nickName' defaultValue={athlete?.nickName} />
-        <Field label='Fecha de nacimiento' name='birthday' type='date' defaultValue={athlete?.birthday} />
-        <Field label='Teléfono' name='phone' type='tel' defaultValue={athlete?.phone} />
+        <Field label={t('firstName')} name='firstName' defaultValue={athlete?.firstName} required />
+        <Field label={t('lastName')} name='lastName' defaultValue={athlete?.lastName} required />
+        <Field label={t('email')} name='email' type='email' defaultValue={athlete?.email} required />
+        <Field label={t('dni')} name='dni' defaultValue={athlete?.dni} required />
+        <Field label={t('nickName')} name='nickName' defaultValue={athlete?.nickName} />
+        <Field label={t('birthday')} name='birthday' type='date' defaultValue={athlete?.birthday} />
+        <Field label={t('phone')} name='phone' type='tel' defaultValue={athlete?.phone} />
       </div>
 
       <div className='space-y-4 rounded-xl border p-4'>
         <div>
-          <h3 className='font-medium'>Contacto de emergencia</h3>
-          <p className='text-sm text-muted-foreground'>Opcional. Puede completarse o modificarse más adelante.</p>
+          <h3 className='font-medium'>{t('emergencyTitle')}</h3>
+          <p className='text-sm text-muted-foreground'>{t('emergencyDescription')}</p>
         </div>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <Field label='Nombre del contacto' name='emergencyContact' defaultValue={athlete?.emergencyContact} />
-          <Field label='Teléfono de emergencia' name='emergencyPhone' type='tel' defaultValue={athlete?.emergencyPhone} />
+          <Field label={t('emergencyContact')} name='emergencyContact' defaultValue={athlete?.emergencyContact} />
+          <Field label={t('emergencyPhone')} name='emergencyPhone' type='tel' defaultValue={athlete?.emergencyPhone} />
         </div>
       </div>
 
@@ -124,11 +125,11 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
           <AthleteEditCancelLink href={athletesPath} />
         ) : (
           <Link href={athletesPath} className={buttonVariants({ variant: 'outline' })}>
-            Cancelar
+            {t('cancel')}
           </Link>
         )}
         <Button type='submit' disabled={pending}>
-          {pending ? 'Guardando…' : athlete ? 'Guardar cambios' : 'Crear atleta'}
+          {pending ? t('saving') : athlete ? t('saveChanges') : t('createAthlete')}
         </Button>
       </div>
     </form>
@@ -148,7 +149,7 @@ function AthleteEditCancelLink({ href }: { href: string }) {
         guardNavigation(() => router.push(href))
       }}
     >
-      Cancelar
+      {useTranslations('AthleteForm')('cancel')}
     </Link>
   )
 }
