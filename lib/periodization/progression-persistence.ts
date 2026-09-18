@@ -15,7 +15,11 @@ const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
 
 export type CompetitionSnapshotPersistenceMode = 'replace' | 'preserve'
 
-type ProgressionDatabase = typeof db | any
+type ProgressionTransaction = Pick<typeof db, 'insert' | 'update'>
+type ProgressionDatabase = {
+  readonly query: Pick<typeof db.query, 'macrocycles'>
+  transaction<T>(callback: (tx: ProgressionTransaction) => T): T
+}
 
 export interface PersistProgressionParams {
   groupTrainingPlanId: string
@@ -113,7 +117,7 @@ export function persistProgression({
   }
   const now = new Date().toISOString()
 
-  database.transaction((tx: typeof db) => {
+  database.transaction((tx) => {
     for (const proposedMesocycle of planning.mesocycles) {
       const existingMesocycle = existingMesocyclesByNumber.get(proposedMesocycle.number)
       const mesocycleId = existingMesocycle?.id ?? randomUUID()
