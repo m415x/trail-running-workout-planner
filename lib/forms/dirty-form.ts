@@ -7,7 +7,11 @@ export type DirtyFormValue =
   | DirtyFormValue[]
   | { [key: string]: DirtyFormValue }
 
-function normalizeDirtyFormValue(value: DirtyFormValue): DirtyFormValue {
+const UNDEFINED_SENTINEL = '__dirty_form_undefined__'
+
+function normalizeDirtyFormValue(value: DirtyFormValue): unknown {
+  if (value === undefined) return { [UNDEFINED_SENTINEL]: true }
+
   if (Array.isArray(value)) return value.map(normalizeDirtyFormValue)
 
   if (value && typeof value === 'object') {
@@ -24,7 +28,7 @@ function normalizeDirtyFormValue(value: DirtyFormValue): DirtyFormValue {
 /**
  * Produces a stable structural representation for persisted/initial and current
  * form values. Object key order is irrelevant; array order and primitive value
- * types remain meaningful.
+ * types remain meaningful. Undefined remains distinct from a missing property.
  */
 export function dirtyFormFingerprint(value: DirtyFormValue): string {
   return JSON.stringify(normalizeDirtyFormValue(value))
