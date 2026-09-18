@@ -6,6 +6,7 @@ type Athlete = {
 }
 
 type Registration = {
+  registrationId: string
   athleteProfileId: string
   raceCourseId: string
   courseLabel: string
