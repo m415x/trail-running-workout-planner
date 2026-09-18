@@ -8,7 +8,9 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 
-type CompetitionDatabase = typeof db | any
+export type CompetitionDatabase = Pick<typeof db, 'insert' | 'update'> & {
+  readonly query: Pick<typeof db.query, 'competitionEntries'>
+}
 
 export interface CreateCompetitionRecord {
   readonly id: string
