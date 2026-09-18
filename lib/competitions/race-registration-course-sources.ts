@@ -7,7 +7,6 @@ import { athleteProfiles, users } from '@/db/schema'
 export async function listActiveCourseRegistrationAthletes(teamId: string) {
   const rows = await db
     .select({
-      registrationId: raceRegistrations.id,
       athleteProfileId: athleteProfiles.id,
       firstName: users.firstName,
       lastName: users.lastName,
@@ -32,6 +31,7 @@ export async function listEffectiveCourseRegistrationsInEdition(input: {
 }) {
   return db
     .select({
+      registrationId: raceRegistrations.id,
       athleteProfileId: raceRegistrations.athleteProfileId,
       raceCourseId: raceRegistrations.raceCourseId,
       courseLabel: raceRegistrations.snapshotCourseLabel,
