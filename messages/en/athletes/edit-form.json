@@ -1,0 +1,8 @@
+{
+  "AthleteEditForm": {
+    "unsavedTitle": "Discard unsaved changes?",
+    "unsavedDescription": "Your changes to this athlete have not been saved. Discard them and leave this page?",
+    "stay": "Keep editing",
+    "discard": "Discard changes"
+  }
+}
