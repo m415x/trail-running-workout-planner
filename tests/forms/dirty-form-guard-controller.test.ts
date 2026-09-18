@@ -30,7 +30,7 @@ test('markSaved establishes the current value as the new safe baseline', () => {
 })
 
 test('guardNavigation exposes pending state until stay or discard resolves it', () => {
-  let current = { name: 'Ana María' }
+  const current = { name: 'Ana María' }
   let navigations = 0
   const guard = createDirtyFormGuardController({ name: 'Ana' }, () => current)
 
