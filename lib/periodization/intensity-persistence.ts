@@ -13,10 +13,7 @@ import { resolveWeeklySessionCount } from '@/lib/session-generation/weekly-gener
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
 import type { WeeklySessionFrequency } from '@/types/training/session-generation.types'
 
-type IntensityTransaction = Pick<typeof db, 'insert' | 'update'>
-type IntensityDatabase = Pick<typeof db, 'select'> & {
-  transaction<T>(callback: (tx: IntensityTransaction) => T): T
-}
+type IntensityDatabase = Omit<typeof db, '$client'>
 
 export interface PersistIntensityPlanningParams {
   groupTrainingPlanId: string
