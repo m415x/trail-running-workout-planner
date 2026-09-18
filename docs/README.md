@@ -53,6 +53,7 @@ The next epic must be reconstructed from the actual `dev` baseline rather than a
 ## Other documentation
 
 - [`research/`](research/) — scientific/product research and rationale. Research informs contracts but is not automatically implementation scope.
+- [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) — Epic 4 evidence review and MVP decisions for the 1000 m field test, execution guidance and physiology boundaries.
 - [`product/`](product/) — product-facing documentation.
 - [`glossary/`](glossary/) — terminology.
 - [`superpowers/`](superpowers/) — implementation plans/workflow artifacts; completed plans must be clearly treated as historical rather than pending work.
