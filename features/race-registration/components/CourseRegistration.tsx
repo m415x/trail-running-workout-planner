@@ -3,7 +3,7 @@
 import { useActionState, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-import { changeRaceRegistrationCourseAction, registerAthletesForRaceCourse } from '@/app/actions/race-registration-actions'
+import { changeRaceRegistrationCourseFormAction, registerAthletesForRaceCourse } from '@/app/actions/race-registration-actions'
 import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
 import type { RaceCourse, RaceEdition, RaceEvent } from '@/types/training/race-catalog.types'
 
@@ -60,23 +60,6 @@ export function CourseRegistration({ event, edition, course, interaction, locale
           </div>
         ))}
 
-        {interaction.registeredElsewhere.map((athlete) => (
-          <div key={athlete.athleteProfileId} className='flex flex-wrap items-center justify-between gap-2'>
-            <div>
-              <span>{athlete.athleteName}</span>
-              <span className='ml-2 text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
-            </div>
-            <form action={changeRaceRegistrationCourseAction}>
-              <input type='hidden' name='locale' value={locale} />
-              <input type='hidden' name='registrationId' value={athlete.registrationId} />
-              <input type='hidden' name='raceCourseId' value={course.id} />
-              <button type='submit' className='rounded-md border px-2 py-1 text-xs font-medium'>
-                {t('changeCourse')}
-              </button>
-            </form>
-          </div>
-        ))}
-
         {interaction.eligible.length > 0 && (
           <ConfirmActionDialog
             variant='primary'
@@ -93,6 +76,27 @@ export function CourseRegistration({ event, edition, course, interaction, locale
           />
         )}
       </form>
+
+      {interaction.registeredElsewhere.length > 0 && (
+        <div className='mt-4 space-y-2'>
+          {interaction.registeredElsewhere.map((athlete) => (
+            <div key={athlete.athleteProfileId} className='flex flex-wrap items-center justify-between gap-2'>
+              <div>
+                <span>{athlete.athleteName}</span>
+                <span className='ml-2 text-sm text-muted-foreground'>{t('registeredElsewhere', { course: athlete.courseLabel })}</span>
+              </div>
+              <form action={changeRaceRegistrationCourseFormAction}>
+                <input type='hidden' name='locale' value={locale} />
+                <input type='hidden' name='registrationId' value={athlete.registrationId} />
+                <input type='hidden' name='raceCourseId' value={course.id} />
+                <button type='submit' className='rounded-md border px-2 py-1 text-xs font-medium'>
+                  {t('changeCourse')}
+                </button>
+              </form>
+            </div>
+          ))}
+        </div>
+      )}
 
       {result && (
         <div className='mt-4 rounded-md border p-3 text-sm' role='status'>
