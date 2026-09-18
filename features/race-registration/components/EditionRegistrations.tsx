@@ -32,7 +32,7 @@ export async function EditionRegistrations({
         <p className='text-sm text-muted-foreground'>{t('groupedByCourse')}</p>
       </div>
 
-      <div className='grid gap-4 lg:grid-cols-2'>
+      <div className='space-y-4'>
         {editionRegistrationGroups.map((group) => (
           <Card key={group.raceCourseId}>
             <CardHeader>
@@ -43,16 +43,16 @@ export async function EditionRegistrations({
                 {group.nominalElevationGainM == null ? t('elevationUnknown') : `${group.nominalElevationGainM} m+`}
               </CardDescription>
             </CardHeader>
-            <CardContent className='space-y-3'>
+            <CardContent className='space-y-2'>
               {group.registrations.map((registration) => (
-                <div key={registration.registrationId} className='rounded-lg border p-3 text-sm'>
-                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                <div key={registration.registrationId} className='grid gap-2 rounded-lg border p-3 text-sm xl:grid-cols-[minmax(10rem,1fr)_auto_minmax(18rem,1.4fr)_minmax(28rem,2fr)] xl:items-end'>
+                  <div className='flex min-w-0 flex-wrap items-center gap-2'>
                     <span className='font-medium'>{registration.athleteName ?? registration.athleteProfileId}</span>
                     <Badge variant='outline'>{t(`participationStatuses.${registration.participationStatus}`)}</Badge>
                   </div>
 
                   {registration.participationStatus === 'unknown' && (
-                    <div className='mt-3 grid gap-3 sm:grid-cols-2'>
+                    <div className='grid gap-2 sm:grid-cols-2'>
                       <form action={updateRaceRegistrationLifecycleFormAction}>
                         <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
@@ -85,11 +85,11 @@ export async function EditionRegistrations({
                     </div>
                   )}
 
-                  <form action={updateRaceParticipationFormAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
+                  <form action={updateRaceParticipationFormAction} className='grid gap-2 sm:grid-cols-4'>
                     <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
 
-                    <label className='grid gap-1'>
+                    <label className='grid min-w-0 gap-1'>
                       <span className='text-xs text-muted-foreground'>{t('participation')}</span>
                       <select
                         name='participationStatus'
