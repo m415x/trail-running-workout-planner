@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Card } from '@ui/card'
+import { ConfirmActionDialog } from '@ui/custom/confirm-dialog'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,6 +18,11 @@ import {
   DropdownMenuTrigger,
 } from '@ui/dropdown-menu'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@ui/table'
+
+import {
+  requiresAthleteActiveStateConfirmation,
+  targetAthleteActiveState,
+} from '@/features/athletes/lib/athlete-active-state-confirmation'
 
 import type { AthleteCategoryCode, AthleteLevelCode } from '@/types'
 
@@ -58,7 +64,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
     setPendingAthleteId(athlete.id)
 
     startTransition(async () => {
-      const result = await setAthleteActiveState(athlete.id, !athlete.isActive, locale)
+      const result = await setAthleteActiveState(athlete.id, targetAthleteActiveState(athlete.isActive), locale)
 
       if (!result.success) {
         setError(result.error)
@@ -171,14 +177,37 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                           <Eye />
                           {t('viewDetail')}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant={athlete.isActive ? 'destructive' : 'default'}
-                          disabled={isChangingState}
-                          onClick={() => toggleActiveState(athlete)}
-                        >
-                          <Power />
-                          {athlete.isActive ? t('deactivate') : t('activate')}
-                        </DropdownMenuItem>
+                        {requiresAthleteActiveStateConfirmation(athlete.isActive) ? (
+                          <ConfirmActionDialog
+                            title={t('deactivateConfirmTitle')}
+                            description={t('deactivateConfirmDescription')}
+                            confirmLabel={t('deactivateConfirmAction')}
+                            cancelLabel={t('deactivateConfirmCancel')}
+                            variant='destructive'
+                            onConfirm={() => toggleActiveState(athlete)}
+                            trigger={(openDialog) => (
+                              <DropdownMenuItem
+                                variant='destructive'
+                                disabled={isChangingState}
+                                onSelect={(event) => {
+                                  event.preventDefault()
+                                  openDialog()
+                                }}
+                              >
+                                <Power />
+                                {t('deactivate')}
+                              </DropdownMenuItem>
+                            )}
+                          />
+                        ) : (
+                          <DropdownMenuItem
+                            disabled={isChangingState}
+                            onClick={() => toggleActiveState(athlete)}
+                          >
+                            <Power />
+                            {t('activate')}
+                          </DropdownMenuItem>
+                        )}
                         <DropdownMenuItem render={<Link href={groupPath} />}>
                           <UsersRound />
                           {groupCode ? t('changeGroup') : t('assignGroup')}
