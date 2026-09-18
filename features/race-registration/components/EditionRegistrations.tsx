@@ -78,6 +78,7 @@ export async function EditionRegistrations({
                   )}
 
                   <RaceParticipationEditor
+                    key={`${registration.registrationId}:${registration.participationStatus}:${registration.actualDistanceKm ?? 'unknown'}:${registration.elapsedTimeSeconds ?? 'unknown'}`}
                     locale={locale}
                     registrationId={registration.registrationId}
                     participationStatus={registration.participationStatus}
