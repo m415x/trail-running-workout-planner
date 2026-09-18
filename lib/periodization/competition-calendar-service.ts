@@ -98,7 +98,7 @@ function loadPlanContext(planId: string, database: CompetitionDatabase) {
       eq(macrocycles.groupTrainingPlanId, planId),
       eq(macrocycles.isDeleted, false),
     ),
-  }).sync().map((macrocycle) => ({
+  }).sync().map((macrocycle: typeof macrocycles.$inferSelect) => ({
     id: macrocycle.id,
     startDate: macrocycle.startDate,
     endDate: macrocycle.endDate,
