@@ -55,7 +55,14 @@ export function DashboardDirtyFormGuardProvider({
     const protection = createDirtyFormBrowserProtection(
       () => guard.isDirty(),
       (handler) => {
-        const handleBeforeUnload = (event: BeforeUnloadEvent) => handler(event)
+        const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+          const dirty = guard.isDirty()
+          window.sessionStorage.setItem(
+            'kan-369-beforeunload-debug',
+            JSON.stringify({ fired: true, dirty, at: Date.now() }),
+          )
+          handler(event)
+        }
         window.addEventListener('beforeunload', handleBeforeUnload)
 
         return () => window.removeEventListener('beforeunload', handleBeforeUnload)
