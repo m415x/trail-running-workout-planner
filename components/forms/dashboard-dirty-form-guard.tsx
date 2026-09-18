@@ -20,6 +20,7 @@ import {
 } from '@ui/alert-dialog'
 import { applyBeforeUnloadProtection } from '@/lib/forms/dirty-form-before-unload'
 import { createDashboardDirtyFormGuard } from '@/lib/forms/dashboard-dirty-form-guard'
+import { useTranslations } from 'next-intl'
 import type { DirtyFormValue } from '@/lib/forms/dirty-form'
 
 interface DashboardDirtyFormGuardContextValue {
@@ -38,6 +39,7 @@ export function DashboardDirtyFormGuardProvider({
 }: {
   children: ReactNode
 }) {
+  const t = useTranslations('DirtyFormGuard')
   const [guard] = useState(createDashboardDirtyFormGuard)
   const [confirmationOpen, setConfirmationOpen] = useState(false)
 
@@ -83,15 +85,13 @@ export function DashboardDirtyFormGuardProvider({
       <AlertDialog open={confirmationOpen} onOpenChange={(open) => !open && stay()}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Descartar cambios sin guardar?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Los cambios todavía no se guardaron. ¿Querés descartarlos y salir de esta página?
-            </AlertDialogDescription>
+            <AlertDialogTitle>{t('title')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('description')}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={stay}>Seguir editando</AlertDialogCancel>
+            <AlertDialogCancel onClick={stay}>{t('stay')}</AlertDialogCancel>
             <AlertDialogAction variant='destructive' onClick={discard}>
-              Descartar cambios
+              {t('discard')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
