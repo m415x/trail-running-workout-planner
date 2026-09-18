@@ -44,10 +44,12 @@ export function RaceRegistrationLifecycleControl({
   }
 
   return (
-    <form ref={cancelFormRef} action={updateRaceRegistrationLifecycleFormAction}>
-      <input type='hidden' name='locale' value={locale} />
-      <input type='hidden' name='registrationId' value={registrationId} />
-      <input type='hidden' name='registrationStatus' value='cancelled' />
+    <>
+      <form ref={cancelFormRef} action={updateRaceRegistrationLifecycleFormAction} className='hidden'>
+        <input type='hidden' name='locale' value={locale} />
+        <input type='hidden' name='registrationId' value={registrationId} />
+        <input type='hidden' name='registrationStatus' value='cancelled' />
+      </form>
 
       <ConfirmActionDialog
         title={labels.cancelConfirmTitle}
@@ -64,6 +66,6 @@ export function RaceRegistrationLifecycleControl({
           </Button>
         )}
       />
-    </form>
+    </>
   )
 }
