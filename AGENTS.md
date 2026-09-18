@@ -80,6 +80,19 @@ Use **just-in-time retrieval** after bootstrap. Prefer paths, issue keys, commit
 
 Treat each Jira story as a natural context-compaction boundary: its final durable documentation and handoff must allow the next story to start in a fresh chat without reconstructing the completed story from conversation history.
 
+### Task sizing and decomposition
+
+Tasks/subtasks are execution units, not containers for an entire story. Design them so each can be implemented, verified and reconciled independently within a bounded working context.
+
+- Prefer small **vertical slices with one coherent responsibility and focused evidence** over broad tasks spanning multiple independent behaviors.
+- Before task creation, estimate the boundaries involved: domain/contracts, persistence, application/actions, UI integration, hardening/migration and documentation. A task may cross layers when that is necessary for one vertical behavior, but it must not accumulate several independently verifiable behaviors merely to reduce the Jira task count.
+- If a proposed task contains multiple acceptance outcomes that can fail, ship or be verified independently, split it before implementation.
+- If implementation reveals substantially more scope than the approved task — additional independent contracts, multiple unrelated UI flows, a migration plus broad integration, or repeated TDD cycles across distinct boundaries — **stop and re-scope the task in Jira before continuing**. Do not wait for chat/context exhaustion.
+- A task that effectively becomes a mini-story is a decomposition failure. KAN-360 is the explicit historical regression case to avoid.
+- Each implementation task should end with its own focused verification and concise Jira evidence. Reserve aggregate/full gates for story closure unless an earlier full gate is needed to diagnose a cross-cutting failure.
+- Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
+- Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
+
 ## Architecture and directory map
 
 - `app/[locale]/` — localized routes and shells
