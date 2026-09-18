@@ -5,7 +5,7 @@ import {
 } from '@/app/actions/race-registration-actions'
 import { RaceRegistrationCourseChange } from '@/features/race-registration/components/RaceRegistrationCourseChange'
 import { RaceParticipationEditor } from '@/features/race-registration/components/RaceParticipationEditor'
-import { ConfirmActionDialog } from '@/components/ui/custom/confirm-dialog'
+import { RaceRegistrationLifecycleControl } from '@/features/race-registration/components/RaceRegistrationLifecycleControl'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
@@ -53,39 +53,21 @@ export async function EditionRegistrations({
 
                   {registration.participationStatus === 'unknown' && (
                     <div className='flex flex-wrap items-center gap-2'>
-                      {registration.registrationStatus === 'registered' ? (
-                        <ConfirmActionDialog
-                          title={t('cancelConfirmTitle')}
-                          description={t('cancelConfirmDescription', {
-                            athlete: registration.athleteName ?? registration.athleteProfileId,
-                            course: group.courseLabel,
-                          })}
-                          confirmLabel={t('cancelConfirmAction')}
-                          cancelLabel={t('cancelConfirmKeep')}
-                          variant='destructive'
-                          onConfirm={async () => {
-                            const formData = new FormData()
-                            formData.set('locale', locale)
-                            formData.set('registrationId', registration.registrationId)
-                            formData.set('registrationStatus', 'cancelled')
-                            await updateRaceRegistrationLifecycleFormAction(formData)
-                          }}
-                          trigger={(openDialog) => (
-                            <Button type='button' size='sm' variant='outline' onClick={openDialog}>
-                              {t('cancelRegistration')}
-                            </Button>
-                          )}
-                        />
-                      ) : (
-                        <form action={updateRaceRegistrationLifecycleFormAction}>
-                          <input type='hidden' name='locale' value={locale} />
-                          <input type='hidden' name='registrationId' value={registration.registrationId} />
-                          <input type='hidden' name='registrationStatus' value='registered' />
-                          <Button type='submit' size='sm' variant='outline'>
-                            {t('reactivateRegistration')}
-                          </Button>
-                        </form>
-                      )}
+                      <RaceRegistrationLifecycleControl
+                        locale={locale}
+                        registrationId={registration.registrationId}
+                        registrationStatus={registration.registrationStatus}
+                        athleteName={registration.athleteName ?? registration.athleteProfileId}
+                        courseLabel={group.courseLabel}
+                        labels={{
+                          cancelRegistration: t('cancelRegistration'),
+                          reactivateRegistration: t('reactivateRegistration'),
+                          cancelConfirmTitle: t('cancelConfirmTitle'),
+                          cancelConfirmDescription: t.raw('cancelConfirmDescription'),
+                          cancelConfirmAction: t('cancelConfirmAction'),
+                          cancelConfirmKeep: t('cancelConfirmKeep'),
+                        }}
+                      />
 
                       {registration.registrationStatus === 'registered' && (
                         <RaceRegistrationCourseChange
