@@ -85,7 +85,8 @@ export function getCompetitionCalendar(
 }
 
 function loadPlanContext(planId: string, database: CompetitionDatabase) {
-  const plan = database.query.groupTrainingPlans.findFirst({
+  const resolvedDatabase = database as typeof db
+  const plan = resolvedDatabase.query.groupTrainingPlans.findFirst({
     where: and(
       eq(groupTrainingPlans.id, planId),
       eq(groupTrainingPlans.isDeleted, false),
@@ -94,7 +95,7 @@ function loadPlanContext(planId: string, database: CompetitionDatabase) {
 
   if (!plan) return null
 
-  const windows = database.query.macrocycles.findMany({
+  const windows = resolvedDatabase.query.macrocycles.findMany({
     where: and(
       eq(macrocycles.groupTrainingPlanId, planId),
       eq(macrocycles.isDeleted, false),
