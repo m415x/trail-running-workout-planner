@@ -21,11 +21,9 @@ describe('coach RaceEdition participation editor', () => {
   })
 
   it('offers explicit lifecycle states without inferring a result from nominal course facts', () => {
-    assert.match(editor, /value=['"]unknown['"]/)
-    assert.match(editor, /value=['"]started['"]/)
-    assert.match(editor, /value=['"]finished['"]/)
-    assert.match(editor, /value=['"]dnf['"]/)
-    assert.match(editor, /value=['"]dns['"]/)
+    assert.match(editor, /type ParticipationStatus = ['"]unknown['"] \| ['"]started['"] \| ['"]finished['"] \| ['"]dnf['"] \| ['"]dns['"]/)
+    assert.match(editor, /Object\.keys\(labels\.statuses\)/)
+    assert.match(editor, /value=\{status\}/)
     assert.doesNotMatch(editor, /nominalDistanceKm[^\n]*(actualDistanceKm|value=)/)
   })
 })
