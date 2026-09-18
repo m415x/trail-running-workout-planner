@@ -10,6 +10,7 @@ import {
   rescheduleCompetitionRecord,
   updateCompetitionRecord,
   updateCompetitionStatusRecord,
+  type CompetitionDatabase as CompetitionRepositoryDatabase,
 } from '@/lib/periodization/competition-repository'
 import {
   validateCompetitionCalendarMutation,
@@ -23,7 +24,12 @@ import type {
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
-type CompetitionDatabase = typeof db | any
+type CompetitionDatabase = CompetitionRepositoryDatabase & {
+  readonly query: CompetitionRepositoryDatabase['query'] & Pick<
+    typeof db.query,
+    'groupTrainingPlans' | 'macrocycles'
+  >
+}
 
 export type CompetitionCalendarServiceErrorCode =
   | CompetitionCalendarPolicyErrorCode
