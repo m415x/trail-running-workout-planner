@@ -9,19 +9,21 @@ import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
 
+export const databaseSchema = {
+  ...coreSchema,
+  ...loadStrategySchema,
+  ...intensityStrategySchema,
+  ...sessionGenerationPreferencesSchema,
+  ...competitionEntrySchema,
+  ...readinessSchema,
+  ...raceCatalogSchema,
+  ...raceRegistrationSchema,
+}
+
 // Conexión a la base de datos local en un archivo sqlite.db
 const sqlite = new Database('sqlite.db')
 
 // Instancia de Drizzle con autocompletado, tipos y relaciones de todos los módulos del esquema
 export const db = drizzle(sqlite, {
-  schema: {
-    ...coreSchema,
-    ...loadStrategySchema,
-    ...intensityStrategySchema,
-    ...sessionGenerationPreferencesSchema,
-    ...competitionEntrySchema,
-    ...readinessSchema,
-    ...raceCatalogSchema,
-    ...raceRegistrationSchema,
-  },
+  schema: databaseSchema,
 })
