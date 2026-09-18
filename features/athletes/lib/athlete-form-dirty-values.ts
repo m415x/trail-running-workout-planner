@@ -12,6 +12,7 @@ export interface AthleteFormDirtySource {
 }
 
 export interface AthleteFormDirtyValues {
+  [key: string]: string
   firstName: string
   lastName: string
   email: string
