@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { updateRaceParticipationFormAction } from '@/app/actions/race-registration-actions'
 import { Button } from '@ui/button'
@@ -32,6 +32,11 @@ export function RaceParticipationEditor({
   const [participationStatus, setParticipationStatus] = useState<ParticipationStatus>(initialStatus)
   const [actualDistanceKm, setActualDistanceKm] = useState(initialDistance?.toString() ?? '')
   const [elapsedTimeSeconds, setElapsedTimeSeconds] = useState(initialTime?.toString() ?? '')
+  useEffect(() => {
+    setParticipationStatus(initialStatus)
+    setActualDistanceKm(initialDistance?.toString() ?? '')
+    setElapsedTimeSeconds(initialTime?.toString() ?? '')
+  }, [initialStatus, initialDistance, initialTime])
   const changed =
     participationStatus !== initialStatus ||
     actualDistanceKm !== (initialDistance?.toString() ?? '') ||
