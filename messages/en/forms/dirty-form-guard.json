@@ -1,0 +1,8 @@
+{
+  "DirtyFormGuard": {
+    "title": "Discard unsaved changes?",
+    "description": "Your changes have not been saved. Discard them and leave this page?",
+    "stay": "Keep editing",
+    "discard": "Discard changes"
+  }
+}
