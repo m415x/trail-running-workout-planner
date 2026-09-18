@@ -2,66 +2,55 @@
 
 ## Current status
 
-Epic 3 Stories 1–8 are complete through **KAN-264**. The current `dev` baseline includes Athlete Stats and its responsive Athlete shell. The next story is **KAN-281 — Historia 9: Registrar inscripciones y participación histórica en carreras**.
+Epic 3 Stories 1–9 are implemented through **KAN-281**. KAN-281 adds effective individual race registration, participation evidence and factual competitive history. The next story is **KAN-282 — Historia 10: Proteger acciones sensibles y cambios sin guardar en la UI**.
 
-Use the story-specific handoffs and architecture documents as durable authority rather than treating older branch references in historical handoffs as current operational instructions.
+Use current architecture and code/tests as authority. The durable KAN-281 contract is [`race-registration.md`](../architecture/competitions/race-registration.md); the older boundary document is the historical KAN-275 reservation.
 
-## Delivered foundations relevant to KAN-281
+## KAN-281 delivered behavior
 
-### Competitive catalog — KAN-257
+- `RaceRegistration` is an effective individual registration scoped by explicit team + athlete and one concrete `RaceCourseReference`.
+- Registration lifecycle is `registered | cancelled`; participation is separately `unknown | started | finished | dnf | dns`.
+- Factual result stores nullable actual distance and elapsed time; null remains unknown and explicit zero remains known.
+- Historical event/edition/course labels, edition date and nominal course facts are snapshotted.
+- Persistence uniqueness is `teamId + athleteProfileId + raceEditionId`; same-edition course change is an explicit mutation, not a second registration.
+- SQLite and Supabase persistence are aligned; final remote verification reported 36/36 application tables with RLS.
 
-```text
-RaceEvent → RaceEdition → RaceCourse
-                            ├→ explicit selection → CompetitionEntry snapshot
-                            ├→ explicit selection → TrainingGoal snapshot
-                            └→ reserved RaceRegistration target
-```
+Coach surfaces support course-first bulk registration with Level 2 confirmation and partial success, explicit course change, RaceEdition lifecycle and participation/result editing, athlete-first registration with edition-scoped courses, and factual individual history.
 
-Catalog identity is explicit and historical consumer snapshots do not silently refresh after catalog edits/archive. `TrainingGoal`, `CompetitionEntry` and registration are independent facts. See `docs/architecture/competitions/`.
+Athlete disclosure uses a dedicated safe projection. **Plan -> Competition** shows upcoming effective registrations; **Stats -> Competition** shows historical factual participation/results. This presentation does not couple registration to TrainingGoal, CompetitionEntry, readiness or realized training.
 
-### Realized training and monitoring — KAN-258 through KAN-263
+## Preserved invariants
 
-Epic 3 now has durable realized-training evidence, plan-vs-real comparison, adherence, estimated internal load, systematic-volume monitoring and Training Response convergence. These models preserve `unknown != 0` and do not fabricate performed training from planning data.
+- Goal, planning entry, registration, participation/result and realized training are distinct facts.
+- `unknown != 0`; missing evidence is not negative evidence.
+- Registered does not imply started, finished, DNS or DNF.
+- Nominal course distance is not actual covered distance.
+- Historical accepted facts do not silently mutate with live catalog changes.
+- Team/athlete isolation remains explicit.
+- Athlete disclosure uses explicit allowlists/projections.
 
-A future race registration/result may provide competitive context, but KAN-281 must not turn registration or result state into realized-training evidence implicitly.
+## Deliberate deferrals
 
-### Athlete Stats — KAN-264
+KAN-281 does not implement organizer integrations, payment/bib/qualification/lottery/waitlist, official ranking/position/classification, performance prediction, automatic planning/goal/readiness/realized-training mutation, or authentication/tenant resolution. KAN-360 remains deferred. Pure visual/Tailwind polish identified during the walkthrough is deferred to a later UI/UX epic.
 
-KAN-264 established consumer-neutral Training Analytics and explicit Athlete Stats Projection allowlists with `/stats` and Training, Load, Adherence and Competition detail routes. Athlete presentation is mobile-first; coach-only interpretation remains outside athlete disclosure by default.
+## Verified KAN-281 closure evidence
 
-Final reported KAN-264 gate: 790/790 tests across 157 suites; lint, TypeScript, build and i18n passed; 452 ES/EN message leaves aligned; responsive walkthrough approved.
+Fresh after the final production/UI changes and test reconciliation:
 
-See [`kan-264-athlete-stats.md`](kan-264-athlete-stats.md) and [`athlete-stats-analytics.md`](../architecture/monitoring/athlete-stats-analytics.md).
+- `pn exec tsc --noEmit`: clean.
+- `pn lint`: 0 errors / 7 warnings.
+- focused reconciliation gate: 17/17 tests across 6 suites.
+- `pn test`: 908/908 tests across 202 suites, 0 failed, 0 skipped.
+- `pn build`: green.
+- Supabase migration check: green.
+- Supabase verifier: 36/36 application tables, 36/36 with RLS.
+- Coach desktop manual walkthrough: functional registration, course change, lifecycle and participation/result flows validated after runtime fixes.
+- Athlete mobile manual walkthrough: Plan/Competition and Stats/Competition separation validated with no functional errors reported.
 
-## KAN-281 starting boundary
+## Next story baseline — KAN-282
 
-KAN-275 deliberately reserved only the minimum future registration target:
+KAN-282 is the final Epic 3 story and owns cross-cutting UI action safety and unsaved-change protection. Start from [`ux-action-safety.md`](../architecture/platform/ux-action-safety.md). Reuse `ConfirmActionDialog`, the three-level action-safety policy and KAN-366 bulk registration as the first explicit Level 2 adoption.
 
-```text
-teamId + athleteProfileId + concrete RaceCourseReference
-```
+KAN-282 should inventory sensitive lifecycle actions, apply consistent confirmation semantics, and design a reusable dirty-form/navigation guard. Race-registration lifecycle actions are part of the inventory surface, but KAN-282 should not reopen KAN-281 domain semantics.
 
-It intentionally left lifecycle, result/participation semantics, historical snapshot fields, persistence, deduplication and integrations undefined. Those decisions now belong to KAN-281. See [`race-registration-boundary.md`](../architecture/competitions/race-registration-boundary.md).
-
-### Accepted MVP clarification
-
-For KAN-281, `RaceRegistration` represents an **effective individual registration**, not an intention to register. Competitive intent remains represented by existing goal/planning concepts.
-
-Registration lifecycle is distinct from participation/result evidence. An athlete may be registered while participation is still unknown. Missing evidence must not be inferred as DNS or DNF.
-
-The complete contract must be designed before implementation tasks are created.
-
-## Baseline invariants for subsequent work
-
-- `RaceCourse` is the minimum concrete competitive target.
-- Team and athlete scope are explicit for individual registration.
-- Goal, planning entry and registration remain independent facts.
-- Historical facts survive catalog evolution without silent mutation.
-- Nominal course distance and actually covered distance are different facts.
-- Unknown participation/result/distance evidence remains unknown.
-- Registration/result data does not itself prove readiness, authorization, fitness or performed training.
-- Existing authorization and athlete-disclosure boundaries must not be weakened.
-
-## Historical material
-
-Earlier implementation chronology and detailed commit traceability for KAN-257 remain available through repository history. Story-specific durable outcomes are indexed from `docs/README.md`; completed plans and superseded operational handoffs should be treated as historical evidence, not current instructions.
+Because KAN-282 is the second `harness-eval-v1` story, keep the harness unchanged and compare its closure trace with the KAN-281 evaluation before proposing v2.
