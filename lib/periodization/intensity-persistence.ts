@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
-import { db } from '@/db'
+import { db, databaseSchema } from '@/db'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
@@ -13,7 +14,7 @@ import { resolveWeeklySessionCount } from '@/lib/session-generation/weekly-gener
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
 import type { WeeklySessionFrequency } from '@/types/training/session-generation.types'
 
-type IntensityDatabase = Omit<typeof db, '$client'>
+type IntensityDatabase = BetterSQLite3Database<typeof databaseSchema>
 
 export interface PersistIntensityPlanningParams {
   groupTrainingPlanId: string
