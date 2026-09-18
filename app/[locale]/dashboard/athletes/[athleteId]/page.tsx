@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
+import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
+
 import { getAthleteById } from '@/app/actions/athlete-actions'
-import { registerAthleteForRaceCourseFormAction } from '@/app/actions/race-registration-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
@@ -111,29 +112,12 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                   {es ? 'No hay ediciones con recorridos disponibles.' : 'There are no editions with available courses.'}
                 </p>
               ) : (
-                <form action={registerAthleteForRaceCourseFormAction} className='grid gap-3 rounded-lg border p-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto] lg:items-end'>
-                  <input type='hidden' name='locale' value={locale} />
-                  <input type='hidden' name='athleteProfileId' value={athleteId} />
-                  <label className='grid gap-1'>
-                    <span className='text-xs text-muted-foreground'>{es ? 'Edición' : 'Edition'}</span>
-                    <select name='raceEditionId' className='h-9 rounded-md border border-input bg-background px-3'>
-                      {raceEditions.map((edition) => (
-                        <option key={edition.id} value={edition.id}>{edition.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className='grid gap-1'>
-                    <span className='text-xs text-muted-foreground'>{es ? 'Recorrido' : 'Course'}</span>
-                    <select name='raceCourseId' className='h-9 rounded-md border border-input bg-background px-3'>
-                      {raceCourses.map((course) => (
-                        <option key={course.id} value={course.id}>{course.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <button type='submit' className={buttonVariants({ size: 'sm' })}>
-                    {es ? 'Registrar' : 'Register'}
-                  </button>
-                </form>
+                <AthleteRaceRegistrationForm
+                  athleteProfileId={athleteId}
+                  locale={locale}
+                  editions={raceEditions.map((edition) => ({ id: edition.id, label: edition.label }))}
+                  courses={raceCourses.map((course) => ({ id: course.id, label: course.label, raceEditionId: course.raceEditionId }))}
+                />
               )}
             </section>
             <section className='space-y-3'>
