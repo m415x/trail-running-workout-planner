@@ -1,9 +1,9 @@
 import { getTranslations } from 'next-intl/server'
 
 import {
-  changeRaceRegistrationCourseAction,
-  updateRaceParticipationAction,
-  updateRaceRegistrationLifecycleAction,
+  changeRaceRegistrationCourseFormAction,
+  updateRaceParticipationFormAction,
+  updateRaceRegistrationLifecycleFormAction,
 } from '@/app/actions/race-registration-actions'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
@@ -53,7 +53,7 @@ export async function EditionRegistrations({
 
                   {registration.participationStatus === 'unknown' && (
                     <div className='mt-3 grid gap-3 sm:grid-cols-2'>
-                      <form action={updateRaceRegistrationLifecycleAction}>
+                      <form action={updateRaceRegistrationLifecycleFormAction}>
                         <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
                         <input
@@ -67,7 +67,7 @@ export async function EditionRegistrations({
                       </form>
 
                       {registration.registrationStatus === 'registered' && (
-                        <form action={changeRaceRegistrationCourseAction} className='flex gap-2'>
+                        <form action={changeRaceRegistrationCourseFormAction} className='flex gap-2'>
                           <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
                           <select
@@ -85,7 +85,7 @@ export async function EditionRegistrations({
                     </div>
                   )}
 
-                  <form action={updateRaceParticipationAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
+                  <form action={updateRaceParticipationFormAction} className='mt-3 grid gap-3 sm:grid-cols-2'>
                     <input type='hidden' name='locale' value={locale} />
                         <input type='hidden' name='registrationId' value={registration.registrationId} />
 
