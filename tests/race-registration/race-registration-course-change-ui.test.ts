@@ -12,7 +12,7 @@ describe('KAN-366 course-first explicit course change', () => {
   })
 
   it('offers an explicit change-course action instead of treating the athlete as bulk-registerable', () => {
-    assert.match(component, /changeRaceRegistrationCourseAction/)
+    assert.match(component, /changeRaceRegistrationCourseFormAction/)
     assert.match(component, /interaction\.registeredElsewhere\.map/)
     assert.match(component, /name=['"]registrationId['"]/)
     assert.match(component, /name=['"]raceCourseId['"]/)
