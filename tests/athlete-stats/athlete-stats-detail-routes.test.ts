@@ -12,8 +12,12 @@ describe('athlete stats detail routes', () => {
   it('provides one athlete-facing route per stats domain', async () => {
     for (const route of routes) {
       const source = await routeSource(route)
-      assert.match(source, /getCurrentAthleteStatsAction/)
-      assert.match(source, /view:\s*['"]details['"]/)
+      if (route === 'competition') {
+        assert.match(source, /getCurrentAthleteRaceRegistrationsAction/)
+      } else {
+        assert.match(source, /getCurrentAthleteStatsAction/)
+        assert.match(source, /view:\s*['"]details['"]/)
+      }
       assert.match(source, /\/stats/)
     }
   })
@@ -41,8 +45,8 @@ describe('athlete stats detail routes', () => {
 
   it('competition detail renders only factual competition context', async () => {
     const source = await routeSource('competition')
-    assert.match(source, /primaryCompetition/)
-    assert.match(source, /intermediateCompetitions/)
+    assert.match(source, /raceRegistrationData\.history/)
+    assert.doesNotMatch(source, /raceRegistrationData\.upcoming|primaryCompetition|intermediateCompetitions/)
     assert.doesNotMatch(source, /readiness|recommendation|prediction/i)
   })
 })

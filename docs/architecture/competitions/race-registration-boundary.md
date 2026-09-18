@@ -1,4 +1,6 @@
-# Future RaceRegistration boundary
+# RaceRegistration boundary — KAN-275 historical reservation
+
+> **Status:** historical precursor. KAN-281 has implemented the durable contract in [`race-registration.md`](race-registration.md). Use that document for current lifecycle, participation/result, snapshot, persistence and disclosure semantics.
 
 ## Purpose
 

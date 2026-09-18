@@ -17,9 +17,10 @@ Domain and technical contracts that current implementation should preserve unles
 
 - [`architecture/monitoring/athlete-stats-analytics.md`](architecture/monitoring/athlete-stats-analytics.md) — KAN-264 completed Athlete Stats architecture and final verification baseline.
 
-### Current competitive-registration starting point
+### Current competitive-registration baseline
 
-- [`architecture/competitions/race-registration-boundary.md`](architecture/competitions/race-registration-boundary.md) — minimum target reserved by KAN-275. Lifecycle, participation/result evidence, snapshot and persistence are intentionally deferred to KAN-281.
+- [`architecture/competitions/race-registration.md`](architecture/competitions/race-registration.md) — implemented KAN-281 registration lifecycle, participation/result, historical snapshot, persistence/isolation and Coach/Athlete disclosure contract.
+- [`architecture/competitions/race-registration-boundary.md`](architecture/competitions/race-registration-boundary.md) — historical KAN-275 reservation that preceded the implemented contract.
 
 ## Handoffs
 
@@ -30,19 +31,17 @@ Use handoffs to reconstruct the transition between completed stories; architectu
 - [`handoffs/kan-261-training-load.md`](handoffs/kan-261-training-load.md) — training-load v1 boundary.
 - [`handoffs/kan-260-adherence.md`](handoffs/kan-260-adherence.md) — adherence boundary.
 
+## Agent harness
+
+- [`agent-harness.md`](agent-harness.md) — `harness-eval-v1` context/tool discipline, behavioral evals and the two-story evaluation protocol. `AGENTS.md` remains the operational authority.
+
+The final two Epic 3 stories intentionally use the same harness version. Record observations at story closure; do not tune v1 between stories unless a rule creates a blocking safety/correctness failure.
+
 ## Current story transition
 
-Stories KAN-257 through KAN-264 are complete. The next Epic 3 story is **KAN-281 — Registrar inscripciones y participación histórica en carreras**.
+KAN-281 — Historia 9 is implemented and verified. Its durable contract is `architecture/competitions/race-registration.md`; the current Epic 3 handoff contains the exact next-story baseline. RaceRegistration is an effective individual registration, registration lifecycle remains separate from participation evidence, and missing evidence remains unknown.
 
-Before KAN-281 implementation, the accepted MVP clarification is:
-
-- `RaceRegistration` starts from an effective individual registration, not a mere intention to register;
-- registration lifecycle is separate from participation/result evidence;
-- being registered does not imply started/finished/DNS/DNF;
-- absence of explicit participation/result evidence remains unknown;
-- `TrainingGoal` and `CompetitionEntry` remain independent and do not create registrations automatically.
-
-The complete KAN-281 contract still needs to be designed before Jira implementation tasks are created.
+The final Athlete information architecture keeps upcoming effective registrations under Plan -> Competition and historical factual participation/results under Stats -> Competition without coupling registration to planning or realized training.
 
 ## Other documentation
 
@@ -54,4 +53,4 @@ The complete KAN-281 contract still needs to be designed before Jira implementat
 
 ## Reading rule
 
-For a new story, read `AGENTS.md`, this index, the relevant architecture documents and the latest completed-story handoff; then reconcile them with current code/tests and the complete Jira story before designing implementation tasks.
+For a new story, read `AGENTS.md`, this index, the current epic handoff and only the relevant durable domain documents; then reconcile them with focused current code/tests and the complete Jira story. Retrieve additional detail just in time instead of preloading the repository or relying on chat history.

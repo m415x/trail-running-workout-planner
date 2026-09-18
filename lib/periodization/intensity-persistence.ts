@@ -13,11 +13,13 @@ import { resolveWeeklySessionCount } from '@/lib/session-generation/weekly-gener
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
 import type { WeeklySessionFrequency } from '@/types/training/session-generation.types'
 
+type IntensityDatabase = unknown
+
 export interface PersistIntensityPlanningParams {
   groupTrainingPlanId: string
   strategy: IntensityStrategyDraft
   targets: Array<{ microcycleId: string; target: MicrocycleIntensityTargetDraft }>
-  database?: typeof db
+  database?: IntensityDatabase
 }
 
 /** Persists one strategy and its weekly targets atomically after ownership checks. */
@@ -27,7 +29,8 @@ export function persistIntensityPlanning({
   targets,
   database = db,
 }: PersistIntensityPlanningParams): void {
-  const plan = database.select({
+  const resolvedDatabase = database as typeof db
+  const plan = resolvedDatabase.select({
     id: groupTrainingPlans.id,
     categoryCode: athleteGroups.categoryCode,
     levelCode: athleteGroups.levelCode,
@@ -60,7 +63,7 @@ export function persistIntensityPlanning({
   const ids = targets.map(({ microcycleId }) => microcycleId)
   if (new Set(ids).size !== ids.length) throw new Error('Hay objetivos de intensidad duplicados.')
 
-  const ownedRows = ids.length === 0 ? [] : database.select({
+  const ownedRows = ids.length === 0 ? [] : resolvedDatabase.select({
     id: microcycles.id,
     type: microcycles.type,
     targetVolumeKm: microcycles.targetVolumeKm,
@@ -78,7 +81,7 @@ export function persistIntensityPlanning({
     : { mode: 'auto' }
   const ownedById = new Map(ownedRows.map((row) => [row.id, row]))
 
-  const existingTargets = ids.length === 0 ? [] : database.select()
+  const existingTargets = ids.length === 0 ? [] : resolvedDatabase.select()
     .from(microcycleIntensityTargets)
     .where(inArray(microcycleIntensityTargets.microcycleId, ids))
     .all()
@@ -119,10 +122,10 @@ export function persistIntensityPlanning({
   }
 
   const now = new Date().toISOString()
-  const existingStrategy = database.select().from(intensityStrategies)
+  const existingStrategy = resolvedDatabase.select().from(intensityStrategies)
     .where(eq(intensityStrategies.groupTrainingPlanId, groupTrainingPlanId)).get()
 
-  database.transaction((tx) => {
+  resolvedDatabase.transaction((tx) => {
     const strategyValues = {
       goalType: strategy.context.goalType,
       defaultMethod: strategy.values.defaultMethod,

@@ -64,6 +64,35 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 
 Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
 
+## Story bootstrap and context discipline
+
+For every new story, reconstruct state from durable sources before proposing tasks or code. Memory and prior chats may help navigation but are never project authority.
+
+1. Read this file and any nested `AGENTS.md` that applies to the files likely to be touched.
+2. Read `docs/README.md`, the current epic handoff, the previous completed-story handoff when relevant, and only the architecture/glossary/research documents required by the story domain.
+3. Inspect current code/tests selectively to verify that documentation still matches implementation.
+4. Read the complete Jira story: description, acceptance criteria, comments, relations, dependencies and existing subtasks.
+5. Reconcile Jira, docs and code. Surface discrepancies instead of silently choosing one source.
+6. Present the real scope, reusable infrastructure, already-delivered work, risks and unresolved decisions before creating tasks.
+7. Do not create tasks or a branch until the human approves that analysis and the proposed task breakdown.
+
+Use **just-in-time retrieval** after bootstrap. Prefer paths, issue keys, commit/branch refs and short findings over repeatedly loading whole documents or large tool outputs. Re-open the exact source when detail is needed rather than carrying redundant content forward.
+
+Treat each Jira story as a natural context-compaction boundary: its final durable documentation and handoff must allow the next story to start in a fresh chat without reconstructing the completed story from conversation history.
+
+### Task sizing and decomposition
+
+Tasks/subtasks are execution units, not containers for an entire story. Design them so each can be implemented, verified and reconciled independently within a bounded working context.
+
+- Prefer small **vertical slices with one coherent responsibility and focused evidence** over broad tasks spanning multiple independent behaviors.
+- Before task creation, estimate the boundaries involved: domain/contracts, persistence, application/actions, UI integration, hardening/migration and documentation. A task may cross layers when that is necessary for one vertical behavior, but it must not accumulate several independently verifiable behaviors merely to reduce the Jira task count.
+- If a proposed task contains multiple acceptance outcomes that can fail, ship or be verified independently, split it before implementation.
+- If implementation reveals substantially more scope than the approved task — additional independent contracts, multiple unrelated UI flows, a migration plus broad integration, or repeated TDD cycles across distinct boundaries — **stop and re-scope the task in Jira before continuing**. Do not wait for chat/context exhaustion.
+- A task that effectively becomes a mini-story is a decomposition failure. KAN-360 is the explicit historical regression case to avoid.
+- Each implementation task should end with its own focused verification and concise Jira evidence. Reserve aggregate/full gates for story closure unless an earlier full gate is needed to diagnose a cross-cutting failure.
+- Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
+- Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
+
 ## Architecture and directory map
 
 - `app/[locale]/` — localized routes and shells
@@ -104,7 +133,7 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - H12 reuses H10 competition impact phases so deliberate taper/recovery reductions are not automatically interpreted as insufficient preparation.
 - Automatic assessment and coach review/acknowledgement are separate persisted facts.
 - H12 does not automatically mutate planning or enter H11's write-set.
-- H12 persistence uses `workout_log_evidence`, `readiness_evaluations`, `readiness_reviews`; H12 closure verified 28 application tables with RLS. After KAN-257, the complete Supabase inventory is 34 application tables and must verify RLS for all 34.
+- H12 persistence uses `workout_log_evidence`, `readiness_evaluations`, `readiness_reviews`; H12 closure verified 28 application tables with RLS. After KAN-281, the complete Supabase inventory is 36 application tables and must verify RLS for all 36.
 
 ## Data, security and persistence
 
@@ -138,6 +167,8 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - Work in a story branch created from `dev`; keep commits aligned with the active Jira task.
 - Merge completed story branches into `dev`, not `main` and not the legacy `dashboard` branch.
 - Default to **remote-first** inspection/versioning and focused validation during implementation.
+- Before each task, inspect only the related contracts, implementation and tests needed to understand the boundary; check whether part of the task already exists before adding abstractions.
+- Keep Jira synchronized with real implementation/evidence and use small coherent commits aligned with the active task.
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
@@ -147,6 +178,20 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
 - Keep Jira synchronized with real evidence. A task requiring environment evidence stays open until that evidence exists.
 - At story/epic closure consolidate durable decisions into architecture/history, remove superseded handoffs, and update README/docs indexes.
+
+### Tool and retry discipline
+
+- Prefer the narrowest tool/action that can answer the current question. Do not fetch an entire tree/file when a known path, range, query or focused test is enough.
+- After a tool call, retain the decision-relevant finding and stable locator; avoid re-fetching identical content without a new reason.
+- A failed operation gets at most **two substantially equivalent attempts**. Diagnose after the first failure. If the second equivalent attempt fails, stop repeating it and change strategy: inspect the relevant contract/schema, use a different tool/action, or request the smallest missing evidence.
+- Do not hide repeated failures by making cosmetic parameter changes. Treat same intent + same expected mechanism as the same retry budget.
+- When a large tool output is no longer needed verbatim, reduce it to a short working finding and retrieve details again just in time if required.
+
+### Verification loop
+
+For each task use the lightweight loop **inspect → implement → statically verify → focused evidence when informative → reconcile with task scope**. Do not substitute repeated full-suite execution for reasoning.
+
+Before marking a task complete, compare the result against the original Jira task/acceptance intent, not merely against the implementation just written. At story closure perform the complete project gate and an acceptance-criteria-by-acceptance-criteria review.
 
 ## Documentation policy
 
@@ -162,12 +207,45 @@ Start at `README.md` → `docs/README.md`; do not reconstruct completed work fro
 - Jira owns task status/acceptance evidence.
 - Do not copy chat transcripts into repository docs.
 
+### Durable documentation and next-story baseline
+
+Every story includes a final documentation/handoff task. It is part of delivery, not optional cleanup.
+
+- Reconcile durable docs with the **implemented** contract, including deviations from the initial design.
+- Update architecture, glossary, research, indexes and `AGENTS.md` only where the story changed durable knowledge; do not manufacture edits to satisfy a checklist.
+- Preserve operational infrastructure and invariants unless a later explicit decision supersedes them.
+- Record known limitations and deliberately deferred decisions, linking Jira follow-ups where applicable.
+- Mark completed implementation plans clearly `completed` / `historical`; an old checklist must not look like pending work.
+- Ensure new/significantly reorganized durable docs are reachable from the appropriate index.
+- The final handoff must state: delivered behavior, current contracts/invariants, reusable infrastructure, limitations/deferred work, verified evidence, and the exact baseline the next story may assume.
+- Only record verification that actually ran. Jira remains the authority for task status and acceptance evidence.
+
+## Harness evaluation — Epic 3 closing stories
+
+The story workflow above is **harness-eval-v1**. Keep its operational rules stable through the final two Epic 3 stories unless a rule causes a blocking/safety/correctness failure. Record observations rather than tuning the harness mid-experiment.
+
+Evaluate observable behavior, not subjective impressions or token count alone. At each story closure record a compact evaluation covering:
+
+- redundant/repeated tool calls or unnecessary full-file reloads;
+- equivalent failed attempts and whether the retry budget stopped loops;
+- context/source-of-truth mistakes or requests to repeat durable information;
+- premature task/branch creation or reopened settled decisions;
+- unnecessary local/full-gate requests during implementation;
+- claims of verification without evidence;
+- missed acceptance criteria or corrective human interventions attributable to workflow/context handling;
+- durable-documentation/handoff completeness;
+- any case where lower context/tool usage reduced correctness.
+
+Do not change harness-eval-v1 merely to improve the second story's score. After both stories, compare the two traces and decide which rules to keep, remove or revise for v2.
+
 ## Current closure context
 
-Epic 2 is complete. Epic 3 Stories 1–8 are complete through KAN-264 and integrated into `dev`. The current operational handoff is `docs/handoffs/epic-3.md`; the completed Historia 8 baseline is `docs/handoffs/kan-264-athlete-stats.md` and `docs/architecture/monitoring/athlete-stats-analytics.md`.
+Epic 2 is complete. Epic 3 Stories 1–9 are implemented through KAN-281. The current operational handoff is `docs/handoffs/epic-3.md`; the durable registration contract is `docs/architecture/competitions/race-registration.md`.
 
-The next Epic 3 story is KAN-281 — Historia 9: registrar inscripciones y participación histórica en carreras. KAN-275 reserved the minimum `RaceRegistration` target in `docs/architecture/competitions/race-registration-boundary.md`; KAN-281 owns the actual lifecycle, participation/result evidence, historical snapshot, persistence and deduplication design.
+KAN-281 establishes effective individual `RaceRegistration` with explicit team + athlete scope and concrete RaceCourse identity. Registration lifecycle (`registered | cancelled`) is separate from explicit participation evidence (`unknown | started | finished | dnf | dns`). Historical snapshots preserve event/edition/course facts; nominal distance remains distinct from actual covered distance; registration/result does not become realized training, readiness, authorization or performance interpretation.
 
-Accepted KAN-281 MVP clarification: `RaceRegistration` represents an effective individual registration, not a mere intention to register. Competitive intent remains in existing goal/planning concepts. Registration lifecycle and participation/result evidence are separate concerns; being registered does not imply started, finished, DNS or DNF, and absent evidence remains unknown.
+Athlete presentation is split intentionally: Plan -> Competition contains upcoming effective registrations, while Stats -> Competition contains historical factual participation/results. This is information architecture only and does not couple registration to TrainingGoal or CompetitionEntry.
 
-KAN-264 final reported gate: 790/790 tests across 157 suites, lint, `pn exec tsc --noEmit`, build and i18n passed; 452 ES/EN message leaves aligned; Athlete responsive walkthrough approved. KAN-282 UX action safety and the documented post-KAN-264 accessibility/navigation follow-ups remain deferred unless Jira explicitly changes scope.
+The next and final Epic 3 story is KAN-282 — Historia 10: protect sensitive actions and unsaved UI changes. Start from `docs/architecture/platform/ux-action-safety.md`; reuse `ConfirmActionDialog` and the three-level policy. KAN-366 bulk race registration is the first explicit Level 2 adoption. Keep `harness-eval-v1` unchanged through KAN-282, then compare both story evaluations before proposing v2.
+
+KAN-281 final reported gate: 908/908 tests across 202 suites, TypeScript clean, lint 0 errors / 7 warnings, build green, Supabase migration check green and 36/36 application tables with RLS. Coach desktop and Athlete mobile functional walkthroughs passed after final runtime fixes. KAN-360, rankings/positions and purely aesthetic UI polish remain deferred.

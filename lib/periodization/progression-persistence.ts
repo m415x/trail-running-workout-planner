@@ -15,6 +15,8 @@ const PROTECTED_PERIODS = new Set(['competitive', 'transition'])
 
 export type CompetitionSnapshotPersistenceMode = 'replace' | 'preserve'
 
+type ProgressionDatabase = unknown
+
 export interface PersistProgressionParams {
   groupTrainingPlanId: string
   macrocycleId: string
@@ -25,7 +27,7 @@ export interface PersistProgressionParams {
    * previously accepted competition/taper snapshot untouched.
    */
   competitionSnapshotMode?: CompetitionSnapshotPersistenceMode
-  database?: typeof db
+  database?: ProgressionDatabase
 }
 
 export interface PersistProgressionResult {
@@ -45,7 +47,8 @@ export function persistProgression({
 }: PersistProgressionParams): PersistProgressionResult {
   assertPersistablePlanning(planning)
 
-  const macrocycle = database.query.macrocycles.findFirst({
+  const resolvedDatabase = database as typeof db
+  const macrocycle = resolvedDatabase.query.macrocycles.findFirst({
     where: and(eq(macrocycles.id, macrocycleId), eq(macrocycles.isDeleted, false)),
     with: {
       groupTrainingPlan: true,
@@ -63,7 +66,9 @@ export function persistProgression({
     throw new Error('No se encontró el macrociclo del plan indicado.')
   }
 
-  const activeMesocycles = macrocycle.mesocycles.filter((mesocycle) => !mesocycle.isDeleted)
+  type LoadedMesocycle = typeof mesocycles.$inferSelect & { microcycles: Array<typeof microcycles.$inferSelect> }
+  const loadedMesocycles = macrocycle.mesocycles as LoadedMesocycle[]
+  const activeMesocycles = loadedMesocycles.filter((mesocycle) => !mesocycle.isDeleted)
   const protectedMesocycles = activeMesocycles.filter((mesocycle) => (
     PROTECTED_PERIODS.has(mesocycle.period)
   ))
@@ -86,7 +91,7 @@ export function persistProgression({
 
     existingMesocyclesByNumber.set(mesocycle.number, mesocycle)
 
-    for (const microcycle of mesocycle.microcycles.filter((week) => !week.isDeleted)) {
+    for (const microcycle of mesocycle.microcycles.filter((week: typeof microcycles.$inferSelect) => !week.isDeleted)) {
       if (existingMicrocyclesByWeek.has(microcycle.weekNumber)) {
         throw new Error(`La semana ${microcycle.weekNumber} está duplicada.`)
       }
@@ -109,7 +114,7 @@ export function persistProgression({
   }
   const now = new Date().toISOString()
 
-  database.transaction((tx) => {
+  resolvedDatabase.transaction((tx) => {
     for (const proposedMesocycle of planning.mesocycles) {
       const existingMesocycle = existingMesocyclesByNumber.get(proposedMesocycle.number)
       const mesocycleId = existingMesocycle?.id ?? randomUUID()

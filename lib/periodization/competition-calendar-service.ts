@@ -10,6 +10,7 @@ import {
   rescheduleCompetitionRecord,
   updateCompetitionRecord,
   updateCompetitionStatusRecord,
+  type CompetitionDatabase as CompetitionRepositoryDatabase,
 } from '@/lib/periodization/competition-repository'
 import {
   validateCompetitionCalendarMutation,
@@ -23,7 +24,7 @@ import type {
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
 
-type CompetitionDatabase = typeof db
+type CompetitionDatabase = CompetitionRepositoryDatabase
 
 export type CompetitionCalendarServiceErrorCode =
   | CompetitionCalendarPolicyErrorCode
@@ -84,7 +85,8 @@ export function getCompetitionCalendar(
 }
 
 function loadPlanContext(planId: string, database: CompetitionDatabase) {
-  const plan = database.query.groupTrainingPlans.findFirst({
+  const resolvedDatabase = database as typeof db
+  const plan = resolvedDatabase.query.groupTrainingPlans.findFirst({
     where: and(
       eq(groupTrainingPlans.id, planId),
       eq(groupTrainingPlans.isDeleted, false),
@@ -93,12 +95,12 @@ function loadPlanContext(planId: string, database: CompetitionDatabase) {
 
   if (!plan) return null
 
-  const windows = database.query.macrocycles.findMany({
+  const windows = resolvedDatabase.query.macrocycles.findMany({
     where: and(
       eq(macrocycles.groupTrainingPlanId, planId),
       eq(macrocycles.isDeleted, false),
     ),
-  }).sync().map((macrocycle) => ({
+  }).sync().map((macrocycle: typeof macrocycles.$inferSelect) => ({
     id: macrocycle.id,
     startDate: macrocycle.startDate,
     endDate: macrocycle.endDate,

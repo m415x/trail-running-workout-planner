@@ -55,7 +55,24 @@
       "primary": "Primary competition",
       "intermediate": "Intermediate competitions",
       "noPrimary": "No primary competition is planned.",
-      "elevationUnavailable": "Elevation gain unavailable"
+      "elevationUnavailable": "Elevation gain unavailable",
+      "registrations": {
+        "upcoming": "Upcoming registrations",
+        "history": "Race history",
+        "noUpcoming": "No upcoming registrations.",
+        "noHistory": "No historical participation is recorded.",
+        "participation": "Participation",
+        "actualDistance": "Actual distance",
+        "elapsedTime": "Elapsed time",
+        "unknown": "Unknown",
+        "participationStatuses": {
+          "unknown": "Unknown",
+          "started": "Started",
+          "finished": "Finished",
+          "dnf": "DNF",
+          "dns": "DNS"
+        }
+      }
     }
   }
 }
