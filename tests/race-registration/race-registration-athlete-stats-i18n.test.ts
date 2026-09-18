@@ -9,7 +9,7 @@ const en = readFileSync('messages/en/athlete-stats/stats.json', 'utf8')
 describe('Athlete Stats race history i18n', () => {
   it('keeps all new registration/history presentation copy behind Stats translations', () => {
     assert.doesNotMatch(page, /Próximas inscripciones|Historial de carreras|Participación:|Distancia real:|Tiempo:|No hay inscripciones próximas|No hay participaciones históricas registradas/)
-    assert.match(page, /t\('competitionDetail\.registrations\.upcoming'\)/)
+    assert.doesNotMatch(page, /t\('competitionDetail\.registrations\.upcoming'\)/)
     assert.match(page, /t\('competitionDetail\.registrations\.history'\)/)
     assert.match(page, /t\('competitionDetail\.registrations\.unknown'\)/)
   })
