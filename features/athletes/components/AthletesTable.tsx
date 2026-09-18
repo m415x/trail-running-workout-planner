@@ -159,65 +159,62 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                   </TableCell>
 
                   <TableCell className='text-right'>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={(
-                          <Button
-                            type='button'
-                            variant='ghost'
-                            size='icon-sm'
-                            aria-label={t('menuFor', { name: fullName })}
-                          />
-                        )}
-                      >
-                        <EllipsisVertical />
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align='end' className='w-52'>
-                        <DropdownMenuItem render={<Link href={basePath} />}>
-                          <Eye />
-                          {t('viewDetail')}
-                        </DropdownMenuItem>
-                        {requiresAthleteActiveStateConfirmation(athlete.isActive) ? (
-                          <ConfirmActionDialog
-                            title={t('deactivateConfirmTitle')}
-                            description={t('deactivateConfirmDescription')}
-                            confirmLabel={t('deactivateConfirmAction')}
-                            cancelLabel={t('deactivateConfirmCancel')}
-                            variant='destructive'
-                            onConfirm={() => toggleActiveState(athlete)}
-                            trigger={(openDialog) => (
+                    <ConfirmActionDialog
+                      title={t('deactivateConfirmTitle')}
+                      description={t('deactivateConfirmDescription')}
+                      confirmLabel={t('deactivateConfirmAction')}
+                      cancelLabel={t('deactivateConfirmCancel')}
+                      variant='destructive'
+                      onConfirm={() => toggleActiveState(athlete)}
+                      trigger={(openDialog) => (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger
+                            render={(
+                              <Button
+                                type='button'
+                                variant='ghost'
+                                size='icon-sm'
+                                aria-label={t('menuFor', { name: fullName })}
+                              />
+                            )}
+                          >
+                            <EllipsisVertical />
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align='end' className='w-52'>
+                            <DropdownMenuItem render={<Link href={basePath} />}>
+                              <Eye />
+                              {t('viewDetail')}
+                            </DropdownMenuItem>
+                            {requiresAthleteActiveStateConfirmation(athlete.isActive) ? (
                               <DropdownMenuItem
                                 variant='destructive'
                                 disabled={isChangingState}
-                                onClick={(event) => {
-                                  event.preventDefault()
-                                  window.setTimeout(openDialog, 0)
-                                }}
+                                onClick={openDialog}
                               >
                                 <Power />
                                 {t('deactivate')}
                               </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                disabled={isChangingState}
+                                onClick={() => toggleActiveState(athlete)}
+                              >
+                                <Power />
+                                {t('activate')}
+                              </DropdownMenuItem>
                             )}
-                          />
-                        ) : (
-                          <DropdownMenuItem
-                            disabled={isChangingState}
-                            onClick={() => toggleActiveState(athlete)}
-                          >
-                            <Power />
-                            {t('activate')}
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem render={<Link href={groupPath} />}>
-                          <UsersRound />
-                          {groupCode ? t('changeGroup') : t('assignGroup')}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem render={<Link href={editPath} />}>
-                          <Pencil />
-                          {t('editAthlete')}
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            <DropdownMenuItem render={<Link href={groupPath} />}>
+                              <UsersRound />
+                              {groupCode ? t('changeGroup') : t('assignGroup')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem render={<Link href={editPath} />}>
+                              <Pencil />
+                              {t('editAthlete')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    />
                   </TableCell>
                 </TableRow>
               )
