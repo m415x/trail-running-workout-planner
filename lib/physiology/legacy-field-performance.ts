@@ -22,6 +22,7 @@ export function promoteLegacy1000mEvidence(
     return {
       id: record.id,
       ...evidence,
+      source: 'legacy_migration',
       notes: evidence.notes ?? null,
       isDeleted: record.isDeleted ?? false,
       createdAt: record.createdAt ?? record.date,
