@@ -63,3 +63,12 @@ test('preserves lifecycle and notes but never promotes legacy HR or derived PAM 
   assert.equal('pamPaceFormatted' in (promoted ?? {}), false)
   assert.equal('pamSpeedKmh' in (promoted ?? {}), false)
 })
+
+
+test('does not promote explicit 1000m legacy rows with invalid observed facts', () => {
+  assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', pamTimeSec: 0 })), null)
+  assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', pamTimeSec: -1 })), null)
+  assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', pamTimeSec: Number.NaN })), null)
+  assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', date: '2026-02-30' })), null)
+  assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', athleteId: '   ' })), null)
+})
