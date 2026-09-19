@@ -12,7 +12,7 @@ test('field performance tests persist only canonical observed 1000 m evidence', 
   assert.equal(config.name, 'field_performance_tests')
   assert.deepEqual(columns, [
     'id', 'is_deleted', 'created_at', 'updated_at', 'athlete_id',
-    'performed_at', 'protocol', 'distance_m', 'elapsed_time_sec', 'notes',
+    'performed_at', 'protocol', 'source', 'distance_m', 'elapsed_time_sec', 'notes',
   ])
 
   assert.equal(columns.includes('pace_sec_per_km'), false)
