@@ -23,16 +23,11 @@ import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-da
 import { getWorkoutIcon, getWorkoutTypeLabel } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
-import { getZoneBpmRange } from '@/lib/physiology/heart-rate'
-import { getZonePaceRangeFromPam } from '@/lib/physiology/pam'
 
 interface UseWorkoutCardParams {
   workout: WorkoutCardProps['workout']
-  maxHr?: number
-  restHr?: number
   date?: string
   TrackData?: TrackData | null
-  athletePamSec?: number
   isCompleted?: boolean
   onRealizedTrainingSaved?: (record: RealizedTrainingRecord) => void
 }
@@ -46,11 +41,8 @@ interface DurableCaptureState {
 
 export function useWorkoutCard({
   workout,
-  maxHr = 190,
-  restHr = 50,
   date,
   TrackData,
-  athletePamSec,
   isCompleted: initialIsCompleted = false,
   onRealizedTrainingSaved,
 }: UseWorkoutCardParams) {
@@ -95,15 +87,8 @@ export function useWorkoutCard({
     return HR_ZONES[workout.zone] ?? HR_ZONES.Z1
   }, [workout.zone])
 
-  const bpmRange = useMemo(() => {
-    if (!workout?.zone) return ''
-    const res = getZoneBpmRange(workout.zone, { maxHr: 190, restHr: 50 })
-    return `${res.minBpm}-${res.maxBpm} ${t('dialog.bpm')}`
-  }, [workout?.zone, t])
-
-  const bpmLimits = useMemo(() => {
-    return getZoneBpmRange(workout.zone, { maxHr, restHr })
-  }, [workout.zone, maxHr, restHr])
+  // HR guidance remains unavailable until explicit athlete evidence reaches this boundary.
+  const bpmRange = ''
 
   const targetCoordinates = useMemo(() => {
     if (TrackData?.startCoordinates) return TrackData.startCoordinates
@@ -145,13 +130,9 @@ export function useWorkoutCard({
     }
   }, [date, isPast, targetCoordinates.lat, targetCoordinates.lon])
 
-  const pamRange = useMemo(() => {
-    return getZonePaceRangeFromPam(workout.zone, athletePamSec, workout.distance)
-  }, [workout.zone, athletePamSec, workout.distance])
-
-  const timeDisplay = pamRange?.timeRangeLabel ?? workout.time
-  const paceDisplay = pamRange?.paceRangeLabel ?? formatPace(workout.pace)
-  const speedDisplay = pamRange?.speedRangeLabel ?? paceToSpeed(workout.pace)
+  const timeDisplay = workout.time
+  const paceDisplay = formatPace(workout.pace)
+  const speedDisplay = paceToSpeed(workout.pace)
 
   const stats = useMemo(
     () => [
@@ -159,17 +140,17 @@ export function useWorkoutCard({
         icon: Clock,
         label: t('card.estimatedTime'),
         value: timeDisplay,
-        unit: pamRange ? '\nmin' : 'min',
+        unit: 'min',
       },
-      { icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: pamRange ? '\nmin/km' : '/km' },
+      { icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: '/km' },
       {
         icon: Gauge,
         label: t('card.avgSpeed'),
         value: speedDisplay,
-        unit: pamRange ? '\nkm/h' : 'km/h',
+        unit: 'km/h',
       },
     ],
-    [timeDisplay, paceDisplay, speedDisplay, pamRange, t],
+    [timeDisplay, paceDisplay, speedDisplay, t],
   )
 
   const openLogDialog = () => setIsLogOpen(true)
@@ -222,9 +203,6 @@ export function useWorkoutCard({
     stats,
     zoneInfo,
     bpmRange,
-    pamRange,
-    minBpm: bpmLimits.minBpm,
-    maxBpm: bpmLimits.maxBpm,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
