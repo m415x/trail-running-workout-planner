@@ -5,6 +5,7 @@
  * the observed result is a direct PAM/MAS, VO2max or threshold measurement.
  */
 export type FieldPerformanceTestProtocol = '1000m_track'
+export type FieldPerformanceTestSource = 'coach_manual'
 
 export interface Track1000mEvaluationInput {
   athleteId: string
@@ -17,6 +18,7 @@ export interface Track1000mEvaluation {
   athleteId: string
   performedAt: string
   protocol: FieldPerformanceTestProtocol
+  source: FieldPerformanceTestSource
   distanceM: 1000
   elapsedTimeSec: number
   notes?: string
@@ -80,7 +82,8 @@ function formatPace(secondsPerKm: number): string {
 /**
  * Creates the canonical observed evidence for the v1 1000 m track protocol.
  * Pace and speed are deliberately excluded because they are deterministic
- * derivations, not independent observed authority.
+ * derivations, not independent observed authority. The MVP provenance is
+ * intentionally fixed to manual registration through the coach boundary.
  */
 export function createTrack1000mEvaluation(
   input: Track1000mEvaluationInput,
@@ -96,6 +99,7 @@ export function createTrack1000mEvaluation(
     athleteId: input.athleteId,
     performedAt: input.performedAt,
     protocol: '1000m_track',
+    source: 'coach_manual',
     distanceM: 1000,
     elapsedTimeSec: input.elapsedTimeSec,
     ...(input.notes === undefined ? {} : { notes: input.notes }),
