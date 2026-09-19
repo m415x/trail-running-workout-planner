@@ -147,3 +147,49 @@ test('supports coach quality percentages above 100 without treating them as zone
   assert.equal(result.quality.paceLabel, '3:36/km')
   assert.equal(result.quality.averageSpeedKmh, 16.7)
 })
+
+
+test('provides first-class RPE and talk-test guidance for every Z1-Z5 prescription', () => {
+  const expectations = {
+    Z1: { rpe: { min: 1, max: 2 }, talkTest: 'comfortable_conversation' },
+    Z2: { rpe: { min: 3, max: 4 }, talkTest: 'full_conversation' },
+    Z3: { rpe: { min: 5, max: 6 }, talkTest: 'short_phrases' },
+    Z4: { rpe: { min: 7, max: 8 }, talkTest: 'few_words' },
+    Z5: { rpe: { min: 9, max: 10 }, talkTest: 'no_conversation' },
+  } as const
+
+  for (const [zone, expected] of Object.entries(expectations)) {
+    const result = resolveExecutionGuidance({
+      intensity: {
+        method: 'hr_zone',
+        zone: zone as keyof typeof expectations,
+      },
+      runningReference: { status: 'unknown' },
+    })
+
+    assert.equal(result.quality, null)
+    assert.deepEqual(result.zone, {
+      zone,
+      rpe: expected.rpe,
+      talkTest: expected.talkTest,
+      terrainPriority: 'effort_over_pace',
+    })
+  }
+})
+
+test('keeps Z2 executable without a running reference or heart-rate sensor', () => {
+  const result = resolveExecutionGuidance({
+    intensity: {
+      method: 'hr_zone',
+      zone: 'Z2',
+    },
+    runningReference: { status: 'unknown' },
+  })
+
+  assert.deepEqual(result.zone, {
+    zone: 'Z2',
+    rpe: { min: 3, max: 4 },
+    talkTest: 'full_conversation',
+    terrainPriority: 'effort_over_pace',
+  })
+})
