@@ -36,7 +36,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`; future work should create/retain only the current or recent handoff required for safe resumption.
+`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-376.md`](handoffs/kan-376.md), which records the completed first Epic 4 story and the baseline later physiology stories may assume.
 
 ## Agent harness
 
@@ -46,9 +46,11 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current transition
 
-Epic 3 is functionally complete through KAN-282. Use [`history/epic-3.md`](history/epic-3.md) for the consolidated evolution and the relevant architecture documents for current contracts.
+Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation has begun: KAN-376 is complete and establishes canonical `1000m_track` field-performance evidence, deterministic pace/speed derivation, append-oriented history, atomic correction, explicit `coach_manual | legacy_migration` provenance, legacy reconciliation without unsupported physiological inference, and SQLite/Supabase parity with team/athlete isolation.
 
-The next epic must be reconstructed from the actual `dev` baseline rather than assuming preliminary future-story descriptions are still correct. In particular, monitoring/Training Response must remain distinct from measured physiology, and new physiological work must reuse existing planning/intensity/analytics boundaries instead of introducing parallel authority.
+Use [`handoffs/kan-376.md`](handoffs/kan-376.md) as the immediate completed-story baseline and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for the Epic 4 research/decision context. Current code/tests remain authoritative for actual behavior.
+
+The next Epic 4 story must be reconstructed from the current `dev` baseline and Jira rather than assuming the preliminary sequence still matches delivered reality. Monitoring/Training Response remains distinct from measured physiology; later reference/guidance work must build on canonical evidence rather than introduce parallel authority.
 
 ## Other documentation
 
