@@ -27,6 +27,7 @@ test('promotes only explicit 1000m_track legacy evidence', () => {
     athleteId: 'athlete_1',
     performedAt: '2026-01-30',
     protocol: '1000m_track',
+    source: 'legacy_migration',
     distanceM: 1000,
     elapsedTimeSec: 300,
     notes: null,
