@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createTrack1000mEvidence } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createTrack1000mEvidence, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -186,4 +186,59 @@ test('invalid replacement leaves the original evidence active and writes nothing
 
   assert.equal(result.success, false)
   assert.equal(replacements, 0)
+})
+
+
+test('resolves an authorized athlete running reference for the effective date', async () => {
+  let queried: { athleteId: string; effectiveDate: string } | undefined
+
+  const result = await resolveAthleteRunningReference(
+    { athleteId: 'athlete_1', effectiveDate: '2026-09-20' },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      listActiveByAthleteThroughDate: (athleteId, effectiveDate) => {
+        queried = { athleteId, effectiveDate }
+        return [{
+          id: 'eval_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        }]
+      },
+    },
+  )
+
+  assert.deepEqual(queried, { athleteId: 'athlete_1', effectiveDate: '2026-09-20' })
+  assert.equal(result.success, true)
+  assert.equal(result.success && result.data.status === 'available' ? result.data.source.evaluationId : null, 'eval_1')
+})
+
+test('returns explicit unknown for an owned athlete without eligible evidence', async () => {
+  const result = await resolveAthleteRunningReference(
+    { athleteId: 'athlete_1', effectiveDate: '2026-09-01' },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      listActiveByAthleteThroughDate: () => [],
+    },
+  )
+
+  assert.deepEqual(result, { success: true, data: { status: 'unknown' } })
+})
+
+test('does not query evidence when athlete ownership is not resolved', async () => {
+  let queryCalls = 0
+
+  const result = await resolveAthleteRunningReference(
+    { athleteId: 'other_team_athlete', effectiveDate: '2026-09-20' },
+    {
+      resolveOwnedAthlete: async () => null,
+      listActiveByAthleteThroughDate: () => {
+        queryCalls += 1
+        return []
+      },
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(queryCalls, 0)
 })

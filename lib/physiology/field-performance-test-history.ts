@@ -60,3 +60,19 @@ export function invalidateFieldPerformanceTest(
     updatedAt,
   }
 }
+
+
+/**
+ * Returns active evidence for one athlete that is temporally applicable to an
+ * effective date. Ordering matches the canonical history order so callers can
+ * deterministically select the last eligible observation.
+ */
+export function listEligibleFieldPerformanceTestHistory(
+  rows: readonly FieldPerformanceTestRow[],
+  athleteId: string,
+  effectiveDate: string,
+): FieldPerformanceTestRow[] {
+  return listFieldPerformanceTestHistory(rows, athleteId).filter(
+    (row) => row.performedAt <= effectiveDate,
+  )
+}

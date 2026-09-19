@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, eq, lte } from 'drizzle-orm'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import { fieldPerformanceTests } from '@/db/schema'
@@ -11,6 +11,7 @@ export type InsertFieldPerformanceTest = Omit<FieldPerformanceTestRow, 'isDelete
 export interface SqliteFieldPerformanceTestRepository {
   insert(evaluation: InsertFieldPerformanceTest): FieldPerformanceTestRow
   listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
+  listActiveByAthleteThroughDate(athleteId: string, effectiveDate: string): FieldPerformanceTestRow[]
   getById(id: string): FieldPerformanceTestRow | undefined
   invalidate(id: string, updatedAt: string): void
   replace(id: string, replacement: InsertFieldPerformanceTest, updatedAt: string): FieldPerformanceTestRow
@@ -39,6 +40,25 @@ export function createSqliteFieldPerformanceTestRepository(
           and(
             eq(fieldPerformanceTests.athleteId, athleteId),
             eq(fieldPerformanceTests.isDeleted, false),
+          ),
+        )
+        .orderBy(
+          asc(fieldPerformanceTests.performedAt),
+          asc(fieldPerformanceTests.createdAt),
+          asc(fieldPerformanceTests.id),
+        )
+        .all() as FieldPerformanceTestRow[]
+    },
+
+    listActiveByAthleteThroughDate(athleteId, effectiveDate) {
+      return db
+        .select()
+        .from(fieldPerformanceTests)
+        .where(
+          and(
+            eq(fieldPerformanceTests.athleteId, athleteId),
+            eq(fieldPerformanceTests.isDeleted, false),
+            lte(fieldPerformanceTests.performedAt, effectiveDate),
           ),
         )
         .orderBy(
