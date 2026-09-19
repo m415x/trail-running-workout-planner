@@ -80,6 +80,7 @@ For every new story, reconstruct state from durable sources before proposing tas
 5. Reconcile Jira, docs and code. Surface discrepancies instead of silently choosing one source.
 6. Present the real scope, reusable infrastructure, already-delivered work, risks and unresolved decisions before creating tasks.
 7. Do not create tasks or a branch until the human approves that analysis and the proposed task breakdown.
+8. The final task in every proposed story breakdown must be an explicit story-closure task. Define its story-specific closure criteria during decomposition so closure can be executed correctly from a fresh chat without relying on conversation memory.
 
 Use **just-in-time retrieval** after bootstrap. Prefer paths, issue keys, commit/branch refs and short findings over repeatedly loading whole documents or large tool outputs. Re-open the exact source when detail is needed rather than carrying redundant content forward.
 
@@ -97,6 +98,8 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Each implementation task should end with its own focused verification and concise Jira evidence. Reserve aggregate/full gates for story closure unless an earlier full gate is needed to diagnose a cross-cutting failure.
 - Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
 - Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
+- The final approved task is the story-closure task, not a generic documentation task. Its description and acceptance criteria must encode the closure evidence implied by that story: applicable full technical gates, persistence/security verification, manual walkthrough, acceptance-criteria audit, durable documentation/handoff and index reconciliation, known limitations/deferred work, Jira closure evidence, and the integration sequence back to `dev`.
+- Keep the parent story `En curso` while the closure task is being executed. Complete and record the closure task's technical/documentation evidence first; then perform the prescribed final Jira transitions so the closure task does not create a circular requirement that the parent already be closed.
 
 ## Architecture and directory map
 
