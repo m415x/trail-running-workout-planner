@@ -19,6 +19,7 @@ function row(
     athleteId,
     performedAt,
     protocol: '1000m_track',
+    source: 'coach_manual',
     distanceM: 1000,
     elapsedTimeSec,
     notes: null,
