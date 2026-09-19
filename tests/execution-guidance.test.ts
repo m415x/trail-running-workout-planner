@@ -82,3 +82,68 @@ test('does not synthesize quality pace when the running reference is unknown', (
 
   assert.equal(result.quality?.status, 'unknown')
 })
+
+
+test('derives orientative quality pace and speed from the explicit percentage', () => {
+  const result = resolveExecutionGuidance({
+    intensity: {
+      method: 'pam_percentage',
+      pamPercentage: 90,
+    },
+    runningReference: {
+      status: 'available',
+      source: {
+        evaluationId: 'eval_1000m',
+        protocol: '1000m_track',
+        performedAt: '2026-09-17',
+        distanceM: 1000,
+        elapsedTimeSec: 259,
+      },
+      derived: {
+        paceSecPerKm: 259,
+        paceLabel: '4:19/km',
+        averageSpeedKmh: 13.9,
+      },
+    },
+  })
+
+  assert.equal(result.quality?.status, 'available')
+  if (result.quality?.status !== 'available') return
+
+  assert.equal(result.quality.intensityPercentage, 90)
+  assert.equal(result.quality.paceSecPerKm, 288)
+  assert.equal(result.quality.paceLabel, '4:48/km')
+  assert.equal(result.quality.averageSpeedKmh, 12.5)
+})
+
+test('supports coach quality percentages above 100 without treating them as zones', () => {
+  const result = resolveExecutionGuidance({
+    intensity: {
+      method: 'pam_percentage',
+      pamPercentage: 120,
+    },
+    runningReference: {
+      status: 'available',
+      source: {
+        evaluationId: 'eval_1000m',
+        protocol: '1000m_track',
+        performedAt: '2026-09-17',
+        distanceM: 1000,
+        elapsedTimeSec: 259,
+      },
+      derived: {
+        paceSecPerKm: 259,
+        paceLabel: '4:19/km',
+        averageSpeedKmh: 13.9,
+      },
+    },
+  })
+
+  assert.equal(result.zone, null)
+  assert.equal(result.quality?.status, 'available')
+  if (result.quality?.status !== 'available') return
+
+  assert.equal(result.quality.paceSecPerKm, 216)
+  assert.equal(result.quality.paceLabel, '3:36/km')
+  assert.equal(result.quality.averageSpeedKmh, 16.7)
+})
