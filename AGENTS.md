@@ -80,6 +80,7 @@ For every new story, reconstruct state from durable sources before proposing tas
 5. Reconcile Jira, docs and code. Surface discrepancies instead of silently choosing one source.
 6. Present the real scope, reusable infrastructure, already-delivered work, risks and unresolved decisions before creating tasks.
 7. Do not create tasks or a branch until the human approves that analysis and the proposed task breakdown.
+8. The final task in every proposed story breakdown must be an explicit story-closure task. Define its story-specific closure criteria during decomposition so closure can be executed correctly from a fresh chat without relying on conversation memory.
 
 Use **just-in-time retrieval** after bootstrap. Prefer paths, issue keys, commit/branch refs and short findings over repeatedly loading whole documents or large tool outputs. Re-open the exact source when detail is needed rather than carrying redundant content forward.
 
@@ -97,6 +98,8 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Each implementation task should end with its own focused verification and concise Jira evidence. Reserve aggregate/full gates for story closure unless an earlier full gate is needed to diagnose a cross-cutting failure.
 - Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
 - Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
+- The final approved task is the story-closure task, not a generic documentation task. Its description and acceptance criteria must encode the closure evidence implied by that story: applicable full technical gates, persistence/security verification, manual walkthrough, acceptance-criteria audit, durable documentation/handoff and index reconciliation, known limitations/deferred work, Jira closure evidence, and the integration sequence back to `dev`.
+- Keep the parent story `En curso` while the closure task is being executed. Complete and record the closure task's technical/documentation evidence first; then perform the prescribed final Jira transitions so the closure task does not create a circular requirement that the parent already be closed.
 
 ## Architecture and directory map
 
@@ -183,6 +186,43 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
 - Keep Jira synchronized with real evidence. A task requiring environment evidence stays open until that evidence exists.
 - At story/epic closure consolidate durable decisions into architecture/history, remove superseded handoffs, and update README/docs indexes.
+
+### Jira execution state and evidence
+
+Jira status must represent actual execution state, not intended state.
+
+- Before implementation begins on a task/subtask, transition it to **En curso**. Ensure its parent story is also **En curso** while story implementation is active.
+- Never leave actively implemented work in **Por hacer**.
+- Before completing a task, run the focused verification required by its scope and reconcile the result against the original Jira intent.
+- Add a concise task-closing Jira comment recording relevant commits, tests/checks that actually ran and their results, delivered invariants, and material limitations/deferred work.
+- Only after the required task evidence exists, transition the task to **Finalizada**. Never use **Finalizada** as an intention or optimistic state.
+- Keep the parent story **En curso** while any approved implementation task remains incomplete.
+- Before completing a story, require all approved story tasks to be **Finalizada**, run the complete story gate, perform the acceptance-criteria review and applicable manual walkthrough, reconcile durable docs/handoff, and record story-level closure evidence in Jira.
+- Transition the story to **Finalizada** only after those closure requirements are satisfied.
+
+### TDD and compact human-run verification
+
+Use RED/GREEN TDD for new or changed behavior whenever a focused automated test can express the contract economically.
+
+1. Add or modify the smallest focused test that demonstrates the intended behavior.
+2. Run it and establish **RED** for the expected reason before implementing the behavior. An unrelated compile/environment failure is not valid RED evidence.
+3. Implement the smallest coherent production change that satisfies the contract.
+4. Re-run the focused test and establish **GREEN**.
+5. Refactor only while preserving GREEN, then reconcile against task scope.
+6. Record meaningful RED/GREEN evidence in Jira when closing the task; do not claim executions that did not run.
+
+When asking the human to execute focused tests in the local terminal, default to **minimal-output commands** so routine runs do not flood conversational context. Suppress normal stdout/stderr and return only `GREEN` or `RED`, for example:
+
+~~~bash
+git pull -q
+pnpm exec tsx --test tests/field-performance-test-history.test.ts >/dev/null 2>&1 && echo GREEN || echo RED
+~~~
+
+- If the compact result is the expected `RED` during the RED phase, continue without requesting full output unless the failure reason is ambiguous.
+- If a result is unexpected — RED when GREEN is expected, GREEN when RED is expected, or an environment/compile failure is suspected — request or run the narrowest diagnostic command needed to expose failure details.
+- Do not request verbose test output preemptively. Escalate from compact result to detailed diagnostics only when necessary.
+- Compact output is a context-preservation mechanism, not weaker evidence: record the exact command/scope and observed GREEN/RED result, and obtain detailed output whenever correctness cannot be established from the compact result alone.
+- Full-suite/story-gate commands may also suppress routine output when only pass/fail is needed, but failures must be diagnosed before closure and quantitative evidence must not be invented from suppressed output.
 
 ### Tool and retry discipline
 
