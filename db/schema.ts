@@ -245,6 +245,7 @@ export const fieldPerformanceTests = sqliteTable(
 
     performedAt: text('performed_at').notNull(),
     protocol: text('protocol').$type<'1000m_track'>().notNull(),
+    source: text('source').$type<'coach_manual'>().notNull(),
     distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: real('elapsed_time_sec').notNull(),
     notes: text('notes'),
@@ -252,6 +253,7 @@ export const fieldPerformanceTests = sqliteTable(
   (table) => [
     index('field_performance_tests_athlete_date_idx').on(table.athleteId, table.performedAt),
     check('field_performance_tests_protocol_check', sql`${table.protocol} = '1000m_track'`),
+    check('field_performance_tests_source_check', sql`${table.source} = 'coach_manual'`),
     check('field_performance_tests_distance_check', sql`${table.distanceM} = 1000`),
     check('field_performance_tests_elapsed_time_check', sql`${table.elapsedTimeSec} > 0`),
   ],
