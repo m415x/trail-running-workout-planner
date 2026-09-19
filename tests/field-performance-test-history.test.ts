@@ -5,6 +5,7 @@ import {
   appendFieldPerformanceTest,
   invalidateFieldPerformanceTest,
   listFieldPerformanceTestHistory,
+  listEligibleFieldPerformanceTestHistory,
   type FieldPerformanceTestRow,
 } from '@/lib/physiology/field-performance-test-history'
 
@@ -87,4 +88,36 @@ test('correction is represented as invalidation plus a new appended evaluation',
   assert.equal(history[0]?.elapsedTimeSec, 298)
   assert.equal(history[1]?.isDeleted, false)
   assert.equal(history[1]?.elapsedTimeSec, 296.5)
+})
+
+test('eligible history applies the effective-date upper bound after athlete and lifecycle filtering', () => {
+  const rows = [
+    row('other', 'athlete_2', '2026-09-10', 280),
+    row('old', 'athlete_1', '2026-09-01', 305),
+    { ...row('invalid', 'athlete_1', '2026-09-10', 301), isDeleted: true },
+    row('boundary', 'athlete_1', '2026-09-17', 298),
+    row('future', 'athlete_1', '2026-09-18', 290),
+  ]
+
+  assert.deepEqual(
+    listEligibleFieldPerformanceTestHistory(rows, 'athlete_1', '2026-09-17').map(
+      (evaluation) => evaluation.id,
+    ),
+    ['old', 'boundary'],
+  )
+})
+
+test('eligible history preserves deterministic performedAt-createdAt-id ordering', () => {
+  const rows = [
+    { ...row('eval_b', 'athlete_1', '2026-09-17', 300), createdAt: '2026-09-17T13:00:00.000Z' },
+    { ...row('eval_c', 'athlete_1', '2026-09-17', 295), createdAt: '2026-09-17T13:00:00.000Z' },
+    { ...row('eval_a', 'athlete_1', '2026-09-17', 305), createdAt: '2026-09-17T12:00:00.000Z' },
+  ]
+
+  assert.deepEqual(
+    listEligibleFieldPerformanceTestHistory(rows, 'athlete_1', '2026-09-17').map(
+      (evaluation) => evaluation.id,
+    ),
+    ['eval_a', 'eval_b', 'eval_c'],
+  )
 })
