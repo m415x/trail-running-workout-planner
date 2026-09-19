@@ -1,0 +1,2 @@
+ALTER TABLE "field_performance_tests" ADD COLUMN "source" text NOT NULL;--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_source_check" CHECK ("field_performance_tests"."source" in ('coach_manual', 'legacy_migration'));
