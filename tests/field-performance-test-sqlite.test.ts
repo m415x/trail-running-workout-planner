@@ -24,6 +24,7 @@ function createRepository() {
     );
   `)
   sqlite.prepare('INSERT INTO athlete_profiles (id) VALUES (?)').run('athlete_1')
+  sqlite.prepare('INSERT INTO athlete_profiles (id) VALUES (?)').run('athlete_2')
   return createSqliteFieldPerformanceTestRepository(
     drizzle(sqlite, { schema: { athleteProfiles, fieldPerformanceTests } }),
   )
@@ -77,4 +78,26 @@ test('correction is atomic when replacement persistence fails', () => {
   const original = repository.getById('eval_1')
   assert.equal(original?.isDeleted, false)
   assert.equal(original?.updatedAt, '2026-09-17T12:00:00.000Z')
+})
+
+
+test('lists only active athlete evidence eligible at the effective date', () => {
+  const repository = createRepository()
+  const insert = (id: string, athleteId: string, performedAt: string, createdAt: string) =>
+    repository.insert({
+      id, athleteId, performedAt, protocol: '1000m_track', distanceM: 1000,
+      elapsedTimeSec: 300, source: 'coach_manual', notes: null, createdAt, updatedAt: createdAt,
+    })
+
+  insert('old', 'athlete_1', '2026-09-01', '2026-09-01T12:00:00.000Z')
+  insert('boundary_b', 'athlete_1', '2026-09-17', '2026-09-17T13:00:00.000Z')
+  insert('boundary_a', 'athlete_1', '2026-09-17', '2026-09-17T12:00:00.000Z')
+  insert('future', 'athlete_1', '2026-09-18', '2026-09-18T12:00:00.000Z')
+  insert('other', 'athlete_2', '2026-09-10', '2026-09-10T12:00:00.000Z')
+  repository.invalidate('old', '2026-09-19T12:00:00.000Z')
+
+  assert.deepEqual(
+    repository.listActiveByAthleteThroughDate('athlete_1', '2026-09-17').map((row) => row.id),
+    ['boundary_a', 'boundary_b'],
+  )
 })
