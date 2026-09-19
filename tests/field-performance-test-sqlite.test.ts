@@ -19,7 +19,8 @@ function createRepository() {
       performed_at TEXT NOT NULL,
       protocol TEXT NOT NULL CHECK (protocol = '1000m_track'),
       distance_m INTEGER NOT NULL CHECK (distance_m = 1000),
-      elapsed_time_sec REAL NOT NULL CHECK (elapsed_time_sec > 0),      source TEXT NOT NULL CHECK (source = 'coach_manual'), notes TEXT
+      elapsed_time_sec REAL NOT NULL CHECK (elapsed_time_sec > 0),
+      source TEXT NOT NULL CHECK (source = 'coach_manual'), notes TEXT
     );
   `)
   sqlite.prepare('INSERT INTO athlete_profiles (id) VALUES (?)').run('athlete_1')
@@ -42,6 +43,7 @@ test('invalidation preserves observed evidence and excludes it from active histo
   assert.deepEqual(repository.listActiveByAthlete('athlete_1'), [])
   const stored = repository.getById('eval_1')
   assert.equal(stored?.isDeleted, true)
-  assert.equal(stored?.elapsedTimeSec, 298)  assert.equal(stored?.source, 'coach_manual')
+  assert.equal(stored?.elapsedTimeSec, 298)
+  assert.equal(stored?.source, 'coach_manual')
   assert.equal(stored?.updatedAt, '2026-09-19T15:00:00.000Z')
 })
