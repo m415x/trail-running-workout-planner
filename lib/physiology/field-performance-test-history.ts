@@ -1,10 +1,11 @@
-import type { FieldPerformanceTestProtocol } from '@/lib/physiology/field-performance-test'
+import type { FieldPerformanceTestProtocol, FieldPerformanceTestSource } from '@/lib/physiology/field-performance-test'
 
 export interface FieldPerformanceTestRow {
   id: string
   athleteId: string
   performedAt: string
   protocol: FieldPerformanceTestProtocol
+  source: FieldPerformanceTestSource
   distanceM: 1000
   elapsedTimeSec: number
   notes: string | null
