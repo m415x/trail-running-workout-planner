@@ -22,11 +22,13 @@ export type IntensityEmphasis =
   | 'race_specific'
 
 /**
- * Percentage of the athlete's maximal aerobic pace (PAM).
+ * Explicit quality-session intensity percentage used by the coach workflow.
  *
  * Values use the human-readable scale: `90` means 90%, never the decimal
- * factor `0.9`. Athlete-specific pace conversion belongs to the physiology
- * layer and is not stored in group planning.
+ * factor `0.9`. The legacy PAM naming is retained for planning compatibility,
+ * but athlete-specific execution is resolved against the canonical 1000 m
+ * RunningReference. This field does not assert that the test measures a
+ * physiological PAM/MAS value.
  */
 export type PamPercentage = number
 
