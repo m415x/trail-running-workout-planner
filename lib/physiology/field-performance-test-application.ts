@@ -57,8 +57,7 @@ export interface CorrectTrack1000mEvidenceInput {
 interface FieldPerformanceCorrectionDependencies {
   resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
   getById(id: string): FieldPerformanceTestRow | undefined
-  invalidate(id: string, updatedAt: string): void
-  insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  replace(id: string, replacement: InsertFieldPerformanceTest, updatedAt: string): FieldPerformanceTestRow
   newId(): string
   now(): string
 }
@@ -98,8 +97,7 @@ export async function correctTrack1000mEvidence(
       updatedAt: timestamp,
     }
 
-    dependencies.invalidate(original.id, timestamp)
-    const row = dependencies.insert(replacement)
+    const row = dependencies.replace(original.id, replacement, timestamp)
     return { success: true, data: row }
   } catch (error) {
     return {
