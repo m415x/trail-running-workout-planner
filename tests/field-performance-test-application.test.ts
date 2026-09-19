@@ -150,3 +150,43 @@ test('cannot correct evidence owned by another athlete', async () => {
   assert.equal(invalidations, 0)
   assert.equal(inserts, 0)
 })
+
+
+test('invalid replacement leaves the original evidence active and writes nothing', async () => {
+  let invalidations = 0
+  let inserts = 0
+
+  const result = await correctTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      evidenceId: 'old_1',
+      replacement: { performedAt: '2026-02-30', elapsedTimeSec: 0 },
+    },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      getById: id => ({
+        id,
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-24',
+        protocol: '1000m_track',
+        distanceM: 1000,
+        elapsedTimeSec: 215,
+        notes: null,
+        isDeleted: false,
+        createdAt: '2026-09-24T12:00:00.000Z',
+        updatedAt: '2026-09-24T12:00:00.000Z',
+      }),
+      invalidate: () => { invalidations += 1 },
+      insert: evidence => {
+        inserts += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-25T12:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, false)
+  assert.equal(invalidations, 0)
+  assert.equal(inserts, 0)
+})
