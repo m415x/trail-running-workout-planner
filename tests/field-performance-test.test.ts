@@ -18,6 +18,7 @@ test('creates canonical observed evidence for a 1000 m track evaluation', () => 
     athleteId: 'athlete_1',
     performedAt: '2026-09-17',
     protocol: '1000m_track',
+    source: 'coach_manual',
     distanceM: 1000,
     elapsedTimeSec: 300,
     notes: 'Pista 400 m',
