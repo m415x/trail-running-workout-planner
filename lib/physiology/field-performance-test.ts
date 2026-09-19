@@ -5,7 +5,7 @@
  * the observed result is a direct PAM/MAS, VO2max or threshold measurement.
  */
 export type FieldPerformanceTestProtocol = '1000m_track'
-export type FieldPerformanceTestSource = 'coach_manual'
+export type FieldPerformanceTestSource = 'coach_manual' | 'legacy_migration'
 
 export interface Track1000mEvaluationInput {
   athleteId: string
