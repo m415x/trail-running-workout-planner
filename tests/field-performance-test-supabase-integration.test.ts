@@ -26,6 +26,6 @@ test('versioned migration creates field performance evidence and enables RLS', (
   assert.match(sql, /CREATE INDEX "field_performance_tests_athlete_date_idx"/)
   assert.match(sql, /"source" text NOT NULL/)
   assert.match(sql, /field_performance_tests_source_check/)
-  assert.match(sql, /"source" = 'coach_manual'/)
+  assert.match(sql, /"source" in \('coach_manual', 'legacy_migration'\)/)
   assert.match(sql, /ALTER TABLE "field_performance_tests" ENABLE ROW LEVEL SECURITY/)
 })
