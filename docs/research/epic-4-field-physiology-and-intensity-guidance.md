@@ -213,3 +213,92 @@ The app therefore uses conservative language, explicit provenance and coach-vali
 9. Make pace mapping explicit, versioned and coach-validated.
 10. Reuse Training Analytics/projection boundaries for evolution.
 11. Preserve Epic 2/3 invariants and never silently mutate planning from physiology.
+
+
+## Age-predicted heart-rate fallback
+
+Epic 4 also needs a useful heart-rate reference for athletes who do not have reliable measured maximum/resting heart-rate data. Athlete profiles already capture date of birth, so the MVP may derive an **age-predicted HRmax** using the Tanaka equation:
+
+```text
+estimated HRmax = 208 - (0.7 × age)
+```
+
+Tanaka, Monahan and Seals (2001) derived this equation from a meta-analysis covering 18,712 healthy adults and cross-validated it against laboratory-measured HRmax in 514 healthy subjects. The equation is therefore suitable as an explicit population-based estimate, not as an individual measurement.
+
+Source: Tanaka et al., "Age-predicted maximal heart rate revisited", PMID 11153730:
+https://pubmed.ncbi.nlm.nih.gov/11153730/
+
+The individual uncertainty is material. In the HERITAGE Family Study, Tanaka's equation had a standard error of estimate of about 11.4 bpm and the authors concluded that age-based equations do not precisely predict an individual's measured HRmax.
+
+Source: Sarzynski et al., PMID 23913510:
+https://pubmed.ncbi.nlm.nih.gov/23913510/
+
+A study of recreational marathon runners also evaluated measured HRmax against Fox and Tanaka equations, reinforcing that predicted HRmax must remain distinguishable from measured HRmax in endurance-running populations.
+
+Source: Nikolaidis et al., PMID 29599724:
+https://pubmed.ncbi.nlm.nih.gov/29599724/
+
+ACSM materials recognize %HRmax, perceived effort and Talk Test as complementary ways to monitor aerobic intensity. This supports using an age-predicted HRmax as one orientative execution signal rather than making it the sole definition of training intensity.
+
+Source: ACSM, "Tips for Monitoring Aerobic Exercise Intensity":
+https://acsm.org/wp-content/uploads/2025/02/Exercise-intensity-infographic-PDF.pdf
+
+### Product decision
+
+Heart-rate guidance has explicit provenance and precedence:
+
+```text
+reliable measured/known HR evidence
+        ↓ preferred when applicable
+individualized HR reference
+
+otherwise, if date of birth is available
+        ↓
+Tanaka 208 - (0.7 × age)
+        ↓
+age-predicted HRmax
+        ↓
+orientative %HRmax guidance
+```
+
+The application must never present the Tanaka result as measured HRmax.
+
+Date of birth does **not** provide resting HR. Therefore an athlete with only age-predicted HRmax must not silently enter a Karvonen/heart-rate-reserve calculation by inventing a resting-HR default such as 50 bpm. In that case the heart-rate guidance must use a policy explicitly based on %HRmax.
+
+If reliable measured/known HRmax and resting HR are available, a separate explicitly identified policy may use heart-rate reserve/Karvonen. Measured and predicted inputs remain distinguishable in provenance.
+
+Recommended provenance concepts:
+
+```text
+source = measured | age_predicted
+formula = tanaka_2001 | null
+formulaVersion = v1 | null
+effectiveAt = date
+```
+
+Age must be calculated for the relevant effective/session date from the athlete's birth date rather than stored as mutable profile state.
+
+### Revised no-HR invariant
+
+The earlier shorthand "missing HR = do not fabricate HR" is refined to:
+
+> The application never presents estimated heart rate as measured heart rate. When reliable HRmax/resting-HR evidence is unavailable, it may provide orientative heart-rate guidance from an age-predicted HRmax using the explicit Tanaka 2001 formula and provenance. It must not invent resting HR to run a heart-rate-reserve calculation.
+
+This means the existing silent defaults `maxHr=190` and `restHr=50` are not acceptable Epic 4 fallback semantics.
+
+### Relationship to the 1000 m test
+
+The 1000 m test and age-predicted HRmax are independent evidence/reference paths:
+
+```text
+1000 m test ──> running pace/speed reference ─┐
+                                              ├─> execution guidance
+birth date ──> Tanaka estimated HRmax ────────┤
+RPE/Talk Test policy ─────────────────────────┘
+```
+
+The app must not use the 1000 m result to infer HRmax/resting HR, and it must not use Tanaka to reinterpret the observed 1000 m result as a physiological threshold.
+
+### Scope placement
+
+This decision does not expand the 1000 m evidence contract in KAN-376. It belongs to the execution-guidance work in KAN-378. KAN-376 remains responsible for correct field-test evidence; KAN-378 resolves the available execution references and their provenance.
