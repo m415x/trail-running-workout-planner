@@ -35,7 +35,9 @@ test('keeps quality percentage prescription distinct from zone guidance', () => 
   assert.equal(result.policyVersion, INTENSITY_GUIDANCE_POLICY.version)
   assert.equal(result.prescription.method, 'pam_percentage')
   assert.equal(result.prescription.pamPercentage, 90)
-  assert.equal(result.quality?.source.evaluationId, 'eval_1000m')
+  assert.equal(result.quality?.status, 'available')
+  if (result.quality?.status !== 'available') return
+  assert.equal(result.quality.source.evaluationId, 'eval_1000m')
   assert.equal(result.zone, null)
 })
 
