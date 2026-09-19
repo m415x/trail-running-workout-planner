@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import type { PhysiologyRecord } from '@/types/athlete/physiology.types'
-import { promoteLegacy1000mEvidence } from '@/lib/physiology/legacy-field-performance'
+import { planLegacyPhysiologyReconciliation, promoteLegacy1000mEvidence } from '@/lib/physiology/legacy-field-performance'
 
 function legacy(overrides: Partial<PhysiologyRecord> = {}): PhysiologyRecord {
   return {
@@ -71,4 +71,27 @@ test('does not promote explicit 1000m legacy rows with invalid observed facts', 
   assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', pamTimeSec: Number.NaN })), null)
   assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', date: '2026-02-30' })), null)
   assert.equal(promoteLegacy1000mEvidence(legacy({ testType: '1000m_track', athleteId: '   ' })), null)
+})
+
+
+test('reconciliation plan promotes safe evidence without dropping legacy source rows', () => {
+  const explicit = legacy({ id: 'explicit', testType: '1000m_track' })
+  const ambiguous = legacy({ id: 'ambiguous', testType: undefined })
+  const otherProtocol = legacy({ id: 'cooper', testType: 'cooper' })
+  const invalid = legacy({ id: 'invalid', testType: '1000m_track', pamTimeSec: 0 })
+
+  const plan = planLegacyPhysiologyReconciliation([
+    explicit,
+    ambiguous,
+    otherProtocol,
+    invalid,
+  ])
+
+  assert.deepEqual(plan.promoted.map(row => row.id), ['explicit'])
+  assert.deepEqual(plan.retainedLegacy.map(row => row.id), [
+    'explicit',
+    'ambiguous',
+    'cooper',
+    'invalid',
+  ])
 })
