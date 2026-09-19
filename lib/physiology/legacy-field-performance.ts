@@ -23,9 +23,9 @@ export function promoteLegacy1000mEvidence(
       id: record.id,
       ...evidence,
       notes: evidence.notes ?? null,
-      isDeleted: record.isDeleted,
-      createdAt: record.createdAt,
-      updatedAt: record.updatedAt,
+      isDeleted: record.isDeleted ?? false,
+      createdAt: record.createdAt ?? record.date,
+      updatedAt: record.updatedAt ?? record.createdAt ?? record.date,
     }
   } catch {
     return null
