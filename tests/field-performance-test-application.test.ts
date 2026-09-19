@@ -65,9 +65,8 @@ test('rejects an athlete outside the authorized team before persistence', async 
 })
 
 
-test('corrects owned evidence by invalidating the original and appending a replacement', async () => {
-  const invalidated: Array<{ id: string; updatedAt: string }> = []
-  const inserted: InsertFieldPerformanceTest[] = []
+test('corrects owned evidence through the atomic replacement boundary', async () => {
+  const replacements: Array<{ id: string; replacement: InsertFieldPerformanceTest; updatedAt: string }> = []
 
   const result = await correctTrack1000mEvidence(
     {
@@ -95,10 +94,9 @@ test('corrects owned evidence by invalidating the original and appending a repla
             updatedAt: '2026-09-24T12:00:00.000Z',
           }
         : undefined,
-      invalidate: (id, updatedAt) => invalidated.push({ id, updatedAt }),
-      insert: evidence => {
-        inserted.push(evidence)
-        return { ...evidence, isDeleted: false }
+      replace: (id, replacement, updatedAt) => {
+        replacements.push({ id, replacement, updatedAt })
+        return { ...replacement, isDeleted: false }
       },
       newId: () => 'new_1',
       now: () => '2026-09-25T12:00:00.000Z',
@@ -106,10 +104,11 @@ test('corrects owned evidence by invalidating the original and appending a repla
   )
 
   assert.equal(result.success, true)
-  assert.deepEqual(invalidated, [{ id: 'old_1', updatedAt: '2026-09-25T12:00:00.000Z' }])
-  assert.equal(inserted.length, 1)
-  assert.equal(inserted[0]?.id, 'new_1')
-  assert.equal(inserted[0]?.elapsedTimeSec, 214.25)
+  assert.equal(replacements.length, 1)
+  assert.equal(replacements[0]?.id, 'old_1')
+  assert.equal(replacements[0]?.updatedAt, '2026-09-25T12:00:00.000Z')
+  assert.equal(replacements[0]?.replacement.id, 'new_1')
+  assert.equal(replacements[0]?.replacement.elapsedTimeSec, 214.25)
 })
 
 test('cannot correct evidence owned by another athlete', async () => {
