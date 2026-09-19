@@ -13,6 +13,7 @@ export interface SqliteFieldPerformanceTestRepository {
   listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
   getById(id: string): FieldPerformanceTestRow | undefined
   invalidate(id: string, updatedAt: string): void
+  replace(id: string, replacement: InsertFieldPerformanceTest, updatedAt: string): FieldPerformanceTestRow
 }
 
 /** SQLite persistence boundary for append-only 1000 m performance evidence. */
@@ -61,6 +62,23 @@ export function createSqliteFieldPerformanceTestRepository(
         .set({ isDeleted: true, updatedAt })
         .where(eq(fieldPerformanceTests.id, id))
         .run()
+    },
+
+    replace(id, replacement, updatedAt) {
+      return db.transaction((tx) => {
+        tx.update(fieldPerformanceTests)
+          .set({ isDeleted: true, updatedAt })
+          .where(eq(fieldPerformanceTests.id, id))
+          .run()
+
+        const inserted = tx
+          .insert(fieldPerformanceTests)
+          .values({ ...replacement, isDeleted: false })
+          .returning()
+          .get()
+
+        return inserted as FieldPerformanceTestRow
+      })
     },
   }
 }
