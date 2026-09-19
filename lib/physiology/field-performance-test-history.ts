@@ -1,0 +1,61 @@
+import type { FieldPerformanceTestProtocol } from '@/lib/physiology/field-performance-test'
+
+export interface FieldPerformanceTestRow {
+  id: string
+  athleteId: string
+  performedAt: string
+  protocol: FieldPerformanceTestProtocol
+  distanceM: 1000
+  elapsedTimeSec: number
+  notes: string | null
+  isDeleted: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Models append-only history semantics independently from the storage adapter.
+ * Persistence must insert the new evidence row rather than upserting by athlete/date.
+ */
+export function appendFieldPerformanceTest(
+  history: readonly FieldPerformanceTestRow[],
+  evaluation: FieldPerformanceTestRow,
+): FieldPerformanceTestRow[] {
+  return [...history, evaluation]
+}
+
+/**
+ * Returns active evidence for one athlete in chronological order.
+ * Invalidated rows remain durable evidence but are excluded from the default view.
+ */
+export function listFieldPerformanceTestHistory(
+  rows: readonly FieldPerformanceTestRow[],
+  athleteId: string,
+): FieldPerformanceTestRow[] {
+  return rows
+    .filter((row) => row.athleteId === athleteId && !row.isDeleted)
+    .toSorted((left, right) => {
+      const dateOrder = left.performedAt.localeCompare(right.performedAt)
+      if (dateOrder !== 0) return dateOrder
+
+      const createdOrder = left.createdAt.localeCompare(right.createdAt)
+      if (createdOrder !== 0) return createdOrder
+
+      return left.id.localeCompare(right.id)
+    })
+}
+
+/**
+ * Invalidates evidence without mutating or erasing its observed values.
+ * A corrected observation is represented by a separate appended row.
+ */
+export function invalidateFieldPerformanceTest(
+  evaluation: FieldPerformanceTestRow,
+  updatedAt: string,
+): FieldPerformanceTestRow {
+  return {
+    ...evaluation,
+    isDeleted: true,
+    updatedAt,
+  }
+}
