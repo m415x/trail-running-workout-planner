@@ -10,6 +10,9 @@ interface QualityGuidanceAvailable {
   readonly status: 'available'
   readonly intensityPercentage: number
   readonly source: Extract<RunningReference, { status: 'available' }>['source']
+  readonly paceSecPerKm: number
+  readonly paceLabel: string
+  readonly averageSpeedKmh: number
 }
 
 interface QualityGuidanceUnknown {
@@ -37,6 +40,13 @@ export type ExecutionGuidance =
       readonly zone: ZoneGuidance
     }
 
+function formatPace(paceSecPerKm: number): string {
+  const rounded = Math.round(paceSecPerKm)
+  const minutes = Math.floor(rounded / 60)
+  const seconds = rounded % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}/km`
+}
+
 interface ResolveExecutionGuidanceInput {
   readonly intensity: TrainingIntensity
   readonly runningReference: RunningReference
@@ -61,6 +71,18 @@ export function resolveExecutionGuidance({
           status: 'available',
           intensityPercentage: intensity.pamPercentage,
           source: runningReference.source,
+          paceSecPerKm: Math.round(
+            runningReference.derived.paceSecPerKm / (intensity.pamPercentage / 100),
+          ),
+          paceLabel: formatPace(
+            runningReference.derived.paceSecPerKm / (intensity.pamPercentage / 100),
+          ),
+          averageSpeedKmh: Number(
+            (
+              runningReference.derived.averageSpeedKmh *
+              (intensity.pamPercentage / 100)
+            ).toFixed(1),
+          ),
         }
       : {
           status: 'unknown',
