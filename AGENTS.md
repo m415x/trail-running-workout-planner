@@ -184,6 +184,43 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Keep Jira synchronized with real evidence. A task requiring environment evidence stays open until that evidence exists.
 - At story/epic closure consolidate durable decisions into architecture/history, remove superseded handoffs, and update README/docs indexes.
 
+### Jira execution state and evidence
+
+Jira status must represent actual execution state, not intended state.
+
+- Before implementation begins on a task/subtask, transition it to **En curso**. Ensure its parent story is also **En curso** while story implementation is active.
+- Never leave actively implemented work in **Por hacer**.
+- Before completing a task, run the focused verification required by its scope and reconcile the result against the original Jira intent.
+- Add a concise task-closing Jira comment recording relevant commits, tests/checks that actually ran and their results, delivered invariants, and material limitations/deferred work.
+- Only after the required task evidence exists, transition the task to **Finalizada**. Never use **Finalizada** as an intention or optimistic state.
+- Keep the parent story **En curso** while any approved implementation task remains incomplete.
+- Before completing a story, require all approved story tasks to be **Finalizada**, run the complete story gate, perform the acceptance-criteria review and applicable manual walkthrough, reconcile durable docs/handoff, and record story-level closure evidence in Jira.
+- Transition the story to **Finalizada** only after those closure requirements are satisfied.
+
+### TDD and compact human-run verification
+
+Use RED/GREEN TDD for new or changed behavior whenever a focused automated test can express the contract economically.
+
+1. Add or modify the smallest focused test that demonstrates the intended behavior.
+2. Run it and establish **RED** for the expected reason before implementing the behavior. An unrelated compile/environment failure is not valid RED evidence.
+3. Implement the smallest coherent production change that satisfies the contract.
+4. Re-run the focused test and establish **GREEN**.
+5. Refactor only while preserving GREEN, then reconcile against task scope.
+6. Record meaningful RED/GREEN evidence in Jira when closing the task; do not claim executions that did not run.
+
+When asking the human to execute focused tests in the local terminal, default to **minimal-output commands** so routine runs do not flood conversational context. Suppress normal stdout/stderr and return only `GREEN` or `RED`, for example:
+
+~~~bash
+git pull -q
+pnpm exec tsx --test tests/field-performance-test-history.test.ts >/dev/null 2>&1 && echo GREEN || echo RED
+~~~
+
+- If the compact result is the expected `RED` during the RED phase, continue without requesting full output unless the failure reason is ambiguous.
+- If a result is unexpected — RED when GREEN is expected, GREEN when RED is expected, or an environment/compile failure is suspected — request or run the narrowest diagnostic command needed to expose failure details.
+- Do not request verbose test output preemptively. Escalate from compact result to detailed diagnostics only when necessary.
+- Compact output is a context-preservation mechanism, not weaker evidence: record the exact command/scope and observed GREEN/RED result, and obtain detailed output whenever correctness cannot be established from the compact result alone.
+- Full-suite/story-gate commands may also suppress routine output when only pass/fail is needed, but failures must be diagnosed before closure and quantitative evidence must not be invented from suppressed output.
+
 ### Tool and retry discipline
 
 - Prefer the narrowest tool/action that can answer the current question. Do not fetch an entire tree/file when a known path, range, query or focused test is enough.
