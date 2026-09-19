@@ -2,44 +2,65 @@ import { IntensityZone } from '@/types'
 import { HR_ZONES } from '@/lib/constants'
 
 export interface AthleteHeartRateParams {
-  maxHr: number // Frecuencia Cardíaca Máxima (ej: 185 bpm)
-  restHr?: number // Frecuencia Cardíaca Basal / en reposo (ej: 48 bpm)
+  maxHr?: number
+  restHr?: number
+}
+
+function assertValidMaxHr(maxHr: number | undefined): asserts maxHr is number {
+  if (maxHr === undefined || !Number.isFinite(maxHr) || maxHr <= 0) {
+    throw new Error('Maximum heart rate is required')
+  }
 }
 
 /**
- * Calcula la FC objetivo para un porcentaje específico usando la fórmula de Karvonen
- * Si no se proporciona `restHr`, aplica el porcentaje plano sobre `maxHr`.
+ * Calculates a target heart rate with the Karvonen method.
+ * Resting HR is required: this function never substitutes a population default.
  */
 export function calculateKarvonenBpm(
-  intensityPct: number, // Valor entre 0 y 1 (ej: 0.65 para 65%)
+  intensityPct: number,
   maxHr: number,
-  restHr: number = 50,
+  restHr?: number,
 ): number {
-  if (restHr <= 0 || restHr >= maxHr) {
-    return Math.round(maxHr * intensityPct)
+  assertValidMaxHr(maxHr)
+  if (
+    restHr === undefined ||
+    !Number.isFinite(restHr) ||
+    restHr <= 0 ||
+    restHr >= maxHr
+  ) {
+    throw new Error('Resting heart rate is required for Karvonen')
   }
+
   const heartRateReserve = maxHr - restHr
   return Math.round(restHr + heartRateReserve * intensityPct)
 }
 
 /**
- * Parsea el rango de porcentaje de la zona (ej: "60-70%") y devuelve los BPM exactos
+ * Resolves a zone BPM range from explicit HR evidence.
+ * When resting HR is unavailable, uses %HRmax rather than fabricating HRR/Karvonen.
  */
 export function getZoneBpmRange(
   zone: IntensityZone,
-  { maxHr = 190, restHr = 50 }: AthleteHeartRateParams,
+  { maxHr, restHr }: AthleteHeartRateParams,
 ): { minBpm: number; maxBpm: number } {
+  assertValidMaxHr(maxHr)
+
   const zoneInfo = HR_ZONES[zone] ?? HR_ZONES.Z1
   const [minPctStr, maxPctStr] = zoneInfo.pct.replace(/%/g, '').split('-')
-
   const minPct = Number(minPctStr) / 100
   const maxPct = Number(maxPctStr) / 100
-
-  const minBpm = calculateKarvonenBpm(minPct, maxHr, restHr)
-  const maxBpm = calculateKarvonenBpm(maxPct, maxHr, restHr)
+  const hasValidRestHr =
+    restHr !== undefined &&
+    Number.isFinite(restHr) &&
+    restHr > 0 &&
+    restHr < maxHr
 
   return {
-    minBpm,
-    maxBpm,
+    minBpm: hasValidRestHr
+      ? calculateKarvonenBpm(minPct, maxHr, restHr)
+      : Math.round(maxHr * minPct),
+    maxBpm: hasValidRestHr
+      ? calculateKarvonenBpm(maxPct, maxHr, restHr)
+      : Math.round(maxHr * maxPct),
   }
 }
