@@ -72,6 +72,40 @@ The dependency direction is evidence → reference → guidance → history/UI.
 
 A new test may create new evidence and later a new individual reference/guidance version. It must never mutate accepted workout planning or rewrite historical planning snapshots.
 
+## Coach operational intensity model
+
+KAN-378 reconfirmed the coach's current operational model from the training worksheet used in practice. The worksheet separates two execution references rather than mapping the 1000 m result directly to heart-rate zones.
+
+### Quality sessions: explicit percentage of the 1000 m running reference
+
+For quality work, the coach prescribes an explicit intensity percentage against the athlete's 1000 m reference. With a 1000 m result of 4:19 (259 seconds), the worksheet gives these representative targets:
+
+| Intensity | Orientative pace |
+| ---: | ---: |
+| 50% | 8:38/km |
+| 60% | 7:12/km |
+| 70% | 6:10/km |
+| 80% | 5:24/km |
+| 90% | 4:48/km |
+| 100% | 4:19/km |
+| 110% | 3:55/km |
+| 115% | 3:45/km |
+| 120% | 3:36/km |
+
+The operational calculation is based on relative speed; for a fixed 1000 m reference it is equivalent to `targetPaceSecPerKm = referencePaceSecPerKm / intensityFraction`. These percentages are explicit prescription inputs for quality work. They are **not** Z1-Z5 boundaries, and the listed worksheet steps are operational examples rather than a requirement to restrict the domain to only those percentages.
+
+The product may preserve “% PAM” as coach-facing terminology where required by the established workflow, but the underlying canonical source remains the KAN-377 `RunningReference` derived from observed `1000m_track` performance. The system must not claim that the 1000 m observation directly measures physiological PAM/MAS.
+
+### Long/easy sessions: Z1-Z5 execution guidance
+
+For long runs, base work and other zone-prescribed sessions, Z1-Z5 remains the prescription intent. Execution guidance may use a valid heart-rate reference plus RPE and Talk Test. Heart-rate guidance must preserve provenance; an age-predicted HRmax is an estimate, not a measurement, and missing resting HR must not be replaced by a fictitious default merely to run Karvonen/HRR.
+
+RPE and Talk Test remain independently usable when cardiac evidence is unavailable. On slope or technical terrain, effort guidance takes precedence over trying to hold a pace that was derived for a different running context.
+
+### Legacy reconciliation consequence
+
+The existing `ZONE_PAM_PERCENTAGES` / `getZonePaceRangeFromPam(zone, ...)` path conflates these two operational systems by deriving a pace range from Z1-Z5. KAN-378 must not promote that mapping into the new policy. Quality pace guidance is driven by an explicit percentage; Z1-Z5 guidance is resolved independently.
+
 ## Safety boundaries
 
 Epic 4 must preserve these invariants:
