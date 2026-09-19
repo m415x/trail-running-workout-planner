@@ -31,3 +31,25 @@ export function promoteLegacy1000mEvidence(
     return null
   }
 }
+
+
+export interface LegacyPhysiologyReconciliationPlan {
+  readonly promoted: readonly FieldPerformanceTestRow[]
+  readonly retainedLegacy: readonly PhysiologyRecord[]
+}
+
+/**
+ * Builds a non-destructive reconciliation plan. Promotion is additive: source
+ * legacy rows remain available until a separate, explicit retirement decision.
+ */
+export function planLegacyPhysiologyReconciliation(
+  records: readonly PhysiologyRecord[],
+): LegacyPhysiologyReconciliationPlan {
+  return {
+    promoted: records.flatMap(record => {
+      const evidence = promoteLegacy1000mEvidence(record)
+      return evidence ? [evidence] : []
+    }),
+    retainedLegacy: [...records],
+  }
+}
