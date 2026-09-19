@@ -234,6 +234,29 @@ export const physiologyRecords = sqliteTable('physiology_records', {
   notes: text('notes'),
 })
 
+export const fieldPerformanceTests = sqliteTable(
+  'field_performance_tests',
+  {
+    ...baseColumns,
+
+    athleteId: text('athlete_id')
+      .notNull()
+      .references(() => athleteProfiles.id, { onDelete: 'cascade' }),
+
+    performedAt: text('performed_at').notNull(),
+    protocol: text('protocol').$type<'1000m_track'>().notNull(),
+    distanceM: integer('distance_m').notNull(),
+    elapsedTimeSec: real('elapsed_time_sec').notNull(),
+    notes: text('notes'),
+  },
+  (table) => [
+    index('field_performance_tests_athlete_date_idx').on(table.athleteId, table.performedAt),
+    check('field_performance_tests_protocol_check', sql`${table.protocol} = '1000m_track'`),
+    check('field_performance_tests_distance_check', sql`${table.distanceM} = 1000`),
+    check('field_performance_tests_elapsed_time_check', sql`${table.elapsedTimeSec} > 0`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 6. GROUP HISTORY RECORDS (Historial de cambios de grupo)                   */
 /* -------------------------------------------------------------------------- */
