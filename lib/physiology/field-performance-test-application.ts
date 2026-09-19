@@ -4,6 +4,7 @@ import type {
   InsertFieldPerformanceTest,
 } from '@/lib/physiology/field-performance-test-sqlite'
 import type { FieldPerformanceTestRow } from '@/lib/physiology/field-performance-test-history'
+import { resolveRunningReference, type RunningReference } from '@/lib/physiology/running-reference'
 
 interface FieldPerformanceCreateDependencies {
   resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
@@ -104,5 +105,55 @@ export async function correctTrack1000mEvidence(
       success: false,
       error: error instanceof Error ? error.message : 'field_performance_test_correction_failed',
     }
+  }
+}
+
+
+export interface ResolveAthleteRunningReferenceInput {
+  readonly athleteId: string
+  readonly effectiveDate: string
+}
+
+interface RunningReferenceDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  listActiveByAthleteThroughDate(
+    athleteId: string,
+    effectiveDate: string,
+  ): FieldPerformanceTestRow[]
+}
+
+export type ResolveAthleteRunningReferenceResult =
+  | { success: true; data: RunningReference }
+  | { success: false; error: 'athlete_not_found' }
+
+/**
+ * Authorized application boundary for resolving the running reference that
+ * applies to one athlete on an explicit effective date.
+ */
+export async function resolveAthleteRunningReference(
+  input: ResolveAthleteRunningReferenceInput,
+  dependencies: RunningReferenceDependencies,
+): Promise<ResolveAthleteRunningReferenceResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  const rows = dependencies.listActiveByAthleteThroughDate(
+    athlete.id,
+    input.effectiveDate,
+  )
+
+  return {
+    success: true,
+    data: resolveRunningReference({
+      effectiveDate: input.effectiveDate,
+      evidence: rows.map((row) => ({
+        evaluationId: row.id,
+        performedAt: row.performedAt,
+        createdAt: row.createdAt,
+        protocol: row.protocol,
+        distanceM: row.distanceM,
+        elapsedTimeSec: row.elapsedTimeSec,
+      })),
+    }),
   }
 }
