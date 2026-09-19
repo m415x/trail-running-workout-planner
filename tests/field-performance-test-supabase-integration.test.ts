@@ -24,5 +24,8 @@ test('versioned migration creates field performance evidence and enables RLS', (
   assert.match(sql, /CREATE TABLE "field_performance_tests"/)
   assert.match(sql, /FOREIGN KEY \("athlete_id"\) REFERENCES "public"\."athlete_profiles"\("id"\) ON DELETE cascade/)
   assert.match(sql, /CREATE INDEX "field_performance_tests_athlete_date_idx"/)
+  assert.match(sql, /"source" text NOT NULL/)
+  assert.match(sql, /field_performance_tests_source_check/)
+  assert.match(sql, /"source" = 'coach_manual'/)
   assert.match(sql, /ALTER TABLE "field_performance_tests" ENABLE ROW LEVEL SECURITY/)
 })
