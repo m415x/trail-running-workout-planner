@@ -22,8 +22,21 @@ interface QualityGuidanceUnknown {
 
 type QualityGuidance = QualityGuidanceAvailable | QualityGuidanceUnknown
 
+const ZONE_EFFORT_GUIDANCE = {
+  Z1: { rpe: { min: 1, max: 2 }, talkTest: 'comfortable_conversation' },
+  Z2: { rpe: { min: 3, max: 4 }, talkTest: 'full_conversation' },
+  Z3: { rpe: { min: 5, max: 6 }, talkTest: 'short_phrases' },
+  Z4: { rpe: { min: 7, max: 8 }, talkTest: 'few_words' },
+  Z5: { rpe: { min: 9, max: 10 }, talkTest: 'no_conversation' },
+} as const
+
+type Zone = Extract<TrainingIntensity, { method: 'hr_zone' }>['zone']
+
 interface ZoneGuidance {
-  readonly zone: Extract<TrainingIntensity, { method: 'hr_zone' }>['zone']
+  readonly zone: Zone
+  readonly rpe: (typeof ZONE_EFFORT_GUIDANCE)[Zone]['rpe']
+  readonly talkTest: (typeof ZONE_EFFORT_GUIDANCE)[Zone]['talkTest']
+  readonly terrainPriority: 'effort_over_pace'
 }
 
 export type ExecutionGuidance =
@@ -61,7 +74,11 @@ export function resolveExecutionGuidance({
       policyVersion: INTENSITY_GUIDANCE_POLICY.version,
       prescription: intensity,
       quality: null,
-      zone: { zone: intensity.zone },
+      zone: {
+        zone: intensity.zone,
+        ...ZONE_EFFORT_GUIDANCE[intensity.zone],
+        terrainPriority: 'effort_over_pace',
+      },
     }
   }
 
