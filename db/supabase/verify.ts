@@ -7,7 +7,7 @@ const applicationTables = [
   'athlete_groups', 'athlete_profiles', 'competition_entries', 'competition_entry_race_courses',
   'group_history_records', 'group_session_prescriptions', 'group_training_plans',
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
-  'microcycle_intensity_targets', 'physiology_records',
+  'microcycle_intensity_targets', 'physiology_records', 'field_performance_tests',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
   'race_courses', 'race_editions', 'race_events', 'race_registrations',
   'readiness_evaluations', 'readiness_reviews',
