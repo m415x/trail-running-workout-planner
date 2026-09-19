@@ -32,6 +32,7 @@ test('creates canonical 1000m evidence only after athlete ownership is resolved'
     athleteId: 'athlete_1',
     performedAt: '2026-09-24',
     protocol: '1000m_track',
+    source: 'coach_manual',
     distanceM: 1000,
     elapsedTimeSec: 215.5,
     notes: 'control mensual',
