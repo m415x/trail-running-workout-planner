@@ -32,6 +32,6 @@ export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEv
   return correctTrack1000mEvidence(input, {
     ...dependencies,
     getById: repository.getById,
-    invalidate: repository.invalidate,
+    replace: repository.replace,
   })
 }
