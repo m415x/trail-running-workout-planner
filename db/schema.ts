@@ -245,7 +245,7 @@ export const fieldPerformanceTests = sqliteTable(
 
     performedAt: text('performed_at').notNull(),
     protocol: text('protocol').$type<'1000m_track'>().notNull(),
-    source: text('source').$type<'coach_manual'>().notNull(),
+    source: text('source').$type<'coach_manual' | 'legacy_migration'>().notNull(),
     distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: real('elapsed_time_sec').notNull(),
     notes: text('notes'),
