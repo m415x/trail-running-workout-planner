@@ -54,22 +54,25 @@ test('correction is atomic when replacement persistence fails', () => {
   repository.insert({ id: 'eval_1', athleteId: 'athlete_1', performedAt: '2026-09-17', protocol: '1000m_track', distanceM: 1000, elapsedTimeSec: 298, source: 'coach_manual', notes: null, createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z' })
   repository.insert({ id: 'duplicate_id', athleteId: 'athlete_1', performedAt: '2026-09-18', protocol: '1000m_track', distanceM: 1000, elapsedTimeSec: 297, source: 'coach_manual', notes: null, createdAt: '2026-09-18T12:00:00.000Z', updatedAt: '2026-09-18T12:00:00.000Z' })
 
-  assert.throws(() => repository.replace(
-    'eval_1',
-    {
-      id: 'duplicate_id',
-      athleteId: 'athlete_1',
-      performedAt: '2026-09-19',
-      protocol: '1000m_track',
-      distanceM: 1000,
-      elapsedTimeSec: 296,
-      source: 'coach_manual',
-      notes: 'corrected',
-      createdAt: '2026-09-19T12:00:00.000Z',
-      updatedAt: '2026-09-19T12:00:00.000Z',
-    },
-    '2026-09-19T12:00:00.000Z',
-  ))
+  assert.throws(
+    () => repository.replace(
+      'eval_1',
+      {
+        id: 'duplicate_id',
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-19',
+        protocol: '1000m_track',
+        distanceM: 1000,
+        elapsedTimeSec: 296,
+        source: 'coach_manual',
+        notes: 'corrected',
+        createdAt: '2026-09-19T12:00:00.000Z',
+        updatedAt: '2026-09-19T12:00:00.000Z',
+      },
+      '2026-09-19T12:00:00.000Z',
+    ),
+    /UNIQUE constraint failed: field_performance_tests\.id/,
+  )
 
   const original = repository.getById('eval_1')
   assert.equal(original?.isDeleted, false)
