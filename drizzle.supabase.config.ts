@@ -10,6 +10,7 @@ export default defineConfig({
     './db/supabase/readiness-schema.ts',
     './db/supabase/race-catalog-schema.ts',
     './db/supabase/race-registration-schema.ts',
+    './db/supabase/field-performance-test-schema.ts',
   ],
   out: './drizzle/supabase',
   dialect: 'postgresql',
