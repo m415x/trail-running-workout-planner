@@ -31,11 +31,12 @@ Missing heart-rate data remains unknown. No heart-rate value is inferred from el
 
 ## Provenance decision
 
-For the current MVP, the only supported evidence origin is:
+For the current MVP, provenance distinguishes the two evidence origins that already exist:
 
-`source: 'coach_manual'`
+- `source: 'coach_manual'` — the field-test observation was manually registered through the coach application boundary.
+- `source: 'legacy_migration'` — valid observed 1000 m evidence was promoted from an explicit legacy `1000m_track` record during reconciliation.
 
-It means that the field-test observation was manually registered through the coach application boundary.
+This is the minimum truthful provenance contract for the current system, not a generic source framework.
 
 This is deliberately narrow. It does not claim who physically timed the test, which individual user account typed the value, which device was used, or whether a particular sensor produced it. Those facts are not currently captured reliably and must not be invented.
 
