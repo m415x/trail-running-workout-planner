@@ -87,6 +87,7 @@ test('corrects owned evidence through the atomic replacement boundary', async ()
             athleteId: 'athlete_1',
             performedAt: '2026-09-24',
             protocol: '1000m_track',
+            source: 'coach_manual',
             distanceM: 1000,
             elapsedTimeSec: 215,
             notes: null,
@@ -113,8 +114,7 @@ test('corrects owned evidence through the atomic replacement boundary', async ()
 })
 
 test('cannot correct evidence owned by another athlete', async () => {
-  let invalidations = 0
-  let inserts = 0
+  let replacements = 0
 
   const result = await correctTrack1000mEvidence(
     {
@@ -129,6 +129,7 @@ test('cannot correct evidence owned by another athlete', async () => {
         athleteId: 'athlete_2',
         performedAt: '2026-09-24',
         protocol: '1000m_track',
+        source: 'coach_manual',
         distanceM: 1000,
         elapsedTimeSec: 215,
         notes: null,
@@ -136,10 +137,9 @@ test('cannot correct evidence owned by another athlete', async () => {
         createdAt: '2026-09-24T12:00:00.000Z',
         updatedAt: '2026-09-24T12:00:00.000Z',
       }),
-      invalidate: () => { invalidations += 1 },
-      insert: evidence => {
-        inserts += 1
-        return { ...evidence, isDeleted: false }
+      replace: (_id, replacement) => {
+        replacements += 1
+        return { ...replacement, isDeleted: false }
       },
       newId: () => 'must_not_be_used',
       now: () => '2026-09-25T12:00:00.000Z',
@@ -147,14 +147,12 @@ test('cannot correct evidence owned by another athlete', async () => {
   )
 
   assert.deepEqual(result, { success: false, error: 'evidence_not_found' })
-  assert.equal(invalidations, 0)
-  assert.equal(inserts, 0)
+  assert.equal(replacements, 0)
 })
 
 
 test('invalid replacement leaves the original evidence active and writes nothing', async () => {
-  let invalidations = 0
-  let inserts = 0
+  let replacements = 0
 
   const result = await correctTrack1000mEvidence(
     {
@@ -169,6 +167,7 @@ test('invalid replacement leaves the original evidence active and writes nothing
         athleteId: 'athlete_1',
         performedAt: '2026-09-24',
         protocol: '1000m_track',
+        source: 'coach_manual',
         distanceM: 1000,
         elapsedTimeSec: 215,
         notes: null,
@@ -176,10 +175,9 @@ test('invalid replacement leaves the original evidence active and writes nothing
         createdAt: '2026-09-24T12:00:00.000Z',
         updatedAt: '2026-09-24T12:00:00.000Z',
       }),
-      invalidate: () => { invalidations += 1 },
-      insert: evidence => {
-        inserts += 1
-        return { ...evidence, isDeleted: false }
+      replace: (_id, replacement) => {
+        replacements += 1
+        return { ...replacement, isDeleted: false }
       },
       newId: () => 'must_not_be_used',
       now: () => '2026-09-25T12:00:00.000Z',
@@ -187,6 +185,5 @@ test('invalid replacement leaves the original evidence active and writes nothing
   )
 
   assert.equal(result.success, false)
-  assert.equal(invalidations, 0)
-  assert.equal(inserts, 0)
+  assert.equal(replacements, 0)
 })
