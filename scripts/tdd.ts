@@ -13,8 +13,11 @@ if (tests.length === 0) {
 }
 
 function run(command: string, commandArgs: string[]): boolean {
-  const executable = process.platform === 'win32' && command === 'pn' ? 'pn.cmd' : command
-  const result = spawnSync(executable, commandArgs, {
+  const executable = command === 'pn' ? process.execPath : command
+  const executableArgs = command === 'pn'
+    ? [process.env.npm_execpath!, ...commandArgs]
+    : commandArgs
+  const result = spawnSync(executable, executableArgs, {
     shell: false,
     stdio: verbose ? 'inherit' : 'ignore',
   })
