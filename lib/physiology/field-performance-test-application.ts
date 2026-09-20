@@ -111,6 +111,53 @@ export async function createAthleteTrack1000mEvidence(
   )
 }
 
+export interface CreateCoachTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly coachUserId: string
+  readonly performedAt: string
+  readonly elapsedTimeSec: number
+  readonly notes?: string
+  readonly testEventId: string
+}
+
+interface CoachFieldPerformanceCreateDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  resolveEligibleTestEvent(testEventId: string, athleteId: string): Promise<{ id: string } | null>
+  insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  newId(): string
+  now(): string
+}
+
+export async function createCoachTrack1000mEvidence(
+  input: CreateCoachTrack1000mEvidenceInput,
+  dependencies: CoachFieldPerformanceCreateDependencies,
+): Promise<CreateTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  const testEvent = await dependencies.resolveEligibleTestEvent(input.testEventId, athlete.id)
+  if (!testEvent) return { success: false, error: 'test_event_not_found' }
+
+  return createTrack1000mEvidence(
+    {
+      athleteId: athlete.id,
+      performedAt: input.performedAt,
+      elapsedTimeSec: input.elapsedTimeSec,
+      notes: input.notes,
+      testEventId: testEvent.id,
+      executionContext: 'official',
+      recordedBy: 'coach',
+      recordedByUserId: input.coachUserId,
+    },
+    {
+      resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
+      insert: dependencies.insert,
+      newId: dependencies.newId,
+      now: dependencies.now,
+    },
+  )
+}
+
 export interface CorrectTrack1000mEvidenceInput {
   readonly athleteId: string
   readonly evidenceId: string
