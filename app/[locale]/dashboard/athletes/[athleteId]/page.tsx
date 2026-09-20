@@ -52,7 +52,7 @@ function todayInArgentina() {
 }
 
 function CoachTrack1000mPanel({ athleteId, locale, events, pending }: { athleteId: string; locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }> }) {
-  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent><CoachTrack1000mForm athleteId={athleteId} coachUserId='deferred-to-kan-298' locale={locale} events={events} pendingEvidence={pending} /></CardContent></Card>
+  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent><CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} /></CardContent></Card>
 }
 
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
