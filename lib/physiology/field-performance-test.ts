@@ -5,13 +5,19 @@
  * the observed result is a direct PAM/MAS, VO2max or threshold measurement.
  */
 export type FieldPerformanceTestProtocol = '1000m_track'
-export type FieldPerformanceTestSource = 'coach_manual' | 'legacy_migration'
+export type FieldPerformanceTestSource = 'coach_manual' | 'athlete_manual' | 'legacy_migration'
+export type FieldPerformanceTestExecutionContext = 'official' | 'self_directed'
+export type FieldPerformanceTestRecordedBy = 'coach' | 'athlete'
+export type FieldPerformanceTestReviewStatus = 'accepted' | 'pending_review' | 'rejected'
 
 export interface Track1000mEvaluationInput {
   athleteId: string
   performedAt: string
   elapsedTimeSec: number
   notes?: string
+  testEventId?: string
+  executionContext?: FieldPerformanceTestExecutionContext
+  recordedBy?: FieldPerformanceTestRecordedBy
 }
 
 export interface Track1000mEvaluation {
@@ -22,6 +28,11 @@ export interface Track1000mEvaluation {
   distanceM: 1000
   elapsedTimeSec: number
   notes?: string
+  testEventId: string | null
+  executionContext: FieldPerformanceTestExecutionContext
+  recordedBy: FieldPerformanceTestRecordedBy
+  reviewStatus: FieldPerformanceTestReviewStatus
+  isEligible: boolean
 }
 
 export interface Track1000mObservation {
@@ -95,14 +106,37 @@ export function createTrack1000mEvaluation(
   assertIsoCalendarDate(input.performedAt)
   assertPositiveFiniteElapsedTime(input.elapsedTimeSec)
 
+  const executionContext = input.executionContext ?? 'official'
+  const recordedBy = input.recordedBy ?? 'coach'
+
+  if (executionContext === 'official' && !input.testEventId?.trim()) {
+    // Legacy coach registrations predate explicit test events. Preserve that
+    // boundary only when callers have not opted into the new lifecycle fields.
+    if (input.executionContext !== undefined || input.recordedBy !== undefined) {
+      throw new Error('testEventId is required for official evidence')
+    }
+  }
+
+  if (executionContext === 'self_directed' && input.testEventId !== undefined) {
+    throw new Error('self-directed evidence must not reference a testEventId')
+  }
+
+  const reviewStatus: FieldPerformanceTestReviewStatus =
+    executionContext === 'self_directed' ? 'pending_review' : 'accepted'
+
   return {
     athleteId: input.athleteId,
     performedAt: input.performedAt,
     protocol: '1000m_track',
-    source: 'coach_manual',
+    source: recordedBy === 'athlete' ? 'athlete_manual' : 'coach_manual',
     distanceM: 1000,
     elapsedTimeSec: input.elapsedTimeSec,
     ...(input.notes === undefined ? {} : { notes: input.notes }),
+    testEventId: input.testEventId ?? null,
+    executionContext,
+    recordedBy,
+    reviewStatus,
+    isEligible: reviewStatus === 'accepted',
   }
 }
 
