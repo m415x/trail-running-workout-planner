@@ -1,4 +1,5 @@
 import type { Track1000mEvaluationInput } from '@/lib/physiology/field-performance-test'
+import { projectTrack1000mEvolution, type Track1000mEvolution } from '@/lib/analytics/training/track-1000m-evolution'
 import { createTrack1000mEvaluation } from '@/lib/physiology/field-performance-test'
 import type {
   InsertFieldPerformanceTest,
@@ -155,5 +156,40 @@ export async function resolveAthleteRunningReference(
         elapsedTimeSec: row.elapsedTimeSec,
       })),
     }),
+  }
+}
+
+
+export interface ReadAthleteTrack1000mEvolutionInput {
+  readonly athleteId: string
+}
+
+interface Track1000mEvolutionDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
+}
+
+export type ReadAthleteTrack1000mEvolutionResult =
+  | { success: true; data: Track1000mEvolution }
+  | { success: false; error: 'athlete_not_found' }
+
+/**
+ * Authorized read boundary for factual 1000 m test evolution.
+ * Ownership is resolved before evidence is queried, preserving team/athlete
+ * isolation independently from any consuming Coach UI.
+ */
+export async function readAthleteTrack1000mEvolution(
+  input: ReadAthleteTrack1000mEvolutionInput,
+  dependencies: Track1000mEvolutionDependencies,
+): Promise<ReadAthleteTrack1000mEvolutionResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  return {
+    success: true,
+    data: projectTrack1000mEvolution(
+      dependencies.listActiveByAthlete(athlete.id),
+      athlete.id,
+    ),
   }
 }
