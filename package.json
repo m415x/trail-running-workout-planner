@@ -27,7 +27,9 @@
     "db:seed:plan-real": "tsx db/seed-plan-real-comparison-fixtures.ts",
     "db:seed": "pn db:seed:base && pn db:seed:race-catalog && pn db:seed:realized-training && pn db:seed:plan-real",
     "db:generate:sqlite": "drizzle-kit generate --config=drizzle.sqlite.config.ts",
-    "db:migrate:realized-training:sqlite": "tsx scripts/migrate-realized-training-timing-sqlite.ts"
+    "db:migrate:realized-training:sqlite": "tsx scripts/migrate-realized-training-timing-sqlite.ts",
+    "tdd:red": "tsx scripts/tdd.ts --red",
+    "tdd": "tsx scripts/tdd.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
