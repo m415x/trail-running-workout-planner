@@ -1,11 +1,12 @@
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 const redOnly = args[0] === '--red'
 const remaining = redOnly ? args.slice(1) : args
 const verboseIndex = remaining.indexOf('--verbose')
 const verbose = verboseIndex >= 0
-const tests = remaining.filter((arg, index) => index !== verboseIndex)
+const tests = remaining.filter((_, index) => index !== verboseIndex)
 
 if (tests.length === 0) {
   process.stderr.write('Usage: pn tdd[:red] [--verbose] <test-file> [...test-files]\n')
@@ -13,11 +14,7 @@ if (tests.length === 0) {
 }
 
 function run(command: string, commandArgs: string[]): boolean {
-  const executable = command === 'pn' ? process.execPath : command
-  const executableArgs = command === 'pn'
-    ? [require.resolve('pnpm/bin/pnpm.cjs'), ...commandArgs]
-    : commandArgs
-  const result = spawnSync(executable, executableArgs, {
+  const result = spawnSync(command, commandArgs, {
     shell: false,
     stdio: verbose ? 'inherit' : 'ignore',
   })
@@ -34,14 +31,16 @@ if (!run('git', ['pull', '--ff-only', '-q'])) {
   process.exit(1)
 }
 
-const testsGreen = run('pn', ['exec', 'tsx', '--test', ...tests])
+const tsxCli = fileURLToPath(import.meta.resolve('tsx/cli'))
+const testsGreen = run(process.execPath, [tsxCli, '--test', ...tests])
 
 if (redOnly) {
   console.log(testsGreen ? 'GREEN' : 'RED')
   process.exit(testsGreen ? 0 : 1)
 }
 
-if (!testsGreen || !run('pn', ['tsc'])) {
+const tscCli = fileURLToPath(import.meta.resolve('typescript/bin/tsc'))
+if (!testsGreen || !run(process.execPath, [tscCli, '--noEmit'])) {
   console.log('RED')
   process.exit(1)
 }
