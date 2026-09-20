@@ -22,6 +22,11 @@ test('creates canonical observed evidence for a 1000 m track evaluation', () => 
     distanceM: 1000,
     elapsedTimeSec: 300,
     notes: 'Pista 400 m',
+    testEventId: null,
+    executionContext: 'official',
+    recordedBy: 'coach',
+    reviewStatus: 'accepted',
+    isEligible: true,
   })
 })
 
