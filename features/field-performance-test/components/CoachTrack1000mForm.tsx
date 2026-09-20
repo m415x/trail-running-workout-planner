@@ -8,7 +8,7 @@ import { buttonVariants } from '@ui/button'
 type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
 
-export function CoachTrack1000mForm({ athleteId, coachUserId, locale, events, pendingEvidence }: { athleteId: string; coachUserId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[] }) {
+export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[] }) {
   const es = locale === 'es'
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
   const [elapsedTimeSec, setElapsedTimeSec] = useState('')
@@ -18,7 +18,7 @@ export function CoachTrack1000mForm({ athleteId, coachUserId, locale, events, pe
   async function register(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true)
-    const result = await createCoachTrack1000mEvidenceAction({ athleteId, coachUserId, testEventId, elapsedTimeSec: Number(elapsedTimeSec) })
+    const result = await createCoachTrack1000mEvidenceAction({ athleteId, testEventId, elapsedTimeSec: Number(elapsedTimeSec) })
     setBusy(false)
     setMessage(result.success ? (es ? 'Test oficial registrado.' : 'Official test recorded.') : result.error)
   }
