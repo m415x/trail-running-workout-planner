@@ -153,3 +153,16 @@ test('field-test UI does not introduce placeholder coach identity and preserves 
   assert.match(athletePage, /params: Promise<\{ locale: string \}>/)
   assert.match(athletePage, /locale=\{locale\}/)
 })
+
+
+test('Coach field-test workflow reads authorized history, factual evolution and running reference', () => {
+  const actionSource = fs.readFileSync(actionPath, 'utf8')
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+
+  assert.match(actionSource, /getCoachTrack1000mHistoryAction/)
+  assert.match(actionSource, /readAthleteTrack1000mEvolution/)
+  assert.match(actionSource, /resolveAthleteRunningReference/)
+  assert.match(actionSource, /repository\.listActiveByAthlete/)
+  assert.match(coachPage, /getCoachTrack1000mHistoryAction/)
+  assert.match(coachPage, /faster|same|slower/)
+})
