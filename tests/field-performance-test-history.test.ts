@@ -131,7 +131,6 @@ test('eligible history excludes self-directed evidence until coach acceptance an
     executionContext: 'self_directed' as const,
     recordedBy: 'athlete' as const,
     reviewStatus: 'pending_review' as const,
-    isEligible: false,
   }
   const accepted = {
     ...row('self_accepted', 'athlete_1', '2026-09-12', 297),
@@ -140,7 +139,6 @@ test('eligible history excludes self-directed evidence until coach acceptance an
     executionContext: 'self_directed' as const,
     recordedBy: 'athlete' as const,
     reviewStatus: 'accepted' as const,
-    isEligible: true,
   }
 
   const eligible = listEligibleFieldPerformanceTestHistory(
