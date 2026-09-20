@@ -94,3 +94,14 @@ test('field test persistence keeps recorder identity separate from recorder role
     assert.match(schema, /recordedByUserId[\s\S]*references\(\(\) => users\.id/)
   }
 })
+
+
+test('Supabase verifier checks durable recorder user identity column', () => {
+  const verifier = fs.readFileSync('db/supabase/verify.ts', 'utf8')
+
+  const expectedLifecycleColumns = verifier.match(
+    /expectedFieldTestLifecycleColumns\s*=\s*\[([^\]]+)\]/,
+  )?.[1] ?? ''
+
+  assert.match(expectedLifecycleColumns, /recorded_by_user_id/)
+})
