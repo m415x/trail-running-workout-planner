@@ -97,3 +97,13 @@ test('field-test workflows are exposed from Athlete Stats and Coach athlete deta
   assert.match(coachAthlete, /getCoachTrack1000mTestEventsAction/)
   assert.match(coachAthlete, /getCoachPendingTrack1000mEvidenceAction/)
 })
+
+
+test('official field-test registration derives performed date from the selected TestEvent', () => {
+  const source = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(source, /scheduledAt/)
+  assert.match(source, /performedAt/)
+  assert.match(source, /testEventId/)
+  assert.match(source, /executionContext === 'official'/)
+})
