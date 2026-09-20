@@ -171,3 +171,14 @@ test('Coach field-test workflow reads authorized history, factual evolution and 
   assert.match(coachPage, /Más lento/)
   assert.match(coachPage, /Igual/)
 })
+
+
+test('Coach field-test workflow exposes append-only correction from history', () => {
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(coachPage, /historyResult\.data\.history/)
+  assert.match(coachForm, /correctTrack1000mEvidenceAction/)
+  assert.match(coachForm, /evidenceId/)
+  assert.match(coachForm, /replacement/)
+})
