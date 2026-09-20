@@ -54,7 +54,13 @@ function todayInArgentina() {
 function CoachTrack1000mPanel({ athleteId, locale, events, pending, historyResult }: { athleteId: string; locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }>; historyResult: Awaited<ReturnType<typeof getCoachTrack1000mHistoryAction>> }) {
   const es = locale === 'es'
   const evolution = historyResult.success ? historyResult.data.evolution : null
-  const factualTrend = evolution?.trend === 'faster' ? (es ? 'Más rápido' : 'Faster') : evolution?.trend === 'slower' ? (es ? 'Más lento' : 'Slower') : evolution?.trend === 'same' ? (es ? 'Igual' : 'Same') : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
+  const factualTrend = evolution?.comparison.state === 'available'
+    ? evolution.comparison.direction === 'decreasing'
+      ? (es ? 'Más rápido' : 'Faster')
+      : evolution.comparison.direction === 'increasing'
+        ? (es ? 'Más lento' : 'Slower')
+        : (es ? 'Igual' : 'Same')
+    : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
   return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent className='space-y-6'><CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} /><section className='space-y-2'><h3 className='font-medium'>{es ? 'Histórico y referencia' : 'History and reference'}</h3>{historyResult.success ? <><p className='text-sm text-muted-foreground'>{es ? 'Evolución factual' : 'Factual evolution'}: {factualTrend}</p><p className='text-sm text-muted-foreground'>{es ? 'Registros activos' : 'Active records'}: {historyResult.data.history.length}</p></> : <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudo cargar el histórico.' : 'History could not be loaded.'}</p>}</section></CardContent></Card>
 }
 
