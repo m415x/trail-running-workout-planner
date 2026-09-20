@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createCoachTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -442,5 +442,72 @@ test('athlete cannot claim an unavailable official TestEvent', async () => {
   )
 
   assert.deepEqual(result, { success: false, error: 'test_event_not_found' })
+  assert.equal(insertCalls, 0)
+})
+
+
+test('coach records official evidence for an owned athlete with coach recorder provenance', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      coachUserId: 'user_coach_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 297,
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      resolveEligibleTestEvent: async (testEventId, athleteId) =>
+        testEventId === 'event_2026_09' && athleteId === 'athlete_1'
+          ? { id: testEventId }
+          : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'coach_test_1',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.executionContext, 'official')
+  assert.equal(inserted[0]?.testEventId, 'event_2026_09')
+  assert.equal(inserted[0]?.recordedBy, 'coach')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+  assert.equal(inserted[0]?.reviewStatus, 'accepted')
+})
+
+test('coach registration authorizes athlete before resolving TestEvent or persisting', async () => {
+  let eventCalls = 0
+  let insertCalls = 0
+
+  const result = await createCoachTrack1000mEvidence(
+    {
+      athleteId: 'other_team_athlete',
+      coachUserId: 'user_coach_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 297,
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveOwnedAthlete: async () => null,
+      resolveEligibleTestEvent: async () => {
+        eventCalls += 1
+        return { id: 'event_2026_09' }
+      },
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(eventCalls, 0)
   assert.equal(insertCalls, 0)
 })
