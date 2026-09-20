@@ -113,7 +113,7 @@ export async function createAthleteTrack1000mEvidence(
 
 export interface CreateCoachTrack1000mEvidenceInput {
   readonly athleteId: string
-  readonly coachUserId: string
+  readonly coachUserId?: string | null
   readonly performedAt: string
   readonly elapsedTimeSec: number
   readonly notes?: string
@@ -147,7 +147,7 @@ export async function createCoachTrack1000mEvidence(
       testEventId: testEvent.id,
       executionContext: 'official',
       recordedBy: 'coach',
-      recordedByUserId: input.coachUserId,
+      recordedByUserId: input.coachUserId ?? undefined,
     },
     {
       resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
