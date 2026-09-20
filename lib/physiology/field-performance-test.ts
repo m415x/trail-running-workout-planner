@@ -32,7 +32,7 @@ export interface Track1000mEvaluation {
   executionContext: FieldPerformanceTestExecutionContext
   recordedBy: FieldPerformanceTestRecordedBy
   reviewStatus: FieldPerformanceTestReviewStatus
-  isEligible: boolean
+
 }
 
 export interface Track1000mObservation {
@@ -136,8 +136,7 @@ export function createTrack1000mEvaluation(
     executionContext,
     recordedBy,
     reviewStatus,
-    isEligible: reviewStatus === 'accepted',
-  }
+   }
 }
 
 /**
