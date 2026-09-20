@@ -69,3 +69,16 @@ test('coach field-test workflow exposes pending self-directed evidence for an ow
   assert.match(source, /executionContext === 'self_directed'/)
   assert.match(source, /reviewStatus === 'pending_review'/)
 })
+
+
+test('coach field-test workflow exposes eligible official TestEvents for an owned athlete', () => {
+  const source = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(source, /getCoachTrack1000mTestEventsAction/)
+  assert.match(source, /getAthleteById\(athleteId\)/)
+  assert.match(source, /resolveEligibleTrack1000mTestEvents/)
+  assert.match(source, /fieldPerformanceTestEvents\.teamId/)
+  assert.match(source, /fieldPerformanceTestEvents\.groupId/)
+  assert.match(source, /fieldPerformanceTestEvents\.protocol/)
+  assert.match(source, /fieldPerformanceTestEvents\.isDeleted/)
+})
