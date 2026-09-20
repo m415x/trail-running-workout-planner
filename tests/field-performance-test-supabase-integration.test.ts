@@ -71,3 +71,9 @@ test('field test persistence defines a stable team-owned official test event', (
     assert.match(schema, /testEventId[\s\S]*references\(\(\) => fieldPerformanceTestEvents\.id/)
   }
 })
+
+
+test('official field test events require RLS verification', () => {
+  const verifier = fs.readFileSync('db/supabase/verify.ts', 'utf8')
+  assert.match(verifier, /field_performance_test_events/)
+})
