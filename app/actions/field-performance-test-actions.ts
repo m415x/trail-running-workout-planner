@@ -46,6 +46,10 @@ export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEv
 }
 
 
+function testEventPerformedAt(scheduledAt: string) {
+  return scheduledAt.slice(0, 10)
+}
+
 function resolveEligibleTrack1000mTestEvents(athlete: { teamId: string; groupId: string }) {
   return db.query.fieldPerformanceTestEvents.findMany({
     where: and(
@@ -69,7 +73,7 @@ async function resolveEligibleTestEvent(testEventId: string, athleteId: string) 
   })
   const event = events.find((candidate) => candidate.id === testEventId)
 
-  return event ? { id: event.id } : null
+  return event ? { id: event.id, scheduledAt: event.scheduledAt } : null
 }
 
 export async function getCurrentAthleteTrack1000mTestEventsAction() {
@@ -93,16 +97,39 @@ export async function getCurrentAthleteTrack1000mTestEventsAction() {
 }
 
 export async function getCurrentAthleteTrack1000mEvidenceAction(
-  input: Omit<CreateAthleteTrack1000mEvidenceInput, 'athleteId' | 'userId'>,
+  input: Omit<CreateAthleteTrack1000mEvidenceInput, 'athleteId' | 'userId' | 'performedAt'> & {
+    performedAt?: string
+  },
 ) {
   const currentAthlete = await getCurrentAthlete()
   if (!currentAthlete.success || !currentAthlete.data?.athleteProfile) {
     return { success: false as const, error: 'athlete_not_found' as const }
   }
 
+  let performedAt = input.performedAt
+  if (input.executionContext === 'official') {
+    if (!input.testEventId) {
+      return { success: false as const, error: 'official evidence requires testEventId' }
+    }
+
+    const testEvent = await resolveEligibleTestEvent(
+      input.testEventId,
+      currentAthlete.data.athleteProfile.id,
+    )
+    if (!testEvent) {
+      return { success: false as const, error: 'test_event_not_found' as const }
+    }
+    performedAt = testEventPerformedAt(testEvent.scheduledAt)
+  }
+
+  if (!performedAt) {
+    return { success: false as const, error: 'performedAt is required' as const }
+  }
+
   return createAthleteTrack1000mEvidence(
     {
       ...input,
+      performedAt,
       athleteId: currentAthlete.data.athleteProfile.id,
       userId: currentAthlete.data.id,
     },
@@ -121,9 +148,17 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
 }
 
 export async function createCoachTrack1000mEvidenceAction(
-  input: CreateCoachTrack1000mEvidenceInput,
+  input: Omit<CreateCoachTrack1000mEvidenceInput, 'performedAt'>,
 ) {
-  return createCoachTrack1000mEvidence(input, {
+  const testEvent = await resolveEligibleTestEvent(input.testEventId, input.athleteId)
+  if (!testEvent) {
+    return { success: false as const, error: 'test_event_not_found' as const }
+  }
+
+  return createCoachTrack1000mEvidence({
+    ...input,
+    performedAt: testEventPerformedAt(testEvent.scheduledAt),
+  }, {
     ...dependencies,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
