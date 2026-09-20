@@ -126,6 +126,23 @@ export async function createCoachTrack1000mEvidenceAction(
   })
 }
 
+export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string) {
+  const athlete = await getAthleteById(athleteId)
+  if (!athlete) {
+    return { success: false as const, error: 'athlete_not_found' as const }
+  }
+
+  const data = repository
+    .listActiveByAthlete(athlete.id)
+    .filter(
+      (evidence) =>
+        evidence.executionContext === 'self_directed' &&
+        evidence.reviewStatus === 'pending_review',
+    )
+
+  return { success: true as const, data }
+}
+
 export async function reviewCoachTrack1000mEvidenceAction(
   input: ReviewCoachTrack1000mEvidenceInput,
 ) {
