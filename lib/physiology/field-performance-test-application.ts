@@ -4,7 +4,7 @@ import { createTrack1000mEvaluation } from '@/lib/physiology/field-performance-t
 import type {
   InsertFieldPerformanceTest,
 } from '@/lib/physiology/field-performance-test-sqlite'
-import type { FieldPerformanceTestRow } from '@/lib/physiology/field-performance-test-history'
+import { listEligibleFieldPerformanceTestHistory, type FieldPerformanceTestRow } from '@/lib/physiology/field-performance-test-history'
 import { resolveRunningReference, type RunningReference } from '@/lib/physiology/running-reference'
 
 interface FieldPerformanceCreateDependencies {
