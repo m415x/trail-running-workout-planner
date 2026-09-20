@@ -101,3 +101,32 @@ test('lists only active athlete evidence eligible at the effective date', () => 
     ['boundary_a', 'boundary_b'],
   )
 })
+
+
+test('persists official instance and lifecycle dimensions independently', () => {
+  const repository = createRepository()
+
+  const stored = repository.insert({
+    id: 'eval_lifecycle',
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-24',
+    protocol: '1000m_track',
+    distanceM: 1000,
+    elapsedTimeSec: 298,
+    source: 'athlete_manual',
+    testEventId: 'event_2026_09',
+    executionContext: 'official',
+    recordedBy: 'athlete',
+    reviewStatus: 'accepted',
+    isEligible: true,
+    notes: null,
+    createdAt: '2026-09-24T12:00:00.000Z',
+    updatedAt: '2026-09-24T12:00:00.000Z',
+  })
+
+  assert.equal(stored.testEventId, 'event_2026_09')
+  assert.equal(stored.executionContext, 'official')
+  assert.equal(stored.recordedBy, 'athlete')
+  assert.equal(stored.reviewStatus, 'accepted')
+  assert.equal(stored.isEligible, true)
+})
