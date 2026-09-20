@@ -50,7 +50,9 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 - `pn dev` — local development
 - `pn test` — automated suite
 - `pn lint` — ESLint
-- `pn exec tsc --noEmit` — typecheck
+- `pn tsc` — typecheck
+- `pn tdd:red <test-file> [...]` — sync + focused RED-phase test run with compact output
+- `pn tdd <test-file> [...]` — sync + focused tests + `pn tsc` with compact output; add `--verbose` for diagnostics
 - `pn build` — production build
 - `pn db:push` / `pn db:seed` — local SQLite
 - `pn db:generate:supabase` — generate PostgreSQL migration
@@ -181,7 +183,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
 - Current lint baseline is 0 errors / 9 warnings after KAN-290. New warnings are regressions unless explicitly accepted.
-- Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn exec tsc --noEmit`, `pn build`, plus relevant DB verifiers.
+- Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn tsc`, `pn build`, plus relevant DB verifiers.
 - Perform the functional/manual walkthrough at story end unless earlier manual validation is required to continue.
 - For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
 - Keep Jira synchronized with real evidence. A task requiring environment evidence stays open until that evidence exists.
@@ -211,12 +213,14 @@ Use RED/GREEN TDD for new or changed behavior whenever a focused automated test 
 5. Refactor only while preserving GREEN, then reconcile against task scope.
 6. Record meaningful RED/GREEN evidence in Jira when closing the task; do not claim executions that did not run.
 
-When asking the human to execute focused tests in the local terminal, default to **minimal-output commands** so routine runs do not flood conversational context. Suppress normal stdout/stderr and return only `GREEN` or `RED`, for example:
+When asking the human to execute focused tests in the local terminal, use the repository TDD runner by default so routine runs remain portable and do not flood conversational context:
 
 ~~~bash
-git pull -q
-pnpm exec tsx --test tests/field-performance-test-history.test.ts >/dev/null 2>&1 && echo GREEN || echo RED
+pn tdd:red tests/field-performance-test-history.test.ts
+pn tdd tests/field-performance-test-history.test.ts
 ~~~
+
+`pn tdd:red` performs `git pull --ff-only -q` and the supplied focused tests. `pn tdd` performs the same sync/test run and then the canonical `pn tsc` typecheck. Both print only `GREEN` or `RED` by default. Add `--verbose` to either command when diagnostics are required. Keep `pn tsc` as the single typecheck script; do not add duplicate aliases for `tsc --noEmit`.
 
 - If the compact result is the expected `RED` during the RED phase, continue without requesting full output unless the failure reason is ambiguous.
 - If a result is unexpected — RED when GREEN is expected, GREEN when RED is expected, or an environment/compile failure is suspected — request or run the narrowest diagnostic command needed to expose failure details.
