@@ -143,6 +143,25 @@ export function createTrack1000mEvaluation(
 }
 
 /**
+ * Resolves the review lifecycle of pending self-directed evidence without
+ * changing its observed result, execution context, or recording provenance.
+ * Accepted and rejected evidence are terminal in the v1 lifecycle.
+ */
+export function reviewTrack1000mEvaluation(
+  evaluation: Track1000mEvaluation,
+  reviewStatus: Exclude<FieldPerformanceTestReviewStatus, 'pending_review'>,
+): Track1000mEvaluation {
+  if (evaluation.reviewStatus !== 'pending_review') {
+    throw new Error('only pending_review evidence can be reviewed')
+  }
+
+  return {
+    ...evaluation,
+    reviewStatus,
+  }
+}
+
+/**
  * Reproduces presentation-oriented performance values from the observed 1000 m
  * evidence. These values make no physiological claim beyond arithmetic.
  */
