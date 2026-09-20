@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -320,4 +320,64 @@ test('persists recorder user identity through the create application boundary', 
   assert.equal(result.success, true)
   assert.equal(inserted[0]?.recordedBy, 'coach')
   assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+})
+
+
+test('athlete records self-directed evidence as own pending-review submission', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-20',
+      elapsedTimeSec: 302,
+      notes: 'control propio',
+      executionContext: 'self_directed',
+    },
+    {
+      resolveSelfAthlete: async (athleteId, userId) =>
+        athleteId === 'athlete_1' && userId === 'user_athlete_1' ? { id: athleteId } : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'athlete_test_1',
+      now: () => '2026-09-20T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted.length, 1)
+  assert.equal(inserted[0]?.executionContext, 'self_directed')
+  assert.equal(inserted[0]?.recordedBy, 'athlete')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_athlete_1')
+  assert.equal(inserted[0]?.reviewStatus, 'pending_review')
+  assert.equal(inserted[0]?.testEventId, null)
+})
+
+test('athlete registration resolves self subject before persistence', async () => {
+  let insertCalls = 0
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_2',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-20',
+      elapsedTimeSec: 302,
+      executionContext: 'self_directed',
+    },
+    {
+      resolveSelfAthlete: async () => null,
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-20T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(insertCalls, 0)
 })
