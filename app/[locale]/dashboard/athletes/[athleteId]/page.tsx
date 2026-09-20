@@ -7,7 +7,7 @@ import { AthleteRaceRegistrationForm } from '@/features/race-registration/compon
 import { CoachTrack1000mForm } from '@/features/field-performance-test/components/CoachTrack1000mForm'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
-import { getCoachPendingTrack1000mEvidenceAction, getCoachTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
+import { getCoachPendingTrack1000mEvidenceAction, getCoachTrack1000mHistoryAction, getCoachTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
@@ -51,8 +51,11 @@ function todayInArgentina() {
   }).format(new Date())
 }
 
-function CoachTrack1000mPanel({ athleteId, locale, events, pending }: { athleteId: string; locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }> }) {
-  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent><CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} /></CardContent></Card>
+function CoachTrack1000mPanel({ athleteId, locale, events, pending, historyResult }: { athleteId: string; locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }>; historyResult: Awaited<ReturnType<typeof getCoachTrack1000mHistoryAction>> }) {
+  const es = locale === 'es'
+  const evolution = historyResult.success ? historyResult.data.evolution : null
+  const factualTrend = evolution?.trend === 'faster' ? (es ? 'Más rápido' : 'Faster') : evolution?.trend === 'slower' ? (es ? 'Más lento' : 'Slower') : evolution?.trend === 'same' ? (es ? 'Igual' : 'Same') : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
+  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent className='space-y-6'><CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} /><section className='space-y-2'><h3 className='font-medium'>{es ? 'Histórico y referencia' : 'History and reference'}</h3>{historyResult.success ? <><p className='text-sm text-muted-foreground'>{es ? 'Evolución factual' : 'Factual evolution'}: {factualTrend}</p><p className='text-sm text-muted-foreground'>{es ? 'Registros activos' : 'Active records'}: {historyResult.data.history.length}</p></> : <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudo cargar el histórico.' : 'History could not be loaded.'}</p>}</section></CardContent></Card>
 }
 
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
@@ -65,12 +68,13 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const { locale, athleteId } = await params
   const tActions = await getTranslations({ locale, namespace: 'AthleteActions' })
   const today = todayInArgentina()
-  const [athlete, planningResult, goals, testEventsResult, pendingEvidenceResult] = await Promise.all([
+  const [athlete, planningResult, goals, testEventsResult, pendingEvidenceResult, testHistoryResult] = await Promise.all([
     getAthleteById(athleteId),
     getAthletePlanningResolutionOnDate(athleteId, today),
     getTrainingGoalsForAthlete(athleteId),
     getCoachTrack1000mTestEventsAction(athleteId),
     getCoachPendingTrack1000mEvidenceAction(athleteId),
+    getCoachTrack1000mHistoryAction(athleteId, today),
   ])
   if (!athlete) notFound()
 
@@ -105,7 +109,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
-        <CoachTrack1000mPanel athleteId={athleteId} locale={locale} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} />
+        <CoachTrack1000mPanel athleteId={athleteId} locale={locale} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} historyResult={testHistoryResult} />
         <Card><CardHeader><CardTitle>Datos personales</CardTitle></CardHeader><CardContent><dl className='grid gap-5 sm:grid-cols-2'><DetailItem label='DNI' value={athlete.dni} /><DetailItem label='Fecha de nacimiento' value={formatDate(athlete.birthday)} /><DetailItem label='Apodo' value={athlete.nickName} /><div><dt className='text-sm text-muted-foreground'>Grupo</dt><dd className='mt-1'>{groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>Sin grupo</Badge>}</dd></div></dl></CardContent></Card>
         <Card><CardHeader><CardTitle>Contacto</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Teléfono</p><p className='font-medium'>{athlete.phone || 'No informado'}</p></div></div></CardContent></Card>
 
