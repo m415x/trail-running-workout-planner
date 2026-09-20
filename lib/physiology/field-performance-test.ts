@@ -18,6 +18,7 @@ export interface Track1000mEvaluationInput {
   testEventId?: string
   executionContext?: FieldPerformanceTestExecutionContext
   recordedBy?: FieldPerformanceTestRecordedBy
+  recordedByUserId?: string
 }
 
 export interface Track1000mEvaluation {
@@ -31,6 +32,7 @@ export interface Track1000mEvaluation {
   testEventId: string | null
   executionContext: FieldPerformanceTestExecutionContext
   recordedBy: FieldPerformanceTestRecordedBy
+  recordedByUserId: string | null
   reviewStatus: FieldPerformanceTestReviewStatus
 
 }
@@ -135,6 +137,7 @@ export function createTrack1000mEvaluation(
     testEventId: input.testEventId ?? null,
     executionContext,
     recordedBy,
+    recordedByUserId: input.recordedByUserId ?? null,
     reviewStatus,
    }
 }
