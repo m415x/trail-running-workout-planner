@@ -25,8 +25,7 @@ function createRepository() {
       execution_context TEXT CHECK (execution_context IN ('official', 'self_directed')),
       recorded_by TEXT CHECK (recorded_by IN ('coach', 'athlete')),
       review_status TEXT CHECK (review_status IN ('accepted', 'pending_review', 'rejected')),
-      is_eligible INTEGER,
-      notes TEXT
+       notes TEXT
     );
   `)
   sqlite.prepare('INSERT INTO athlete_profiles (id) VALUES (?)').run('athlete_1')
@@ -124,7 +123,6 @@ test('persists official instance and lifecycle dimensions independently', () => 
     executionContext: 'official',
     recordedBy: 'athlete',
     reviewStatus: 'accepted',
-    isEligible: true,
     notes: null,
     createdAt: '2026-09-24T12:00:00.000Z',
     updatedAt: '2026-09-24T12:00:00.000Z',
@@ -134,5 +132,4 @@ test('persists official instance and lifecycle dimensions independently', () => 
   assert.equal(stored.executionContext, 'official')
   assert.equal(stored.recordedBy, 'athlete')
   assert.equal(stored.reviewStatus, 'accepted')
-  assert.equal(stored.isEligible, true)
-})
+ })
