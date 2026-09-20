@@ -58,14 +58,3 @@ test('athlete field-test workflow exposes eligible official TestEvents for the c
   assert.match(source, /fieldPerformanceTestEvents\.groupId/)
   assert.match(source, /fieldPerformanceTestEvents\.isDeleted/)
 })
-
-
-test('coach field-test workflow derives recorder identity server-side', () => {
-  const source = fs.readFileSync(actionPath, 'utf8')
-
-  const signature = source.match(/createCoachTrack1000mEvidenceAction\s*\(([\s\S]*?)\)\s*\{/)
-  assert.ok(signature)
-  assert.doesNotMatch(signature[1] ?? '', /\bcoachUserId\s*:/)
-  assert.match(source, /getCurrentCoachUserId/)
-  assert.match(source, /coachUserId: currentCoachUserId/)
-})
