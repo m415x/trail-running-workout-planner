@@ -22,3 +22,22 @@ test('server action does not mutate legacy physiology or planning snapshots', ()
   assert.doesNotMatch(source, /groupTrainingPlans/)
   assert.doesNotMatch(source, /sessions/)
 })
+
+
+test('server action exposes separate athlete and coach field-test workflows', () => {
+  const source = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(source, /getCurrentAthlete/)
+  assert.match(source, /createAthleteTrack1000mEvidence/)
+  assert.match(source, /createCoachTrack1000mEvidence/)
+  assert.match(source, /reviewCoachTrack1000mEvidence/)
+  assert.match(source, /repository\.review/)
+})
+
+test('athlete field-test action derives subject identity server-side', () => {
+  const source = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(source, /getCurrentAthleteTrack1000mEvidenceAction/)
+  assert.match(source, /getCurrentAthlete\(\)/)
+  assert.doesNotMatch(source, /getCurrentAthleteTrack1000mEvidenceAction\s*\([^)]*userId/)
+})
