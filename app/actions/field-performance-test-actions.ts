@@ -71,14 +71,15 @@ export async function getCurrentAthleteTrack1000mTestEventsAction() {
   }
 
   const athlete = currentAthlete.data.athleteProfile
-  if (!athlete.groupId) {
+  const groupId = athlete.groupId
+  if (!groupId) {
     return { success: true as const, data: [] }
   }
 
   const data = await db.query.fieldPerformanceTestEvents.findMany({
     where: and(
-      eq(fieldPerformanceTestEvents.teamId, currentAthlete.data.athleteProfile.teamId),
-      eq(fieldPerformanceTestEvents.groupId, currentAthlete.data.athleteProfile.groupId),
+      eq(fieldPerformanceTestEvents.teamId, athlete.teamId),
+      eq(fieldPerformanceTestEvents.groupId, groupId),
       eq(fieldPerformanceTestEvents.protocol, '1000m_track'),
       eq(fieldPerformanceTestEvents.isDeleted, false),
     ),
