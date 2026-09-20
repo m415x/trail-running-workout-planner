@@ -91,9 +91,9 @@ test('field-test workflows are exposed from Athlete Stats and Coach athlete deta
   const athleteStats = fs.readFileSync(athleteStatsPath, 'utf8')
   const coachAthlete = fs.readFileSync(coachAthletePath, 'utf8')
 
-  assert.match(athleteStats, /Track1000m/)
+  assert.match(athleteStats, /AthleteTrack1000m/)
   assert.match(athleteStats, /getCurrentAthleteTrack1000mTestEventsAction/)
-  assert.match(coachAthlete, /Track1000m/)
+  assert.match(coachAthlete, /CoachTrack1000m/)
   assert.match(coachAthlete, /getCoachTrack1000mTestEventsAction/)
   assert.match(coachAthlete, /getCoachPendingTrack1000mEvidenceAction/)
 })
