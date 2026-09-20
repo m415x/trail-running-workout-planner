@@ -162,3 +162,41 @@ test('persists durable recorder user identity independently from recorder role',
   assert.equal(stored.recordedBy, 'athlete')
   assert.equal(stored.recordedByUserId, 'user_athlete_1')
 })
+
+
+test('persists review lifecycle transition without changing observed evidence or provenance', () => {
+  const repository = createRepository()
+  repository.insert({
+    id: 'eval_pending_review',
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    protocol: '1000m_track',
+    distanceM: 1000,
+    elapsedTimeSec: 301,
+    source: 'athlete_manual',
+    testEventId: null,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+    recordedByUserId: 'user_athlete_1',
+    reviewStatus: 'pending_review',
+    notes: 'self directed',
+    createdAt: '2026-09-19T12:00:00.000Z',
+    updatedAt: '2026-09-19T12:00:00.000Z',
+  })
+
+  const reviewed = repository.review(
+    'eval_pending_review',
+    'accepted',
+    '2026-09-20T15:00:00.000Z',
+  )
+
+  assert.equal(reviewed.reviewStatus, 'accepted')
+  assert.equal(reviewed.updatedAt, '2026-09-20T15:00:00.000Z')
+  assert.equal(reviewed.elapsedTimeSec, 301)
+  assert.equal(reviewed.source, 'athlete_manual')
+  assert.equal(reviewed.executionContext, 'self_directed')
+  assert.equal(reviewed.testEventId, null)
+  assert.equal(reviewed.recordedBy, 'athlete')
+  assert.equal(reviewed.recordedByUserId, 'user_athlete_1')
+  assert.equal(reviewed.notes, 'self directed')
+})
