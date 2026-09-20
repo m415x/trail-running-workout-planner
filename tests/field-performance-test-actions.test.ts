@@ -111,21 +111,23 @@ test('official field-test registration derives performed date from the selected 
 
 test('Athlete field-test entry point supports official and self-directed registration', () => {
   const source = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+  const athleteForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
 
   assert.match(source, /AthleteTrack1000mForm/)
-  assert.match(source, /getCurrentAthleteTrack1000mEvidenceAction/)
-  assert.match(source, /self_directed/)
-  assert.match(source, /official/)
+  assert.match(athleteForm, /getCurrentAthleteTrack1000mEvidenceAction/)
+  assert.match(athleteForm, /self_directed/)
+  assert.match(athleteForm, /official/)
 })
 
 test('Coach field-test entry point supports official registration and pending review decisions', () => {
   const source = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
 
   assert.match(source, /CoachTrack1000mForm/)
-  assert.match(source, /createCoachTrack1000mEvidenceAction/)
-  assert.match(source, /reviewCoachTrack1000mEvidenceAction/)
-  assert.match(source, /accepted/)
-  assert.match(source, /rejected/)
+  assert.match(coachForm, /createCoachTrack1000mEvidenceAction/)
+  assert.match(coachForm, /reviewCoachTrack1000mEvidenceAction/)
+  assert.match(coachForm, /accepted/)
+  assert.match(coachForm, /rejected/)
 })
 
 
