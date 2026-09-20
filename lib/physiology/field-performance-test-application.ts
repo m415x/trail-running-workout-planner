@@ -63,6 +63,7 @@ export interface CreateAthleteTrack1000mEvidenceInput {
 
 interface AthleteFieldPerformanceCreateDependencies {
   resolveSelfAthlete(athleteId: string, userId: string): Promise<{ id: string } | null>
+  resolveEligibleTestEvent?(testEventId: string, athleteId: string): Promise<{ id: string } | null>
   insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
   newId(): string
   now(): string
@@ -78,6 +79,17 @@ export async function createAthleteTrack1000mEvidence(
 ): Promise<CreateTrack1000mEvidenceResult> {
   const athlete = await dependencies.resolveSelfAthlete(input.athleteId, input.userId)
   if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  if (input.executionContext === 'official') {
+    if (!input.testEventId) {
+      return { success: false, error: 'official evidence requires testEventId' }
+    }
+
+    const testEvent = dependencies.resolveEligibleTestEvent
+      ? await dependencies.resolveEligibleTestEvent(input.testEventId, athlete.id)
+      : null
+    if (!testEvent) return { success: false, error: 'test_event_not_found' }
+  }
 
   return createTrack1000mEvidence(
     {
