@@ -83,3 +83,17 @@ test('coach field-test workflow exposes eligible official TestEvents for an owne
   assert.match(source, /fieldPerformanceTestEvents\.protocol/)
   assert.match(source, /fieldPerformanceTestEvents\.isDeleted/)
 })
+
+
+test('field-test workflows are exposed from Athlete Stats and Coach athlete detail entry points', () => {
+  const athleteStatsPath = path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx')
+  const coachAthletePath = path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx')
+  const athleteStats = fs.readFileSync(athleteStatsPath, 'utf8')
+  const coachAthlete = fs.readFileSync(coachAthletePath, 'utf8')
+
+  assert.match(athleteStats, /Track1000m/)
+  assert.match(athleteStats, /getCurrentAthleteTrack1000mTestEventsAction/)
+  assert.match(coachAthlete, /Track1000m/)
+  assert.match(coachAthlete, /getCoachTrack1000mTestEventsAction/)
+  assert.match(coachAthlete, /getCoachPendingTrack1000mEvidenceAction/)
+})
