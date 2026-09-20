@@ -1,8 +1,24 @@
 import { sql } from 'drizzle-orm'
 import { check, doublePrecision, index, integer, pgTable, text } from 'drizzle-orm/pg-core'
 
-import { athleteProfiles, baseColumns } from '@/db/supabase/schema'
+import { athleteGroups, athleteProfiles, baseColumns, teams, users } from '@/db/supabase/schema'
 import type { FieldPerformanceTestProtocol, FieldPerformanceTestSource } from '@/lib/physiology/field-performance-test'
+
+export const fieldPerformanceTestEvents = pgTable(
+  'field_performance_test_events',
+  {
+    ...baseColumns,
+    teamId: text('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    scheduledAt: text('scheduled_at').notNull(),
+    protocol: text('protocol').$type<FieldPerformanceTestProtocol>().notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (table) => [
+    index('field_performance_test_events_team_group_date_idx').on(table.teamId, table.groupId, table.scheduledAt),
+    check('field_performance_test_events_protocol_check', sql`${table.protocol} = '1000m_track'`),
+  ],
+)
 
 /** PostgreSQL parity for append-only observed field-performance evidence. */
 export const fieldPerformanceTests = pgTable(
@@ -15,7 +31,7 @@ export const fieldPerformanceTests = pgTable(
     performedAt: text('performed_at').notNull(),
     protocol: text('protocol').$type<FieldPerformanceTestProtocol>().notNull(),
     source: text('source').$type<FieldPerformanceTestSource>().notNull(),
-    testEventId: text('test_event_id'),
+    testEventId: text('test_event_id').references(() => fieldPerformanceTestEvents.id, { onDelete: 'restrict' }),
     executionContext: text('execution_context').$type<'official' | 'self_directed'>(),
     recordedBy: text('recorded_by').$type<'coach' | 'athlete'>(),
     reviewStatus: text('review_status').$type<'accepted' | 'pending_review' | 'rejected'>(),
