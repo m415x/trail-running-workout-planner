@@ -84,3 +84,13 @@ test('official field test event migration enables RLS', () => {
   const sql = migrations.map((name) => fs.readFileSync(`drizzle/supabase/${name}`, 'utf8')).join('\n')
   assert.match(sql, /ALTER TABLE "field_performance_test_events" ENABLE ROW LEVEL SECURITY/)
 })
+
+
+test('field test persistence keeps recorder identity separate from recorder role', () => {
+  const sqliteSchema = fs.readFileSync('db/schema.ts', 'utf8')
+  const supabaseSchema = fs.readFileSync('db/supabase/field-performance-test-schema.ts', 'utf8')
+  for (const schema of [sqliteSchema, supabaseSchema]) {
+    assert.match(schema, /recordedByUserId:\s*text\('recorded_by_user_id'\)/)
+    assert.match(schema, /recordedByUserId[\s\S]*references\(\(\) => users\.id/)
+  }
+})
