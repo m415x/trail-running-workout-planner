@@ -64,6 +64,29 @@ function resolveEligibleTestEvent(testEventId: string, athleteId: string) {
   return event ? { id: event.id } : null
 }
 
+export async function getCurrentAthleteTrack1000mTestEventsAction() {
+  const currentAthlete = await getCurrentAthlete()
+  if (!currentAthlete.success || !currentAthlete.data?.athleteProfile) {
+    return { success: false as const, error: 'athlete_not_found' as const }
+  }
+
+  const athlete = currentAthlete.data.athleteProfile
+  if (!athlete.groupId) {
+    return { success: true as const, data: [] }
+  }
+
+  const data = await db.query.fieldPerformanceTestEvents.findMany({
+    where: and(
+      eq(fieldPerformanceTestEvents.teamId, currentAthlete.data.athleteProfile.teamId),
+      eq(fieldPerformanceTestEvents.groupId, currentAthlete.data.athleteProfile.groupId),
+      eq(fieldPerformanceTestEvents.protocol, '1000m_track'),
+      eq(fieldPerformanceTestEvents.isDeleted, false),
+    ),
+  })
+
+  return { success: true as const, data }
+}
+
 export async function getCurrentAthleteTrack1000mEvidenceAction(
   input: Omit<CreateAthleteTrack1000mEvidenceInput, 'athleteId' | 'userId'>,
 ) {
