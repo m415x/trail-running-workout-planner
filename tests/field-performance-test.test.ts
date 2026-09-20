@@ -207,3 +207,33 @@ test('review lifecycle refuses terminal evidence transitions', () => {
   assert.throws(() => reviewTrack1000mEvaluation(accepted, 'rejected'), /pending_review/)
   assert.throws(() => reviewTrack1000mEvaluation(rejected, 'accepted'), /pending_review/)
 })
+
+
+test('recorder identity opts legacy callers into the explicit lifecycle contract', () => {
+  assert.throws(
+    () =>
+      createTrack1000mEvaluation({
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-24',
+        elapsedTimeSec: 298,
+        recordedByUserId: 'user_coach_1',
+      }),
+    /testEventId/,
+  )
+})
+
+test('rejects blank recorder identity instead of persisting ambiguous provenance', () => {
+  assert.throws(
+    () =>
+      createTrack1000mEvaluation({
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-24',
+        elapsedTimeSec: 298,
+        testEventId: 'event_2026_09',
+        executionContext: 'official',
+        recordedBy: 'coach',
+        recordedByUserId: '   ',
+      }),
+    /recordedByUserId/,
+  )
+})
