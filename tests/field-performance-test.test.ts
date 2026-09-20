@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   createTrack1000mEvaluation,
   deriveTrack1000mPerformance,
+  reviewTrack1000mEvaluation,
 } from '@/lib/physiology/field-performance-test'
 
 test('creates canonical observed evidence for a 1000 m track evaluation', () => {
@@ -165,4 +166,44 @@ test('preserves durable recorder identity independently from execution context a
 
   assert.equal(evaluation.recordedBy, 'coach')
   assert.equal(evaluation.recordedByUserId, 'user_coach_1')
+})
+
+
+test('review lifecycle accepts or rejects pending self-directed evidence without changing provenance', () => {
+  const pending = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+    recordedByUserId: 'user_athlete_1',
+  })
+
+  for (const reviewStatus of ['accepted', 'rejected'] as const) {
+    const reviewed = reviewTrack1000mEvaluation(pending, reviewStatus)
+
+    assert.equal(reviewed.reviewStatus, reviewStatus)
+    assert.equal(reviewed.executionContext, 'self_directed')
+    assert.equal(reviewed.testEventId, null)
+    assert.equal(reviewed.source, 'athlete_manual')
+    assert.equal(reviewed.recordedBy, 'athlete')
+    assert.equal(reviewed.recordedByUserId, 'user_athlete_1')
+    assert.equal(reviewed.elapsedTimeSec, 301)
+  }
+})
+
+test('review lifecycle refuses terminal evidence transitions', () => {
+  const pending = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+  })
+
+  const accepted = reviewTrack1000mEvaluation(pending, 'accepted')
+  const rejected = reviewTrack1000mEvaluation(pending, 'rejected')
+
+  assert.throws(() => reviewTrack1000mEvaluation(accepted, 'rejected'), /pending_review/)
+  assert.throws(() => reviewTrack1000mEvaluation(rejected, 'accepted'), /pending_review/)
 })
