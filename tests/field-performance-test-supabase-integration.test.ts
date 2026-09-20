@@ -26,6 +26,20 @@ test('versioned migration creates field performance evidence and enables RLS', (
   assert.match(sql, /CREATE INDEX "field_performance_tests_athlete_date_idx"/)
   assert.match(sql, /"source" text NOT NULL/)
   assert.match(sql, /field_performance_tests_source_check/)
-  assert.match(sql, /"source" in \('coach_manual', 'legacy_migration'\)/)
+  assert.match(sql, /"source" in \('coach_manual', 'athlete_manual', 'legacy_migration'\)/)
   assert.match(sql, /ALTER TABLE "field_performance_tests" ENABLE ROW LEVEL SECURITY/)
+})
+
+
+test('lifecycle migration preserves provenance and review dimensions without fabricating legacy values', () => {
+  const sql = fs.readFileSync('drizzle/supabase/0019_supreme_maddog.sql', 'utf8')
+
+  assert.match(sql, /ADD COLUMN "test_event_id" text/)
+  assert.match(sql, /ADD COLUMN "execution_context" text/)
+  assert.match(sql, /ADD COLUMN "recorded_by" text/)
+  assert.match(sql, /ADD COLUMN "review_status" text/)
+  assert.match(sql, /execution_context.+official.+self_directed/)
+  assert.match(sql, /review_status.+accepted.+pending_review.+rejected/)
+  assert.doesNotMatch(sql, /UPDATE "field_performance_tests"/)
+  assert.doesNotMatch(sql, /ADD COLUMN "is_eligible"/)
 })
