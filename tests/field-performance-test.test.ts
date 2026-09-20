@@ -149,3 +149,19 @@ test('self-directed evidence remains self-directed while awaiting coach review',
   assert.equal(evaluation.reviewStatus, 'pending_review')
   assert.equal(evaluation.reviewStatus, 'pending_review')
 })
+
+
+test('preserves durable recorder identity independently from execution context and recorder role', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-24',
+    elapsedTimeSec: 298,
+    testEventId: 'event_2026_09',
+    executionContext: 'official',
+    recordedBy: 'coach',
+    recordedByUserId: 'user_coach_1',
+  })
+
+  assert.equal(evaluation.recordedBy, 'coach')
+  assert.equal(evaluation.recordedByUserId, 'user_coach_1')
+})
