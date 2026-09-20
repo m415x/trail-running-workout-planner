@@ -218,6 +218,52 @@ export async function correctTrack1000mEvidence(
 }
 
 
+export interface ReviewCoachTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly evidenceId: string
+  readonly reviewStatus: 'accepted' | 'rejected'
+}
+
+interface CoachFieldPerformanceReviewDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  getById(id: string): FieldPerformanceTestRow | undefined
+  review(
+    id: string,
+    reviewStatus: 'accepted' | 'rejected',
+    updatedAt: string,
+  ): FieldPerformanceTestRow
+  now(): string
+}
+
+export type ReviewCoachTrack1000mEvidenceResult =
+  | { success: true; data: FieldPerformanceTestRow }
+  | { success: false; error: 'athlete_not_found' | 'evidence_not_found' | string }
+
+export async function reviewCoachTrack1000mEvidence(
+  input: ReviewCoachTrack1000mEvidenceInput,
+  dependencies: CoachFieldPerformanceReviewDependencies,
+): Promise<ReviewCoachTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  const evidence = dependencies.getById(input.evidenceId)
+  if (!evidence || evidence.isDeleted || evidence.athleteId !== athlete.id) {
+    return { success: false, error: 'evidence_not_found' }
+  }
+
+  try {
+    return {
+      success: true,
+      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now()),
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'field_performance_test_review_failed',
+    }
+  }
+}
+
 export interface ResolveAthleteRunningReferenceInput {
   readonly athleteId: string
   readonly effectiveDate: string
