@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { getCurrentAthleteStatsAction } from '@/app/actions/athlete-stats-actions'
 import { getCurrentAthleteTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
 import { Link } from '@/i18n/routing'
+import { AthleteTrack1000mForm } from '@/features/field-performance-test/components/AthleteTrack1000mForm'
 import type { AthleteStatsDetails, AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 import { athleteStatsSummaryPeriod } from '@/lib/athlete-stats/athlete-stats-summary-period'
 import { buildAthleteStatsSummaryView } from '@/lib/athlete-stats/athlete-stats-summary-view'
@@ -13,7 +14,7 @@ function DomainLink({ href, children }: { href: '/stats/training' | '/stats/load
 }
 
 function AthleteTrack1000mPanel({ events }: { events: Array<{ id: string; scheduledAt: string }> }) {
-  return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'><h2 className='font-heading text-lg font-bold'>Test 1000 m</h2><p className='mt-1 text-sm text-muted-foreground'>Registrá un test oficial programado o un intento autogestionado.</p>{events.length === 0 ? <p className='mt-4 rounded-xl border border-dashed p-3 text-sm text-muted-foreground'>No hay tests oficiales disponibles.</p> : <div className='mt-4 space-y-2'>{events.map(event => <div key={event.id} className='rounded-xl bg-muted/50 p-3 text-sm'><span className='font-medium'>Test oficial</span><span className='ml-2 text-muted-foreground'>{event.scheduledAt.slice(0, 10)}</span></div>)}</div>}</article>
+  return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'><h2 className='font-heading text-lg font-bold'>Test 1000 m</h2><p className='mt-1 text-sm text-muted-foreground'>Registrá un test oficial programado o un intento autogestionado.</p><AthleteTrack1000mForm locale='es' events={events} /></article>
 }
 
 function isSummary(data: AthleteStatsSummary | AthleteStatsDetails): data is AthleteStatsSummary {
