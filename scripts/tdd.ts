@@ -15,7 +15,7 @@ if (tests.length === 0) {
 function run(command: string, commandArgs: string[]): boolean {
   const executable = command === 'pn' ? process.execPath : command
   const executableArgs = command === 'pn'
-    ? [process.env.npm_execpath!, ...commandArgs]
+    ? [require.resolve('pnpm/bin/pnpm.cjs'), ...commandArgs]
     : commandArgs
   const result = spawnSync(executable, executableArgs, {
     shell: false,
