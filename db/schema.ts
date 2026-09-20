@@ -234,6 +234,22 @@ export const physiologyRecords = sqliteTable('physiology_records', {
   notes: text('notes'),
 })
 
+export const fieldPerformanceTestEvents = sqliteTable(
+  'field_performance_test_events',
+  {
+    ...baseColumns,
+    teamId: text('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'restrict' }),
+    scheduledAt: text('scheduled_at').notNull(),
+    protocol: text('protocol').$type<'1000m_track'>().notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+  },
+  (table) => [
+    index('field_performance_test_events_team_group_date_idx').on(table.teamId, table.groupId, table.scheduledAt),
+    check('field_performance_test_events_protocol_check', sql`${table.protocol} = '1000m_track'`),
+  ],
+)
+
 export const fieldPerformanceTests = sqliteTable(
   'field_performance_tests',
   {
@@ -246,7 +262,7 @@ export const fieldPerformanceTests = sqliteTable(
     performedAt: text('performed_at').notNull(),
     protocol: text('protocol').$type<'1000m_track'>().notNull(),
     source: text('source').$type<'coach_manual' | 'athlete_manual' | 'legacy_migration'>().notNull(),
-    testEventId: text('test_event_id'),
+    testEventId: text('test_event_id').references(() => fieldPerformanceTestEvents.id, { onDelete: 'restrict' }),
     executionContext: text('execution_context').$type<'official' | 'self_directed'>(),
     recordedBy: text('recorded_by').$type<'coach' | 'athlete'>(),
     reviewStatus: text('review_status').$type<'accepted' | 'pending_review' | 'rejected'>(),
