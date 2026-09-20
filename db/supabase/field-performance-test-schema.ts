@@ -34,6 +34,7 @@ export const fieldPerformanceTests = pgTable(
     testEventId: text('test_event_id').references(() => fieldPerformanceTestEvents.id, { onDelete: 'restrict' }),
     executionContext: text('execution_context').$type<'official' | 'self_directed'>(),
     recordedBy: text('recorded_by').$type<'coach' | 'athlete'>(),
+    recordedByUserId: text('recorded_by_user_id').references(() => users.id, { onDelete: 'set null' }),
     reviewStatus: text('review_status').$type<'accepted' | 'pending_review' | 'rejected'>(),
     distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: doublePrecision('elapsed_time_sec').notNull(),
