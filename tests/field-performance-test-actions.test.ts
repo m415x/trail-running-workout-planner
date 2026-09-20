@@ -51,8 +51,9 @@ test('athlete field-test workflow exposes eligible official TestEvents for the c
 
   assert.match(source, /getCurrentAthleteTrack1000mTestEventsAction/)
   assert.match(source, /fieldPerformanceTestEvents/)
-  assert.match(source, /currentAthlete\.data\.athleteProfile\.teamId/)
-  assert.match(source, /currentAthlete\.data\.athleteProfile\.groupId/)
+  assert.match(source, /const athlete = currentAthlete\.data\.athleteProfile/)
+  assert.match(source, /fieldPerformanceTestEvents\.teamId, athlete\.teamId/)
+  assert.match(source, /fieldPerformanceTestEvents\.groupId, groupId/)
   assert.match(source, /fieldPerformanceTestEvents\.teamId/)
   assert.match(source, /fieldPerformanceTestEvents\.groupId/)
   assert.match(source, /fieldPerformanceTestEvents\.isDeleted/)
