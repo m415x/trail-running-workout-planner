@@ -19,6 +19,10 @@ function run(command: string, commandArgs: string[]): boolean {
     stdio: verbose ? 'inherit' : 'ignore',
   })
 
+  if (verbose && result.error) process.stderr.write(`${command}: ${result.error.message}\n`)
+  if (verbose && result.signal) process.stderr.write(`${command}: terminated by ${result.signal}\n`)
+  if (verbose && result.status !== 0 && !result.error) process.stderr.write(`${command}: exit ${result.status}\n`)
+
   return result.status === 0
 }
 
