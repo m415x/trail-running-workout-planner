@@ -54,3 +54,20 @@ test('Supabase verifier checks durable field test lifecycle columns', () => {
   assert.match(verifier, /recorded_by/)
   assert.match(verifier, /review_status/)
 })
+
+
+test('field test persistence defines a stable team-owned official test event', () => {
+  const sqliteSchema = fs.readFileSync('db/schema.ts', 'utf8')
+  const supabaseSchema = fs.readFileSync('db/supabase/field-performance-test-schema.ts', 'utf8')
+
+  for (const schema of [sqliteSchema, supabaseSchema]) {
+    assert.match(schema, /fieldPerformanceTestEvents/)
+    assert.match(schema, /field_performance_test_events/)
+    assert.match(schema, /teamId/)
+    assert.match(schema, /groupId/)
+    assert.match(schema, /scheduledAt/)
+    assert.match(schema, /createdByUserId/)
+    assert.match(schema, /1000m_track/)
+    assert.match(schema, /testEventId[\s\S]*references\(\(\) => fieldPerformanceTestEvents\.id/)
+  }
+})
