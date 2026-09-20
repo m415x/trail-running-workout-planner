@@ -224,3 +224,17 @@ Historia 8 intentionally did not include:
 - automated athlete recommendations;
 - prediction of competition performance;
 - a generic all-purpose analytics platform.
+
+
+## Epic 4 factual 1000 m evolution extension
+
+KAN-379 extends consumer-neutral analytics with a factual longitudinal projection of canonical `1000m_track` evidence. It does not change the Athlete Stats disclosure baseline or add a user-facing surface.
+
+- Active field-test history is the evidence authority; invalidated observations remain durable but are excluded from the active series.
+- The series preserves evaluation identity, performed date, protocol and observed elapsed time. Pace and average speed are reproducible arithmetic derivations only.
+- Latest-versus-previous comparison uses the shared `compareAnalyticsMetric()` primitive. With fewer than two active observations the comparison is not evaluable and preserves insufficient-data semantics rather than inventing zero.
+- Mathematical `decreasing` for elapsed time means only a lower elapsed time. It is not a claim of improved fitness, readiness, VO2max, PAM/MAS or physiological adaptation.
+- The application read boundary resolves athlete ownership before evidence is queried. Analytics does not weaken team/athlete isolation and does not mutate planning, Training Response or field-test evidence.
+- No schema or migration is introduced: series, derived pace/speed and comparison deltas are reconstructible from canonical evidence.
+
+Coach/Athlete Stats presentation of this information remains a subsequent product concern (KAN-380).

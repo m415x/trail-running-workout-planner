@@ -36,7 +36,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-378.md`](handoffs/kan-378.md), which records the versioned individual execution-guidance contract built on the completed KAN-376/KAN-377 evidence and running-reference baseline.
+`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-379.md`](handoffs/kan-379.md), which records the factual 1000 m evolution analytics built on the completed KAN-376/KAN-377/KAN-378 physiology baseline.
 
 ## Agent harness
 
@@ -46,9 +46,9 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current transition
 
-Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation has progressed through KAN-378. KAN-376 establishes canonical `1000m_track` evidence; KAN-377 resolves the authorized running reference applicable to an effective date from active canonical evidence; KAN-378 separates explicit quality percentages from Z1–Z5 execution guidance, adds safe HR provenance/age-prediction semantics, and removes fabricated HR and zone→PAM guidance from WorkoutCard.
+Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation has progressed through KAN-379. KAN-376 establishes canonical `1000m_track` evidence; KAN-377 resolves the authorized running reference applicable to an effective date from active canonical evidence; KAN-378 separates explicit quality percentages from Z1–Z5 execution guidance, adds safe HR provenance/age-prediction semantics, and removes fabricated HR and zone→PAM guidance from WorkoutCard. KAN-379 adds consumer-neutral factual 1000 m history/evolution, shared latest/previous elapsed-time comparison semantics, and an ownership-gated read boundary without adding UI or persistence.
 
-Use [`handoffs/kan-378.md`](handoffs/kan-378.md) as the immediate story baseline and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for the Epic 4 research/decision context. Current code/tests remain authoritative for actual behavior.
+Use [`handoffs/kan-379.md`](handoffs/kan-379.md) as the immediate story baseline and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for the Epic 4 research/decision context. Current code/tests remain authoritative for actual behavior.
 
 Subsequent Epic 4 work must be reconstructed from the current `dev` baseline and Jira rather than assuming the preliminary sequence still matches delivered reality. Monitoring/Training Response remains distinct from measured physiology; later reference/guidance work must build on canonical evidence rather than introduce parallel authority.
 

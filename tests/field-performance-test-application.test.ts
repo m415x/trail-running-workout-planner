@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createTrack1000mEvidence, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -233,6 +233,50 @@ test('does not query evidence when athlete ownership is not resolved', async () 
     {
       resolveOwnedAthlete: async () => null,
       listActiveByAthleteThroughDate: () => {
+        queryCalls += 1
+        return []
+      },
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(queryCalls, 0)
+})
+
+
+test('reads factual 1000m evolution only after athlete ownership is resolved', async () => {
+  let queriedAthleteId: string | undefined
+
+  const result = await readAthleteTrack1000mEvolution(
+    { athleteId: 'athlete_1' },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      listActiveByAthlete: athleteId => {
+        queriedAthleteId = athleteId
+        return [{
+          id: 'eval_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        }]
+      },
+    },
+  )
+
+  assert.equal(queriedAthleteId, 'athlete_1')
+  assert.equal(result.success, true)
+  assert.equal(result.success ? result.data.series[0]?.evaluationId : null, 'eval_1')
+  assert.equal(result.success ? result.data.comparison.state : null, 'not_evaluable')
+})
+
+test('does not read 1000m evolution when athlete ownership is not resolved', async () => {
+  let queryCalls = 0
+
+  const result = await readAthleteTrack1000mEvolution(
+    { athleteId: 'other_team_athlete' },
+    {
+      resolveOwnedAthlete: async () => null,
+      listActiveByAthlete: () => {
         queryCalls += 1
         return []
       },
