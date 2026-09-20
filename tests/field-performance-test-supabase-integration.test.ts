@@ -77,3 +77,10 @@ test('official field test events require RLS verification', () => {
   const verifier = fs.readFileSync('db/supabase/verify.ts', 'utf8')
   assert.match(verifier, /field_performance_test_events/)
 })
+
+
+test('official field test event migration enables RLS', () => {
+  const migrations = fs.readdirSync('drizzle/supabase').filter((name) => /^\d{4}_.+\.sql$/.test(name)).sort()
+  const sql = migrations.map((name) => fs.readFileSync(`drizzle/supabase/${name}`, 'utf8')).join('\n')
+  assert.match(sql, /ALTER TABLE "field_performance_test_events" ENABLE ROW LEVEL SECURITY/)
+})
