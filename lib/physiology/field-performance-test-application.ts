@@ -292,7 +292,8 @@ export async function resolveAthleteRunningReference(
   const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
   if (!athlete) return { success: false, error: 'athlete_not_found' }
 
-  const rows = dependencies.listActiveByAthleteThroughDate(
+  const rows = listEligibleFieldPerformanceTestHistory(
+    dependencies.listActiveByAthleteThroughDate(athlete.id, input.effectiveDate),
     athlete.id,
     input.effectiveDate,
   )
@@ -342,7 +343,11 @@ export async function readAthleteTrack1000mEvolution(
   return {
     success: true,
     data: projectTrack1000mEvolution(
-      dependencies.listActiveByAthlete(athlete.id),
+      listEligibleFieldPerformanceTestHistory(
+        dependencies.listActiveByAthlete(athlete.id),
+        athlete.id,
+        '9999-12-31',
+      ),
       athlete.id,
     ),
   }
