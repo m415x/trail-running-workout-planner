@@ -111,10 +111,18 @@ export function createTrack1000mEvaluation(
   const executionContext = input.executionContext ?? 'official'
   const recordedBy = input.recordedBy ?? 'coach'
 
+  if (input.recordedByUserId !== undefined && !input.recordedByUserId.trim()) {
+    throw new Error('recordedByUserId must not be empty')
+  }
+
   if (executionContext === 'official' && !input.testEventId?.trim()) {
     // Legacy coach registrations predate explicit test events. Preserve that
     // boundary only when callers have not opted into the new lifecycle fields.
-    if (input.executionContext !== undefined || input.recordedBy !== undefined) {
+    if (
+      input.executionContext !== undefined ||
+      input.recordedBy !== undefined ||
+      input.recordedByUserId !== undefined
+    ) {
       throw new Error('testEventId is required for official evidence')
     }
   }
