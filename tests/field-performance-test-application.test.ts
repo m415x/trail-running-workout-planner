@@ -381,3 +381,66 @@ test('athlete registration resolves self subject before persistence', async () =
   assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
   assert.equal(insertCalls, 0)
 })
+
+
+test('athlete records official evidence only against an eligible owned TestEvent', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 299,
+      executionContext: 'official',
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveSelfAthlete: async () => ({ id: 'athlete_1' }),
+      resolveEligibleTestEvent: async (testEventId, athleteId) =>
+        testEventId === 'event_2026_09' && athleteId === 'athlete_1'
+          ? { id: testEventId }
+          : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'official_athlete_test_1',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.testEventId, 'event_2026_09')
+  assert.equal(inserted[0]?.executionContext, 'official')
+  assert.equal(inserted[0]?.recordedBy, 'athlete')
+  assert.equal(inserted[0]?.reviewStatus, 'accepted')
+})
+
+test('athlete cannot claim an unavailable official TestEvent', async () => {
+  let insertCalls = 0
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 299,
+      executionContext: 'official',
+      testEventId: 'other_team_event',
+    },
+    {
+      resolveSelfAthlete: async () => ({ id: 'athlete_1' }),
+      resolveEligibleTestEvent: async () => null,
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'test_event_not_found' })
+  assert.equal(insertCalls, 0)
+})
