@@ -616,3 +616,68 @@ test('coach review hides evidence outside the owned athlete boundary and never m
   assert.deepEqual(result, { success: false, error: 'evidence_not_found' })
   assert.equal(reviewCalls, 0)
 })
+
+
+test('running reference excludes pending and rejected evidence at the application boundary', async () => {
+  const result = await resolveAthleteRunningReference(
+    { athleteId: 'athlete_1', effectiveDate: '2026-09-20' },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      listActiveByAthleteThroughDate: athleteId => [
+        {
+          id: 'accepted_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, reviewStatus: 'accepted', isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        },
+        {
+          id: 'pending_1', athleteId, performedAt: '2026-09-19',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 280, notes: null, reviewStatus: 'pending_review', isDeleted: false,
+          createdAt: '2026-09-19T12:00:00.000Z', updatedAt: '2026-09-19T12:00:00.000Z',
+        },
+        {
+          id: 'rejected_1', athleteId, performedAt: '2026-09-20',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 270, notes: null, reviewStatus: 'rejected', isDeleted: false,
+          createdAt: '2026-09-20T12:00:00.000Z', updatedAt: '2026-09-20T12:00:00.000Z',
+        },
+      ],
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(result.success && result.data.status === 'available' ? result.data.source.evaluationId : null, 'accepted_1')
+})
+
+test('factual evolution excludes pending and rejected evidence at the application boundary', async () => {
+  const result = await readAthleteTrack1000mEvolution(
+    { athleteId: 'athlete_1' },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      listActiveByAthlete: athleteId => [
+        {
+          id: 'accepted_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, reviewStatus: 'accepted', isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        },
+        {
+          id: 'pending_1', athleteId, performedAt: '2026-09-19',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 280, notes: null, reviewStatus: 'pending_review', isDeleted: false,
+          createdAt: '2026-09-19T12:00:00.000Z', updatedAt: '2026-09-19T12:00:00.000Z',
+        },
+        {
+          id: 'rejected_1', athleteId, performedAt: '2026-09-20',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 270, notes: null, reviewStatus: 'rejected', isDeleted: false,
+          createdAt: '2026-09-20T12:00:00.000Z', updatedAt: '2026-09-20T12:00:00.000Z',
+        },
+      ],
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.deepEqual(result.success ? result.data.series.map(point => point.evaluationId) : [], ['accepted_1'])
+})
