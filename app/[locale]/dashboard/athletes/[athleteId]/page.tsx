@@ -6,6 +6,7 @@ import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Penci
 import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
+import { getCoachPendingTrack1000mEvidenceAction, getCoachTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
@@ -49,6 +50,11 @@ function todayInArgentina() {
   }).format(new Date())
 }
 
+function CoachTrack1000mPanel({ locale, events, pending }: { locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }> }) {
+  const es = locale === 'es'
+  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent className='grid gap-6 lg:grid-cols-2'><section><h3 className='font-medium'>{es ? 'Instancias oficiales' : 'Official tests'}</h3>{events.length === 0 ? <p className='mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay tests oficiales disponibles.' : 'There are no official tests available.'}</p> : <div className='mt-3 space-y-2'>{events.map(event => <div key={event.id} className='rounded-lg border p-3 text-sm'>{event.scheduledAt.slice(0, 10)}</div>)}</div>}</section><section><h3 className='font-medium'>{es ? 'Pendientes de revisión' : 'Pending review'}</h3>{pending.length === 0 ? <p className='mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros autogestionados pendientes.' : 'There are no pending self-directed submissions.'}</p> : <div className='mt-3 space-y-2'>{pending.map(evidence => <div key={evidence.id} className='rounded-lg border p-3 text-sm'><span>{evidence.performedAt}</span><span className='ml-2 font-medium'>{evidence.elapsedTimeSec} s</span></div>)}</div>}</section></CardContent></Card>
+}
+
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
   return <div><dt className='text-sm text-muted-foreground'>{label}</dt><dd className='mt-1 font-medium'>{value || 'No informado'}</dd></div>
 }
@@ -59,10 +65,12 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const { locale, athleteId } = await params
   const tActions = await getTranslations({ locale, namespace: 'AthleteActions' })
   const today = todayInArgentina()
-  const [athlete, planningResult, goals] = await Promise.all([
+  const [athlete, planningResult, goals, testEventsResult, pendingEvidenceResult] = await Promise.all([
     getAthleteById(athleteId),
     getAthletePlanningResolutionOnDate(athleteId, today),
     getTrainingGoalsForAthlete(athleteId),
+    getCoachTrack1000mTestEventsAction(athleteId),
+    getCoachPendingTrack1000mEvidenceAction(athleteId),
   ])
   if (!athlete) notFound()
 
@@ -97,6 +105,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
+        <CoachTrack1000mPanel locale={locale} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} />
         <Card><CardHeader><CardTitle>Datos personales</CardTitle></CardHeader><CardContent><dl className='grid gap-5 sm:grid-cols-2'><DetailItem label='DNI' value={athlete.dni} /><DetailItem label='Fecha de nacimiento' value={formatDate(athlete.birthday)} /><DetailItem label='Apodo' value={athlete.nickName} /><div><dt className='text-sm text-muted-foreground'>Grupo</dt><dd className='mt-1'>{groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>Sin grupo</Badge>}</dd></div></dl></CardContent></Card>
         <Card><CardHeader><CardTitle>Contacto</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Teléfono</p><p className='font-medium'>{athlete.phone || 'No informado'}</p></div></div></CardContent></Card>
 
