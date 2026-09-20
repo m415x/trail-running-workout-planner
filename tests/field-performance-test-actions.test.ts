@@ -39,5 +39,8 @@ test('athlete field-test action derives subject identity server-side', () => {
 
   assert.match(source, /getCurrentAthleteTrack1000mEvidenceAction/)
   assert.match(source, /getCurrentAthlete\(\)/)
-  assert.doesNotMatch(source, /getCurrentAthleteTrack1000mEvidenceAction\s*\([^)]*userId/)
+  const signature = source.match(/getCurrentAthleteTrack1000mEvidenceAction\s*\(([\s\S]*?)\)\s*\{/)
+  assert.ok(signature)
+  assert.doesNotMatch(signature[1] ?? '', /\buserId\s*:/)
+  assert.doesNotMatch(signature[1] ?? '', /\bathleteId\s*:/)
 })
