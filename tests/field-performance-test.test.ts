@@ -25,6 +25,7 @@ test('creates canonical observed evidence for a 1000 m track evaluation', () => 
     testEventId: null,
     executionContext: 'official',
     recordedBy: 'coach',
+    recordedByUserId: null,
     reviewStatus: 'accepted',
   })
 })
