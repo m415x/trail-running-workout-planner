@@ -44,3 +44,16 @@ test('athlete field-test action derives subject identity server-side', () => {
   assert.doesNotMatch(signature[1] ?? '', /\buserId\s*:/)
   assert.doesNotMatch(signature[1] ?? '', /\bathleteId\s*:/)
 })
+
+
+test('athlete field-test workflow exposes eligible official TestEvents for the current subject', () => {
+  const source = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(source, /getCurrentAthleteTrack1000mTestEventsAction/)
+  assert.match(source, /fieldPerformanceTestEvents/)
+  assert.match(source, /currentAthlete\.data\.athleteProfile\.teamId/)
+  assert.match(source, /currentAthlete\.data\.athleteProfile\.groupId/)
+  assert.match(source, /fieldPerformanceTestEvents\.teamId/)
+  assert.match(source, /fieldPerformanceTestEvents\.groupId/)
+  assert.match(source, /fieldPerformanceTestEvents\.isDeleted/)
+})
