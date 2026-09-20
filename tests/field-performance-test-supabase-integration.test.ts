@@ -43,3 +43,14 @@ test('lifecycle migration preserves provenance and review dimensions without fab
   assert.doesNotMatch(sql, /UPDATE "field_performance_tests"/)
   assert.doesNotMatch(sql, /ADD COLUMN "is_eligible"/)
 })
+
+
+test('Supabase verifier checks durable field test lifecycle columns', () => {
+  const verifier = fs.readFileSync('db/supabase/verify.ts', 'utf8')
+
+  assert.match(verifier, /field_performance_tests/)
+  assert.match(verifier, /test_event_id/)
+  assert.match(verifier, /execution_context/)
+  assert.match(verifier, /recorded_by/)
+  assert.match(verifier, /review_status/)
+})
