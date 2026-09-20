@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
+import { CoachTrack1000mForm } from '@/features/field-performance-test/components/CoachTrack1000mForm'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getCoachPendingTrack1000mEvidenceAction, getCoachTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
@@ -50,9 +51,8 @@ function todayInArgentina() {
   }).format(new Date())
 }
 
-function CoachTrack1000mPanel({ locale, events, pending }: { locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }> }) {
-  const es = locale === 'es'
-  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent className='grid gap-6 lg:grid-cols-2'><section><h3 className='font-medium'>{es ? 'Instancias oficiales' : 'Official tests'}</h3>{events.length === 0 ? <p className='mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay tests oficiales disponibles.' : 'There are no official tests available.'}</p> : <div className='mt-3 space-y-2'>{events.map(event => <div key={event.id} className='rounded-lg border p-3 text-sm'>{event.scheduledAt.slice(0, 10)}</div>)}</div>}</section><section><h3 className='font-medium'>{es ? 'Pendientes de revisión' : 'Pending review'}</h3>{pending.length === 0 ? <p className='mt-3 rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros autogestionados pendientes.' : 'There are no pending self-directed submissions.'}</p> : <div className='mt-3 space-y-2'>{pending.map(evidence => <div key={evidence.id} className='rounded-lg border p-3 text-sm'><span>{evidence.performedAt}</span><span className='ml-2 font-medium'>{evidence.elapsedTimeSec} s</span></div>)}</div>}</section></CardContent></Card>
+function CoachTrack1000mPanel({ athleteId, locale, events, pending }: { athleteId: string; locale: string; events: Array<{ id: string; scheduledAt: string }>; pending: Array<{ id: string; performedAt: string; elapsedTimeSec: number }> }) {
+  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent><CoachTrack1000mForm athleteId={athleteId} coachUserId='deferred-to-kan-298' locale={locale} events={events} pendingEvidence={pending} /></CardContent></Card>
 }
 
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
@@ -105,7 +105,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
       </div>
 
       <div className='grid gap-6 md:grid-cols-2'>
-        <CoachTrack1000mPanel locale={locale} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} />
+        <CoachTrack1000mPanel athleteId={athleteId} locale={locale} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} />
         <Card><CardHeader><CardTitle>Datos personales</CardTitle></CardHeader><CardContent><dl className='grid gap-5 sm:grid-cols-2'><DetailItem label='DNI' value={athlete.dni} /><DetailItem label='Fecha de nacimiento' value={formatDate(athlete.birthday)} /><DetailItem label='Apodo' value={athlete.nickName} /><div><dt className='text-sm text-muted-foreground'>Grupo</dt><dd className='mt-1'>{groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>Sin grupo</Badge>}</dd></div></dl></CardContent></Card>
         <Card><CardHeader><CardTitle>Contacto</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Teléfono</p><p className='font-medium'>{athlete.phone || 'No informado'}</p></div></div></CardContent></Card>
 
