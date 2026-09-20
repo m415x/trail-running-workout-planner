@@ -65,7 +65,7 @@ test('coach field-test workflow exposes pending self-directed evidence for an ow
 
   assert.match(source, /getCoachPendingTrack1000mEvidenceAction/)
   assert.match(source, /getAthleteById/)
-  assert.match(source, /repository\.listActiveByAthlete/)
+  assert.match(source, /repository\s*\.listActiveByAthlete/)
   assert.match(source, /executionContext === 'self_directed'/)
   assert.match(source, /reviewStatus === 'pending_review'/)
 })
