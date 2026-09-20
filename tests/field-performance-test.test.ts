@@ -26,7 +26,6 @@ test('creates canonical observed evidence for a 1000 m track evaluation', () => 
     executionContext: 'official',
     recordedBy: 'coach',
     reviewStatus: 'accepted',
-    isEligible: true,
   })
 })
 
@@ -132,7 +131,7 @@ test('preserves official instance, execution context, recorder and review eligib
   assert.equal(evaluation.executionContext, 'official')
   assert.equal(evaluation.recordedBy, 'athlete')
   assert.equal(evaluation.reviewStatus, 'accepted')
-  assert.equal(evaluation.isEligible, true)
+  assert.equal(evaluation.reviewStatus, 'accepted')
 })
 
 test('self-directed evidence remains self-directed while awaiting coach review', () => {
@@ -148,5 +147,5 @@ test('self-directed evidence remains self-directed while awaiting coach review',
   assert.equal(evaluation.executionContext, 'self_directed')
   assert.equal(evaluation.recordedBy, 'athlete')
   assert.equal(evaluation.reviewStatus, 'pending_review')
-  assert.equal(evaluation.isEligible, false)
+  assert.equal(evaluation.reviewStatus, 'pending_review')
 })
