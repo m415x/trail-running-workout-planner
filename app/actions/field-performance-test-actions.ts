@@ -46,20 +46,27 @@ export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEv
 }
 
 
+function resolveEligibleTrack1000mTestEvents(athlete: { teamId: string; groupId: string }) {
+  return db.query.fieldPerformanceTestEvents.findMany({
+    where: and(
+      eq(fieldPerformanceTestEvents.teamId, athlete.teamId),
+      eq(fieldPerformanceTestEvents.groupId, athlete.groupId),
+      eq(fieldPerformanceTestEvents.protocol, '1000m_track'),
+      eq(fieldPerformanceTestEvents.isDeleted, false),
+    ),
+  })
+}
+
 function resolveEligibleTestEvent(testEventId: string, athleteId: string) {
   const athlete = db.query.athleteProfiles.findFirst({
     where: eq(athleteProfiles.id, athleteId),
   }).sync()
   if (!athlete?.groupId) return null
 
-  const event = db.query.fieldPerformanceTestEvents.findFirst({
-    where: and(
-      eq(fieldPerformanceTestEvents.id, testEventId),
-      eq(fieldPerformanceTestEvents.teamId, athlete.teamId),
-      eq(fieldPerformanceTestEvents.groupId, athlete.groupId),
-      eq(fieldPerformanceTestEvents.isDeleted, false),
-    ),
-  }).sync()
+  const event = resolveEligibleTrack1000mTestEvents({
+    teamId: athlete.teamId,
+    groupId: athlete.groupId,
+  }).find((candidate) => candidate.id === testEventId)
 
   return event ? { id: event.id } : null
 }
@@ -76,13 +83,9 @@ export async function getCurrentAthleteTrack1000mTestEventsAction() {
     return { success: true as const, data: [] }
   }
 
-  const data = await db.query.fieldPerformanceTestEvents.findMany({
-    where: and(
-      eq(fieldPerformanceTestEvents.teamId, athlete.teamId),
-      eq(fieldPerformanceTestEvents.groupId, groupId),
-      eq(fieldPerformanceTestEvents.protocol, '1000m_track'),
-      eq(fieldPerformanceTestEvents.isDeleted, false),
-    ),
+  const data = await resolveEligibleTrack1000mTestEvents({
+    teamId: athlete.teamId,
+    groupId,
   })
 
   return { success: true as const, data }
@@ -124,6 +127,25 @@ export async function createCoachTrack1000mEvidenceAction(
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
   })
+}
+
+export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
+  const athlete = await getAthleteById(athleteId)
+  if (!athlete) {
+    return { success: false as const, error: 'athlete_not_found' as const }
+  }
+
+  const groupId = athlete.groupId
+  if (!groupId) {
+    return { success: true as const, data: [] }
+  }
+
+  const data = await resolveEligibleTrack1000mTestEvents({
+    teamId: athlete.teamId,
+    groupId,
+  })
+
+  return { success: true as const, data }
 }
 
 export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string) {
