@@ -164,5 +164,7 @@ test('Coach field-test workflow reads authorized history, factual evolution and 
   assert.match(actionSource, /resolveAthleteRunningReference/)
   assert.match(actionSource, /repository\.listActiveByAthlete/)
   assert.match(coachPage, /getCoachTrack1000mHistoryAction/)
-  assert.match(coachPage, /faster|same|slower/)
+  assert.match(coachPage, /decreasing/)
+  assert.match(coachPage, /stable/)
+  assert.match(coachPage, /increasing/)
 })
