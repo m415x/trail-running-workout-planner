@@ -16,8 +16,7 @@ export interface FieldPerformanceTestRow {
   executionContext?: FieldPerformanceTestExecutionContext
   recordedBy?: FieldPerformanceTestRecordedBy
   reviewStatus?: FieldPerformanceTestReviewStatus
-  isEligible?: boolean
-  distanceM: 1000
+   distanceM: 1000
   elapsedTimeSec: number
   notes: string | null
   isDeleted: boolean
@@ -89,6 +88,6 @@ export function listEligibleFieldPerformanceTestHistory(
       // Rows written before the KAN-401 lifecycle contract are accepted
       // evidence by construction. New lifecycle-aware rows must opt in
       // explicitly through review eligibility.
-      (row.isEligible ?? true),
+      (row.reviewStatus ?? 'accepted') === 'accepted',
   )
 }
