@@ -111,3 +111,37 @@ test('derivation refuses a different distance or protocol', () => {
     /protocol/,
   )
 })
+
+
+test('preserves official instance, execution context, recorder and review eligibility as independent evidence dimensions', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-24',
+    elapsedTimeSec: 298,
+    testEventId: 'event_2026_09',
+    executionContext: 'official',
+    recordedBy: 'athlete',
+  })
+
+  assert.equal(evaluation.testEventId, 'event_2026_09')
+  assert.equal(evaluation.executionContext, 'official')
+  assert.equal(evaluation.recordedBy, 'athlete')
+  assert.equal(evaluation.reviewStatus, 'accepted')
+  assert.equal(evaluation.isEligible, true)
+})
+
+test('self-directed evidence remains self-directed while awaiting coach review', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+  })
+
+  assert.equal(evaluation.testEventId, null)
+  assert.equal(evaluation.executionContext, 'self_directed')
+  assert.equal(evaluation.recordedBy, 'athlete')
+  assert.equal(evaluation.reviewStatus, 'pending_review')
+  assert.equal(evaluation.isEligible, false)
+})
