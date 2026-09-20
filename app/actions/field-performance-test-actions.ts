@@ -57,7 +57,7 @@ function resolveEligibleTrack1000mTestEvents(athlete: { teamId: string; groupId:
   })
 }
 
-function resolveEligibleTestEvent(testEventId: string, athleteId: string) {
+async function resolveEligibleTestEvent(testEventId: string, athleteId: string) {
   const athlete = db.query.athleteProfiles.findFirst({
     where: eq(athleteProfiles.id, athleteId),
   }).sync()
