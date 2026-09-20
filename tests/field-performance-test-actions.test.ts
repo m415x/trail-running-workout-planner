@@ -127,3 +127,15 @@ test('Coach field-test entry point supports official registration and pending re
   assert.match(source, /accepted/)
   assert.match(source, /rejected/)
 })
+
+
+test('field-test UI uses dedicated client components instead of server pages as interactive forms', () => {
+  const athleteForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(athleteForm, /'use client'/)
+  assert.match(athleteForm, /getCurrentAthleteTrack1000mEvidenceAction/)
+  assert.match(coachForm, /'use client'/)
+  assert.match(coachForm, /createCoachTrack1000mEvidenceAction/)
+  assert.match(coachForm, /reviewCoachTrack1000mEvidenceAction/)
+})
