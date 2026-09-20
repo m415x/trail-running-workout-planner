@@ -134,6 +134,13 @@
       "when": 1789844137957,
       "tag": "0018_wise_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789866827082,
+      "tag": "0019_supreme_maddog",
+      "breakpoints": true
     }
   ]
 }

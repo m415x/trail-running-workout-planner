@@ -1,0 +1,11 @@
+ALTER TABLE "field_performance_tests" DROP CONSTRAINT "field_performance_tests_source_check";--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD COLUMN "test_event_id" text;--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD COLUMN "execution_context" text;--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD COLUMN "recorded_by" text;--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD COLUMN "review_status" text;--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_execution_context_check" CHECK ("field_performance_tests"."execution_context" is null or "field_performance_tests"."execution_context" in ('official', 'self_directed'));--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_recorded_by_check" CHECK ("field_performance_tests"."recorded_by" is null or "field_performance_tests"."recorded_by" in ('coach', 'athlete'));--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_review_status_check" CHECK ("field_performance_tests"."review_status" is null or "field_performance_tests"."review_status" in ('accepted', 'pending_review', 'rejected'));--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_official_event_check" CHECK ("field_performance_tests"."execution_context" is null or "field_performance_tests"."execution_context" <> 'official' or "field_performance_tests"."test_event_id" is not null);--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_self_directed_event_check" CHECK ("field_performance_tests"."execution_context" is null or "field_performance_tests"."execution_context" <> 'self_directed' or "field_performance_tests"."test_event_id" is null);--> statement-breakpoint
+ALTER TABLE "field_performance_tests" ADD CONSTRAINT "field_performance_tests_source_check" CHECK ("field_performance_tests"."source" in ('coach_manual', 'athlete_manual', 'legacy_migration'));
