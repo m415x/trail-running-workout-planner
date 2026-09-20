@@ -20,7 +20,13 @@ function createRepository() {
       protocol TEXT NOT NULL CHECK (protocol = '1000m_track'),
       distance_m INTEGER NOT NULL CHECK (distance_m = 1000),
       elapsed_time_sec REAL NOT NULL CHECK (elapsed_time_sec > 0),
-      source TEXT NOT NULL CHECK (source = 'coach_manual'), notes TEXT
+      source TEXT NOT NULL CHECK (source IN ('coach_manual', 'athlete_manual', 'legacy_migration')),
+      test_event_id TEXT,
+      execution_context TEXT CHECK (execution_context IN ('official', 'self_directed')),
+      recorded_by TEXT CHECK (recorded_by IN ('coach', 'athlete')),
+      review_status TEXT CHECK (review_status IN ('accepted', 'pending_review', 'rejected')),
+      is_eligible INTEGER,
+      notes TEXT
     );
   `)
   sqlite.prepare('INSERT INTO athlete_profiles (id) VALUES (?)').run('athlete_1')
