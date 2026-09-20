@@ -286,3 +286,33 @@ test('does not read 1000m evolution when athlete ownership is not resolved', asy
   assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
   assert.equal(queryCalls, 0)
 })
+
+
+test('persists recorder user identity through the create application boundary', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 215.5,
+      testEventId: 'event_2026_09',
+      executionContext: 'official',
+      recordedBy: 'coach',
+      recordedByUserId: 'user_coach_1',
+    },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'test_actor_1',
+      now: () => '2026-09-24T12:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.recordedBy, 'coach')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+})
