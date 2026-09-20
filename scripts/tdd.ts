@@ -1,0 +1,41 @@
+import { spawnSync } from 'node:child_process'
+
+const args = process.argv.slice(2)
+const redOnly = args[0] === '--red'
+const remaining = redOnly ? args.slice(1) : args
+const verboseIndex = remaining.indexOf('--verbose')
+const verbose = verboseIndex >= 0
+const tests = remaining.filter((arg, index) => index !== verboseIndex)
+
+if (tests.length === 0) {
+  process.stderr.write('Usage: pn tdd[:red] [--verbose] <test-file> [...test-files]\n')
+  process.exit(2)
+}
+
+function run(command: string, commandArgs: string[]): boolean {
+  const result = spawnSync(command, commandArgs, {
+    shell: process.platform === 'win32',
+    stdio: verbose ? 'inherit' : 'ignore',
+  })
+
+  return result.status === 0
+}
+
+if (!run('git', ['pull', '--ff-only', '-q'])) {
+  console.log('RED')
+  process.exit(1)
+}
+
+const testsGreen = run('pn', ['exec', 'tsx', '--test', ...tests])
+
+if (redOnly) {
+  console.log(testsGreen ? 'GREEN' : 'RED')
+  process.exit(testsGreen ? 0 : 1)
+}
+
+if (!testsGreen || !run('pn', ['tsc'])) {
+  console.log('RED')
+  process.exit(1)
+}
+
+console.log('GREEN')
