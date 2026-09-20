@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createCoachTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createCoachTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, reviewCoachTrack1000mEvidence, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -510,4 +510,109 @@ test('coach registration authorizes athlete before resolving TestEvent or persis
   assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
   assert.equal(eventCalls, 0)
   assert.equal(insertCalls, 0)
+})
+
+
+test('coach accepts owned pending self-directed evidence without changing provenance', async () => {
+  let reviewed: { id: string; reviewStatus: 'accepted' | 'rejected'; updatedAt: string } | undefined
+
+  const result = await reviewCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      evidenceId: 'self_1',
+      reviewStatus: 'accepted',
+    },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      getById: id => id === 'self_1' ? {
+        id,
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-20',
+        protocol: '1000m_track',
+        source: 'athlete_manual',
+        distanceM: 1000,
+        elapsedTimeSec: 302,
+        notes: null,
+        testEventId: null,
+        executionContext: 'self_directed',
+        recordedBy: 'athlete',
+        recordedByUserId: 'user_athlete_1',
+        reviewStatus: 'pending_review',
+        isDeleted: false,
+        createdAt: '2026-09-20T14:00:00.000Z',
+        updatedAt: '2026-09-20T14:00:00.000Z',
+      } : undefined,
+      review: (id, reviewStatus, updatedAt) => {
+        reviewed = { id, reviewStatus, updatedAt }
+        return {
+          id,
+          athleteId: 'athlete_1',
+          performedAt: '2026-09-20',
+          protocol: '1000m_track',
+          source: 'athlete_manual',
+          distanceM: 1000,
+          elapsedTimeSec: 302,
+          notes: null,
+          testEventId: null,
+          executionContext: 'self_directed',
+          recordedBy: 'athlete',
+          recordedByUserId: 'user_athlete_1',
+          reviewStatus,
+          isDeleted: false,
+          createdAt: '2026-09-20T14:00:00.000Z',
+          updatedAt,
+        }
+      },
+      now: () => '2026-09-20T16:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.deepEqual(reviewed, {
+    id: 'self_1',
+    reviewStatus: 'accepted',
+    updatedAt: '2026-09-20T16:00:00.000Z',
+  })
+  assert.equal(result.success && result.data.executionContext, 'self_directed')
+  assert.equal(result.success && result.data.recordedBy, 'athlete')
+  assert.equal(result.success && result.data.recordedByUserId, 'user_athlete_1')
+})
+
+test('coach review hides evidence outside the owned athlete boundary and never mutates it', async () => {
+  let reviewCalls = 0
+
+  const result = await reviewCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      evidenceId: 'other_evidence',
+      reviewStatus: 'rejected',
+    },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      getById: () => ({
+        id: 'other_evidence',
+        athleteId: 'athlete_2',
+        performedAt: '2026-09-20',
+        protocol: '1000m_track',
+        source: 'athlete_manual',
+        distanceM: 1000,
+        elapsedTimeSec: 302,
+        notes: null,
+        executionContext: 'self_directed',
+        recordedBy: 'athlete',
+        reviewStatus: 'pending_review',
+        isDeleted: false,
+        createdAt: '2026-09-20T14:00:00.000Z',
+        updatedAt: '2026-09-20T14:00:00.000Z',
+      }),
+      review: (_id, _status, _updatedAt) => {
+        reviewCalls += 1
+        throw new Error('must not review')
+      },
+      now: () => '2026-09-20T16:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'evidence_not_found' })
+  assert.equal(reviewCalls, 0)
 })
