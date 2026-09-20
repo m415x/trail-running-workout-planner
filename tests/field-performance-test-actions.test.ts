@@ -107,3 +107,23 @@ test('official field-test registration derives performed date from the selected 
   assert.match(source, /testEventId/)
   assert.match(source, /executionContext === 'official'/)
 })
+
+
+test('Athlete field-test entry point supports official and self-directed registration', () => {
+  const source = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+
+  assert.match(source, /AthleteTrack1000mForm/)
+  assert.match(source, /getCurrentAthleteTrack1000mEvidenceAction/)
+  assert.match(source, /self_directed/)
+  assert.match(source, /official/)
+})
+
+test('Coach field-test entry point supports official registration and pending review decisions', () => {
+  const source = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+
+  assert.match(source, /CoachTrack1000mForm/)
+  assert.match(source, /createCoachTrack1000mEvidenceAction/)
+  assert.match(source, /reviewCoachTrack1000mEvidenceAction/)
+  assert.match(source, /accepted/)
+  assert.match(source, /rejected/)
+})
