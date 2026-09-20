@@ -63,10 +63,11 @@ function resolveEligibleTestEvent(testEventId: string, athleteId: string) {
   }).sync()
   if (!athlete?.groupId) return null
 
-  const event = resolveEligibleTrack1000mTestEvents({
+  const events = await resolveEligibleTrack1000mTestEvents({
     teamId: athlete.teamId,
     groupId: athlete.groupId,
-  }).find((candidate) => candidate.id === testEventId)
+  })
+  const event = events.find((candidate) => candidate.id === testEventId)
 
   return event ? { id: event.id } : null
 }
