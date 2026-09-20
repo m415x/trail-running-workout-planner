@@ -13,8 +13,9 @@ if (tests.length === 0) {
 }
 
 function run(command: string, commandArgs: string[]): boolean {
-  const result = spawnSync(command, commandArgs, {
-    shell: process.platform === 'win32',
+  const executable = process.platform === 'win32' && command === 'pn' ? 'pn.cmd' : command
+  const result = spawnSync(executable, commandArgs, {
+    shell: false,
     stdio: verbose ? 'inherit' : 'ignore',
   })
 
