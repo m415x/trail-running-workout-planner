@@ -49,9 +49,9 @@ async function main() {
       select column_name, data_type, is_nullable, column_default
       from information_schema.columns
       where table_schema = 'public' and table_name = 'field_performance_tests'
-        and column_name in ('test_event_id', 'execution_context', 'recorded_by', 'review_status')
+        and column_name in ('test_event_id', 'execution_context', 'recorded_by', 'recorded_by_user_id', 'review_status')
     `
-    const expectedFieldTestLifecycleColumns = ['test_event_id', 'execution_context', 'recorded_by', 'review_status']
+    const expectedFieldTestLifecycleColumns = ['test_event_id', 'execution_context', 'recorded_by', 'recorded_by_user_id', 'review_status']
     const fieldTestLifecycleValid = expectedFieldTestLifecycleColumns.every(name => {
       const column = fieldTestLifecycleColumns.find(candidate => candidate.column_name === name)
       return column?.data_type === 'text' && column.is_nullable === 'YES' && column.column_default === null
