@@ -50,6 +50,55 @@ export async function createTrack1000mEvidence(
 }
 
 
+
+export interface CreateAthleteTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly userId: string
+  readonly performedAt: string
+  readonly elapsedTimeSec: number
+  readonly notes?: string
+  readonly executionContext: 'official' | 'self_directed'
+  readonly testEventId?: string
+}
+
+interface AthleteFieldPerformanceCreateDependencies {
+  resolveSelfAthlete(athleteId: string, userId: string): Promise<{ id: string } | null>
+  insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  newId(): string
+  now(): string
+}
+
+/**
+ * Athlete-owned creation boundary. Recorder provenance is derived from the
+ * authenticated subject rather than accepted from client-controlled input.
+ */
+export async function createAthleteTrack1000mEvidence(
+  input: CreateAthleteTrack1000mEvidenceInput,
+  dependencies: AthleteFieldPerformanceCreateDependencies,
+): Promise<CreateTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveSelfAthlete(input.athleteId, input.userId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  return createTrack1000mEvidence(
+    {
+      athleteId: athlete.id,
+      performedAt: input.performedAt,
+      elapsedTimeSec: input.elapsedTimeSec,
+      notes: input.notes,
+      executionContext: input.executionContext,
+      testEventId: input.testEventId,
+      recordedBy: 'athlete',
+      recordedByUserId: input.userId,
+    },
+    {
+      resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
+      insert: dependencies.insert,
+      newId: dependencies.newId,
+      now: dependencies.now,
+    },
+  )
+}
+
 export interface CorrectTrack1000mEvidenceInput {
   readonly athleteId: string
   readonly evidenceId: string
