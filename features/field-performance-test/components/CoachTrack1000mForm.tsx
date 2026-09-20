@@ -7,7 +7,7 @@ import { buttonVariants } from '@ui/button'
 
 type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
-type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number; notes: string | null; testEventId?: string | null; executionContext: 'official' | 'self_directed'; recordedBy: 'coach' | 'athlete'; recordedByUserId?: string | null }
+type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number; notes: string | null; testEventId?: string | null; executionContext?: 'official' | 'self_directed'; recordedBy?: 'coach' | 'athlete'; recordedByUserId?: string | null }
 
 export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[] }) {
   const es = locale === 'es'
@@ -40,8 +40,8 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
         elapsedTimeSec: Number(nextElapsedTime),
         ...(evidence.notes === null ? {} : { notes: evidence.notes }),
         ...(evidence.testEventId == null ? {} : { testEventId: evidence.testEventId }),
-        executionContext: evidence.executionContext,
-        recordedBy: evidence.recordedBy,
+        ...(evidence.executionContext === undefined ? {} : { executionContext: evidence.executionContext }),
+        ...(evidence.recordedBy === undefined ? {} : { recordedBy: evidence.recordedBy }),
         ...(evidence.recordedByUserId == null ? {} : { recordedByUserId: evidence.recordedByUserId }),
       },
     })
