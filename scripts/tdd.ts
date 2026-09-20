@@ -1,5 +1,7 @@
 import { spawnSync } from 'node:child_process'
-import { fileURLToPath } from 'node:url'
+import { createRequire } from 'node:module'
+
+const require = createRequire(import.meta.url)
 
 const args = process.argv.slice(2)
 const redOnly = args[0] === '--red'
@@ -31,7 +33,7 @@ if (!run('git', ['pull', '--ff-only', '-q'])) {
   process.exit(1)
 }
 
-const tsxCli = fileURLToPath(import.meta.resolve('tsx/cli'))
+const tsxCli = require.resolve('tsx/cli')
 const testsGreen = run(process.execPath, [tsxCli, '--test', ...tests])
 
 if (redOnly) {
@@ -39,7 +41,7 @@ if (redOnly) {
   process.exit(testsGreen ? 0 : 1)
 }
 
-const tscCli = fileURLToPath(import.meta.resolve('typescript/bin/tsc'))
+const tscCli = require.resolve('typescript/bin/tsc')
 if (!testsGreen || !run(process.execPath, [tscCli, '--noEmit'])) {
   console.log('RED')
   process.exit(1)
