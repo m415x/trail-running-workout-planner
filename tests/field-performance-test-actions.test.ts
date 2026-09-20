@@ -141,3 +141,15 @@ test('field-test UI uses dedicated client components instead of server pages as 
   assert.match(coachForm, /createCoachTrack1000mEvidenceAction/)
   assert.match(coachForm, /reviewCoachTrack1000mEvidenceAction/)
 })
+
+
+test('field-test UI does not introduce placeholder coach identity and preserves page locale', () => {
+  const athletePage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.doesNotMatch(coachPage, /deferred-to-kan-298/)
+  assert.doesNotMatch(coachForm, /coachUserId/)
+  assert.match(athletePage, /params: Promise<\{ locale: string \}>/)
+  assert.match(athletePage, /locale=\{locale\}/)
+})
