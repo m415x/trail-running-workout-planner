@@ -37,7 +37,7 @@ test('WorkoutCard presentation requires first-class zone execution guidance', as
   assert.match(cardSource, /executionGuidance/)
   assert.match(cardSource, /rpe/)
   assert.match(cardSource, /talkTest/)
-  assert.match(cardSource, /effort_over_pace/)
+  assert.match(cardSource, /terrainPriority/)
   assert.doesNotMatch(cardSource, /(?:maxHr|maxHR)\s*[:=]\s*190/)
   assert.doesNotMatch(cardSource, /(?:restHr|restHR)\s*[:=]\s*50/)
 })
