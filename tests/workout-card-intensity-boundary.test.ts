@@ -35,9 +35,9 @@ test('WorkoutCard presentation requires first-class zone execution guidance', as
 
   assert.match(hookSource, /ExecutionGuidance/)
   assert.match(cardSource, /executionGuidance/)
-  assert.match(cardSource, /rpe/)
-  assert.match(cardSource, /talkTest/)
-  assert.match(cardSource, /terrainPriority/)
+  assert.match(hookSource, /executionGuidance/)
+  assert.match(hookSource, /zoneInfo/)
+  assert.match(cardSource, /ZonePill/)
   assert.doesNotMatch(cardSource, /(?:maxHr|maxHR)\s*[:=]\s*190/)
   assert.doesNotMatch(cardSource, /(?:restHr|restHR)\s*[:=]\s*50/)
 })
