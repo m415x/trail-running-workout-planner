@@ -280,3 +280,37 @@ test('Athlete Stats performance boundary excludes pending and rejected evidence 
   assert.doesNotMatch(performanceBoundary, /pending_review/)
   assert.doesNotMatch(performanceBoundary, /reviewStatus/)
 })
+
+
+test('field-test forms capture 1000 m elapsed time as minutes plus seconds and derive total seconds', () => {
+  const athleteForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  for (const form of [athleteForm, coachForm]) {
+    assert.match(form, /minutes/)
+    assert.match(form, /seconds/)
+    assert.match(form, /max=['"]59['"]/)
+    assert.match(form, /minutes\s*\*\s*60\s*\+\s*seconds/)
+  }
+
+  assert.doesNotMatch(athleteForm, /Tiempo \(segundos\)/)
+  assert.doesNotMatch(coachForm, /Tiempo en segundos/)
+})
+
+test('field-test forms explain unavailable official TestEvents instead of presenting an empty selector', () => {
+  const athleteForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(coachForm, /events\.length === 0/)
+  assert.match(coachForm, /No hay instancias oficiales disponibles/)
+  assert.match(athleteForm, /events\.length === 0/)
+  assert.match(athleteForm, /No hay instancias oficiales disponibles/)
+})
+
+test('development seed provides an eligible 1000 m TestEvent for the current athlete group', () => {
+  const seed = fs.readFileSync(path.join(process.cwd(), 'db/seed.ts'), 'utf8')
+
+  assert.match(seed, /fieldPerformanceTestEvents/)
+  assert.match(seed, /1000m_track/)
+  assert.match(seed, /currentGroup\.id/)
+})
