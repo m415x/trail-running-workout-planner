@@ -265,3 +265,18 @@ test('Athlete Stats presents factual 1000 m evolution, running reference and ins
   assert.match(athleteStatsPage, /Referencia no disponible/)
   assert.match(athleteStatsPage, /Reference unavailable/)
 })
+
+
+test('Athlete Stats performance boundary excludes pending and rejected evidence before projection', () => {
+  const actionSource = fs.readFileSync(actionPath, 'utf8')
+  const performanceBoundary = actionSource.slice(
+    actionSource.indexOf('export async function getCurrentAthleteTrack1000mPerformanceAction'),
+  )
+
+  assert.match(performanceBoundary, /listEligibleFieldPerformanceTestHistory/)
+  assert.match(performanceBoundary, /const eligible =/)
+  assert.match(performanceBoundary, /projectTrack1000mEvolution\(eligible, athleteId\)/)
+  assert.match(performanceBoundary, /evidence: eligible\.map/)
+  assert.doesNotMatch(performanceBoundary, /pending_review/)
+  assert.doesNotMatch(performanceBoundary, /reviewStatus/)
+})
