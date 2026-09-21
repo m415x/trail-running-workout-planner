@@ -91,12 +91,6 @@ export function BaseWorkoutCard({
           </CustomCardInside>
         )}
 
-        {executionGuidance.zone && shouldPrioritizeTerrainEffort && (
-          <CustomCardInside className='text-xs'>
-            <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
-          </CustomCardInside>
-        )}
-
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
             <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>{t('card.coachNote')}</p>
