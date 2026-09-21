@@ -15,9 +15,10 @@ interface HomeTabProps {
   initialSchedule: SessionWithWorkout[]
   initialRealizedTraining: UseHomeTabProps['initialRealizedTraining']
   locale: string
+  runningReference: NonNullable<UseHomeTabProps['initialAthlete']> extends never ? never : import('@/lib/physiology/running-reference').RunningReference
 }
 
-export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale }: HomeTabProps) {
+export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale, runningReference }: HomeTabProps) {
   const handleWeekChange = async (startDateIso: string) => {
     const result = await getWeeklySchedule(startDateIso)
     return result.success && result.data ? result.data : []
@@ -92,7 +93,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
           ) : (
             <TodayWorkoutCard
               key={workout.id}
-              workout={workout}
+              workout={{ ...workout, runningReference }}
               date={selectedWeekDay?.fullDate}
               TrackData={index === 0 ? TrackData : null}
               onRealizedTrainingSaved={onRealizedTrainingSaved}
