@@ -61,11 +61,19 @@ function CoachTrack1000mPanel({ athleteId, locale, events, pending, eventsError,
         ? (es ? 'Más lento' : 'Slower')
         : (es ? 'Igual' : 'Same')
     : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
-  const series = historyResult.success ? historyResult.data.evolution.series : []
-  const reference = historyResult.success ? historyResult.data.reference : null
-  return <Card className='md:col-span-2'><CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader><CardContent className='space-y-6'>{historyResult.success && historyResult.data.officialResults.length > 0 && <section className='space-y-3'><h3 className='font-medium'>{es ? 'Resultados oficiales' : 'Official results'}</h3>{historyResult.data.officialResults.map((result) => <div key={result.id} className='rounded-lg border p-3 text-sm'><p className='font-medium'>{es ? 'Resultado oficial' : 'Official result'} · {formatDate(result.performedAt, locale)} · {result.elapsedTimeSec} s</p><p className='text-muted-foreground'>{es ? 'Instancia' : 'Test event'}: {result.testEventId}</p></div>)}</section>}<CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} history={historyResult.success ? historyResult.data.history : []} eventsError={eventsError} pendingError={pendingError} /><section className='space-y-3'><h3 className='font-medium'>{es ? 'Histórico y referencia' : 'History and reference'}</h3>{historyResult.success ? <>{series.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'Sin resultados aceptados.' : 'No accepted results.'}</p> : <div className='space-y-2'>{series.map((point) => <div key={point.evaluationId} className='rounded-lg border p-3 text-sm'><p className='font-medium'>{formatDate(point.performedAt, locale)} · {point.elapsedTimeSec} s</p><p className='text-muted-foreground'>{es ? 'Ritmo' : 'Pace'}: {Math.floor(point.paceSecPerKm / 60)}:{String(Math.round(point.paceSecPerKm % 60)).padStart(2, '0')} min/km · {point.averageSpeedKmh.toFixed(2)} km/h</p></div>)}</div>}<p className='text-sm text-muted-foreground'>{es ? 'Evolución factual' : 'Factual evolution'}: {factualTrend}</p>{reference?.status === 'available' ? <div className='rounded-lg border p-3 text-sm'><p className='font-medium'>{es ? 'Referencia vigente' : 'Current reference'}</p><p className='text-muted-foreground'>{reference.derived.paceLabel} · {reference.derived.averageSpeedKmh.toFixed(2)} km/h</p></div> : <p className='text-sm text-muted-foreground'>{es ? 'Referencia no disponible' : 'Reference unavailable'}</p>}</> : <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudo cargar el histórico.' : 'History could not be loaded.'}</p>}</section></CardContent></Card>
-}
+  const reference = historyResult.success && historyResult.data.reference.status === 'available'
+    ? `${historyResult.data.reference.derived.paceLabel} · ${historyResult.data.reference.derived.averageSpeedKmh.toFixed(2)} km/h`
+    : (es ? 'No disponible' : 'Unavailable')
 
+  return <Card className='md:col-span-2'>
+    <CardHeader><CardTitle>Test 1000 m</CardTitle></CardHeader>
+    <CardContent>
+      {historyResult.success
+        ? <CoachTrack1000mForm athleteId={athleteId} locale={locale} events={events} pendingEvidence={pending} history={historyResult.data.history} reference={reference} factualTrend={factualTrend} eventsError={eventsError} pendingError={pendingError} />
+        : <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudo cargar el histórico.' : 'History could not be loaded.'}</p>}
+    </CardContent>
+  </Card>
+}
 function DetailItem({ label, value }: { label: string; value: string | null | undefined }) {
   return <div><dt className='text-sm text-muted-foreground'>{label}</dt><dd className='mt-1 font-medium'>{value || 'No informado'}</dd></div>
 }
