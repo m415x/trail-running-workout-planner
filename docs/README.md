@@ -16,6 +16,7 @@ Domain and technical contracts that current implementation should preserve unles
 ### Monitoring baseline
 
 - [`architecture/monitoring/athlete-stats-analytics.md`](architecture/monitoring/athlete-stats-analytics.md) — KAN-264 completed Athlete Stats architecture and disclosure baseline.
+- [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md) — Epic 4 canonical 1000 m evidence, lifecycle, RunningReference and safe execution/presentation contract.
 - [`architecture/monitoring/systematic-volume-excess.md`](architecture/monitoring/systematic-volume-excess.md) — versioned external-volume persistence/review signal.
 - [`architecture/monitoring/training-response-convergence.md`](architecture/monitoring/training-response-convergence.md) — coach-review convergence/triage boundary; explicitly not a physiological diagnosis.
 - [`architecture/monitoring/readiness-assessment.md`](architecture/monitoring/readiness-assessment.md) — individual readiness evidence boundary inherited from Epic 2.
@@ -36,7 +37,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-401.md`](handoffs/kan-401.md), which records the durable 1000 m TestEvent, provenance, review lifecycle and analytical-eligibility contract built on KAN-376..379.
+`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-380.md`](handoffs/kan-380.md). [`handoffs/kan-401.md`](handoffs/kan-401.md) remains the preceding lifecycle handoff until closure consolidation.
 
 ## Agent harness
 
@@ -46,9 +47,9 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current transition
 
-Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation has progressed through KAN-401 under KAN-380. KAN-376 establishes canonical `1000m_track` evidence; KAN-377 resolves the authorized running reference applicable to an effective date from active canonical evidence; KAN-378 separates explicit quality percentages from Z1–Z5 execution guidance, adds safe HR provenance/age-prediction semantics, and removes fabricated HR and zone→PAM guidance from WorkoutCard. KAN-379 adds consumer-neutral factual 1000 m history/evolution and an ownership-gated read boundary. KAN-401 adds stable official TestEvent identity, durable official/self-directed provenance, independent recorder identity, review lifecycle and accepted-evidence eligibility across SQLite/Supabase.
+Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation is currently closing KAN-380, integrating canonical 1000 m evidence, RunningReference, safe execution guidance, factual evolution, TestEvent/review lifecycle, and Coach/Athlete presentation boundaries.
 
-Use [`handoffs/kan-401.md`](handoffs/kan-401.md) as the immediate implementation baseline and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for the Epic 4 research/decision context. Current code/tests remain authoritative for actual behavior.
+Use [`handoffs/kan-380.md`](handoffs/kan-380.md) as the immediate implementation baseline, [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md) as the durable implementation contract, and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for research rationale. Current code/tests and Jira remain authoritative for actual behavior.
 
 Subsequent Epic 4 work must be reconstructed from the current `dev` baseline and Jira rather than assuming the preliminary sequence still matches delivered reality. Monitoring/Training Response remains distinct from measured physiology; later reference/guidance work must build on canonical evidence rather than introduce parallel authority.
 
