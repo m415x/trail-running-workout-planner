@@ -314,3 +314,21 @@ test('development seed provides an eligible 1000 m TestEvent for the current ath
   assert.match(seed, /1000m_track/)
   assert.match(seed, /currentGroup\.id/)
 })
+
+
+test('official 1000 m evidence cannot be recorded before the scheduled TestEvent date', () => {
+  const source = fs.readFileSync(path.join(process.cwd(), 'app/actions/field-performance-test-actions.ts'), 'utf8')
+
+  assert.match(source, /getCurrentISODateInTimeZone/)
+  assert.match(source, /testEventPerformedAt\(testEvent\.scheduledAt\)/)
+  assert.match(source, /test_event_not_yet_occurred/)
+})
+
+test('coach review refreshes the route and disables only the evidence being reviewed', () => {
+  const source = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(source, /useRouter/)
+  assert.match(source, /router\.refresh\(\)/)
+  assert.match(source, /reviewingEvidenceId/)
+  assert.match(source, /disabled=\{reviewingEvidenceId === item\.id\}/)
+})
