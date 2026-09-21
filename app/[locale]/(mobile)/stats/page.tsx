@@ -5,6 +5,7 @@ import { getCurrentAthleteStatsAction } from '@/app/actions/athlete-stats-action
 import { getCurrentAthleteTrack1000mPerformanceAction, getCurrentAthleteTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
 import { Link } from '@/i18n/routing'
 import { AthleteTrack1000mForm } from '@/features/field-performance-test/components/AthleteTrack1000mForm'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import type { AthleteStatsDetails, AthleteStatsSummary } from '@/lib/athlete-stats/athlete-stats-projections'
 import { athleteStatsSummaryPeriod } from '@/lib/athlete-stats/athlete-stats-summary-period'
 import { buildAthleteStatsSummaryView } from '@/lib/athlete-stats/athlete-stats-summary-view'
@@ -23,6 +24,7 @@ function AthleteTrack1000mPanel({ locale, events, performanceResult }: { locale:
   const es = locale === 'es'
   const evolution = performanceResult.success ? performanceResult.data.evolution : null
   const reference = performanceResult.success ? performanceResult.data.reference : null
+  const latest = evolution?.series.at(-1)
   const trend = evolution?.comparison.direction === 'decreasing'
     ? (es ? 'Más rápido' : 'Faster')
     : evolution?.comparison.direction === 'increasing'
@@ -30,9 +32,29 @@ function AthleteTrack1000mPanel({ locale, events, performanceResult }: { locale:
       : evolution?.comparison.direction === 'stable'
         ? (es ? 'Igual' : 'Same')
         : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
-  return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'><h2 className='font-heading text-lg font-bold'>Test 1000 m</h2><p className='mt-1 text-sm text-muted-foreground'>{es ? 'Registrá un test oficial programado o un intento autogestionado.' : 'Record a scheduled official test or a self-directed attempt.'}</p>{performanceResult.success ? performanceResult.data.evolution.series.length ? <div className='mt-4 grid gap-2'>{performanceResult.data.evolution.series.map(point => <div key={point.evaluationId} className='rounded-xl bg-muted/50 p-3 text-sm'><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div>)}</div> : <p className='mt-4 text-sm text-muted-foreground'>{es ? 'Todavía no hay tests elegibles.' : 'There are no eligible tests yet.'}</p> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{es ? 'No se pudo cargar el rendimiento del test.' : 'Test performance could not be loaded.'}</p>}{performanceResult.success && <div className='mt-4 grid gap-2 rounded-xl border p-3 text-sm'><p><span className='font-medium'>{es ? 'Evolución' : 'Evolution'}:</span> {trend}</p>{reference?.status === 'available' ? <p><span className='font-medium'>{es ? 'Referencia' : 'Reference'}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{es ? 'Referencia no disponible' : 'Reference unavailable'}</p>}</div>}<AthleteTrack1000mForm locale={locale} events={events} /></article>
-}
 
+  return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'>
+    <h2 className='font-heading text-lg font-bold'>Test 1000 m</h2>
+    <p className='mt-1 text-sm text-muted-foreground'>{es ? 'Registrá un test oficial programado o un intento autogestionado.' : 'Record a scheduled official test or a self-directed attempt.'}</p>
+    {performanceResult.success ? <div className='mt-4 grid gap-2 rounded-xl border p-3 text-sm'>
+      {reference?.status === 'available' ? <p><span className='font-medium'>{es ? 'Referencia' : 'Reference'}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{es ? 'Referencia no disponible' : 'Reference unavailable'}</p>}
+      <p><span className='font-medium'>{es ? 'Evolución' : 'Evolution'}:</span> {trend}</p>
+      {latest && <p className='text-xs text-muted-foreground'>{es ? 'Último test' : 'Latest test'}: {latest.performedAt} · {latest.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p>}
+    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{es ? 'No se pudo cargar el rendimiento del test.' : 'Test performance could not be loaded.'}</p>}
+    <Accordion className='mt-3'>
+      <AccordionItem value='history'>
+        <AccordionTrigger>{es ? `Historial de tests (${evolution?.series.length ?? 0})` : `Test history (${evolution?.series.length ?? 0})`}</AccordionTrigger>
+        <AccordionContent>
+          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{es ? 'Todavía no hay tests elegibles.' : 'There are no eligible tests yet.'}</p>}
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value='register'>
+        <AccordionTrigger>{es ? 'Registrar nuevo test' : 'Record new test'}</AccordionTrigger>
+        <AccordionContent><AthleteTrack1000mForm locale={locale} events={events} /></AccordionContent>
+      </AccordionItem>
+    </Accordion>
+  </article>
+}
 function isSummary(data: AthleteStatsSummary | AthleteStatsDetails): data is AthleteStatsSummary {
   return data.competition === null || !('primaryCompetition' in data.competition)
 }
