@@ -93,8 +93,8 @@ export function BaseWorkoutCard({
         {executionGuidance.zone && (
           <CustomCardInside className='space-y-1 text-xs'>
             <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
-            <p className='text-muted-foreground'>Talk Test: {executionGuidance.zone.talkTest}</p>
-            <p className='text-muted-foreground'>{executionGuidance.zone.terrainPriority === 'effort_over_pace' ? 'effort_over_pace' : executionGuidance.zone.terrainPriority}</p>
+            <p className='text-muted-foreground'>{t(`card.guidance.talkTest.${executionGuidance.zone.talkTest}`)}</p>
+            <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
           </CustomCardInside>
         )}
 
