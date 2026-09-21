@@ -32,6 +32,7 @@ export function BaseWorkoutCard({
 }: BaseWorkoutCardProps) {
   const t = useTranslations('Workouts')
   const common = useTranslations('Common')
+  const shouldPrioritizeTerrainEffort = workout.type === 'Trail' || workout.type === 'Hills' || (TrackData?.maxGradePct ?? 0) > 0
   const {
     WorkoutIcon,
     headerTitle,
@@ -94,7 +95,9 @@ export function BaseWorkoutCard({
           <CustomCardInside className='space-y-1 text-xs'>
             <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
             <p className='text-muted-foreground'>{t(`card.guidance.talkTest.${executionGuidance.zone.talkTest}`)}</p>
-            <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
+            {shouldPrioritizeTerrainEffort && (
+              <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
+            )}
           </CustomCardInside>
         )}
 
