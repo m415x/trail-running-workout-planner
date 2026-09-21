@@ -38,9 +38,9 @@ test('variable-terrain WorkoutCard does not present legacy group duration-derive
   const hook = await readFile('features/workouts/hooks/useWorkoutCard.ts', 'utf8')
 
   assert.match(card, /shouldPrioritizeTerrainEffort\s*\?\s*stats[.]filter/)
-  assert.match(card, /stat[.]kind\s*===\s*['"]duration['"]/)
-  assert.match(card, /stat[.]kind\s*===\s*['"]pace['"]/)
-  assert.match(card, /stat[.]kind\s*===\s*['"]speed['"]/)
+  assert.match(card, /stat[.]kind\s*!==\s*['"]duration['"]/)
+  assert.match(card, /stat[.]kind\s*!==\s*['"]pace['"]/)
+  assert.match(card, /stat[.]kind\s*!==\s*['"]speed['"]/)
   assert.match(hook, /kind:\s*['"]duration['"]/)
   assert.match(hook, /kind:\s*['"]pace['"]/)
   assert.match(hook, /kind:\s*['"]speed['"]/)
