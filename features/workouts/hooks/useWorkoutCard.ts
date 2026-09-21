@@ -142,13 +142,15 @@ export function useWorkoutCard({
   const stats = useMemo(
     () => [
       {
+        kind: 'duration' as const,
         icon: Clock,
         label: t('card.estimatedTime'),
         value: timeDisplay,
         unit: 'min',
       },
-      { icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: '/km' },
+      { kind: 'pace' as const, icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: '/km' },
       {
+        kind: 'speed' as const,
         icon: Gauge,
         label: t('card.avgSpeed'),
         value: speedDisplay,
