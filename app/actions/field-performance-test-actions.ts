@@ -21,6 +21,9 @@ import {
   type ReviewCoachTrack1000mEvidenceInput,
 } from '@/lib/physiology/field-performance-test-application'
 import type { Track1000mEvaluationInput } from '@/lib/physiology/field-performance-test'
+import { listEligibleFieldPerformanceTestHistory } from '@/lib/physiology/field-performance-test-history'
+import { projectTrack1000mEvolution } from '@/lib/analytics/training/track-1000m-evolution'
+import { resolveRunningReference } from '@/lib/physiology/running-reference'
 import { createSqliteFieldPerformanceTestRepository } from '@/lib/physiology/field-performance-test-sqlite'
 
 const repository = createSqliteFieldPerformanceTestRepository(db)
@@ -245,6 +248,50 @@ export async function getCoachTrack1000mHistoryAction(athleteId: string, effecti
       reference: reference.data,
       history,
       officialResults,
+    },
+  }
+}
+
+
+export async function getCurrentAthleteTrack1000mPerformanceAction(effectiveDate: string) {
+  const currentAthlete = await getCurrentAthlete()
+  if (!currentAthlete.success || !currentAthlete.data?.athleteProfile) {
+    return { success: false as const, error: 'athlete_not_found' as const }
+  }
+
+  const athleteId = currentAthlete.data.athleteProfile.id
+  const eligible = listEligibleFieldPerformanceTestHistory(
+    repository.listActiveByAthlete(athleteId),
+    athleteId,
+    effectiveDate,
+  )
+  const evolution = projectTrack1000mEvolution(eligible, athleteId)
+  const reference = resolveRunningReference({
+    effectiveDate,
+    evidence: eligible.map((row) => ({
+      evaluationId: row.id,
+      performedAt: row.performedAt,
+      createdAt: row.createdAt,
+      protocol: row.protocol,
+      distanceM: row.distanceM,
+      elapsedTimeSec: row.elapsedTimeSec,
+    })),
+  })
+
+  return {
+    success: true as const,
+    data: {
+      evolution: {
+        comparison: evolution.comparison,
+        series: evolution.series.map((point) => {
+          const evidence = eligible.find((row) => row.id === point.evaluationId)
+          return {
+            ...point,
+            executionContext: evidence?.executionContext ?? 'official',
+          }
+        }),
+      },
+      reference,
     },
   }
 }
