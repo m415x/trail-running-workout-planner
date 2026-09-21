@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { correctTrack1000mEvidenceAction, createCoachTrack1000mEvidenceAction, reviewCoachTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
@@ -11,11 +12,13 @@ type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number
 
 export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history, eventsError = false, pendingError = false }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[]; eventsError?: boolean; pendingError?: boolean }) {
   const es = locale === 'es'
+  const router = useRouter()
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
   const [minutes, setMinutes] = useState('')
   const [seconds, setSeconds] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [reviewingEvidenceId, setReviewingEvidenceId] = useState<string | null>(null)
   const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
   const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
 
@@ -53,10 +56,11 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
   }
 
   async function review(evidenceId: string, reviewStatus: 'accepted' | 'rejected') {
-    setBusy(true)
+    setReviewingEvidenceId(evidenceId)
     const result = await reviewCoachTrack1000mEvidenceAction({ athleteId, evidenceId, reviewStatus })
-    setBusy(false)
+    setReviewingEvidenceId(null)
     setMessage(result.success ? (es ? 'Revisión guardada.' : 'Review saved.') : result.error)
+    if (result.success) router.refresh()
   }
 
   return <div className='grid gap-6 lg:grid-cols-2'>
@@ -69,7 +73,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
       </div>
       <button type='submit' disabled={busy || !testEventId || !hasTime} className={buttonVariants({ size: 'sm' })}>{es ? 'Registrar' : 'Record'}</button>
     </form>
-    <section className='space-y-3'><h3 className='font-medium'>{es ? 'Pendientes de revisión' : 'Pending review'}</h3>{pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : pendingEvidence.map(item => <div key={item.id} className='rounded-lg border p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><div className='mt-3 flex gap-2'><button type='button' disabled={busy} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={busy} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</section>
+    <section className='space-y-3'><h3 className='font-medium'>{es ? 'Pendientes de revisión' : 'Pending review'}</h3>{pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : pendingEvidence.map(item => <div key={item.id} className='rounded-lg border p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><div className='mt-3 flex gap-2'><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</section>
     <section className='space-y-3 lg:col-span-2'><h3 className='font-medium'>{es ? 'Histórico corregible' : 'Correctable history'}</h3>{history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : history.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><button type='button' disabled={busy} onClick={() => correct(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</section>
     {message && <p role='status' className='text-sm text-muted-foreground lg:col-span-2'>{message}</p>}
   </div>
