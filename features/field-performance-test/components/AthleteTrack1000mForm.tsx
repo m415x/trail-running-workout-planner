@@ -12,10 +12,13 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
   const [executionContext, setExecutionContext] = useState<'official' | 'self_directed'>(events.length ? 'official' : 'self_directed')
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
   const [performedAt, setPerformedAt] = useState('')
-  const [elapsedTimeSec, setElapsedTimeSec] = useState('')
+  const [minutes, setMinutes] = useState('')
+  const [seconds, setSeconds] = useState('')
   const [notes, setNotes] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
+  const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
+  const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -24,7 +27,7 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
     const result = await getCurrentAthleteTrack1000mEvidenceAction({
       executionContext,
       ...(executionContext === 'official' ? { testEventId } : { performedAt }),
-      elapsedTimeSec: Number(elapsedTimeSec),
+      elapsedTimeSec,
       ...(notes.trim() ? { notes: notes.trim() } : {}),
     })
     setPending(false)
@@ -37,10 +40,14 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
 
   return <form onSubmit={submit} className='mt-4 grid gap-3'>
     <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Tipo de registro' : 'Registration type'}</span><select value={executionContext} onChange={event => setExecutionContext(event.target.value as 'official' | 'self_directed')} className='h-10 rounded-md border border-input bg-background px-3'><option value='official' disabled={events.length === 0}>{es ? 'Test oficial' : 'Official test'}</option><option value='self_directed'>{es ? 'Autogestionado' : 'Self-directed'}</option></select></label>
+    {events.length === 0 && <p className='rounded-lg border border-dashed p-3 text-sm text-muted-foreground'>{es ? 'No hay instancias oficiales disponibles. Podés registrar un intento autogestionado.' : 'No official test events are available. You can record a self-directed attempt.'}</p>}
     {executionContext === 'official' ? <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Instancia oficial' : 'Official test'}</span><select value={testEventId} onChange={event => setTestEventId(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3'>{events.map(item => <option key={item.id} value={item.id}>{item.scheduledAt.slice(0, 10)}</option>)}</select></label> : <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Fecha realizada' : 'Performed date'}</span><input type='date' required value={performedAt} onChange={event => setPerformedAt(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>}
-    <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Tiempo (segundos)' : 'Time (seconds)'}</span><input type='number' min='1' step='0.1' required value={elapsedTimeSec} onChange={event => setElapsedTimeSec(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+    <div className='grid grid-cols-2 gap-3'>
+      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='number' min='0' step='1' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='number' min='0' max='59' step='1' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+    </div>
     <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Notas (opcional)' : 'Notes (optional)'}</span><textarea value={notes} onChange={event => setNotes(event.target.value)} className='min-h-20 rounded-md border border-input bg-background p-3' /></label>
-    <button type='submit' disabled={pending || !elapsedTimeSec || (executionContext === 'official' && !testEventId)} className={buttonVariants({ size: 'sm' })}>{pending ? (es ? 'Guardando…' : 'Saving…') : (es ? 'Registrar test' : 'Record test')}</button>
+    <button type='submit' disabled={pending || !hasTime || (executionContext === 'official' && !testEventId)} className={buttonVariants({ size: 'sm' })}>{pending ? (es ? 'Guardando…' : 'Saving…') : (es ? 'Registrar test' : 'Record test')}</button>
     {message && <p role='status' className='text-sm text-muted-foreground'>{message}</p>}
   </form>
 }
