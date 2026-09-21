@@ -189,7 +189,7 @@ test('Coach field-test workflow presents factual evolution and running reference
 
   assert.match(coachPage, /historyResult\.data\.evolution/)
   assert.match(coachPage, /historyResult\.data\.reference/)
-  assert.match(coachPage, /reference\?\.status === 'available'/)
+  assert.match(coachPage, /historyResult\.data\.reference\.status === 'available'/)
   assert.match(coachPage, /paceLabel/)
   assert.match(coachPage, /averageSpeedKmh/)
   assert.match(coachPage, /No disponible/)
