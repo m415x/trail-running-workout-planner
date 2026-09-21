@@ -227,3 +227,19 @@ test('Coach field-test workflow identifies official TestEvent results without re
   assert.match(coachPage, /Instancia/)
   assert.match(coachPage, /Test event/)
 })
+
+
+test('Athlete Stats reads an explicit safe 1000 m performance projection', () => {
+  const athleteStatsPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+  const actionSource = fs.readFileSync(actionPath, 'utf8')
+
+  assert.match(actionSource, /getCurrentAthleteTrack1000mPerformanceAction/)
+  assert.match(actionSource, /listEligibleFieldPerformanceTestHistory/)
+  assert.match(actionSource, /executionContext/)
+  assert.match(athleteStatsPage, /getCurrentAthleteTrack1000mPerformanceAction/)
+  assert.match(athleteStatsPage, /performanceResult/)
+  assert.match(athleteStatsPage, /official/)
+  assert.match(athleteStatsPage, /self_directed/)
+  assert.doesNotMatch(athleteStatsPage, /reviewStatus/)
+  assert.doesNotMatch(athleteStatsPage, /recordedByUserId/)
+})
