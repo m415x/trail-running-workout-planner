@@ -371,3 +371,20 @@ test('coach 1000 m presentation prioritizes pending review and collapses registr
   assert.match(form, /Historial|History/)
   assert.doesNotMatch(form, /Histórico corregible/)
 })
+
+
+test('coach athlete page keeps analytical 1000 m history inside the collapsed history section', () => {
+  const page = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+
+  assert.doesNotMatch(page, /Histórico y referencia/)
+  assert.doesNotMatch(page, /historyResult\.data\.officialResults\.map/)
+  assert.match(page, /reference=/)
+  assert.match(page, /factualTrend=/)
+})
+
+test('athlete 1000 m mobile summary is compact and avoids explanatory copy when evidence exists', () => {
+  const stats = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+
+  assert.match(stats, /performanceResult\.success.*reference\?\.status === 'available'/s)
+  assert.doesNotMatch(stats, /Registrá un test oficial programado o un intento autogestionado\.<\/p>/)
+})
