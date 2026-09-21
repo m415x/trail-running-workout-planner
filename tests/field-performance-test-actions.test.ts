@@ -182,3 +182,18 @@ test('Coach field-test workflow exposes append-only correction from history', ()
   assert.match(coachForm, /evidenceId/)
   assert.match(coachForm, /replacement/)
 })
+
+
+test('Coach field-test workflow presents factual evolution and running reference states', () => {
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+
+  assert.match(coachPage, /historyResult\.data\.evolution\.series/)
+  assert.match(coachPage, /historyResult\.data\.reference/)
+  assert.match(coachPage, /reference\.status === 'available'/)
+  assert.match(coachPage, /paceLabel/)
+  assert.match(coachPage, /averageSpeedKmh/)
+  assert.match(coachPage, /Referencia no disponible/)
+  assert.match(coachPage, /Reference unavailable/)
+  assert.match(coachPage, /Sin resultados aceptados/)
+  assert.match(coachPage, /No accepted results/)
+})
