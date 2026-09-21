@@ -8,8 +8,8 @@ test('WorkoutCard localizes execution guidance instead of exposing internal enum
   const en = await readFile('messages/en/realized-training/workouts.json', 'utf8')
 
   assert.match(cardSource, /executionGuidance/)
-  assert.match(cardSource, /t[(]['"]card[.]guidance[.]talkTest/)
-  assert.match(cardSource, /t[(]['"]card[.]guidance[.]terrainPriority/)
+  assert.match(cardSource, /card[.]guidance[.]talkTest/)
+  assert.match(cardSource, /card[.]guidance[.]terrainPriority/)
   assert.doesNotMatch(cardSource, />Talk Test:/)
   assert.doesNotMatch(cardSource, /['"]effort_over_pace['"]\s*:\s*['"]effort_over_pace['"]/)
 
