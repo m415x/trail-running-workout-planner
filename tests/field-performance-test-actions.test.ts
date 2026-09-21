@@ -395,7 +395,8 @@ test('WorkoutCard avoids duplicate zone guidance and suppresses flat-reference q
 
   assert.doesNotMatch(card, /RPE \{executionGuidance\.zone\.rpe\.min\}/)
   assert.doesNotMatch(card, /card\.guidance\.talkTest/)
+  assert.doesNotMatch(card, /card\.guidance\.terrainPriority/)
   assert.match(card, /shouldPrioritizeTerrainEffort/)
-  assert.match(card, /terrainPriority/)
+  assert.match(card, /ZonePill/)
   assert.match(card, /executionGuidance\.quality\?\.status === 'available' && !shouldPrioritizeTerrainEffort/)
 })
