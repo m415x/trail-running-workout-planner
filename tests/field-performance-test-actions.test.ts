@@ -359,7 +359,7 @@ test('athlete stats keeps 1000 m summary visible and moves history and registrat
   assert.match(stats, /Accordion/)
   assert.match(stats, /Historial de tests|Test history/)
   assert.match(stats, /Registrar nuevo test|Record new test/)
-  assert.match(stats, /evolution\.series\.length/)
+  assert.match(stats, /evolution\?\.series\.length/)
 })
 
 test('coach 1000 m presentation prioritizes pending review and collapses registration and unified history', () => {
