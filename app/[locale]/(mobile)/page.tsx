@@ -27,7 +27,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
     getCurrentAthlete(),
     getWeeklySchedule(range.startDate),
     getCurrentAthleteRealizedTrainingRangeAction(range.startDate, range.endDate),
-    getCurrentAthleteTrack1000mPerformanceAction(range.endDate),
+    getCurrentAthleteTrack1000mPerformanceAction(getCurrentISODateInTimeZone()),
   ])
 
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
