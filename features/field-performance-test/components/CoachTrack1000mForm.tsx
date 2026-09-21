@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import { correctTrack1000mEvidenceAction, createCoachTrack1000mEvidenceAction, reviewCoachTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 
 type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
@@ -63,18 +64,31 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
     if (result.success) router.refresh()
   }
 
-  return <div className='grid gap-6 lg:grid-cols-2'>
-    <form onSubmit={register} className='grid gap-3'>
-      <h3 className='font-medium'>{es ? 'Registrar test oficial' : 'Record official test'}</h3>
-      {eventsError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar las instancias oficiales.' : 'Official test events could not be loaded.'}</p> : events.length === 0 ? <p className='rounded-lg border border-dashed p-3 text-sm text-muted-foreground'>{es ? 'No hay instancias oficiales disponibles.' : 'No official test events are available.'}</p> : <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Instancia oficial' : 'Official test event'}</span><select value={testEventId} onChange={event => setTestEventId(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3'>{events.map(item => <option key={item.id} value={item.id}>{item.scheduledAt.slice(0, 10)}</option>)}</select></label>}
-      <div className='grid grid-cols-2 gap-3'>
-        <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='number' min='0' step='1' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
-        <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='number' min='0' max='59' step='1' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
-      </div>
-      <button type='submit' disabled={busy || !testEventId || !hasTime} className={buttonVariants({ size: 'sm' })}>{es ? 'Registrar' : 'Record'}</button>
-    </form>
-    <section className='space-y-3'><h3 className='font-medium'>{es ? 'Pendientes de revisión' : 'Pending review'}</h3>{pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : pendingEvidence.map(item => <div key={item.id} className='rounded-lg border p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><div className='mt-3 flex gap-2'><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</section>
-    <section className='space-y-3 lg:col-span-2'><h3 className='font-medium'>{es ? 'Histórico corregible' : 'Correctable history'}</h3>{history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : history.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 rounded-lg border p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><button type='button' disabled={busy} onClick={() => correct(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</section>
-    {message && <p role='status' className='text-sm text-muted-foreground lg:col-span-2'>{message}</p>}
+  return <div className='space-y-3'>
+    <Accordion defaultValue={pendingEvidence.length > 0 ? ['pending'] : []}>
+      <AccordionItem value='pending'>
+        <AccordionTrigger>{es ? `Pendientes de revisión (${pendingEvidence.length})` : `Pending review (${pendingEvidence.length})`}</AccordionTrigger>
+        <AccordionContent>
+          {pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : <div className='divide-y rounded-lg border'>{pendingEvidence.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><div className='flex gap-2'><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</div>}
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value='register'>
+        <AccordionTrigger>{es ? 'Registrar test oficial' : 'Record official test'}</AccordionTrigger>
+        <AccordionContent>
+          <form onSubmit={register} className='grid gap-3'>
+            {eventsError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar las instancias oficiales.' : 'Official test events could not be loaded.'}</p> : events.length === 0 ? <p className='rounded-lg border border-dashed p-3 text-sm text-muted-foreground'>{es ? 'No hay instancias oficiales disponibles.' : 'No official test events are available.'}</p> : <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Instancia oficial' : 'Official test event'}</span><select value={testEventId} onChange={event => setTestEventId(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3'>{events.map(item => <option key={item.id} value={item.id}>{item.scheduledAt.slice(0, 10)}</option>)}</select></label>}
+            <div className='grid grid-cols-2 gap-3'><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='number' min='0' step='1' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='number' min='0' max='59' step='1' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label></div>
+            <button type='submit' disabled={busy || !testEventId || !hasTime} className={buttonVariants({ size: 'sm' })}>{es ? 'Registrar' : 'Record'}</button>
+          </form>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value='history'>
+        <AccordionTrigger>{es ? `Historial (${history.length})` : `History (${history.length})`}</AccordionTrigger>
+        <AccordionContent>
+          {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {item.elapsedTimeSec} s</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => correct(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
+    {message && <p role='status' className='text-sm text-muted-foreground'>{message}</p>}
   </div>
 }
