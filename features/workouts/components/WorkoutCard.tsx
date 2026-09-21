@@ -55,6 +55,10 @@ export function BaseWorkoutCard({
     handleSaveSession,
   } = useWorkoutCard({ workout, date, TrackData, onRealizedTrainingSaved })
 
+  const visibleStats = shouldPrioritizeTerrainEffort
+    ? stats.filter((stat) => stat.kind !== 'duration' && stat.kind !== 'pace' && stat.kind !== 'speed')
+    : stats
+
   return (
     <>
       <CustomCard className={cardClassName}>
@@ -79,7 +83,7 @@ export function BaseWorkoutCard({
         {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
         <div className='grid grid-cols-3 gap-2'>
-          {stats.map(({ icon: Icon, label, value, unit }) => (
+          {visibleStats.map(({ icon: Icon, label, value, unit }) => (
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
         </div>
