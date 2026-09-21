@@ -9,16 +9,21 @@ import { RouteMapCard } from '@workouts/components/RouteMapCard'
 import { getWeeklySchedule } from '@/app/actions/dashboard-actions'
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { Team } from '@/types'
+import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
+import type { RunningReference } from '@/lib/physiology/running-reference'
+import { useEffect, useState } from 'react'
 
 interface HomeTabProps {
   initialAthlete: UseHomeTabProps['initialAthlete']
   initialSchedule: SessionWithWorkout[]
   initialRealizedTraining: UseHomeTabProps['initialRealizedTraining']
   locale: string
-  runningReference: NonNullable<UseHomeTabProps['initialAthlete']> extends never ? never : import('@/lib/physiology/running-reference').RunningReference
+  runningReference: RunningReference
 }
 
-export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale, runningReference }: HomeTabProps) {
+export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale, runningReference: initialRunningReference }: HomeTabProps) {
+  const [runningReference, setRunningReference] = useState<RunningReference>(initialRunningReference)
+
   const handleWeekChange = async (startDateIso: string) => {
     const result = await getWeeklySchedule(startDateIso)
     return result.success && result.data ? result.data : []
@@ -54,6 +59,29 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     onWeekChange: handleWeekChange,
     onRealizedTrainingWeekChange: handleRealizedTrainingWeekChange,
   })
+
+  useEffect(() => {
+    const effectiveDate = selectedWeekDay?.fullDate
+    if (!effectiveDate) {
+      setRunningReference({ status: 'unknown' })
+      return
+    }
+
+    let active = true
+    getCurrentAthleteTrack1000mPerformanceAction(effectiveDate)
+      .then(result => {
+        if (active) {
+          setRunningReference(result.success ? result.data.reference : { status: 'unknown' })
+        }
+      })
+      .catch(() => {
+        if (active) setRunningReference({ status: 'unknown' })
+      })
+
+    return () => {
+      active = false
+    }
+  }, [selectedWeekDay?.fullDate])
 
   const fallbackTeam: Team = {
     id: 'default',
