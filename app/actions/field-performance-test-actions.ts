@@ -25,6 +25,7 @@ import { listEligibleFieldPerformanceTestHistory } from '@/lib/physiology/field-
 import { projectTrack1000mEvolution } from '@/lib/analytics/training/track-1000m-evolution'
 import { resolveRunningReference } from '@/lib/physiology/running-reference'
 import { createSqliteFieldPerformanceTestRepository } from '@/lib/physiology/field-performance-test-sqlite'
+import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 
 const repository = createSqliteFieldPerformanceTestRepository(db)
 
@@ -125,6 +126,9 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
       return { success: false as const, error: 'test_event_not_found' as const }
     }
     performedAt = testEventPerformedAt(testEvent.scheduledAt)
+    if (performedAt > getCurrentISODateInTimeZone()) {
+      return { success: false as const, error: 'test_event_not_yet_occurred' as const }
+    }
   }
 
   if (!performedAt) {
@@ -160,9 +164,14 @@ export async function createCoachTrack1000mEvidenceAction(
     return { success: false as const, error: 'test_event_not_found' as const }
   }
 
+  const performedAt = testEventPerformedAt(testEvent.scheduledAt)
+  if (performedAt > getCurrentISODateInTimeZone()) {
+    return { success: false as const, error: 'test_event_not_yet_occurred' as const }
+  }
+
   return createCoachTrack1000mEvidence({
     ...input,
-    performedAt: testEventPerformedAt(testEvent.scheduledAt),
+    performedAt,
   }, {
     ...dependencies,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
