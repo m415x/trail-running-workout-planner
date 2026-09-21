@@ -19,7 +19,19 @@
       "avgPace": "Avg. Pace",
       "avgSpeed": "Avg. Speed",
       "restMessage": "No session scheduled. Time to recover.",
-      "logged": "Workout logged"
+      "logged": "Workout logged",
+      "guidance": {
+        "talkTest": {
+          "comfortable_conversation": "Comfortable conversation",
+          "full_conversation": "Full conversation",
+          "short_phrases": "Short phrases",
+          "few_words": "Few words",
+          "no_conversation": "No conversation"
+        },
+        "terrainPriority": {
+          "effort_over_pace": "Prioritize effort over pace"
+        }
+      }
     },
     "dialog": {
       "title": "Log Workout",
