@@ -243,3 +243,25 @@ test('Athlete Stats reads an explicit safe 1000 m performance projection', () =>
   assert.doesNotMatch(athleteStatsPage, /reviewStatus/)
   assert.doesNotMatch(athleteStatsPage, /recordedByUserId/)
 })
+
+
+test('Athlete Stats presents factual 1000 m evolution, running reference and insufficient evidence states', () => {
+  const athleteStatsPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+
+  assert.match(athleteStatsPage, /performanceResult\.data\.reference/)
+  assert.match(athleteStatsPage, /paceLabel/)
+  assert.match(athleteStatsPage, /averageSpeedKmh/)
+  assert.match(athleteStatsPage, /comparison\.direction/)
+  assert.match(athleteStatsPage, /decreasing/)
+  assert.match(athleteStatsPage, /increasing/)
+  assert.match(athleteStatsPage, /Más rápido/)
+  assert.match(athleteStatsPage, /Faster/)
+  assert.match(athleteStatsPage, /Más lento/)
+  assert.match(athleteStatsPage, /Slower/)
+  assert.match(athleteStatsPage, /Igual/)
+  assert.match(athleteStatsPage, /Same/)
+  assert.match(athleteStatsPage, /Evidencia insuficiente/)
+  assert.match(athleteStatsPage, /Insufficient evidence/)
+  assert.match(athleteStatsPage, /Referencia no disponible/)
+  assert.match(athleteStatsPage, /Reference unavailable/)
+})
