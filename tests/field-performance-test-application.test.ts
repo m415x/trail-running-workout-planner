@@ -605,7 +605,7 @@ test('coach review hides evidence outside the owned athlete boundary and never m
         createdAt: '2026-09-20T14:00:00.000Z',
         updatedAt: '2026-09-20T14:00:00.000Z',
       }),
-      review: (_id, _status, _updatedAt) => {
+      review: () => {
         reviewCalls += 1
         throw new Error('must not review')
       },
