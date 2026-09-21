@@ -10,13 +10,17 @@ Full-stack application for trail-running group management, periodized planning, 
 - [`docs/architecture/`](docs/architecture/) — current contracts and invariants.
 - [`docs/history/epic-1.md`](docs/history/epic-1.md) — consolidated Epic 1 evolution.
 - [`docs/history/epic-2.md`](docs/history/epic-2.md) — consolidated Epic 2 / Planning Automation evolution.
-- [`docs/handoffs/`](docs/handoffs/) — minimal operational context for resuming recent work.
+- [`docs/history/epic-3.md`](docs/history/epic-3.md) — realized training, monitoring, Athlete Stats, competitive catalog and action safety.
+- [`docs/history/epic-4.md`](docs/history/epic-4.md) — field-performance evidence, RunningReference, execution guidance and safe physiology integration.
+- [`docs/handoffs/`](docs/handoffs/) — temporary operational context for active/recent work; not a history archive.
 
 ## Product status
 
-Epic 2 completes the planning automation domain, from generation and ownership through cohorts, competitive context, taper/recovery, integral review/persistence and individual assessment of preparation mismatches. Durable decisions are documented in `docs/architecture/`; Jira maintains scope and execution traceability.
+Epics 1–4 are complete. The current `dev` baseline includes group-first periodized planning, durable realized-training evidence, evidence-qualified monitoring and Athlete Stats, competitive catalog/registration and action safety, plus canonical 1000 m field-performance evidence with temporal RunningReference, safe execution guidance, factual evolution and Coach/Athlete integration.
 
-Individual preparation assessment is advisory: an assessment without alerts does not certify readiness to compete, and insufficient data is never interpreted as sufficient preparation.
+The 1000 m field test is observed performance evidence, not a direct measurement of PAM/MAS, VO2max, threshold or heart-rate physiology. Missing evidence remains unknown; monitoring/readiness and physiology remain separate domains; automation does not silently replace coach-owned planning.
+
+Durable current contracts live in `docs/architecture/`; completed evolution is consolidated in `docs/history/`; Jira owns scope and execution traceability. Known legacy/debt work is evaluated from the current `dev` baseline rather than treated as retroactive acceptance failure for completed epics.
 
 ## Stack
 
