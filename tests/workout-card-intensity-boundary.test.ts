@@ -27,3 +27,17 @@ test('WorkoutCard keeps planned workout pace and time until explicit intensity g
   assert.match(source, /const paceDisplay = formatPace\(workout\.pace\)/)
   assert.match(source, /const speedDisplay = paceToSpeed\(workout\.pace\)/)
 })
+
+
+test('WorkoutCard presentation requires first-class zone execution guidance', async () => {
+  const cardSource = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')
+  const hookSource = await readFile(HOOK_PATH, 'utf8')
+
+  assert.match(hookSource, /ExecutionGuidance/)
+  assert.match(cardSource, /executionGuidance/)
+  assert.match(cardSource, /rpe/)
+  assert.match(cardSource, /talkTest/)
+  assert.match(cardSource, /effort_over_pace/)
+  assert.doesNotMatch(cardSource, /190/)
+  assert.doesNotMatch(cardSource, /50/)
+})
