@@ -48,6 +48,7 @@ export function BaseWorkoutCard({
     stats,
     zoneInfo,
     bpmRange,
+    executionGuidance,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
@@ -81,6 +82,14 @@ export function BaseWorkoutCard({
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
         </div>
+
+        {executionGuidance.zone && (
+          <CustomCardInside className='space-y-1 text-xs'>
+            <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
+            <p className='text-muted-foreground'>Talk Test: {executionGuidance.zone.talkTest}</p>
+            <p className='text-muted-foreground'>{executionGuidance.zone.terrainPriority === 'effort_over_pace' ? 'effort_over_pace' : executionGuidance.zone.terrainPriority}</p>
+          </CustomCardInside>
+        )}
 
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
