@@ -388,3 +388,14 @@ test('athlete 1000 m mobile summary is compact and avoids explanatory copy when 
   assert.match(stats, /performanceResult\.success.*reference\?\.status === 'available'/s)
   assert.doesNotMatch(stats, /Registrá un test oficial programado o un intento autogestionado\.<\/p>/)
 })
+
+
+test('WorkoutCard avoids duplicate zone guidance and suppresses flat-reference quality targets on variable terrain', () => {
+  const card = fs.readFileSync(path.join(process.cwd(), 'features/workouts/components/WorkoutCard.tsx'), 'utf8')
+
+  assert.doesNotMatch(card, /RPE \{executionGuidance\.zone\.rpe\.min\}/)
+  assert.doesNotMatch(card, /card\.guidance\.talkTest/)
+  assert.match(card, /shouldPrioritizeTerrainEffort/)
+  assert.match(card, /terrainPriority/)
+  assert.match(card, /executionGuidance\.quality\?\.status === 'available'.*!shouldPrioritizeTerrainEffort/s)
+})
