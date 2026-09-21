@@ -2,6 +2,7 @@ import { db } from '@/db/index'
 import {
   athleteGroups,
   athleteProfiles,
+  fieldPerformanceTestEvents,
   groupSessionPrescriptions,
   groupTrainingPlans,
   macrocycles,
@@ -567,7 +568,24 @@ async function seed() {
   await db.insert(athleteProfiles).values(testAthleteRows).onConflictDoNothing().run()
 
   // -----------------------------------------------------------------------
-  // 6. Cohortes de planificación demostrativas
+  // 6. Instancia oficial de test de 1000 m para desarrollo
+  // -----------------------------------------------------------------------
+
+  await db
+    .insert(fieldPerformanceTestEvents)
+    .values({
+      id: 'field_test_event_s2_1000m_current',
+      teamId,
+      groupId: currentGroup.id,
+      scheduledAt: `${shiftISODate(currentWeekStart, 3)}T18:00:00-03:00`,
+      protocol: '1000m_track',
+      createdByUserId: null,
+    })
+    .onConflictDoNothing()
+    .run()
+
+  // -----------------------------------------------------------------------
+  // 7. Cohortes de planificación demostrativas
   // -----------------------------------------------------------------------
 
   await db.insert(planningCohorts).values([
