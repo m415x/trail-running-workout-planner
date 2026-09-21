@@ -290,7 +290,7 @@ test('field-test forms capture 1000 m elapsed time as minutes plus seconds and d
     assert.match(form, /minutes/)
     assert.match(form, /seconds/)
     assert.match(form, /max=['"]59['"]/)
-    assert.match(form, /minutes\s*\*\s*60\s*\+\s*seconds/)
+    assert.match(form, /Number\(minutes\)\s*\*\s*60\s*\+\s*Number\(seconds\)/)
   }
 
   assert.doesNotMatch(athleteForm, /Tiempo \(segundos\)/)
