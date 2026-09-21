@@ -1,6 +1,7 @@
 import { Activity, MapPin, Mountain, Timer } from 'lucide-react'
 
 import type { IntensityMethod, IntensityZone } from '@/types/training/intensity.types'
+import type { ExecutionGuidance } from '@/lib/physiology/execution-guidance'
 import type { WorkoutType } from '@/types/training/workout.types'
 import { Badge } from '@ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
@@ -19,6 +20,7 @@ interface AthleteSessionCardProps {
       cooldown?: string | null
     } | null
   }
+  executionGuidance?: ExecutionGuidance
   prescription: {
     distanceKm: number | null
     durationMin: number | null
@@ -30,7 +32,7 @@ interface AthleteSessionCardProps {
   }
 }
 
-export function AthleteSessionCard({ session, prescription }: AthleteSessionCardProps) {
+export function AthleteSessionCard({ session, prescription, executionGuidance }: AthleteSessionCardProps) {
   const intensity = formatIntensity(prescription)
   const hasVolume = prescription.distanceKm != null
     || prescription.durationMin != null
@@ -74,6 +76,19 @@ export function AthleteSessionCard({ session, prescription }: AthleteSessionCard
           </p>
         </div>
         {intensity && <p className='font-medium text-foreground'>{intensity}</p>}
+        {executionGuidance?.zone && (
+          <div className='rounded-lg border px-2.5 py-2'>
+            <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
+            <p>Talk Test: {executionGuidance.zone.talkTest}</p>
+            <p>{executionGuidance.zone.terrainPriority === 'effort_over_pace' ? 'effort_over_pace' : executionGuidance.zone.terrainPriority}</p>
+          </div>
+        )}
+        {executionGuidance?.quality?.status === 'available' && (
+          <div className='rounded-lg border px-2.5 py-2'>
+            <p className='font-medium text-foreground'>{executionGuidance.quality.intensityPercentage}% · {executionGuidance.quality.paceLabel}</p>
+            <p>{executionGuidance.quality.averageSpeedKmh} km/h</p>
+          </div>
+        )}
 
         <div className='border-t pt-3'>
           <p className='mb-2 font-medium text-foreground'>Instrucciones</p>
