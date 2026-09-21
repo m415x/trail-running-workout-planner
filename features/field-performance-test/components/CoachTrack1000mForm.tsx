@@ -11,7 +11,7 @@ type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
 type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number; notes: string | null; testEventId?: string | null; executionContext?: 'official' | 'self_directed'; recordedBy?: 'coach' | 'athlete'; recordedByUserId?: string | null }
 
-export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history, eventsError = false, pendingError = false }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[]; eventsError?: boolean; pendingError?: boolean }) {
+export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history, reference, factualTrend, eventsError = false, pendingError = false }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[]; reference?: string | null; factualTrend?: string | null; eventsError?: boolean; pendingError?: boolean }) {
   const es = locale === 'es'
   const router = useRouter()
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
@@ -85,6 +85,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
       <AccordionItem value='history'>
         <AccordionTrigger>{es ? `Historial (${history.length})` : `History (${history.length})`}</AccordionTrigger>
         <AccordionContent>
+          {(reference || factualTrend) && <div className='mb-3 grid gap-1 rounded-lg border p-3 text-sm'>{reference && <p><span className='font-medium'>{es ? 'Referencia vigente' : 'Current reference'}:</span> {reference}</p>}{factualTrend && <p><span className='font-medium'>{es ? 'Evolución factual' : 'Factual evolution'}:</span> {factualTrend}</p>}</div>}
           {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {item.elapsedTimeSec} s</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => correct(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
         </AccordionContent>
       </AccordionItem>
