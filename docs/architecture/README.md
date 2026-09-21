@@ -22,6 +22,7 @@ Key competition documents:
 `monitoring/` owns monitoring/analytics contracts built from authoritative evidence.
 
 - `monitoring/athlete-stats-analytics.md` is the completed KAN-264 baseline: consumer-neutral Training Analytics plus explicit Athlete Stats Projection allowlists, preserving known-zero/unknown/insufficient/empty/error semantics.
+- `monitoring/field-performance-and-execution-guidance.md` is the Epic 4 contract for canonical 1000 m evidence, lifecycle, RunningReference, factual evolution and safe execution/presentation boundaries.
 
 ### Planning
 
@@ -42,4 +43,4 @@ Key competition documents:
 
 ## Workflow
 
-For current story/baseline pointers also read `docs/README.md`, `docs/handoffs/epic-3.md` and the latest completed-story handoff. Historical plans/handoffs provide traceability but do not override current architecture, code/tests or current Jira scope.
+For current story/baseline pointers also read `docs/README.md`, `docs/history/epic-3.md` and the current story handoff. Historical plans/handoffs provide traceability but do not override current architecture, code/tests or current Jira scope.
