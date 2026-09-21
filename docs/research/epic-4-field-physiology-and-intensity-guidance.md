@@ -102,6 +102,29 @@ For long runs, base work and other zone-prescribed sessions, Z1-Z5 remains the p
 
 RPE and Talk Test remain independently usable when cardiac evidence is unavailable. On slope or technical terrain, effort guidance takes precedence over trying to hold a pace that was derived for a different running context.
 
+### Variable-terrain execution: intensity remains, flat pace does not
+
+KAN-380 manual validation exposed a presentation ambiguity for trail and hill sessions: the product was showing a Z1-Z5 prescription while also presenting pace-oriented execution guidance derived from level-running evidence.
+
+The research supports separating **intensity intent** from **pace transferability** rather than removing intensity zones from mountain running:
+
+- Grade materially changes the relationship between speed and physiological cost. In trained runners, pace changes inversely with grade and uphill lactate can increase even while running pace decreases. [Staab et al., 1992](https://pubmed.ncbi.nlm.nih.gov/1548986/)
+- Running energy cost is slope-specific; at comparable oxygen demand, uphill, level and downhill running have substantially different energy costs and determinants. [Vernillo et al., 2021](https://pubmed.ncbi.nlm.nih.gov/34853187/)
+- Terrain technicity itself can increase oxygen cost and ventilation even at matched slope, speed and distance, while perceived exertion may remain similar. [Ehrström et al., 2022](https://pubmed.ncbi.nlm.nih.gov/34663199/)
+- Moderate uphill intervals can produce higher oxygen uptake than level intervals at comparable RPE, heart-rate and lactate responses. [Held et al., 2023](https://pubmed.ncbi.nlm.nih.gov/36875023/)
+- RPE and Talk Test remain legitimate ways to monitor aerobic exercise intensity without requiring a pace target. ACSM describes RPE as perceived-effort monitoring and Talk Test as intensity gauged by the ability to sustain conversation. [ACSM, Tips for Monitoring Aerobic Exercise Intensity](https://www.acsm.org/docs/default-source/files-for-resource-library/exercise-intensity-infographic.pdf)
+
+Therefore, the product contract is:
+
+1. **Z1-Z5 remains valid prescription intent on trail, hills and positive grade.** Variable terrain does not make the intended effort meaningless.
+2. **An explicit quality percentage may remain the coach's prescription input**, but a pace/speed target derived from the athlete's 1000 m level-track RunningReference must not be presented as an execution target when the session context is trail, hills or positive grade.
+3. **Level/road/track contexts may expose deterministic pace/speed derived from an explicit percentage** when an applicable RunningReference exists.
+4. **Trail/hill execution should be effort-led.** RPE and Talk Test may support execution; the UI should communicate that terrain and effort take precedence over pace.
+5. **The UI must avoid redundant guidance.** If the zone control/tooltip already communicates the zone's RPE/Talk-Test meaning, a separate card should not repeat the same information. A distinct visible message is warranted only when it changes execution behavior, such as effort-over-pace on variable terrain.
+6. This decision does **not** establish new physiological zone boundaries, infer heart-rate data, or claim that the 1000 m track test measures PAM/MAS.
+
+In presentation terms, the zone badge remains useful for a mountain workout, while flat-running pace/speed targets are suppressed. The zone tooltip can carry concise educational guidance (for example the effort description plus Talk Test), and variable-terrain guidance can state that the athlete should regulate by effort and terrain rather than chase pace.
+
 ### Legacy reconciliation consequence
 
 The existing `ZONE_PAM_PERCENTAGES` / `getZonePaceRangeFromPam(zone, ...)` path conflates these two operational systems by deriving a pace range from Z1-Z5. KAN-378 must not promote that mapping into the new policy. Quality pace guidance is driven by an explicit percentage; Z1-Z5 guidance is resolved independently.
