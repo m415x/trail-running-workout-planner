@@ -58,8 +58,8 @@ test('WorkoutCard uses percentage execution guidance pace only when a running re
   const cardSource = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')
   const hookSource = await readFile(HOOK_PATH, 'utf8')
 
-  assert.match(hookSource, /pam_percentage/)
-  assert.match(hookSource, /runningReference/)
+  assert.match(hookSource, /workout[.]intensity/)
+  assert.match(hookSource, /workout[.]runningReference/)
   assert.match(cardSource, /quality/)
   assert.match(cardSource, /paceLabel/)
 })
