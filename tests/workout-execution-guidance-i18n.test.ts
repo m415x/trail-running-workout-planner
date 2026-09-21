@@ -3,7 +3,7 @@ import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 
 test('WorkoutCard localizes execution guidance instead of exposing internal enum values', async () => {
-  const cardSource = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')
+  const cardSource = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')\n  const pillSource = await readFile('components/ui/custom/pills.tsx', 'utf8')
   const es = await readFile('messages/es/realized-training/workouts.json', 'utf8')
   const en = await readFile('messages/en/realized-training/workouts.json', 'utf8')
 
