@@ -1,4 +1,10 @@
-import type { FieldPerformanceTestProtocol, FieldPerformanceTestSource } from '@/lib/physiology/field-performance-test'
+import type {
+  FieldPerformanceTestExecutionContext,
+  FieldPerformanceTestProtocol,
+  FieldPerformanceTestRecordedBy,
+  FieldPerformanceTestReviewStatus,
+  FieldPerformanceTestSource,
+} from '@/lib/physiology/field-performance-test'
 
 export interface FieldPerformanceTestRow {
   id: string
@@ -6,7 +12,12 @@ export interface FieldPerformanceTestRow {
   performedAt: string
   protocol: FieldPerformanceTestProtocol
   source: FieldPerformanceTestSource
-  distanceM: 1000
+  testEventId?: string | null
+  executionContext?: FieldPerformanceTestExecutionContext
+  recordedBy?: FieldPerformanceTestRecordedBy
+  recordedByUserId?: string | null
+  reviewStatus?: FieldPerformanceTestReviewStatus
+   distanceM: 1000
   elapsedTimeSec: number
   notes: string | null
   isDeleted: boolean
@@ -73,6 +84,11 @@ export function listEligibleFieldPerformanceTestHistory(
   effectiveDate: string,
 ): FieldPerformanceTestRow[] {
   return listFieldPerformanceTestHistory(rows, athleteId).filter(
-    (row) => row.performedAt <= effectiveDate,
+    (row) =>
+      row.performedAt <= effectiveDate &&
+      // Rows written before the KAN-401 lifecycle contract are accepted
+      // evidence by construction. New lifecycle-aware rows must opt in
+      // explicitly through review eligibility.
+      (row.reviewStatus ?? 'accepted') === 'accepted',
   )
 }

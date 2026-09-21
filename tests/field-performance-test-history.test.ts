@@ -121,3 +121,32 @@ test('eligible history preserves deterministic performedAt-createdAt-id ordering
     ['eval_a', 'eval_b', 'eval_c'],
   )
 })
+
+
+test('eligible history excludes self-directed evidence until coach acceptance and preserves provenance after acceptance', () => {
+  const pending = {
+    ...row('self_pending', 'athlete_1', '2026-09-10', 299),
+    source: 'athlete_manual' as const,
+    testEventId: null,
+    executionContext: 'self_directed' as const,
+    recordedBy: 'athlete' as const,
+    reviewStatus: 'pending_review' as const,
+  }
+  const accepted = {
+    ...row('self_accepted', 'athlete_1', '2026-09-12', 297),
+    source: 'athlete_manual' as const,
+    testEventId: null,
+    executionContext: 'self_directed' as const,
+    recordedBy: 'athlete' as const,
+    reviewStatus: 'accepted' as const,
+  }
+
+  const eligible = listEligibleFieldPerformanceTestHistory(
+    [pending, accepted],
+    'athlete_1',
+    '2026-09-20',
+  )
+
+  assert.deepEqual(eligible.map(evaluation => evaluation.id), ['self_accepted'])
+  assert.equal(eligible[0]?.executionContext, 'self_directed')
+})

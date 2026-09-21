@@ -19,7 +19,19 @@
       "avgPace": "Ritmo medio",
       "avgSpeed": "Vel. media",
       "restMessage": "Sin rutina programada. Aprovecha para recuperar.",
-      "logged": "Entrenamiento registrado"
+      "logged": "Entrenamiento registrado",
+      "guidance": {
+        "talkTest": {
+          "comfortable_conversation": "Conversación cómoda",
+          "full_conversation": "Conversación completa",
+          "short_phrases": "Frases cortas",
+          "few_words": "Pocas palabras",
+          "no_conversation": "Sin conversación"
+        },
+        "terrainPriority": {
+          "effort_over_pace": "Priorizá el esfuerzo sobre el ritmo"
+        }
+      }
     },
     "dialog": {
       "title": "Registrar Entrenamiento",

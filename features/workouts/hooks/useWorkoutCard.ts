@@ -23,6 +23,7 @@ import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-da
 import { getWorkoutIcon, getWorkoutTypeLabel } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
+import { resolveExecutionGuidance } from '@/lib/physiology/execution-guidance'
 
 interface UseWorkoutCardParams {
   workout: WorkoutCardProps['workout']
@@ -89,6 +90,10 @@ export function useWorkoutCard({
 
   // HR guidance remains unavailable until explicit athlete evidence reaches this boundary.
   const bpmRange = ''
+  const executionGuidance = useMemo(() => resolveExecutionGuidance({
+    intensity: workout.intensity ?? { method: 'hr_zone', zone: workout.zone },
+    runningReference: workout.runningReference ?? { status: 'unknown' },
+  }), [workout.intensity, workout.runningReference, workout.zone])
 
   const targetCoordinates = useMemo(() => {
     if (TrackData?.startCoordinates) return TrackData.startCoordinates
@@ -137,13 +142,15 @@ export function useWorkoutCard({
   const stats = useMemo(
     () => [
       {
+        kind: 'duration' as const,
         icon: Clock,
         label: t('card.estimatedTime'),
         value: timeDisplay,
         unit: 'min',
       },
-      { icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: '/km' },
+      { kind: 'pace' as const, icon: Zap, label: t('card.avgPace'), value: paceDisplay, unit: '/km' },
       {
+        kind: 'speed' as const,
         icon: Gauge,
         label: t('card.avgSpeed'),
         value: speedDisplay,
@@ -203,6 +210,7 @@ export function useWorkoutCard({
     stats,
     zoneInfo,
     bpmRange,
+    executionGuidance,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,

@@ -10,6 +10,7 @@ interface HomeTabClientProps {
   initialSchedule: SessionWithWorkout[]
   initialRealizedTraining: UseHomeTabProps['initialRealizedTraining']
   locale: string
+  runningReference: import('@/lib/physiology/running-reference').RunningReference
 }
 
 export function HomeTabClient({
@@ -17,6 +18,7 @@ export function HomeTabClient({
   initialSchedule,
   initialRealizedTraining,
   locale,
+  runningReference,
 }: HomeTabClientProps) {
   const { setShellBgColor } = useMobileShell()
 
@@ -31,6 +33,7 @@ export function HomeTabClient({
       initialSchedule={initialSchedule}
       initialRealizedTraining={initialRealizedTraining}
       locale={locale}
+      runningReference={runningReference}
     />
   )
 }

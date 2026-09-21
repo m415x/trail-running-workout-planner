@@ -1,5 +1,6 @@
 import { AthleteGroupCode } from '@/types/athlete/group.types'
-import { IntensityZone } from '@/types/training/intensity.types'
+import type { TrainingIntensity, IntensityZone } from '@/types/training/intensity.types'
+import type { RunningReference } from '@/lib/physiology/running-reference'
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
 export type WorkoutType =
@@ -21,6 +22,8 @@ export interface WorkoutProps {
   type: WorkoutType
   distance: number
   zone: IntensityZone
+  intensity?: TrainingIntensity
+  runningReference?: RunningReference
   time: number
   gain: number
   pace: number

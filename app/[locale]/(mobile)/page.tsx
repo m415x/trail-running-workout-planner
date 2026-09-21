@@ -4,6 +4,7 @@ import { getCurrentAthlete, getWeeklySchedule } from '@/app/actions/dashboard-ac
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { HomeTabClient } from '@/app/[locale]/(mobile)/HomeTabClient'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
 
 function currentWeekRangeInArgentina() {
   const today = new Date(`${getCurrentISODateInTimeZone()}T00:00:00Z`)
@@ -22,10 +23,11 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
   const t = await getTranslations({ locale, namespace: 'RaceCatalog' })
   const range = currentWeekRangeInArgentina()
 
-  const [athleteRes, scheduleRes, realizedRes] = await Promise.all([
+  const [athleteRes, scheduleRes, realizedRes, performanceRes] = await Promise.all([
     getCurrentAthlete(),
     getWeeklySchedule(range.startDate),
     getCurrentAthleteRealizedTrainingRangeAction(range.startDate, range.endDate),
+    getCurrentAthleteTrack1000mPerformanceAction(getCurrentISODateInTimeZone()),
   ])
 
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
@@ -42,6 +44,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
       initialSchedule={scheduleRes.data}
       initialRealizedTraining={realizedRes.data}
       locale={locale}
+      runningReference={performanceRes.success ? performanceRes.data.reference : { status: 'unknown' }}
     />
   )
 }

@@ -7,7 +7,7 @@ const applicationTables = [
   'athlete_groups', 'athlete_profiles', 'competition_entries', 'competition_entry_race_courses',
   'group_history_records', 'group_session_prescriptions', 'group_training_plans',
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
-  'microcycle_intensity_targets', 'physiology_records', 'field_performance_tests',
+  'microcycle_intensity_targets', 'physiology_records', 'field_performance_test_events', 'field_performance_tests',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
   'race_courses', 'race_editions', 'race_events', 'race_registrations',
   'readiness_evaluations', 'readiness_reviews',
@@ -45,6 +45,19 @@ async function main() {
       where table_schema = 'public' and table_name = 'workout_logs'
         and column_name in ('date', 'performed_at', 'logged_at', 'duration_min')
     `
+    const fieldTestLifecycleColumns = await sql<{ column_name: string; data_type: string; is_nullable: string; column_default: string | null }[]>`
+      select column_name, data_type, is_nullable, column_default
+      from information_schema.columns
+      where table_schema = 'public' and table_name = 'field_performance_tests'
+        and column_name in ('test_event_id', 'execution_context', 'recorded_by', 'recorded_by_user_id', 'review_status')
+    `
+    const expectedFieldTestLifecycleColumns = ['test_event_id', 'execution_context', 'recorded_by', 'recorded_by_user_id', 'review_status']
+    const fieldTestLifecycleValid = expectedFieldTestLifecycleColumns.every(name => {
+      const column = fieldTestLifecycleColumns.find(candidate => candidate.column_name === name)
+      return column?.data_type === 'text' && column.is_nullable === 'YES' && column.column_default === null
+    })
+    console.log(`Field performance lifecycle columns: ${fieldTestLifecycleValid ? 'OK' : 'FAIL'}`)
+
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
     const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
@@ -61,7 +74,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid) {
       process.exitCode = 1
     }
   } finally {

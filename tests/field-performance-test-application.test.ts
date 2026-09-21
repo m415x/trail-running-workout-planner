@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { correctTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
+import { correctTrack1000mEvidence, createAthleteTrack1000mEvidence, createCoachTrack1000mEvidence, createTrack1000mEvidence, readAthleteTrack1000mEvolution, reviewCoachTrack1000mEvidence, resolveAthleteRunningReference } from '@/lib/physiology/field-performance-test-application'
 import type { InsertFieldPerformanceTest } from '@/lib/physiology/field-performance-test-sqlite'
 
 test('creates canonical 1000m evidence only after athlete ownership is resolved', async () => {
@@ -36,6 +36,11 @@ test('creates canonical 1000m evidence only after athlete ownership is resolved'
     distanceM: 1000,
     elapsedTimeSec: 215.5,
     notes: 'control mensual',
+    testEventId: null,
+    executionContext: 'official',
+    recordedBy: 'coach',
+    recordedByUserId: null,
+    reviewStatus: 'accepted',
     createdAt: '2026-09-24T12:00:00.000Z',
     updatedAt: '2026-09-24T12:00:00.000Z',
   })
@@ -285,4 +290,394 @@ test('does not read 1000m evolution when athlete ownership is not resolved', asy
 
   assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
   assert.equal(queryCalls, 0)
+})
+
+
+test('persists recorder user identity through the create application boundary', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 215.5,
+      testEventId: 'event_2026_09',
+      executionContext: 'official',
+      recordedBy: 'coach',
+      recordedByUserId: 'user_coach_1',
+    },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'test_actor_1',
+      now: () => '2026-09-24T12:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.recordedBy, 'coach')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+})
+
+
+test('athlete records self-directed evidence as own pending-review submission', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-20',
+      elapsedTimeSec: 302,
+      notes: 'control propio',
+      executionContext: 'self_directed',
+    },
+    {
+      resolveSelfAthlete: async (athleteId, userId) =>
+        athleteId === 'athlete_1' && userId === 'user_athlete_1' ? { id: athleteId } : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'athlete_test_1',
+      now: () => '2026-09-20T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted.length, 1)
+  assert.equal(inserted[0]?.executionContext, 'self_directed')
+  assert.equal(inserted[0]?.recordedBy, 'athlete')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_athlete_1')
+  assert.equal(inserted[0]?.reviewStatus, 'pending_review')
+  assert.equal(inserted[0]?.testEventId, null)
+})
+
+test('athlete registration resolves self subject before persistence', async () => {
+  let insertCalls = 0
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_2',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-20',
+      elapsedTimeSec: 302,
+      executionContext: 'self_directed',
+    },
+    {
+      resolveSelfAthlete: async () => null,
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-20T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(insertCalls, 0)
+})
+
+
+test('athlete records official evidence only against an eligible owned TestEvent', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 299,
+      executionContext: 'official',
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveSelfAthlete: async () => ({ id: 'athlete_1' }),
+      resolveEligibleTestEvent: async (testEventId, athleteId) =>
+        testEventId === 'event_2026_09' && athleteId === 'athlete_1'
+          ? { id: testEventId }
+          : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'official_athlete_test_1',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.testEventId, 'event_2026_09')
+  assert.equal(inserted[0]?.executionContext, 'official')
+  assert.equal(inserted[0]?.recordedBy, 'athlete')
+  assert.equal(inserted[0]?.reviewStatus, 'accepted')
+})
+
+test('athlete cannot claim an unavailable official TestEvent', async () => {
+  let insertCalls = 0
+
+  const result = await createAthleteTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      userId: 'user_athlete_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 299,
+      executionContext: 'official',
+      testEventId: 'other_team_event',
+    },
+    {
+      resolveSelfAthlete: async () => ({ id: 'athlete_1' }),
+      resolveEligibleTestEvent: async () => null,
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'test_event_not_found' })
+  assert.equal(insertCalls, 0)
+})
+
+
+test('coach records official evidence for an owned athlete with coach recorder provenance', async () => {
+  const inserted: InsertFieldPerformanceTest[] = []
+
+  const result = await createCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      coachUserId: 'user_coach_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 297,
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      resolveEligibleTestEvent: async (testEventId, athleteId) =>
+        testEventId === 'event_2026_09' && athleteId === 'athlete_1'
+          ? { id: testEventId }
+          : null,
+      insert: evidence => {
+        inserted.push(evidence)
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'coach_test_1',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(inserted[0]?.executionContext, 'official')
+  assert.equal(inserted[0]?.testEventId, 'event_2026_09')
+  assert.equal(inserted[0]?.recordedBy, 'coach')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+  assert.equal(inserted[0]?.reviewStatus, 'accepted')
+})
+
+test('coach registration authorizes athlete before resolving TestEvent or persisting', async () => {
+  let eventCalls = 0
+  let insertCalls = 0
+
+  const result = await createCoachTrack1000mEvidence(
+    {
+      athleteId: 'other_team_athlete',
+      coachUserId: 'user_coach_1',
+      performedAt: '2026-09-24',
+      elapsedTimeSec: 297,
+      testEventId: 'event_2026_09',
+    },
+    {
+      resolveOwnedAthlete: async () => null,
+      resolveEligibleTestEvent: async () => {
+        eventCalls += 1
+        return { id: 'event_2026_09' }
+      },
+      insert: evidence => {
+        insertCalls += 1
+        return { ...evidence, isDeleted: false }
+      },
+      newId: () => 'must_not_be_used',
+      now: () => '2026-09-24T15:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'athlete_not_found' })
+  assert.equal(eventCalls, 0)
+  assert.equal(insertCalls, 0)
+})
+
+
+test('coach accepts owned pending self-directed evidence without changing provenance', async () => {
+  let reviewed: { id: string; reviewStatus: 'accepted' | 'rejected'; updatedAt: string } | undefined
+
+  const result = await reviewCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      evidenceId: 'self_1',
+      reviewStatus: 'accepted',
+    },
+    {
+      resolveOwnedAthlete: async id => id === 'athlete_1' ? { id } : null,
+      getById: id => id === 'self_1' ? {
+        id,
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-20',
+        protocol: '1000m_track',
+        source: 'athlete_manual',
+        distanceM: 1000,
+        elapsedTimeSec: 302,
+        notes: null,
+        testEventId: null,
+        executionContext: 'self_directed',
+        recordedBy: 'athlete',
+        recordedByUserId: 'user_athlete_1',
+        reviewStatus: 'pending_review',
+        isDeleted: false,
+        createdAt: '2026-09-20T14:00:00.000Z',
+        updatedAt: '2026-09-20T14:00:00.000Z',
+      } : undefined,
+      review: (id, reviewStatus, updatedAt) => {
+        reviewed = { id, reviewStatus, updatedAt }
+        return {
+          id,
+          athleteId: 'athlete_1',
+          performedAt: '2026-09-20',
+          protocol: '1000m_track',
+          source: 'athlete_manual',
+          distanceM: 1000,
+          elapsedTimeSec: 302,
+          notes: null,
+          testEventId: null,
+          executionContext: 'self_directed',
+          recordedBy: 'athlete',
+          recordedByUserId: 'user_athlete_1',
+          reviewStatus,
+          isDeleted: false,
+          createdAt: '2026-09-20T14:00:00.000Z',
+          updatedAt,
+        }
+      },
+      now: () => '2026-09-20T16:00:00.000Z',
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.deepEqual(reviewed, {
+    id: 'self_1',
+    reviewStatus: 'accepted',
+    updatedAt: '2026-09-20T16:00:00.000Z',
+  })
+  assert.equal(result.success && result.data.executionContext, 'self_directed')
+  assert.equal(result.success && result.data.recordedBy, 'athlete')
+  assert.equal(result.success && result.data.recordedByUserId, 'user_athlete_1')
+})
+
+test('coach review hides evidence outside the owned athlete boundary and never mutates it', async () => {
+  let reviewCalls = 0
+
+  const result = await reviewCoachTrack1000mEvidence(
+    {
+      athleteId: 'athlete_1',
+      evidenceId: 'other_evidence',
+      reviewStatus: 'rejected',
+    },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      getById: () => ({
+        id: 'other_evidence',
+        athleteId: 'athlete_2',
+        performedAt: '2026-09-20',
+        protocol: '1000m_track',
+        source: 'athlete_manual',
+        distanceM: 1000,
+        elapsedTimeSec: 302,
+        notes: null,
+        executionContext: 'self_directed',
+        recordedBy: 'athlete',
+        reviewStatus: 'pending_review',
+        isDeleted: false,
+        createdAt: '2026-09-20T14:00:00.000Z',
+        updatedAt: '2026-09-20T14:00:00.000Z',
+      }),
+      review: () => {
+        reviewCalls += 1
+        throw new Error('must not review')
+      },
+      now: () => '2026-09-20T16:00:00.000Z',
+    },
+  )
+
+  assert.deepEqual(result, { success: false, error: 'evidence_not_found' })
+  assert.equal(reviewCalls, 0)
+})
+
+
+test('running reference excludes pending and rejected evidence at the application boundary', async () => {
+  const result = await resolveAthleteRunningReference(
+    { athleteId: 'athlete_1', effectiveDate: '2026-09-20' },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      listActiveByAthleteThroughDate: athleteId => [
+        {
+          id: 'accepted_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, reviewStatus: 'accepted', isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        },
+        {
+          id: 'pending_1', athleteId, performedAt: '2026-09-19',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 280, notes: null, reviewStatus: 'pending_review', isDeleted: false,
+          createdAt: '2026-09-19T12:00:00.000Z', updatedAt: '2026-09-19T12:00:00.000Z',
+        },
+        {
+          id: 'rejected_1', athleteId, performedAt: '2026-09-20',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 270, notes: null, reviewStatus: 'rejected', isDeleted: false,
+          createdAt: '2026-09-20T12:00:00.000Z', updatedAt: '2026-09-20T12:00:00.000Z',
+        },
+      ],
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.equal(result.success && result.data.status === 'available' ? result.data.source.evaluationId : null, 'accepted_1')
+})
+
+test('factual evolution excludes pending and rejected evidence at the application boundary', async () => {
+  const result = await readAthleteTrack1000mEvolution(
+    { athleteId: 'athlete_1' },
+    {
+      resolveOwnedAthlete: async id => ({ id }),
+      listActiveByAthlete: athleteId => [
+        {
+          id: 'accepted_1', athleteId, performedAt: '2026-09-17',
+          protocol: '1000m_track', source: 'coach_manual', distanceM: 1000,
+          elapsedTimeSec: 300, notes: null, reviewStatus: 'accepted', isDeleted: false,
+          createdAt: '2026-09-17T12:00:00.000Z', updatedAt: '2026-09-17T12:00:00.000Z',
+        },
+        {
+          id: 'pending_1', athleteId, performedAt: '2026-09-19',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 280, notes: null, reviewStatus: 'pending_review', isDeleted: false,
+          createdAt: '2026-09-19T12:00:00.000Z', updatedAt: '2026-09-19T12:00:00.000Z',
+        },
+        {
+          id: 'rejected_1', athleteId, performedAt: '2026-09-20',
+          protocol: '1000m_track', source: 'athlete_manual', distanceM: 1000,
+          elapsedTimeSec: 270, notes: null, reviewStatus: 'rejected', isDeleted: false,
+          createdAt: '2026-09-20T12:00:00.000Z', updatedAt: '2026-09-20T12:00:00.000Z',
+        },
+      ],
+    },
+  )
+
+  assert.equal(result.success, true)
+  assert.deepEqual(result.success ? result.data.series.map(point => point.evaluationId) : [], ['accepted_1'])
 })

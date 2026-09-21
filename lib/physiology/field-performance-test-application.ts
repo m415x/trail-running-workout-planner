@@ -4,7 +4,7 @@ import { createTrack1000mEvaluation } from '@/lib/physiology/field-performance-t
 import type {
   InsertFieldPerformanceTest,
 } from '@/lib/physiology/field-performance-test-sqlite'
-import type { FieldPerformanceTestRow } from '@/lib/physiology/field-performance-test-history'
+import { listEligibleFieldPerformanceTestHistory, type FieldPerformanceTestRow } from '@/lib/physiology/field-performance-test-history'
 import { resolveRunningReference, type RunningReference } from '@/lib/physiology/running-reference'
 
 interface FieldPerformanceCreateDependencies {
@@ -49,6 +49,114 @@ export async function createTrack1000mEvidence(
   }
 }
 
+
+
+export interface CreateAthleteTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly userId: string
+  readonly performedAt: string
+  readonly elapsedTimeSec: number
+  readonly notes?: string
+  readonly executionContext: 'official' | 'self_directed'
+  readonly testEventId?: string
+}
+
+interface AthleteFieldPerformanceCreateDependencies {
+  resolveSelfAthlete(athleteId: string, userId: string): Promise<{ id: string } | null>
+  resolveEligibleTestEvent?(testEventId: string, athleteId: string): Promise<{ id: string } | null>
+  insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  newId(): string
+  now(): string
+}
+
+/**
+ * Athlete-owned creation boundary. Recorder provenance is derived from the
+ * authenticated subject rather than accepted from client-controlled input.
+ */
+export async function createAthleteTrack1000mEvidence(
+  input: CreateAthleteTrack1000mEvidenceInput,
+  dependencies: AthleteFieldPerformanceCreateDependencies,
+): Promise<CreateTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveSelfAthlete(input.athleteId, input.userId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  if (input.executionContext === 'official') {
+    if (!input.testEventId) {
+      return { success: false, error: 'official evidence requires testEventId' }
+    }
+
+    const testEvent = dependencies.resolveEligibleTestEvent
+      ? await dependencies.resolveEligibleTestEvent(input.testEventId, athlete.id)
+      : null
+    if (!testEvent) return { success: false, error: 'test_event_not_found' }
+  }
+
+  return createTrack1000mEvidence(
+    {
+      athleteId: athlete.id,
+      performedAt: input.performedAt,
+      elapsedTimeSec: input.elapsedTimeSec,
+      notes: input.notes,
+      executionContext: input.executionContext,
+      testEventId: input.testEventId,
+      recordedBy: 'athlete',
+      recordedByUserId: input.userId,
+    },
+    {
+      resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
+      insert: dependencies.insert,
+      newId: dependencies.newId,
+      now: dependencies.now,
+    },
+  )
+}
+
+export interface CreateCoachTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly coachUserId?: string | null
+  readonly performedAt: string
+  readonly elapsedTimeSec: number
+  readonly notes?: string
+  readonly testEventId: string
+}
+
+interface CoachFieldPerformanceCreateDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  resolveEligibleTestEvent(testEventId: string, athleteId: string): Promise<{ id: string } | null>
+  insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  newId(): string
+  now(): string
+}
+
+export async function createCoachTrack1000mEvidence(
+  input: CreateCoachTrack1000mEvidenceInput,
+  dependencies: CoachFieldPerformanceCreateDependencies,
+): Promise<CreateTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  const testEvent = await dependencies.resolveEligibleTestEvent(input.testEventId, athlete.id)
+  if (!testEvent) return { success: false, error: 'test_event_not_found' }
+
+  return createTrack1000mEvidence(
+    {
+      athleteId: athlete.id,
+      performedAt: input.performedAt,
+      elapsedTimeSec: input.elapsedTimeSec,
+      notes: input.notes,
+      testEventId: testEvent.id,
+      executionContext: 'official',
+      recordedBy: 'coach',
+      recordedByUserId: input.coachUserId ?? undefined,
+    },
+    {
+      resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
+      insert: dependencies.insert,
+      newId: dependencies.newId,
+      now: dependencies.now,
+    },
+  )
+}
 
 export interface CorrectTrack1000mEvidenceInput {
   readonly athleteId: string
@@ -110,6 +218,52 @@ export async function correctTrack1000mEvidence(
 }
 
 
+export interface ReviewCoachTrack1000mEvidenceInput {
+  readonly athleteId: string
+  readonly evidenceId: string
+  readonly reviewStatus: 'accepted' | 'rejected'
+}
+
+interface CoachFieldPerformanceReviewDependencies {
+  resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
+  getById(id: string): FieldPerformanceTestRow | undefined
+  review(
+    id: string,
+    reviewStatus: 'accepted' | 'rejected',
+    updatedAt: string,
+  ): FieldPerformanceTestRow
+  now(): string
+}
+
+export type ReviewCoachTrack1000mEvidenceResult =
+  | { success: true; data: FieldPerformanceTestRow }
+  | { success: false; error: 'athlete_not_found' | 'evidence_not_found' | string }
+
+export async function reviewCoachTrack1000mEvidence(
+  input: ReviewCoachTrack1000mEvidenceInput,
+  dependencies: CoachFieldPerformanceReviewDependencies,
+): Promise<ReviewCoachTrack1000mEvidenceResult> {
+  const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  const evidence = dependencies.getById(input.evidenceId)
+  if (!evidence || evidence.isDeleted || evidence.athleteId !== athlete.id) {
+    return { success: false, error: 'evidence_not_found' }
+  }
+
+  try {
+    return {
+      success: true,
+      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now()),
+    }
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'field_performance_test_review_failed',
+    }
+  }
+}
+
 export interface ResolveAthleteRunningReferenceInput {
   readonly athleteId: string
   readonly effectiveDate: string
@@ -138,7 +292,8 @@ export async function resolveAthleteRunningReference(
   const athlete = await dependencies.resolveOwnedAthlete(input.athleteId)
   if (!athlete) return { success: false, error: 'athlete_not_found' }
 
-  const rows = dependencies.listActiveByAthleteThroughDate(
+  const rows = listEligibleFieldPerformanceTestHistory(
+    dependencies.listActiveByAthleteThroughDate(athlete.id, input.effectiveDate),
     athlete.id,
     input.effectiveDate,
   )
@@ -188,7 +343,11 @@ export async function readAthleteTrack1000mEvolution(
   return {
     success: true,
     data: projectTrack1000mEvolution(
-      dependencies.listActiveByAthlete(athlete.id),
+      listEligibleFieldPerformanceTestHistory(
+        dependencies.listActiveByAthlete(athlete.id),
+        athlete.id,
+        '9999-12-31',
+      ),
       athlete.id,
     ),
   }

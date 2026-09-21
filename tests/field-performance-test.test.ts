@@ -4,6 +4,7 @@ import test from 'node:test'
 import {
   createTrack1000mEvaluation,
   deriveTrack1000mPerformance,
+  reviewTrack1000mEvaluation,
 } from '@/lib/physiology/field-performance-test'
 
 test('creates canonical observed evidence for a 1000 m track evaluation', () => {
@@ -22,6 +23,11 @@ test('creates canonical observed evidence for a 1000 m track evaluation', () => 
     distanceM: 1000,
     elapsedTimeSec: 300,
     notes: 'Pista 400 m',
+    testEventId: null,
+    executionContext: 'official',
+    recordedBy: 'coach',
+    recordedByUserId: null,
+    reviewStatus: 'accepted',
   })
 })
 
@@ -109,5 +115,125 @@ test('derivation refuses a different distance or protocol', () => {
         elapsedTimeSec: 300,
       }),
     /protocol/,
+  )
+})
+
+
+test('preserves official instance, execution context, recorder and review eligibility as independent evidence dimensions', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-24',
+    elapsedTimeSec: 298,
+    testEventId: 'event_2026_09',
+    executionContext: 'official',
+    recordedBy: 'athlete',
+  })
+
+  assert.equal(evaluation.testEventId, 'event_2026_09')
+  assert.equal(evaluation.executionContext, 'official')
+  assert.equal(evaluation.recordedBy, 'athlete')
+  assert.equal(evaluation.reviewStatus, 'accepted')
+  assert.equal(evaluation.reviewStatus, 'accepted')
+})
+
+test('self-directed evidence remains self-directed while awaiting coach review', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+  })
+
+  assert.equal(evaluation.testEventId, null)
+  assert.equal(evaluation.executionContext, 'self_directed')
+  assert.equal(evaluation.recordedBy, 'athlete')
+  assert.equal(evaluation.reviewStatus, 'pending_review')
+  assert.equal(evaluation.reviewStatus, 'pending_review')
+})
+
+
+test('preserves durable recorder identity independently from execution context and recorder role', () => {
+  const evaluation = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-24',
+    elapsedTimeSec: 298,
+    testEventId: 'event_2026_09',
+    executionContext: 'official',
+    recordedBy: 'coach',
+    recordedByUserId: 'user_coach_1',
+  })
+
+  assert.equal(evaluation.recordedBy, 'coach')
+  assert.equal(evaluation.recordedByUserId, 'user_coach_1')
+})
+
+
+test('review lifecycle accepts or rejects pending self-directed evidence without changing provenance', () => {
+  const pending = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+    recordedByUserId: 'user_athlete_1',
+  })
+
+  for (const reviewStatus of ['accepted', 'rejected'] as const) {
+    const reviewed = reviewTrack1000mEvaluation(pending, reviewStatus)
+
+    assert.equal(reviewed.reviewStatus, reviewStatus)
+    assert.equal(reviewed.executionContext, 'self_directed')
+    assert.equal(reviewed.testEventId, null)
+    assert.equal(reviewed.source, 'athlete_manual')
+    assert.equal(reviewed.recordedBy, 'athlete')
+    assert.equal(reviewed.recordedByUserId, 'user_athlete_1')
+    assert.equal(reviewed.elapsedTimeSec, 301)
+  }
+})
+
+test('review lifecycle refuses terminal evidence transitions', () => {
+  const pending = createTrack1000mEvaluation({
+    athleteId: 'athlete_1',
+    performedAt: '2026-09-19',
+    elapsedTimeSec: 301,
+    executionContext: 'self_directed',
+    recordedBy: 'athlete',
+  })
+
+  const accepted = reviewTrack1000mEvaluation(pending, 'accepted')
+  const rejected = reviewTrack1000mEvaluation(pending, 'rejected')
+
+  assert.throws(() => reviewTrack1000mEvaluation(accepted, 'rejected'), /pending_review/)
+  assert.throws(() => reviewTrack1000mEvaluation(rejected, 'accepted'), /pending_review/)
+})
+
+
+test('recorder identity opts legacy callers into the explicit lifecycle contract', () => {
+  assert.throws(
+    () =>
+      createTrack1000mEvaluation({
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-24',
+        elapsedTimeSec: 298,
+        recordedByUserId: 'user_coach_1',
+      }),
+    /testEventId/,
+  )
+})
+
+test('rejects blank recorder identity instead of persisting ambiguous provenance', () => {
+  assert.throws(
+    () =>
+      createTrack1000mEvaluation({
+        athleteId: 'athlete_1',
+        performedAt: '2026-09-24',
+        elapsedTimeSec: 298,
+        testEventId: 'event_2026_09',
+        executionContext: 'official',
+        recordedBy: 'coach',
+        recordedByUserId: '   ',
+      }),
+    /recordedByUserId/,
   )
 })

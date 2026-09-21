@@ -32,6 +32,7 @@ export function BaseWorkoutCard({
 }: BaseWorkoutCardProps) {
   const t = useTranslations('Workouts')
   const common = useTranslations('Common')
+  const shouldPrioritizeTerrainEffort = workout.type === 'Trail' || workout.type === 'Hills' || (TrackData?.maxGradePct ?? 0) > 0
   const {
     WorkoutIcon,
     headerTitle,
@@ -48,10 +49,15 @@ export function BaseWorkoutCard({
     stats,
     zoneInfo,
     bpmRange,
+    executionGuidance,
     openLogDialog,
     closeLogDialog,
     handleSaveSession,
   } = useWorkoutCard({ workout, date, TrackData, onRealizedTrainingSaved })
+
+  const visibleStats = shouldPrioritizeTerrainEffort
+    ? stats.filter((stat) => stat.kind !== 'duration' && stat.kind !== 'pace' && stat.kind !== 'speed')
+    : stats
 
   return (
     <>
@@ -77,10 +83,17 @@ export function BaseWorkoutCard({
         {!isPast && <WeatherPillStrip weather={weather} isLoading={isLoadingWeather} />}
 
         <div className='grid grid-cols-3 gap-2'>
-          {stats.map(({ icon: Icon, label, value, unit }) => (
+          {visibleStats.map(({ icon: Icon, label, value, unit }) => (
             <StatPill key={label} icon={Icon} label={label} value={value} unit={unit} />
           ))}
         </div>
+
+        {executionGuidance.quality?.status === 'available' && !shouldPrioritizeTerrainEffort && (
+          <CustomCardInside className='space-y-1 text-xs'>
+            <p className='font-medium text-foreground'>{executionGuidance.quality.intensityPercentage}% · {executionGuidance.quality.paceLabel}</p>
+            <p className='text-muted-foreground'>{executionGuidance.quality.averageSpeedKmh} km/h</p>
+          </CustomCardInside>
+        )}
 
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>

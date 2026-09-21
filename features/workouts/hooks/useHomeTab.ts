@@ -121,6 +121,11 @@ function resolveGroupWorkout(session: SessionWithWorkout) {
     type: session.type,
     distance,
     zone: prescription.zone ?? session.workout?.zone ?? ('Z1' as IntensityZone),
+    intensity: prescription.intensityMethod === 'pam_percentage' && prescription.pamPercentage != null
+      ? { method: 'pam_percentage' as const, pamPercentage: prescription.pamPercentage }
+      : prescription.zone
+        ? { method: 'hr_zone' as const, zone: prescription.zone }
+        : undefined,
     time,
     gain: prescription.elevationGain ?? 0,
     pace: time > 0 && distance > 0 ? (time * 60) / distance : 0,

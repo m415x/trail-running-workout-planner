@@ -80,6 +80,7 @@ function formValue(value: string | number | null | undefined) {
 
 const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const initialState: SessionFormState = {}
+const TRAIL_EFFORT_NOTE = 'Priorizá el esfuerzo sobre el ritmo.'
 
 export function SessionForm({ locale, workouts, locations, groups, session }: SessionFormProps) {
   const templateText = useTranslations('WorkoutTemplates')
@@ -87,6 +88,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => session?.sessionPrescriptions.map((item) => item.groupId) ?? [])
   const [clientError, setClientError] = useState<string>()
   const [selectedWorkoutId, setSelectedWorkoutId] = useState(session?.workoutId ?? '')
+  const [sessionType, setSessionType] = useState(session?.type ?? '')
+  const [sessionNotes, setSessionNotes] = useState(session?.notes ?? '')
   const [appliedPrescriptionDefaults, setAppliedPrescriptionDefaults] = useState<AppliedPrescriptionDefaults | null>(null)
   const [prescriptionValues, setPrescriptionValues] = useState<Record<string, PrescriptionFormValues>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.groupId, {
@@ -125,13 +128,15 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
     setFormValue(form, 'title', snapshot.session.title)
     setFormValue(form, 'type', snapshot.session.type)
+    setSessionType(snapshot.session.type)
     setFormValue(form, 'locationKey', snapshot.session.locationKey)
     setFormValue(form, 'trackPath', snapshot.session.trackPath)
     setFormValue(form, 'preliminaryExercises', snapshot.session.structure?.preliminaryExercises)
     setFormValue(form, 'warmup', snapshot.session.structure?.warmup)
     setFormValue(form, 'mainBlock', snapshot.session.structure?.mainBlock)
     setFormValue(form, 'cooldown', snapshot.session.structure?.cooldown)
-    setFormValue(form, 'notes', snapshot.session.notes)
+    const templateNotes = snapshot.session.notes ?? ''
+    setSessionNotes(templateNotes || ((snapshot.session.type === 'Trail' || snapshot.session.type === 'Hills') ? TRAIL_EFFORT_NOTE : ''))
 
     const defaults: AppliedPrescriptionDefaults = {
       distance: snapshot.prescription.distanceKm ?? null,
@@ -219,7 +224,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       </div>
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <SelectField label='Tipo de entrenamiento' name='type' defaultValue={session?.type} required>
+        <SelectField label='Tipo de entrenamiento' name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(TRAIL_EFFORT_NOTE) }} required>
           <option value=''>Seleccionar tipo</option>
           {workoutTypes.map((type) => <option key={type} value={type}>{type}</option>)}
         </SelectField>
@@ -248,7 +253,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
         <TextAreaField label='Vuelta a la calma' name='cooldown' rows={2} placeholder='Ej.: 10 min suaves + elongación' defaultValue={session?.structure?.cooldown} />
       </fieldset>
 
-      <TextAreaField label='Notas' name='notes' rows={4} placeholder='Indicaciones generales de la sesión…' defaultValue={session?.notes} />
+      <TextAreaField label='Notas' name='notes' rows={4} placeholder='Indicaciones generales de la sesión…' value={sessionNotes} onChange={setSessionNotes} />
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
         <legend className='px-1 text-sm font-medium'>Prescripciones por grupo</legend>
