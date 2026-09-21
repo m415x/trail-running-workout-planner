@@ -197,3 +197,18 @@ test('Coach field-test workflow presents factual evolution and running reference
   assert.match(coachPage, /Sin resultados aceptados/)
   assert.match(coachPage, /No accepted results/)
 })
+
+
+test('Coach field-test workflow distinguishes TestEvent and inbox load errors from empty states', () => {
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+  const coachForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/CoachTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(coachPage, /eventsError=/)
+  assert.match(coachPage, /pendingError=/)
+  assert.match(coachForm, /eventsError/)
+  assert.match(coachForm, /pendingError/)
+  assert.match(coachForm, /No se pudieron cargar las instancias oficiales/)
+  assert.match(coachForm, /Official test events could not be loaded/)
+  assert.match(coachForm, /No se pudieron cargar los pendientes/)
+  assert.match(coachForm, /Pending submissions could not be loaded/)
+})
