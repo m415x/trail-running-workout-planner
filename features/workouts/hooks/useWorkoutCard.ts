@@ -91,9 +91,9 @@ export function useWorkoutCard({
   // HR guidance remains unavailable until explicit athlete evidence reaches this boundary.
   const bpmRange = ''
   const executionGuidance = useMemo(() => resolveExecutionGuidance({
-    intensity: { method: 'hr_zone', zone: workout.zone },
-    runningReference: { status: 'unknown' },
-  }), [workout.zone])
+    intensity: workout.intensity ?? { method: 'hr_zone', zone: workout.zone },
+    runningReference: workout.runningReference ?? { status: 'unknown' },
+  }), [workout.intensity, workout.runningReference, workout.zone])
 
   const targetCoordinates = useMemo(() => {
     if (TrackData?.startCoordinates) return TrackData.startCoordinates
