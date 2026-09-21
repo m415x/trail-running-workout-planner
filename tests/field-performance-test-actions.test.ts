@@ -343,3 +343,11 @@ test('athlete field-test presentation formats elapsed time as mm:ss and localize
   assert.match(form, /test_event_not_yet_occurred/)
   assert.match(form, /todavía no ocurrió|has not occurred yet/)
 })
+
+
+test('athlete 1000 m result avoids duplicating elapsed time and pace for the fixed 1 km protocol', () => {
+  const stats = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+
+  assert.doesNotMatch(stats, /formatElapsedTime\(point\.elapsedTimeSec\).*formatElapsedTime\(point\.paceSecPerKm\)/)
+  assert.match(stats, /formatElapsedTime\(point\.paceSecPerKm\).*min\/km/)
+})
