@@ -35,7 +35,7 @@ function AthleteTrack1000mPanel({ locale, events, performanceResult }: { locale:
 
   return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'>
     <h2 className='font-heading text-lg font-bold'>Test 1000 m</h2>
-    <p className='mt-1 text-sm text-muted-foreground'>{es ? 'Registrá un test oficial programado o un intento autogestionado.' : 'Record a scheduled official test or a self-directed attempt.'}</p>
+    {!(performanceResult.success && reference?.status === 'available') && <p className='mt-1 text-sm text-muted-foreground'>{es ? 'Registrá un test oficial programado o un intento autogestionado.' : 'Record a scheduled official test or a self-directed attempt.'}</p>}
     {performanceResult.success ? <div className='mt-4 grid gap-2 rounded-xl border p-3 text-sm'>
       {reference?.status === 'available' ? <p><span className='font-medium'>{es ? 'Referencia' : 'Reference'}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{es ? 'Referencia no disponible' : 'Reference unavailable'}</p>}
       <p><span className='font-medium'>{es ? 'Evolución' : 'Evolution'}:</span> {trend}</p>
