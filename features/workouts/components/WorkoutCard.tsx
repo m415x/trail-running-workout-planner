@@ -84,20 +84,16 @@ export function BaseWorkoutCard({
           ))}
         </div>
 
-        {executionGuidance.quality?.status === 'available' && (
+        {executionGuidance.quality?.status === 'available' && !shouldPrioritizeTerrainEffort && (
           <CustomCardInside className='space-y-1 text-xs'>
             <p className='font-medium text-foreground'>{executionGuidance.quality.intensityPercentage}% · {executionGuidance.quality.paceLabel}</p>
             <p className='text-muted-foreground'>{executionGuidance.quality.averageSpeedKmh} km/h</p>
           </CustomCardInside>
         )}
 
-        {executionGuidance.zone && (
-          <CustomCardInside className='space-y-1 text-xs'>
-            <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
-            <p className='text-muted-foreground'>{t(`card.guidance.talkTest.${executionGuidance.zone.talkTest}`)}</p>
-            {shouldPrioritizeTerrainEffort && (
-              <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
-            )}
+        {executionGuidance.zone && shouldPrioritizeTerrainEffort && (
+          <CustomCardInside className='text-xs'>
+            <p className='text-muted-foreground'>{t(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
           </CustomCardInside>
         )}
 
