@@ -20,6 +20,13 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
   const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
   const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
 
+  function localizeError(error: string) {
+    if (error === 'test_event_not_yet_occurred') {
+      return es ? 'Este test oficial todavía no ocurrió.' : 'This official test has not occurred yet.'
+    }
+    return error
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setPending(true)
@@ -35,7 +42,7 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
       ? executionContext === 'self_directed'
         ? es ? 'Registro enviado para revisión del coach.' : 'Submission sent for coach review.'
         : es ? 'Test oficial registrado.' : 'Official test recorded.'
-      : result.error)
+      : localizeError(result.error))
   }
 
   return <form onSubmit={submit} className='mt-4 grid gap-3'>
