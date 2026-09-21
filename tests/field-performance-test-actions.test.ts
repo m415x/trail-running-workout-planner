@@ -332,3 +332,14 @@ test('coach review refreshes the route and disables only the evidence being revi
   assert.match(source, /reviewingEvidenceId/)
   assert.match(source, /disabled=\{reviewingEvidenceId === item\.id\}/)
 })
+
+
+test('athlete field-test presentation formats elapsed time as mm:ss and localizes future-event errors', () => {
+  const stats = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
+  const form = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
+
+  assert.match(stats, /formatElapsedTime/)
+  assert.doesNotMatch(stats, /elapsedTimeSec}\s*s/)
+  assert.match(form, /test_event_not_yet_occurred/)
+  assert.match(form, /todavía no ocurrió|has not occurred yet/)
+})
