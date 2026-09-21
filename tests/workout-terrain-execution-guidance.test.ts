@@ -14,5 +14,5 @@ test('WorkoutCard can use known positive grade as terrain evidence', async () =>
   const source = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')
 
   assert.match(source, /TrackData[?][.]maxGradePct/)
-  assert.match(source, /maxGradePct\s*>\s*0/)
+  assert.match(source, /maxGradePct[^\r\n]*>\s*0/)
 })
