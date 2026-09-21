@@ -34,10 +34,11 @@ Completed epics are consolidated here. History explains evolution and prior deci
 - [`history/epic-1.md`](history/epic-1.md) — foundational coach/group/planning workflow.
 - [`history/epic-2.md`](history/epic-2.md) — planning automation, safe persistence and readiness evidence.
 - [`history/epic-3.md`](history/epic-3.md) — realized training, plan-real monitoring, load/triage, Athlete Stats, competitive catalog/registration and action safety.
+- [`history/epic-4.md`](history/epic-4.md) — canonical 1000 m evidence, RunningReference, execution guidance, factual evolution, lifecycle and safe Coach/Athlete integration.
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Completed Epic 3 handoffs were consolidated into `history/epic-3.md`. The current operational baseline is [`handoffs/kan-380.md`](handoffs/kan-380.md). [`handoffs/kan-401.md`](handoffs/kan-401.md) remains the preceding lifecycle handoff until closure consolidation.
+`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
 
 ## Agent harness
 
@@ -45,13 +46,15 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 Do not modify the published harness as incidental feature/epic bootstrap work. Any v2 change must be an explicit workflow decision based on the recorded experiment conclusions.
 
-## Current transition
+## Current baseline
 
-Epic 3 is consolidated in [`history/epic-3.md`](history/epic-3.md). Epic 4 implementation is currently closing KAN-380, integrating canonical 1000 m evidence, RunningReference, safe execution guidance, factual evolution, TestEvent/review lifecycle, and Coach/Athlete presentation boundaries.
+Epics 1–4 are complete. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
-Use [`handoffs/kan-380.md`](handoffs/kan-380.md) as the immediate implementation baseline, [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md) as the durable implementation contract, and [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md) for research rationale. Current code/tests and Jira remain authoritative for actual behavior.
+No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
-Subsequent Epic 4 work must be reconstructed from the current `dev` baseline and Jira rather than assuming the preliminary sequence still matches delivered reality. Monitoring/Training Response remains distinct from measured physiology; later reference/guidance work must build on canonical evidence rather than introduce parallel authority.
+Known deferred work includes legacy ES/EN migration, session/intensity terminology and semantics, date-derived microcycle selection, Trail/Hills duration semantics, KAN-407 SQLite upgrade-path reliability and KAN-374 athlete date-of-birth validation. These are inputs to later scoping, not incomplete Epic 4 acceptance.
+
+Before defining the next epic, reconcile current `dev`, [`history/epic-4.md`](history/epic-4.md), relevant architecture and Jira. Do not rely on removed per-story handoffs or preliminary future-epic outlines.
 
 ## Other documentation
 

@@ -67,7 +67,7 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 2. `docs/architecture/` for durable domain contracts/invariants.
 3. Jira for scope, acceptance criteria and execution state.
 4. The current epic/story handoff when one exists for immediate resumption context.
-5. `docs/history/epic-3.md` and earlier epic histories for completed evolution/rationale.
+5. The latest completed `docs/history/epic-N.md` and earlier epic histories when needed for completed evolution/rationale.
 
 Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
 
@@ -275,15 +275,19 @@ The KAN-281/KAN-282 story workflow experiment used **harness-eval-v1** and is co
 
 Preserve the source-of-truth ordering, focused verification, final full gate, manual runtime walkthrough, durable handoff and fresh-chat-capable boundaries established by that evaluation. Do not modify the published harness as incidental feature work. Potential v2 changes require an explicit workflow decision based on the recorded evidence.
 
-## Current closure context
+## Current completed-epic baseline
 
-Epic 2 and Epic 3 are complete at the functional/story level. Epic 3 is consolidated in `docs/history/epic-3.md`; current domain authority remains the relevant `docs/architecture/` contracts plus current code/tests.
+Epics 1–4 are complete. Completed evolution is consolidated under `docs/history/`; current domain authority remains current code/tests plus the relevant `docs/architecture/` contracts.
 
-Epic 3 established durable realized training, plan-real comparison, evidence-qualified adherence/load monitoring, systematic-volume and Training Response triage, Athlete Stats analytics/disclosure, the normalized competitive catalog, effective race registration/history, and shared action-safety semantics.
+Epic 3 established durable realized training, evidence-qualified monitoring/Training Response, Athlete Stats analytics/disclosure, competitive catalog/registration and shared action safety. Epic 4 added canonical 1000 m field-performance evidence, temporal RunningReference, safe execution guidance, factual evolution, TestEvent/review lifecycle and Coach/Athlete presentation.
 
 Preserve these boundaries in subsequent work:
 
 - monitoring/Training Response is operational review evidence, not measured physiology or diagnosis;
+- observed field performance, deterministic derivatives and physiological interpretation remain distinct facts;
+- the 1000 m test does not directly measure PAM/MAS, VO2max, thresholds or heart-rate physiology;
+- Z1-Z5 does not manufacture BPM; missing physiology remains unknown;
+- flat-reference pace/speed is not an execution target on Trail/Hills/positive grade;
 - planned, realized, registered, participated and derived analytical states remain distinct facts;
 - `unknown != 0` and missing evidence is not a negative assertion;
 - derived rules expose version/provenance and do not silently mutate planning;
@@ -291,6 +295,6 @@ Preserve these boundaries in subsequent work:
 - team/athlete isolation remains end-to-end;
 - the temporary development identity is not an authentication model.
 
-Known deferred work includes KAN-342, KAN-349, KAN-360, KAN-374 and KAN-375. These are not retroactive Epic 3 acceptance blockers unless Jira explicitly re-scopes them.
+Known deferred work must be read from the latest completed epic history and current Jira. At the Epic 4 baseline this includes KAN-374, KAN-375, KAN-407 and explicitly documented session/intensity legacy debt. These are not retroactive acceptance blockers unless Jira explicitly re-scopes them.
 
-Before starting a later epic, reconstruct its stories from the current `dev` baseline, relevant architecture, completed epic history and Jira. Do not assume an old preliminary epic outline still matches the delivered system.
+Before starting a later epic, reconstruct its stories from current `dev`, the latest completed epic history, relevant architecture and Jira. Do not assume an old preliminary epic outline still matches the delivered system.
