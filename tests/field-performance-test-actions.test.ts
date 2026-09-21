@@ -385,7 +385,7 @@ test('coach athlete page keeps analytical 1000 m history inside the collapsed hi
 test('athlete 1000 m mobile summary is compact and avoids explanatory copy when evidence exists', () => {
   const stats = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
 
-  assert.match(stats, /performanceResult\.success.*reference\?\.status === 'available'/s)
+  assert.ok(stats.indexOf('performanceResult.success') < stats.indexOf("reference?.status === 'available'"))
   assert.doesNotMatch(stats, /Registrá un test oficial programado o un intento autogestionado\.<\/p>/)
 })
 
@@ -397,5 +397,5 @@ test('WorkoutCard avoids duplicate zone guidance and suppresses flat-reference q
   assert.doesNotMatch(card, /card\.guidance\.talkTest/)
   assert.match(card, /shouldPrioritizeTerrainEffort/)
   assert.match(card, /terrainPriority/)
-  assert.match(card, /executionGuidance\.quality\?\.status === 'available'.*!shouldPrioritizeTerrainEffort/s)
+  assert.match(card, /executionGuidance\.quality\?\.status === 'available' && !shouldPrioritizeTerrainEffort/)
 })
