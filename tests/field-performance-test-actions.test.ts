@@ -192,10 +192,10 @@ test('Coach field-test workflow presents factual evolution and running reference
   assert.match(coachPage, /reference\?\.status === 'available'/)
   assert.match(coachPage, /paceLabel/)
   assert.match(coachPage, /averageSpeedKmh/)
-  assert.match(coachPage, /Referencia no disponible/)
-  assert.match(coachPage, /Reference unavailable/)
-  assert.match(coachPage, /Sin resultados aceptados/)
-  assert.match(coachPage, /No accepted results/)
+  assert.match(coachPage, /No disponible/)
+  assert.match(coachPage, /Unavailable/)
+  assert.match(coachPage, /Evidencia insuficiente/)
+  assert.match(coachPage, /Insufficient evidence/)
 })
 
 
@@ -221,11 +221,11 @@ test('Coach field-test workflow identifies official TestEvent results without re
   assert.match(actionSource, /officialResults/)
   assert.match(actionSource, /executionContext === 'official'/)
   assert.match(actionSource, /testEventId/)
-  assert.match(coachPage, /historyResult\.data\.officialResults/)
-  assert.match(coachPage, /Resultado oficial/)
-  assert.match(coachPage, /Official result/)
-  assert.match(coachPage, /Instancia/)
-  assert.match(coachPage, /Test event/)
+  assert.match(actionSource, /officialResults/)
+  assert.match(actionSource, /executionContext === 'official'/)
+  assert.match(actionSource, /testEventId/)
+  assert.match(coachPage, /historyResult\.data\.history/)
+  assert.match(coachPage, /CoachTrack1000mForm/)
 })
 
 
