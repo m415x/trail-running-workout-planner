@@ -212,3 +212,18 @@ test('Coach field-test workflow distinguishes TestEvent and inbox load errors fr
   assert.match(coachForm, /No se pudieron cargar los pendientes/)
   assert.match(coachForm, /Pending submissions could not be loaded/)
 })
+
+
+test('Coach field-test workflow identifies official TestEvent results without relabeling accepted self-directed evidence', () => {
+  const actionSource = fs.readFileSync(actionPath, 'utf8')
+  const coachPage = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'), 'utf8')
+
+  assert.match(actionSource, /officialResults/)
+  assert.match(actionSource, /executionContext === 'official'/)
+  assert.match(actionSource, /testEventId/)
+  assert.match(coachPage, /historyResult\.data\.officialResults/)
+  assert.match(coachPage, /Resultado oficial/)
+  assert.match(coachPage, /Official result/)
+  assert.match(coachPage, /Instancia/)
+  assert.match(coachPage, /Test event/)
+})
