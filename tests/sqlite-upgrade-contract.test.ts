@@ -433,3 +433,12 @@ test('canonical SQLite runner does not resolve non-exported Drizzle Kit package 
 
   assert.doesNotMatch(runner, /require\.resolve\(['"]drizzle-kit\/package\.json['"]\)/)
 })
+
+
+test('versioned SQLite with a HEAD schema but partial canonical metadata is reconciled before migrate', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /reconcileVersionedHeadMetadata/)
+  assert.match(runner, /verify-sqlite/)
+  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
+})
