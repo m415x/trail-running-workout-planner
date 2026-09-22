@@ -38,7 +38,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
+`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. The current operational handoff is [`handoffs/kan-409.md`](handoffs/kan-409.md), covering the KAN-408 baseline/gate reconciliation through KAN-409 closure and integration. When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
 
 ## Agent harness
 
