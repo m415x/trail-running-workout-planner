@@ -4,7 +4,8 @@ import { migratePlanningCohortsSqlite } from '@/db/migrations/planning-cohorts-s
 import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-training-timing-sqlite'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { resolve } from 'node:path'
 import Database from 'better-sqlite3'
 
@@ -50,6 +51,23 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' {
   }
 }
 
+function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
+
+  const insert = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
+  const migrations = [
+    ['drizzle/sqlite/0000_baseline.sql', 1789348463278],
+    ['drizzle/sqlite/0001_realized_training_timing.sql', 1789348503010],
+  ] as const
+
+  sqlite.transaction(() => {
+    for (const [migrationPath, createdAt] of migrations) {
+      const sql = readFileSync(resolve(migrationPath), 'utf8')
+      insert.run(createHash('sha256').update(sql).digest('hex'), createdAt)
+    }
+  })()
+}
+
 const state = classifyExistingSqlite()
 if (state === 'legacy') {
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
@@ -58,6 +76,7 @@ if (state === 'legacy') {
     migratePlanningCohortsSqlite(sqlite)
     migrateCompetitionEntriesSqlite(sqlite)
     migrateMacrocycleTargetRaceDateSqlite(sqlite)
+    establishCanonicalLegacyMetadata(sqlite)
 
     if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
       throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
