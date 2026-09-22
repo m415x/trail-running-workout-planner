@@ -1,6 +1,6 @@
 import type { db as sqliteDb } from '@/db/index'
 import { fieldPerformanceTestEvents } from '@/db/schema'
-import { team } from '@/data/data'
+import { createSeedContext } from '@/db/seeds/context'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
 
@@ -18,7 +18,7 @@ export async function seedCompetitions(
   currentWeekStart: string,
   shiftISODate: (value: string, days: number) => string,
 ): Promise<void> {
-  const teamId = String(team.id || 'team_1')
+  const { teamId } = createSeedContext()
 
   await db
     .insert(fieldPerformanceTestEvents)
