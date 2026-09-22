@@ -1,0 +1,33 @@
+{
+  "AthleteDetail": {
+    "backToList": "Back to athlete list",
+    "profile": "Athlete profile",
+    "active": "Active",
+    "inactive": "Inactive",
+    "notProvided": "Not provided",
+    "personalData": "Personal details",
+    "birthDate": "Date of birth",
+    "nickname": "Nickname",
+    "group": "Group",
+    "noGroup": "No group",
+    "contact": "Contact",
+    "phone": "Phone",
+    "goals": "Goals",
+    "newGoal": "New goal",
+    "noGoals": "This athlete does not have any recorded goals yet.",
+    "date": "Date",
+    "distance": "Distance",
+    "competitions": "Competitions",
+    "registerCompetition": "Register athlete",
+    "noCourses": "There are no editions with available courses.",
+    "upcomingRegistrations": "Upcoming registrations",
+    "noUpcomingRegistrations": "There are no effective registrations awaiting participation.",
+    "participationHistory": "Participation history",
+    "noParticipationHistory": "No competitive participation has been recorded yet.",
+    "nominalDistance": "Nominal distance",
+    "actualDistance": "Actual distance",
+    "elapsedTime": "Elapsed time",
+    "planningToday": "Planning applicable today",
+    "emergencyContact": "Emergency contact"
+  }
+}
