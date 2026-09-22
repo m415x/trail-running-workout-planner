@@ -93,3 +93,21 @@ test('full SQLite seed composes the approved feature fixtures in dependency orde
     previous = index
   }
 })
+
+
+test('full SQLite seed delegates extracted feature ownership instead of duplicating it', () => {
+  const seed = fs.readFileSync(path.join(process.cwd(), 'db', 'seed.ts'), 'utf8')
+  const compositionStart = seed.indexOf('await seedTeamAndCoach(db)')
+  assert.ok(compositionStart >= 0, 'missing feature-seed composition')
+
+  const legacyBody = seed.slice(seed.indexOf('const relativeWeekDays', compositionStart))
+
+  assert.doesNotMatch(legacyBody, /db\.insert\(trainingLocations\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(teams\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(athleteGroups\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(users\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(athleteProfiles\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(fieldPerformanceTestEvents\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(planningCohorts\)/)
+  assert.doesNotMatch(legacyBody, /db\.insert\(planningCohortMemberships\)/)
+})
