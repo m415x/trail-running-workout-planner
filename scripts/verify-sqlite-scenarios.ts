@@ -275,6 +275,52 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
   }
 }
 
+function readNormalizedSchema(sqlitePath: string): string[] {
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    return (sqlite.prepare(`
+      SELECT type, name, tbl_name, sql
+      FROM sqlite_master
+      WHERE name NOT LIKE 'sqlite_%'
+        AND name <> '__drizzle_migrations'
+        AND tbl_name <> '__drizzle_migrations'
+      ORDER BY type, name
+    `).all() as Array<{ type: string; name: string; tbl_name: string; sql: string | null }>)
+      .map(row => JSON.stringify(row))
+  } finally {
+    sqlite.close()
+  }
+}
+
+export function runDriftScenario(projectRoot = process.cwd()): void {
+  const fresh = createScenarioWorkspace('drift')
+  const upgraded = createScenarioWorkspace('drift')
+  try {
+    createRepresentativeLegacyDatabase(upgraded, projectRoot)
+
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    runScenarioCommand(fresh.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(upgraded.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(fresh.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(upgraded.root, process.execPath, [tsxCli, verifyScript])
+
+    const freshSchema = readNormalizedSchema(fresh.sqlitePath)
+    const upgradedSchema = readNormalizedSchema(upgraded.sqlitePath)
+    if (
+      freshSchema.length !== upgradedSchema.length ||
+      freshSchema.some((entry, index) => entry !== upgradedSchema[index])
+    ) {
+      throw new Error('Schema drift detected between fresh HEAD and upgraded legacy SQLite databases')
+    }
+  } finally {
+    removeScenarioWorkspace(fresh)
+    removeScenarioWorkspace(upgraded)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -340,6 +386,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'preservation') {
     runPreservationScenario()
+    return
+  }
+
+  if (scenario === 'drift') {
+    runDriftScenario()
     return
   }
 
