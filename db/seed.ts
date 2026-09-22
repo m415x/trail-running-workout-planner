@@ -27,9 +27,7 @@ import { seedTeamAndCoach } from '@/db/seeds/team-and-coach'
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
 import type {
-  AthleteCategoryCode,
   AthleteGroupCode,
-  AthleteLevelCode,
   DayStatus,
   MicrocycleType,
   PeriodType,
