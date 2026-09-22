@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@ui/dropdown-menu'
-import { Button } from '@ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
