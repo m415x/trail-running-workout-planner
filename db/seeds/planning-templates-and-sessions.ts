@@ -1,5 +1,5 @@
 import type { db as sqliteDb } from '@/db/index'
-import { groupTrainingPlans, macrocycles, microcycles, sessions } from '@/db/schema'
+import { groupTrainingPlans, macrocycles, mesocycles, microcycles, sessions } from '@/db/schema'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
 
@@ -28,6 +28,7 @@ export async function seedPlanningTemplatesAndSessions(
   const s2GroupId = groupId(groups, 'S2')
   const planId = 'group_plan_s2_seed_fixture'
   const macrocycleId = 'macro_s2_seed_fixture'
+  const mesocycleId = 'meso_s2_seed_fixture_base'
   const microcycleId = 'micro_s2_seed_fixture_1'
 
   await db.insert(groupTrainingPlans).values({
@@ -51,9 +52,18 @@ export async function seedPlanningTemplatesAndSessions(
     notes: null,
   }).onConflictDoNothing().run()
 
+  await db.insert(mesocycles).values({
+    id: mesocycleId,
+    macrocycleId,
+    title: 'Preparación general',
+    number: 1,
+    period: 'general_preparatory',
+    objective: 'Construir base aeróbica para el fixture S2.',
+  }).onConflictDoNothing().run()
+
   await db.insert(microcycles).values({
     id: microcycleId,
-    mesocycleId: null,
+    mesocycleId,
     weekNumber: 1,
     type: 'base',
     startDate: currentWeekStart,
