@@ -38,7 +38,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. The current operational handoff is [`handoffs/kan-375.md`](handoffs/kan-375.md), covering KAN-375 Athlete legacy ES/EN localization and closure. The prior KAN-409 baseline/gate reconciliation handoff remains available as [`handoffs/kan-409.md`](handoffs/kan-409.md). When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
+`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. The current operational handoff is [`handoffs/kan-407.md`](handoffs/kan-407.md), covering SQLite local upgrade-path stabilization and closure. Recent completed-work handoffs remain available for KAN-375 Athlete legacy ES/EN localization and KAN-409 baseline/gate reconciliation. When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
 
 ## Agent harness
 
@@ -52,7 +52,7 @@ Epics 1–4 are complete. Epic 4 is consolidated in [`history/epic-4.md`](histor
 
 No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
-Known deferred work includes legacy ES/EN migration, session/intensity terminology and semantics, date-derived microcycle selection, Trail/Hills duration semantics, KAN-407 SQLite upgrade-path reliability and KAN-374 athlete date-of-birth validation. These are inputs to later scoping, not incomplete Epic 4 acceptance.
+Known deferred work includes remaining legacy ES/EN migration, session/intensity terminology and semantics, date-derived microcycle selection, Trail/Hills duration semantics, and later persistence work for the legacy PAM/intensity contract. KAN-407 SQLite upgrade-path reliability and KAN-374 athlete date-of-birth validation have been implemented. These are inputs to later scoping, not incomplete Epic 4 acceptance.
 
 Before defining the next epic, reconcile current `dev`, [`history/epic-4.md`](history/epic-4.md), relevant architecture and Jira. Do not rely on removed per-story handoffs or preliminary future-epic outlines.
 
