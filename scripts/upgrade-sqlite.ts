@@ -65,6 +65,10 @@ function establishCanonicalMigrationMetadata(sqlite: Database.Database): void {
   const migrations = [
     ['drizzle/sqlite/0000_baseline.sql', 1789348463278],
     ['drizzle/sqlite/0001_realized_training_timing.sql', 1789348503010],
+    ['drizzle/sqlite/0002_marvelous_franklin_richards.sql', 1789650330603],
+    ['drizzle/sqlite/0003_thin_bastion.sql', 1789866825158],
+    ['drizzle/sqlite/0004_mighty_king_cobra.sql', 1789867537434],
+    ['drizzle/sqlite/0005_volatile_ultragirl.sql', 1789905666541],
   ] as const
 
   for (const [migrationPath, createdAt] of migrations) {
