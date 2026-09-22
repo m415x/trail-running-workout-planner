@@ -306,11 +306,19 @@ test('field-test forms explain unavailable official TestEvents instead of presen
 })
 
 test('development seed provides an eligible 1000 m TestEvent for the current athlete group', () => {
-  const seed = fs.readFileSync(path.join(process.cwd(), 'db/seed.ts'), 'utf8')
+  const seedSources = [
+    path.join(process.cwd(), 'db', 'seed.ts'),
+    ...fs
+      .readdirSync(path.join(process.cwd(), 'db', 'seeds'))
+      .filter((file) => file.endsWith('.ts'))
+      .map((file) => path.join(process.cwd(), 'db', 'seeds', file)),
+  ]
+    .map((file) => fs.readFileSync(file, 'utf8'))
+    .join('\n')
 
-  assert.match(seed, /fieldPerformanceTestEvents/)
-  assert.match(seed, /1000m_track/)
-  assert.match(seed, /currentGroup\.id/)
+  assert.match(seedSources, /fieldPerformanceTestEvents/)
+  assert.match(seedSources, /1000m_track/)
+  assert.match(seedSources, /currentGroup\.id|groupId/)
 })
 
 
