@@ -3,6 +3,10 @@ import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
 
+export function tddTypecheckCommand(): { command: string; args: string[] } {
+  return { command: 'pn', args: ['tsc'] }
+}
+
 const args = process.argv.slice(2)
 const redOnly = args[0] === '--red'
 const remaining = redOnly ? args.slice(1) : args
@@ -41,8 +45,8 @@ if (redOnly) {
   process.exit(testsGreen ? 0 : 1)
 }
 
-const tscCli = require.resolve('typescript/bin/tsc')
-if (!testsGreen || !run(process.execPath, [tscCli, '--noEmit'])) {
+const typecheck = tddTypecheckCommand()
+if (!testsGreen || !run(typecheck.command, typecheck.args)) {
   console.log('RED')
   process.exit(1)
 }
