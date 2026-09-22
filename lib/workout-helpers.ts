@@ -14,18 +14,14 @@ export function getWorkoutIcon(type?: WorkoutType): Icon {
  * Retorna el label formateado para el tipo de rutina (o el título / valor recibido).
  */
 export function getWorkoutTypeLabel(type?: WorkoutType, fallbackTitle?: string): string {
-  if (!type) return fallbackTitle ?? 'Entrenamiento'
-  return WORKOUT_TYPES_CONFIG[type]?.label ?? fallbackTitle ?? type
+  return fallbackTitle ?? type ?? ''
 }
 
 /**
  * Retorna la configuración completa del tipo de rutina.
  */
 export function getWorkoutTypeConfig(type?: WorkoutType): WorkoutTypeConfig {
-  const fallback: WorkoutTypeConfig = {
-    label: 'Entrenamiento',
-    icon: PulseIcon,
-  }
+  const fallback: WorkoutTypeConfig = { icon: PulseIcon }
   if (!type) return fallback
   return WORKOUT_TYPES_CONFIG[type] ?? fallback
 }
