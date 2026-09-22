@@ -2,6 +2,7 @@ import type { db as sqliteDb } from '@/db/index'
 import { groupTrainingPlans, macrocycles, mesocycles, microcycles, sessions } from '@/db/schema'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
+import { createSeedContext } from '@/db/seeds/context'
 
 type SeedDb = typeof sqliteDb
 
@@ -78,7 +79,7 @@ export async function seedPlanningTemplatesAndSessions(
 
   await db.insert(sessions).values({
     id: 'session_s2_seed_fixture',
-    teamId: groups[0]?.teamId ?? 'team_1',
+    teamId: createSeedContext().teamId,
     workoutId: null,
     date: currentWeekStart,
     title: 'Entrenamiento',
