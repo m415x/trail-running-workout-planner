@@ -194,3 +194,19 @@ test('fresh SQLite bootstrap establishes migration metadata compatible with late
   assert.match(freshBlock, /establishCanonicalMigrationMetadata\(sqlite\)/)
   assert.match(runner, /CREATE TABLE IF NOT EXISTS __drizzle_migrations/)
 })
+
+
+test('fresh bootstrap records every migration already represented by the pushed HEAD schema', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+  const journal = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8'),
+  ) as { entries: Array<{ tag: string }> }
+
+  for (const entry of journal.entries) {
+    assert.match(
+      runner,
+      new RegExp(entry.tag.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g, '\\$&')),
+      `fresh bootstrap metadata must include ${entry.tag}`,
+    )
+  }
+})
