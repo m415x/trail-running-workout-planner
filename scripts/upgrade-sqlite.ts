@@ -91,6 +91,16 @@ if (state === 'unrecognized') {
   )
 }
 
+if (state === 'fresh') {
+  run([
+    require.resolve('drizzle-kit/bin.cjs'),
+    'push',
+    '--config=drizzle.sqlite.config.ts',
+  ])
+  run([tsxCli, resolve('scripts/verify-sqlite.ts')])
+  process.exit(0)
+}
+
 if (state === 'legacy') {
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
