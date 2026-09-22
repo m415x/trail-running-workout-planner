@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import {
   assignAthleteToGroup,
@@ -38,6 +39,7 @@ export function AthleteGroupForm({
   locale,
   defaultEffectiveDate,
 }: AthleteGroupFormProps) {
+  const t = useTranslations('AthleteGroup')
   const [state, formAction, pending] = useActionState(assignAthleteToGroup, initialState)
   const detailPath = locale === 'es'
     ? `/dashboard/athletes/${athleteId}`
@@ -57,7 +59,7 @@ export function AthleteGroupForm({
 
       <div className='space-y-1.5'>
         <label htmlFor='newGroupId' className='text-sm font-medium'>
-          Nuevo grupo <span className='text-destructive'>*</span>
+          {t('newGroup')} <span className='text-destructive'>*</span>
         </label>
         <select
           id='newGroupId'
@@ -67,7 +69,7 @@ export function AthleteGroupForm({
           disabled={availableGroups.length === 0}
           className='h-8 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50'
         >
-          <option value='' disabled>Seleccioná un grupo</option>
+          <option value='' disabled>{t('selectGroup')}</option>
           {availableGroups.map((group) => {
             const code = `${group.categoryCode}${group.levelCode}`
 
@@ -79,13 +81,13 @@ export function AthleteGroupForm({
           })}
         </select>
         {availableGroups.length === 0 && (
-          <p className='text-sm text-muted-foreground'>No hay otro grupo activo disponible.</p>
+          <p className='text-sm text-muted-foreground'>{t('noAvailableGroup')}</p>
         )}
       </div>
 
       <div className='space-y-1.5'>
         <label htmlFor='effectiveDate' className='text-sm font-medium'>
-          Fecha efectiva <span className='text-destructive'>*</span>
+          {t('effectiveDate')} <span className='text-destructive'>*</span>
         </label>
         <Input
           id='effectiveDate'
@@ -97,24 +99,24 @@ export function AthleteGroupForm({
       </div>
 
       <div className='space-y-1.5'>
-        <label htmlFor='reason' className='text-sm font-medium'>Motivo</label>
+        <label htmlFor='reason' className='text-sm font-medium'>{t('reason')}</label>
         <textarea
           id='reason'
           name='reason'
           rows={4}
           maxLength={500}
-          placeholder={`Ej.: promoción de ${athleteName} por evolución de carga.`}
+          placeholder={t('reasonPlaceholder', { name: athleteName })}
           className='w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
         />
-        <p className='text-xs text-muted-foreground'>Opcional. Quedará registrado en el historial del atleta.</p>
+        <p className='text-xs text-muted-foreground'>{t('reasonHelp')}</p>
       </div>
 
       <div className='flex justify-end gap-2'>
         <Link href={detailPath} className={buttonVariants({ variant: 'outline' })}>
-          Cancelar
+          {t('cancel')}
         </Link>
         <Button type='submit' disabled={pending || availableGroups.length === 0}>
-          {pending ? 'Asignando…' : currentGroupId ? 'Cambiar grupo' : 'Asignar grupo'}
+          {pending ? t('assigning') : currentGroupId ? t('changeGroup') : t('assignGroup')}
         </Button>
       </div>
     </form>
