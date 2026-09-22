@@ -182,7 +182,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
-- Current lint baseline is 0 errors / 9 warnings after KAN-290. New warnings are regressions unless explicitly accepted.
+- Current lint baseline is 0 errors / 0 warnings after KAN-417. New warnings are regressions unless explicitly accepted.
 - Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn tsc`, `pn build`, plus relevant DB verifiers.
 - Perform the functional/manual walkthrough at story end unless earlier manual validation is required to continue.
 - For schema changes: generate → inspect SQL → version migration/metadata → apply → verify real schema/security. Never create a duplicate migration merely because the remote was behind.
