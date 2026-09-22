@@ -84,8 +84,9 @@ const state = classifyExistingSqlite()
 if (state === 'legacy') {
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
+    migrateRealizedTrainingTimingSqlite(sqlite)
+
     sqlite.transaction(() => {
-      migrateRealizedTrainingTimingSqlite(sqlite)
       migratePlanningCohortsSqlite(sqlite)
       migrateCompetitionEntriesSqlite(sqlite)
       migrateMacrocycleTargetRaceDateSqlite(sqlite)
