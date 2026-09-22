@@ -1,0 +1,33 @@
+{
+  "AthleteDetail": {
+    "backToList": "Volver al listado de atletas",
+    "profile": "Perfil del atleta",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "notProvided": "No informado",
+    "personalData": "Datos personales",
+    "birthDate": "Fecha de nacimiento",
+    "nickname": "Apodo",
+    "group": "Grupo",
+    "noGroup": "Sin grupo",
+    "contact": "Contacto",
+    "phone": "Teléfono",
+    "goals": "Objetivos",
+    "newGoal": "Nuevo objetivo",
+    "noGoals": "Este atleta todavía no tiene objetivos registrados.",
+    "date": "Fecha",
+    "distance": "Distancia",
+    "competitions": "Competencias",
+    "registerCompetition": "Registrar inscripción",
+    "noCourses": "No hay ediciones con recorridos disponibles.",
+    "upcomingRegistrations": "Inscripciones próximas",
+    "noUpcomingRegistrations": "No hay inscripciones efectivas pendientes de participación.",
+    "participationHistory": "Historial de participación",
+    "noParticipationHistory": "Todavía no hay participación competitiva registrada.",
+    "nominalDistance": "Distancia nominal",
+    "actualDistance": "Distancia real",
+    "elapsedTime": "Tiempo",
+    "planningToday": "Planificación aplicable hoy",
+    "emergencyContact": "Contacto de emergencia"
+  }
+}
