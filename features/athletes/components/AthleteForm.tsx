@@ -81,6 +81,12 @@ function AthleteEditGuard({
 }
 
 function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
   const t = useTranslations('AthleteForm')
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
@@ -105,7 +111,7 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
         <Field label={t('email')} name='email' type='email' defaultValue={athlete?.email} required />
         <Field label={t('dni')} name='dni' defaultValue={athlete?.dni} required />
         <Field label={t('nickName')} name='nickName' defaultValue={athlete?.nickName} />
-        <Field label={t('birthday')} name='birthday' type='date' defaultValue={athlete?.birthday} />
+        <Field label={t('birthday')} name='birthday' type='date' max={today} defaultValue={athlete?.birthday} />
         <Field label={t('phone')} name='phone' type='tel' defaultValue={athlete?.phone} />
       </div>
 
@@ -186,15 +192,16 @@ interface FieldProps {
   type?: string
   defaultValue?: string | null
   required?: boolean
+  max?: string
 }
 
-function Field({ label, name, type = 'text', defaultValue, required }: FieldProps) {
+function Field({ label, name, type = 'text', defaultValue, required, max }: FieldProps) {
   return (
     <div className='space-y-1.5'>
       <label htmlFor={name} className='text-sm font-medium'>
         {label}{required && <span className='text-destructive'> *</span>}
       </label>
-      <Input id={name} name={name} type={type} defaultValue={defaultValue ?? ''} required={required} />
+      <Input id={name} name={name} type={type} max={max} defaultValue={defaultValue ?? ''} required={required} />
     </div>
   )
 }
