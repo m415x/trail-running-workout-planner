@@ -15,7 +15,7 @@ test('full workout type consumers use the canonical catalog instead of duplicati
   for (const relativePath of fullCatalogConsumers) {
     const source = fs.readFileSync(path.join(process.cwd(), relativePath), 'utf8')
 
-    assert.match(source, /WORKOUT_TYPES/, relativePath)
+    assert.match(source, /(?:WORKOUT_TYPES|isWorkoutType)/, relativePath)
     assert.doesNotMatch(
       source,
       /\['Base',\s*'Long',\s*'Intervals',\s*'Trail',\s*'Speed',\s*'Fartlek',\s*'PAM',\s*'Hills',\s*'Rest',\s*'Race'\]/,
