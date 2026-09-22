@@ -68,3 +68,19 @@ test('the canonical upgrade runner invokes the verifier after migration', () => 
   assert.match(runner, /migrate/)
   assert.match(runner, /verify-sqlite/)
 })
+
+
+test('the canonical runner classifies the database before applying migrations', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /classif/i)
+  assert.match(runner, /unrecognized|inconsistent/i)
+  assert.match(runner, /legacy/i)
+})
+
+test('the canonical runner does not silently migrate contradictory version metadata', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /recorded_by_user_id/)
+  assert.match(runner, /reject|throw/i)
+})
