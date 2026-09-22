@@ -28,3 +28,12 @@ test('typecheck gate stops after the first failed preparation step', async () =>
   assert.equal(exitCode, 1)
   assert.deepEqual(calls, ['next'])
 })
+
+test('focused GREEN TDD routes typecheck through the canonical package gate', async () => {
+  const { tddTypecheckCommand } = await import('../scripts/tdd')
+
+  assert.deepEqual(tddTypecheckCommand(), {
+    command: 'pn',
+    args: ['tsc'],
+  })
+})
