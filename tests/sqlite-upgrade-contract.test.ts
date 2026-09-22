@@ -365,3 +365,30 @@ test('SQLite scenario harness verifies the supported upgrade is safe to rerun at
   assert.match(verifier, /scenario === ['"]rerun['"]/)
   assert.match(verifier, /runRerunScenario\(/)
 })
+
+
+test('SQLite seed ownership is consolidated under db/seeds with stable package entrypoints', () => {
+  const scripts = packageJson.scripts ?? {}
+  const legacyRootSeedFiles = [
+    'seed-race-catalog-fixtures.ts',
+    'seed-realized-training-fixtures.ts',
+    'seed-plan-real-comparison-fixtures.ts',
+  ]
+
+  for (const file of legacyRootSeedFiles) {
+    assert.equal(
+      fs.existsSync(path.join(process.cwd(), 'db', file)),
+      false,
+      `${file} must not remain as root-level seed ownership`,
+    )
+    assert.equal(
+      fs.existsSync(path.join(process.cwd(), 'db', 'seeds', file.replace(/^seed-/, ''))),
+      true,
+      `${file} must be owned under db/seeds`,
+    )
+  }
+
+  assert.match(scripts['db:seed:race-catalog'] ?? '', /db\/seeds\/race-catalog-fixtures\.ts/)
+  assert.match(scripts['db:seed:realized-training'] ?? '', /db\/seeds\/realized-training-fixtures\.ts/)
+  assert.match(scripts['db:seed:plan-real'] ?? '', /db\/seeds\/plan-real-comparison-fixtures\.ts/)
+})
