@@ -13,7 +13,7 @@ import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
-import { seedFull } from '@/db/seeds'
+import { seedFeature, seedFull } from '@/db/seeds'
 
 
 export type SqliteVerificationScenario =
@@ -126,6 +126,52 @@ export async function runFullSeedScenario(projectRoot = process.cwd()): Promise<
   }
 }
 
+export async function runPartialSeedScenario(projectRoot = process.cwd()): Promise<void> {
+  const features = ['groups', 'competitions'] as const
+
+  for (const feature of features) {
+    const workspace = createScenarioWorkspace('partial-seed')
+    try {
+      const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+      const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+      const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+      runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+      assertScenarioDatabaseExists(workspace)
+
+      const sqlite = new Database(workspace.sqlitePath)
+      try {
+        const scenarioDb = drizzle(sqlite, {
+          schema: {
+            ...coreSchema,
+            ...loadStrategySchema,
+            ...intensityStrategySchema,
+            ...sessionGenerationPreferencesSchema,
+            ...competitionEntrySchema,
+            ...readinessSchema,
+            ...raceCatalogSchema,
+            ...raceRegistrationSchema,
+          },
+        })
+        const currentWeekStart = '2026-09-21'
+        const shiftISODate = (value: string, days: number): string => {
+          const date = new Date(`${value}T00:00:00Z`)
+          date.setUTCDate(date.getUTCDate() + days)
+          return date.toISOString().slice(0, 10)
+        }
+
+        await seedFeature(scenarioDb, feature, { currentWeekStart, shiftISODate })
+      } finally {
+        sqlite.close()
+      }
+
+      runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    } finally {
+      removeScenarioWorkspace(workspace)
+    }
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -176,6 +222,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'full-seed') {
     await runFullSeedScenario()
+    return
+  }
+
+  if (scenario === 'partial-seed') {
+    await runPartialSeedScenario()
     return
   }
 
