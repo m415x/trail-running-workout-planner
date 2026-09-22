@@ -162,3 +162,14 @@ test('legacy reconciliation does not wrap the realized-training rebuild in an ac
     'realized-training timing migration must run before the outer transaction because it rejects active transactions',
   )
 })
+
+
+test('legacy classification requires a reviewed schema fingerprint, not merely absence of Drizzle metadata', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /workout_logs/)
+  assert.match(runner, /group_training_plans/)
+  assert.match(runner, /macrocycles/)
+  assert.match(runner, /unrecognized/i)
+  assert.doesNotMatch(runner, /return hasMigrationMetadata \? 'versioned' : 'legacy'/)
+})
