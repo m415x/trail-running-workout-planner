@@ -30,22 +30,36 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
   return files
 }
 
-export function runTestFiles(testFiles: string[]): number {
-  const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...testFiles], {
-    shell: false,
-    stdio: 'inherit',
-  })
+type TestRunResult = Pick<ReturnType<typeof spawnSync>, 'status' | 'signal' | 'error'>
 
+export function interpretTestRunResult(result: TestRunResult): {
+  exitCode: number | null
+  signal: NodeJS.Signals | null
+} {
   if (result.error) {
     throw result.error
   }
 
   if (result.signal) {
-    process.kill(process.pid, result.signal)
+    return { exitCode: null, signal: result.signal }
+  }
+
+  return { exitCode: result.status ?? 1, signal: null }
+}
+
+export function runTestFiles(testFiles: string[]): number {
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...testFiles], {
+    shell: false,
+    stdio: 'inherit',
+  })
+  const outcome = interpretTestRunResult(result)
+
+  if (outcome.signal) {
+    process.kill(process.pid, outcome.signal)
     return 1
   }
 
-  return result.status ?? 1
+  return outcome.exitCode ?? 1
 }
 
 async function main(): Promise<void> {
