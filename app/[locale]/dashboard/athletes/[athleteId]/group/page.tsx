@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getActiveAthleteGroups, getAthleteById } from '@/app/actions/athlete-actions'
 import { AthleteGroupForm } from '@/features/athletes/components/AthleteGroupForm'
@@ -25,6 +26,7 @@ function currentDate() {
 
 export default async function AthleteGroupPage({ params }: AthleteGroupPageProps) {
   const { locale, athleteId } = await params
+  const t = await getTranslations({ locale, namespace: 'AthleteGroup' })
   const [athlete, groups] = await Promise.all([
     getAthleteById(athleteId),
     getActiveAthleteGroups(),
@@ -44,26 +46,26 @@ export default async function AthleteGroupPage({ params }: AthleteGroupPageProps
       <div className='flex items-start gap-3'>
         <Link
           href={detailPath(locale, athlete.id)}
-          aria-label='Volver al detalle del atleta'
+          aria-label={t('backToDetail')}
           className={buttonVariants({ variant: 'ghost', size: 'icon' })}
         >
           <ArrowLeft />
         </Link>
         <div>
           <h2 className='text-3xl font-bold tracking-tight'>
-            {groupCode ? 'Cambiar grupo' : 'Asignar a grupo'}
+            {groupCode ? t('changeGroup') : t('assignToGroup')}
           </h2>
-          <p className='text-muted-foreground'>Definí el grupo operativo actual de {athleteName}.</p>
+          <p className='text-muted-foreground'>{t('description', { name: athleteName })}</p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className='flex flex-wrap items-center gap-2 text-lg'>
-            Grupo actual
+            {t('currentGroup')}
             {groupCode
               ? <Badge variant='secondary'>{groupCode}</Badge>
-              : <Badge variant='outline'>Sin grupo</Badge>}
+              : <Badge variant='outline'>{t('noGroup')}</Badge>}
           </CardTitle>
         </CardHeader>
         <CardContent>
