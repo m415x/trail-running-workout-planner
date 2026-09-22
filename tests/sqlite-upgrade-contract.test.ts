@@ -95,3 +95,12 @@ test('recognized legacy databases are reconciled instead of categorically reject
   assert.match(runner, /migrateCompetitionEntriesSqlite/)
   assert.match(runner, /migrateMacrocycleTargetRaceDateSqlite/)
 })
+
+
+test('legacy reconciliation establishes canonical migration metadata before Drizzle continues', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /__drizzle_migrations/)
+  assert.match(runner, /0000_baseline|1789348463278/)
+  assert.match(runner, /legacy/i)
+})
