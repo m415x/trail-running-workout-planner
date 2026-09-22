@@ -33,7 +33,7 @@ export interface ElevationChartProps {
   xDomain?: string[]
 }
 
-export function ElevationProfileCard({ workout, elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
+export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
   const primaryColor = 'var(--primary)'
 
   return (
