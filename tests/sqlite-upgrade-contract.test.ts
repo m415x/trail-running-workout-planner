@@ -313,3 +313,20 @@ test('SQLite scenario harness implements a representative legacy upgrade to HEAD
   assert.match(verifier, /scenario === ['"]upgrade['"]/)
   assert.match(verifier, /runUpgradeScenario\(/)
 })
+
+
+test('SQLite scenario harness verifies existing application data survives the supported upgrade', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  const scenario = verifier.match(/function runPreservationScenario[\s\S]*?\n}/)?.[0] ?? ''
+  assert.match(verifier, /runPreservationScenario/)
+  assert.match(scenario, /createRepresentativeLegacyDatabase/)
+  assert.match(scenario, /INSERT/i)
+  assert.match(scenario, /SELECT/i)
+  assert.match(scenario, /upgrade-sqlite/)
+  assert.match(verifier, /scenario === ['"]preservation['"]/)
+  assert.match(verifier, /runPreservationScenario\(/)
+})
