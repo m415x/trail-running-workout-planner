@@ -24,7 +24,6 @@ export interface RouteMapCardProps {
   gainMeters?: number
   maxGradePct?: number
   trackPoints?: TrackPoint[]
-  mapKey?: string
   onUploadGpx?: () => void
 }
 
@@ -34,7 +33,6 @@ export function RouteMapCard({
   gainMeters = 0,
   maxGradePct = 0,
   trackPoints = [],
-  mapKey,
 }: RouteMapCardProps) {
   // Punto de largada para el botón externo de Google Maps
   const firstPoint = trackPoints.find((point) => Number.isFinite(point.lat) && Number.isFinite(point.lon)) ?? null
