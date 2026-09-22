@@ -1,6 +1,7 @@
 import type { db as sqliteDb } from '@/db/index'
 import { teams, trainingLocations } from '@/db/schema'
-import { team, TRAINING_LOCATIONS } from '@/data/data'
+import { TRAINING_LOCATIONS } from '@/data/data'
+import { createSeedContext } from '@/db/seeds/context'
 
 type SeedDb = typeof sqliteDb
 
@@ -14,7 +15,7 @@ export async function seedTeamAndCoach(db: SeedDb): Promise<void> {
 
   await db.insert(trainingLocations).values(locationRows).onConflictDoNothing().run()
 
-  const teamId = String(team.id || 'team_1')
+  const { teamId } = createSeedContext()
   await db
     .insert(teams)
     .values({
