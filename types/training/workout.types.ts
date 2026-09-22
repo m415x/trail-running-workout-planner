@@ -3,17 +3,24 @@ import type { TrainingIntensity, IntensityZone } from '@/types/training/intensit
 import type { RunningReference } from '@/lib/physiology/running-reference'
 
 export type DayStatus = 'completed' | 'partial' | 'missed' | 'pending' | 'rest'
-export type WorkoutType =
-  | 'Base'
-  | 'Long'
-  | 'Intervals'
-  | 'Trail'
-  | 'Speed'
-  | 'Fartlek'
-  | 'PAM'
-  | 'Hills'
-  | 'Rest'
-  | 'Race'
+export const WORKOUT_TYPES = [
+  'Base',
+  'Long',
+  'Intervals',
+  'Trail',
+  'Speed',
+  'Fartlek',
+  'PAM',
+  'Hills',
+  'Rest',
+  'Race',
+] as const
+
+export type WorkoutType = (typeof WORKOUT_TYPES)[number]
+
+export function isWorkoutType(value: unknown): value is WorkoutType {
+  return typeof value === 'string' && (WORKOUT_TYPES as readonly string[]).includes(value)
+}
 
 /** Resolved workout view consumed by the authenticated athlete UI. */
 export interface WorkoutProps {
