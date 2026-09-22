@@ -14,7 +14,9 @@
     "cancel": "Cancel",
     "saving": "Saving…",
     "saveChanges": "Save changes",
-    "createAthlete": "Create athlete"
+    "createAthlete": "Create athlete",
+    "newPageTitle": "New athlete",
+    "newPageDescription": "Create the athlete profile. Group assignment is managed separately."
   },
   "AthleteEditPage": {
     "title": "Edit athlete",
