@@ -109,6 +109,9 @@ test('legacy reconciliation establishes canonical migration metadata before Driz
 test('legacy metadata establishment is safe to rerun without duplicate migration rows', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
-  assert.match(runner, /SELECT.*__drizzle_migrations|ON CONFLICT|COUNT\(/is)
+  assert.match(
+    runner,
+    /SELECT\s+COUNT\(\*\)\s+AS\s+count\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
+  )
   assert.match(runner, /created_at/)
 })
