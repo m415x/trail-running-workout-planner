@@ -50,3 +50,21 @@ test('the canonical upgrade contract defines supported legacy-state handling', (
   assert.match(contract, /reject/i)
   assert.match(contract, /preserv/i)
 })
+
+
+test('the SQLite verifier owns detection of the recorded_by_user_id drift regression', () => {
+  const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
+  const verifier = fs.readFileSync(verifierPath, 'utf8')
+
+  assert.match(verifier, /field_performance_tests/)
+  assert.match(verifier, /recorded_by_user_id/)
+  assert.match(verifier, /foreign_key_check/)
+})
+
+test('the canonical upgrade runner invokes the verifier after migration', () => {
+  const runnerPath = path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts')
+  const runner = fs.readFileSync(runnerPath, 'utf8')
+
+  assert.match(runner, /migrate/)
+  assert.match(runner, /verify-sqlite/)
+})
