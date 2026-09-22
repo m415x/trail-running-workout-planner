@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
-import type { WorkoutTemplateSnapshot, WorkoutType } from '@/types'
+import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
 
@@ -78,7 +78,6 @@ function formValue(value: string | number | null | undefined) {
   return value == null ? '' : String(value)
 }
 
-const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const initialState: SessionFormState = {}
 const TRAIL_EFFORT_NOTE = 'Priorizá el esfuerzo sobre el ritmo.'
 
@@ -226,7 +225,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       <div className='grid gap-4 sm:grid-cols-2'>
         <SelectField label='Tipo de entrenamiento' name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(TRAIL_EFFORT_NOTE) }} required>
           <option value=''>Seleccionar tipo</option>
-          {workoutTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
         </SelectField>
         <div className='space-y-1.5'>
           <SelectField label='Plantilla de entrenamiento' name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
