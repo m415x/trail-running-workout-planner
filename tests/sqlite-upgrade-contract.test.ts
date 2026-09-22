@@ -137,7 +137,7 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
   const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
   const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
-  const metadataIndex = legacyBlock.indexOf('establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')')
+  const metadataIndex = legacyBlock.indexOf("establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')")
 
   const planningIndex = legacyBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const competitionIndex = legacyBlock.indexOf('migrateCompetitionEntriesSqlite(sqlite)')
