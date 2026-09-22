@@ -2,8 +2,6 @@ import { Footprints, Watch } from 'lucide-react'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { Button } from '@ui/button'
-import { ShoeItem } from '@profile/components/ShoeItem'
-import { runningShoes } from '@/data/data'
 
 export function GearTabContent() {
   return (
