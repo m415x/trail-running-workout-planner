@@ -129,3 +129,11 @@ test('legacy metadata reconciliation rejects a conflicting canonical timestamp i
   assert.match(runner, /hash[\s\S]*!==|!==[\s\S]*hash/i)
   assert.match(runner, /conflict|inconsistent/i)
 })
+
+
+test('legacy reconciliation is atomic with canonical metadata establishment', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /sqlite\.transaction\(\(\)\s*=>\s*\{[\s\S]*migrateRealizedTrainingTimingSqlite/)
+  assert.match(runner, /migrateMacrocycleTargetRaceDateSqlite[\s\S]*establishCanonicalLegacyMetadata/)
+})
