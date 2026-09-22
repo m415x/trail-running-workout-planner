@@ -55,7 +55,7 @@ function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
 
   const existing = sqlite.prepare(
-    'SELECT COUNT(*) AS count FROM __drizzle_migrations WHERE created_at = ?',
+    'SELECT hash FROM __drizzle_migrations WHERE created_at = ?',
   )
   const insert = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
   const migrations = [
@@ -65,11 +65,19 @@ function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
 
   sqlite.transaction(() => {
     for (const [migrationPath, createdAt] of migrations) {
-      const row = existing.get(createdAt) as { count: number }
-      if (row.count > 0) continue
-
       const sql = readFileSync(resolve(migrationPath), 'utf8')
-      insert.run(createHash('sha256').update(sql).digest('hex'), createdAt)
+      const hash = createHash('sha256').update(sql).digest('hex')
+      const row = existing.get(createdAt) as { hash: string } | undefined
+      if (row) {
+        if (row.hash !== hash) {
+          throw new Error(
+            `SQLite migration metadata conflict at canonical timestamp ${createdAt}`,
+          )
+        }
+        continue
+      }
+
+      insert.run(hash, createdAt)
     }
   })()
 }
