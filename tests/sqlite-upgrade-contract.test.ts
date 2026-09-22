@@ -253,3 +253,15 @@ test('SQLite scenario harness executes empty bootstrap without invoking seed com
     /seedFull|seedFeature/,
   )
 })
+
+
+test('SQLite scenario verifier can execute the empty bootstrap scenario from its CLI', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  assert.match(verifier, /process\.argv/)
+  assert.match(verifier, /['"]empty['"]/)
+  assert.match(verifier, /runEmptyBootstrapScenario\(/)
+})
