@@ -53,62 +53,20 @@ export const MONTHS_OF_YEAR: readonly MonthConfig[] = [
 ] as const
 
 export interface WorkoutTypeConfig {
-  label: string
   icon: Icon
-  description?: string
 }
 
 export const WORKOUT_TYPES_CONFIG: Record<WorkoutType, WorkoutTypeConfig> = {
-  Base: {
-    label: 'Rodaje Base',
-    icon: BaseIcon,
-    description: 'Rodaje aeróbico continuo a ritmo suave / conversacional',
-  },
-  Long: {
-    label: 'Fondo / Tirada Larga',
-    icon: LongIcon,
-    description: 'Volumen aeróbico y resistencia muscular de larga duración',
-  },
-  Intervals: {
-    label: 'Series / Intervalos',
-    icon: IntervalsIcon,
-    description: 'Fraccionados y pasadas de alta intensidad con recuperación',
-  },
-  Trail: {
-    label: 'Montaña',
-    icon: TrailIcon,
-    description: 'Terreno técnico, montaña y senderos naturales',
-  },
-  Speed: {
-    label: 'Velocidad / Calidad',
-    icon: SpeedIcon,
-    description: 'Ritmos rápidos, reactividad y potencia aeróbica',
-  },
-  Fartlek: {
-    label: 'Fartlek',
-    icon: FartlekIcon,
-    description: 'Juegos continuos con variaciones libres o pautadas de ritmo',
-  },
-  PAM: {
-    label: 'Test PAM / 1000m',
-    icon: PamIcon,
-    description: 'Evaluación y test de potencia aeróbica máxima',
-  },
-  Hills: {
-    label: 'Cuestas y Desnivel',
-    icon: HillsIcon,
-    description: 'Fuerza específica y trabajo de subidas con pendiente',
-  },
-  Race: {
-    label: 'Día de Carrera',
-    icon: RaceIcon,
-    description: 'Competición oficial o evento objetivo',
-  },
-  Rest: {
-    label: 'Descanso',
-    icon: RestIcon,
-    description: 'Recuperación activa o descanso total',
-  },
+  Base: { icon: BaseIcon },
+  Long: { icon: LongIcon },
+  Intervals: { icon: IntervalsIcon },
+  Trail: { icon: TrailIcon },
+  Speed: { icon: SpeedIcon },
+  Fartlek: { icon: FartlekIcon },
+  PAM: { icon: PamIcon },
+  Hills: { icon: HillsIcon },
+  Race: { icon: RaceIcon },
+  Rest: { icon: RestIcon },
 } as const
 
 export interface HrZoneStyles {
