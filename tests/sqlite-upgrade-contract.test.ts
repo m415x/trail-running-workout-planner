@@ -126,6 +126,6 @@ test('legacy metadata reconciliation rejects a conflicting canonical timestamp i
     runner,
     /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
   )
-  assert.match(runner, /hash.*!==|!==.*hash/is)
+  assert.match(runner, /hash[\\s\\S]*!==|!==[\\s\\S]*hash/i)
   assert.match(runner, /conflict|inconsistent/i)
 })
