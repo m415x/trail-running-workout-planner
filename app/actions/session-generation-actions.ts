@@ -16,12 +16,10 @@ import {
   sessionGenerationModificationRecords,
 } from '@/db/schema'
 import { reconcileSessionGeneration } from '@/lib/session-generation/session-regeneration'
+import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
 const CURRENT_TEAM_ID = 'team_1'
-const WORKOUT_TYPES = new Set([
-  'Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race',
-])
 
 export interface PersistGeneratedSessionsState {
   error?: string
@@ -343,7 +341,7 @@ function validateProposalScope(
       !event.sharedEventKey?.trim()
       || !/^\d{4}-\d{2}-\d{2}$/.test(event.session?.date ?? '')
       || !event.session?.title?.trim()
-      || !WORKOUT_TYPES.has(event.session?.type)
+      || !isWorkoutType(event.session?.type)
       || !Array.isArray(event.prescriptions)
     ) {
       throw new Error('La propuesta contiene un evento incompleto.')
