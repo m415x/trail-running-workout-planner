@@ -28,6 +28,24 @@
     "actualDistance": "Actual distance",
     "elapsedTime": "Elapsed time",
     "planningToday": "Planning applicable today",
-    "emergencyContact": "Emergency contact"
+    "emergencyContact": "Emergency contact",
+    "goalDraft": "Draft",
+    "goalCompleted": "Completed",
+    "goalCancelled": "Cancelled",
+    "faster": "Faster",
+    "slower": "Slower",
+    "same": "Same",
+    "insufficientEvidence": "Insufficient evidence",
+    "unavailable": "Unavailable",
+    "historyLoadError": "History could not be loaded.",
+    "planningUntitled": "Planning title unavailable",
+    "cohort": "Cohort",
+    "groupPlan": "Group plan",
+    "cohortVariant": "Variant shared by {cohort}.",
+    "applicableCohort": "the applicable cohort",
+    "groupPlanFallback": "The group base plan is used because there is no applicable cohort variant.",
+    "viewPlanning": "View planning",
+    "planningConflict": "A unique planning could not be resolved. Review cohort memberships and plans covering this date.",
+    "noActivePlanning": "There is no active planning covering the current date for the athlete’s group."
   }
 }
