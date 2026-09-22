@@ -33,7 +33,10 @@ const athleteFormSchema = z.object({
   email: z.email('Ingresá un email válido').transform((value) => value.toLowerCase()),
   dni: z.string().trim().min(6, 'Ingresá un DNI válido'),
   nickName: z.string().trim().optional(),
-  birthday: z.string().trim().optional(),
+  birthday: z.string().trim().optional().refine(
+    (value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value) && value <= getCurrentDateInArgentina(),
+    'La fecha de nacimiento no puede ser futura',
+  ),
   phone: z.string().trim().optional(),
   emergencyContact: z.string().trim().optional(),
   emergencyPhone: z.string().trim().optional(),
