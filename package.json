@@ -11,10 +11,6 @@
     "tsc": "tsx scripts/typecheck-runner.ts",
     "i18n:check": "tsx scripts/check-i18n.ts",
     "db:push": "drizzle-kit push",
-    "db:migrate:workout-templates:sqlite": "tsx scripts/migrate-workout-templates-sqlite.ts",
-    "db:migrate:planning-cohorts:sqlite": "tsx scripts/migrate-planning-cohorts-sqlite.ts",
-    "db:migrate:competition-entries:sqlite": "tsx scripts/migrate-competition-entries-sqlite.ts",
-    "db:migrate:macrocycle-target-race-date:sqlite": "tsx scripts/migrate-macrocycle-target-race-date-sqlite.ts",
     "db:generate:supabase": "drizzle-kit generate --config=drizzle.supabase.config.ts",
     "db:check:supabase": "drizzle-kit check --config=drizzle.supabase.config.ts",
     "db:migrate:supabase": "drizzle-kit migrate --config=drizzle.supabase.config.ts",
@@ -27,9 +23,10 @@
     "db:seed:plan-real": "tsx db/seed-plan-real-comparison-fixtures.ts",
     "db:seed": "pn db:seed:base && pn db:seed:race-catalog && pn db:seed:realized-training && pn db:seed:plan-real",
     "db:generate:sqlite": "drizzle-kit generate --config=drizzle.sqlite.config.ts",
-    "db:migrate:realized-training:sqlite": "tsx scripts/migrate-realized-training-timing-sqlite.ts",
     "tdd:red": "tsx scripts/tdd.ts --red",
-    "tdd": "tsx scripts/tdd.ts"
+    "tdd": "tsx scripts/tdd.ts",
+    "db:sqlite:upgrade": "tsx scripts/upgrade-sqlite.ts",
+    "db:sqlite:verify": "tsx scripts/verify-sqlite.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
