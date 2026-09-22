@@ -55,7 +55,7 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
   }
 }
 
-function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
+function establishCanonicalMigrationMetadata(sqlite: Database.Database): void {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
 
   const existing = sqlite.prepare(
@@ -97,6 +97,14 @@ if (state === 'fresh') {
     'push',
     '--config=drizzle.sqlite.config.ts',
   ])
+
+  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  try {
+    establishCanonicalMigrationMetadata(sqlite)
+  } finally {
+    sqlite.close()
+  }
+
   run([tsxCli, resolve('scripts/verify-sqlite.ts')])
   process.exit(0)
 }
@@ -110,7 +118,7 @@ if (state === 'legacy') {
       migratePlanningCohortsSqlite(sqlite)
       migrateCompetitionEntriesSqlite(sqlite)
       migrateMacrocycleTargetRaceDateSqlite(sqlite)
-      establishCanonicalLegacyMetadata(sqlite)
+      establishCanonicalMigrationMetadata(sqlite)
 
       if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
         throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
