@@ -182,3 +182,15 @@ test('fresh SQLite bootstrap creates the current schema instead of relying on ba
   assert.match(runner, /push/)
   assert.match(runner, /migrate/)
 })
+
+
+test('fresh SQLite bootstrap establishes migration metadata compatible with later upgrades', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+  const freshBlock = runner.slice(
+    runner.indexOf("if (state === 'fresh')"),
+    runner.indexOf("if (state === 'legacy')"),
+  )
+
+  assert.match(freshBlock, /establishCanonical/)
+  assert.match(freshBlock, /__drizzle_migrations|migration metadata/i)
+})
