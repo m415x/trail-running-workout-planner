@@ -3,13 +3,12 @@ import { Archive, ArchiveRestore, Copy, FilterX, Pencil, Plus, Search } from 'lu
 import { getTranslations } from 'next-intl/server'
 
 import { duplicateWorkoutTemplate, getWorkoutTemplates, setWorkoutTemplateArchiveStatus } from '@/app/actions/workout-template-actions'
-import type { WorkoutTemplateArchiveFilter, WorkoutTemplateCategory, WorkoutTemplateSearchCriteria, WorkoutType } from '@/types'
+import { WORKOUT_TYPES, type WorkoutTemplateArchiveFilter, type WorkoutTemplateCategory, type WorkoutTemplateSearchCriteria, type WorkoutType } from '@/types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 
 const categories: WorkoutTemplateCategory[] = ['endurance', 'quality', 'mountain', 'technique', 'recovery', 'competition']
-const workoutTypes: WorkoutType[] = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Race', 'Rest']
 const archiveFilters: WorkoutTemplateArchiveFilter[] = ['active', 'archived', 'all']
 
 interface WorkoutTemplatesPageProps {
@@ -26,7 +25,7 @@ function isCategory(value: string): value is WorkoutTemplateCategory {
 }
 
 function isWorkoutType(value: string): value is WorkoutType {
-  return workoutTypes.some((type) => type === value)
+  return WORKOUT_TYPES.some((type) => type === value)
 }
 
 function isArchiveFilter(value: string): value is WorkoutTemplateArchiveFilter {
@@ -88,7 +87,7 @@ export default async function WorkoutTemplatesPage({ params, searchParams }: Wor
             </FilterSelect>
             <FilterSelect name='type' label={t('filters.type')} defaultValue={workoutType}>
               <option value=''>{t('filters.allTypes')}</option>
-              {workoutTypes.map((value) => <option key={value} value={value}>{workoutTypeLabel(value)}</option>)}
+              {WORKOUT_TYPES.map((value) => <option key={value} value={value}>{workoutTypeLabel(value)}</option>)}
             </FilterSelect>
             <FilterSelect name='tag' label={t('filters.tag')} defaultValue={tag}>
               <option value=''>{t('filters.allTags')}</option>
