@@ -403,3 +403,22 @@ test('SQLite exposes one aggregate verification gate covering every supported sc
     assert.match(command, new RegExp(`\\b${scenario}\\b`), `db:sqlite:check must include ${scenario}`)
   }
 })
+
+
+test('supported SQLite operations and recovery are durably documented', () => {
+  const docPath = path.join(process.cwd(), 'docs', 'architecture', 'platform', 'sqlite-local-operations.md')
+  assert.equal(fs.existsSync(docPath), true, 'missing durable SQLite operations documentation')
+
+  const doc = fs.readFileSync(docPath, 'utf8')
+  assert.match(doc, /db:sqlite:upgrade/)
+  assert.match(doc, /db:sqlite:verify/)
+  assert.match(doc, /db:sqlite:check/)
+  assert.match(doc, /db:seed:base/)
+  assert.match(doc, /db:seed:race-catalog/)
+  assert.match(doc, /db:seed:realized-training/)
+  assert.match(doc, /db:seed:plan-real/)
+  assert.match(doc, /empty/i)
+  assert.match(doc, /partial/i)
+  assert.match(doc, /inconsistent/i)
+  assert.match(doc, /do not delete|do not overwrite/i)
+})
