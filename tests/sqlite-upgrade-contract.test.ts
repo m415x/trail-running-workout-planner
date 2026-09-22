@@ -265,3 +265,19 @@ test('SQLite scenario verifier can execute the empty bootstrap scenario from its
   assert.match(verifier, /['"]empty['"]/)
   assert.match(verifier, /runEmptyBootstrapScenario\(/)
 })
+
+
+test('SQLite scenario harness implements full-seed execution with explicit seedFull composition', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  assert.match(verifier, /runFullSeedScenario/)
+  assert.match(
+    verifier.match(/function runFullSeedScenario[\s\S]*?\n}/)?.[0] ?? '',
+    /seedFull/,
+  )
+  assert.match(verifier, /scenario === ['"]full-seed['"]/)
+  assert.match(verifier, /runFullSeedScenario\(/)
+})
