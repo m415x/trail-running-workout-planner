@@ -101,7 +101,9 @@ test('legacy reconciliation establishes canonical migration metadata before Driz
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
   assert.match(runner, /__drizzle_migrations/)
-  assert.match(runner, /0000_baseline|1789348463278/)
+  assert.match(runner, /meta[/\\\\]_journal\.json/)
+  assert.match(runner, /entry\.tag/)
+  assert.match(runner, /entry\.when/)
   assert.match(runner, /legacy/i)
 })
 
@@ -219,5 +221,5 @@ test('canonical migration metadata derives entries from the Drizzle journal inst
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
   assert.match(runner, /meta[/\\\\]_journal\.json/)
-  assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
+  assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
 })
