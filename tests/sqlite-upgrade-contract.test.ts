@@ -297,3 +297,19 @@ test('SQLite scenario harness implements useful partial-seed execution with seed
   assert.match(verifier, /scenario === ['"]partial-seed['"]/)
   assert.match(verifier, /runPartialSeedScenario\(/)
 })
+
+
+test('SQLite scenario harness implements a representative legacy upgrade to HEAD', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  const scenario = verifier.match(/function runUpgradeScenario[\s\S]*?\n}/)?.[0] ?? ''
+  assert.match(verifier, /runUpgradeScenario/)
+  assert.match(scenario, /createRepresentativeLegacyDatabase/)
+  assert.match(scenario, /upgrade-sqlite/)
+  assert.match(scenario, /verify-sqlite/)
+  assert.match(verifier, /scenario === ['"]upgrade['"]/)
+  assert.match(verifier, /runUpgradeScenario\(/)
+})
