@@ -98,3 +98,29 @@ export function describeSqliteVerificationCoverage(): string {
     'safe rerun idempotence',
   ].join('; ')
 }
+
+
+function main(): void {
+  const scenario = process.argv[2] as SqliteVerificationScenario | undefined
+
+  if (!scenario) {
+    throw new Error(
+      `SQLite verification scenario is required: ${sqliteVerificationScenarios.join(', ')}`,
+    )
+  }
+
+  if (!sqliteVerificationScenarios.includes(scenario)) {
+    throw new Error(`Unknown SQLite verification scenario: ${scenario}`)
+  }
+
+  if (scenario === 'empty') {
+    runEmptyBootstrapScenario()
+    return
+  }
+
+  throw new Error(`SQLite verification scenario is not implemented yet: ${scenario}`)
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main()
+}
