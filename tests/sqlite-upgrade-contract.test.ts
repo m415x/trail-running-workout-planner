@@ -84,3 +84,14 @@ test('the canonical runner does not silently migrate contradictory version metad
   assert.match(runner, /recorded_by_user_id/)
   assert.match(runner, /reject|throw/i)
 })
+
+
+test('recognized legacy databases are reconciled instead of categorically rejected', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.doesNotMatch(runner, /Recognized legacy SQLite migration is not implemented yet/)
+  assert.match(runner, /migrateRealizedTrainingTimingSqlite/)
+  assert.match(runner, /migratePlanningCohortsSqlite/)
+  assert.match(runner, /migrateCompetitionEntriesSqlite/)
+  assert.match(runner, /migrateMacrocycleTargetRaceDateSqlite/)
+})
