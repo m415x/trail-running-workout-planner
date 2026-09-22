@@ -37,15 +37,6 @@ import type {
   TrainingGoalType,
 } from '@/types'
 
-interface SeededAthleteGroup {
-  id: string
-  teamId: string
-  categoryCode: AthleteCategoryCode
-  levelCode: AthleteLevelCode
-  description: string
-  isActive: boolean
-}
-
 interface SeedMesocycleDefinition {
   key: string
   title: string
