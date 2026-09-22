@@ -1,6 +1,6 @@
 import type { db as sqliteDb } from '@/db/index'
 import { teams, trainingLocations } from '@/db/schema'
-import { TRAINING_LOCATIONS } from '@/data/data'
+import { team, TRAINING_LOCATIONS } from '@/data/data'
 import { createSeedContext } from '@/db/seeds/context'
 
 type SeedDb = typeof sqliteDb
