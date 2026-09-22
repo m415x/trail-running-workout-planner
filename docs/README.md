@@ -11,7 +11,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/realized-training/`](architecture/realized-training/) — durable realized-training evidence, plan-real comparison and capture contracts.
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
-- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts.
+- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
 
 ### Monitoring baseline
 
