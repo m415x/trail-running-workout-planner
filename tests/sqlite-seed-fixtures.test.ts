@@ -71,3 +71,25 @@ test('SQLite seed restructuring exposes an explicit planning templates and sessi
   assert.match(fixture, /microcycles/)
   assert.match(fixture, /sessions/)
 })
+
+
+test('full SQLite seed composes the approved feature fixtures in dependency order', () => {
+  const seed = fs.readFileSync(path.join(process.cwd(), 'db', 'seed.ts'), 'utf8')
+
+  const calls = [
+    'seedTeamAndCoach',
+    'seedGroups',
+    'seedAthletes',
+    'seedCompetitions',
+    'seedCohorts',
+    'seedPlanningTemplatesAndSessions',
+  ]
+
+  let previous = -1
+  for (const call of calls) {
+    assert.match(seed, new RegExp(`import[\\s\\S]*${call}`))
+    const index = seed.indexOf(`${call}(`)
+    assert.ok(index > previous, `${call} must be composed after its dependencies`)
+    previous = index
+  }
+})
