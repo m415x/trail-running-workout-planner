@@ -321,6 +321,35 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
   }
 }
 
+export function runRerunScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('rerun')
+  try {
+    createRepresentativeLegacyDatabase(workspace, projectRoot)
+
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    const schemaAfterFirstUpgrade = readNormalizedSchema(workspace.sqlitePath)
+
+    // A database already at canonical HEAD must remain a safe no-op target.
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    const schemaAfterSecondUpgrade = readNormalizedSchema(workspace.sqlitePath)
+
+    if (
+      schemaAfterFirstUpgrade.length !== schemaAfterSecondUpgrade.length ||
+      schemaAfterFirstUpgrade.some((entry, index) => entry !== schemaAfterSecondUpgrade[index])
+    ) {
+      throw new Error('SQLite schema changed after rerunning the supported upgrade at HEAD')
+    }
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -391,6 +420,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'drift') {
     runDriftScenario()
+    return
+  }
+
+  if (scenario === 'rerun') {
+    runRerunScenario()
     return
   }
 
