@@ -137,7 +137,7 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
   const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
   const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
-  const metadataIndex = legacyBlock.indexOf('establishCanonicalLegacyMetadata(sqlite)')
+  const metadataIndex = legacyBlock.indexOf('establishCanonicalMigrationMetadata(sqlite)')
 
   const planningIndex = legacyBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const competitionIndex = legacyBlock.indexOf('migrateCompetitionEntriesSqlite(sqlite)')
@@ -191,6 +191,6 @@ test('fresh SQLite bootstrap establishes migration metadata compatible with late
     runner.indexOf("if (state === 'legacy')"),
   )
 
-  assert.match(freshBlock, /establishCanonical/)
-  assert.match(freshBlock, /__drizzle_migrations|migration metadata/i)
+  assert.match(freshBlock, /establishCanonicalMigrationMetadata\(sqlite\)/)
+  assert.match(runner, /CREATE TABLE IF NOT EXISTS __drizzle_migrations/)
 })
