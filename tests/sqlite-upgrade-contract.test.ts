@@ -137,7 +137,7 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
   const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
   const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
-  const metadataIndex = legacyBlock.indexOf('establishCanonicalMigrationMetadata(sqlite, 2)')
+  const metadataIndex = legacyBlock.indexOf('establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')')
 
   const planningIndex = legacyBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const competitionIndex = legacyBlock.indexOf('migrateCompetitionEntriesSqlite(sqlite)')
@@ -191,7 +191,7 @@ test('fresh SQLite bootstrap establishes migration metadata compatible with late
     runner.indexOf("if (state === 'legacy')"),
   )
 
-  assert.match(freshBlock, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
+  assert.match(freshBlock, /establishCanonicalMigrationMetadata\(sqlite\)/)
   assert.match(runner, /CREATE TABLE IF NOT EXISTS __drizzle_migrations/)
 })
 
@@ -202,21 +202,16 @@ test('fresh bootstrap records every migration already represented by the pushed 
     fs.readFileSync(path.join(process.cwd(), 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8'),
   ) as { entries: Array<{ tag: string }> }
 
-  for (const entry of journal.entries) {
-    assert.match(
-      runner,
-      new RegExp(entry.tag.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g, '\\$&')),
-      `fresh bootstrap metadata must include ${entry.tag}`,
-    )
-  }
+  assert.match(runner, /journal\.entries\.slice\(0, appliedCount\)/)
+  assert.match(runner, /appliedThroughTag === undefined[\s\S]*journal\.entries\.length/)
 })
 
 
 test('legacy reconciliation records only migrations physically reconciled before Drizzle migrate', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
-  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*2\)/)
-  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
+  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*['"]0001_realized_training_timing['"]\)/)
+  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
 })
 
 
@@ -224,5 +219,5 @@ test('canonical migration metadata derives entries from the Drizzle journal inst
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
   assert.match(runner, /meta[/\\\\]_journal\.json/)
-  assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
+  assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
 })
