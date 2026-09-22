@@ -1,3 +1,7 @@
+import { migrateCompetitionEntriesSqlite } from '@/db/migrations/competition-entries-sqlite'
+import { migrateMacrocycleTargetRaceDateSqlite } from '@/db/migrations/macrocycle-target-race-date-sqlite'
+import { migratePlanningCohortsSqlite } from '@/db/migrations/planning-cohorts-sqlite'
+import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-training-timing-sqlite'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { existsSync } from 'node:fs'
@@ -48,9 +52,19 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' {
 
 const state = classifyExistingSqlite()
 if (state === 'legacy') {
-  throw new Error(
-    'Recognized legacy SQLite migration is not implemented yet; refusing to mutate existing data',
-  )
+  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  try {
+    migrateRealizedTrainingTimingSqlite(sqlite)
+    migratePlanningCohortsSqlite(sqlite)
+    migrateCompetitionEntriesSqlite(sqlite)
+    migrateMacrocycleTargetRaceDateSqlite(sqlite)
+
+    if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
+      throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
+    }
+  } finally {
+    sqlite.close()
+  }
 }
 
 run([
