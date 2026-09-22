@@ -14,7 +14,9 @@
     "cancel": "Cancelar",
     "saving": "Guardando…",
     "saveChanges": "Guardar cambios",
-    "createAthlete": "Crear atleta"
+    "createAthlete": "Crear atleta",
+    "newPageTitle": "Nuevo atleta",
+    "newPageDescription": "Creá el perfil del atleta. La asignación de grupo se gestiona por separado."
   },
   "AthleteEditPage": {
     "title": "Editar atleta",
