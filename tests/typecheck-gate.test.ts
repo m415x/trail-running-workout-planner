@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { resolve } from 'node:path'
 
 test('typecheck gate runs Next type generation before TypeScript', async () => {
   const { typecheckSteps } = await import('../scripts/typecheck-runner')
@@ -33,7 +34,7 @@ test('focused GREEN TDD routes typecheck through the canonical package gate', as
   const { tddTypecheckCommand } = await import('../scripts/tdd')
 
   assert.deepEqual(tddTypecheckCommand(), {
-    command: 'pn',
-    args: ['tsc'],
+    command: process.execPath,
+    args: [resolve('scripts/typecheck-runner.ts')],
   })
 })
