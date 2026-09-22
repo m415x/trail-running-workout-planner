@@ -6,11 +6,13 @@ import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { existsSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import Database from 'better-sqlite3'
 
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')
+const drizzleKitPackageDir = dirname(require.resolve('drizzle-kit/package.json'))
+const drizzleKitCli = resolve(drizzleKitPackageDir, 'bin.cjs')
 
 function run(args: string[]): void {
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' })
@@ -105,7 +107,7 @@ if (state === 'unrecognized') {
 
 if (state === 'fresh') {
   run([
-    require.resolve('drizzle-kit/bin.cjs'),
+    drizzleKitCli,
     'push',
     '--config=drizzle.sqlite.config.ts',
   ])
@@ -142,7 +144,7 @@ if (state === 'legacy') {
 }
 
 run([
-  require.resolve('drizzle-kit/bin.cjs'),
+  drizzleKitCli,
   'migrate',
   '--config=drizzle.sqlite.config.ts',
 ])
