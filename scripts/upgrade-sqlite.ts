@@ -18,7 +18,7 @@ function run(args: string[]): void {
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
-function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' {
+function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecognized' {
   if (!existsSync('sqlite.db')) return 'fresh'
 
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
@@ -45,7 +45,11 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' {
       )
     }
 
-    return hasMigrationMetadata ? 'versioned' : 'legacy'
+    if (hasMigrationMetadata) return 'versioned'
+
+    const reviewedLegacyTables = ['workout_logs', 'group_training_plans', 'macrocycles']
+    const isReviewedLegacy = reviewedLegacyTables.every(table => tables.has(table))
+    return isReviewedLegacy ? 'legacy' : 'unrecognized'
   } finally {
     sqlite.close()
   }
@@ -81,6 +85,12 @@ function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
 }
 
 const state = classifyExistingSqlite()
+if (state === 'unrecognized') {
+  throw new Error(
+    'Unrecognized SQLite schema; refusing automatic migration before destructive mutation',
+  )
+}
+
 if (state === 'legacy') {
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
