@@ -27,7 +27,7 @@
     "tdd": "tsx scripts/tdd.ts",
     "db:sqlite:upgrade": "tsx scripts/upgrade-sqlite.ts",
     "db:sqlite:verify": "tsx scripts/verify-sqlite.ts",
-    "db:sqlite:check": "pn exec tsx scripts/verify-sqlite-scenarios.ts empty && pn exec tsx scripts/verify-sqlite-scenarios.ts full-seed && pn exec tsx scripts/verify-sqlite-scenarios.ts partial-seed && pn exec tsx scripts/verify-sqlite-scenarios.ts upgrade && pn exec tsx scripts/verify-sqlite-scenarios.ts preservation && pn exec tsx scripts/verify-sqlite-scenarios.ts drift && pn exec tsx scripts/verify-sqlite-scenarios.ts rerun"
+    "db:sqlite:check": "pn exec tsx scripts/verify-sqlite-scenarios.ts empty && pn exec tsx scripts/verify-sqlite-scenarios.ts full-seed && pn exec tsx scripts/verify-sqlite-scenarios.ts partial-seed && pn exec tsx scripts/verify-sqlite-scenarios.ts upgrade && pn exec tsx scripts/verify-sqlite-scenarios.ts preservation && pn exec tsx scripts/verify-sqlite-scenarios.ts drift && pn exec tsx scripts/verify-sqlite-scenarios.ts rerun && pn exec tsx scripts/verify-sqlite-scenarios.ts partial-metadata-head"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
