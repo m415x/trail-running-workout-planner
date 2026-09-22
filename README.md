@@ -47,7 +47,9 @@ pn build
 Database:
 
 ```bash
-pn db:push
+pn db:sqlite:upgrade
+pn db:sqlite:verify
+pn db:sqlite:check
 pn db:seed
 pn db:generate:supabase
 pn db:check:supabase
@@ -59,7 +61,9 @@ Always review generated SQL before applying a migration. `db:check:supabase` val
 
 ## Database and secrets
 
-SQLite remains the local development database. The PostgreSQL schema and Supabase migrations live in `db/supabase/` and `drizzle/supabase/`.
+SQLite remains the local development database. Use `pn db:sqlite:upgrade` for both fresh bootstrap and supported upgrades; seeding is a separate, optional operation. Use `pn db:sqlite:check` to exercise the supported empty, seeded, upgrade, preservation, drift and rerun scenarios. Do not delete `sqlite.db` as the normal recovery or upgrade mechanism. See [`docs/architecture/platform/sqlite-local-operations.md`](docs/architecture/platform/sqlite-local-operations.md) for supported seed variants and recovery from inconsistent local state.
+
+The PostgreSQL schema and Supabase migrations live in `db/supabase/` and `drizzle/supabase/`.
 
 - `SUPABASE_DIRECT_URL` is used for migrations and direct verification.
 - `SUPABASE_DATABASE_URL` is reserved for the serverless runtime/transaction pooler.
