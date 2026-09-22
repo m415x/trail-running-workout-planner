@@ -392,3 +392,14 @@ test('SQLite seed ownership is consolidated under db/seeds with stable package e
   assert.match(scripts['db:seed:realized-training'] ?? '', /db\/seeds\/realized-training-fixtures\.ts/)
   assert.match(scripts['db:seed:plan-real'] ?? '', /db\/seeds\/plan-real-comparison-fixtures\.ts/)
 })
+
+
+test('SQLite exposes one aggregate verification gate covering every supported scenario', () => {
+  const scripts = packageJson.scripts ?? {}
+  const command = scripts['db:sqlite:check'] ?? ''
+
+  assert.match(command, /verify-sqlite-scenarios/)
+  for (const scenario of ['empty', 'full-seed', 'partial-seed', 'upgrade', 'preservation', 'drift', 'rerun']) {
+    assert.match(command, new RegExp(`\\b${scenario}\\b`), `db:sqlite:check must include ${scenario}`)
+  }
+})
