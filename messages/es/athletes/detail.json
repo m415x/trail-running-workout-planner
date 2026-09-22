@@ -28,6 +28,24 @@
     "actualDistance": "Distancia real",
     "elapsedTime": "Tiempo",
     "planningToday": "Planificación aplicable hoy",
-    "emergencyContact": "Contacto de emergencia"
+    "emergencyContact": "Contacto de emergencia",
+    "goalDraft": "Borrador",
+    "goalCompleted": "Completado",
+    "goalCancelled": "Cancelado",
+    "faster": "Más rápido",
+    "slower": "Más lento",
+    "same": "Igual",
+    "insufficientEvidence": "Evidencia insuficiente",
+    "unavailable": "No disponible",
+    "historyLoadError": "No se pudo cargar el histórico.",
+    "planningUntitled": "Planificación sin título disponible",
+    "cohort": "Cohorte",
+    "groupPlan": "Plan grupal",
+    "cohortVariant": "Variante compartida por {cohort}.",
+    "applicableCohort": "la cohorte aplicable",
+    "groupPlanFallback": "Se usa el plan base del grupo porque no existe una variante de cohorte aplicable.",
+    "viewPlanning": "Ver planificación",
+    "planningConflict": "No se pudo resolver una planificación única. Revisá las membresías de cohorte y los planes que cubren esta fecha.",
+    "noActivePlanning": "No hay una planificación activa que cubra la fecha actual para el grupo del atleta."
   }
 }
