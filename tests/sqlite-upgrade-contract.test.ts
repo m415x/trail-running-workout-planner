@@ -139,9 +139,15 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
   const metadataIndex = legacyBlock.indexOf('establishCanonicalLegacyMetadata(sqlite)')
 
-  assert.notEqual(transactionIndex, -1, 'legacy reconciliation must open one outer transaction')
-  assert.ok(transactionIndex < firstMigrationIndex, 'outer transaction must start before legacy migrations')
-  assert.ok(metadataIndex > firstMigrationIndex, 'canonical metadata must be established after physical reconciliation')
+  const planningIndex = legacyBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
+  const competitionIndex = legacyBlock.indexOf('migrateCompetitionEntriesSqlite(sqlite)')
+  const macrocycleIndex = legacyBlock.indexOf('migrateMacrocycleTargetRaceDateSqlite(sqlite)')
+
+  assert.notEqual(transactionIndex, -1, 'legacy reconciliation must open an outer transaction after realized-training timing')
+  assert.ok(firstMigrationIndex < transactionIndex, 'realized-training timing must retain its own transaction boundary')
+  assert.ok(transactionIndex < planningIndex, 'outer transaction must start before the remaining legacy migrations')
+  assert.ok(planningIndex < competitionIndex && competitionIndex < macrocycleIndex)
+  assert.ok(metadataIndex > macrocycleIndex, 'canonical metadata must be established after physical reconciliation')
 })
 
 
