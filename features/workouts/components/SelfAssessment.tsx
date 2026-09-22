@@ -10,10 +10,9 @@ export type { SelfAssessmentValues }
 export interface SelfAssessmentProps {
   value?: SelfAssessmentValues
   onChange?: (values: SelfAssessmentValues) => void
-  defaultOpen?: boolean
 }
 
-export function SelfAssessment({ value, onChange, defaultOpen = false }: SelfAssessmentProps) {
+export function SelfAssessment({ value, onChange }: SelfAssessmentProps) {
   const { feeling, rpe, hasData, selectedFeelingOption, FeelingIcon, handleFeelingChange, handleRpeChange } =
     useSelfAssessment({
       value,
