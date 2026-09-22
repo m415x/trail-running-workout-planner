@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getAthletesByTeam } from '@/app/actions/athlete-actions'
 import { AthletesEmptyState } from '@/features/athletes/components/AthletesEmptyState'
@@ -12,6 +13,7 @@ interface AthletesPageProps {
 
 export default async function AthletesPage({ params }: AthletesPageProps) {
   const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'AthleteActions' })
   const result = await getAthletesByTeam()
   const newAthletePath = locale === 'es' ? '/dashboard/athletes/new' : `/${locale}/dashboard/athletes/new`
 
@@ -19,13 +21,13 @@ export default async function AthletesPage({ params }: AthletesPageProps) {
     <div className='space-y-6'>
       <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Atletas</h2>
-          <p className='text-muted-foreground'>Perfiles del equipo, estado operativo y grupo actual de cada atleta.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('listTitle')}</h2>
+          <p className='text-muted-foreground'>{t('listDescription')}</p>
         </div>
 
         <Link href={newAthletePath} className={buttonVariants()}>
           <Plus />
-          Nuevo atleta
+          {t('newAthlete')}
         </Link>
       </div>
 
