@@ -1,6 +1,6 @@
 import type { db as sqliteDb } from '@/db/index'
 import { planningCohortMemberships, planningCohorts } from '@/db/schema'
-import { currentUser, team } from '@/data/data'
+import { createSeedContext } from '@/db/seeds/context'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
 
@@ -18,8 +18,7 @@ export async function seedCohorts(
   currentWeekStart: string,
   shiftISODate: (value: string, days: number) => string,
 ): Promise<void> {
-  const teamId = String(team.id || 'team_1')
-  const currentAthleteProfileId = `profile_${String(currentUser.id || 'user_1')}`
+  const { teamId, athleteProfileId: currentAthleteProfileId } = createSeedContext()
 
   await db.insert(planningCohorts).values([
     {
