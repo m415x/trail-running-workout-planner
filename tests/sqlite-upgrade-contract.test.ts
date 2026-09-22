@@ -418,3 +418,11 @@ test('supported SQLite operations and recovery are durably documented', () => {
   assert.match(doc, /inconsistent/i)
   assert.match(doc, /do not delete|do not overwrite/i)
 })
+
+
+test('canonical SQLite runner invokes Drizzle Kit through its supported package executable', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.doesNotMatch(runner, /require\.resolve\(['"]drizzle-kit\/bin\.cjs['"]\)/)
+  assert.match(runner, /drizzle-kit/)
+})
