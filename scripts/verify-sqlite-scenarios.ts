@@ -24,6 +24,7 @@ export type SqliteVerificationScenario =
   | 'preservation'
   | 'drift'
   | 'rerun'
+  | 'partial-metadata-head'
 
 export const sqliteVerificationScenarios: SqliteVerificationScenario[] = [
   'empty',
@@ -33,6 +34,7 @@ export const sqliteVerificationScenarios: SqliteVerificationScenario[] = [
   'preservation',
   'drift',
   'rerun',
+  'partial-metadata-head',
 ]
 
 export interface ScenarioWorkspace {
@@ -350,6 +352,45 @@ export function runRerunScenario(projectRoot = process.cwd()): void {
   }
 }
 
+
+export function runPartialMetadataHeadScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('partial-metadata-head')
+  try {
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+
+    const sqlite = new Database(workspace.sqlitePath, { fileMustExist: true })
+    try {
+      const journal = JSON.parse(readMigrationJournal()) as { entries: Array<{ when: number }> }
+      const keepThrough = journal.entries[1]?.when
+      if (keepThrough === undefined) throw new Error('SQLite journal must contain 0001')
+      sqlite.prepare('DELETE FROM __drizzle_migrations WHERE created_at > ?').run(keepThrough)
+    } finally {
+      sqlite.close()
+    }
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+
+    const reconciled = new Database(workspace.sqlitePath, { fileMustExist: true })
+    try {
+      const journal = JSON.parse(readMigrationJournal()) as { entries: Array<{ when: number }> }
+      const metadataCount = (reconciled.prepare('SELECT COUNT(*) AS count FROM __drizzle_migrations').get() as { count: number }).count
+      if (metadataCount !== journal.entries.length) {
+        throw new Error('Verified HEAD schema did not reconcile complete canonical migration metadata')
+      }
+    } finally {
+      reconciled.close()
+    }
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -425,6 +466,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'rerun') {
     runRerunScenario()
+    return
+  }
+
+  if (scenario === 'partial-metadata-head') {
+    runPartialMetadataHeadScenario()
     return
   }
 
