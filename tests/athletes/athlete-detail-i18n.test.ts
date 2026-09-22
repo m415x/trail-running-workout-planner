@@ -4,7 +4,7 @@ import { describe, it } from 'node:test'
 
 const route = 'app/[locale]/dashboard/athletes/[athleteId]/page.tsx'
 
-const athleteDetailSpanishCopy = /Volver al listado de atletas|Perfil del atleta|Datos personales|Fecha de nacimiento|Apodo|Sin grupo|Teléfono|No informado|Objetivos|Nuevo objetivo|Este atleta todavía no tiene objetivos registrados|Competencias|Registrar inscripción|Inscripciones próximas|Historial de participación|Planificación aplicable hoy|Contacto de emergencia/
+const athleteDetailSpanishCopy = /Volver al listado de atletas|Perfil del atleta|Datos personales|Fecha de nacimiento|Apodo|Sin grupo|Teléfono|No informado|Objetivos|Nuevo objetivo|Este atleta todavía no tiene objetivos registrados|Competencias|Registrar inscripción|Inscripciones próximas|Historial de participación|Planificación aplicable hoy|Contacto de emergencia|Planificación sin título disponible|Cohorte|Plan grupal|Variante compartida por|la cohorte aplicable|Se usa el plan base del grupo|Ver planificación|No se pudo resolver una planificación única|No hay una planificación activa|Borrador|Completado|Cancelado|Más rápido|Más lento|Igual|Evidencia insuficiente|No disponible|No se pudo cargar el histórico/
 
 describe('athlete detail i18n', () => {
   it('uses canonical next-intl translations for athlete detail copy', async () => {
