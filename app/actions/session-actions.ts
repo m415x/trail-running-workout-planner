@@ -9,7 +9,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
-import type { TrainingIntensity, WorkoutTemplate } from '@/types'
+import { WORKOUT_TYPES, type TrainingIntensity, type WorkoutTemplate } from '@/types'
 import {
   athleteGroups,
   groupSessionPrescriptions,
@@ -24,13 +24,12 @@ import {
 } from '@/db/schema'
 
 const CURRENT_TEAM_ID = 'team_1'
-const workoutTypes = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Rest', 'Race'] as const
 const optionalText = z.string().trim().transform((value) => value || null)
 
 const createSessionSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
   title: z.string().trim().min(2, 'El título debe tener al menos 2 caracteres'),
-  type: z.enum(workoutTypes, { message: 'Seleccioná un tipo de entrenamiento' }),
+  type: z.enum(WORKOUT_TYPES, { message: 'Seleccioná un tipo de entrenamiento' }),
   workoutId: optionalText,
   locationKey: optionalText,
   trackPath: optionalText,
