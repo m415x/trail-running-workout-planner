@@ -330,3 +330,20 @@ test('SQLite scenario harness verifies existing application data survives the su
   assert.match(verifier, /scenario === ['"]preservation['"]/)
   assert.match(verifier, /runPreservationScenario\(/)
 })
+
+
+test('SQLite scenario harness detects schema drift between fresh and upgraded databases', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  const scenario = verifier.match(/function runDriftScenario[\s\S]*?\n}/)?.[0] ?? ''
+  assert.match(verifier, /runDriftScenario/)
+  assert.match(scenario, /createRepresentativeLegacyDatabase/)
+  assert.match(scenario, /sqlite_master/)
+  assert.match(scenario, /upgrade-sqlite/)
+  assert.match(scenario, /Schema drift/i)
+  assert.match(verifier, /scenario === ['"]drift['"]/)
+  assert.match(verifier, /runDriftScenario\(/)
+})
