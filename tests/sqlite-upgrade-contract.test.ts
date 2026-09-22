@@ -143,3 +143,16 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   assert.ok(transactionIndex < firstMigrationIndex, 'outer transaction must start before legacy migrations')
   assert.ok(metadataIndex > firstMigrationIndex, 'canonical metadata must be established after physical reconciliation')
 })
+
+
+test('legacy reconciliation does not wrap the realized-training rebuild in an active transaction', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+  const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
+  const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
+  const realizedTimingIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
+
+  assert.ok(
+    realizedTimingIndex < transactionIndex,
+    'realized-training timing migration must run before the outer transaction because it rejects active transactions',
+  )
+})
