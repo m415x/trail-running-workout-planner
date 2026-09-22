@@ -1,6 +1,7 @@
 import type { db as sqliteDb } from '@/db/index'
 import { athleteProfiles, users } from '@/db/schema'
-import { currentAthlete, currentUser, team } from '@/data/data'
+import { currentAthlete, currentUser } from '@/data/data'
+import { createSeedContext } from '@/db/seeds/context'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
 import type { UserRole } from '@/types'
@@ -14,7 +15,7 @@ function groupId(groups: SeededAthleteGroup[], code: string): string {
 }
 
 export async function seedAthletes(db: SeedDb, groups: SeededAthleteGroup[]): Promise<void> {
-  const teamId = String(team.id || 'team_1')
+  const { teamId } = createSeedContext()
   const userId = String(currentUser.id || 'user_1')
 
   const userRows = [
