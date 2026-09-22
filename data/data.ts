@@ -1,4 +1,4 @@
-import { Team, WorkoutProps, WeekDayRaw, GeoLocation, User, Athlete, AthleteProfile } from '@/types'
+import { Team, WorkoutProps, WeekDayRaw, GeoLocation, User, AthleteProfile } from '@/types'
 
 export const TRAINING_LOCATIONS: Record<string, GeoLocation> = {
   elParque: {
