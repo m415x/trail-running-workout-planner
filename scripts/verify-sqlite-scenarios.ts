@@ -53,6 +53,23 @@ export function runScenarioCommand(
   }
 }
 
+export function runEmptyBootstrapScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('empty')
+  try {
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    // Run from the isolated workspace so the canonical upgrade targets its
+    // sqlite.db rather than the developer database. No seed composition runs.
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    assertScenarioDatabaseExists(workspace)
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
