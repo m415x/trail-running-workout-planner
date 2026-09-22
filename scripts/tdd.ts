@@ -6,7 +6,10 @@ import { pathToFileURL } from 'node:url'
 const require = createRequire(import.meta.url)
 
 export function tddTypecheckCommand(): { command: string; args: string[] } {
-  return { command: process.execPath, args: [resolve('scripts/typecheck-runner.ts')] }
+  return {
+    command: process.execPath,
+    args: [require.resolve('tsx/cli'), resolve('scripts/typecheck-runner.ts')],
+  }
 }
 
 function main(): void {
