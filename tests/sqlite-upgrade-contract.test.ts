@@ -210,3 +210,11 @@ test('fresh bootstrap records every migration already represented by the pushed 
     )
   }
 })
+
+
+test('legacy reconciliation records only migrations physically reconciled before Drizzle migrate', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*2\)/)
+  assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
+})
