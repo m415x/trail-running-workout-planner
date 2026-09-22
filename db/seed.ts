@@ -1,21 +1,13 @@
 import { db } from '@/db/index'
 import {
-  athleteGroups,
-  athleteProfiles,
-  fieldPerformanceTestEvents,
   groupSessionPrescriptions,
   groupTrainingPlans,
   macrocycles,
   mesocycles,
   microcycles,
-  planningCohortMemberships,
-  planningCohorts,
   sessions,
   shoes as shoesTable,
-  teams,
   trainingGoals,
-  trainingLocations,
-  users,
   workoutLogs,
   workouts as workoutsTable,
 } from '@/db/schema'
@@ -23,7 +15,7 @@ import { loadStrategies } from '@/db/load-strategy-schema'
 import { intensityStrategies, microcycleIntensityTargets } from '@/db/intensity-strategy-schema'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 
-import { currentAthlete, currentUser, runningShoes, team, TRAINING_LOCATIONS, weekDaysRaw, workouts } from '@/data/data'
+import { currentUser, runningShoes, team, weekDaysRaw, workouts } from '@/data/data'
 
 import { seedAthletes } from '@/db/seeds/athletes'
 import { seedCohorts } from '@/db/seeds/cohorts'
@@ -43,7 +35,6 @@ import type {
   PeriodType,
   TrainingGoalStatus,
   TrainingGoalType,
-  UserRole,
 } from '@/types'
 
 interface SeededAthleteGroup {
@@ -88,16 +79,6 @@ interface SeededMicrocycle {
   targetElevationSource: 'generated'
   targetDurationMin: null
   notes: string | null
-}
-
-function splitGroupCode(groupCode: AthleteGroupCode): {
-  categoryCode: AthleteCategoryCode
-  levelCode: AthleteLevelCode
-} {
-  return {
-    categoryCode: groupCode[0] as AthleteCategoryCode,
-    levelCode: groupCode[1] as AthleteLevelCode,
-  }
 }
 
 function getDayStatus(day: (typeof weekDaysRaw)[number]): DayStatus {
