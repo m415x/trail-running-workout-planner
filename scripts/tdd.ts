@@ -6,7 +6,7 @@ import { pathToFileURL } from 'node:url'
 const require = createRequire(import.meta.url)
 
 export function tddTypecheckCommand(): { command: string; args: string[] } {
-  return { command: 'pn', args: ['tsc'] }
+  return { command: process.execPath, args: [require.resolve('pnpm/bin/pnpm.cjs'), 'tsc'] }
 }
 
 function main(): void {
