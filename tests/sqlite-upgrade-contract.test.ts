@@ -173,3 +173,12 @@ test('legacy classification requires a reviewed schema fingerprint, not merely a
   assert.match(runner, /unrecognized/i)
   assert.doesNotMatch(runner, /return hasMigrationMetadata \? 'versioned' : 'legacy'/)
 })
+
+
+test('fresh SQLite bootstrap creates the current schema instead of relying on baseline migration replay', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /state === 'fresh'/)
+  assert.match(runner, /push/)
+  assert.match(runner, /migrate/)
+})
