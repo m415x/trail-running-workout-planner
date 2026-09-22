@@ -55,36 +55,44 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
   }
 }
 
-function establishCanonicalMigrationMetadata(sqlite: Database.Database, appliedCount: number): void {
+function establishCanonicalMigrationMetadata(
+  sqlite: Database.Database,
+  appliedThroughTag?: string,
+): void {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
+
+  const journal = JSON.parse(
+    readFileSync(resolve('drizzle/sqlite/meta/_journal.json'), 'utf8'),
+  ) as { entries: Array<{ tag: string; when: number }> }
+  const appliedCount =
+    appliedThroughTag === undefined
+      ? journal.entries.length
+      : journal.entries.findIndex(entry => entry.tag === appliedThroughTag) + 1
+
+  if (appliedThroughTag !== undefined && appliedCount === 0) {
+    throw new Error(`SQLite migration journal is missing canonical tag ${appliedThroughTag}`)
+  }
 
   const existing = sqlite.prepare(
     'SELECT hash FROM __drizzle_migrations WHERE created_at = ?',
   )
   const insert = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
-  const migrations = [
-    ['drizzle/sqlite/0000_baseline.sql', 1789348463278],
-    ['drizzle/sqlite/0001_realized_training_timing.sql', 1789348503010],
-    ['drizzle/sqlite/0002_marvelous_franklin_richards.sql', 1789650330603],
-    ['drizzle/sqlite/0003_thin_bastion.sql', 1789866825158],
-    ['drizzle/sqlite/0004_mighty_king_cobra.sql', 1789867537434],
-    ['drizzle/sqlite/0005_volatile_ultragirl.sql', 1789905666541],
-  ] as const
 
-  for (const [migrationPath, createdAt] of migrations.slice(0, appliedCount)) {
-    const sql = readFileSync(resolve(migrationPath), 'utf8')
+  for (const entry of journal.entries.slice(0, appliedCount)) {
+    const migrationPath = resolve('drizzle/sqlite', `${entry.tag}.sql`)
+    const sql = readFileSync(migrationPath, 'utf8')
     const hash = createHash('sha256').update(sql).digest('hex')
-    const row = existing.get(createdAt) as { hash: string } | undefined
+    const row = existing.get(entry.when) as { hash: string } | undefined
     if (row) {
       if (row.hash !== hash) {
         throw new Error(
-          `SQLite migration metadata conflict at canonical timestamp ${createdAt}`,
+          `SQLite migration metadata conflict at canonical timestamp ${entry.when}`,
         )
       }
       continue
     }
 
-    insert.run(hash, createdAt)
+    insert.run(hash, entry.when)
   }
 }
 
@@ -104,7 +112,7 @@ if (state === 'fresh') {
 
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
-    establishCanonicalMigrationMetadata(sqlite, 6)
+    establishCanonicalMigrationMetadata(sqlite)
   } finally {
     sqlite.close()
   }
@@ -122,7 +130,7 @@ if (state === 'legacy') {
       migratePlanningCohortsSqlite(sqlite)
       migrateCompetitionEntriesSqlite(sqlite)
       migrateMacrocycleTargetRaceDateSqlite(sqlite)
-      establishCanonicalMigrationMetadata(sqlite, 2)
+      establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')
 
       if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
         throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
