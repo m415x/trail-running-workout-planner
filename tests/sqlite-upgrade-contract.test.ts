@@ -239,3 +239,17 @@ test('SQLite verification covers empty, full-seed, partial-seed, upgrade, preser
   assert.match(verifier, /drift/i)
   assert.match(verifier, /rerun|idempot/i)
 })
+
+
+test('SQLite scenario harness executes empty bootstrap without invoking seed composition', () => {
+  const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts')
+  const verifier = fs.readFileSync(verifierPath, 'utf8')
+
+  assert.match(verifier, /runEmptyBootstrapScenario/)
+  assert.match(verifier, /upgrade-sqlite/)
+  assert.match(verifier, /verify-sqlite/)
+  assert.doesNotMatch(
+    verifier.match(/function runEmptyBootstrapScenario[\s\S]*?\n}/)?.[0] ?? '',
+    /seedFull|seedFeature/,
+  )
+})
