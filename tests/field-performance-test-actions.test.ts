@@ -167,9 +167,9 @@ test('Coach field-test workflow reads authorized history, factual evolution and 
   assert.match(coachPage, /comparison\.direction/)
   assert.match(coachPage, /decreasing/)
   assert.match(coachPage, /increasing/)
-  assert.match(coachPage, /Más rápido/)
-  assert.match(coachPage, /Más lento/)
-  assert.match(coachPage, /Igual/)
+  assert.match(coachPage, /labels\.faster/)
+  assert.match(coachPage, /labels\.slower/)
+  assert.match(coachPage, /labels\.same/)
 })
 
 
@@ -192,10 +192,8 @@ test('Coach field-test workflow presents factual evolution and running reference
   assert.match(coachPage, /historyResult\.data\.reference\.status === 'available'/)
   assert.match(coachPage, /paceLabel/)
   assert.match(coachPage, /averageSpeedKmh/)
-  assert.match(coachPage, /No disponible/)
-  assert.match(coachPage, /Unavailable/)
-  assert.match(coachPage, /Evidencia insuficiente/)
-  assert.match(coachPage, /Insufficient evidence/)
+  assert.match(coachPage, /labels\.unavailable/)
+  assert.match(coachPage, /labels\.insufficientEvidence/)
 })
 
 
