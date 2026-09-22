@@ -281,3 +281,19 @@ test('SQLite scenario harness implements full-seed execution with explicit seedF
   assert.match(verifier, /scenario === ['"]full-seed['"]/)
   assert.match(verifier, /runFullSeedScenario\(/)
 })
+
+
+test('SQLite scenario harness implements useful partial-seed execution with seedFeature', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
+    'utf8',
+  )
+
+  const scenario = verifier.match(/function runPartialSeedScenario[\s\S]*?\n}/)?.[0] ?? ''
+  assert.match(verifier, /runPartialSeedScenario/)
+  assert.match(scenario, /seedFeature/)
+  assert.match(scenario, /['"]groups['"]/)
+  assert.match(scenario, /['"]competitions['"]/)
+  assert.match(verifier, /scenario === ['"]partial-seed['"]/)
+  assert.match(verifier, /runPartialSeedScenario\(/)
+})
