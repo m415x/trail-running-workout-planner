@@ -36,3 +36,17 @@ test('legacy one-off SQLite migrators are not package entrypoints', () => {
     assert.equal(scripts[name], undefined, `${name} must be reconciled behind the canonical upgrade path`)
   }
 })
+
+
+test('the canonical upgrade contract defines supported legacy-state handling', () => {
+  const contractPath = path.join(process.cwd(), 'db', 'sqlite', 'upgrade-contract.ts')
+  assert.equal(fs.existsSync(contractPath), true, 'missing SQLite upgrade-state contract')
+
+  const contract = fs.readFileSync(contractPath, 'utf8')
+  assert.match(contract, /fresh/i)
+  assert.match(contract, /versioned/i)
+  assert.match(contract, /push/i)
+  assert.match(contract, /legacy/i)
+  assert.match(contract, /reject/i)
+  assert.match(contract, /preserv/i)
+})
