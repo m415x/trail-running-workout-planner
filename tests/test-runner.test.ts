@@ -35,3 +35,32 @@ test('portable test discovery propagates traversal errors', async () => {
 
   await assert.rejects(() => discoverTestFiles(missing))
 })
+
+
+test('portable test runner preserves child exit status', async () => {
+  const { interpretTestRunResult } = await import('../scripts/test-runner')
+
+  assert.deepEqual(interpretTestRunResult({ status: 7, signal: null, error: undefined }), {
+    exitCode: 7,
+    signal: null,
+  })
+})
+
+test('portable test runner surfaces spawn errors', async () => {
+  const { interpretTestRunResult } = await import('../scripts/test-runner')
+  const error = new Error('spawn failed')
+
+  assert.throws(
+    () => interpretTestRunResult({ status: null, signal: null, error }),
+    (thrown) => thrown === error,
+  )
+})
+
+test('portable test runner preserves child termination signals', async () => {
+  const { interpretTestRunResult } = await import('../scripts/test-runner')
+
+  assert.deepEqual(interpretTestRunResult({ status: null, signal: 'SIGTERM', error: undefined }), {
+    exitCode: null,
+    signal: 'SIGTERM',
+  })
+})
