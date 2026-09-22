@@ -111,8 +111,10 @@ test('legacy metadata establishment is safe to rerun without duplicate migration
 
   assert.match(
     runner,
-    /SELECT\s+COUNT\(\*\)\s+AS\s+count\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
+    /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
   )
+  assert.match(runner, /if\s*\(row\)/)
+  assert.match(runner, /continue/)
   assert.match(runner, /created_at/)
 })
 
