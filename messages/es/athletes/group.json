@@ -1,0 +1,20 @@
+{
+  "AthleteGroup": {
+    "backToDetail": "Volver al detalle del atleta",
+    "changeGroup": "Cambiar grupo",
+    "assignToGroup": "Asignar a grupo",
+    "description": "Definí el grupo operativo actual de {name}.",
+    "currentGroup": "Grupo actual",
+    "noGroup": "Sin grupo",
+    "newGroup": "Nuevo grupo",
+    "selectGroup": "Seleccioná un grupo",
+    "noAvailableGroup": "No hay otro grupo activo disponible.",
+    "effectiveDate": "Fecha efectiva",
+    "reason": "Motivo",
+    "reasonPlaceholder": "Ej.: promoción de {name} por evolución de carga.",
+    "reasonHelp": "Opcional. Quedará registrado en el historial del atleta.",
+    "cancel": "Cancelar",
+    "assigning": "Asignando…",
+    "assignGroup": "Asignar grupo"
+  }
+}
