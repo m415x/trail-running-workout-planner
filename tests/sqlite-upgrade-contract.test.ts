@@ -115,3 +115,15 @@ test('legacy metadata establishment is safe to rerun without duplicate migration
   )
   assert.match(runner, /created_at/)
 })
+
+
+test('legacy metadata reconciliation rejects a conflicting canonical timestamp instead of trusting it', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(
+    runner,
+    /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
+  )
+  assert.match(runner, /hash.*!==|!==.*hash/is)
+  assert.match(runner, /conflict|inconsistent/i)
+})
