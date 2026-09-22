@@ -111,3 +111,26 @@ test('full SQLite seed delegates extracted feature ownership instead of duplicat
   assert.doesNotMatch(legacyBody, /db\.insert\(planningCohorts\)/)
   assert.doesNotMatch(legacyBody, /db\.insert\(planningCohortMemberships\)/)
 })
+
+
+test('feature seeds share canonical context instead of deriving team and athlete ids independently', () => {
+  const fixtureNames = [
+    'team-and-coach.ts',
+    'athletes.ts',
+    'competitions.ts',
+    'cohorts.ts',
+    'planning-templates-and-sessions.ts',
+  ]
+  const fixtures = fixtureNames.map((name) => fs.readFileSync(path.join(seedRoot, name), 'utf8'))
+
+  assert.ok(fs.existsSync(path.join(seedRoot, 'context.ts')), 'missing shared seed context')
+  const context = fs.readFileSync(path.join(seedRoot, 'context.ts'), 'utf8')
+  assert.match(context, /SeedContext/)
+  assert.match(context, /teamId/)
+  assert.match(context, /athleteProfileId/)
+
+  for (const fixture of fixtures) {
+    assert.doesNotMatch(fixture, /String\(team\.id\s*\|\|\s*['"]team_1['"]\)/)
+    assert.doesNotMatch(fixture, /profile_\$\{String\(currentUser\.id/)
+  }
+})
