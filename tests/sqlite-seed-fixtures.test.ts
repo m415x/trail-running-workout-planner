@@ -45,3 +45,16 @@ test('SQLite seed restructuring exposes an explicit competitions feature fixture
   assert.match(fixture, /fieldPerformanceTestEvents|competition/i)
   assert.match(fixture, /group/i)
 })
+
+
+test('SQLite seed restructuring exposes an explicit cohorts feature fixture', () => {
+  const fixturePath = path.join(seedRoot, 'cohorts.ts')
+
+  assert.ok(fs.existsSync(fixturePath), 'missing feature seed: cohorts.ts')
+  const fixture = fs.readFileSync(fixturePath, 'utf8')
+  assert.match(fixture, /seedCohorts/)
+  assert.match(fixture, /planningCohorts/)
+  assert.match(fixture, /planningCohortMemberships/)
+  assert.match(fixture, /group/i)
+  assert.match(fixture, /athlete/i)
+})
