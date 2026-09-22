@@ -55,7 +55,7 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
   }
 }
 
-function establishCanonicalMigrationMetadata(sqlite: Database.Database): void {
+function establishCanonicalMigrationMetadata(sqlite: Database.Database, appliedCount: number): void {
   sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
 
   const existing = sqlite.prepare(
@@ -71,7 +71,7 @@ function establishCanonicalMigrationMetadata(sqlite: Database.Database): void {
     ['drizzle/sqlite/0005_volatile_ultragirl.sql', 1789905666541],
   ] as const
 
-  for (const [migrationPath, createdAt] of migrations) {
+  for (const [migrationPath, createdAt] of migrations.slice(0, appliedCount)) {
     const sql = readFileSync(resolve(migrationPath), 'utf8')
     const hash = createHash('sha256').update(sql).digest('hex')
     const row = existing.get(createdAt) as { hash: string } | undefined
@@ -104,7 +104,7 @@ if (state === 'fresh') {
 
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
-    establishCanonicalMigrationMetadata(sqlite)
+    establishCanonicalMigrationMetadata(sqlite, 6)
   } finally {
     sqlite.close()
   }
@@ -122,7 +122,7 @@ if (state === 'legacy') {
       migratePlanningCohortsSqlite(sqlite)
       migrateCompetitionEntriesSqlite(sqlite)
       migrateMacrocycleTargetRaceDateSqlite(sqlite)
-      establishCanonicalMigrationMetadata(sqlite)
+      establishCanonicalMigrationMetadata(sqlite, 2)
 
       if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
         throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
