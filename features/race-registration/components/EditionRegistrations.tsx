@@ -1,15 +1,11 @@
 import { getTranslations } from 'next-intl/server'
 
-import {
-  updateRaceRegistrationLifecycleFormAction,
-} from '@/app/actions/race-registration-actions'
 import { RaceRegistrationCourseChange } from '@/features/race-registration/components/RaceRegistrationCourseChange'
 import { RaceParticipationEditor } from '@/features/race-registration/components/RaceParticipationEditor'
 import { RaceRegistrationLifecycleControl } from '@/features/race-registration/components/RaceRegistrationLifecycleControl'
 import type { EditionCourseRegistrationsProjection } from '@/lib/competitions/race-registration-application'
 import type { RaceCourse } from '@/types/training/race-catalog.types'
 import { Badge } from '@ui/badge'
-import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
 
 export async function EditionRegistrations({
