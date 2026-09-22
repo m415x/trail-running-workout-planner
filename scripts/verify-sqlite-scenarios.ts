@@ -200,6 +200,81 @@ export function runUpgradeScenario(projectRoot = process.cwd()): void {
   }
 }
 
+export function runPreservationScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('preservation')
+  try {
+    createRepresentativeLegacyDatabase(workspace, projectRoot)
+
+    const sqlite = new Database(workspace.sqlitePath)
+    try {
+      const now = '2026-09-22T00:00:00.000Z'
+      sqlite.exec(`
+        INSERT INTO teams (id, created_at, updated_at, name)
+        VALUES ('preservation-team', '${now}', '${now}', 'Preservation Team');
+
+        INSERT INTO users (id, created_at, updated_at, role, user_name, email, first_name, last_name)
+        VALUES ('preservation-user', '${now}', '${now}', 'athlete', 'preservation-user',
+                'preservation@example.test', 'Preservation', 'Athlete');
+
+        INSERT INTO athlete_profiles
+          (id, created_at, updated_at, user_id, team_id, dni)
+        VALUES
+          ('preservation-athlete', '${now}', '${now}', 'preservation-user',
+           'preservation-team', 'KAN427');
+
+        INSERT INTO workout_logs
+          (id, created_at, updated_at, athlete_id, date, status, distance_km,
+           duration_min, elevation_gain, rpe, logged_at)
+        VALUES
+          ('preservation-log', '${now}', '${now}', 'preservation-athlete',
+           '2026-09-22', 'completed', 10.5, 64, 420, 6, '${now}');
+      `)
+    } finally {
+      sqlite.close()
+    }
+
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+
+    const upgraded = new Database(workspace.sqlitePath, { fileMustExist: true })
+    try {
+      const row = upgraded.prepare(`
+        SELECT id, athlete_id, distance_km, duration_min, elevation_gain, rpe, performed_at
+        FROM workout_logs
+        WHERE id = ?
+      `).get('preservation-log') as {
+        id: string
+        athlete_id: string
+        distance_km: number
+        duration_min: number
+        elevation_gain: number
+        rpe: number
+        performed_at: string | null
+      } | undefined
+
+      if (
+        !row ||
+        row.athlete_id !== 'preservation-athlete' ||
+        row.distance_km !== 10.5 ||
+        row.duration_min !== 64 ||
+        row.elevation_gain !== 420 ||
+        row.rpe !== 6 ||
+        row.performed_at !== null
+      ) {
+        throw new Error('Supported SQLite upgrade did not preserve the representative workout log')
+      }
+    } finally {
+      upgraded.close()
+    }
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -260,6 +335,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'upgrade') {
     runUpgradeScenario()
+    return
+  }
+
+  if (scenario === 'preservation') {
+    runPreservationScenario()
     return
   }
 
