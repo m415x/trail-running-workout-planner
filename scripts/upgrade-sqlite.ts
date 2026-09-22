@@ -103,6 +103,24 @@ function establishCanonicalMigrationMetadata(
   }
 }
 
+function reconcileVersionedHeadMetadata(): boolean {
+  const verification = spawnSync(process.execPath, [tsxCli, resolve('scripts/verify-sqlite.ts')], {
+    stdio: 'ignore',
+  })
+  if (verification.status !== 0) return false
+
+  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  try {
+    sqlite.transaction(() => {
+      establishCanonicalMigrationMetadata(sqlite)
+    })()
+  } finally {
+    sqlite.close()
+  }
+
+  return true
+}
+
 const state = classifyExistingSqlite()
 if (state === 'unrecognized') {
   throw new Error(
@@ -123,6 +141,11 @@ if (state === 'fresh') {
     sqlite.close()
   }
 
+  runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
+  process.exit(0)
+}
+
+if (state === 'versioned' && reconcileVersionedHeadMetadata()) {
   runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
   process.exit(0)
 }
