@@ -426,3 +426,10 @@ test('canonical SQLite runner invokes Drizzle Kit through its supported package 
   assert.doesNotMatch(runner, /require\.resolve\(['"]drizzle-kit\/bin\.cjs['"]\)/)
   assert.match(runner, /drizzle-kit/)
 })
+
+
+test('canonical SQLite runner does not resolve non-exported Drizzle Kit package metadata', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.doesNotMatch(runner, /require\.resolve\(['"]drizzle-kit\/package\.json['"]\)/)
+})
