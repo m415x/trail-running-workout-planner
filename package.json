@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "tsx --test tests/**/*.test.ts",
+    "test": "tsx scripts/test-runner.ts",
     "tsc": "tsc --noEmit",
     "i18n:check": "tsx scripts/check-i18n.ts",
     "db:push": "drizzle-kit push",
