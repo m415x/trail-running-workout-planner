@@ -172,6 +172,34 @@ export async function runPartialSeedScenario(projectRoot = process.cwd()): Promi
   }
 }
 
+export function createRepresentativeLegacyDatabase(workspace: ScenarioWorkspace, projectRoot = process.cwd()): void {
+  const sqlite = new Database(workspace.sqlitePath)
+  try {
+    // 0000 represents the reviewed pre-versioned physical shape: application
+    // tables exist, workout_logs still has INTEGER duration and no
+    // performed_at, and no __drizzle_migrations metadata has been established.
+    sqlite.exec(readFileSync(resolve(projectRoot, 'drizzle/sqlite/0000_baseline.sql'), 'utf8'))
+  } finally {
+    sqlite.close()
+  }
+}
+
+export function runUpgradeScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('upgrade')
+  try {
+    createRepresentativeLegacyDatabase(workspace, projectRoot)
+
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
 export function assertScenarioDatabaseExists(workspace: ScenarioWorkspace): void {
   if (!existsSync(workspace.sqlitePath)) {
     throw new Error(`SQLite scenario did not create ${workspace.sqlitePath}`)
@@ -227,6 +255,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'partial-seed') {
     await runPartialSeedScenario()
+    return
+  }
+
+  if (scenario === 'upgrade') {
+    runUpgradeScenario()
     return
   }
 
