@@ -134,6 +134,12 @@ test('legacy metadata reconciliation rejects a conflicting canonical timestamp i
 test('legacy reconciliation is atomic with canonical metadata establishment', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
-  assert.match(runner, /sqlite\.transaction\(\(\)\s*=>\s*\{[\s\S]*migrateRealizedTrainingTimingSqlite/)
-  assert.match(runner, /migrateMacrocycleTargetRaceDateSqlite[\s\S]*establishCanonicalLegacyMetadata/)
+  const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
+  const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
+  const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
+  const metadataIndex = legacyBlock.indexOf('establishCanonicalLegacyMetadata(sqlite)')
+
+  assert.notEqual(transactionIndex, -1, 'legacy reconciliation must open one outer transaction')
+  assert.ok(transactionIndex < firstMigrationIndex, 'outer transaction must start before legacy migrations')
+  assert.ok(metadataIndex > firstMigrationIndex, 'canonical metadata must be established after physical reconciliation')
 })
