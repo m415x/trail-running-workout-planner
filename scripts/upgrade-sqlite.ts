@@ -6,16 +6,21 @@ import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { existsSync, readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import Database from 'better-sqlite3'
 
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')
-const drizzleKitPackageDir = dirname(require.resolve('drizzle-kit/package.json'))
-const drizzleKitCli = resolve(drizzleKitPackageDir, 'bin.cjs')
+const drizzleKitCli = process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit'
 
-function run(args: string[]): void {
+function runNode(args: string[]): void {
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' })
+  if (result.error) throw result.error
+  if (result.status !== 0) process.exit(result.status ?? 1)
+}
+
+function runDrizzleKit(args: string[]): void {
+  const result = spawnSync(drizzleKitCli, args, { stdio: 'inherit', shell: process.platform === 'win32' })
   if (result.error) throw result.error
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
@@ -106,8 +111,7 @@ if (state === 'unrecognized') {
 }
 
 if (state === 'fresh') {
-  run([
-    drizzleKitCli,
+  runDrizzleKit([
     'push',
     '--config=drizzle.sqlite.config.ts',
   ])
@@ -119,7 +123,7 @@ if (state === 'fresh') {
     sqlite.close()
   }
 
-  run([tsxCli, resolve('scripts/verify-sqlite.ts')])
+  runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
   process.exit(0)
 }
 
@@ -143,9 +147,8 @@ if (state === 'legacy') {
   }
 }
 
-run([
-  drizzleKitCli,
+runDrizzleKit([
   'migrate',
   '--config=drizzle.sqlite.config.ts',
 ])
-run([tsxCli, resolve('scripts/verify-sqlite.ts')])
+runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
