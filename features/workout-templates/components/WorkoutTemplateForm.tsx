@@ -5,12 +5,11 @@ import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
-import type { WorkoutTemplate, WorkoutTemplateCategory, WorkoutType } from '@/types'
+import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
 
 const categories: WorkoutTemplateCategory[] = ['endurance', 'quality', 'mountain', 'technique', 'recovery', 'competition']
-const workoutTypes: WorkoutType[] = ['Base', 'Long', 'Intervals', 'Trail', 'Speed', 'Fartlek', 'PAM', 'Hills', 'Race', 'Rest']
 const zones = ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'] as const
 const initialState: WorkoutTemplateFormState = {}
 
@@ -70,7 +69,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
           <Field label={t('identity.title')} name='title' defaultValue={savedValue('title')} placeholder={t('identity.titlePlaceholder')} required minLength={2} maxLength={120} error={state.fieldErrors?.title} />
           <SelectField label={t('identity.type')} name='type' defaultValue={savedTextValue('type')} required error={state.fieldErrors?.type}>
             <option value=''>{t('identity.selectType')}</option>
-            {workoutTypes.map((type) => <option key={type} value={type}>{workoutTypeLabel(type)}</option>)}
+            {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{workoutTypeLabel(type)}</option>)}
           </SelectField>
         </div>
         <div className='grid gap-4 sm:grid-cols-2'>
