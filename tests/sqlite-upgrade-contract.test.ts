@@ -341,7 +341,8 @@ test('SQLite scenario harness detects schema drift between fresh and upgraded da
   const scenario = verifier.match(/function runDriftScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runDriftScenario/)
   assert.match(scenario, /createRepresentativeLegacyDatabase/)
-  assert.match(scenario, /sqlite_master/)
+  assert.match(verifier, /function readNormalizedSchema[\s\S]*sqlite_master/)
+  assert.match(scenario, /readNormalizedSchema/)
   assert.match(scenario, /upgrade-sqlite/)
   assert.match(scenario, /Schema drift/i)
   assert.match(verifier, /scenario === ['"]drift['"]/)
