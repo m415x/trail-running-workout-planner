@@ -134,3 +134,19 @@ test('feature seeds share canonical context instead of deriving team and athlete
     assert.doesNotMatch(fixture, /profile_\$\{String\(currentUser\.id/)
   }
 })
+
+
+test('SQLite seed exposes full and feature-focused composition entrypoints', () => {
+  const indexPath = path.join(seedRoot, 'index.ts')
+  assert.ok(fs.existsSync(indexPath), 'missing seed composition API: db/seeds/index.ts')
+
+  const index = fs.readFileSync(indexPath, 'utf8')
+  assert.match(index, /seedFull/)
+  assert.match(index, /seedFeature/)
+  assert.match(index, /team-and-coach/)
+  assert.match(index, /athletes/)
+  assert.match(index, /groups/)
+  assert.match(index, /competitions/)
+  assert.match(index, /cohorts/)
+  assert.match(index, /planning-templates-and-sessions/)
+})
