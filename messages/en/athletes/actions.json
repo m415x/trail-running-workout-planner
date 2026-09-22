@@ -13,6 +13,19 @@
     "deactivateConfirmTitle": "Deactivate athlete?",
     "deactivateConfirmDescription": "The athlete will become inactive and will no longer be treated as active in the team. You can activate them again later.",
     "deactivateConfirmAction": "Deactivate",
-    "deactivateConfirmCancel": "Keep active"
+    "deactivateConfirmCancel": "Keep active",
+    "listTitle": "Athletes",
+    "listDescription": "Team profiles, operational status, and each athlete’s current group.",
+    "newAthlete": "New athlete",
+    "athleteColumn": "Athlete",
+    "contactColumn": "Contact",
+    "groupCohortColumn": "Group / cohort",
+    "statusColumn": "Status",
+    "noGroup": "No group",
+    "cohortConflict": "Cohort conflict",
+    "active": "Active",
+    "inactive": "Inactive",
+    "emptyTitle": "No athletes yet",
+    "emptyDescription": "Active team profiles will appear in this list once they are added."
   }
 }
