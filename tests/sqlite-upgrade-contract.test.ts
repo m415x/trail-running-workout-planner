@@ -223,3 +223,19 @@ test('canonical migration metadata derives entries from the Drizzle journal inst
   assert.match(runner, /meta[/\\\\]_journal\.json/)
   assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
 })
+
+
+test('SQLite verification covers empty, full-seed, partial-seed, upgrade, preservation, drift and rerun scenarios', () => {
+  const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts')
+
+  assert.ok(fs.existsSync(verifierPath), 'missing SQLite scenario verifier')
+  const verifier = fs.readFileSync(verifierPath, 'utf8')
+
+  assert.match(verifier, /empty/i)
+  assert.match(verifier, /seedFull/)
+  assert.match(verifier, /seedFeature/)
+  assert.match(verifier, /upgrade/i)
+  assert.match(verifier, /preserv/i)
+  assert.match(verifier, /drift/i)
+  assert.match(verifier, /rerun|idempot/i)
+})
