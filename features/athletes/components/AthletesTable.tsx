@@ -86,10 +86,10 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Atleta</TableHead>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Grupo / cohorte</TableHead>
-              <TableHead>Estado</TableHead>
+              <TableHead>{t('athleteColumn')}</TableHead>
+              <TableHead>{t('contactColumn')}</TableHead>
+              <TableHead>{t('groupCohortColumn')}</TableHead>
+              <TableHead>{t('statusColumn')}</TableHead>
               <TableHead className='w-16'><span className='sr-only'>{t('actions')}</span></TableHead>
             </TableRow>
           </TableHeader>
@@ -135,9 +135,9 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
 
                   <TableCell>
                     <div className='flex flex-col items-start gap-1'>
-                      {groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>Sin grupo</Badge>}
+                      {groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>{t('noGroup')}</Badge>}
                       {athlete.hasPlanningCohortConflict ? (
-                        <span className='text-xs font-medium text-destructive'>Conflicto de cohortes</span>
+                        <span className='text-xs font-medium text-destructive'>{t('cohortConflict')}</span>
                       ) : athlete.currentPlanningCohort && cohortPath ? (
                         <Link href={cohortPath} className='max-w-48 truncate text-xs text-muted-foreground hover:text-foreground hover:underline'>
                           {athlete.currentPlanningCohort.name}
@@ -149,11 +149,11 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                   <TableCell>
                     {athlete.isActive ? (
                       <Badge variant='outline' className='border-emerald-500/40 text-emerald-700 dark:text-emerald-400'>
-                        Activo
+                        {t('active')}
                       </Badge>
                     ) : (
                       <Badge variant='outline' className='text-muted-foreground'>
-                        Inactivo
+                        {t('inactive')}
                       </Badge>
                     )}
                   </TableCell>
