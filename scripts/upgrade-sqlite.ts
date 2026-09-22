@@ -63,38 +63,38 @@ function establishCanonicalLegacyMetadata(sqlite: Database.Database): void {
     ['drizzle/sqlite/0001_realized_training_timing.sql', 1789348503010],
   ] as const
 
-  sqlite.transaction(() => {
-    for (const [migrationPath, createdAt] of migrations) {
-      const sql = readFileSync(resolve(migrationPath), 'utf8')
-      const hash = createHash('sha256').update(sql).digest('hex')
-      const row = existing.get(createdAt) as { hash: string } | undefined
-      if (row) {
-        if (row.hash !== hash) {
-          throw new Error(
-            `SQLite migration metadata conflict at canonical timestamp ${createdAt}`,
-          )
-        }
-        continue
+  for (const [migrationPath, createdAt] of migrations) {
+    const sql = readFileSync(resolve(migrationPath), 'utf8')
+    const hash = createHash('sha256').update(sql).digest('hex')
+    const row = existing.get(createdAt) as { hash: string } | undefined
+    if (row) {
+      if (row.hash !== hash) {
+        throw new Error(
+          `SQLite migration metadata conflict at canonical timestamp ${createdAt}`,
+        )
       }
-
-      insert.run(hash, createdAt)
+      continue
     }
-  })()
+
+    insert.run(hash, createdAt)
+  }
 }
 
 const state = classifyExistingSqlite()
 if (state === 'legacy') {
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
   try {
-    migrateRealizedTrainingTimingSqlite(sqlite)
-    migratePlanningCohortsSqlite(sqlite)
-    migrateCompetitionEntriesSqlite(sqlite)
-    migrateMacrocycleTargetRaceDateSqlite(sqlite)
-    establishCanonicalLegacyMetadata(sqlite)
+    sqlite.transaction(() => {
+      migrateRealizedTrainingTimingSqlite(sqlite)
+      migratePlanningCohortsSqlite(sqlite)
+      migrateCompetitionEntriesSqlite(sqlite)
+      migrateMacrocycleTargetRaceDateSqlite(sqlite)
+      establishCanonicalLegacyMetadata(sqlite)
 
-    if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
-      throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
-    }
+      if ((sqlite.pragma('foreign_key_check') as unknown[]).length > 0) {
+        throw new Error('Legacy SQLite reconciliation failed foreign-key verification')
+      }
+    })()
   } finally {
     sqlite.close()
   }
