@@ -1,0 +1,20 @@
+{
+  "AthleteGroup": {
+    "backToDetail": "Back to athlete detail",
+    "changeGroup": "Change group",
+    "assignToGroup": "Assign to group",
+    "description": "Set {name}’s current operational group.",
+    "currentGroup": "Current group",
+    "noGroup": "No group",
+    "newGroup": "New group",
+    "selectGroup": "Select a group",
+    "noAvailableGroup": "There is no other active group available.",
+    "effectiveDate": "Effective date",
+    "reason": "Reason",
+    "reasonPlaceholder": "E.g. {name} promotion due to load progression.",
+    "reasonHelp": "Optional. It will be recorded in the athlete’s history.",
+    "cancel": "Cancel",
+    "assigning": "Assigning…",
+    "assignGroup": "Assign group"
+  }
+}
