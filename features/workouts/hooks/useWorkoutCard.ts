@@ -20,7 +20,7 @@ import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
 import { formatShortDate } from '@/lib/date-helpers'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
-import { getWorkoutIcon, getWorkoutTypeLabel } from '@/lib/workout-helpers'
+import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
 import { resolveExecutionGuidance } from '@/lib/physiology/execution-guidance'
@@ -77,7 +77,7 @@ export function useWorkoutCard({
     return () => { active = false }
   }, [sessionId])
 
-  const headerTitle = getWorkoutTypeLabel(workout.type, workout.title)
+  const headerTitle = workout.type ? t(`types.${workout.type}`) : workout.title
   const WorkoutIcon = getWorkoutIcon(workout.type)
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
   const todayStr = useMemo(() => getCurrentISODateInTimeZone(), [])
