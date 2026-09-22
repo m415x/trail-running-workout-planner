@@ -218,3 +218,11 @@ test('legacy reconciliation records only migrations physically reconciled before
   assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*2\)/)
   assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
 })
+
+
+test('canonical migration metadata derives entries from the Drizzle journal instead of hard-coded counts', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /meta[/\\\\]_journal\.json/)
+  assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
+})
