@@ -25,6 +25,13 @@ import { sessionGenerationPreferences } from '@/db/session-generation-preference
 
 import { currentAthlete, currentUser, runningShoes, team, TRAINING_LOCATIONS, weekDaysRaw, workouts } from '@/data/data'
 
+import { seedAthletes } from '@/db/seeds/athletes'
+import { seedCohorts } from '@/db/seeds/cohorts'
+import { seedCompetitions } from '@/db/seeds/competitions'
+import { seedGroups } from '@/db/seeds/groups'
+import { seedPlanningTemplatesAndSessions } from '@/db/seeds/planning-templates-and-sessions'
+import { seedTeamAndCoach } from '@/db/seeds/team-and-coach'
+
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
 import type {
@@ -322,6 +329,15 @@ async function seed() {
 
   const now = new Date().toISOString()
   const currentWeekStart = getMondayFromISODate(getCurrentDateInArgentina())
+
+  // Composable feature fixtures. Legacy monolithic inserts remain temporarily
+  // below until each ownership block is removed without changing fixture data.
+  await seedTeamAndCoach(db)
+  const composedGroups = await seedGroups(db)
+  await seedAthletes(db, composedGroups)
+  await seedCompetitions(db, composedGroups, currentWeekStart, shiftISODate)
+  await seedCohorts(db, composedGroups, currentWeekStart, shiftISODate)
+  await seedPlanningTemplatesAndSessions(db, composedGroups, currentWeekStart, shiftISODate)
 
   const relativeWeekDays = weekDaysRaw.map((day, index) => ({
     ...day,
