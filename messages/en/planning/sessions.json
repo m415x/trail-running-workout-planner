@@ -64,7 +64,8 @@
         "distance": "Distance (km)",
         "duration": "Duration (min)",
         "elevationGain": "Elevation gain (m+)",
-        "zone": "Zone"
+        "zone": "Zone",
+        "microcycleOption": "{plan} · Week {week} · {start} to {end}"
       },
       "trailEffortNote": "Prioritize effort over pace.",
       "notes": "Notes",
