@@ -61,7 +61,7 @@ export function runScenarioCommand(
   const projectTsconfig = resolve('tsconfig.json')
   const result = spawnSync(command, args, {
     cwd,
-    env: { ...env, TSX_TSCONFIG_PATH: projectTsconfig },
+    env: { ...env, TSX_TSCONFIG_PATH: projectTsconfig, SQLITE_SCENARIO_MODE: '1', SQLITE_DATABASE_PATH: join(cwd, 'sqlite.db') },
     stdio: 'pipe',
     encoding: 'utf8',
   })
