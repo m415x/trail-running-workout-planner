@@ -137,7 +137,7 @@ function proposal(
       elevationGain,
       intensityMethod: 'hr_zone',
       zone,
-      pamPercentage: null,
+      referencePercentage: null,
       notes: null,
     },
     warnings: [],
