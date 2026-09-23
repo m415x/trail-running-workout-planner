@@ -75,6 +75,13 @@
         "title": "New session",
         "description": "Schedule a shared workout for the team."
       }
+    },
+    "calendar": {
+      "sessionCount": "{count, plural, one {# session} other {# sessions}}",
+      "empty": "No sessions",
+      "group": "Group",
+      "allGroups": "All groups",
+      "inactive": "Inactive"
     }
   }
 }
