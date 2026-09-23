@@ -98,7 +98,7 @@ export function persistIntensityPlanning({
           emphasis: existing.emphasis,
           intenseSessionsTarget: existing.intenseSessionsTarget,
           predominantZone: existing.predominantZone,
-          pamPercentageTarget: existing.pamPercentageTarget,
+          referencePercentageTarget: existing.referencePercentageTarget,
           minimumRecoveryDaysBetweenIntenseSessions: existing.minimumRecoveryDaysBetweenIntenseSessions,
           fieldSources: existing.fieldSources,
         },
