@@ -195,7 +195,10 @@ export async function getSessionFormOptions(includeWorkoutId?: string | null) {
     microcycles: group.trainingPlans.flatMap((plan) => plan.macrocycles.flatMap((macrocycle) =>
       macrocycle.mesocycles.flatMap((mesocycle) => mesocycle.microcycles.map((microcycle) => ({
         id: microcycle.id,
-        label: `${plan.title} · Semana ${microcycle.weekNumber} · ${microcycle.startDate} al ${microcycle.endDate}`,
+        planTitle: plan.title,
+        weekNumber: microcycle.weekNumber,
+        startDate: microcycle.startDate,
+        endDate: microcycle.endDate,
       }))),
     )),
   }))
