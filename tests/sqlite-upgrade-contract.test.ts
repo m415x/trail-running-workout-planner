@@ -518,3 +518,14 @@ test('SQLite scenario CLI executes and rejects an unknown scenario', () => {
   assert.notEqual(result.status, 0, 'the scenario CLI must execute rather than silently exit')
   assert.match(result.stderr + result.stdout, /Unknown SQLite verification scenario: invalid-scenario/)
 })
+
+test('SQLite Drizzle config resolves project schemas and migrations independently of the target database', () => {
+  const config = fs.readFileSync(path.join(process.cwd(), 'drizzle.sqlite.config.ts'), 'utf8')
+
+  assert.match(config, /import\.meta\.dirname/)
+  assert.match(config, /resolve\(/)
+  assert.match(config, /schema:/)
+  assert.match(config, /out:/)
+  assert.match(config, /dbCredentials:/)
+  assert.match(config, /sqlite\.db/)
+})
