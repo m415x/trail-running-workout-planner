@@ -101,7 +101,7 @@ function context(groupId: string, microcycleId: string, volume: number): Session
     startDate: '2026-09-07', endDate: '2026-09-13',
     load: { targetVolumeKm: volume, targetElevationGain: 1200, maximumWeeklyVolumeKm: 70 },
     intensity: {
-      defaultMethod: 'pam_percentage', emphasis: 'vo2max', intenseSessionsTarget: 1,
+      defaultMethod: 'reference_percentage', emphasis: 'vo2max', intenseSessionsTarget: 1,
       predominantZone: 'Z2', referencePercentageTarget: 95,
       minimumRecoveryDaysBetweenIntenseSessions: 2,
     },
