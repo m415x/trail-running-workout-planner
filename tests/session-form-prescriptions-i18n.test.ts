@@ -34,7 +34,7 @@ test('SessionForm localizes group prescription, intensity and empty-state copy',
     'form.prescriptions.intensityMethod',
     'form.prescriptions.noIntensity',
     'form.prescriptions.hrZone',
-    'form.prescriptions.pamPercentage',
+    'form.prescriptions.referencePercentage',
     'form.prescriptions.selectZone',
     'form.prescriptions.notes',
   ]) {
