@@ -25,7 +25,7 @@
           "invalidVolume": "Los valores de volumen no pueden ser negativos",
           "microcycleRequired": "Seleccioná un microciclo para cada grupo",
           "hrZoneRequired": "Seleccioná una zona para la intensidad por FC",
-          "referencePercentageInvalid": "Ingresá un porcentaje de referencia entre 0 y 200",
+          "referencePercentageInvalid": "Seleccioná un porcentaje de referencia permitido",
           "prescriptionsInvalid": "Revisá las prescripciones grupales",
           "microcycleDateMismatch": "El microciclo del grupo {group} no corresponde a la fecha de la sesión.",
           "microcycleDateAmbiguous": "Hay microciclos superpuestos para el grupo {group} en la fecha de la sesión."
@@ -59,6 +59,8 @@
         "noIntensity": "Sin intensidad",
         "hrZone": "Zona de frecuencia cardíaca",
         "referencePercentage": "% de referencia",
+        "percentage": "Porcentaje",
+        "selectPercentage": "Seleccionar porcentaje",
         "selectZone": "Seleccionar zona",
         "notes": "Indicaciones para el grupo",
         "group": "Grupo",
