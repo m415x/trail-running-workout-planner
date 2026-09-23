@@ -442,3 +442,15 @@ test('versioned SQLite with a HEAD schema but partial canonical metadata is reco
   assert.match(runner, /verify-sqlite/)
   assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
 })
+
+test('SQLite HEAD verifier rejects legacy intensity columns before metadata reconciliation', () => {
+  const verifier = fs.readFileSync(
+    path.join(process.cwd(), 'scripts', 'verify-sqlite.ts'),
+    'utf8',
+  )
+
+  assert.match(verifier, /microcycle_intensity_targets/)
+  assert.match(verifier, /reference_percentage_target/)
+  assert.match(verifier, /pam_percentage_target/)
+  assert.match(verifier, /throw new Error/)
+})
