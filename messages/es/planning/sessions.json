@@ -7,7 +7,27 @@
       "type": "Tipo de entrenamiento",
       "selectType": "Seleccionar tipo",
       "errors": {
-        "groupRequired": "Asigná la sesión al menos a un grupo"
+        "groupRequired": "Asigná la sesión al menos a un grupo",
+        "server": {
+          "invalidDate": "Ingresá una fecha válida",
+          "titleTooShort": "El título debe tener al menos 2 caracteres",
+          "workoutTypeRequired": "Seleccioná un tipo de entrenamiento",
+          "invalidForm": "Revisá los datos ingresados",
+          "workoutNotFound": "La plantilla de entrenamiento seleccionada no existe",
+          "locationNotFound": "La ubicación seleccionada no existe",
+          "createFailed": "No se pudo crear la sesión",
+          "sessionIdMissing": "No se pudo identificar la sesión",
+          "sessionNotFound": "Sesión no encontrada",
+          "workoutUnavailable": "La plantilla de entrenamiento seleccionada no existe o está archivada",
+          "updateFailed": "No se pudo actualizar la sesión",
+          "groupNotFound": "Uno de los grupos seleccionados no existe o está inactivo",
+          "microcycleGroupMismatch": "El microciclo seleccionado no pertenece al grupo {group}",
+          "invalidVolume": "Los valores de volumen no pueden ser negativos",
+          "microcycleRequired": "Seleccioná un microciclo para cada grupo",
+          "hrZoneRequired": "Seleccioná una zona para la intensidad por FC",
+          "pamPercentageInvalid": "Ingresá un porcentaje PAM entre 0 y 200",
+          "prescriptionsInvalid": "Revisá las prescripciones grupales"
+        }
       },
       "template": "Plantilla de entrenamiento",
       "noTemplate": "Sin plantilla",
