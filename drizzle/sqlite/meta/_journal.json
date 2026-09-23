@@ -50,6 +50,13 @@
       "when": 1790190000000,
       "tag": "0006_reference_percentage_contract",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1790190002000,
+      "tag": "0007_field_performance_recorded_by_fk",
+      "breakpoints": true
     }
   ]
 }
