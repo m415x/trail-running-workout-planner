@@ -15,7 +15,7 @@ import type {
  * A concrete race may alter periodization without changing this base strategy.
  */
 export const DEFAULT_INTENSITY_METHOD_BY_INTENT: Record<PlanningIntent, IntensityMethod> = {
-  development: 'pam_percentage',
+  development: 'reference_percentage',
   base: 'hr_zone',
   maintenance: 'hr_zone',
 }
