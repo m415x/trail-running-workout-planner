@@ -230,7 +230,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
         <div className='space-y-1.5'>
           <SelectField label={t('form.template')} name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
             <option value=''>{t('form.noTemplate')}</option>
-            {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workout.type}{workout.archivedAt ? ` · ${templateText('archive.archived')}` : ''}</option>)}
+            {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workoutTypeT(`types.${workout.type}`)}{workout.archivedAt ? ` · ${templateText('archive.archived')}` : ''}</option>)}
           </SelectField>
           <p className='text-xs text-muted-foreground'>{templateText('applicationHelp')}</p>
         </div>
