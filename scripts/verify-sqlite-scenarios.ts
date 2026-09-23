@@ -395,23 +395,25 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
 
     const freshSchema = readNormalizedSchema(fresh.sqlitePath)
     const upgradedSchema = readNormalizedSchema(upgraded.sqlitePath)
-    if (
-      freshSchema.length !== upgradedSchema.length ||
-      freshSchema.some((entry, index) => entry !== upgradedSchema[index])
-    ) {
-      const freshEntries = new Map(freshSchema.map(entry => {
-        const parsed = JSON.parse(entry) as { type: string; name: string; sql: string | null }
-        return [`${parsed.type}:${parsed.name}`, parsed.sql] as const
-      }))
-      const upgradedEntries = new Map(upgradedSchema.map(entry => {
-        const parsed = JSON.parse(entry) as { type: string; name: string; sql: string | null }
-        return [`${parsed.type}:${parsed.name}`, parsed.sql] as const
-      }))
-      const differences = [...new Set([...freshEntries.keys(), ...upgradedEntries.keys()])]
-        .filter(key => freshEntries.get(key) !== upgradedEntries.get(key))
+    // Compare keyed, fully normalized schema entries. SQLite can list objects
+    // in a different order even when their structure is identical.
+    const schemaByObject = (entries: string[]) => new Map(entries.map(entry => {
+      const parsed = JSON.parse(entry) as { type: string; name: string }
+      return [`${parsed.type}:${parsed.name}`, entry] as const
+    }))
+    const freshEntries = schemaByObject(freshSchema)
+    const upgradedEntries = schemaByObject(upgradedSchema)
+    const differences = [...new Set([...freshEntries.keys(), ...upgradedEntries.keys()])]
+      .filter(key => freshEntries.get(key) !== upgradedEntries.get(key))
+    if (differences.length > 0) {
       const first = differences[0]
-      const freshSql = first ? freshEntries.get(first) ?? '<missing>' : ''
-      const upgradedSql = first ? upgradedEntries.get(first) ?? '<missing>' : ''
+      const freshEntry = freshEntries.get(first)
+      const upgradedEntry = upgradedEntries.get(first)
+      const firstSql = (entry: string | undefined) => entry
+        ? (JSON.parse(entry) as { sql?: string | null }).sql ?? entry
+        : '<missing>'
+      const freshSql = firstSql(freshEntry)
+      const upgradedSql = firstSql(upgradedEntry)
       const mismatchAt = [...freshSql].findIndex((character, index) => character !== upgradedSql[index])
       const offset = mismatchAt >= 0 ? mismatchAt : Math.min(freshSql.length, upgradedSql.length)
       const excerpt = (sql: string) => sql.slice(Math.max(0, offset - 70), offset + 120)
