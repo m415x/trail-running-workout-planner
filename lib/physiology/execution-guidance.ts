@@ -1,7 +1,7 @@
 import type { RunningReference } from '@/lib/physiology/running-reference'
 import type { TrainingIntensity } from '@/types/training/intensity.types'
 
-/** Canonical execution-only contract while persistence compatibility is audited. */
+/** Canonical execution intensity contract. */
 export type ExecutionIntensity = TrainingIntensity
 
 export const INTENSITY_GUIDANCE_POLICY = {
