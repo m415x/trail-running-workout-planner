@@ -1,16 +1,15 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 
-import { resolveExecutionGuidance } from '@/lib/physiology/execution-guidance'
+import { resolveExecutionGuidance, type ExecutionIntensity } from '@/lib/physiology/execution-guidance'
 import type { RunningReference } from '@/lib/physiology/running-reference'
-import type { TrainingIntensity } from '@/types/training/intensity.types'
 
 /** KAN-440 RED: the explicit percentage must use the canonical contract. */
 test('reference percentage uses the human scale and preserves the explicit prescription', () => {
   const intensity = {
     method: 'reference_percentage',
     referencePercentage: 90,
-  } as TrainingIntensity
+  } satisfies ExecutionIntensity
   const runningReference = {
     status: 'available',
     source: {
