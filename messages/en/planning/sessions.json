@@ -55,6 +55,26 @@
         "saveChanges": "Save changes",
         "create": "Create session"
       }
+    },
+    "routes": {
+      "title": "Sessions",
+      "description": "Scheduled workouts for the team.",
+      "new": "New session",
+      "emptyTitle": "There are no sessions yet",
+      "emptyDescription": "Schedule the first session to start building the training calendar.",
+      "month": "Month",
+      "week": "Week",
+      "groupEmptyTitle": "No sessions for group {group}",
+      "groupEmptyDescription": "This group does not have any sessions assigned in the calendar yet.",
+      "previousMonth": "Previous month",
+      "previousWeek": "Previous week",
+      "nextMonth": "Next month",
+      "nextWeek": "Next week",
+      "create": {
+        "back": "Back to sessions",
+        "title": "New session",
+        "description": "Schedule a shared workout for the team."
+      }
     }
   }
 }
