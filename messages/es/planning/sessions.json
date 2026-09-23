@@ -94,6 +94,27 @@
         "back": "Volver a sesiones",
         "title": "Nueva sesión",
         "description": "Programá un entrenamiento compartido para el equipo."
+      },
+      "detail": {
+        "back": "Volver al calendario",
+        "edit": "Editar",
+        "generalTitle": "Información general",
+        "generalDescription": "Datos compartidos de la sesión.",
+        "location": "Ubicación",
+        "template": "Plantilla",
+        "track": "Track",
+        "notesTitle": "Notas",
+        "notesDescription": "Indicaciones generales para el entrenamiento.",
+        "noNotes": "Sin notas generales.",
+        "structureTitle": "Estructura de la sesión",
+        "structureDescription": "Bloques definidos para desarrollar el entrenamiento.",
+        "noStructure": "Esta sesión no tiene una estructura detallada.",
+        "unspecified": "Sin especificar"
+      },
+      "edit": {
+        "back": "Volver al detalle",
+        "title": "Editar sesión",
+        "description": "Actualizá la sesión y las prescripciones específicas de cada grupo."
       }
     },
     "calendar": {
