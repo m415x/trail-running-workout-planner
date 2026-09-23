@@ -40,9 +40,9 @@ interface SessionFormProps {
       distanceKm: number | null
       durationMin: number | null
       elevationGain: number | null
-      intensityMethod: 'hr_zone' | 'pam_percentage' | null
+      intensityMethod: 'hr_zone' | 'reference_percentage' | null
       zone: string | null
-      pamPercentage: number | null
+      referencePercentage: number | null
       notes: string | null
     }>
   }
@@ -60,9 +60,9 @@ interface AppliedPrescriptionDefaults {
   distance: number | null
   time: number | null
   gain: number | null
-  intensityMethod: 'hr_zone' | 'pam_percentage' | null
+  intensityMethod: 'hr_zone' | 'reference_percentage' | null
   zone: string | null
-  pamPercentage: number | null
+  referencePercentage: number | null
   prescriptionNotes: string | null
 }
 
@@ -71,7 +71,7 @@ interface PrescriptionFormValues {
   durationMin: string
   elevationGain: string
   zone: string
-  pamPercentage: string
+  referencePercentage: string
   notes: string
 }
 
@@ -98,7 +98,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       durationMin: formValue(item.durationMin),
       elevationGain: formValue(item.elevationGain),
       zone: formValue(item.zone),
-      pamPercentage: formValue(item.pamPercentage),
+      referencePercentage: formValue(item.referencePercentage),
       notes: formValue(item.notes),
     }]) ?? [],
   ))
@@ -148,7 +148,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       gain: snapshot.prescription.elevationGain ?? null,
       intensityMethod: snapshot.prescription.intensity?.method ?? null,
       zone: snapshot.prescription.intensity?.method === 'hr_zone' ? snapshot.prescription.intensity.zone : null,
-      pamPercentage: snapshot.prescription.intensity?.method === 'pam_percentage' ? snapshot.prescription.intensity.pamPercentage : null,
+      referencePercentage: snapshot.prescription.intensity?.method === 'reference_percentage' ? snapshot.prescription.intensity.referencePercentage : null,
       prescriptionNotes: snapshot.prescription.notes,
     }
     setAppliedPrescriptionDefaults(defaults)
@@ -168,7 +168,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       durationMin: formValue(defaults.time),
       elevationGain: formValue(defaults.gain),
       zone: formValue(defaults.zone),
-      pamPercentage: formValue(defaults.pamPercentage),
+      referencePercentage: formValue(defaults.referencePercentage),
       notes: formValue(defaults.prescriptionNotes),
     }
   }
@@ -183,7 +183,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           gain: null,
           intensityMethod: null,
           zone: null,
-          pamPercentage: null,
+          referencePercentage: null,
           prescriptionNotes: null,
         })),
         [field]: value,
@@ -280,7 +280,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
             durationMin: '',
             elevationGain: '',
             zone: '',
-            pamPercentage: '',
+            referencePercentage: '',
             notes: '',
           }
 
@@ -324,7 +324,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   >
                     <option value=''>{t('form.prescriptions.noIntensity')}</option>
                     <option value='hr_zone'>{t('form.prescriptions.hrZone')}</option>
-                    <option value='pam_percentage'>{t('form.prescriptions.pamPercentage')}</option>
+                    <option value='reference_percentage'>{t('form.prescriptions.referencePercentage')}</option>
                   </SelectField>
 
                   {method === 'hr_zone' && (
@@ -333,8 +333,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                       {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                     </SelectField>
                   )}
-                  {method === 'pam_percentage' && (
-                    <Field label={t('form.prescriptions.pamPercentage')} name={`pamPercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.pamPercentage} onChange={(event) => updatePrescriptionValue(group.id, 'pamPercentage', event.target.value)} required />
+                  {method === 'reference_percentage' && (
+                    <Field label={t('form.prescriptions.referencePercentage')} name={`referencePercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.referencePercentage} onChange={(event) => updatePrescriptionValue(group.id, 'referencePercentage', event.target.value)} required />
                   )}
 
                   <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
