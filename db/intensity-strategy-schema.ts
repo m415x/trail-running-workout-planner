@@ -40,7 +40,7 @@ export const microcycleIntensityTargets = sqliteTable(
     emphasis: text('emphasis').$type<IntensityEmphasis>().notNull(),
     intenseSessionsTarget: integer('intense_sessions_target').notNull(),
     predominantZone: text('predominant_zone').$type<IntensityZone>().notNull(),
-    pamPercentageTarget: real('pam_percentage_target'),
+    referencePercentageTarget: real('reference_percentage_target'),
     minimumRecoveryDaysBetweenIntenseSessions: integer('minimum_recovery_days_between_intense_sessions').notNull(),
     fieldSources: text('field_sources', { mode: 'json' }).$type<MicrocycleIntensityTargetFieldSources>().notNull(),
     isDeleted: integer('is_deleted', { mode: 'boolean' }).notNull().default(false),
