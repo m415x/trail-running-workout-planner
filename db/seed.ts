@@ -231,7 +231,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
     fieldSources: {
       intenseSessionsTarget: 'generated',
       predominantZone: 'generated',
-      pamPercentageTarget: 'generated',
+      referencePercentageTarget: 'generated',
       minimumRecoveryDaysBetweenIntenseSessions: 'generated',
     } as const,
   }
@@ -243,7 +243,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'recovery' as const,
         intenseSessionsTarget: 0,
         predominantZone: 'Z1' as const,
-        pamPercentageTarget: null,
+        referencePercentageTarget: null,
       }
 
     case 'shock':
@@ -252,7 +252,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'threshold' as const,
         intenseSessionsTarget: 2,
         predominantZone: 'Z3' as const,
-        pamPercentageTarget: 95,
+        referencePercentageTarget: 95,
       }
 
     case 'tapering':
@@ -261,7 +261,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'aerobic' as const,
         intenseSessionsTarget: 1,
         predominantZone: 'Z2' as const,
-        pamPercentageTarget: 90,
+        referencePercentageTarget: 90,
       }
 
     case 'race':
@@ -270,7 +270,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'race_specific' as const,
         intenseSessionsTarget: 1,
         predominantZone: 'Z2' as const,
-        pamPercentageTarget: 92.5,
+        referencePercentageTarget: 92.5,
       }
 
     case 'development':
@@ -279,7 +279,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'tempo' as const,
         intenseSessionsTarget: 2,
         predominantZone: 'Z2' as const,
-        pamPercentageTarget: 90,
+        referencePercentageTarget: 90,
       }
 
     case 'base':
@@ -289,7 +289,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
         emphasis: 'aerobic' as const,
         intenseSessionsTarget: 1,
         predominantZone: 'Z2' as const,
-        pamPercentageTarget: null,
+        referencePercentageTarget: null,
       }
   }
 }
