@@ -47,3 +47,21 @@ test('KAN-446 excludes unsupported zone-to-PAM mappings and retains workout type
   assert.doesNotMatch(workoutCard, /getZonePaceRangeFromPam|ZONE_PAM_PERCENTAGES|physiology\/pam/)
   assert.match(workoutCard, /resolveExecutionGuidance/)
 })
+
+test('KAN-444 remote verifier checks reference-percentage schema and persisted legacy values', () => {
+  const verifier = source('db/supabase/verify.ts')
+  for (const name of [
+    'reference_percentage_target',
+    'reference_percentage',
+    'pam_percentage_target',
+    'pam_percentage',
+    'pamPercentageTarget',
+    'intensity_strategies.default_method',
+    'group_session_prescriptions.intensity_method',
+    'workouts.intensity_method',
+  ]) {
+    assert.ok(verifier.includes(name), `remote verifier must check ${name}`)
+  }
+  assert.match(verifier, /!intensityContractValid/)
+  assert.match(verifier, /Reference percentage contract:/)
+})
