@@ -19,8 +19,8 @@ function validateReference(reference: TaperIntensityReference) {
   }
 
   if (
-    reference.pamPercentageTarget !== null
-    && (!Number.isFinite(reference.pamPercentageTarget) || reference.pamPercentageTarget <= 0)
+    reference.referencePercentageTarget !== null
+    && (!Number.isFinite(reference.referencePercentageTarget) || reference.referencePercentageTarget <= 0)
   ) {
     throw new Error('PAM percentage target must be finite and positive when provided.')
   }
@@ -72,8 +72,8 @@ export function decideTaperIntensityPreservation(
 
   reasonCodes.push('existing_hr_zone_preserved')
 
-  if (reference.pamPercentageTarget !== null) {
-    reasonCodes.push('existing_pam_percentage_preserved')
+  if (reference.referencePercentageTarget !== null) {
+    reasonCodes.push('existing_reference_percentage_preserved')
   }
 
   return {
