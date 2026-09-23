@@ -95,10 +95,10 @@
         "intensityMethod": "Método de intensidad",
         "noIntensity": "Sin intensidad predeterminada",
         "hrZone": "Zona de frecuencia cardíaca",
-        "pam": "Porcentaje PAM",
+        "reference": "% de referencia",
         "zone": "Zona",
         "selectZone": "Seleccionar zona",
-        "pamPercentage": "Porcentaje PAM",
+        "referencePercentage": "% de referencia",
         "notes": "Indicaciones para el grupo",
         "notesPlaceholder": "Pautas de ejecución, recuperaciones o adaptaciones…"
       }
