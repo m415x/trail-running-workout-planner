@@ -49,7 +49,7 @@ test('mobile workout boundary preserves percentage prescription and athlete runn
   const pageSource = await readFile('app/[locale]/(mobile)/page.tsx', 'utf8')
 
   assert.match(homeHookSource, /intensityMethod/)
-  assert.match(homeHookSource, /pamPercentage/)
+  assert.match(homeHookSource, /referencePercentage/)
   assert.match(homeSource, /runningReference/)
   assert.match(pageSource, /runningReference/)
 })
