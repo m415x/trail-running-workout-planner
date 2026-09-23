@@ -64,7 +64,8 @@
         "distance": "Distancia (km)",
         "duration": "Duración (min)",
         "elevationGain": "Desnivel (m+)",
-        "zone": "Zona"
+        "zone": "Zona",
+        "microcycleOption": "{plan} · Semana {week} · {start} al {end}"
       },
       "trailEffortNote": "Priorizá el esfuerzo sobre el ritmo.",
       "notes": "Notas",
