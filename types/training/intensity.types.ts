@@ -45,10 +45,6 @@ export type TrainingIntensity =
       method: 'pam_percentage'
       pamPercentage: PamPercentage
     }
-  | {
-      method: 'reference_percentage'
-      referencePercentage: ReferencePercentage
-    }
 
 /** Inputs retained as the planning criterion for an intensity strategy. */
 export interface IntensityStrategyContext {
