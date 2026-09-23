@@ -156,6 +156,9 @@ if (state === 'fresh') {
 
   const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
+    // Drizzle push creates tables and indexes but does not create the
+    // cohort association triggers installed by the supported legacy upgrade.
+    migratePlanningCohortsSqlite(sqlite)
     establishCanonicalMigrationMetadata(sqlite)
   } finally {
     sqlite.close()
