@@ -463,7 +463,7 @@ export const workouts = sqliteTable('workouts', {
   gain: integer('gain'), // m D+
   intensityMethod: text('intensity_method').$type<IntensityMethod>(),
   zone: text('zone').$type<IntensityZone>(),
-  pamPercentage: real('pam_percentage'),
+  referencePercentage: real('reference_percentage'),
   pace: integer('pace'), // seg/km
   notes: text('notes'), // Indicaciones generales de la sesión
   prescriptionNotes: text('prescription_notes'),
@@ -533,7 +533,7 @@ export const groupSessionPrescriptions = sqliteTable(
 
     intensityMethod: text('intensity_method').$type<IntensityMethod>(),
     zone: text('zone').$type<IntensityZone>(),
-    pamPercentage: real('pam_percentage'),
+    referencePercentage: real('reference_percentage'),
 
     notes: text('notes'),
     generationOwnership: text('generation_ownership')
