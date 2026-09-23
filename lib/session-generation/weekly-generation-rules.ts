@@ -309,7 +309,7 @@ export function isPamPreferred(
 ) {
   return (
     role === 'quality' &&
-    intensity.defaultMethod === 'pam_percentage' &&
+    intensity.defaultMethod === 'reference_percentage' &&
     intensity.intenseSessionsTarget > 0 &&
     intensity.referencePercentageTarget !== null &&
     intensity.emphasis !== 'recovery' &&
