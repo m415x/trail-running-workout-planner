@@ -42,6 +42,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/planning/training-goals.json')).default
       case 'planning/workout-templates':
         return (await import('@/messages/en/planning/workout-templates.json')).default
+      case 'planning/sessions':
+        return (await import('@/messages/en/planning/sessions.json')).default
       case 'competitions/race-distance-policy':
         return (await import('@/messages/en/competitions/race-distance-policy.json')).default
       case 'competitions/race-catalog':
@@ -81,6 +83,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/planning/training-goals.json')).default
       case 'planning/workout-templates':
         return (await import('@/messages/es/planning/workout-templates.json')).default
+      case 'planning/sessions':
+        return (await import('@/messages/es/planning/sessions.json')).default
       case 'competitions/race-distance-policy':
         return (await import('@/messages/es/competitions/race-distance-policy.json')).default
       case 'competitions/race-catalog':
