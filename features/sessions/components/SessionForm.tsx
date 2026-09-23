@@ -230,28 +230,28 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>)}
         </SelectField>
         <div className='space-y-1.5'>
-          <SelectField label='Plantilla de entrenamiento' name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
-            <option value=''>Sin plantilla</option>
+          <SelectField label={t('form.template')} name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
+            <option value=''>{t('form.noTemplate')}</option>
             {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workout.type}{workout.archivedAt ? ` · ${templateText('archive.archived')}` : ''}</option>)}
           </SelectField>
           <p className='text-xs text-muted-foreground'>{templateText('applicationHelp')}</p>
         </div>
       </div>
 
-      <SelectField label='Ubicación' name='locationKey' defaultValue={session?.locationKey ?? ''}>
-        <option value=''>Sin ubicación</option>
+      <SelectField label={t('form.location')} name='locationKey' defaultValue={session?.locationKey ?? ''}>
+        <option value=''>{t('form.noLocation')}</option>
         {locations.map((location) => <option key={location.key} value={location.key}>{location.name}</option>)}
       </SelectField>
 
-      <Field label='Track' name='trackPath' placeholder='Ruta o referencia del track (opcional)' defaultValue={session?.trackPath ?? ''} />
+      <Field label={t('form.track')} name='trackPath' placeholder={t('form.trackPlaceholder')} defaultValue={session?.trackPath ?? ''} />
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
-        <legend className='px-1 text-sm font-medium'>Estructura de la sesión</legend>
-        <p className='text-sm text-muted-foreground'>Todos los bloques son opcionales. Completá sólo los que correspondan al entrenamiento.</p>
-        <TextAreaField label='Ejercicios preliminares' name='preliminaryExercises' rows={2} placeholder='Movilidad, activación, técnica…' defaultValue={session?.structure?.preliminaryExercises} />
-        <TextAreaField label='Entrada en calor' name='warmup' rows={2} placeholder='Ej.: 15 min suaves + movilidad dinámica' defaultValue={session?.structure?.warmup} />
-        <TextAreaField label='Bloque principal' name='mainBlock' rows={3} placeholder='Ej.: 6 × 800 m con recuperación de 2 min' defaultValue={session?.structure?.mainBlock} />
-        <TextAreaField label='Vuelta a la calma' name='cooldown' rows={2} placeholder='Ej.: 10 min suaves + elongación' defaultValue={session?.structure?.cooldown} />
+        <legend className='px-1 text-sm font-medium'>{t('form.structure.title')}</legend>
+        <p className='text-sm text-muted-foreground'>{t('form.structure.help')}</p>
+        <TextAreaField label={t('form.structure.preliminaryExercises')} name='preliminaryExercises' rows={2} placeholder={t('form.structure.preliminaryExercisesPlaceholder')} defaultValue={session?.structure?.preliminaryExercises} />
+        <TextAreaField label={t('form.structure.warmup')} name='warmup' rows={2} placeholder={t('form.structure.warmupPlaceholder')} defaultValue={session?.structure?.warmup} />
+        <TextAreaField label={t('form.structure.mainBlock')} name='mainBlock' rows={3} placeholder={t('form.structure.mainBlockPlaceholder')} defaultValue={session?.structure?.mainBlock} />
+        <TextAreaField label={t('form.structure.cooldown')} name='cooldown' rows={2} placeholder={t('form.structure.cooldownPlaceholder')} defaultValue={session?.structure?.cooldown} />
       </fieldset>
 
       <TextAreaField label='Notas' name='notes' rows={4} placeholder='Indicaciones generales de la sesión…' value={sessionNotes} onChange={setSessionNotes} />
