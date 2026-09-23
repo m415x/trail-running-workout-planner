@@ -157,7 +157,7 @@ export async function persistGeneratedSessions(
           sessionId, groupId: values.groupId, microcycleId: values.microcycleId,
           distanceKm: values.distanceKm, durationMin: values.durationMin,
           elevationGain: values.elevationGain, intensityMethod: values.intensityMethod,
-          zone: values.zone, pamPercentage: values.pamPercentage, notes: values.notes,
+          zone: values.zone, referencePercentage: values.referencePercentage, notes: values.notes,
           generationOwnership: 'generated' as const,
           generationKey: operation.proposal.generationKey,
           isDeleted: false, updatedAt: now,
@@ -317,7 +317,7 @@ function prescriptionAuditValue(value: unknown) {
     elevationGain: record.elevationGain,
     intensityMethod: record.intensityMethod,
     zone: record.zone,
-    pamPercentage: record.pamPercentage,
+    referencePercentage: record.referencePercentage,
     notes: record.notes,
   }
 }
