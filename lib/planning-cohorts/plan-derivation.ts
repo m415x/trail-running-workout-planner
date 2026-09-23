@@ -475,7 +475,7 @@ export function derivePlanningCohortVariant(input: DerivePlanningCohortVariantIn
       emphasis: sourceTarget.emphasis,
       intenseSessionsTarget: sourceTarget.intenseSessionsTarget,
       predominantZone: sourceTarget.predominantZone,
-      pamPercentageTarget: sourceTarget.pamPercentageTarget,
+      referencePercentageTarget: sourceTarget.referencePercentageTarget,
       minimumRecoveryDaysBetweenIntenseSessions: sourceTarget.minimumRecoveryDaysBetweenIntenseSessions,
       fieldSources: { ...sourceTarget.fieldSources },
     } satisfies MicrocycleIntensityTarget
