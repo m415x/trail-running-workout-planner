@@ -18,7 +18,7 @@ export interface MicrocycleIntensityTargetModification {
 const EDITABLE_FIELDS: readonly MicrocycleIntensityTargetField[] = [
   'intenseSessionsTarget',
   'predominantZone',
-  'pamPercentageTarget',
+  'referencePercentageTarget',
   'minimumRecoveryDaysBetweenIntenseSessions',
 ]
 
