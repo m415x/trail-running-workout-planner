@@ -38,7 +38,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. Epic 4 story handoffs have been consolidated into `history/epic-4.md` and removed. The current operational handoff is [`handoffs/kan-407.md`](handoffs/kan-407.md), covering SQLite local upgrade-path stabilization and closure. Recent completed-work handoffs remain available for KAN-375 Athlete legacy ES/EN localization and KAN-409 baseline/gate reconciliation. When no story is active, there is intentionally no required current handoff; new work must reconstruct from the latest completed epic history, relevant architecture, current code/tests and Jira.
+`docs/handoffs/` is temporary operational state, not an archive. The most recent completed-story baseline is [`handoffs/kan-410.md`](handoffs/kan-410.md), covering the canonical workout-type catalog and Sessions ES/EN boundary. Earlier KAN-407/KAN-375/KAN-409 handoffs remain only as recent navigation context until consolidated/removed. When no story is active, the most recent completed handoff is a bootstrap aid rather than execution authority: new work must still verify current `dev`, read only relevant durable domain docs, and then consult current Jira.
 
 ## Agent harness
 
@@ -52,9 +52,9 @@ Epics 1–4 are complete. Epic 4 is consolidated in [`history/epic-4.md`](histor
 
 No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
-Known deferred work includes remaining legacy ES/EN migration, session/intensity terminology and semantics, date-derived microcycle selection, Trail/Hills duration semantics, and later persistence work for the legacy PAM/intensity contract. KAN-407 SQLite upgrade-path reliability and KAN-374 athlete date-of-birth validation have been implemented. These are inputs to later scoping, not incomplete Epic 4 acceptance.
+Post-KAN-410 baseline: the workout-type catalog is canonical, Sessions create/list/calendar/detail/edit and SessionForm use the modular ES/EN boundary, server-side Session errors cross the UI boundary as stable codes, and microcycle options expose structural data for localized composition. KAN-410 closed with 1183/1183 tests, lint/typecheck/i18n/build GREEN and an ES/EN walkthrough; its branch was integrated into `dev` at `5dfb36d035ce38e724a18b78c7b77371f1cc0bd8`. Jira-owned deferred work includes KAN-411 date-derived microcycle selection, KAN-412 legacy intensity-percentage reconciliation and KAN-413 `durationMin` semantics. Treat those keys as navigation pointers only until their current Jira state and complete issue content are read.
 
-Before defining the next epic, reconcile current `dev`, [`history/epic-4.md`](history/epic-4.md), relevant architecture and Jira. Do not rely on removed per-story handoffs or preliminary future-epic outlines.
+Before starting the next story, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion throughout the story without treating its historical experiment record as current product state.
 
 ## Other documentation
 
