@@ -257,11 +257,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       <TextAreaField label='Notas' name='notes' rows={4} placeholder='Indicaciones generales de la sesión…' value={sessionNotes} onChange={setSessionNotes} />
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
-        <legend className='px-1 text-sm font-medium'>Prescripciones por grupo</legend>
-        <p className='text-sm text-muted-foreground'>Seleccioná al menos un grupo y definí la carga que verá en su planificación.</p>
+        <legend className='px-1 text-sm font-medium'>{t('form.prescriptions.title')}</legend>
+        <p className='text-sm text-muted-foreground'>{t('form.prescriptions.help')}</p>
 
         {groups.length === 0 ? (
-          <p className='rounded-md bg-muted/40 p-3 text-sm text-muted-foreground'>No hay grupos activos disponibles.</p>
+          <p className='rounded-md bg-muted/40 p-3 text-sm text-muted-foreground'>{t('form.prescriptions.noGroups')}</p>
         ) : groups.map((group) => {
           const selected = selectedGroupIds.includes(group.id)
           const current = session?.sessionPrescriptions.find((item) => item.groupId === group.id)
@@ -292,11 +292,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
               </label>
 
               {!hasMicrocycles ? (
-                <p className='mt-2 text-sm text-muted-foreground'>Este grupo no tiene microciclos disponibles.</p>
+                <p className='mt-2 text-sm text-muted-foreground'>{t('form.prescriptions.noMicrocycles')}</p>
               ) : selected && (
                 <div className='mt-4 space-y-4'>
                   <SelectField label='Microciclo' name={`microcycleId:${group.id}`} defaultValue={current?.microcycleId ?? ''} required>
-                    <option value=''>Seleccionar microciclo</option>
+                    <option value=''>{t('form.prescriptions.selectMicrocycle')}</option>
                     {group.microcycles.map((microcycle) => <option key={microcycle.id} value={microcycle.id}>{microcycle.label}</option>)}
                   </SelectField>
 
@@ -307,27 +307,27 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   </div>
 
                   <SelectField
-                    label='Método de intensidad'
+                    label={t('form.prescriptions.intensityMethod')}
                     name={`intensityMethod:${group.id}`}
                     value={method}
                     onChange={(value) => setIntensityMethods((currentMethods) => ({ ...currentMethods, [group.id]: value }))}
                   >
-                    <option value=''>Sin intensidad</option>
-                    <option value='hr_zone'>Zona de frecuencia cardíaca</option>
-                    <option value='pam_percentage'>Porcentaje PAM</option>
+                    <option value=''>{t('form.prescriptions.noIntensity')}</option>
+                    <option value='hr_zone'>{t('form.prescriptions.hrZone')}</option>
+                    <option value='pam_percentage'>{t('form.prescriptions.pamPercentage')}</option>
                   </SelectField>
 
                   {method === 'hr_zone' && (
                     <SelectField label='Zona' name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(group.id, 'zone', value)} required>
-                      <option value=''>Seleccionar zona</option>
+                      <option value=''>{t('form.prescriptions.selectZone')}</option>
                       {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                     </SelectField>
                   )}
                   {method === 'pam_percentage' && (
-                    <Field label='Porcentaje PAM' name={`pamPercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.pamPercentage} onChange={(event) => updatePrescriptionValue(group.id, 'pamPercentage', event.target.value)} required />
+                    <Field label={t('form.prescriptions.pamPercentage')} name={`pamPercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.pamPercentage} onChange={(event) => updatePrescriptionValue(group.id, 'pamPercentage', event.target.value)} required />
                   )}
 
-                  <TextAreaField label='Indicaciones para el grupo' name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
+                  <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
                 </div>
               )}
             </div>
