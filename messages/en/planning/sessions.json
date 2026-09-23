@@ -94,6 +94,27 @@
         "back": "Back to sessions",
         "title": "New session",
         "description": "Schedule a shared workout for the team."
+      },
+      "detail": {
+        "back": "Back to calendar",
+        "edit": "Edit",
+        "generalTitle": "General information",
+        "generalDescription": "Shared session data.",
+        "location": "Location",
+        "template": "Template",
+        "track": "Track",
+        "notesTitle": "Notes",
+        "notesDescription": "General workout instructions.",
+        "noNotes": "No general notes.",
+        "structureTitle": "Session structure",
+        "structureDescription": "Blocks defined for the workout.",
+        "noStructure": "This session has no detailed structure.",
+        "unspecified": "Not specified"
+      },
+      "edit": {
+        "back": "Back to details",
+        "title": "Edit session",
+        "description": "Update the session and each group's specific prescriptions."
       }
     },
     "calendar": {
