@@ -55,6 +55,26 @@
         "saveChanges": "Guardar cambios",
         "create": "Crear sesión"
       }
+    },
+    "routes": {
+      "title": "Sesiones",
+      "description": "Entrenamientos programados para el equipo.",
+      "new": "Nueva sesión",
+      "emptyTitle": "Todavía no hay sesiones",
+      "emptyDescription": "Programá la primera sesión para comenzar a construir el calendario de entrenamiento.",
+      "month": "Mes",
+      "week": "Semana",
+      "groupEmptyTitle": "Sin sesiones para el grupo {group}",
+      "groupEmptyDescription": "Este grupo todavía no tiene sesiones asignadas en el calendario.",
+      "previousMonth": "Mes anterior",
+      "previousWeek": "Semana anterior",
+      "nextMonth": "Mes siguiente",
+      "nextWeek": "Semana siguiente",
+      "create": {
+        "back": "Volver a sesiones",
+        "title": "Nueva sesión",
+        "description": "Programá un entrenamiento compartido para el equipo."
+      }
     }
   }
 }
