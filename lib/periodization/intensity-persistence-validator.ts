@@ -1,4 +1,4 @@
-import { PAM_PERCENTAGE_STEPS } from '@/lib/periodization/intensity-strategy-matrix'
+import { REFERENCE_PERCENTAGE_STEPS } from '@/lib/periodization/intensity-strategy-matrix'
 import { validateIntensityStrategyLimits } from '@/lib/periodization/intensity-strategy-limits'
 import { validateIntensityFeasibility } from '@/lib/periodization/intensity-feasibility-validator'
 
@@ -39,18 +39,18 @@ export function assertPersistableIntensityPlanning(
     const feasibility = validateIntensityFeasibility({ target, sessionsPerWeek })
     if (!feasibility.isValid) throw new Error(feasibility.errors[0])
 
-    if (target.intenseSessionsTarget === 0 && target.pamPercentageTarget !== null) {
+    if (target.intenseSessionsTarget === 0 && target.referencePercentageTarget !== null) {
       throw new Error('Una semana sin sesiones intensas no puede conservar un objetivo PAM.')
     }
 
-    if (target.pamPercentageTarget !== null) {
-      if (!Number.isFinite(target.pamPercentageTarget) || target.pamPercentageTarget <= 0 || target.pamPercentageTarget > 200) {
+    if (target.referencePercentageTarget !== null) {
+      if (!Number.isFinite(target.referencePercentageTarget) || target.referencePercentageTarget <= 0 || target.referencePercentageTarget > 200) {
         throw new Error('El porcentaje PAM semanal debe estar entre 1 y 200.')
       }
 
       if (
-        target.fieldSources.pamPercentageTarget === 'generated'
-        && !(PAM_PERCENTAGE_STEPS as readonly number[]).includes(target.pamPercentageTarget)
+        target.fieldSources.referencePercentageTarget === 'generated'
+        && !(REFERENCE_PERCENTAGE_STEPS as readonly number[]).includes(target.referencePercentageTarget)
       ) {
         throw new Error('El porcentaje PAM generado no coincide con un escalón permitido.')
       }
