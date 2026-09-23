@@ -38,7 +38,7 @@ function formatUnit(unit: PlanRealMetricUnit, locale: string) {
         bpm: 'bpm',
         rpe: 'RPE',
         hr_zone: 'HR zone',
-        pam_percent: '% PAM',
+        reference_percent: '% of reference',
       }
     : {
         km: 'km',
@@ -47,7 +47,7 @@ function formatUnit(unit: PlanRealMetricUnit, locale: string) {
         bpm: 'ppm',
         rpe: 'RPE',
         hr_zone: 'Zona FC',
-        pam_percent: '% PAM',
+        reference_percent: '% de referencia',
       }
 
   return labels[unit]
