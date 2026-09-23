@@ -647,6 +647,22 @@ test('realized-training migration resolves its SQL file from the repository, not
   assert.doesNotMatch(migration, /readFileSync\(resolve\(['"]drizzle\/sqlite\//)
 })
 
+test('SQLite versioned upgrade reconciles recorded-by foreign key deletion semantics', () => {
+  const journal = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+    entries: Array<{ tag: string }>
+  }
+  const migration = journal.entries.find(entry => entry.tag.startsWith('0007_'))
+  assert.ok(migration, 'missing versioned SQLite recorded-by foreign key reconciliation')
+  const sql = fs.readFileSync(path.join(process.cwd(), 'drizzle/sqlite', `${migration.tag}.sql`), 'utf8')
+  assert.match(sql, /FOREIGN KEY \\(`recorded_by_user_id`\\) REFERENCES `users`\\(`id`\\) ON UPDATE no action ON DELETE set null/)
+  assert.match(sql, /INSERT INTO `__new_field_performance_tests`/)
+  assert.match(sql, /DROP TABLE `field_performance_tests`/)
+  assert.match(sql, /CREATE INDEX `field_performance_tests_athlete_date_idx`/)
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts/verify-sqlite.ts'), 'utf8')
+  assert.match(verifier, /foreign_key_list\\(field_performance_tests\\)/)
+  assert.match(verifier, /SET NULL/)
+})
+
 test('versioned SQLite intensity migration covers every legacy percentage column', () => {
   const root = process.cwd()
   const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
