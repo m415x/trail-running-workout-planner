@@ -25,7 +25,7 @@ const context: SessionGenerationContext = {
     maximumWeeklyVolumeKm: 60,
   },
   intensity: {
-    defaultMethod: 'pam_percentage',
+    defaultMethod: 'reference_percentage',
     emphasis: 'vo2max',
     intenseSessionsTarget: 1,
     predominantZone: 'Z2',
@@ -60,10 +60,10 @@ describe('construcción de propuestas semanales', () => {
       prescription.groupId === 'group-s2' && prescription.microcycleId === 'micro-8'
     )))
     const intense = result.proposals.find(({ prescription }) => (
-      prescription.intensityMethod === 'pam_percentage'
+      prescription.intensityMethod === 'reference_percentage'
     ))
     assert.equal(intense?.slotKey, 'weekly-thursday')
-    assert.equal(intense?.prescription.pamPercentage, 95)
+    assert.equal(intense?.prescription.referencePercentage, 95)
     assert.deepEqual(result.warnings, [])
   })
 
