@@ -291,9 +291,9 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
  */
 export function normalizeSqliteSchemaSql(sql: string | null): string | null {
   if (sql === null) return null
-  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),]|[^\s(),]+/g) ?? []
+  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\\[[^\\]]+\\]|[(),]|[^\\s(),]+/g) ?? []
   const quoteIdentifier = (value: string) => '`' + value.replaceAll('`', '``') + '`'
-  return tokens.map(token => {
+  const canonical = tokens.map(token => {
     if (token.startsWith('"') && token.endsWith('"')) {
       return quoteIdentifier(token.slice(1, -1).replaceAll('""', '"'))
     }
@@ -301,7 +301,44 @@ export function normalizeSqliteSchemaSql(sql: string | null): string | null {
       return quoteIdentifier(token.slice(1, -1))
     }
     return token
-  }).join(' ')
+  })
+
+  // ALTER TABLE ADD COLUMN appends columns physically. Compare complete column
+  // and table-constraint declarations, but not their positional order.
+  if (canonical[0]?.toUpperCase() === 'CREATE' && canonical[1]?.toUpperCase() === 'TABLE') {
+    const opening = canonical.indexOf('(')
+    if (opening !== -1) {
+      const declarations: string[][] = []
+      let current: string[] = []
+      let depth = 0
+      let closing = -1
+      for (let i = opening + 1; i < canonical.length; i++) {
+        const token = canonical[i]
+        if (token === ')' && depth === 0) {
+          if (current.length > 0) declarations.push(current)
+          closing = i
+          break
+        }
+        if (token === ',' && depth === 0) {
+          declarations.push(current)
+          current = []
+          continue
+        }
+        if (token === '(') depth++
+        if (token === ')') depth--
+        current.push(token)
+      }
+      if (closing !== -1) {
+        return [
+          ...canonical.slice(0, opening + 1),
+          ...declarations.map(declaration => declaration.join(' ')).sort(),
+          ...canonical.slice(closing),
+        ].join(' ')
+      }
+    }
+  }
+
+  return canonical.join(' ')
 }
 
 function readNormalizedSchema(sqlitePath: string): string[] {
