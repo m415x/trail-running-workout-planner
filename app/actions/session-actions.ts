@@ -8,7 +8,7 @@ import { z } from 'zod'
 
 import { db } from '@/db'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
-import { validateSessionMicrocycleDate } from '@/lib/sessions/session-microcycle-boundary'
+import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
 import { WORKOUT_TYPES, type TrainingIntensity, type WorkoutTemplate } from '@/types'
 import {
@@ -406,6 +406,8 @@ export async function updateSession(_previousState: SessionFormState, formData: 
 }
 
 function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[], sessionDate: string) {
+  const candidatesByGroup: Record<string, Array<{ id: string; startDate: string; endDate: string }>> = {}
+  const groupCodes = new Map<string, string>()
   for (const prescription of prescriptions) {
     const group = db.query.athleteGroups.findFirst({
       where: and(
@@ -414,6 +416,7 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
       ),
     }).sync()
     if (!group) return { errorCode: 'groupNotFound' as const }
+    groupCodes.set(group.id, `${group.categoryCode}${group.levelCode}`)
 
     const microcycle = db.query.microcycles.findFirst({
       where: and(eq(microcycles.id, prescription.microcycleId), eq(microcycles.isDeleted, false)),
@@ -422,10 +425,10 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
     if (!microcycle || microcycle.mesocycle.macrocycle.groupTrainingPlan.groupId !== group.id
       || microcycle.mesocycle.macrocycle.groupTrainingPlan.isDeleted
       || microcycle.mesocycle.macrocycle.isDeleted || microcycle.mesocycle.isDeleted) {
-      return { errorCode: 'microcycleGroupMismatch' as const, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
+      return { errorCode: 'microcycleGroupMismatch' as const, errorParams: { group: groupCodes.get(group.id) } }
     }
 
-    const groupMicrocycles = db.select({
+    candidatesByGroup[group.id] = db.select({
       id: microcycles.id,
       startDate: microcycles.startDate,
       endDate: microcycles.endDate,
@@ -440,12 +443,11 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
         eq(mesocycles.isDeleted, false),
         eq(microcycles.isDeleted, false),
       )).all()
-    const dateError = validateSessionMicrocycleDate(
-      group.id, sessionDate, prescription.microcycleId, groupMicrocycles,
-    )
-    if (dateError) {
-      return { ...dateError, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
-    }
+  }
+
+  const dateError = validateSessionMicrocyclePrescriptions(sessionDate, prescriptions, candidatesByGroup)
+  if (dateError) {
+    return { ...dateError, errorParams: { group: groupCodes.get(dateError.errorParams.group) ?? dateError.errorParams.group } }
   }
   return null
 }
