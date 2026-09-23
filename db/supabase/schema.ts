@@ -473,7 +473,7 @@ export const workouts = pgTable('workouts', {
   gain: integer('gain'), // m D+
   intensityMethod: text('intensity_method').$type<IntensityMethod>(),
   zone: text('zone').$type<IntensityZone>(),
-  pamPercentage: doublePrecision('pam_percentage'),
+  referencePercentage: doublePrecision('reference_percentage'),
   pace: integer('pace'), // seg/km
   notes: text('notes'), // Indicaciones generales de la sesión
   prescriptionNotes: text('prescription_notes'),
@@ -543,7 +543,7 @@ export const groupSessionPrescriptions = pgTable(
 
     intensityMethod: text('intensity_method').$type<IntensityMethod>(),
     zone: text('zone').$type<IntensityZone>(),
-    pamPercentage: doublePrecision('pam_percentage'),
+    referencePercentage: doublePrecision('reference_percentage'),
 
     notes: text('notes'),
     generationOwnership: text('generation_ownership')
