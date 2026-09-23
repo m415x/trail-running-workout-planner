@@ -7,7 +7,7 @@ describe('prescripciones grupales de una sesión', () => {
   it('exige al menos un grupo', () => {
     assert.deepEqual(parseSessionPrescriptions(new FormData()), {
       success: false,
-      error: 'Asigná la sesión al menos a un grupo',
+      errorCode: 'groupRequired',
     })
   })
 
@@ -39,12 +39,12 @@ describe('prescripciones grupales de una sesión', () => {
   it('rechaza FC sin zona y PAM fuera de rango', () => {
     const heartRateForm = prescriptionForm('group_s2', 'micro_1')
     heartRateForm.set('intensityMethod:group_s2', 'hr_zone')
-    assert.match(getError(heartRateForm), /Seleccioná una zona/)
+    assert.equal(getErrorCode(heartRateForm), 'hrZoneRequired')
 
     const pamForm = prescriptionForm('group_s2', 'micro_1')
     pamForm.set('intensityMethod:group_s2', 'pam_percentage')
     pamForm.set('pamPercentage:group_s2', '250')
-    assert.match(getError(pamForm), /entre 0 y 200/)
+    assert.equal(getErrorCode(pamForm), 'pamPercentageInvalid')
   })
 
   it('admite varios grupos y elimina selecciones duplicadas', () => {
@@ -66,8 +66,8 @@ function prescriptionForm(groupId: string, microcycleId: string) {
   return form
 }
 
-function getError(form: FormData) {
+function getErrorCode(form: FormData) {
   const result = parseSessionPrescriptions(form)
   assert.equal(result.success, false)
-  return result.success ? '' : result.error
+  return result.success ? '' : result.errorCode
 }
