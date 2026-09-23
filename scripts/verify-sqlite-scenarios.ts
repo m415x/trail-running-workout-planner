@@ -322,7 +322,18 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
       freshSchema.length !== upgradedSchema.length ||
       freshSchema.some((entry, index) => entry !== upgradedSchema[index])
     ) {
-      throw new Error('Schema drift detected between fresh HEAD and upgraded legacy SQLite databases')
+      const freshEntries = new Map(freshSchema.map(entry => {
+        const parsed = JSON.parse(entry) as { type: string; name: string; sql: string | null }
+        return [`${parsed.type}:${parsed.name}`, parsed.sql] as const
+      }))
+      const upgradedEntries = new Map(upgradedSchema.map(entry => {
+        const parsed = JSON.parse(entry) as { type: string; name: string; sql: string | null }
+        return [`${parsed.type}:${parsed.name}`, parsed.sql] as const
+      }))
+      const differences = [...new Set([...freshEntries.keys(), ...upgradedEntries.keys()])]
+        .filter(key => freshEntries.get(key) !== upgradedEntries.get(key))
+        .map(key => `${key}\\n  fresh: ${freshEntries.get(key) ?? '<missing>'}\\n  upgraded: ${upgradedEntries.get(key) ?? '<missing>'}`)
+      throw new Error(`Schema drift detected between fresh HEAD and upgraded legacy SQLite databases:\\n${differences.join('\\n')}`)
     }
   } finally {
     removeScenarioWorkspace(fresh)
