@@ -12,53 +12,92 @@ export function tddTypecheckCommand(): { command: string; args: string[] } {
   }
 }
 
+type RunResult = { ok: boolean; output: string }
+
+function run(command: string, args: string[], verbose: boolean): RunResult {
+  const result = spawnSync(command, args, {
+    shell: false,
+    encoding: 'utf8',
+    stdio: verbose ? 'inherit' : ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 16 * 1024 * 1024,
+  })
+
+  const output = verbose ? '' : [result.stdout, result.stderr].filter(Boolean).join('\n')
+  if (verbose && result.error) process.stderr.write(`${command}: ${result.error.message}\n`)
+  if (verbose && result.signal) process.stderr.write(`${command}: terminated by ${result.signal}\n`)
+  return {
+    ok: result.status === 0 && !result.error && !result.signal,
+    output: result.error ? `${output}\n${command}: ${result.error.message}` : output,
+  }
+}
+
+/** Extract the assertion and location without dumping the entire TAP report. */
+export function compactTestFailure(output: string): string {
+  const lines = output.split(/\r?\n/)
+  const failures: string[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (/^\s*not ok \d+/.test(line)) {
+      failures.push(line.trim())
+    } else if (/^\s*(error:|code:|expected:|actual:|operator:|at:)/.test(line)) {
+      failures.push(line.trim())
+    }
+  }
+  if (failures.length > 0) return failures.join('\n')
+  return output.trim().split(/\r?\n/).filter(Boolean).slice(-12).join('\n') || 'Test process failed without diagnostics'
+}
+
+/** Keep one location and message per TypeScript error, without source excerpts. */
+export function compactTypecheckFailure(output: string): string {
+  const errors = output.split(/\r?\n/).filter((line) =>
+    /^(?:.+\(\d+,\d+\): error TS\d+:|.+:\d+:\d+ - error TS\d+:|error TS\d+:)/.test(line.trim()),
+  )
+  if (errors.length > 0) return errors.map((line) => line.trim()).join('\n')
+  return output.trim().split(/\r?\n/).filter(Boolean).slice(-12).join('\n') || 'Typecheck failed without diagnostics'
+}
+
 function main(): void {
   const args = process.argv.slice(2)
   const redOnly = args[0] === '--red'
   const remaining = redOnly ? args.slice(1) : args
-  const verboseIndex = remaining.indexOf('--verbose')
-  const verbose = verboseIndex >= 0
-  const tests = remaining.filter((_, index) => index !== verboseIndex)
-  
+  const verbose = remaining.includes('--verbose')
+  const tests = remaining.filter((arg) => arg !== '--verbose')
+
   if (tests.length === 0) {
     process.stderr.write('Usage: pn tdd[:red] [--verbose] <test-file> [...test-files]\n')
     process.exit(2)
   }
-  
-  function run(command: string, commandArgs: string[]): boolean {
-    const result = spawnSync(command, commandArgs, {
-      shell: false,
-      stdio: verbose ? 'inherit' : 'ignore',
-    })
-  
-    if (verbose && result.error) process.stderr.write(`${command}: ${result.error.message}\n`)
-    if (verbose && result.signal) process.stderr.write(`${command}: terminated by ${result.signal}\n`)
-    if (verbose && result.status !== 0 && !result.error) process.stderr.write(`${command}: exit ${result.status}\n`)
-  
-    return result.status === 0
-  }
-  
-  if (!run('git', ['pull', '--ff-only', '-q'])) {
+
+  const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
+  if (!sync.ok) {
+    if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
     console.log('RED')
     process.exit(1)
   }
-  
+
   const tsxCli = require.resolve('tsx/cli')
-  const testsGreen = run(process.execPath, [tsxCli, '--test', ...tests])
-  
+  const focused = run(process.execPath, [tsxCli, '--test', ...tests], verbose)
+
   if (redOnly) {
-    console.log(testsGreen ? 'GREEN' : 'RED')
-    process.exit(testsGreen ? 0 : 1)
+    console.log(focused.ok ? 'GREEN' : 'RED')
+    process.exit(focused.ok ? 0 : 1)
   }
-  
-  const typecheck = tddTypecheckCommand()
-  if (!testsGreen || !run(typecheck.command, typecheck.args)) {
+
+  if (!focused.ok) {
+    if (!verbose) process.stderr.write(`${compactTestFailure(focused.output)}\n`)
     console.log('RED')
     process.exit(1)
   }
-  
+
+  const typecheck = tddTypecheckCommand()
+  const checked = run(typecheck.command, typecheck.args, verbose)
+  if (!checked.ok) {
+    if (!verbose) process.stderr.write(`${compactTypecheckFailure(checked.output)}\n`)
+    console.log('RED')
+    process.exit(1)
+  }
+
   console.log('GREEN')
-  
 }
 
 const entryPoint = process.argv[1]
