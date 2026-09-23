@@ -496,7 +496,7 @@ test('SQLite refuses to reconcile incompatible intensity HEAD metadata without m
     assert.notEqual(result.status, 0, 'incompatible intensity schema must be rejected')
     assert.match(
       result.stderr + result.stdout,
-      /SQLite state is inconsistent:[^\\n]*reference_percentage_target/,
+      /SQLite state is inconsistent:.*reference_percentage_target/,
       'the upgrade must reject the incompatible physical schema before attempting a migration',
     )
     assert.deepEqual(fs.readFileSync(databasePath), before, 'rejected upgrade must not mutate the database')
