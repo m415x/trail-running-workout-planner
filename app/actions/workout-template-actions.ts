@@ -70,10 +70,10 @@ function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
       method: 'hr_zone',
       zone: optionalText(formData, 'zone') as IntensityZone,
     }
-  } else if (intensityMethod === 'pam_percentage') {
+  } else if (intensityMethod === 'reference_percentage') {
     intensity = {
-      method: 'pam_percentage',
-      pamPercentage: optionalNumber(formData, 'pamPercentage') as number,
+      method: 'reference_percentage',
+      referencePercentage: optionalNumber(formData, 'referencePercentage') as number,
     }
   }
 
@@ -109,8 +109,8 @@ function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
 
 function resolveIntensity(row: typeof workouts.$inferSelect): TrainingIntensity | null {
   if (row.intensityMethod === 'hr_zone' && row.zone) return { method: 'hr_zone', zone: row.zone }
-  if (row.intensityMethod === 'pam_percentage' && row.pamPercentage !== null) {
-    return { method: 'pam_percentage', pamPercentage: row.pamPercentage }
+  if (row.intensityMethod === 'reference_percentage' && row.referencePercentage !== null) {
+    return { method: 'reference_percentage', referencePercentage: row.referencePercentage }
   }
   return null
 }
@@ -160,7 +160,7 @@ function persistenceValues(draft: WorkoutTemplateDraft): WorkoutTemplatePersiste
     gain: draft.prescriptionDefaults.elevationGain,
     intensityMethod: intensity?.method ?? null,
     zone: intensity?.method === 'hr_zone' ? intensity.zone : null,
-    pamPercentage: intensity?.method === 'pam_percentage' ? intensity.pamPercentage : null,
+    referencePercentage: intensity?.method === 'reference_percentage' ? intensity.referencePercentage : null,
     prescriptionNotes: draft.prescriptionDefaults.notes,
   }
 }
