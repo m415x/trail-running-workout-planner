@@ -146,7 +146,7 @@ if (state === 'unrecognized') {
 if (state === 'fresh') {
   runDrizzleKit([
     'push',
-    '--config=drizzle.sqlite.config.ts',
+    `--config=${resolve(import.meta.dirname, '../drizzle.sqlite.config.ts')}`,
   ])
 
   const sqlite = new Database('sqlite.db', { fileMustExist: true })
@@ -187,6 +187,6 @@ if (state === 'legacy') {
 
 runDrizzleKit([
   'migrate',
-  '--config=drizzle.sqlite.config.ts',
+  `--config=${resolve(import.meta.dirname, '../drizzle.sqlite.config.ts')}`,
 ])
 runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
