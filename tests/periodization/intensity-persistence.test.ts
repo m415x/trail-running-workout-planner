@@ -57,7 +57,7 @@ describe('persistencia de intensidad', () => {
     assert.equal(database.select().from(microcycleIntensityTargets).all().length, 1)
   })
 
-  it('preserva un PAM manual al regenerar', () => {
+  it('preserva un porcentaje de referencia manual al regenerar', () => {
     const strategy = suggestIntensityStrategy('S2', 'performance')
     const target = calculateMicrocycleIntensityTarget({
       period: 'specific_preparatory',
