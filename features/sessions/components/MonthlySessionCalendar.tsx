@@ -1,8 +1,8 @@
+import { useLocale, useTranslations } from 'next-intl'
+
 import { SessionCalendarCard, type CalendarSession } from '@/features/sessions/components/SessionCalendarCard'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@ui/card'
-
-const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] as const
 
 interface MonthlySessionCalendarProps {
   year: number
@@ -19,7 +19,10 @@ interface CalendarDay {
 }
 
 export function MonthlySessionCalendar({ year, month, sessions, today, sessionsPath }: MonthlySessionCalendarProps) {
+  const locale = useLocale()
+  const t = useTranslations('Sessions')
   const days = buildCalendarDays(year, month)
+  const weekDays = buildWeekDays(locale)
   const sessionsByDate = new Map<string, CalendarSession[]>()
 
   for (const session of sessions) {
@@ -65,7 +68,7 @@ export function MonthlySessionCalendar({ year, month, sessions, today, sessionsP
                       {day.dayNumber}
                     </span>
                     {daySessions.length > 1 && (
-                      <span className='text-xs text-muted-foreground'>{daySessions.length} sesiones</span>
+                      <span className='text-xs text-muted-foreground'>{t('calendar.sessionCount', { count: daySessions.length })}</span>
                     )}
                   </div>
 
@@ -108,4 +111,9 @@ function formatISODate(date: Date) {
   const month = String(date.getUTCMonth() + 1).padStart(2, '0')
   const day = String(date.getUTCDate()).padStart(2, '0')
   return `${year}-${month}-${day}`
+}
+
+function buildWeekDays(locale: string) {
+  const formatter = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' })
+  return Array.from({ length: 7 }, (_, index) => formatter.format(new Date(Date.UTC(2024, 0, 1 + index))).replace('.', ''))
 }
