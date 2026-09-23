@@ -12,5 +12,5 @@ test('microcycle planning exposes the canonical reference percentage without a l
   })
 
   assert.equal(target.referencePercentageTarget, 100)
-  assert.equal(Object.hasOwn(target, 'referencePercentageTarget'), false)
+  assert.equal(Object.hasOwn(target, 'pamPercentageTarget'), false)
 })
