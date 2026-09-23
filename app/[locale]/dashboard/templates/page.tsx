@@ -129,7 +129,7 @@ export default async function WorkoutTemplatesPage({ params, searchParams }: Wor
                     {defaults.durationMin != null && <span>{defaults.durationMin} min</span>}
                     {defaults.elevationGain != null && <span>{defaults.elevationGain} m D+</span>}
                     {defaults.intensity?.method === 'hr_zone' && <span>{defaults.intensity.zone}</span>}
-                    {defaults.intensity?.method === 'pam_percentage' && <span>{defaults.intensity.pamPercentage}% PAM</span>}
+                    {defaults.intensity?.method === 'reference_percentage' && <span>{defaults.intensity.referencePercentage}% {t('referencePercentageLabel')}</span>}
                     {!hasLoad && <span className='text-muted-foreground'>{t('withoutLoadDefaults')}</span>}
                   </div>
                   {template.tags.length > 0 && <div className='flex flex-wrap gap-1.5'>{template.tags.map((value) => <Badge key={value} variant='secondary'>{value}</Badge>)}</div>}
