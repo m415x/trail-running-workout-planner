@@ -16,7 +16,7 @@ export function migrateRealizedTrainingTimingSqlite(sqlite: Database.Database): 
   }
   if (sqlite.inTransaction) throw new Error('Migration must start outside a transaction')
   const foreignKeys = sqlite.pragma('foreign_keys', { simple: true }) as number
-  const migration = readFileSync(resolve('drizzle/sqlite/0001_realized_training_timing.sql'), 'utf8')
+  const migration = readFileSync(resolve(import.meta.dirname, '../../drizzle/sqlite/0001_realized_training_timing.sql'), 'utf8')
     .replace(/PRAGMA foreign_keys=(OFF|ON);/g, '')
   sqlite.pragma('foreign_keys = OFF')
   try {
