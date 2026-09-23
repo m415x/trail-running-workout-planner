@@ -79,7 +79,7 @@ export function IntensityDistribution({
           </div>
           <div className='flex flex-wrap gap-2'>
             <Badge variant='outline'>
-              Método: {defaultMethod === 'pam_percentage' ? '% PAM' : 'Zonas FC'}
+              Método: {defaultMethod === 'reference_percentage' ? '% de referencia' : 'Zonas FC'}
             </Badge>
             <Badge variant='outline'>Máximo: {maximumIntenseSessionsPerWeek} intensas</Badge>
             <Badge variant='outline'>Recuperación: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
@@ -118,8 +118,8 @@ export function IntensityDistribution({
                         : `${point.intenseSessionsTarget} ${point.intenseSessionsTarget === 1 ? 'sesión intensa' : 'sesiones intensas'}`}
                     </span>
                   </p>
-                  {defaultMethod === 'pam_percentage' && point.referencePercentageTarget !== null && (
-                    <p className='font-medium'>{point.referencePercentageTarget}% PAM</p>
+                  {defaultMethod === 'reference_percentage' && point.referencePercentageTarget !== null && (
+                    <p className='font-medium'>{point.referencePercentageTarget}% de referencia</p>
                   )}
                   <p className='flex items-center gap-2 text-muted-foreground'>
                     <TimerReset className='size-4' />
