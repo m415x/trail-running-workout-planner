@@ -19,7 +19,7 @@ export interface ReconciledIntensityTarget {
 const EDITABLE_FIELDS: readonly MicrocycleIntensityTargetField[] = [
   'intenseSessionsTarget',
   'predominantZone',
-  'pamPercentageTarget',
+  'referencePercentageTarget',
   'minimumRecoveryDaysBetweenIntenseSessions',
 ]
 
@@ -55,9 +55,9 @@ export function reconcileMicrocycleIntensityTarget({
       predominantZone: shouldPreserve('predominantZone')
         ? existingTarget.predominantZone
         : generatedTarget.predominantZone,
-      pamPercentageTarget: shouldPreserve('pamPercentageTarget')
-        ? existingTarget.pamPercentageTarget
-        : generatedTarget.pamPercentageTarget,
+      referencePercentageTarget: shouldPreserve('referencePercentageTarget')
+        ? existingTarget.referencePercentageTarget
+        : generatedTarget.referencePercentageTarget,
       minimumRecoveryDaysBetweenIntenseSessions: shouldPreserve(
         'minimumRecoveryDaysBetweenIntenseSessions',
       )
