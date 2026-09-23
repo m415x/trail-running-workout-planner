@@ -8,7 +8,7 @@ const configDirectory = dirname(fileURLToPath(import.meta.url))
 const scenarioMode = process.env.SQLITE_SCENARIO_MODE === '1'
 const scenarioDatabasePath = process.env.SQLITE_DATABASE_PATH
 
-if (scenarioMode && (!scenarioDatabasePath || !resolve(scenarioDatabasePath).startsWith(configDirectory) && !scenarioDatabasePath)) {
+if (scenarioMode && !scenarioDatabasePath) {
   throw new Error('SQLITE_DATABASE_PATH is required for isolated SQLite scenario verification')
 }
 
