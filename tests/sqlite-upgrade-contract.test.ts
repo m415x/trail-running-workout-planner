@@ -2,6 +2,10 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
+import { spawnSync } from 'node:child_process'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import Database from 'better-sqlite3'
 
 const packageJson = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf8')) as {
   scripts?: Record<string, string>
@@ -453,4 +457,49 @@ test('SQLite HEAD verifier rejects legacy intensity columns before metadata reco
   assert.match(verifier, /reference_percentage_target/)
   assert.match(verifier, /pam_percentage_target/)
   assert.match(verifier, /throw new Error/)
+})
+
+test('SQLite refuses to reconcile incompatible intensity HEAD metadata without mutating the database', () => {
+  const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-intensity-guard-'))
+  const databasePath = path.join(workspace, 'sqlite.db')
+  try {
+    const sqlite = new Database(databasePath)
+    try {
+      sqlite.exec(`
+        CREATE TABLE field_performance_tests (id TEXT PRIMARY KEY, recorded_by_user_id TEXT);
+        CREATE TABLE microcycle_intensity_targets (
+          id TEXT PRIMARY KEY,
+          pam_percentage_target REAL
+        );
+        INSERT INTO microcycle_intensity_targets (id, pam_percentage_target)
+        VALUES ('untouched-target', 90);
+        CREATE TABLE __drizzle_migrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          hash TEXT NOT NULL,
+          created_at NUMERIC
+        );
+      `)
+    } finally {
+      sqlite.close()
+    }
+
+    const before = fs.readFileSync(databasePath)
+    const projectRoot = process.cwd()
+    const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+    const upgradeScript = path.resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const result = spawnSync(process.execPath, [tsxCli, upgradeScript], {
+      cwd: workspace,
+      encoding: 'utf8',
+    })
+
+    assert.notEqual(result.status, 0, 'incompatible intensity schema must be rejected')
+    assert.match(
+      result.stderr + result.stdout,
+      /SQLite state is inconsistent:[^\\n]*reference_percentage_target/,
+      'the upgrade must reject the incompatible physical schema before attempting a migration',
+    )
+    assert.deepEqual(fs.readFileSync(databasePath), before, 'rejected upgrade must not mutate the database')
+  } finally {
+    rmSync(workspace, { recursive: true, force: true })
+  }
 })
