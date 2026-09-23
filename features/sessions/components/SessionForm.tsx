@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
 import { reconcileSessionFormMicrocycles } from '@/lib/sessions/session-microcycle-form-reconciliation'
+import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
@@ -334,7 +335,10 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                     </SelectField>
                   )}
                   {method === 'reference_percentage' && (
-                    <Field label={t('form.prescriptions.referencePercentage')} name={`referencePercentage:${group.id}`} type='number' min='0.1' max='200' step='0.1' value={values.referencePercentage} onChange={(event) => updatePrescriptionValue(group.id, 'referencePercentage', event.target.value)} required />
+                    <SelectField label={t('form.prescriptions.referencePercentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(group.id, 'referencePercentage', value)} required>
+                      <option value=''>{t('form.prescriptions.referencePercentage')}</option>
+                      {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
+                    </SelectField>
                   )}
 
                   <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
