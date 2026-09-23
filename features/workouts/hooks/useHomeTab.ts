@@ -57,9 +57,9 @@ export interface SessionWithWorkout {
     distanceKm: number | null
     durationMin: number | null
     elevationGain: number | null
-    intensityMethod: 'hr_zone' | 'pam_percentage' | null
+    intensityMethod: 'hr_zone' | 'reference_percentage' | null
     zone: IntensityZone | null
-    pamPercentage: number | null
+    referencePercentage: number | null
     notes: string | null
   }>
   locationKey?: string | null
@@ -121,8 +121,8 @@ function resolveGroupWorkout(session: SessionWithWorkout) {
     type: session.type,
     distance,
     zone: prescription.zone ?? session.workout?.zone ?? ('Z1' as IntensityZone),
-    intensity: prescription.intensityMethod === 'pam_percentage' && prescription.pamPercentage != null
-      ? { method: 'pam_percentage' as const, pamPercentage: prescription.pamPercentage }
+    intensity: prescription.intensityMethod === 'reference_percentage' && prescription.referencePercentage != null
+      ? { method: 'reference_percentage' as const, referencePercentage: prescription.referencePercentage }
       : prescription.zone
         ? { method: 'hr_zone' as const, zone: prescription.zone }
         : undefined,
