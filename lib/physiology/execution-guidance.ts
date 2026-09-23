@@ -1,5 +1,11 @@
 import type { RunningReference } from '@/lib/physiology/running-reference'
-import type { TrainingIntensity } from '@/types/training/intensity.types'
+import type { ReferencePercentage, TrainingIntensity } from '@/types/training/intensity.types'
+
+/** Canonical execution-only contract while persistence compatibility is audited. */
+export type ExecutionIntensity = TrainingIntensity | {
+  method: 'reference_percentage'
+  referencePercentage: ReferencePercentage
+}
 
 export const INTENSITY_GUIDANCE_POLICY = {
   id: 'execution-guidance',
@@ -42,7 +48,7 @@ interface ZoneGuidance {
 export type ExecutionGuidance =
   | {
       readonly policyVersion: typeof INTENSITY_GUIDANCE_POLICY.version
-      readonly prescription: Extract<TrainingIntensity, { method: 'pam_percentage' | 'reference_percentage' }>
+      readonly prescription: Exclude<ExecutionIntensity, { method: 'hr_zone' }>
       readonly quality: QualityGuidance
       readonly zone: null
     }
@@ -61,7 +67,7 @@ function formatPace(paceSecPerKm: number): string {
 }
 
 interface ResolveExecutionGuidanceInput {
-  readonly intensity: TrainingIntensity
+  readonly intensity: ExecutionIntensity
   readonly runningReference: RunningReference
 }
 
