@@ -1,5 +1,14 @@
+import { resolve } from 'node:path'
 import { defineConfig } from 'drizzle-kit'
 import config from './drizzle.config'
 
-// Keep the SQLite journal separate from the existing PostgreSQL chain.
-export default defineConfig({ ...config, out: './drizzle/sqlite' })
+// Schema and migration paths belong to the repository; sqlite.db belongs to
+// the caller's working directory so isolated verification never targets dev data.
+export default defineConfig({
+  ...config,
+  schema: (Array.isArray(config.schema) ? config.schema : [config.schema]).map(schemaPath =>
+    resolve(import.meta.dirname, schemaPath),
+  ),
+  out: resolve(import.meta.dirname, 'drizzle/sqlite'),
+  dbCredentials: { url: 'sqlite.db' },
+})
