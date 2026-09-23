@@ -27,9 +27,9 @@ const CURRENT_TEAM_ID = 'team_1'
 const optionalText = z.string().trim().transform((value) => value || null)
 
 const createSessionSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
-  title: z.string().trim().min(2, 'El título debe tener al menos 2 caracteres'),
-  type: z.enum(WORKOUT_TYPES, { message: 'Seleccioná un tipo de entrenamiento' }),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  title: z.string().trim().min(2),
+  type: z.enum(WORKOUT_TYPES),
   workoutId: optionalText,
   locationKey: optionalText,
   trackPath: optionalText,
@@ -41,7 +41,33 @@ const createSessionSchema = z.object({
   locale: z.string().trim().default('es'),
 })
 
-export interface SessionFormState { error?: string }
+export type SessionErrorCode =
+  | 'invalidDate'
+  | 'titleTooShort'
+  | 'workoutTypeRequired'
+  | 'invalidForm'
+  | 'workoutNotFound'
+  | 'locationNotFound'
+  | 'createFailed'
+  | 'sessionIdMissing'
+  | 'sessionNotFound'
+  | 'workoutUnavailable'
+  | 'updateFailed'
+  | 'groupNotFound'
+  | 'microcycleGroupMismatch'
+  | import('@/lib/sessions/session-prescription-parser').SessionPrescriptionErrorCode
+
+export interface SessionFormState {
+  errorCode?: SessionErrorCode
+  errorParams?: { group?: string }
+}
+
+function schemaErrorCode(path: PropertyKey[]): SessionErrorCode {
+  if (path.includes('date')) return 'invalidDate'
+  if (path.includes('title')) return 'titleTooShort'
+  if (path.includes('type')) return 'workoutTypeRequired'
+  return 'invalidForm'
+}
 
 function sessionTemplateOption(row: typeof workouts.$inferSelect) {
   let intensity: TrainingIntensity | null = null
@@ -179,10 +205,10 @@ export async function getSessionFormOptions(includeWorkoutId?: string | null) {
 
 export async function createSession(_previousState: SessionFormState, formData: FormData): Promise<SessionFormState> {
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+  if (!parsed.success) return { errorCode: schemaErrorCode(parsed.error.issues[0]?.path ?? []) }
 
   const prescriptions = parseSessionPrescriptions(formData)
-  if (!prescriptions.success) return { error: prescriptions.error }
+  if (!prescriptions.success) return { errorCode: prescriptions.errorCode }
 
   const data = parsed.data
 
@@ -196,12 +222,12 @@ export async function createSession(_previousState: SessionFormState, formData: 
           eq(workouts.isDeleted, false),
         ),
       }).sync()
-      if (!workout) return { error: 'La plantilla de entrenamiento seleccionada no existe' }
+      if (!workout) return { errorCode: 'workoutNotFound' }
     }
 
     if (data.locationKey) {
       const location = db.query.trainingLocations.findFirst({ where: eq(trainingLocations.key, data.locationKey) }).sync()
-      if (!location) return { error: 'La ubicación seleccionada no existe' }
+      if (!location) return { errorCode: 'locationNotFound' }
     }
 
     const structure = data.preliminaryExercises || data.warmup || data.mainBlock || data.cooldown
@@ -214,7 +240,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
       : null
 
     const referenceError = validatePrescriptionReferences(prescriptions.data)
-    if (referenceError) return { error: referenceError }
+    if (referenceError) return referenceError
 
     const now = new Date().toISOString()
     const sessionId = randomUUID()
@@ -231,7 +257,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
     })
   } catch (error) {
     console.error('Error creating session:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo crear la sesión' }
+    return { errorCode: 'createFailed' }
   }
 
   const path = sessionsPath(data.locale)
@@ -241,7 +267,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
 
 export async function updateSession(_previousState: SessionFormState, formData: FormData): Promise<SessionFormState> {
   const sessionId = formData.get('sessionId')?.toString()
-  if (!sessionId) return { error: 'No se pudo identificar la sesión' }
+  if (!sessionId) return { errorCode: 'sessionIdMissing' }
 
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
@@ -254,7 +280,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     const existingSession = db.query.sessions.findFirst({
       where: and(eq(sessions.id, sessionId), eq(sessions.teamId, CURRENT_TEAM_ID), eq(sessions.isDeleted, false)),
     }).sync()
-    if (!existingSession) return { error: 'Sesión no encontrada' }
+    if (!existingSession) return { errorCode: 'sessionNotFound' }
 
     const referenceError = validatePrescriptionReferences(prescriptions.data)
     if (referenceError) return { error: referenceError }
@@ -268,7 +294,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         ),
       }).sync()
       if (!workout || (workout.archivedAt && existingSession.workoutId !== workout.id)) {
-        return { error: 'La plantilla de entrenamiento seleccionada no existe o está archivada' }
+        return { errorCode: 'workoutUnavailable' }
       }
     }
     if (data.locationKey) {
@@ -364,7 +390,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     })
   } catch (error) {
     console.error('Error updating session:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo actualizar la sesión' }
+    return { errorCode: 'updateFailed' }
   }
 
   const path = sessionsPath(data.locale)
@@ -381,14 +407,14 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
         eq(athleteGroups.isActive, true), eq(athleteGroups.isDeleted, false),
       ),
     }).sync()
-    if (!group) return 'Uno de los grupos seleccionados no existe o está inactivo'
+    if (!group) return { errorCode: 'groupNotFound' as const }
 
     const microcycle = db.query.microcycles.findFirst({
       where: and(eq(microcycles.id, prescription.microcycleId), eq(microcycles.isDeleted, false)),
       with: { mesocycle: { with: { macrocycle: { with: { groupTrainingPlan: true } } } } },
     }).sync()
     if (!microcycle || microcycle.mesocycle.macrocycle.groupTrainingPlan.groupId !== group.id) {
-      return `El microciclo seleccionado no pertenece al grupo ${group.categoryCode}${group.levelCode}`
+      return { errorCode: 'microcycleGroupMismatch' as const, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
     }
   }
   return null
