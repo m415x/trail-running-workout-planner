@@ -43,7 +43,7 @@ const reference: TaperIntensityReference = {
   emphasis: 'vo2max',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: 95,
+  referencePercentageTarget: 95,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
@@ -55,13 +55,13 @@ describe('taper intensity preservation', () => {
     )
 
     assert.equal(result.proposed.intenseSessionsTarget, 1)
-    assert.equal(result.proposed.pamPercentageTarget, 95)
+    assert.equal(result.proposed.referencePercentageTarget, 95)
     assert.equal(result.proposed.predominantZone, 'Z2')
     assert.equal(result.proposed.minimumRecoveryDaysBetweenIntenseSessions, 2)
     assert.equal(result.preserveBriefIntensityStimuli, true)
     assert.ok(result.reasonCodes.includes('brief_intensity_preserved'))
     assert.ok(result.reasonCodes.includes('intense_session_count_reduced'))
-    assert.ok(result.reasonCodes.includes('existing_pam_percentage_preserved'))
+    assert.ok(result.reasonCodes.includes('existing_reference_percentage_preserved'))
   })
 
   it('does not fabricate a PAM target for an HR-zone-only week', () => {
@@ -70,7 +70,7 @@ describe('taper intensity preservation', () => {
       emphasis: 'aerobic',
       intenseSessionsTarget: 1,
       predominantZone: 'Z2',
-      pamPercentageTarget: null,
+      referencePercentageTarget: null,
     }
 
     const result = decideTaperIntensityPreservation(
@@ -80,9 +80,9 @@ describe('taper intensity preservation', () => {
 
     assert.equal(result.proposed.intenseSessionsTarget, 1)
     assert.equal(result.proposed.predominantZone, 'Z2')
-    assert.equal(result.proposed.pamPercentageTarget, null)
+    assert.equal(result.proposed.referencePercentageTarget, null)
     assert.ok(result.reasonCodes.includes('existing_hr_zone_preserved'))
-    assert.equal(result.reasonCodes.includes('existing_pam_percentage_preserved'), false)
+    assert.equal(result.reasonCodes.includes('existing_reference_percentage_preserved'), false)
   })
 
   it('does not create an intense stimulus when the reference week has none', () => {
@@ -91,7 +91,7 @@ describe('taper intensity preservation', () => {
       emphasis: 'recovery',
       intenseSessionsTarget: 0,
       predominantZone: 'Z1',
-      pamPercentageTarget: null,
+      referencePercentageTarget: null,
     }
 
     const result = decideTaperIntensityPreservation(
@@ -118,7 +118,7 @@ describe('taper intensity preservation', () => {
     assert.throws(
       () => decideTaperIntensityPreservation(
         decision('A', 7, { min: 4, max: 21 }),
-        { ...reference, pamPercentageTarget: 0 },
+        { ...reference, referencePercentageTarget: 0 },
       ),
       /PAM percentage target/,
     )
