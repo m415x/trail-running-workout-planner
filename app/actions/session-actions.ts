@@ -270,10 +270,10 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   if (!sessionId) return { errorCode: 'sessionIdMissing' }
 
   const parsed = createSessionSchema.safeParse(Object.fromEntries(formData))
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+  if (!parsed.success) return { errorCode: schemaErrorCode(parsed.error.issues[0]?.path ?? []) }
 
   const prescriptions = parseSessionPrescriptions(formData)
-  if (!prescriptions.success) return { error: prescriptions.error }
+  if (!prescriptions.success) return { errorCode: prescriptions.errorCode }
   const data = parsed.data
 
   try {
@@ -283,7 +283,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     if (!existingSession) return { errorCode: 'sessionNotFound' }
 
     const referenceError = validatePrescriptionReferences(prescriptions.data)
-    if (referenceError) return { error: referenceError }
+    if (referenceError) return referenceError
 
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
@@ -299,7 +299,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     }
     if (data.locationKey) {
       const location = db.query.trainingLocations.findFirst({ where: eq(trainingLocations.key, data.locationKey) }).sync()
-      if (!location) return { error: 'La ubicación seleccionada no existe' }
+      if (!location) return { errorCode: 'locationNotFound' }
     }
 
     const structure = data.preliminaryExercises || data.warmup || data.mainBlock || data.cooldown
