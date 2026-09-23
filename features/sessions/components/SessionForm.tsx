@@ -104,6 +104,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     session?.sessionPrescriptions.map((item) => [item.groupId, item.intensityMethod ?? '']) ?? [],
   ))
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
+  const serverError = state.errorCode ? t(`form.errors.server.${state.errorCode}`, state.errorParams) : undefined
 
   function setFormValue(form: HTMLFormElement, name: string, value: string | number | null | undefined) {
     const field = form.elements.namedItem(name)
@@ -215,7 +216,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     <form action={formAction} onSubmit={handleSubmit} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {session && <input type='hidden' name='sessionId' value={session.id} />}
-      {(clientError || state.error) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || state.error}</div>}
+      {(clientError || serverError) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || serverError}</div>}
 
       <div className='grid gap-4 sm:grid-cols-2'>
         <Field label={t('form.date')} name='date' type='date' defaultValue={session?.date} required />
