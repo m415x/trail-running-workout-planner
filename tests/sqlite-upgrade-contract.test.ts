@@ -202,6 +202,18 @@ test('fresh SQLite bootstrap establishes migration metadata compatible with late
 })
 
 
+test('fresh SQLite bootstrap installs the cohort association triggers before marking HEAD', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+  const freshBlock = runner.slice(
+    runner.indexOf("if (state === 'fresh')"),
+    runner.indexOf("if (state === 'versioned'"),
+  )
+  const triggers = freshBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
+  const metadata = freshBlock.indexOf('establishCanonicalMigrationMetadata(sqlite)')
+  assert.ok(triggers >= 0, 'fresh bootstrap must install cohort triggers')
+  assert.ok(metadata > triggers, 'cohort triggers must exist before HEAD metadata is recorded')
+})
+
 test('fresh bootstrap records every migration already represented by the pushed HEAD schema', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
   assert.match(runner, /journal\.entries\.slice\(0, appliedCount\)/)
