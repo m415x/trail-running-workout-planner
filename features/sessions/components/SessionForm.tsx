@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
+import { reconcileSessionFormMicrocycles } from '@/lib/sessions/session-microcycle-form-reconciliation'
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
@@ -85,6 +86,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const templateText = useTranslations('WorkoutTemplates')
   const [state, formAction, pending] = useActionState(session ? updateSession : createSession, initialState)
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => session?.sessionPrescriptions.map((item) => item.groupId) ?? [])
+  const [sessionDate, setSessionDate] = useState(session?.date ?? '')
   const [clientError, setClientError] = useState<string>()
   const [selectedWorkoutId, setSelectedWorkoutId] = useState(session?.workoutId ?? '')
   const [sessionType, setSessionType] = useState(session?.type ?? '')
@@ -103,6 +105,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [intensityMethods, setIntensityMethods] = useState<Record<string, string>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.groupId, item.intensityMethod ?? '']) ?? [],
   ))
+  const candidatesByGroup = Object.fromEntries(groups.map((group) => [group.id, group.microcycles]))
+  const microcycleResolutions = reconcileSessionFormMicrocycles(sessionDate, selectedGroupIds, candidatesByGroup)
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
   const serverError = state.errorCode ? t(`form.errors.server.${state.errorCode}`, state.errorParams) : undefined
 
@@ -205,10 +209,14 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (selectedGroupIds.length > 0) return
+    if (selectedGroupIds.length > 0 && selectedGroupIds.every((groupId) => microcycleResolutions[groupId]?.status === 'resolved')) return
 
     event.preventDefault()
-    setClientError(t('form.errors.groupRequired'))
+    const invalidGroupId = selectedGroupIds.find((groupId) => microcycleResolutions[groupId]?.status !== 'resolved')
+    const invalidGroup = groups.find((group) => group.id === invalidGroupId)
+    setClientError(invalidGroupId
+      ? t(`form.prescriptions.${microcycleResolutions[invalidGroupId]?.status === 'ambiguous' ? 'microcycleAmbiguous' : 'microcycleUnavailable'}`, { group: invalidGroup?.code ?? invalidGroupId })
+      : t('form.errors.groupRequired'))
     document.getElementById('session-form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
@@ -219,7 +227,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       {(clientError || serverError) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || serverError}</div>}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label={t('form.date')} name='date' type='date' defaultValue={session?.date} required />
+        <Field label={t('form.date')} name='date' type='date' value={sessionDate} onChange={(event) => { setSessionDate(event.target.value); setClientError(undefined) }} required />
         <Field label={t('form.title')} name='title' placeholder={t('form.titlePlaceholder')} defaultValue={session?.title} minLength={2} required />
       </div>
 
@@ -266,6 +274,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           const current = session?.sessionPrescriptions.find((item) => item.groupId === group.id)
           const method = intensityMethods[group.id] ?? current?.intensityMethod ?? ''
           const hasMicrocycles = group.microcycles.length > 0
+          const resolution = microcycleResolutions[group.id]
           const values = prescriptionValues[group.id] ?? {
             distanceKm: '',
             durationMin: '',
@@ -294,10 +303,12 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                 <p className='mt-2 text-sm text-muted-foreground'>{t('form.prescriptions.noMicrocycles')}</p>
               ) : selected && (
                 <div className='mt-4 space-y-4'>
-                  <SelectField label={t('form.prescriptions.microcycle')} name={`microcycleId:${group.id}`} defaultValue={current?.microcycleId ?? ''} required>
-                    <option value=''>{t('form.prescriptions.selectMicrocycle')}</option>
-                    {group.microcycles.map((microcycle) => <option key={microcycle.id} value={microcycle.id}>{t('form.prescriptions.microcycleOption', { plan: microcycle.planTitle, week: microcycle.weekNumber, start: microcycle.startDate, end: microcycle.endDate })}</option>)}
-                  </SelectField>
+                  <input type='hidden' name={`microcycleId:${group.id}`} value={resolution?.microcycleId ?? ''} />
+                  {resolution?.status === 'resolved' ? (
+                    <p className='text-sm text-muted-foreground'>{t('form.prescriptions.microcycle')}: {group.microcycles.filter((microcycle) => microcycle.id === resolution.microcycleId).map((microcycle) => t('form.prescriptions.microcycleOption', { plan: microcycle.planTitle, week: microcycle.weekNumber, start: microcycle.startDate, end: microcycle.endDate })).join('')}</p>
+                  ) : (
+                    <p role='alert' className='text-sm text-destructive'>{t(`form.prescriptions.${resolution?.status === 'ambiguous' ? 'microcycleAmbiguous' : 'microcycleUnavailable'}`, { group: group.code })}</p>
+                  )}
 
                   <div className='grid gap-4 sm:grid-cols-3'>
                     <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
