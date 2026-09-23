@@ -431,7 +431,7 @@ export const microcycleIntensityTargets = pgTable(
     emphasis: text('emphasis').$type<IntensityEmphasis>().notNull(),
     intenseSessionsTarget: integer('intense_sessions_target').notNull(),
     predominantZone: text('predominant_zone').$type<IntensityZone>().notNull(),
-    pamPercentageTarget: doublePrecision('pam_percentage_target'),
+    referencePercentageTarget: doublePrecision('reference_percentage_target'),
     minimumRecoveryDaysBetweenIntenseSessions: integer('minimum_recovery_days_between_intense_sessions').notNull(),
     fieldSources: jsonb('field_sources').$type<MicrocycleIntensityTargetFieldSources>().notNull(),
   },
