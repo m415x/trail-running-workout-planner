@@ -504,3 +504,17 @@ test('SQLite refuses to reconcile incompatible intensity HEAD metadata without m
     rmSync(workspace, { recursive: true, force: true })
   }
 })
+
+test('SQLite scenario CLI executes and rejects an unknown scenario', () => {
+  const projectRoot = process.cwd()
+  const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+  const scenarioScript = path.resolve(projectRoot, 'scripts/verify-sqlite-scenarios.ts')
+  const result = spawnSync(process.execPath, [tsxCli, scenarioScript, 'invalid-scenario'], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    env: { ...process.env, TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') },
+  })
+
+  assert.notEqual(result.status, 0, 'the scenario CLI must execute rather than silently exit')
+  assert.match(result.stderr + result.stdout, /Unknown SQLite verification scenario: invalid-scenario/)
+})
