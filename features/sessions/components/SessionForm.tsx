@@ -82,6 +82,8 @@ const initialState: SessionFormState = {}
 const TRAIL_EFFORT_NOTE = 'Priorizá el esfuerzo sobre el ritmo.'
 
 export function SessionForm({ locale, workouts, locations, groups, session }: SessionFormProps) {
+  const t = useTranslations('Sessions')
+  const workoutTypeT = useTranslations('Workouts')
   const templateText = useTranslations('WorkoutTemplates')
   const [state, formAction, pending] = useActionState(session ? updateSession : createSession, initialState)
   const [selectedGroupIds, setSelectedGroupIds] = useState(() => session?.sessionPrescriptions.map((item) => item.groupId) ?? [])
@@ -207,7 +209,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     if (selectedGroupIds.length > 0) return
 
     event.preventDefault()
-    setClientError('Asigná la sesión al menos a un grupo')
+    setClientError(t('form.errors.groupRequired'))
     document.getElementById('session-form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
@@ -218,14 +220,14 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       {(clientError || state.error) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || state.error}</div>}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label='Fecha' name='date' type='date' defaultValue={session?.date} required />
-        <Field label='Título' name='title' placeholder='Ej.: Fondo de montaña' defaultValue={session?.title} minLength={2} required />
+        <Field label={t('form.date')} name='date' type='date' defaultValue={session?.date} required />
+        <Field label={t('form.title')} name='title' placeholder={t('form.titlePlaceholder')} defaultValue={session?.title} minLength={2} required />
       </div>
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <SelectField label='Tipo de entrenamiento' name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(TRAIL_EFFORT_NOTE) }} required>
-          <option value=''>Seleccionar tipo</option>
-          {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+        <SelectField label={t('form.type')} name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(TRAIL_EFFORT_NOTE) }} required>
+          <option value=''>{t('form.selectType')}</option>
+          {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>)}
         </SelectField>
         <div className='space-y-1.5'>
           <SelectField label='Plantilla de entrenamiento' name='workoutId' value={selectedWorkoutId} onChangeEvent={applyWorkoutTemplate}>
