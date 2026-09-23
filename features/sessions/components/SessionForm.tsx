@@ -335,8 +335,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                     </SelectField>
                   )}
                   {method === 'reference_percentage' && (
-                    <SelectField label={t('form.prescriptions.referencePercentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(group.id, 'referencePercentage', value)} required>
-                      <option value=''>{t('form.prescriptions.referencePercentage')}</option>
+                    <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(group.id, 'referencePercentage', value)} required>
+                      <option value=''>{t('form.prescriptions.selectPercentage')}</option>
                       {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
                     </SelectField>
                   )}
