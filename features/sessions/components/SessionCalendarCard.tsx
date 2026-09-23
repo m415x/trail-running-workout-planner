@@ -1,5 +1,6 @@
 import { MapPin } from 'lucide-react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import { cn } from '@/lib/utils'
 import type { WorkoutType } from '@/types/training/workout.types'
@@ -21,6 +22,8 @@ interface SessionCalendarCardProps {
 }
 
 export function SessionCalendarCard({ session, href, compact = false }: SessionCalendarCardProps) {
+  const workoutTypeT = useTranslations('Workouts')
+
   return (
     <Link href={href} className='block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
       <article className={cn('space-y-2 rounded-md border bg-background p-2.5 shadow-xs transition-colors hover:border-primary/50 hover:bg-accent/40', compact && 'space-y-1 p-2')}>
@@ -29,7 +32,7 @@ export function SessionCalendarCard({ session, href, compact = false }: SessionC
             {session.title}
           </p>
           <Badge variant='secondary' className={cn('shrink-0', compact ? 'px-1.5 py-0 text-[10px]' : 'text-[10px]')}>
-            {session.type}
+            {workoutTypeT(`types.${session.type}`)}
           </Badge>
         </div>
 
