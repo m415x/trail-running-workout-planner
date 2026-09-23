@@ -79,8 +79,6 @@ function formValue(value: string | number | null | undefined) {
 }
 
 const initialState: SessionFormState = {}
-const TRAIL_EFFORT_NOTE = 'Priorizá el esfuerzo sobre el ritmo.'
-
 export function SessionForm({ locale, workouts, locations, groups, session }: SessionFormProps) {
   const t = useTranslations('Sessions')
   const workoutTypeT = useTranslations('Workouts')
@@ -137,7 +135,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     setFormValue(form, 'mainBlock', snapshot.session.structure?.mainBlock)
     setFormValue(form, 'cooldown', snapshot.session.structure?.cooldown)
     const templateNotes = snapshot.session.notes ?? ''
-    setSessionNotes(templateNotes || ((snapshot.session.type === 'Trail' || snapshot.session.type === 'Hills') ? TRAIL_EFFORT_NOTE : ''))
+    setSessionNotes(templateNotes || ((snapshot.session.type === 'Trail' || snapshot.session.type === 'Hills') ? t('form.trailEffortNote') : ''))
 
     const defaults: AppliedPrescriptionDefaults = {
       distance: snapshot.prescription.distanceKm ?? null,
@@ -225,7 +223,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       </div>
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <SelectField label={t('form.type')} name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(TRAIL_EFFORT_NOTE) }} required>
+        <SelectField label={t('form.type')} name='type' value={sessionType} onChange={(type) => { setSessionType(type); if (!session && !sessionNotes && (type === 'Trail' || type === 'Hills')) setSessionNotes(t('form.trailEffortNote')) }} required>
           <option value=''>{t('form.selectType')}</option>
           {WORKOUT_TYPES.map((type) => <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>)}
         </SelectField>
@@ -254,7 +252,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
         <TextAreaField label={t('form.structure.cooldown')} name='cooldown' rows={2} placeholder={t('form.structure.cooldownPlaceholder')} defaultValue={session?.structure?.cooldown} />
       </fieldset>
 
-      <TextAreaField label='Notas' name='notes' rows={4} placeholder='Indicaciones generales de la sesión…' value={sessionNotes} onChange={setSessionNotes} />
+      <TextAreaField label={t('form.notes')} name='notes' rows={4} placeholder={t('form.notesPlaceholder')} value={sessionNotes} onChange={setSessionNotes} />
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
         <legend className='px-1 text-sm font-medium'>{t('form.prescriptions.title')}</legend>
@@ -288,22 +286,22 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   onChange={(event) => toggleGroup(group.id, event.target.checked)}
                   className='size-4 accent-primary'
                 />
-                Grupo {group.code}
+                {t('form.prescriptions.group')} {group.code}
               </label>
 
               {!hasMicrocycles ? (
                 <p className='mt-2 text-sm text-muted-foreground'>{t('form.prescriptions.noMicrocycles')}</p>
               ) : selected && (
                 <div className='mt-4 space-y-4'>
-                  <SelectField label='Microciclo' name={`microcycleId:${group.id}`} defaultValue={current?.microcycleId ?? ''} required>
+                  <SelectField label={t('form.prescriptions.microcycle')} name={`microcycleId:${group.id}`} defaultValue={current?.microcycleId ?? ''} required>
                     <option value=''>{t('form.prescriptions.selectMicrocycle')}</option>
                     {group.microcycles.map((microcycle) => <option key={microcycle.id} value={microcycle.id}>{microcycle.label}</option>)}
                   </SelectField>
 
                   <div className='grid gap-4 sm:grid-cols-3'>
-                    <Field label='Distancia (km)' name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
-                    <Field label='Duración (min)' name={`durationMin:${group.id}`} type='number' min='0' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
-                    <Field label='Desnivel (m+)' name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(group.id, 'elevationGain', event.target.value)} />
+                    <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
+                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='0' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
+                    <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(group.id, 'elevationGain', event.target.value)} />
                   </div>
 
                   <SelectField
@@ -318,7 +316,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   </SelectField>
 
                   {method === 'hr_zone' && (
-                    <SelectField label='Zona' name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(group.id, 'zone', value)} required>
+                    <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(group.id, 'zone', value)} required>
                       <option value=''>{t('form.prescriptions.selectZone')}</option>
                       {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                     </SelectField>
@@ -336,8 +334,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       </fieldset>
 
       <div className='flex justify-end gap-2'>
-        <Link href={sessionsPath} className={buttonVariants({ variant: 'outline' })}>Cancelar</Link>
-        <Button type='submit' disabled={pending}>{pending ? 'Guardando…' : session ? 'Guardar cambios' : 'Crear sesión'}</Button>
+        <Link href={sessionsPath} className={buttonVariants({ variant: 'outline' })}>{t('form.actions.cancel')}</Link>
+        <Button type='submit' disabled={pending}>{pending ? t('form.actions.saving') : session ? t('form.actions.saveChanges') : t('form.actions.create')}</Button>
       </div>
     </form>
   )
