@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { CalendarDays, CalendarRange, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getSessionsByTeam } from '@/app/actions/session-actions'
 import { getGroupsByTeam } from '@/app/actions/group-actions'
@@ -22,6 +23,7 @@ interface SessionsPageProps {
 
 export default async function SessionsPage({ params, searchParams }: SessionsPageProps) {
   const { locale } = await params
+  const t = await getTranslations('Sessions')
   const query = await searchParams
   const [sessions, groups] = await Promise.all([getSessionsByTeam(), getGroupsByTeam()])
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
@@ -36,7 +38,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   const selectedMonth = parseMonth(typeof query.month === 'string' ? query.month : undefined, currentMonth)
   const previousMonth = shiftMonth(selectedMonth, -1)
   const nextMonth = shiftMonth(selectedMonth, 1)
-  const monthLabel = new Intl.DateTimeFormat('es-AR', {
+  const monthLabel = new Intl.DateTimeFormat(locale, {
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC',
@@ -46,7 +48,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   const previousWeek = shiftDate(weekStart, -7)
   const nextWeek = shiftDate(weekStart, 7)
   const weekEnd = shiftDate(weekStart, 6)
-  const weekLabel = formatWeekRange(weekStart, weekEnd)
+  const weekLabel = formatWeekRange(weekStart, weekEnd, locale)
   const monthForViewToggle = view === 'week'
     ? { year: Number(selectedDate.slice(0, 4)), month: Number(selectedDate.slice(5, 7)) }
     : selectedMonth
@@ -57,12 +59,12 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   return (
     <div className='space-y-6'>
       <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
-        <div><h2 className='text-3xl font-bold tracking-tight'>Sesiones</h2><p className='text-muted-foreground'>Entrenamientos programados para el equipo.</p></div>
-        <Link href={`${sessionsPath}/new`} className={buttonVariants()}><Plus /> Nueva sesión</Link>
+        <div><h2 className='text-3xl font-bold tracking-tight'>{t('routes.title')}</h2><p className='text-muted-foreground'>{t('routes.description')}</p></div>
+        <Link href={`${sessionsPath}/new`} className={buttonVariants()}><Plus /> {t('routes.new')}</Link>
       </div>
 
       {sessions.length === 0 && (
-        <Card><CardHeader><CardTitle>Todavía no hay sesiones</CardTitle><CardDescription>Programá la primera sesión para comenzar a construir el calendario de entrenamiento.</CardDescription></CardHeader></Card>
+        <Card><CardHeader><CardTitle>{t('routes.emptyTitle')}</CardTitle><CardDescription>{t('routes.emptyDescription')}</CardDescription></CardHeader></Card>
       )}
 
       <div className='flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between'>
@@ -71,13 +73,13 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
             href={buildCalendarHref(sessionsPath, { month: formatMonth(monthForViewToggle), group: selectedGroupId })}
             className={cn(buttonVariants({ variant: view === 'month' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
           >
-            <CalendarDays /> Mes
+            <CalendarDays /> {t('routes.month')}
           </Link>
           <Link
             href={buildCalendarHref(sessionsPath, { view: 'week', date: weekDateForViewToggle, group: selectedGroupId })}
             className={cn(buttonVariants({ variant: view === 'week' ? 'default' : 'ghost', size: 'sm' }), 'gap-2')}
           >
-            <CalendarRange /> Semana
+            <CalendarRange /> {t('routes.week')}
           </Link>
         </div>
 
@@ -87,8 +89,8 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
       {selectedGroup && filteredSessions.length === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Sin sesiones para el grupo {selectedGroup.categoryCode}{selectedGroup.levelCode}</CardTitle>
-            <CardDescription>Este grupo todavía no tiene sesiones asignadas en el calendario.</CardDescription>
+            <CardTitle>{t('routes.groupEmptyTitle', { group: `${selectedGroup.categoryCode}${selectedGroup.levelCode}` })}</CardTitle>
+            <CardDescription>{t('routes.groupEmptyDescription')}</CardDescription>
           </CardHeader>
         </Card>
       )}
@@ -100,7 +102,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
               ? buildCalendarHref(sessionsPath, { month: formatMonth(previousMonth), group: selectedGroupId })
               : buildCalendarHref(sessionsPath, { view: 'week', date: previousWeek, group: selectedGroupId })}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
-            aria-label={view === 'month' ? 'Mes anterior' : 'Semana anterior'}
+            aria-label={view === 'month' ? t('routes.previousMonth') : t('routes.previousWeek')}
           >
             <ChevronLeft />
           </Link>
@@ -110,7 +112,7 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
               ? buildCalendarHref(sessionsPath, { month: formatMonth(nextMonth), group: selectedGroupId })
               : buildCalendarHref(sessionsPath, { view: 'week', date: nextWeek, group: selectedGroupId })}
             className={buttonVariants({ variant: 'outline', size: 'icon' })}
-            aria-label={view === 'month' ? 'Mes siguiente' : 'Semana siguiente'}
+            aria-label={view === 'month' ? t('routes.nextMonth') : t('routes.nextWeek')}
           >
             <ChevronRight />
           </Link>
@@ -196,8 +198,8 @@ function shiftDate(value: string, amount: number) {
   return formatISODate(date)
 }
 
-function formatWeekRange(start: string, end: string) {
-  const formatter = new Intl.DateTimeFormat('es-AR', {
+function formatWeekRange(start: string, end: string, locale: string) {
+  const formatter = new Intl.DateTimeFormat(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
