@@ -291,13 +291,14 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
  */
 export function normalizeSqliteSchemaSql(sql: string | null): string | null {
   if (sql === null) return null
-  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\\[[^\\]]+\\]|[(),]|[^\\s(),]+/g) ?? []
+  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),]|[^\s(),]+/g) ?? []
+  const quoteIdentifier = (value: string) => '`' + value.replaceAll('`', '``') + '`'
   return tokens.map(token => {
     if (token.startsWith('"') && token.endsWith('"')) {
-      return `\`${token.slice(1, -1).replaceAll('""', '"').replaceAll('\`', '\`\`')}\``
+      return quoteIdentifier(token.slice(1, -1).replaceAll('""', '"'))
     }
     if (token.startsWith('[') && token.endsWith(']')) {
-      return `\`${token.slice(1, -1).replaceAll('\`', '\`\`')}\``
+      return quoteIdentifier(token.slice(1, -1))
     }
     return token
   }).join(' ')
