@@ -57,6 +57,24 @@
       "selectType": "Seleccionar tipo",
       "errors": {
         "groupRequired": "Asigná la sesión al menos a un grupo"
+      },
+      "template": "Plantilla de entrenamiento",
+      "noTemplate": "Sin plantilla",
+      "location": "Ubicación",
+      "noLocation": "Sin ubicación",
+      "track": "Track",
+      "trackPlaceholder": "Ruta o referencia del track (opcional)",
+      "structure": {
+        "title": "Estructura de la sesión",
+        "help": "Todos los bloques son opcionales. Completá sólo los que correspondan al entrenamiento.",
+        "preliminaryExercises": "Ejercicios preliminares",
+        "preliminaryExercisesPlaceholder": "Movilidad, activación, técnica…",
+        "warmup": "Entrada en calor",
+        "warmupPlaceholder": "Ej.: 15 min suaves + movilidad dinámica",
+        "mainBlock": "Bloque principal",
+        "mainBlockPlaceholder": "Ej.: 6 × 800 m con recuperación de 2 min",
+        "cooldown": "Vuelta a la calma",
+        "cooldownPlaceholder": "Ej.: 10 min suaves + elongación"
       }
     }
   }
