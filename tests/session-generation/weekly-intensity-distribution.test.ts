@@ -44,7 +44,7 @@ describe('distribución semanal de intensidad', () => {
   it('aplica PAM únicamente a los estímulos intensos seleccionados', () => {
     const result = distributeWeeklyIntensity(datedSlots, {
       ...zoneTarget,
-      defaultMethod: 'pam_percentage',
+      defaultMethod: 'reference_percentage',
       emphasis: 'vo2max',
       intenseSessionsTarget: 1,
       referencePercentageTarget: 95,
@@ -56,9 +56,9 @@ describe('distribución semanal de intensidad', () => {
       slotKey: 'thursday',
       date: '2026-09-10',
       isIntense: true,
-      intensityMethod: 'pam_percentage',
+      intensityMethod: 'reference_percentage',
       zone: null,
-      pamPercentage: 95,
+      referencePercentage: 95,
     })
     assert.ok(regular.every(({ intensityMethod, zone }) => intensityMethod === 'hr_zone' && zone === 'Z2'))
   })
@@ -87,7 +87,7 @@ describe('distribución semanal de intensidad', () => {
   it('cae a zonas si PAM no tiene un porcentaje ejecutable', () => {
     const result = distributeWeeklyIntensity(datedSlots, {
       ...zoneTarget,
-      defaultMethod: 'pam_percentage',
+      defaultMethod: 'reference_percentage',
       intenseSessionsTarget: 1,
       referencePercentageTarget: null,
     })
