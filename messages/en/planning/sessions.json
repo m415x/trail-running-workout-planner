@@ -26,7 +26,9 @@
           "microcycleRequired": "Select a microcycle for each group",
           "hrZoneRequired": "Select a zone for heart-rate intensity",
           "pamPercentageInvalid": "Enter a PAM percentage between 0 and 200",
-          "prescriptionsInvalid": "Review the group prescriptions"
+          "prescriptionsInvalid": "Review the group prescriptions",
+          "microcycleDateMismatch": "The microcycle for group {group} does not match the session date.",
+          "microcycleDateAmbiguous": "Microcycles overlap for group {group} on the session date."
         }
       },
       "template": "Workout template",
@@ -65,7 +67,9 @@
         "duration": "Duration (min)",
         "elevationGain": "Elevation gain (m+)",
         "zone": "Zone",
-        "microcycleOption": "{plan} · Week {week} · {start} to {end}"
+        "microcycleOption": "{plan} · Week {week} · {start} to {end}",
+        "microcycleUnavailable": "No microcycle is available for group {group} on the selected date.",
+        "microcycleAmbiguous": "Multiple microcycles overlap for group {group} on the selected date. Correct the periods before saving."
       },
       "trailEffortNote": "Prioritize effort over pace.",
       "notes": "Notes",
