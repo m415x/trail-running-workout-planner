@@ -75,6 +75,19 @@
         "mainBlockPlaceholder": "E.g.: 6 × 800 m with 2 min recovery",
         "cooldown": "Cool-down",
         "cooldownPlaceholder": "E.g.: 10 easy min + stretching"
+      },
+      "prescriptions": {
+        "title": "Group prescriptions",
+        "help": "Select at least one group and define the load shown in its planning.",
+        "noGroups": "No active groups are available.",
+        "noMicrocycles": "This group has no available microcycles.",
+        "selectMicrocycle": "Select microcycle",
+        "intensityMethod": "Intensity method",
+        "noIntensity": "No intensity",
+        "hrZone": "Heart rate zone",
+        "pamPercentage": "PAM percentage",
+        "selectZone": "Select zone",
+        "notes": "Group instructions"
       }
     }
   }
