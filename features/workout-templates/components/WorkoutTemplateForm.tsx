@@ -43,7 +43,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
     durationMin: template?.prescriptionDefaults.durationMin ?? undefined,
     elevationGain: template?.prescriptionDefaults.elevationGain ?? undefined,
     zone: template?.prescriptionDefaults.intensity?.method === 'hr_zone' ? template.prescriptionDefaults.intensity.zone : undefined,
-    pamPercentage: template?.prescriptionDefaults.intensity?.method === 'pam_percentage' ? template.prescriptionDefaults.intensity.pamPercentage : undefined,
+    referencePercentage: template?.prescriptionDefaults.intensity?.method === 'reference_percentage' ? template.prescriptionDefaults.intensity.referencePercentage : undefined,
     prescriptionNotes: template?.prescriptionDefaults.notes ?? undefined,
   }
   const savedValue = (name: string) => state.values?.[name] ?? originalValues[name]
@@ -115,7 +115,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
         <SelectField label={t('prescription.intensityMethod')} name='intensityMethod' value={intensityMethod} onChange={setIntensityMethod} error={state.fieldErrors?.intensity}>
           <option value=''>{t('prescription.noIntensity')}</option>
           <option value='hr_zone'>{t('prescription.hrZone')}</option>
-          <option value='pam_percentage'>{t('prescription.pam')}</option>
+          <option value='reference_percentage'>{t('prescription.reference')}</option>
         </SelectField>
         {intensityMethod === 'hr_zone' && (
           <SelectField label={t('prescription.zone')} name='zone' defaultValue={savedTextValue('zone')} required error={state.fieldErrors?.intensity}>
@@ -123,8 +123,8 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
             {zones.map((zone) => <option key={zone} value={zone}>{zone}</option>)}
           </SelectField>
         )}
-        {intensityMethod === 'pam_percentage' && (
-          <Field label={t('prescription.pamPercentage')} name='pamPercentage' defaultValue={savedValue('pamPercentage')} type='number' min='0.1' max='200' step='0.1' required error={state.fieldErrors?.intensity} />
+        {intensityMethod === 'reference_percentage' && (
+          <Field label={t('prescription.referencePercentage')} name='referencePercentage' defaultValue={savedValue('referencePercentage')} type='number' min='0.1' max='200' step='0.1' required error={state.fieldErrors?.intensity} />
         )}
         <TextAreaField label={t('prescription.notes')} name='prescriptionNotes' rows={3} defaultValue={savedTextValue('prescriptionNotes')} placeholder={t('prescription.notesPlaceholder')} />
       </fieldset>
