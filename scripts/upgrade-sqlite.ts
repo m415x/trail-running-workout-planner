@@ -52,6 +52,21 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
       )
     }
 
+    if (hasMigrationMetadata && tables.has('microcycle_intensity_targets')) {
+      const intensityColumns = new Set(
+        (sqlite.prepare('PRAGMA table_info(microcycle_intensity_targets)').all() as { name: string }[])
+          .map(row => row.name),
+      )
+      if (
+        !intensityColumns.has('reference_percentage_target') ||
+        intensityColumns.has('pam_percentage_target')
+      ) {
+        throw new Error(
+          'SQLite state is inconsistent: microcycle_intensity_targets.reference_percentage_target is missing or legacy pam_percentage_target remains; refusing automatic migration without an explicitly approved test-data reset',
+        )
+      }
+    }
+
     if (hasMigrationMetadata) return 'versioned'
 
     const reviewedLegacyTables = ['workout_logs', 'group_training_plans', 'macrocycles']
