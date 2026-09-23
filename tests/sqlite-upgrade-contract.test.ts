@@ -519,11 +519,9 @@ test('SQLite scenario CLI executes and rejects an unknown scenario', () => {
   assert.match(result.stderr + result.stdout, /Unknown SQLite verification scenario: invalid-scenario/)
 })
 
-test('SQLite Drizzle config resolves project schemas and migrations independently of the target database', () => {
+test('SQLite Drizzle config retains repository-relative schemas and migrations', () => {
   const config = fs.readFileSync(path.join(process.cwd(), 'drizzle.sqlite.config.ts'), 'utf8')
 
-  assert.match(config, /fileURLToPath\(import\.meta\.url\)/)
-  assert.match(config, /resolve\(/)
   assert.match(config, /schema:/)
   assert.match(config, /out:/)
   assert.match(config, /dbCredentials:/)
@@ -547,8 +545,8 @@ test('SQLite Drizzle config loads from an isolated working directory', () => {
     })
     assert.equal(result.status, 0, result.stderr)
     const loaded = JSON.parse(result.stdout.trim()) as { schema: string[]; out: string; url: string }
-    assert.ok(loaded.schema.every(schemaPath => path.isAbsolute(schemaPath)))
-    assert.ok(path.isAbsolute(loaded.out))
+    assert.ok(loaded.schema.every(schemaPath => !path.isAbsolute(schemaPath)))
+    assert.ok(!path.isAbsolute(loaded.out))
     assert.equal(loaded.url, 'sqlite.db')
   } finally {
     rmSync(workspace, { recursive: true, force: true })
@@ -595,4 +593,35 @@ test('SQLite Drizzle config rejects scenario mode without an explicit database t
   ], { cwd: projectRoot, encoding: 'utf8', env })
   assert.notEqual(result.status, 0)
   assert.match(result.stderr + result.stdout, /SQLITE_DATABASE_PATH/)
+})
+
+test('Drizzle Kit can push repository-relative schemas into an explicitly isolated SQLite database', () => {
+  const projectRoot = process.cwd()
+  const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-drizzle-kit-'))
+  const databasePath = path.join(workspace, 'sqlite.db')
+  try {
+    const drizzleKit = path.resolve(projectRoot, 'node_modules/.bin', process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit')
+    const result = spawnSync(drizzleKit, ['push', `--config=${path.resolve(projectRoot, 'drizzle.sqlite.config.ts')}`], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      shell: process.platform === 'win32',
+      env: {
+        ...process.env,
+        SQLITE_SCENARIO_MODE: '1',
+        SQLITE_DATABASE_PATH: databasePath,
+      },
+    })
+    assert.equal(result.status, 0, result.stderr + result.stdout)
+    assert.equal(fs.existsSync(databasePath), true)
+    const sqlite = new Database(databasePath, { fileMustExist: true })
+    try {
+      const columns = sqlite.prepare('PRAGMA table_info(microcycle_intensity_targets)').all() as Array<{ name: string }>
+      assert.ok(columns.some(column => column.name === 'reference_percentage_target'))
+      assert.ok(!columns.some(column => column.name === 'pam_percentage_target'))
+    } finally {
+      sqlite.close()
+    }
+  } finally {
+    rmSync(workspace, { recursive: true, force: true })
+  }
 })
