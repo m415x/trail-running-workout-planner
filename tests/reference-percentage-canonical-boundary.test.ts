@@ -23,11 +23,14 @@ test('KAN-412 SQLite and Supabase workout and session schemas use reference perc
 test('KAN-412 plan-real comparison exposes reference percentage without PAM unit aliases', () => {
   const types = source('types/training/plan-real-comparison.types.ts')
   const presentation = source('features/athletes/components/PlanRealComparison.tsx')
+  const actions = source('app/actions/realized-training-actions.ts')
   assert.match(types, /'reference_percent'/)
   assert.doesNotMatch(types, /'pam_percent'/)
   assert.match(presentation, /reference_percent: '% of reference'/)
   assert.match(presentation, /reference_percent: '% de referencia'/)
   assert.doesNotMatch(presentation, /pam_percent|% PAM/)
+  assert.match(actions, /unit: 'reference_percent'/)
+  assert.doesNotMatch(actions, /unit: 'pam_percent'/)
 })
 
 test('KAN-412 removes the temporary legacy percentage classifier', () => {
