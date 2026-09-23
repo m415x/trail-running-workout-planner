@@ -1,13 +1,21 @@
 import { z } from 'zod'
 
+export type SessionPrescriptionErrorCode =
+  | 'groupRequired'
+  | 'invalidVolume'
+  | 'microcycleRequired'
+  | 'hrZoneRequired'
+  | 'pamPercentageInvalid'
+  | 'prescriptionsInvalid'
+
 const optionalNumber = z.preprocess(
   (value) => value === '' || value == null ? null : Number(value),
-  z.number().finite().min(0, 'Los valores de volumen no pueden ser negativos').nullable(),
+  z.number().finite().min(0).nullable(),
 )
 
 export const sessionPrescriptionSchema = z.object({
   groupId: z.string().trim().min(1),
-  microcycleId: z.string().trim().min(1, 'Seleccioná un microciclo para cada grupo'),
+  microcycleId: z.string().trim().min(1),
   distanceKm: optionalNumber,
   durationMin: optionalNumber,
   elevationGain: optionalNumber,
@@ -17,21 +25,29 @@ export const sessionPrescriptionSchema = z.object({
   notes: z.string().trim().transform((value) => value || null),
 }).superRefine((data, context) => {
   if (data.intensityMethod === 'hr_zone' && !data.zone) {
-    context.addIssue({ code: 'custom', path: ['zone'], message: 'Seleccioná una zona para la intensidad por FC' })
+    context.addIssue({ code: 'custom', path: ['zone'], message: 'hrZoneRequired' })
   }
   if (data.intensityMethod === 'pam_percentage'
     && (data.pamPercentage == null || data.pamPercentage <= 0 || data.pamPercentage > 200)) {
-    context.addIssue({ code: 'custom', path: ['pamPercentage'], message: 'Ingresá un porcentaje PAM entre 0 y 200' })
+    context.addIssue({ code: 'custom', path: ['pamPercentage'], message: 'pamPercentageInvalid' })
   }
 })
 
 export type SessionPrescriptionInput = z.infer<typeof sessionPrescriptionSchema>
 
+function prescriptionErrorCode(issue: z.core.$ZodIssue): SessionPrescriptionErrorCode {
+  if (issue.path.includes('microcycleId')) return 'microcycleRequired'
+  if (issue.path.includes('zone')) return 'hrZoneRequired'
+  if (issue.path.includes('pamPercentage')) return 'pamPercentageInvalid'
+  if (issue.path.some((part) => part === 'distanceKm' || part === 'durationMin' || part === 'elevationGain')) return 'invalidVolume'
+  return 'prescriptionsInvalid'
+}
+
 export function parseSessionPrescriptions(formData: FormData):
   | { success: true; data: SessionPrescriptionInput[] }
-  | { success: false; error: string } {
+  | { success: false; errorCode: SessionPrescriptionErrorCode } {
   const groupIds = [...new Set(formData.getAll('prescriptionGroupId').map((value) => value.toString()))]
-  if (groupIds.length === 0) return { success: false, error: 'Asigná la sesión al menos a un grupo' }
+  if (groupIds.length === 0) return { success: false, errorCode: 'groupRequired' }
 
   const rows: SessionPrescriptionInput[] = []
   for (const groupId of groupIds) {
@@ -50,7 +66,7 @@ export function parseSessionPrescriptions(formData: FormData):
       notes: formData.get(`prescriptionNotes:${groupId}`)?.toString() || '',
     })
     if (!parsed.success) {
-      return { success: false, error: parsed.error.issues[0]?.message ?? 'Revisá las prescripciones grupales' }
+      return { success: false, errorCode: prescriptionErrorCode(parsed.error.issues[0]) }
     }
     rows.push(parsed.data)
   }
