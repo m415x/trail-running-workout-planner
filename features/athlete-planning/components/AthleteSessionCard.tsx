@@ -27,7 +27,7 @@ interface AthleteSessionCardProps {
     elevationGain: number | null
     intensityMethod: IntensityMethod | null
     zone: IntensityZone | null
-    pamPercentage: number | null
+    referencePercentage: number | null
     notes: string | null
   }
 }
@@ -121,8 +121,8 @@ function Instruction({ label, value }: { label: string; value: string }) {
 }
 
 function formatIntensity(prescription: AthleteSessionCardProps['prescription']) {
-  if (prescription.intensityMethod === 'pam_percentage' && prescription.pamPercentage != null) {
-    return `Intensidad: ${prescription.pamPercentage}% PAM`
+  if (prescription.intensityMethod === 'reference_percentage' && prescription.referencePercentage != null) {
+    return `Intensidad: ${prescription.referencePercentage}% de referencia`
   }
   if (prescription.zone) return `Intensidad: ${prescription.zone}`
   return null
