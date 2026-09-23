@@ -57,6 +57,24 @@
       "selectType": "Select type",
       "errors": {
         "groupRequired": "Assign the session to at least one group"
+      },
+      "template": "Workout template",
+      "noTemplate": "No template",
+      "location": "Location",
+      "noLocation": "No location",
+      "track": "Track",
+      "trackPlaceholder": "Track route or reference (optional)",
+      "structure": {
+        "title": "Session structure",
+        "help": "All blocks are optional. Complete only those that apply to the workout.",
+        "preliminaryExercises": "Preliminary exercises",
+        "preliminaryExercisesPlaceholder": "Mobility, activation, technique…",
+        "warmup": "Warm-up",
+        "warmupPlaceholder": "E.g.: 15 easy min + dynamic mobility",
+        "mainBlock": "Main block",
+        "mainBlockPlaceholder": "E.g.: 6 × 800 m with 2 min recovery",
+        "cooldown": "Cool-down",
+        "cooldownPlaceholder": "E.g.: 10 easy min + stretching"
       }
     }
   }
