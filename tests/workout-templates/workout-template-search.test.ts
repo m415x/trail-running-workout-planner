@@ -29,7 +29,7 @@ const template: WorkoutTemplate = {
     distanceKm: 8,
     durationMin: 60,
     elevationGain: 450,
-    intensity: { method: 'pam_percentage', pamPercentage: 100 },
+    intensity: { method: 'reference_percentage', referencePercentage: 100 },
     notes: 'Recuperación bajando.',
   },
 }
