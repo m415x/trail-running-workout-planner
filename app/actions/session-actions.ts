@@ -76,8 +76,8 @@ function sessionTemplateOption(row: typeof workouts.$inferSelect) {
   let intensity: TrainingIntensity | null = null
   if (row.intensityMethod === 'hr_zone' && row.zone) {
     intensity = { method: 'hr_zone', zone: row.zone }
-  } else if (row.intensityMethod === 'pam_percentage' && row.pamPercentage !== null) {
-    intensity = { method: 'pam_percentage', pamPercentage: row.pamPercentage }
+  } else if (row.intensityMethod === 'reference_percentage' && row.referencePercentage !== null) {
+    intensity = { method: 'reference_percentage', referencePercentage: row.referencePercentage }
   }
 
   const template: WorkoutTemplate = {
