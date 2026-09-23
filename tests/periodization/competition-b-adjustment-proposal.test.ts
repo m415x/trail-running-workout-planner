@@ -29,7 +29,7 @@ const intensity: TaperIntensityReference = {
   emphasis: 'vo2max',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: 95,
+  referencePercentageTarget: 95,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
@@ -110,7 +110,7 @@ describe('competition B proportional adjustment proposal', () => {
   it('preserves PAM magnitude while limiting the quality exposure during a mini-taper', () => {
     const proposal = buildCompetitionBAdjustmentProposal(input())
 
-    assert.equal(proposal.intensity.proposed.pamPercentageTarget, 95)
+    assert.equal(proposal.intensity.proposed.referencePercentageTarget, 95)
     assert.ok(proposal.intensity.proposed.intenseSessionsTarget <= 1)
   })
 
