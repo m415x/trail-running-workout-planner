@@ -352,7 +352,27 @@ function readNormalizedSchema(sqlitePath: string): string[] {
         AND tbl_name <> '__drizzle_migrations'
       ORDER BY type, name
     `).all() as Array<{ type: string; name: string; tbl_name: string; sql: string | null }>)
-      .map(row => JSON.stringify({ ...row, sql: normalizeSqliteSchemaSql(row.sql) }))
+      .map(row => {
+        // SQLite appends columns and can rewrite inline foreign keys on ALTER.
+        // Compare the affected table by its actual columns and foreign keys.
+        if (row.type === 'table' && row.name === 'field_performance_tests') {
+          const columns = (sqlite.pragma('table_xinfo(field_performance_tests)') as Array<{
+            name: string; type: string; notnull: number; dflt_value: string | null; pk: number; hidden: number
+          }>).map(({ name, type, notnull, dflt_value, pk, hidden }) =>
+            ({ name, type: type.toUpperCase(), notnull, dflt_value, pk, hidden }),
+          ).sort((a, b) => a.name.localeCompare(b.name))
+          const foreignKeys = (sqlite.pragma('foreign_key_list(field_performance_tests)') as Array<{
+            table: string; from: string; to: string; on_update: string; on_delete: string; match: string; seq: number
+          }>).map(({ table, from, to, on_update, on_delete, match, seq }) =>
+            ({ table, from, to, on_update, on_delete, match, seq }),
+          ).sort((a, b) => a.from.localeCompare(b.from) || a.seq - b.seq)
+          return JSON.stringify({ type: row.type, name: row.name, tbl_name: row.tbl_name, columns, foreignKeys })
+        }
+        const sql = row.type === 'trigger'
+          ? row.sql?.replace(/^CREATE\\s+TRIGGER\\s+IF\\s+NOT\\s+EXISTS\\s+/i, 'CREATE TRIGGER ')
+          : row.sql
+        return JSON.stringify({ ...row, sql: normalizeSqliteSchemaSql(sql ?? null) })
+      })
   } finally {
     sqlite.close()
   }
