@@ -27,7 +27,7 @@ const intensity: TaperIntensityReference = {
   emphasis: 'vo2max',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: 95,
+  referencePercentageTarget: 95,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
