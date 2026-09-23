@@ -1,9 +1,9 @@
-import { PAM_PERCENTAGE_STEPS } from '@/lib/periodization/intensity-strategy-matrix'
+import { REFERENCE_PERCENTAGE_STEPS } from '@/lib/periodization/intensity-strategy-matrix'
 
 import type {
   IntensityMethod,
   MicrocycleIntensityTargetDraft,
-  PamPercentage,
+  ReferencePercentage,
   TrainingIntensity,
 } from '@/types'
 
@@ -16,16 +16,16 @@ export interface ProposeMicrocycleIntensityParams {
  * Rounds an internally calculated PAM value to the nearest practical step.
  * Ties resolve toward the lower percentage to avoid increasing load silently.
  */
-export function getNearestPamPercentageStep(
-  pamPercentage: PamPercentage,
-): (typeof PAM_PERCENTAGE_STEPS)[number] {
-  if (!Number.isFinite(pamPercentage) || pamPercentage <= 0) {
+export function getNearestReferencePercentageStep(
+  referencePercentage: ReferencePercentage,
+): (typeof REFERENCE_PERCENTAGE_STEPS)[number] {
+  if (!Number.isFinite(referencePercentage) || referencePercentage <= 0) {
     throw new Error('El porcentaje PAM debe ser un número positivo y finito.')
   }
 
-  return PAM_PERCENTAGE_STEPS.reduce((nearest, candidate) => {
-    const candidateDistance = Math.abs(candidate - pamPercentage)
-    const nearestDistance = Math.abs(nearest - pamPercentage)
+  return REFERENCE_PERCENTAGE_STEPS.reduce((nearest, candidate) => {
+    const candidateDistance = Math.abs(candidate - referencePercentage)
+    const nearestDistance = Math.abs(nearest - referencePercentage)
 
     return candidateDistance < nearestDistance ? candidate : nearest
   })
@@ -45,11 +45,11 @@ export function proposeMicrocycleIntensity({
   if (
     defaultMethod === 'pam_percentage'
     && target.intenseSessionsTarget > 0
-    && target.pamPercentageTarget !== null
+    && target.referencePercentageTarget !== null
   ) {
     return {
       method: 'pam_percentage',
-      pamPercentage: getNearestPamPercentageStep(target.pamPercentageTarget),
+      pamPercentage: getNearestReferencePercentageStep(target.referencePercentageTarget),
     }
   }
 
