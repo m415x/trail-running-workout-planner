@@ -194,7 +194,7 @@ export interface SessionGenerationIntensityTarget {
   emphasis: IntensityEmphasis
   intenseSessionsTarget: number
   predominantZone: IntensityZone
-  pamPercentageTarget: PamPercentage | null
+  referencePercentageTarget: PamPercentage | null
   minimumRecoveryDaysBetweenIntenseSessions: number
 }
 
