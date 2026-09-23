@@ -18,7 +18,7 @@ export interface IntensityDistributionPoint {
   emphasis: IntensityEmphasis
   intenseSessionsTarget: number
   predominantZone: IntensityZone
-  pamPercentageTarget: number | null
+  referencePercentageTarget: number | null
   minimumRecoveryDaysBetweenIntenseSessions: number
   fieldSources: MicrocycleIntensityTargetFieldSources
 }
@@ -118,8 +118,8 @@ export function IntensityDistribution({
                         : `${point.intenseSessionsTarget} ${point.intenseSessionsTarget === 1 ? 'sesión intensa' : 'sesiones intensas'}`}
                     </span>
                   </p>
-                  {defaultMethod === 'pam_percentage' && point.pamPercentageTarget !== null && (
-                    <p className='font-medium'>{point.pamPercentageTarget}% PAM</p>
+                  {defaultMethod === 'pam_percentage' && point.referencePercentageTarget !== null && (
+                    <p className='font-medium'>{point.referencePercentageTarget}% PAM</p>
                   )}
                   <p className='flex items-center gap-2 text-muted-foreground'>
                     <TimerReset className='size-4' />
