@@ -421,7 +421,6 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
     }).sync()
     if (!microcycle || microcycle.mesocycle.macrocycle.groupTrainingPlan.groupId !== group.id
       || microcycle.mesocycle.macrocycle.groupTrainingPlan.isDeleted
-      || microcycle.mesocycle.macrocycle.groupTrainingPlan.teamId !== CURRENT_TEAM_ID
       || microcycle.mesocycle.macrocycle.isDeleted || microcycle.mesocycle.isDeleted) {
       return { errorCode: 'microcycleGroupMismatch' as const, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
     }
@@ -436,7 +435,6 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
       .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
       .where(and(
         eq(groupTrainingPlans.groupId, group.id),
-        eq(groupTrainingPlans.teamId, CURRENT_TEAM_ID),
         eq(groupTrainingPlans.isDeleted, false),
         eq(macrocycles.isDeleted, false),
         eq(mesocycles.isDeleted, false),
