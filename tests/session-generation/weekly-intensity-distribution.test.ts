@@ -20,7 +20,7 @@ const zoneTarget: SessionGenerationIntensityTarget = {
   emphasis: 'threshold',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: null,
+  referencePercentageTarget: null,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
@@ -47,7 +47,7 @@ describe('distribución semanal de intensidad', () => {
       defaultMethod: 'pam_percentage',
       emphasis: 'vo2max',
       intenseSessionsTarget: 1,
-      pamPercentageTarget: 95,
+      referencePercentageTarget: 95,
     })
     const intense = result.allocations.find(({ isIntense }) => isIntense)
     const regular = result.allocations.filter(({ isIntense }) => !isIntense)
@@ -89,7 +89,7 @@ describe('distribución semanal de intensidad', () => {
       ...zoneTarget,
       defaultMethod: 'pam_percentage',
       intenseSessionsTarget: 1,
-      pamPercentageTarget: null,
+      referencePercentageTarget: null,
     })
 
     assert.ok(result.allocations.every(({ intensityMethod }) => intensityMethod === 'hr_zone'))
