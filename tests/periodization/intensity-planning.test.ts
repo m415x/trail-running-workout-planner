@@ -79,7 +79,7 @@ describe('planificación de intensidad', () => {
   })
 
   it('selecciona PAM para desarrollo y zonas para mantenimiento', () => {
-    assert.equal(suggestIntensityStrategy('S2', 'performance').values.defaultMethod, 'pam_percentage')
+    assert.equal(suggestIntensityStrategy('S2', 'performance').values.defaultMethod, 'reference_percentage')
     assert.equal(suggestIntensityStrategy('S2', 'maintenance').values.defaultMethod, 'hr_zone')
   })
 
@@ -126,7 +126,7 @@ describe('planificación de intensidad', () => {
 
     assert.deepEqual(proposeMicrocycleIntensity({
       target,
-      defaultMethod: 'pam_percentage',
+      defaultMethod: 'reference_percentage',
     }), { method: 'hr_zone', zone: 'Z2' })
   })
 
