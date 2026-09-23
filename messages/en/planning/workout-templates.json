@@ -95,10 +95,10 @@
         "intensityMethod": "Intensity method",
         "noIntensity": "No default intensity",
         "hrZone": "Heart-rate zone",
-        "pam": "PAM percentage",
+        "reference": "Reference percentage",
         "zone": "Zone",
         "selectZone": "Select a zone",
-        "pamPercentage": "PAM percentage",
+        "referencePercentage": "Reference percentage",
         "notes": "Group instructions",
         "notesPlaceholder": "Execution guidelines, recoveries, or adaptations…"
       }
