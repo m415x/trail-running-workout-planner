@@ -58,7 +58,13 @@ export function runScenarioCommand(
   args: string[],
   env: NodeJS.ProcessEnv = process.env,
 ): void {
-  const result = spawnSync(command, args, { cwd, env, stdio: 'pipe', encoding: 'utf8' })
+  const projectTsconfig = resolve('tsconfig.json')
+  const result = spawnSync(command, args, {
+    cwd,
+    env: { ...env, TSX_TSCONFIG_PATH: projectTsconfig },
+    stdio: 'pipe',
+    encoding: 'utf8',
+  })
   if (result.error) throw result.error
   if (result.status !== 0) {
     throw new Error(
