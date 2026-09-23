@@ -25,6 +25,16 @@ describe('SQLite schema drift normalization', () => {
     )
   })
 
+  it('keeps identifiers and SQL keywords intact during tokenization', () => {
+    const normalized = normalizeSqliteSchemaSql(
+      'CREATE TABLE `athlete_groups` (`is_deleted` integer DEFAULT false NOT NULL)',
+    )
+    assert.match(normalized ?? '', /`athlete_groups`/)
+    assert.match(normalized ?? '', /`is_deleted`/)
+    assert.match(normalized ?? '', /DEFAULT false NOT NULL/)
+    assert.doesNotMatch(normalized ?? '', /`athlete_group `|`i _deleted`|fal e/)
+  })
+
   it('does not ignore whitespace inside SQL string literals', () => {
     assert.notEqual(
       normalizeSqliteSchemaSql("CREATE TABLE t (value text DEFAULT 'a b')"),
