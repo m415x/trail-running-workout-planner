@@ -29,7 +29,7 @@ function templateFixture(
       distanceKm: 8,
       durationMin: 60,
       elevationGain: 450,
-      intensity: { method: 'pam_percentage', pamPercentage: 100 },
+      intensity: { method: 'reference_percentage', referencePercentage: 100 },
       notes: 'Recuperar bajando al trote.',
     },
     ...overrides,
@@ -72,13 +72,13 @@ describe('valores predeterminados de plantillas', () => {
     assert.equal(validateWorkoutTemplateDefaults(template).isValid, true)
   })
 
-  it('rechaza unidades negativas, enteros inválidos y PAM fuera de rango', () => {
+  it('rechaza unidades negativas, enteros inválidos y porcentaje de referencia fuera de rango', () => {
     const template = templateFixture({
       prescriptionDefaults: {
         distanceKm: -1,
         durationMin: 30.5,
         elevationGain: 450.5,
-        intensity: { method: 'pam_percentage', pamPercentage: 250 },
+        intensity: { method: 'reference_percentage', referencePercentage: 250 },
         notes: null,
       },
     })
