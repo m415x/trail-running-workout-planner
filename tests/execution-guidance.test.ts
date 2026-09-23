@@ -9,8 +9,8 @@ import type { TrainingIntensity } from '@/types/training/intensity.types'
 
 test('keeps quality percentage prescription distinct from zone guidance', () => {
   const intensity: TrainingIntensity = {
-    method: 'pam_percentage',
-    pamPercentage: 90,
+    method: 'reference_percentage',
+    referencePercentage: 90,
   }
 
   const result = resolveExecutionGuidance({
@@ -33,8 +33,8 @@ test('keeps quality percentage prescription distinct from zone guidance', () => 
   })
 
   assert.equal(result.policyVersion, INTENSITY_GUIDANCE_POLICY.version)
-  assert.equal(result.prescription.method, 'pam_percentage')
-  assert.equal(result.prescription.pamPercentage, 90)
+  assert.equal(result.prescription.method, 'reference_percentage')
+  assert.equal(result.prescription.referencePercentage, 90)
   assert.equal(result.quality?.status, 'available')
   if (result.quality?.status !== 'available') return
   assert.equal(result.quality.source.evaluationId, 'eval_1000m')
@@ -76,8 +76,8 @@ test('keeps Z1-Z5 prescription independent from the 1000 m running reference', (
 test('does not synthesize quality pace when the running reference is unknown', () => {
   const result = resolveExecutionGuidance({
     intensity: {
-      method: 'pam_percentage',
-      pamPercentage: 110,
+      method: 'reference_percentage',
+      referencePercentage: 110,
     },
     runningReference: { status: 'unknown' },
   })
@@ -89,8 +89,8 @@ test('does not synthesize quality pace when the running reference is unknown', (
 test('derives orientative quality pace and speed from the explicit percentage', () => {
   const result = resolveExecutionGuidance({
     intensity: {
-      method: 'pam_percentage',
-      pamPercentage: 90,
+      method: 'reference_percentage',
+      referencePercentage: 90,
     },
     runningReference: {
       status: 'available',
@@ -121,8 +121,8 @@ test('derives orientative quality pace and speed from the explicit percentage', 
 test('supports coach quality percentages above 100 without treating them as zones', () => {
   const result = resolveExecutionGuidance({
     intensity: {
-      method: 'pam_percentage',
-      pamPercentage: 120,
+      method: 'reference_percentage',
+      referencePercentage: 120,
     },
     runningReference: {
       status: 'available',
