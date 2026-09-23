@@ -240,15 +240,15 @@ function plannedNumericOperand(
 }
 
 function plannedIntensityOperand(input: {
-  intensityMethod: 'hr_zone' | 'pam_percentage' | null
+  intensityMethod: 'hr_zone' | 'reference_percentage' | null
   zone: string | null
-  pamPercentage: number | null
+  referencePercentage: number | null
 }): PlanRealMetricOperand {
   if (input.intensityMethod === 'hr_zone' && input.zone !== null) {
     return { state: 'known', value: input.zone, unit: 'hr_zone' }
   }
-  if (input.intensityMethod === 'pam_percentage' && input.pamPercentage !== null) {
-    return { state: 'known', value: input.pamPercentage, unit: 'pam_percent' }
+  if (input.intensityMethod === 'reference_percentage' && input.referencePercentage !== null) {
+    return { state: 'known', value: input.referencePercentage, unit: 'reference_percent' }
   }
   return { state: 'unknown', reason: 'not_prescribed', unit: null }
 }
@@ -287,7 +287,7 @@ export async function getAthletePlanRealComparisonAction(
         elevationGainM: groupSessionPrescriptions.elevationGain,
         intensityMethod: groupSessionPrescriptions.intensityMethod,
         zone: groupSessionPrescriptions.zone,
-        pamPercentage: groupSessionPrescriptions.pamPercentage,
+        referencePercentage: groupSessionPrescriptions.referencePercentage,
       })
       .from(sessions)
       .innerJoin(
