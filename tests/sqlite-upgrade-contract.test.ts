@@ -634,3 +634,22 @@ test('realized-training migration resolves its SQL file from the repository, not
   assert.match(migration, /import\.meta\.(url|dirname)/)
   assert.doesNotMatch(migration, /readFileSync\(resolve\(['"]drizzle\/sqlite\//)
 })
+
+test('versioned SQLite intensity migration covers every legacy percentage column', () => {
+  const root = process.cwd()
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+    entries: Array<{ tag: string }>
+  }
+  const migration = journal.entries.find(entry => entry.tag.startsWith('0006_'))
+  assert.ok(migration, 'missing versioned SQLite intensity migration after 0005')
+  const sql = fs.readFileSync(path.join(root, 'drizzle/sqlite', `${migration.tag}.sql`), 'utf8')
+  for (const [table, oldColumn, newColumn] of [
+    ['microcycle_intensity_targets', 'pam_percentage_target', 'reference_percentage_target'],
+    ['group_session_prescriptions', 'pam_percentage', 'reference_percentage'],
+    ['workouts', 'pam_percentage', 'reference_percentage'],
+  ]) {
+    assert.match(sql, new RegExp(table), `missing intensity migration for ${table}`)
+    assert.match(sql, new RegExp(oldColumn), `missing legacy column handling for ${table}`)
+    assert.match(sql, new RegExp(newColumn), `missing canonical column handling for ${table}`)
+  }
+})
