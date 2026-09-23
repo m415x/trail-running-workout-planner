@@ -16,7 +16,7 @@ interface SessionFormProps {
   groups: Array<{
     id: string
     code: string
-    microcycles: Array<{ id: string; label: string }>
+    microcycles: Array<{ id: string; planTitle: string; weekNumber: number; startDate: string; endDate: string }>
   }>
   session?: {
     id: string
@@ -296,7 +296,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                 <div className='mt-4 space-y-4'>
                   <SelectField label={t('form.prescriptions.microcycle')} name={`microcycleId:${group.id}`} defaultValue={current?.microcycleId ?? ''} required>
                     <option value=''>{t('form.prescriptions.selectMicrocycle')}</option>
-                    {group.microcycles.map((microcycle) => <option key={microcycle.id} value={microcycle.id}>{microcycle.label}</option>)}
+                    {group.microcycles.map((microcycle) => <option key={microcycle.id} value={microcycle.id}>{t('form.prescriptions.microcycleOption', { plan: microcycle.planTitle, week: microcycle.weekNumber, start: microcycle.startDate, end: microcycle.endDate })}</option>)}
                   </SelectField>
 
                   <div className='grid gap-4 sm:grid-cols-3'>
