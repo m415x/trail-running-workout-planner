@@ -17,7 +17,7 @@ import type {
 const GENERATED_FIELD_SOURCES: MicrocycleIntensityTargetFieldSources = {
   intenseSessionsTarget: 'generated',
   predominantZone: 'generated',
-  pamPercentageTarget: 'generated',
+  referencePercentageTarget: 'generated',
   minimumRecoveryDaysBetweenIntenseSessions: 'generated',
 }
 
@@ -69,7 +69,7 @@ export function calculateMicrocycleIntensityTarget({
     emphasis: rule.emphasis,
     intenseSessionsTarget,
     predominantZone: rule.predominantZone,
-    pamPercentageTarget: intenseSessionsTarget > 0 ? rule.suggestedPamPercentage : null,
+    referencePercentageTarget: intenseSessionsTarget > 0 ? rule.suggestedReferencePercentage : null,
     minimumRecoveryDaysBetweenIntenseSessions:
       intensityStrategy.values.minimumRecoveryDaysBetweenIntenseSessions,
     fieldSources: { ...GENERATED_FIELD_SOURCES },
