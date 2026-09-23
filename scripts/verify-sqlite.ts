@@ -22,6 +22,25 @@ try {
     )
   }
 
+  if (!tables.has('microcycle_intensity_targets')) {
+    throw new Error('SQLite schema is not at HEAD: missing table microcycle_intensity_targets')
+  }
+
+  const intensityTargetColumns = new Set(
+    (sqlite.prepare('PRAGMA table_info(microcycle_intensity_targets)').all() as { name: string }[])
+      .map(row => row.name),
+  )
+  if (!intensityTargetColumns.has('reference_percentage_target')) {
+    throw new Error(
+      'SQLite schema is not at HEAD: microcycle_intensity_targets.reference_percentage_target is missing',
+    )
+  }
+  if (intensityTargetColumns.has('pam_percentage_target')) {
+    throw new Error(
+      'SQLite schema is not at HEAD: legacy microcycle_intensity_targets.pam_percentage_target remains',
+    )
+  }
+
   const foreignKeyErrors = sqlite.pragma('foreign_key_check') as unknown[]
   if (foreignKeyErrors.length > 0) throw new Error('SQLite foreign key integrity check failed')
 
