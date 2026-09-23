@@ -75,6 +75,13 @@
         "title": "Nueva sesión",
         "description": "Programá un entrenamiento compartido para el equipo."
       }
+    },
+    "calendar": {
+      "sessionCount": "{count, plural, one {# sesión} other {# sesiones}}",
+      "empty": "Sin sesiones",
+      "group": "Grupo",
+      "allGroups": "Todos los grupos",
+      "inactive": "Inactivo"
     }
   }
 }
