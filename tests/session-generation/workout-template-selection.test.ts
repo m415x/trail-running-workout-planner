@@ -167,7 +167,7 @@ describe('selección de plantillas para generación semanal', () => {
         distanceKm: 99,
         durationMin: 300,
         elevationGain: 5000,
-        intensity: { method: 'pam_percentage' as const, pamPercentage: 200 as const },
+        intensity: { method: 'reference_percentage' as const, referencePercentage: 200 as const },
         notes: null,
       },
     }
