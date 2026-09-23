@@ -172,7 +172,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             emphasis: target.emphasis,
             intenseSessionsTarget: target.intenseSessionsTarget,
             predominantZone: target.predominantZone,
-            pamPercentageTarget: target.pamPercentageTarget,
+            referencePercentageTarget: target.referencePercentageTarget,
             minimumRecoveryDaysBetweenIntenseSessions:
               target.minimumRecoveryDaysBetweenIntenseSessions,
             fieldSources: target.fieldSources,
@@ -220,7 +220,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                   emphasis: intensityTarget.emphasis,
                   intenseSessionsTarget: intensityTarget.intenseSessionsTarget,
                   predominantZone: intensityTarget.predominantZone,
-                  pamPercentageTarget: intensityTarget.pamPercentageTarget,
+                  referencePercentageTarget: intensityTarget.referencePercentageTarget,
                 minimumRecoveryDaysBetweenIntenseSessions:
                   intensityTarget.minimumRecoveryDaysBetweenIntenseSessions,
               },
