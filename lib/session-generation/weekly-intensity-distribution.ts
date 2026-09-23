@@ -39,7 +39,7 @@ export function distributeWeeklyIntensity(
     target.minimumRecoveryDaysBetweenIntenseSessions,
   )
   const intenseKeys = new Set(intenseSlots.map(({ slot }) => slot.key))
-  const usePam = target.defaultMethod === 'pam_percentage' && target.referencePercentageTarget !== null
+  const usePam = target.defaultMethod === 'reference_percentage' && target.referencePercentageTarget !== null
   const warnings: string[] = []
 
   if (intenseSlots.length < target.intenseSessionsTarget) {
@@ -47,7 +47,7 @@ export function distributeWeeklyIntensity(
       `Solo se pudieron ubicar ${intenseSlots.length} de ${target.intenseSessionsTarget} sesiones intensas respetando la recuperación requerida.`,
     )
   }
-  if (target.defaultMethod === 'pam_percentage' && target.referencePercentageTarget === null) {
+  if (target.defaultMethod === 'reference_percentage' && target.referencePercentageTarget === null) {
     warnings.push(
       'La estrategia usa PAM pero el microciclo no tiene un porcentaje objetivo; se utilizarán zonas de frecuencia cardíaca.',
     )
@@ -63,9 +63,9 @@ export function distributeWeeklyIntensity(
           slotKey: slot.key,
           date,
           isIntense: true,
-          intensityMethod: 'pam_percentage',
+          intensityMethod: 'reference_percentage',
           zone: null,
-          pamPercentage: target.referencePercentageTarget,
+          referencePercentage: target.referencePercentageTarget,
         }
       }
 
@@ -75,7 +75,7 @@ export function distributeWeeklyIntensity(
         isIntense,
         intensityMethod: 'hr_zone',
         zone: resolveZone(slot.role === 'recovery', isIntense, target),
-        pamPercentage: null,
+        referencePercentage: null,
       }
     })
 
