@@ -554,3 +554,45 @@ test('SQLite Drizzle config loads from an isolated working directory', () => {
     rmSync(workspace, { recursive: true, force: true })
   }
 })
+
+test('SQLite Drizzle config requires an explicit isolated target when invoked by scenario verification', () => {
+  const projectRoot = process.cwd()
+  const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-explicit-target-'))
+  try {
+    const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+    const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
+    const result = spawnSync(process.execPath, [
+      tsxCli,
+      '-e',
+      `import config from ${JSON.stringify(configPath)}; console.log(config.dbCredentials?.url)`,
+    ], {
+      cwd: projectRoot,
+      encoding: 'utf8',
+      env: {
+        ...process.env,
+        TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json'),
+        SQLITE_SCENARIO_MODE: '1',
+        SQLITE_DATABASE_PATH: path.join(workspace, 'sqlite.db'),
+      },
+    })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stdout.trim(), path.join(workspace, 'sqlite.db'))
+  } finally {
+    rmSync(workspace, { recursive: true, force: true })
+  }
+})
+
+test('SQLite Drizzle config rejects scenario mode without an explicit database target', () => {
+  const projectRoot = process.cwd()
+  const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+  const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
+  const env = { ...process.env, SQLITE_SCENARIO_MODE: '1', TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') }
+  delete env.SQLITE_DATABASE_PATH
+  const result = spawnSync(process.execPath, [
+    tsxCli,
+    '-e',
+    `import ${JSON.stringify(configPath)}`,
+  ], { cwd: projectRoot, encoding: 'utf8', env })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr + result.stdout, /SQLITE_DATABASE_PATH/)
+})
