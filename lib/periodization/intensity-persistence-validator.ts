@@ -4,7 +4,7 @@ import { validateIntensityFeasibility } from '@/lib/periodization/intensity-feas
 
 import type { IntensityStrategyDraft, MicrocycleIntensityTargetDraft } from '@/types'
 
-const METHODS = new Set(['hr_zone', 'pam_percentage'])
+const METHODS = new Set(['hr_zone', 'reference_percentage'])
 const STRATEGY_SOURCES = new Set(['suggested', 'manual'])
 const TARGET_SOURCES = new Set(['generated', 'manual'])
 const ZONES = new Set(['Z1', 'Z2', 'Z3', 'Z4', 'Z5'])
@@ -40,19 +40,19 @@ export function assertPersistableIntensityPlanning(
     if (!feasibility.isValid) throw new Error(feasibility.errors[0])
 
     if (target.intenseSessionsTarget === 0 && target.referencePercentageTarget !== null) {
-      throw new Error('Una semana sin sesiones intensas no puede conservar un objetivo PAM.')
+      throw new Error('Una semana sin sesiones intensas no puede conservar un objetivo de referencia.')
     }
 
     if (target.referencePercentageTarget !== null) {
       if (!Number.isFinite(target.referencePercentageTarget) || target.referencePercentageTarget <= 0 || target.referencePercentageTarget > 200) {
-        throw new Error('El porcentaje PAM semanal debe estar entre 1 y 200.')
+        throw new Error('El porcentaje de referencia semanal debe estar entre 1 y 200.')
       }
 
       if (
         target.fieldSources.referencePercentageTarget === 'generated'
         && !(REFERENCE_PERCENTAGE_STEPS as readonly number[]).includes(target.referencePercentageTarget)
       ) {
-        throw new Error('El porcentaje PAM generado no coincide con un escalón permitido.')
+        throw new Error('El porcentaje de referencia generado no coincide con un escalón permitido.')
       }
     }
   }
