@@ -37,3 +37,13 @@ test('KAN-412 removes the temporary legacy percentage classifier', () => {
   assert.equal(fs.existsSync(path.join(process.cwd(), 'lib/physiology/reference-percentage-compatibility.ts')), false)
   assert.equal(fs.existsSync(path.join(process.cwd(), 'tests/physiology/reference-percentage-compatibility.test.ts')), false)
 })
+
+test('KAN-446 excludes unsupported zone-to-PAM mappings and retains workout type PAM', () => {
+  const constants = source('lib/constants.ts')
+  const workoutCard = source('features/workouts/hooks/useWorkoutCard.ts')
+  assert.equal(fs.existsSync(path.join(process.cwd(), 'lib/physiology/pam.ts')), false)
+  assert.doesNotMatch(constants, /ZONE_PAM_PERCENTAGES/)
+  assert.match(constants, /PAM: \{ icon: PamIcon \}/)
+  assert.doesNotMatch(workoutCard, /getZonePaceRangeFromPam|ZONE_PAM_PERCENTAGES|physiology\/pam/)
+  assert.match(workoutCard, /resolveExecutionGuidance/)
+})
