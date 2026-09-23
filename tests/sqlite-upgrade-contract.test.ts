@@ -625,3 +625,12 @@ test('Drizzle Kit can push repository-relative schemas into an explicitly isolat
     rmSync(workspace, { recursive: true, force: true })
   }
 })
+
+test('realized-training migration resolves its SQL file from the repository, not the scenario cwd', () => {
+  const migration = fs.readFileSync(
+    path.join(process.cwd(), 'db/migrations/realized-training-timing-sqlite.ts'),
+    'utf8',
+  )
+  assert.match(migration, /import\.meta\.(url|dirname)/)
+  assert.doesNotMatch(migration, /readFileSync\(resolve\(['"]drizzle\/sqlite\//)
+})
