@@ -12,6 +12,11 @@ import Database from 'better-sqlite3'
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')
 const drizzleKitCli = process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit'
+const projectRoot = resolve(import.meta.dirname, '..')
+const scenarioMode = process.env.SQLITE_SCENARIO_MODE === '1'
+const sqlitePath = scenarioMode
+  ? process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()
+  : 'sqlite.db'
 
 function runNode(args: string[]): void {
   const result = spawnSync(process.execPath, args, { stdio: 'inherit' })
@@ -20,15 +25,15 @@ function runNode(args: string[]): void {
 }
 
 function runDrizzleKit(args: string[]): void {
-  const result = spawnSync(drizzleKitCli, args, { stdio: 'inherit', shell: process.platform === 'win32' })
+  const result = spawnSync(drizzleKitCli, args, { cwd: projectRoot, stdio: 'inherit', shell: process.platform === 'win32' })
   if (result.error) throw result.error
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
 function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecognized' {
-  if (!existsSync('sqlite.db')) return 'fresh'
+  if (!existsSync(sqlitePath)) return 'fresh'
 
-  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
     const tables = new Set(
       (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
@@ -84,7 +89,7 @@ function establishCanonicalMigrationMetadata(
   sqlite.exec(`CREATE TABLE IF NOT EXISTS __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)`)
 
   const journal = JSON.parse(
-    readFileSync(resolve('drizzle/sqlite/meta/_journal.json'), 'utf8'),
+    readFileSync(resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'), 'utf8'),
   ) as { entries: Array<{ tag: string; when: number }> }
   const appliedCount =
     appliedThroughTag === undefined
@@ -101,7 +106,7 @@ function establishCanonicalMigrationMetadata(
   const insert = sqlite.prepare('INSERT INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)')
 
   for (const entry of journal.entries.slice(0, appliedCount)) {
-    const migrationPath = resolve('drizzle/sqlite', `${entry.tag}.sql`)
+    const migrationPath = resolve(projectRoot, 'drizzle/sqlite', `${entry.tag}.sql`)
     const sql = readFileSync(migrationPath, 'utf8')
     const hash = createHash('sha256').update(sql).digest('hex')
     const row = existing.get(entry.when) as { hash: string } | undefined
@@ -119,12 +124,12 @@ function establishCanonicalMigrationMetadata(
 }
 
 function reconcileVersionedHeadMetadata(): boolean {
-  const verification = spawnSync(process.execPath, [tsxCli, resolve('scripts/verify-sqlite.ts')], {
+  const verification = spawnSync(process.execPath, [tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')], {
     stdio: 'ignore',
   })
   if (verification.status !== 0) return false
 
-  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
     sqlite.transaction(() => {
       establishCanonicalMigrationMetadata(sqlite)
@@ -149,24 +154,24 @@ if (state === 'fresh') {
     `--config=${resolve(import.meta.dirname, '../drizzle.sqlite.config.ts')}`,
   ])
 
-  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
     establishCanonicalMigrationMetadata(sqlite)
   } finally {
     sqlite.close()
   }
 
-  runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
+  runNode([tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')])
   process.exit(0)
 }
 
 if (state === 'versioned' && reconcileVersionedHeadMetadata()) {
-  runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
+  runNode([tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')])
   process.exit(0)
 }
 
 if (state === 'legacy') {
-  const sqlite = new Database('sqlite.db', { fileMustExist: true })
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
     migrateRealizedTrainingTimingSqlite(sqlite)
 
@@ -189,4 +194,4 @@ runDrizzleKit([
   'migrate',
   `--config=${resolve(import.meta.dirname, '../drizzle.sqlite.config.ts')}`,
 ])
-runNode([tsxCli, resolve('scripts/verify-sqlite.ts')])
+runNode([tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')])
