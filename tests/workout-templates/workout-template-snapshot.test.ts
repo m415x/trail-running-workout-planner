@@ -23,7 +23,7 @@ function template(): WorkoutTemplate {
       distanceKm: 10,
       durationMin: 60,
       elevationGain: 150,
-      intensity: { method: 'pam_percentage', pamPercentage: 100 },
+      intensity: { method: 'reference_percentage', referencePercentage: 100 },
       notes: 'Recuperación al trote.',
     },
   }
@@ -46,13 +46,13 @@ describe('snapshot de plantilla para una sesión', () => {
     source.sessionDefaults.title = 'Fartlek modificado'
     source.sessionDefaults.structure!.mainBlock = 'Nuevo bloque'
     source.prescriptionDefaults.distanceKm = 14
-    if (source.prescriptionDefaults.intensity?.method === 'pam_percentage') {
-      source.prescriptionDefaults.intensity.pamPercentage = 110
+    if (source.prescriptionDefaults.intensity?.method === 'reference_percentage') {
+      source.prescriptionDefaults.intensity.referencePercentage = 110
     }
 
     assert.equal(snapshot.session.title, 'Fartlek piramidal')
     assert.equal(snapshot.session.structure?.mainBlock, '1-2-3-2-1 minutos')
     assert.equal(snapshot.prescription.distanceKm, 10)
-    assert.deepEqual(snapshot.prescription.intensity, { method: 'pam_percentage', pamPercentage: 100 })
+    assert.deepEqual(snapshot.prescription.intensity, { method: 'reference_percentage', referencePercentage: 100 })
   })
 })
