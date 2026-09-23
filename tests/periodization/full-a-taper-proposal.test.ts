@@ -29,7 +29,7 @@ const intensity: TaperIntensityReference = {
   emphasis: 'vo2max',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: 95,
+  referencePercentageTarget: 95,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
@@ -93,7 +93,7 @@ describe('full A taper proposal', () => {
     const proposal = buildFullCompetitionATaperProposal(input())
 
     assert.equal(proposal.intensity.proposed.intenseSessionsTarget, 1)
-    assert.equal(proposal.intensity.proposed.pamPercentageTarget, 95)
+    assert.equal(proposal.intensity.proposed.referencePercentageTarget, 95)
     assert.ok(proposal.volumeCurve.finalReductionPercentage > 0)
     assert.ok((proposal.elevationCurve.finalReductionPercentage ?? 0) > 0)
   })
