@@ -2,7 +2,7 @@ import type { CompetitionPriority } from '@/types/training/competition-entry.typ
 import type {
   IntensityEmphasis,
   IntensityZone,
-  PamPercentage,
+  ReferencePercentage,
 } from '@/types/training/intensity.types'
 
 export type CompetitionAdjustmentStrategy =
@@ -191,7 +191,7 @@ export interface TaperIntensityReference {
   readonly emphasis: IntensityEmphasis
   readonly intenseSessionsTarget: number
   readonly predominantZone: IntensityZone
-  readonly pamPercentageTarget: PamPercentage | null
+  readonly referencePercentageTarget: ReferencePercentage | null
   readonly minimumRecoveryDaysBetweenIntenseSessions: number
 }
 
@@ -200,7 +200,7 @@ export type TaperIntensityReasonCode =
   | 'brief_intensity_preserved'
   | 'intense_session_count_reduced'
   | 'existing_hr_zone_preserved'
-  | 'existing_pam_percentage_preserved'
+  | 'existing_reference_percentage_preserved'
 
 /**
  * H10 proposal for retaining short quality stimuli while unloading total work.
