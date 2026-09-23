@@ -248,7 +248,7 @@ describe('reglas semanales de generación de sesiones', () => {
       emphasis: 'vo2max',
       intenseSessionsTarget: 1,
       predominantZone: 'Z2',
-      pamPercentageTarget: 92,
+      referencePercentageTarget: 92,
       minimumRecoveryDaysBetweenIntenseSessions: 2,
     }
 
