@@ -1,3 +1,5 @@
+import { useLocale, useTranslations } from 'next-intl'
+
 import { SessionCalendarCard, type CalendarSession } from '@/features/sessions/components/SessionCalendarCard'
 import { cn } from '@/lib/utils'
 import { Card, CardContent } from '@ui/card'
@@ -10,7 +12,9 @@ interface WeeklySessionCalendarProps {
 }
 
 export function WeeklySessionCalendar({ startDate, sessions, today, sessionsPath }: WeeklySessionCalendarProps) {
-  const days = buildWeek(startDate)
+  const locale = useLocale()
+  const t = useTranslations('Sessions')
+  const days = buildWeek(startDate, locale)
   const sessionsByDate = new Map<string, CalendarSession[]>()
 
   for (const session of sessions) {
@@ -44,7 +48,7 @@ export function WeeklySessionCalendar({ startDate, sessions, today, sessionsPath
 
                 <div className='space-y-2 p-2'>
                   {daySessions.length === 0 ? (
-                    <p className='py-6 text-center text-xs text-muted-foreground'>Sin sesiones</p>
+                    <p className='py-6 text-center text-xs text-muted-foreground'>{t('calendar.empty')}</p>
                   ) : (
                     daySessions.map((session) => (
                       <SessionCalendarCard key={session.id} session={session} href={`${sessionsPath}/${session.id}`} />
@@ -60,10 +64,10 @@ export function WeeklySessionCalendar({ startDate, sessions, today, sessionsPath
   )
 }
 
-function buildWeek(startDate: string) {
+function buildWeek(startDate: string, locale: string) {
   const start = new Date(`${startDate}T00:00:00Z`)
-  const weekDayFormatter = new Intl.DateTimeFormat('es-AR', { weekday: 'short', timeZone: 'UTC' })
-  const monthFormatter = new Intl.DateTimeFormat('es-AR', { month: 'short', timeZone: 'UTC' })
+  const weekDayFormatter = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' })
+  const monthFormatter = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' })
 
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(start)
