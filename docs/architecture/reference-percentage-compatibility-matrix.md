@@ -1,44 +1,36 @@
-# KAN-440 — Reference percentage compatibility matrix
+# KAN-440 — Reference percentage contract and clean migration decision
 
-Status: **proposed; requires explicit coach/product approval before KAN-443 SQLite and KAN-444 Supabase migrations**. This matrix documents current legacy contracts; it does not authorize automatic rewriting of historical records.
+Status: **approved by the product owner on 2026-09-23**. The application is pre-production and contains no real data. The previous proposal to preserve ambiguous legacy rows and maintain parallel legacy columns is superseded.
 
-## Canonical contract and scale
+## Approved canonical contract
 
-- Execution identifier: `reference_percentage`; value field: `referencePercentage`; persisted target field to be agreed in the migration tasks.
-- Human-readable percentage scale: `90` means 90% of the applicable temporal 1000 m `RunningReference`, not a decimal multiplier `0.9`.
-- Z1–Z5 remain independent; they must not be converted to percentages or BPM.
-- Workout type `PAM` remains unchanged. Its name is not evidence that a 1000 m test measures physiological PAM/MAS.
-- Legacy `pam_percentage` / `pamPercentage` are not canonical synonyms until their historical provenance and scale are established.
+- Method: `reference_percentage`; value: `referencePercentage`; persistence identifiers: `reference_percentage` for the numeric column and `reference_percentage` as the intensity method value.
+- Human percentage scale: `90` means 90% of the applicable temporal 1000 m `RunningReference`; `0.9` is not a valid representation of 90%.
+- Z1–Z5 remain independent; no implicit percentage or BPM conversion.
+- Workout type `PAM` remains unchanged. A 1000 m test does not directly measure physiological PAM/MAS.
+- The coach remains the owner of the prescribed intensity. Migration must not introduce automatic sporting decisions.
 
-## Existing storage and compatibility boundaries
+## Clean replacement inventory
 
-| Boundary | Existing identifier and value | Current read/write path | Scale evidence and treatment |
-| --- | --- | --- | --- |
-| Workout catalogue | `workouts.intensity_method`, `workouts.pam_percentage` | `app/actions/workout-template-actions.ts`: `resolveIntensity` reads; `draftFromFormData` and `persistenceValues` write | Numeric scale is not encoded in the column. Preserve original values and method; do not infer scale from magnitude. |
-| Session prescription | `session_prescriptions.intensity_method`, `session_prescriptions.pam_percentage` | Session form and session actions; workout-template snapshot can supply defaults | Same provenance rule. A template-derived value must not silently acquire canonical semantics. |
-| Microcycle intensity target | `pamPercentageTarget` / `pam_percentage_target` | Intensity strategy/periodization domain; Supabase schema includes the target | Planning intent is distinct from an athlete-specific execution reference. Do not rewrite as a RunningReference-derived prescription without an explicit domain decision. |
-| Intensity strategy/rules | `suggestedPamPercentage`, `PamPercentage`, `defaultMethod` | `types/training/intensity.types.ts` and planning consumers | Legacy planning semantics. Preserve independently until KAN-441 defines their canonical mapping. |
-| Legacy pace/zone helper | `lib/physiology/pam.ts`, `ZONE_PAM_PERCENTAGES` | Legacy calculation consumers | Do not equate zone percentage bands with the 1000 m reference. KAN-446 owns retirement or isolation. |
-| Execution guidance | `ExecutionIntensity` `reference_percentage` / `referencePercentage` | `lib/physiology/execution-guidance.ts` | Explicit canonical value uses the human percentage scale. Legacy `pam_percentage` remains distinguishable. |
-| SQLite | `db/schema.ts` workout and session prescription columns | Local Drizzle storage | No migration until this matrix is approved; retain original values for audit. |
-| Supabase | `db/supabase/schema.ts` workout, session prescription and microcycle target columns | PostgreSQL Drizzle storage | Apply the same classification rules as SQLite; no unilateral remote reinterpretation. |
+| Boundary | Legacy contract to replace | Canonical outcome |
+| --- | --- | --- |
+| Workout catalogue | `workouts.intensity_method = pam_percentage`, `workouts.pam_percentage` | `reference_percentage` method and `reference_percentage` numeric column |
+| Session prescriptions | `session_prescriptions.intensity_method = pam_percentage`, `session_prescriptions.pam_percentage` | Same canonical method and numeric column |
+| Microcycle intensity targets | `pamPercentageTarget` / `pam_percentage_target` | Rename to `referencePercentageTarget` / `reference_percentage_target` as a planning target; do not invent an athlete-specific pace before a RunningReference is available |
+| Planning strategy and rules | `PamPercentage`, `suggestedPamPercentage`, legacy default method | Canonical reference-percentage naming and explicit human percentage scale |
+| Template and session forms/actions | `pamPercentage`, `pam_percentage` payloads and UI | Canonical payloads, validation and ES/EN “% de referencia” presentation |
+| Legacy pace/zone helper | `lib/physiology/pam.ts` and `ZONE_PAM_PERCENTAGES` | Replace or isolate legacy calculations; never infer the 1000 m reference from Z1–Z5 |
+| Execution guidance | Temporary `ExecutionIntensity` alongside legacy `TrainingIntensity` | Converge on one canonical `TrainingIntensity` union after consumers are migrated |
+| SQLite and Supabase | Legacy Drizzle columns and historical migration assumptions | Equivalent canonical schemas and verified migration state |
 
-## Classification rules for historical values
+## Migration rules
 
-| Legacy value | Provenance | Classification | Permitted action |
-| --- | --- | --- | --- |
-| `90` | Explicitly documented human percent | Resolved as `referencePercentage: 90` **only if** the value is also documented as a percentage of the applicable 1000 m reference | Convert through an explicit reviewed mapping. |
-| `0.9` | Explicitly documented fractional multiplier of the applicable 1000 m reference | Resolved as `referencePercentage: 90` | Convert through an explicit reviewed mapping. |
-| `90` or `0.9` | Unknown scale or reference basis | Ambiguous | Preserve legacy identifier and original value; flag for review. Do not infer from numeric range. |
-| Any value | Known percentage scale but unknown physiological/reference basis | Reference basis unresolved | Preserve as legacy until reference basis is verified; numeric normalization alone does not establish canonical meaning. |
-| Null | No prescribed percentage | Absent | Keep null; never substitute zero. |
+1. There are no production records or real athlete data to preserve. Legacy test data may be discarded and reseeded. Do not implement historical scale heuristics, review queues, dual-write, or indefinite compatibility columns.
+2. Migrate application consumers and schema as bounded tasks; keep the branch type-safe at each integration boundary. Both databases must end with the same identifiers and semantics.
+3. For SQLite, follow the project's migration workflow and reset only the local test database as needed. For Supabase, inspect generated SQL and apply/verify against the intended test environment; do not assume generated SQL proves remote application.
+4. Preserve independently meaningful concepts: Z1–Z5, the `PAM` workout type, temporal RunningReference, and explicit coach prescriptions.
+5. Remove temporary legacy compatibility code and tests that no longer describe the final contract. The scale classifier added during KAN-440 is temporary and must not survive KAN-446 unless a concrete non-legacy use is demonstrated.
 
-`classifyLegacyPercentage` is a narrow scale classifier, not a migration authorization or proof of reference basis. Callers must establish the reference basis separately.
+## Approval gate
 
-## Migration entry gate
-
-1. Explicit approval of this matrix and of the target column/identifier mapping for both databases.
-2. Inventory existing values and their provenance; document how ambiguous rows remain accessible without silent reinterpretation.
-3. Define identical SQLite/Supabase transformations and rollback/audit behavior before generating migrations.
-4. Preserve Z1–Z5, manual coach prescriptions, workout type `PAM`, and temporal RunningReference semantics.
-5. Verify focused read/write tests and actual database state independently; do not claim a remote migration from generated SQL alone.
+The product owner explicitly approved clean replacement of the legacy fields on 2026-09-23, with no additional product questions. KAN-443 and KAN-444 may proceed after their upstream implementation dependencies, using this approved matrix; they do not require a second historical-data approval.
