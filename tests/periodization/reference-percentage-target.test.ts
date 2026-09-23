@@ -11,6 +11,6 @@ test('microcycle planning exposes the canonical reference percentage without a l
     planningIntent: 'development',
   })
 
-  assert.equal((target as Record<string, unknown>).referencePercentageTarget, 100)
-  assert.equal(Object.hasOwn(target, 'pamPercentageTarget'), false)
+  assert.equal(target.referencePercentageTarget, 100)
+  assert.equal(Object.hasOwn(target, 'referencePercentageTarget'), false)
 })
