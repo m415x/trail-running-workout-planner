@@ -149,7 +149,7 @@ const intensity: TaperIntensityReference = {
   emphasis: 'threshold',
   intenseSessionsTarget: 2,
   predominantZone: 'Z2',
-  pamPercentageTarget: 92.5,
+  referencePercentageTarget: 92.5,
   minimumRecoveryDaysBetweenIntenseSessions: 2,
 }
 
