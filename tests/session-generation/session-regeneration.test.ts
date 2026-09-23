@@ -182,7 +182,7 @@ function prescription(generationKey: string): SharedEventPrescriptionProposal {
     prescription: {
       groupId: 'group-1', microcycleId: 'microcycle-1', distanceKm: 10,
       durationMin: null, elevationGain: 100, intensityMethod: 'hr_zone',
-      zone: 'Z2', pamPercentage: null, notes: null,
+      zone: 'Z2', referencePercentage: null, notes: null,
     },
     warnings: [],
   }
