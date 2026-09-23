@@ -148,7 +148,7 @@ export function generateWeeklySessionProposals(
           : allocatedElevation?.elevationGain ?? null,
         intensityMethod: isCompetition ? 'hr_zone' : allocatedIntensity?.intensityMethod ?? 'hr_zone',
         zone: isCompetition ? null : allocatedIntensity?.zone ?? null,
-        pamPercentage: isCompetition ? null : allocatedIntensity?.pamPercentage ?? null,
+        referencePercentage: isCompetition ? null : allocatedIntensity?.referencePercentage ?? null,
         notes: snapshot?.prescription.notes ?? null,
       },
       warnings: templateWarnings.get(assigned.slot.key) ?? [],
