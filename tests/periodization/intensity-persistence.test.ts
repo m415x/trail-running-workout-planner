@@ -72,8 +72,8 @@ describe('persistencia de intensidad', () => {
     const saved = database.select().from(microcycleIntensityTargets).get()
     assert.ok(saved)
     database.update(microcycleIntensityTargets).set({
-      pamPercentageTarget: 95,
-      fieldSources: { ...saved.fieldSources, pamPercentageTarget: 'manual' },
+      referencePercentageTarget: 95,
+      fieldSources: { ...saved.fieldSources, referencePercentageTarget: 'manual' },
     }).where(eq(microcycleIntensityTargets.id, saved.id)).run()
 
     persistIntensityPlanning({
@@ -82,8 +82,8 @@ describe('persistencia de intensidad', () => {
     })
 
     const regenerated = database.select().from(microcycleIntensityTargets).get()
-    assert.equal(regenerated?.pamPercentageTarget, 95)
-    assert.equal(regenerated?.fieldSources.pamPercentageTarget, 'manual')
+    assert.equal(regenerated?.referencePercentageTarget, 95)
+    assert.equal(regenerated?.fieldSources.referencePercentageTarget, 'manual')
   })
 
   it('rechaza una propuesta inválida sin escribir intensidad', () => {
@@ -120,7 +120,7 @@ function createTestDatabase() {
     CREATE TABLE mesocycles (id TEXT PRIMARY KEY, macrocycle_id TEXT NOT NULL, title TEXT NOT NULL, number INTEGER NOT NULL, period TEXT NOT NULL, objective TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE microcycles (id TEXT PRIMARY KEY, mesocycle_id TEXT NOT NULL, week_number INTEGER NOT NULL, type TEXT NOT NULL, start_date TEXT NOT NULL, end_date TEXT NOT NULL, target_volume_km REAL, target_volume_source TEXT DEFAULT 'generated', target_elevation_gain INTEGER, target_elevation_source TEXT DEFAULT 'generated', target_duration_min INTEGER, notes TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE intensity_strategies (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL UNIQUE, goal_type TEXT NOT NULL, default_method TEXT NOT NULL, maximum_intense_sessions_per_week INTEGER NOT NULL, minimum_recovery_days_between_intense_sessions INTEGER NOT NULL, field_sources TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
-    CREATE TABLE microcycle_intensity_targets (id TEXT PRIMARY KEY, microcycle_id TEXT NOT NULL UNIQUE, emphasis TEXT NOT NULL, intense_sessions_target INTEGER NOT NULL, predominant_zone TEXT NOT NULL, pam_percentage_target REAL, minimum_recovery_days_between_intense_sessions INTEGER NOT NULL, field_sources TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
+    CREATE TABLE microcycle_intensity_targets (id TEXT PRIMARY KEY, microcycle_id TEXT NOT NULL UNIQUE, emphasis TEXT NOT NULL, intense_sessions_target INTEGER NOT NULL, predominant_zone TEXT NOT NULL, reference_percentage_target REAL, minimum_recovery_days_between_intense_sessions INTEGER NOT NULL, field_sources TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
   `)
 
   return {
