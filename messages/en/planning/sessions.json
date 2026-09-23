@@ -7,7 +7,27 @@
       "type": "Workout type",
       "selectType": "Select type",
       "errors": {
-        "groupRequired": "Assign the session to at least one group"
+        "groupRequired": "Assign the session to at least one group",
+        "server": {
+          "invalidDate": "Enter a valid date",
+          "titleTooShort": "The title must be at least 2 characters",
+          "workoutTypeRequired": "Select a workout type",
+          "invalidForm": "Review the entered data",
+          "workoutNotFound": "The selected workout template does not exist",
+          "locationNotFound": "The selected location does not exist",
+          "createFailed": "The session could not be created",
+          "sessionIdMissing": "The session could not be identified",
+          "sessionNotFound": "Session not found",
+          "workoutUnavailable": "The selected workout template does not exist or is archived",
+          "updateFailed": "The session could not be updated",
+          "groupNotFound": "One of the selected groups does not exist or is inactive",
+          "microcycleGroupMismatch": "The selected microcycle does not belong to group {group}",
+          "invalidVolume": "Volume values cannot be negative",
+          "microcycleRequired": "Select a microcycle for each group",
+          "hrZoneRequired": "Select a zone for heart-rate intensity",
+          "pamPercentageInvalid": "Enter a PAM percentage between 0 and 200",
+          "prescriptionsInvalid": "Review the group prescriptions"
+        }
       },
       "template": "Workout template",
       "noTemplate": "No template",
