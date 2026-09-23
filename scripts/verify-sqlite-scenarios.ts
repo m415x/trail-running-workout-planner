@@ -332,8 +332,19 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
       }))
       const differences = [...new Set([...freshEntries.keys(), ...upgradedEntries.keys()])]
         .filter(key => freshEntries.get(key) !== upgradedEntries.get(key))
-        .map(key => `${key}\\n  fresh: ${freshEntries.get(key) ?? '<missing>'}\\n  upgraded: ${upgradedEntries.get(key) ?? '<missing>'}`)
-      throw new Error(`Schema drift detected between fresh HEAD and upgraded legacy SQLite databases:\\n${differences.join('\\n')}`)
+      const first = differences[0]
+      const freshSql = first ? freshEntries.get(first) ?? '<missing>' : ''
+      const upgradedSql = first ? upgradedEntries.get(first) ?? '<missing>' : ''
+      const mismatchAt = [...freshSql].findIndex((character, index) => character !== upgradedSql[index])
+      const offset = mismatchAt >= 0 ? mismatchAt : Math.min(freshSql.length, upgradedSql.length)
+      const excerpt = (sql: string) => sql.slice(Math.max(0, offset - 70), offset + 120)
+      throw new Error([
+        `Schema drift detected: ${differences.length} differing objects`,
+        `Objects: ${differences.slice(0, 12).join(', ')}${differences.length > 12 ? ', …' : ''}`,
+        `First mismatch: ${first} at character ${offset}`,
+        `fresh: ${excerpt(freshSql)}`,
+        `upgraded: ${excerpt(upgradedSql)}`,
+      ].join('\\n'))
     }
   } finally {
     removeScenarioWorkspace(fresh)
