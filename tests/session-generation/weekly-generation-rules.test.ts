@@ -244,7 +244,7 @@ describe('reglas semanales de generación de sesiones', () => {
 
   it('prefiere PAM solo en el último jueves cuando la planificación lo permite', () => {
     const intensity: SessionGenerationIntensityTarget = {
-      defaultMethod: 'pam_percentage',
+      defaultMethod: 'reference_percentage',
       emphasis: 'vo2max',
       intenseSessionsTarget: 1,
       predominantZone: 'Z2',
