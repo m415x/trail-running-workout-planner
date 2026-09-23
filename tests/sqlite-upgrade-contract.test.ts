@@ -490,6 +490,7 @@ test('SQLite refuses to reconcile incompatible intensity HEAD metadata without m
     const result = spawnSync(process.execPath, [tsxCli, upgradeScript], {
       cwd: workspace,
       encoding: 'utf8',
+      env: { ...process.env, TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') },
     })
 
     assert.notEqual(result.status, 0, 'incompatible intensity schema must be rejected')
