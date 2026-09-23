@@ -5,7 +5,7 @@ export type SessionPrescriptionErrorCode =
   | 'invalidVolume'
   | 'microcycleRequired'
   | 'hrZoneRequired'
-  | 'pamPercentageInvalid'
+  | 'referencePercentageInvalid'
   | 'prescriptionsInvalid'
 
 const optionalNumber = z.preprocess(
@@ -19,17 +19,17 @@ export const sessionPrescriptionSchema = z.object({
   distanceKm: optionalNumber,
   durationMin: optionalNumber,
   elevationGain: optionalNumber,
-  intensityMethod: z.enum(['hr_zone', 'pam_percentage']).nullable(),
+  intensityMethod: z.enum(['hr_zone', 'reference_percentage']).nullable(),
   zone: z.enum(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']).nullable(),
-  pamPercentage: optionalNumber,
+  referencePercentage: optionalNumber,
   notes: z.string().trim().transform((value) => value || null),
 }).superRefine((data, context) => {
   if (data.intensityMethod === 'hr_zone' && !data.zone) {
     context.addIssue({ code: 'custom', path: ['zone'], message: 'hrZoneRequired' })
   }
-  if (data.intensityMethod === 'pam_percentage'
-    && (data.pamPercentage == null || data.pamPercentage <= 0 || data.pamPercentage > 200)) {
-    context.addIssue({ code: 'custom', path: ['pamPercentage'], message: 'pamPercentageInvalid' })
+  if (data.intensityMethod === 'reference_percentage'
+    && (data.referencePercentage == null || data.referencePercentage <= 0 || data.referencePercentage > 200)) {
+    context.addIssue({ code: 'custom', path: ['referencePercentage'], message: 'referencePercentageInvalid' })
   }
 })
 
@@ -38,7 +38,7 @@ export type SessionPrescriptionInput = z.infer<typeof sessionPrescriptionSchema>
 function prescriptionErrorCode(issue: z.core.$ZodIssue): SessionPrescriptionErrorCode {
   if (issue.path.includes('microcycleId')) return 'microcycleRequired'
   if (issue.path.includes('zone')) return 'hrZoneRequired'
-  if (issue.path.includes('pamPercentage')) return 'pamPercentageInvalid'
+  if (issue.path.includes('referencePercentage')) return 'referencePercentageInvalid'
   if (issue.path.some((part) => part === 'distanceKm' || part === 'durationMin' || part === 'elevationGain')) return 'invalidVolume'
   return 'prescriptionsInvalid'
 }
@@ -60,8 +60,8 @@ export function parseSessionPrescriptions(formData: FormData):
       elevationGain: formData.get(`elevationGain:${groupId}`)?.toString() || '',
       intensityMethod,
       zone: intensityMethod === 'hr_zone' ? formData.get(`zone:${groupId}`)?.toString() || null : null,
-      pamPercentage: intensityMethod === 'pam_percentage'
-        ? formData.get(`pamPercentage:${groupId}`)?.toString() || ''
+      referencePercentage: intensityMethod === 'reference_percentage'
+        ? formData.get(`referencePercentage:${groupId}`)?.toString() || ''
         : '',
       notes: formData.get(`prescriptionNotes:${groupId}`)?.toString() || '',
     })
