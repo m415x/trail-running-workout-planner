@@ -9,6 +9,7 @@ const fullCatalogConsumers = [
   'app/actions/session-generation-actions.ts',
   'features/sessions/components/SessionForm.tsx',
   'features/workout-templates/components/WorkoutTemplateForm.tsx',
+  'lib/workout-templates/workout-template-validator.ts',
 ]
 
 test('full workout type consumers use the canonical catalog instead of duplicating it', () => {
