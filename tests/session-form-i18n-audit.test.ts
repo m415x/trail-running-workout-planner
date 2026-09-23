@@ -7,8 +7,10 @@ const source = fs.readFileSync(
   path.join(process.cwd(), 'features/sessions/components/SessionForm.tsx'),
   'utf8',
 )
-const es = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/es.json'), 'utf8'))
-const en = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/en.json'), 'utf8'))
+const es = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/es/planning/sessions.json'), 'utf8'))
+const en = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/en/planning/sessions.json'), 'utf8'))
+const fragmentRegistry = fs.readFileSync(path.join(process.cwd(), 'i18n/message-fragments.ts'), 'utf8')
+const loader = fs.readFileSync(path.join(process.cwd(), 'i18n/messages.ts'), 'utf8')
 
 function keyShape(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(keyShape)
@@ -18,18 +20,14 @@ function keyShape(value: unknown): unknown {
   return true
 }
 
-test('SessionForm translation catalogs preserve ES/EN key parity', () => {
-  assert.deepEqual(keyShape(es.Sessions), keyShape(en.Sessions))
+test('Sessions uses the canonical modular message catalog with ES/EN parity', () => {
+  assert.deepEqual(keyShape(es), keyShape(en))
+  assert.match(fragmentRegistry, /'planning\/sessions'/)
+  assert.match(loader, /messages\/en\/planning\/sessions\.json/)
+  assert.match(loader, /messages\/es\/planning\/sessions\.json/)
 })
 
 test('SessionForm template options localize workout type labels', () => {
   assert.match(source, /workoutTypeT\(`types\.\$\{workout\.type\}`\)/)
   assert.doesNotMatch(source, /\{workout\.title\} · \{workout\.type\}/)
-})
-
-test('message catalogs retain established application namespaces', () => {
-  for (const namespace of ['Common', 'Workouts', 'WorkoutTemplates', 'Sessions']) {
-    assert.ok(es[namespace], `es missing ${namespace}`)
-    assert.ok(en[namespace], `en missing ${namespace}`)
-  }
 })
