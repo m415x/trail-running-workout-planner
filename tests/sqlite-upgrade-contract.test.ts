@@ -586,7 +586,7 @@ test('SQLite Drizzle config rejects scenario mode without an explicit database t
   const projectRoot = process.cwd()
   const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
   const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
-  const env = { ...process.env, SQLITE_SCENARIO_MODE: '1', TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') }
+  const env: NodeJS.ProcessEnv = { ...process.env, SQLITE_SCENARIO_MODE: '1', TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') }
   delete env.SQLITE_DATABASE_PATH
   const result = spawnSync(process.execPath, [
     tsxCli,
