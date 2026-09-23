@@ -31,20 +31,35 @@ describe('prescripciones grupales de una sesión', () => {
       elevationGain: 430,
       intensityMethod: 'hr_zone',
       zone: 'Z3',
-      pamPercentage: null,
+      referencePercentage: null,
       notes: 'Ritmo controlado',
     })
   })
 
-  it('rechaza FC sin zona y PAM fuera de rango', () => {
+  it('rechaza FC sin zona y porcentaje de referencia fuera de rango', () => {
     const heartRateForm = prescriptionForm('group_s2', 'micro_1')
     heartRateForm.set('intensityMethod:group_s2', 'hr_zone')
     assert.equal(getErrorCode(heartRateForm), 'hrZoneRequired')
 
     const pamForm = prescriptionForm('group_s2', 'micro_1')
-    pamForm.set('intensityMethod:group_s2', 'pam_percentage')
-    pamForm.set('pamPercentage:group_s2', '250')
-    assert.equal(getErrorCode(pamForm), 'pamPercentageInvalid')
+    pamForm.set('intensityMethod:group_s2', 'reference_percentage')
+    pamForm.set('referencePercentage:group_s2', '250')
+    assert.equal(getErrorCode(pamForm), 'referencePercentageInvalid')
+  })
+
+  it('conserva 90 como porcentaje humano y rechaza el método legacy', () => {
+    const form = prescriptionForm('group_s2', 'micro_1')
+    form.set('intensityMethod:group_s2', 'reference_percentage')
+    form.set('referencePercentage:group_s2', '90')
+    const result = parseSessionPrescriptions(form)
+    assert.equal(result.success, true)
+    if (result.success) {
+      assert.equal(result.data[0].referencePercentage, 90)
+      assert.equal(result.data[0].intensityMethod, 'reference_percentage')
+    }
+
+    form.set('intensityMethod:group_s2', 'pam_percentage')
+    assert.equal(getErrorCode(form), 'prescriptionsInvalid')
   })
 
   it('admite varios grupos y elimina selecciones duplicadas', () => {
