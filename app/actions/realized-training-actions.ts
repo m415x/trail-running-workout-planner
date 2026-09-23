@@ -248,7 +248,7 @@ function plannedIntensityOperand(input: {
     return { state: 'known', value: input.zone, unit: 'hr_zone' }
   }
   if (input.intensityMethod === 'reference_percentage' && input.referencePercentage !== null) {
-    return { state: 'known', value: input.referencePercentage, unit: 'pam_percent' }
+    return { state: 'known', value: input.referencePercentage, unit: 'reference_percent' }
   }
   return { state: 'unknown', reason: 'not_prescribed', unit: null }
 }
