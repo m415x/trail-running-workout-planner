@@ -311,7 +311,7 @@ export function isPamPreferred(
     role === 'quality' &&
     intensity.defaultMethod === 'pam_percentage' &&
     intensity.intenseSessionsTarget > 0 &&
-    intensity.pamPercentageTarget !== null &&
+    intensity.referencePercentageTarget !== null &&
     intensity.emphasis !== 'recovery' &&
     isLastThursdayOfMonth(date)
   )
