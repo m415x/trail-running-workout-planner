@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { parseSessionPrescriptions } from '@/lib/sessions/session-prescription-parser'
+import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 
 describe('prescripciones grupales de una sesión', () => {
   it('exige al menos un grupo', () => {
@@ -60,6 +61,22 @@ describe('prescripciones grupales de una sesión', () => {
 
     form.set('intensityMethod:group_s2', 'pam_percentage')
     assert.equal(getErrorCode(form), 'prescriptionsInvalid')
+  })
+
+  it('acepta exclusivamente las nueve opciones de porcentaje de referencia', () => {
+    const form = prescriptionForm('group_s2', 'micro_1')
+    form.set('intensityMethod:group_s2', 'reference_percentage')
+    assert.deepEqual(SESSION_REFERENCE_PERCENTAGES, [50, 60, 70, 80, 90, 100, 110, 115, 120])
+    for (const percentage of SESSION_REFERENCE_PERCENTAGES) {
+      form.set('referencePercentage:group_s2', String(percentage))
+      const result = parseSessionPrescriptions(form)
+      assert.equal(result.success, true, String(percentage))
+      if (result.success) assert.equal(result.data[0].referencePercentage, percentage)
+    }
+    for (const invalid of ['', '2.2', '0.9', '55', '125', '200']) {
+      form.set('referencePercentage:group_s2', invalid)
+      assert.equal(getErrorCode(form), 'referencePercentageInvalid', invalid)
+    }
   })
 
   it('admite varios grupos y elimina selecciones duplicadas', () => {
