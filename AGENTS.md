@@ -275,6 +275,23 @@ The KAN-281/KAN-282 story workflow experiment used **harness-eval-v1** and is co
 
 Preserve the source-of-truth ordering, focused verification, final full gate, manual runtime walkthrough, durable handoff and fresh-chat-capable boundaries established by that evaluation. Do not modify the published harness as incidental feature work. Potential v2 changes require an explicit workflow decision based on the recorded evidence.
 
+## Fresh-chat bootstrap contract
+
+A new chat must be able to start a story from repository/Jira state alone. Conversation memory is navigation-only and must not be required for correctness.
+
+When the human provides the minimal new-story bootstrap prompt, execute this sequence idempotently:
+
+1. Read this `AGENTS.md` and `docs/README.md` from current `dev`.
+2. Read the single current/recent operational handoff identified by the documentation index. Treat completed-story handoffs as navigation context, not current execution state.
+3. Read `docs/agent-harness.md` as the workflow evaluation/discipline companion. Apply its durable lessons throughout the story while keeping this file as operational authority; do not modify the published harness incidentally.
+4. Read only the architecture/glossary/research/history documents materially relevant to the candidate story.
+5. Verify the baseline against focused current code/tests on `dev` before trusting a stale description.
+6. Only then read the complete Jira story, its parent/dependencies, comments, relations and existing subtasks. Jira selects/scopes the next work; repository docs do not silently promote a deferred item into active scope.
+7. Reconcile discrepancies explicitly and present the story understanding, reusable infrastructure, risks, unresolved decisions and proposed bounded task decomposition.
+8. Wait for human approval of that analysis/decomposition before creating Jira tasks, a story branch or implementation commits.
+
+Repeating this bootstrap must produce the same project understanding for the same `dev` + Jira state and must not append chat-specific state to this file. Keep story-specific execution state in Jira and the current handoff; keep durable domain truth in architecture/docs/code/tests.
+
 ## Current completed-epic baseline
 
 Epics 1–4 are complete. Completed evolution is consolidated under `docs/history/`; current domain authority remains current code/tests plus the relevant `docs/architecture/` contracts.
