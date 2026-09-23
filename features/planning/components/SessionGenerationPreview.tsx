@@ -207,7 +207,7 @@ function formatNumber(value: number | null | undefined) {
 function formatIntensity(
   prescription: SharedSessionEventProposal['prescriptions'][number]['prescription'],
 ) {
-  return prescription.intensityMethod === 'pam_percentage'
-    ? `${prescription.pamPercentage ?? 0}% PAM`
+  return prescription.intensityMethod === 'reference_percentage'
+    ? `${prescription.referencePercentage ?? 0}% de referencia`
     : prescription.zone ?? 'Sin zona'
 }
