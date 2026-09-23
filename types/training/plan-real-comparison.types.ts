@@ -25,7 +25,7 @@ export type PlanRealMetricUnit =
   | 'bpm'
   | 'rpe'
   | 'hr_zone'
-  | 'pam_percent'
+  | 'reference_percent'
 
 export type PlanRealMetricUnknownReason =
   | RealizedMetricUnknownReason
