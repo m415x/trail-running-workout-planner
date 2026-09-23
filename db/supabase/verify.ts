@@ -58,6 +58,61 @@ async function main() {
     })
     console.log(`Field performance lifecycle columns: ${fieldTestLifecycleValid ? 'OK' : 'FAIL'}`)
 
+    // KAN-412: check the deployed contract, not only the local migration journal.
+    const intensityColumns = await sql<{ table_name: string; column_name: string }[]>`
+      select table_name, column_name
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name in ('microcycle_intensity_targets', 'group_session_prescriptions', 'workouts')
+        and column_name in (
+          'reference_percentage_target', 'pam_percentage_target',
+          'reference_percentage', 'pam_percentage'
+        )
+    `
+    const requiredIntensityColumns = [
+      'microcycle_intensity_targets:reference_percentage_target',
+      'group_session_prescriptions:reference_percentage',
+      'workouts:reference_percentage',
+    ]
+    const presentIntensityColumns = new Set(
+      intensityColumns.map(column => `${column.table_name}:${column.column_name}`),
+    )
+    const missingIntensityColumns = requiredIntensityColumns.filter(
+      column => !presentIntensityColumns.has(column),
+    )
+    const legacyIntensityColumns = intensityColumns
+      .filter(column => column.column_name.startsWith('pam_percentage'))
+      .map(column => `${column.table_name}.${column.column_name}`)
+
+    const legacyIntensityMethods = await sql<{ source: string; count: number }[]>`
+      select 'intensity_strategies.default_method' as source, count(*)::integer as count
+      from intensity_strategies where default_method = 'pam_percentage'
+      union all
+      select 'group_session_prescriptions.intensity_method', count(*)::integer
+      from group_session_prescriptions where intensity_method = 'pam_percentage'
+      union all
+      select 'workouts.intensity_method', count(*)::integer
+      from workouts where intensity_method = 'pam_percentage'
+      union all
+      select 'microcycle_intensity_targets.field_sources', count(*)::integer
+      from microcycle_intensity_targets
+      where field_sources::text like '%"pamPercentageTarget"%'
+    `
+    const remainingLegacyMethods = legacyIntensityMethods.filter(entry => entry.count > 0)
+    const intensityContractValid = missingIntensityColumns.length === 0
+      && legacyIntensityColumns.length === 0
+      && remainingLegacyMethods.length === 0
+    console.log(`Reference percentage contract: ${intensityContractValid ? 'OK' : 'FAIL'}`)
+    if (missingIntensityColumns.length > 0) {
+      console.log(`Missing canonical intensity columns: ${missingIntensityColumns.join(', ')}`)
+    }
+    if (legacyIntensityColumns.length > 0) {
+      console.log(`Legacy intensity columns: ${legacyIntensityColumns.join(', ')}`)
+    }
+    if (remainingLegacyMethods.length > 0) {
+      console.log(`Legacy intensity values: ${remainingLegacyMethods.map(entry => `${entry.source} (${entry.count})`).join(', ')}`)
+    }
+
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
     const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
@@ -74,7 +129,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid) {
       process.exitCode = 1
     }
   } finally {
