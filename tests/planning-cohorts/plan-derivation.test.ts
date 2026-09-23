@@ -139,12 +139,12 @@ function createSource(): PlanningVariantSource {
     emphasis: 'threshold',
     intenseSessionsTarget: 2,
     predominantZone: 'Z2',
-    pamPercentageTarget: 92.5,
+    referencePercentageTarget: 92.5,
     minimumRecoveryDaysBetweenIntenseSessions: 2,
     fieldSources: {
       intenseSessionsTarget: 'manual',
       predominantZone: 'generated',
-      pamPercentageTarget: 'manual',
+      referencePercentageTarget: 'manual',
       minimumRecoveryDaysBetweenIntenseSessions: 'generated',
     },
   }
@@ -311,7 +311,7 @@ describe('derivación de variantes de planificación', () => {
     assert.deepEqual(derivedTarget.fieldSources, sourceTarget.fieldSources)
     assert.notStrictEqual(derivedTarget.fieldSources, sourceTarget.fieldSources)
 
-    assert.equal(derivedTarget.pamPercentageTarget, sourceTarget.pamPercentageTarget)
+    assert.equal(derivedTarget.referencePercentageTarget, sourceTarget.referencePercentageTarget)
   })
 
   it('no copia sesiones materializadas desde los microciclos del plan base', () => {
