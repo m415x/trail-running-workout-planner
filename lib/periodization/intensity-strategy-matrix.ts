@@ -9,7 +9,7 @@ import type {
 } from '@/types'
 
 /** PAM percentages used as practical prescription steps by the coach. */
-export const PAM_PERCENTAGE_STEPS = [50, 60, 70, 80, 90, 100, 110, 115, 120] as const
+export const REFERENCE_PERCENTAGE_STEPS = [50, 60, 70, 80, 90, 100, 110, 115, 120] as const
 
 const PERIODS: readonly PeriodType[] = [
   'general_preparatory',
@@ -77,9 +77,9 @@ function rule(
   emphasis: IntensityStrategyRule['emphasis'],
   predominantZone: IntensityStrategyRule['predominantZone'],
   intenseSessionDemand: IntensityStrategyRule['intenseSessionDemand'],
-  suggestedPamPercentage: IntensityStrategyRule['suggestedPamPercentage'],
+  suggestedReferencePercentage: IntensityStrategyRule['suggestedReferencePercentage'],
 ): IntensityStrategyRule {
-  return { emphasis, predominantZone, intenseSessionDemand, suggestedPamPercentage }
+  return { emphasis, predominantZone, intenseSessionDemand, suggestedReferencePercentage }
 }
 
 /**
@@ -102,7 +102,7 @@ function adaptRuleToPlanningIntent(
     return {
       ...baseRule,
       intenseSessionDemand: 'reduced',
-      suggestedPamPercentage: Math.min(baseRule.suggestedPamPercentage ?? 80, 80),
+      suggestedReferencePercentage: Math.min(baseRule.suggestedReferencePercentage ?? 80, 80),
     }
   }
 
