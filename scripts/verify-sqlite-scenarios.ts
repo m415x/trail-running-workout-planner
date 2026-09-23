@@ -284,6 +284,16 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
   }
 }
 
+/**
+ * Compare SQLite DDL by tokens rather than sqlite_master formatting.
+ * Quoted identifiers and string literals remain intact, including whitespace
+ * inside string defaults; column definitions and constraints are not discarded.
+ */
+export function normalizeSqliteSchemaSql(sql: string | null): string | null {
+  if (sql === null) return null
+  return sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\\[[^\\]]+\\]|[(),]|[^\\s(),]+/g)?.join(' ') ?? ''
+}
+
 function readNormalizedSchema(sqlitePath: string): string[] {
   const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
@@ -295,7 +305,7 @@ function readNormalizedSchema(sqlitePath: string): string[] {
         AND tbl_name <> '__drizzle_migrations'
       ORDER BY type, name
     `).all() as Array<{ type: string; name: string; tbl_name: string; sql: string | null }>)
-      .map(row => JSON.stringify(row))
+      .map(row => JSON.stringify({ ...row, sql: normalizeSqliteSchemaSql(row.sql) }))
   } finally {
     sqlite.close()
   }
