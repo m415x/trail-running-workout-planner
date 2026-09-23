@@ -291,7 +291,7 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
  */
 export function normalizeSqliteSchemaSql(sql: string | null): string | null {
   if (sql === null) return null
-  return sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\\[[^\\]]+\\]|[(),]|[^\\s(),]+/g)?.join(' ') ?? ''
+  return sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),]|[^\s(),]+/g)?.join(' ') ?? ''
 }
 
 function readNormalizedSchema(sqlitePath: string): string[] {
