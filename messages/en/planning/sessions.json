@@ -1,0 +1,60 @@
+{
+  "Sessions": {
+    "form": {
+      "date": "Date",
+      "title": "Title",
+      "titlePlaceholder": "E.g.: Mountain long run",
+      "type": "Workout type",
+      "selectType": "Select type",
+      "errors": {
+        "groupRequired": "Assign the session to at least one group"
+      },
+      "template": "Workout template",
+      "noTemplate": "No template",
+      "location": "Location",
+      "noLocation": "No location",
+      "track": "Track",
+      "trackPlaceholder": "Track route or reference (optional)",
+      "structure": {
+        "title": "Session structure",
+        "help": "All blocks are optional. Complete only those that apply to the workout.",
+        "preliminaryExercises": "Preliminary exercises",
+        "preliminaryExercisesPlaceholder": "Mobility, activation, technique…",
+        "warmup": "Warm-up",
+        "warmupPlaceholder": "E.g.: 15 easy min + dynamic mobility",
+        "mainBlock": "Main block",
+        "mainBlockPlaceholder": "E.g.: 6 × 800 m with 2 min recovery",
+        "cooldown": "Cool-down",
+        "cooldownPlaceholder": "E.g.: 10 easy min + stretching"
+      },
+      "prescriptions": {
+        "title": "Group prescriptions",
+        "help": "Select at least one group and define the load shown in its planning.",
+        "noGroups": "No active groups are available.",
+        "noMicrocycles": "This group has no available microcycles.",
+        "selectMicrocycle": "Select microcycle",
+        "intensityMethod": "Intensity method",
+        "noIntensity": "No intensity",
+        "hrZone": "Heart rate zone",
+        "pamPercentage": "PAM percentage",
+        "selectZone": "Select zone",
+        "notes": "Group instructions",
+        "group": "Group",
+        "microcycle": "Microcycle",
+        "distance": "Distance (km)",
+        "duration": "Duration (min)",
+        "elevationGain": "Elevation gain (m+)",
+        "zone": "Zone"
+      },
+      "trailEffortNote": "Prioritize effort over pace.",
+      "notes": "Notes",
+      "notesPlaceholder": "General session instructions…",
+      "actions": {
+        "cancel": "Cancel",
+        "saving": "Saving…",
+        "saveChanges": "Save changes",
+        "create": "Create session"
+      }
+    }
+  }
+}
