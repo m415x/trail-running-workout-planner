@@ -25,7 +25,7 @@
           "invalidVolume": "Volume values cannot be negative",
           "microcycleRequired": "Select a microcycle for each group",
           "hrZoneRequired": "Select a zone for heart-rate intensity",
-          "pamPercentageInvalid": "Enter a PAM percentage between 0 and 200",
+          "referencePercentageInvalid": "Enter a reference percentage between 0 and 200",
           "prescriptionsInvalid": "Review the group prescriptions",
           "microcycleDateMismatch": "The microcycle for group {group} does not match the session date.",
           "microcycleDateAmbiguous": "Microcycles overlap for group {group} on the session date."
@@ -58,7 +58,7 @@
         "intensityMethod": "Intensity method",
         "noIntensity": "No intensity",
         "hrZone": "Heart rate zone",
-        "pamPercentage": "PAM percentage",
+        "referencePercentage": "reference percentage",
         "selectZone": "Select zone",
         "notes": "Group instructions",
         "group": "Group",
