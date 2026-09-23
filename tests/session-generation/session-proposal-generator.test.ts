@@ -29,7 +29,7 @@ const context: SessionGenerationContext = {
     emphasis: 'vo2max',
     intenseSessionsTarget: 1,
     predominantZone: 'Z2',
-    pamPercentageTarget: 95,
+    referencePercentageTarget: 95,
     minimumRecoveryDaysBetweenIntenseSessions: 2,
   },
   competition: null,
