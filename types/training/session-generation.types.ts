@@ -2,7 +2,7 @@ import type {
   IntensityEmphasis,
   IntensityMethod,
   IntensityZone,
-  PamPercentage,
+  ReferencePercentage,
 } from '@/types/training/intensity.types'
 import type { MicrocycleType, PeriodType } from '@/types/training/periodization.types'
 import type { SessionStructure } from '@/types/training/session.types'
@@ -151,7 +151,7 @@ export interface WeeklyIntensityAllocation {
   isIntense: boolean
   intensityMethod: IntensityMethod
   zone: IntensityZone | null
-  pamPercentage: PamPercentage | null
+  referencePercentage: ReferencePercentage | null
 }
 
 /** Result of placing intense stimuli and recovery across a selected week. */
@@ -194,7 +194,7 @@ export interface SessionGenerationIntensityTarget {
   emphasis: IntensityEmphasis
   intenseSessionsTarget: number
   predominantZone: IntensityZone
-  referencePercentageTarget: PamPercentage | null
+  referencePercentageTarget: ReferencePercentage | null
   minimumRecoveryDaysBetweenIntenseSessions: number
 }
 
@@ -257,7 +257,7 @@ export interface GeneratedGroupPrescriptionDraft extends TrainingVolume {
   microcycleId: string
   intensityMethod: IntensityMethod
   zone: IntensityZone | null
-  pamPercentage: PamPercentage | null
+  referencePercentage: ReferencePercentage | null
   notes: string | null
 }
 
