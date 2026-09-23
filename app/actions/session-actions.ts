@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 import { db } from '@/db'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
+import { validateSessionMicrocycleDate } from '@/lib/sessions/session-microcycle-boundary'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
 import { WORKOUT_TYPES, type TrainingIntensity, type WorkoutTemplate } from '@/types'
 import {
@@ -55,6 +56,8 @@ export type SessionErrorCode =
   | 'updateFailed'
   | 'groupNotFound'
   | 'microcycleGroupMismatch'
+  | 'microcycleDateMismatch'
+  | 'microcycleDateAmbiguous'
   | import('@/lib/sessions/session-prescription-parser').SessionPrescriptionErrorCode
 
 export interface SessionFormState {
@@ -242,7 +245,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
         }
       : null
 
-    const referenceError = validatePrescriptionReferences(prescriptions.data)
+    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
 
     const now = new Date().toISOString()
@@ -285,7 +288,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     }).sync()
     if (!existingSession) return { errorCode: 'sessionNotFound' }
 
-    const referenceError = validatePrescriptionReferences(prescriptions.data)
+    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
 
     if (data.workoutId) {
@@ -402,7 +405,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   redirect(`${path}/${sessionId}`)
 }
 
-function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[]) {
+function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[], sessionDate: string) {
   for (const prescription of prescriptions) {
     const group = db.query.athleteGroups.findFirst({
       where: and(
@@ -416,8 +419,34 @@ function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[
       where: and(eq(microcycles.id, prescription.microcycleId), eq(microcycles.isDeleted, false)),
       with: { mesocycle: { with: { macrocycle: { with: { groupTrainingPlan: true } } } } },
     }).sync()
-    if (!microcycle || microcycle.mesocycle.macrocycle.groupTrainingPlan.groupId !== group.id) {
+    if (!microcycle || microcycle.mesocycle.macrocycle.groupTrainingPlan.groupId !== group.id
+      || microcycle.mesocycle.macrocycle.groupTrainingPlan.isDeleted
+      || microcycle.mesocycle.macrocycle.groupTrainingPlan.teamId !== CURRENT_TEAM_ID
+      || microcycle.mesocycle.macrocycle.isDeleted || microcycle.mesocycle.isDeleted) {
       return { errorCode: 'microcycleGroupMismatch' as const, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
+    }
+
+    const groupMicrocycles = db.select({
+      id: microcycles.id,
+      startDate: microcycles.startDate,
+      endDate: microcycles.endDate,
+    }).from(microcycles)
+      .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+      .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+      .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+      .where(and(
+        eq(groupTrainingPlans.groupId, group.id),
+        eq(groupTrainingPlans.teamId, CURRENT_TEAM_ID),
+        eq(groupTrainingPlans.isDeleted, false),
+        eq(macrocycles.isDeleted, false),
+        eq(mesocycles.isDeleted, false),
+        eq(microcycles.isDeleted, false),
+      )).all()
+    const dateError = validateSessionMicrocycleDate(
+      group.id, sessionDate, prescription.microcycleId, groupMicrocycles,
+    )
+    if (dateError) {
+      return { ...dateError, errorParams: { group: `${group.categoryCode}${group.levelCode}` } }
     }
   }
   return null
