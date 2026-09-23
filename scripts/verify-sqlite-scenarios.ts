@@ -291,7 +291,7 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
  */
 export function normalizeSqliteSchemaSql(sql: string | null): string | null {
   if (sql === null) return null
-  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\\[[^\\]]+\\]|[(),]|[^\\s(),]+/g) ?? []
+  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),]|[^\s(),]+/g) ?? []
   const quoteIdentifier = (value: string) => '`' + value.replaceAll('`', '``') + '`'
   const canonical = tokens.map(token => {
     if (token.startsWith('"') && token.endsWith('"')) {
