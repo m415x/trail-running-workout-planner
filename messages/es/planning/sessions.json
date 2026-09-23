@@ -26,7 +26,9 @@
           "microcycleRequired": "Seleccioná un microciclo para cada grupo",
           "hrZoneRequired": "Seleccioná una zona para la intensidad por FC",
           "pamPercentageInvalid": "Ingresá un porcentaje PAM entre 0 y 200",
-          "prescriptionsInvalid": "Revisá las prescripciones grupales"
+          "prescriptionsInvalid": "Revisá las prescripciones grupales",
+          "microcycleDateMismatch": "El microciclo del grupo {group} no corresponde a la fecha de la sesión.",
+          "microcycleDateAmbiguous": "Hay microciclos superpuestos para el grupo {group} en la fecha de la sesión."
         }
       },
       "template": "Plantilla de entrenamiento",
@@ -65,7 +67,9 @@
         "duration": "Duración (min)",
         "elevationGain": "Desnivel (m+)",
         "zone": "Zona",
-        "microcycleOption": "{plan} · Semana {week} · {start} al {end}"
+        "microcycleOption": "{plan} · Semana {week} · {start} al {end}",
+        "microcycleUnavailable": "No hay un microciclo para el grupo {group} en la fecha seleccionada.",
+        "microcycleAmbiguous": "Hay varios microciclos para el grupo {group} en la fecha seleccionada. Corregí los períodos antes de guardar."
       },
       "trailEffortNote": "Priorizá el esfuerzo sobre el ritmo.",
       "notes": "Notas",
