@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { isSessionReferencePercentage } from '@/lib/sessions/reference-percentage-options'
 
 export type SessionPrescriptionErrorCode =
   | 'groupRequired'
@@ -28,7 +29,7 @@ export const sessionPrescriptionSchema = z.object({
     context.addIssue({ code: 'custom', path: ['zone'], message: 'hrZoneRequired' })
   }
   if (data.intensityMethod === 'reference_percentage'
-    && (data.referencePercentage == null || data.referencePercentage <= 0 || data.referencePercentage > 200)) {
+    && (data.referencePercentage == null || !isSessionReferencePercentage(data.referencePercentage))) {
     context.addIssue({ code: 'custom', path: ['referencePercentage'], message: 'referencePercentageInvalid' })
   }
 })
