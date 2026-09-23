@@ -87,7 +87,22 @@
         "hrZone": "Zona de frecuencia cardíaca",
         "pamPercentage": "Porcentaje PAM",
         "selectZone": "Seleccionar zona",
-        "notes": "Indicaciones para el grupo"
+        "notes": "Indicaciones para el grupo",
+        "group": "Grupo",
+        "microcycle": "Microciclo",
+        "distance": "Distancia (km)",
+        "duration": "Duración (min)",
+        "elevationGain": "Desnivel (m+)",
+        "zone": "Zona"
+      },
+      "trailEffortNote": "Priorizá el esfuerzo sobre el ritmo.",
+      "notes": "Notas",
+      "notesPlaceholder": "Indicaciones generales de la sesión…",
+      "actions": {
+        "cancel": "Cancelar",
+        "saving": "Guardando…",
+        "saveChanges": "Guardar cambios",
+        "create": "Crear sesión"
       }
     }
   }
