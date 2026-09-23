@@ -9,7 +9,7 @@ import type {
 
 export type IntensityZone = 'Z1' | 'Z2' | 'Z3' | 'Z4' | 'Z5'
 
-export type IntensityMethod = 'hr_zone' | 'pam_percentage'
+export type IntensityMethod = 'hr_zone' | 'pam_percentage' | 'reference_percentage'
 
 export type IntensitySessionDemand = 'none' | 'reduced' | 'standard' | 'high'
 
@@ -30,6 +30,9 @@ export type IntensityEmphasis =
  * RunningReference. This field does not assert that the test measures a
  * physiological PAM/MAS value.
  */
+export type ReferencePercentage = number
+
+/** Legacy field retained only until each writer and reader is migrated. */
 export type PamPercentage = number
 
 /** Concrete intensity prescribed for a training session. */
@@ -41,6 +44,10 @@ export type TrainingIntensity =
   | {
       method: 'pam_percentage'
       pamPercentage: PamPercentage
+    }
+  | {
+      method: 'reference_percentage'
+      referencePercentage: ReferencePercentage
     }
 
 /** Inputs retained as the planning criterion for an intensity strategy. */
