@@ -14,6 +14,17 @@ describe('SQLite schema drift normalization', () => {
     )
   })
 
+  it('treats double-quoted and backtick identifiers as equivalent', () => {
+    assert.equal(
+      normalizeSqliteSchemaSql('CREATE TABLE "field_performance_tests" ("id" text PRIMARY KEY)'),
+      normalizeSqliteSchemaSql('CREATE TABLE `field_performance_tests` (`id` text PRIMARY KEY)'),
+    )
+    assert.notEqual(
+      normalizeSqliteSchemaSql('CREATE TABLE "field_performance_tests" ("id" text PRIMARY KEY)'),
+      normalizeSqliteSchemaSql('CREATE TABLE `field_performance_tests` (`other_id` text PRIMARY KEY)'),
+    )
+  })
+
   it('does not ignore whitespace inside SQL string literals', () => {
     assert.notEqual(
       normalizeSqliteSchemaSql("CREATE TABLE t (value text DEFAULT 'a b')"),
