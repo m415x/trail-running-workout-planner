@@ -6,9 +6,9 @@ import config from './drizzle.config'
 // the caller's working directory so isolated verification never targets dev data.
 export default defineConfig({
   ...config,
-  schema: (Array.isArray(config.schema) ? config.schema : [config.schema]).map(schemaPath =>
-    resolve(import.meta.dirname, schemaPath),
-  ),
+  schema: (Array.isArray(config.schema) ? config.schema : [config.schema])
+    .filter((schemaPath): schemaPath is string => typeof schemaPath === 'string')
+    .map(schemaPath => resolve(import.meta.dirname, schemaPath)),
   out: resolve(import.meta.dirname, 'drizzle/sqlite'),
   dbCredentials: { url: 'sqlite.db' },
 })
