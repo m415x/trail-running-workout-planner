@@ -5,14 +5,14 @@ import { validateIntensityFeasibility } from '@/lib/periodization/intensity-feas
 import {
   getIntensityStrategyRuleForPlanningIntent,
   INTENSITY_STRATEGY_MATRIX,
-  PAM_PERCENTAGE_STEPS,
+  REFERENCE_PERCENTAGE_STEPS,
 } from '@/lib/periodization/intensity-strategy-matrix'
 import {
   suggestIntensityStrategyLimits,
   suggestIntensityStrategyLimitsForPlanningIntent,
 } from '@/lib/periodization/intensity-strategy-limits'
 import {
-  getNearestPamPercentageStep,
+  getNearestReferencePercentageStep,
   proposeMicrocycleIntensity,
 } from '@/lib/periodization/microcycle-intensity-proposal'
 import { calculateMicrocycleIntensityTarget } from '@/lib/periodization/microcycle-intensity-target'
@@ -32,8 +32,8 @@ describe('planificación de intensidad', () => {
 
     assert.equal(rules.length, 4 * 6 * 3)
     assert.equal(rules.every((rule) => (
-      rule.suggestedPamPercentage === null
-      || (PAM_PERCENTAGE_STEPS as readonly number[]).includes(rule.suggestedPamPercentage)
+      rule.suggestedReferencePercentage === null
+      || (REFERENCE_PERCENTAGE_STEPS as readonly number[]).includes(rule.suggestedReferencePercentage)
     )), true)
   })
 
@@ -58,7 +58,7 @@ describe('planificación de intensidad', () => {
         emphasis: 'vo2max',
         predominantZone: 'Z5',
         intenseSessionDemand: 'high',
-        suggestedPamPercentage: 100,
+        suggestedReferencePercentage: 100,
       },
     )
   })
@@ -94,7 +94,7 @@ describe('planificación de intensidad', () => {
 
     assert.equal(target.intenseSessionsTarget, 1)
     assert.equal(target.predominantZone, 'Z5')
-    assert.equal(target.pamPercentageTarget, 100)
+    assert.equal(target.referencePercentageTarget, 100)
   })
 
   it('protege descarga, taper y semana de carrera sin depender de goalType race', () => {
@@ -110,19 +110,19 @@ describe('planificación de intensidad', () => {
 
     assert.equal(calculate('deload').intenseSessionsTarget, 0)
     assert.equal(calculate('tapering').intenseSessionsTarget, 1)
-    assert.equal(calculate('tapering').pamPercentageTarget, 90)
+    assert.equal(calculate('tapering').referencePercentageTarget, 90)
     assert.equal(calculate('race').intenseSessionsTarget, 0)
-    assert.equal(calculate('race').pamPercentageTarget, null)
+    assert.equal(calculate('race').referencePercentageTarget, null)
   })
 
   it('redondea PAM hacia el escalón práctico más cercano sin subir empates', () => {
-    assert.equal(getNearestPamPercentageStep(87.6), 90)
-    assert.equal(getNearestPamPercentageStep(85), 80)
-    assert.equal(getNearestPamPercentageStep(118), 120)
+    assert.equal(getNearestReferencePercentageStep(87.6), 90)
+    assert.equal(getNearestReferencePercentageStep(85), 80)
+    assert.equal(getNearestReferencePercentageStep(118), 120)
   })
 
   it('usa zona cuando una semana no contiene un estímulo PAM ejecutable', () => {
-    const target = targetFixture({ intenseSessionsTarget: 0, pamPercentageTarget: null })
+    const target = targetFixture({ intenseSessionsTarget: 0, referencePercentageTarget: null })
 
     assert.deepEqual(proposeMicrocycleIntensity({
       target,
@@ -147,25 +147,25 @@ describe('planificación de intensidad', () => {
   it('registra procedencia manual por campo y permite volver a generado', () => {
     const generated = targetFixture()
     const manual = applyManualMicrocycleIntensityChanges(generated, {
-      pamPercentageTarget: 95,
+      referencePercentageTarget: 95,
     })
     const restored = applyManualMicrocycleIntensityChanges(generated, {
-      pamPercentageTarget: 90,
+      referencePercentageTarget: 90,
     })
 
-    assert.equal(manual.fieldSources.pamPercentageTarget, 'manual')
+    assert.equal(manual.fieldSources.referencePercentageTarget, 'manual')
     assert.equal(manual.fieldSources.predominantZone, 'generated')
-    assert.equal(restored.fieldSources.pamPercentageTarget, 'generated')
+    assert.equal(restored.fieldSources.referencePercentageTarget, 'generated')
   })
 
   it('preserva solo campos manuales durante una regeneración', () => {
     const existing = applyManualMicrocycleIntensityChanges(targetFixture(), {
-      pamPercentageTarget: null,
+      referencePercentageTarget: null,
       minimumRecoveryDaysBetweenIntenseSessions: 2,
     })
     const nextGenerated = targetFixture({
       predominantZone: 'Z4',
-      pamPercentageTarget: 100,
+      referencePercentageTarget: 100,
     })
     const result = reconcileMicrocycleIntensityTarget({
       generatedTarget: nextGenerated,
@@ -173,10 +173,10 @@ describe('planificación de intensidad', () => {
     })
 
     assert.equal(result.target.predominantZone, 'Z4')
-    assert.equal(result.target.pamPercentageTarget, null)
+    assert.equal(result.target.referencePercentageTarget, null)
     assert.equal(result.target.minimumRecoveryDaysBetweenIntenseSessions, 2)
     assert.deepEqual(result.preservedManualFields, [
-      'pamPercentageTarget',
+      'referencePercentageTarget',
       'minimumRecoveryDaysBetweenIntenseSessions',
     ])
   })
@@ -189,12 +189,12 @@ function targetFixture(
     emphasis: 'threshold',
     intenseSessionsTarget: 2,
     predominantZone: 'Z2',
-    pamPercentageTarget: 90,
+    referencePercentageTarget: 90,
     minimumRecoveryDaysBetweenIntenseSessions: 1,
     fieldSources: {
       intenseSessionsTarget: 'generated',
       predominantZone: 'generated',
-      pamPercentageTarget: 'generated',
+      referencePercentageTarget: 'generated',
       minimumRecoveryDaysBetweenIntenseSessions: 'generated',
     },
     ...overrides,
