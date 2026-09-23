@@ -29,5 +29,6 @@ test('Sessions calendar components localize visible copy', () => {
 
   assert.doesNotMatch(monthly, /const weekDays = \['Lun'/)
   assert.doesNotMatch(weekly, /DateTimeFormat\(['"]es-AR['"]/)
-  assert.doesNotMatch(card, /\{session\.type\}/)
+  assert.doesNotMatch(card, />\s*\{session\.type\}\s*</)
+  assert.match(card, /workoutTypeT\(`types\.\$\{session\.type\}`\)/)
 })
