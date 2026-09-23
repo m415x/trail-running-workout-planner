@@ -1,11 +1,8 @@
 import type { RunningReference } from '@/lib/physiology/running-reference'
-import type { ReferencePercentage, TrainingIntensity } from '@/types/training/intensity.types'
+import type { TrainingIntensity } from '@/types/training/intensity.types'
 
 /** Canonical execution-only contract while persistence compatibility is audited. */
-export type ExecutionIntensity = TrainingIntensity | {
-  method: 'reference_percentage'
-  referencePercentage: ReferencePercentage
-}
+export type ExecutionIntensity = TrainingIntensity
 
 export const INTENSITY_GUIDANCE_POLICY = {
   id: 'execution-guidance',
@@ -88,12 +85,7 @@ export function resolveExecutionGuidance({
     }
   }
 
-  // Legacy prescriptions remain explicit until the approved compatibility matrix
-  // defines their persistence migration. Never infer a decimal scale here.
-  const percentage =
-    intensity.method === 'reference_percentage'
-      ? intensity.referencePercentage
-      : intensity.pamPercentage
+  const percentage = intensity.referencePercentage
 
   const quality: QualityGuidance =
     runningReference.status === 'available'
