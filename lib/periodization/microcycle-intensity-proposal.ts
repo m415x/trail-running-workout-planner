@@ -43,13 +43,13 @@ export function proposeMicrocycleIntensity({
   defaultMethod,
 }: ProposeMicrocycleIntensityParams): TrainingIntensity {
   if (
-    defaultMethod === 'pam_percentage'
+    defaultMethod === 'reference_percentage'
     && target.intenseSessionsTarget > 0
     && target.referencePercentageTarget !== null
   ) {
     return {
-      method: 'pam_percentage',
-      pamPercentage: getNearestReferencePercentageStep(target.referencePercentageTarget),
+      method: 'reference_percentage',
+      referencePercentage: getNearestReferencePercentageStep(target.referencePercentageTarget),
     }
   }
 
