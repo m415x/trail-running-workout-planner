@@ -10,6 +10,6 @@ const source = fs.readFileSync(
 
 test('workout card resolves workout type labels through Workouts translations', () => {
   assert.match(source, /useTranslations\(['"]Workouts['"]\)/)
-  assert.match(source, /t\(['"]types\./)
+  assert.match(source, /t\(`types\.\$\{workout\.type\}`\)/)
   assert.doesNotMatch(source, /getWorkoutTypeLabel/)
 })
