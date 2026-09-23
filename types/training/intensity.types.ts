@@ -94,13 +94,13 @@ export interface IntensityStrategy extends BaseEntity, IntensityStrategyDraft {
  *
  * `predominantZone` describes the overall weekly emphasis while an optional
  * PAM target describes the intensive stimulus. This allows a week to be
- * predominantly Z2 and still prescribe one session at 90% PAM.
+ * predominantly Z2 and still prescribe one session at 90% of the running reference.
  */
 export interface MicrocycleIntensityTargetDraft {
   emphasis: IntensityEmphasis
   intenseSessionsTarget: number
   predominantZone: IntensityZone
-  pamPercentageTarget: PamPercentage | null
+  referencePercentageTarget: ReferencePercentage | null
   minimumRecoveryDaysBetweenIntenseSessions: number
   fieldSources: MicrocycleIntensityTargetFieldSources
 }
@@ -108,7 +108,7 @@ export interface MicrocycleIntensityTargetDraft {
 export type MicrocycleIntensityTargetField =
   | 'intenseSessionsTarget'
   | 'predominantZone'
-  | 'pamPercentageTarget'
+  | 'referencePercentageTarget'
   | 'minimumRecoveryDaysBetweenIntenseSessions'
 
 /** Tracks manual/generated provenance independently for every editable value. */
@@ -135,7 +135,7 @@ export interface IntensityStrategyRule {
   emphasis: IntensityEmphasis
   predominantZone: IntensityZone
   intenseSessionDemand: IntensitySessionDemand
-  suggestedPamPercentage: PamPercentage | null
+  suggestedReferencePercentage: ReferencePercentage | null
 }
 
 /** Exhaustive intensity rule matrix indexed by period, microcycle and goal. */
