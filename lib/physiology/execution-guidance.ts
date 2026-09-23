@@ -42,7 +42,7 @@ interface ZoneGuidance {
 export type ExecutionGuidance =
   | {
       readonly policyVersion: typeof INTENSITY_GUIDANCE_POLICY.version
-      readonly prescription: Extract<TrainingIntensity, { method: 'pam_percentage' }>
+      readonly prescription: Extract<TrainingIntensity, { method: 'pam_percentage' | 'reference_percentage' }>
       readonly quality: QualityGuidance
       readonly zone: null
     }
@@ -82,28 +82,35 @@ export function resolveExecutionGuidance({
     }
   }
 
+  // Legacy prescriptions remain explicit until the approved compatibility matrix
+  // defines their persistence migration. Never infer a decimal scale here.
+  const percentage =
+    intensity.method === 'reference_percentage'
+      ? intensity.referencePercentage
+      : intensity.pamPercentage
+
   const quality: QualityGuidance =
     runningReference.status === 'available'
       ? {
           status: 'available',
-          intensityPercentage: intensity.pamPercentage,
+          intensityPercentage: percentage,
           source: runningReference.source,
           paceSecPerKm: Math.round(
-            runningReference.derived.paceSecPerKm / (intensity.pamPercentage / 100),
+            runningReference.derived.paceSecPerKm / (percentage / 100),
           ),
           paceLabel: formatPace(
-            runningReference.derived.paceSecPerKm / (intensity.pamPercentage / 100),
+            runningReference.derived.paceSecPerKm / (percentage / 100),
           ),
           averageSpeedKmh: Number(
             (
               runningReference.derived.averageSpeedKmh *
-              (intensity.pamPercentage / 100)
+              (percentage / 100)
             ).toFixed(1),
           ),
         }
       : {
           status: 'unknown',
-          intensityPercentage: intensity.pamPercentage,
+          intensityPercentage: percentage,
         }
 
   return {
