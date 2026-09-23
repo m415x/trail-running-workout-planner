@@ -152,6 +152,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Generate Drizzle migrations; never hand-edit generated snapshot/journal metadata.
 - Review generated SQL before applying it. `db:check:supabase` does not prove the remote migration was applied; use the remote verifier.
 - Supabase Data API is currently disabled. The app's migration/verification flow uses direct PostgreSQL; do not enable PostgREST merely to silence `pg_pgrst_no_exposed_schemas` log noise.
+- Current environment boundary: SQLite is the development/runtime database; Supabase is reserved for production deployment. A versioned/locally checked Supabase migration is not evidence that production was migrated. Apply production migrations only as an explicit controlled deployment step, then require `pn db:verify:supabase` before claiming the remote schema is current.
 - `SUPABASE_DIRECT_URL` and `SUPABASE_DATABASE_URL` are server-only secrets. Never commit/print them or prefix with `NEXT_PUBLIC_`.
 - Do not spread fixed development identities (`team_1`, `profile_user_1`) or invent an authenticated coach actor before authentication/tenant resolution exists.
 
