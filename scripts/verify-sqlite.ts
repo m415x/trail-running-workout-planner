@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3'
 
-const sqlite = new Database('sqlite.db', { fileMustExist: true })
+const sqlite = new Database(process.env.SQLITE_SCENARIO_MODE === '1' ? (process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()) : 'sqlite.db', { fileMustExist: true })
 try {
   const requiredTables = ['users', 'athlete_profiles', 'field_performance_tests']
   const tables = new Set(
