@@ -30,7 +30,7 @@ test('SessionForm localizes group prescription, intensity and empty-state copy',
     'form.prescriptions.help',
     'form.prescriptions.noGroups',
     'form.prescriptions.noMicrocycles',
-    'form.prescriptions.selectMicrocycle',
+    'form.prescriptions.microcycle',
     'form.prescriptions.intensityMethod',
     'form.prescriptions.noIntensity',
     'form.prescriptions.hrZone',
@@ -39,5 +39,13 @@ test('SessionForm localizes group prescription, intensity and empty-state copy',
     'form.prescriptions.notes',
   ]) {
     assert.equal(source.includes(`t('${key}')`), true, key)
+  }
+
+  for (const key of [
+    'form.prescriptions.microcycleOption',
+    'microcycleAmbiguous',
+    'microcycleUnavailable',
+  ]) {
+    assert.equal(source.includes(key), true, key)
   }
 })
