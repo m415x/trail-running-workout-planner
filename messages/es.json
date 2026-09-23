@@ -75,6 +75,19 @@
         "mainBlockPlaceholder": "Ej.: 6 × 800 m con recuperación de 2 min",
         "cooldown": "Vuelta a la calma",
         "cooldownPlaceholder": "Ej.: 10 min suaves + elongación"
+      },
+      "prescriptions": {
+        "title": "Prescripciones por grupo",
+        "help": "Seleccioná al menos un grupo y definí la carga que verá en su planificación.",
+        "noGroups": "No hay grupos activos disponibles.",
+        "noMicrocycles": "Este grupo no tiene microciclos disponibles.",
+        "selectMicrocycle": "Seleccionar microciclo",
+        "intensityMethod": "Método de intensidad",
+        "noIntensity": "Sin intensidad",
+        "hrZone": "Zona de frecuencia cardíaca",
+        "pamPercentage": "Porcentaje PAM",
+        "selectZone": "Seleccionar zona",
+        "notes": "Indicaciones para el grupo"
       }
     }
   }
