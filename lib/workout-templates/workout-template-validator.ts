@@ -116,15 +116,15 @@ function validateOptionalIntensity(
   }
 
   if (
-    intensity.method !== 'pam_percentage'
-    || !Number.isFinite(intensity.pamPercentage)
-    || intensity.pamPercentage <= 0
-    || intensity.pamPercentage > 200
+    intensity.method !== 'reference_percentage'
+    || !Number.isFinite(intensity.referencePercentage)
+    || intensity.referencePercentage <= 0
+    || intensity.referencePercentage > 200
   ) {
     errors.push(issue(
       'intensity',
-      'intensity-pam-range',
-      'La intensidad PAM debe ser un porcentaje mayor que 0 y menor o igual a 200.',
+      'intensity-reference-percentage-range',
+      'El porcentaje de referencia debe ser un porcentaje mayor que 0 y menor o igual a 200.',
     ))
   }
 }
