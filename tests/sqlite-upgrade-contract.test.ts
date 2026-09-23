@@ -522,10 +522,35 @@ test('SQLite scenario CLI executes and rejects an unknown scenario', () => {
 test('SQLite Drizzle config resolves project schemas and migrations independently of the target database', () => {
   const config = fs.readFileSync(path.join(process.cwd(), 'drizzle.sqlite.config.ts'), 'utf8')
 
-  assert.match(config, /import\.meta\.dirname/)
+  assert.match(config, /fileURLToPath\(import\.meta\.url\)/)
   assert.match(config, /resolve\(/)
   assert.match(config, /schema:/)
   assert.match(config, /out:/)
   assert.match(config, /dbCredentials:/)
   assert.match(config, /sqlite\.db/)
+})
+
+test('SQLite Drizzle config loads from an isolated working directory', () => {
+  const projectRoot = process.cwd()
+  const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-config-'))
+  try {
+    const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+    const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
+    const result = spawnSync(process.execPath, [
+      tsxCli,
+      '-e',
+      `import config from ${JSON.stringify(configPath)}; console.log(JSON.stringify({ schema: config.schema, out: config.out, url: config.dbCredentials?.url }))`,
+    ], {
+      cwd: workspace,
+      encoding: 'utf8',
+      env: { ...process.env, TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') },
+    })
+    assert.equal(result.status, 0, result.stderr)
+    const loaded = JSON.parse(result.stdout.trim()) as { schema: string[]; out: string; url: string }
+    assert.ok(loaded.schema.every(schemaPath => path.isAbsolute(schemaPath)))
+    assert.ok(path.isAbsolute(loaded.out))
+    assert.equal(loaded.url, 'sqlite.db')
+  } finally {
+    rmSync(workspace, { recursive: true, force: true })
+  }
 })
