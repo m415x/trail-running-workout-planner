@@ -41,6 +41,22 @@ try {
     )
   }
 
+  const recordedByUserForeignKey = (sqlite.pragma('foreign_key_list(field_performance_tests)') as Array<{
+    table: string
+    from: string
+    to: string
+    on_delete: string
+  }>).find(foreignKey => foreignKey.from === 'recorded_by_user_id')
+  if (
+    recordedByUserForeignKey?.table !== 'users'
+    || recordedByUserForeignKey.to !== 'id'
+    || recordedByUserForeignKey.on_delete !== 'SET NULL'
+  ) {
+    throw new Error(
+      'SQLite schema is inconsistent: field_performance_tests.recorded_by_user_id must reference users(id) ON DELETE SET NULL',
+    )
+  }
+
   const foreignKeyErrors = sqlite.pragma('foreign_key_check') as unknown[]
   if (foreignKeyErrors.length > 0) throw new Error('SQLite foreign key integrity check failed')
 
