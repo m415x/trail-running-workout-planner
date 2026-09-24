@@ -15,7 +15,7 @@
     "card": {
       "coachNote": "Coach's Note",
       "logWorkoutButton": "Log completed workout",
-      "estimatedTime": "Est. Time",
+      "estimatedTime": "Est. Time",\n      "plannedDuration": "Planned duration",
       "avgPace": "Avg. Pace",
       "avgSpeed": "Avg. Speed",
       "restMessage": "No session scheduled. Time to recover.",
