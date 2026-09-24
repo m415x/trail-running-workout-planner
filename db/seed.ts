@@ -294,7 +294,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
   }
 }
 
-async function seed() {
+export async function seed() {
   console.log('🌱 Poblando base de datos SQLite...')
 
   const now = new Date().toISOString()
@@ -821,8 +821,10 @@ async function seed() {
   console.log('   • B3: grupo disponible sin planificación competitiva')
 }
 
-seed().catch((error) => {
-  console.error('❌ Error al inicializar la base de datos:', error)
+if (process.env.SQLITE_SCENARIO_MODE !== '1') {
+  seed().catch((error) => {
+    console.error('❌ Error al inicializar la base de datos:', error)
 
-  process.exitCode = 1
-})
+    process.exitCode = 1
+  })
+}
