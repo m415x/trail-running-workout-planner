@@ -15,7 +15,7 @@
     "card": {
       "coachNote": "Nota del Entrenador",
       "logWorkoutButton": "Registrar entrenamiento realizado",
-      "estimatedTime": "Tiempo est.",
+      "estimatedTime": "Tiempo est.",\n      "plannedDuration": "Duración planificada",
       "avgPace": "Ritmo medio",
       "avgSpeed": "Vel. media",
       "restMessage": "Sin rutina programada. Aprovecha para recuperar.",
