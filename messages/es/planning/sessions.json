@@ -66,7 +66,7 @@
         "group": "Grupo",
         "microcycle": "Microciclo",
         "distance": "Distancia (km)",
-        "duration": "Duración (min)",
+        "duration": "Duración grupal planificada (min)",
         "elevationGain": "Desnivel (m+)",
         "zone": "Zona",
         "microcycleOption": "{plan} · Semana {week} · {start} al {end}",
