@@ -79,6 +79,27 @@ describe('prescripciones grupales de una sesión', () => {
     }
   })
 
+  it('preserva durationMin como planning grupal y mantiene ausencia como unknown', () => {
+    const planned = prescriptionForm('group_s2', 'micro_1')
+    planned.set('durationMin:group_s2', '75')
+
+    const plannedResult = parseSessionPrescriptions(planned)
+    assert.equal(plannedResult.success, true)
+    if (plannedResult.success) assert.equal(plannedResult.data[0].durationMin, 75)
+
+    const unknown = prescriptionForm('group_s2', 'micro_1')
+    const unknownResult = parseSessionPrescriptions(unknown)
+    assert.equal(unknownResult.success, true)
+    if (unknownResult.success) assert.equal(unknownResult.data[0].durationMin, null)
+  })
+
+  it('rechaza cero como duración grupal planificada explícita', () => {
+    const form = prescriptionForm('group_s2', 'micro_1')
+    form.set('durationMin:group_s2', '0')
+
+    assert.equal(getErrorCode(form), 'invalidVolume')
+  })
+
   it('admite varios grupos y elimina selecciones duplicadas', () => {
     const form = prescriptionForm('group_s2', 'micro_s2')
     form.append('prescriptionGroupId', 'group_s2')
