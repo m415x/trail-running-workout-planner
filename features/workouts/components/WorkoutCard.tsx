@@ -56,7 +56,7 @@ export function BaseWorkoutCard({
   } = useWorkoutCard({ workout, date, TrackData, onRealizedTrainingSaved })
 
   const visibleStats = shouldPrioritizeTerrainEffort
-    ? stats.filter((stat) => stat.kind !== 'duration' && stat.kind !== 'pace' && stat.kind !== 'speed')
+    ? stats.filter((stat) => stat.kind !== 'pace' && stat.kind !== 'speed')
     : stats
 
   return (
