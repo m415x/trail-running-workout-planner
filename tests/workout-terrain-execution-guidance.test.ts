@@ -33,12 +33,12 @@ test('WorkoutCard does not render terrain priority as a separate guidance card',
 })
 
 
-test('variable-terrain WorkoutCard does not present legacy group duration-derived pace and speed as athlete targets', async () => {
+test('variable-terrain WorkoutCard keeps planned group duration but suppresses derived pace and speed as athlete targets', async () => {
   const card = await readFile('features/workouts/components/WorkoutCard.tsx', 'utf8')
   const hook = await readFile('features/workouts/hooks/useWorkoutCard.ts', 'utf8')
 
   assert.match(card, /shouldPrioritizeTerrainEffort\s*\?\s*stats[.]filter/)
-  assert.match(card, /stat[.]kind\s*!==\s*['"]duration['"]/)
+  assert.doesNotMatch(card, /stat[.]kind\s*!==\s*['"]duration['"]/)
   assert.match(card, /stat[.]kind\s*!==\s*['"]pace['"]/)
   assert.match(card, /stat[.]kind\s*!==\s*['"]speed['"]/)
   assert.match(hook, /kind:\s*['"]duration['"]/)
