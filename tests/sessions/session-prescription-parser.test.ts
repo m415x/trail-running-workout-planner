@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { parseSessionPrescriptions } from '@/lib/sessions/session-prescription-parser'
+import { readFileSync } from 'node:fs'
 import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 
 describe('prescripciones grupales de una sesión', () => {
@@ -110,6 +111,14 @@ describe('prescripciones grupales de una sesión', () => {
     assert.equal(result.success, true)
     if (result.success) assert.deepEqual(result.data.map((item) => item.groupId), ['group_s2', 'group_m1'])
   })
+})
+
+test('coach session copy identifies durationMin as planned group duration in ES/EN', () => {
+  const es = JSON.parse(readFileSync('messages/es/planning/sessions.json', 'utf8'))
+  const en = JSON.parse(readFileSync('messages/en/planning/sessions.json', 'utf8'))
+
+  assert.equal(es.Sessions.form.prescriptions.duration, 'Duración grupal planificada (min)')
+  assert.equal(en.Sessions.form.prescriptions.duration, 'Planned group duration (min)')
 })
 
 function prescriptionForm(groupId: string, microcycleId: string) {
