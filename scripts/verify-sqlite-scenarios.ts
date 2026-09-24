@@ -125,6 +125,27 @@ export async function runFullSeedScenario(projectRoot = process.cwd()): Promise<
       }
 
       await seedFull(scenarioDb, { currentWeekStart, shiftISODate })
+
+      const overlappingPlanning = sqlite.prepare(`
+        SELECT g.category_code || g.level_code AS group_code, COUNT(*) AS count
+        FROM microcycles mi
+        INNER JOIN mesocycles me ON me.id = mi.mesocycle_id
+        INNER JOIN macrocycles ma ON ma.id = me.macrocycle_id
+        INNER JOIN group_training_plans gp ON gp.id = ma.group_training_plan_id
+        INNER JOIN athlete_groups g ON g.id = gp.group_id
+        WHERE mi.is_deleted = 0
+          AND me.is_deleted = 0
+          AND ma.is_deleted = 0
+          AND gp.is_deleted = 0
+          AND mi.start_date <= ?
+          AND mi.end_date >= ?
+        GROUP BY gp.group_id
+        HAVING COUNT(*) > 1
+      `).all(currentWeekStart, currentWeekStart) as Array<{ group_code: string; count: number }>
+
+      if (overlappingPlanning.length > 0) {
+        throw new Error(`Full seed contains ambiguous active microcycles on ${currentWeekStart}: ${overlappingPlanning.map(row => `${row.group_code}=${row.count}`).join(', ')}`)
+      }
     } finally {
       sqlite.close()
     }
