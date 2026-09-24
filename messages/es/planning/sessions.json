@@ -22,7 +22,7 @@
           "updateFailed": "No se pudo actualizar la sesión",
           "groupNotFound": "Uno de los grupos seleccionados no existe o está inactivo",
           "microcycleGroupMismatch": "El microciclo seleccionado no pertenece al grupo {group}",
-          "invalidVolume": "Los valores de volumen no pueden ser negativos",
+          "invalidVolume": "Revisá los valores de volumen. Distancia y desnivel pueden ser 0; la duración planificada debe ser mayor que 0.",
           "microcycleRequired": "Seleccioná un microciclo para cada grupo",
           "hrZoneRequired": "Seleccioná una zona para la intensidad por FC",
           "referencePercentageInvalid": "Seleccioná un porcentaje de referencia permitido",
