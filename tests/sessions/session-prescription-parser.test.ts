@@ -113,7 +113,7 @@ describe('prescripciones grupales de una sesión', () => {
   })
 })
 
-test('coach session copy identifies durationMin as planned group duration in ES/EN', () => {
+it('identifica durationMin como duración grupal planificada en el copy Coach ES/EN', () => {
   const es = JSON.parse(readFileSync('messages/es/planning/sessions.json', 'utf8'))
   const en = JSON.parse(readFileSync('messages/en/planning/sessions.json', 'utf8'))
 
