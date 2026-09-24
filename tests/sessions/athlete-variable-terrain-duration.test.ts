@@ -11,9 +11,13 @@ describe('athlete variable-terrain duration boundary', () => {
     assert.doesNotMatch(card, /stat\.kind !== 'duration'/)
   })
 
-  it('does not label planned group duration as an athlete estimated time', () => {
+  it('labels the athlete-facing value explicitly as planned group duration in ES/EN', () => {
     const hook = readFileSync('features/workouts/hooks/useWorkoutCard.ts', 'utf8')
+    const es = JSON.parse(readFileSync('messages/es/realized-training/workouts.json', 'utf8'))
+    const en = JSON.parse(readFileSync('messages/en/realized-training/workouts.json', 'utf8'))
 
     assert.doesNotMatch(hook, /label: t\('card\.estimatedTime'\)/)
+    assert.equal(es.Workouts.card.plannedDuration, 'Duración grupal planificada')
+    assert.equal(en.Workouts.card.plannedDuration, 'Planned group duration')
   })
 })
