@@ -119,6 +119,25 @@ it('identifica durationMin como duración grupal planificada en el copy Coach ES
 
   assert.equal(es.Sessions.form.prescriptions.duration, 'Duración grupal planificada (min)')
   assert.equal(en.Sessions.form.prescriptions.duration, 'Planned group duration (min)')
+  it('alinea el input Coach y el error ES/EN con duración planificada estrictamente positiva', () => {
+    const form = readFileSync('features/sessions/components/SessionForm.tsx', 'utf8')
+    const es = JSON.parse(readFileSync('messages/es/planning/sessions.json', 'utf8'))
+    const en = JSON.parse(readFileSync('messages/en/planning/sessions.json', 'utf8'))
+
+    assert.match(
+      form,
+      /name={`durationMin:\${group\.id}`} type='number' min='1' step='1'/,
+    )
+    assert.equal(
+      es.Sessions.form.errors.server.invalidVolume,
+      'Revisá los valores de volumen. Distancia y desnivel pueden ser 0; la duración planificada debe ser mayor que 0.',
+    )
+    assert.equal(
+      en.Sessions.form.errors.server.invalidVolume,
+      'Review the volume values. Distance and elevation gain may be 0; planned duration must be greater than 0.',
+    )
+  })
+
 })
 
 function prescriptionForm(groupId: string, microcycleId: string) {
