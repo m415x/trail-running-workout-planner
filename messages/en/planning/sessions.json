@@ -22,7 +22,7 @@
           "updateFailed": "The session could not be updated",
           "groupNotFound": "One of the selected groups does not exist or is inactive",
           "microcycleGroupMismatch": "The selected microcycle does not belong to group {group}",
-          "invalidVolume": "Volume values cannot be negative",
+          "invalidVolume": "Review the volume values. Distance and elevation gain may be 0; planned duration must be greater than 0.",
           "microcycleRequired": "Select a microcycle for each group",
           "hrZoneRequired": "Select a zone for heart-rate intensity",
           "referencePercentageInvalid": "Select an allowed reference percentage",
