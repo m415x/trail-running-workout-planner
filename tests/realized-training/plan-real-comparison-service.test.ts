@@ -119,6 +119,42 @@ describe('longitudinal plan-real comparison service', () => {
       : item.realized.recordId), ['session-1'])
   })
 
+  it('does not match realized evidence by date, title, or workout when the authoritative session link differs', () => {
+    const result = buildAthletePlanRealComparison({
+      teamId: 'team-1',
+      athleteId: 'athlete-1',
+      window,
+      plannedSessions: [planned({
+        sessionId: 'session-planned',
+        sessionTitle: 'Trail',
+        metrics: {
+          ...planned().metrics,
+          durationMin: { state: 'known', value: 90, unit: 'min' },
+        },
+      })],
+      realizedRecords: [realized({
+        id: 'same-looking-realized',
+        sessionId: 'different-session',
+        workoutId: 'same-workout',
+        date: '2026-09-10',
+        durationMin: 90,
+      })],
+    })
+    const item = result.items[0]
+
+    assert.equal(item.kind, 'planned_session')
+    assert.equal(item.state, 'unknown')
+    assert.equal(item.realized, null)
+    const duration = item.metrics.find(metric => metric.name === 'durationMin')
+    assert.equal(duration?.evaluation.state, 'not_evaluated')
+    assert.equal(
+      duration?.evaluation.state === 'not_evaluated'
+        ? duration.evaluation.reason
+        : null,
+      'not_observed',
+    )
+  })
+
   it('does not choose silently between multiple authoritative rows for one session', () => {
     const result = buildAthletePlanRealComparison({
       teamId: 'team-1',
