@@ -140,3 +140,55 @@ test('membership Server Action runtime applies and changes athlete terms inside 
   assert.ok(calls.includes('update:2026-11-01'))
   assert.ok(calls.includes('insert:terms-next'))
 })
+
+
+test('membership Server Action runtime reports the original policy write failure to its diagnostic boundary', async () => {
+  const failure = new Error('SQLITE_CONSTRAINT diagnostic')
+  const reported: unknown[] = []
+  const db = {
+    transaction: (operation: () => unknown) => ({
+      immediate: () => operation(),
+    }),
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          all: () => [],
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => {
+          throw failure
+        },
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db,
+    createId: () => 'policy-a',
+    reportError: (error) => reported.push(error),
+  })
+
+  const result = await runtime.configureTeamEconomicPolicy({
+    teamId: 'team_1',
+    effectiveFrom: '2026-10-01',
+    defaultMonthlyAmountMinor: 2_500_000,
+    currency: 'ARS',
+    ordinaryDueDay: 5,
+  })
+
+  assert.deepEqual(result, {
+    success: false,
+    error: 'Could not configure team economic policy',
+  })
+  assert.deepEqual(reported, [failure])
+})
