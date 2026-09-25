@@ -16,3 +16,19 @@ test('athlete detail membership block integrates the terms form from the current
   assert.doesNotMatch(source, /materializeMonthlyCharges/)
   assert.doesNotMatch(source, /insertMonthlyCharges/)
 })
+
+
+test('athlete detail separates current, scheduled, and past billing terms', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+
+  assert.match(source, /membership\.scheduledTerms/)
+  assert.match(source, /membership\.pastTerms/)
+  assert.match(source, /Cambios programados/)
+  assert.match(source, /Scheduled changes/)
+  assert.match(source, /Historial de condiciones/)
+  assert.match(source, /Terms history/)
+  assert.match(source, /Accordion/)
+})
