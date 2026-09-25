@@ -25,7 +25,17 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
       },
       listMonthlyCharges: async (teamId, athleteId) => {
         calls.push(`charges:${teamId}:${athleteId}`)
-        return []
+        return [{
+          id: 'charge-2026-09',
+          athleteId,
+          year: 2026,
+          month: 9,
+          baseAmountMinor: 2_500_000,
+          amountDueMinor: 2_500_000,
+          currency: 'ARS',
+          baseDueDate: '2026-09-15',
+          effectiveDueDate: '2026-09-15',
+        }]
       },
       listTeamEconomicPolicies: async () => [],
       insertMonthlyCharges: async () => {
@@ -44,6 +54,9 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
 
   assert.equal(model.title, 'Membresía')
   assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.charges.length, 1)
+  assert.equal(model.charges[0]?.amountDue, '$25.000')
+  assert.equal(model.charges[0]?.period, '09/2026')
   assert.deepEqual(calls, [
     'belongs:team_1:athlete-1',
     'terms:team_1:athlete-1',
