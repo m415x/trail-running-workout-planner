@@ -141,3 +141,47 @@ test('portable test runner rejects incomplete TAP summaries instead of inventing
     /complete.*summary|summary.*complete/i,
   )
 })
+
+
+test('portable test runner separates TAP diagnostics from the batch summary', async () => {
+  const { stripTestRunSummary } = await import('../scripts/test-runner')
+  const output = `TAP version 13
+# Subtest: example
+ok 1 - example
+1..1
+# tests 1
+# suites 1
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12.5`
+
+  assert.equal(stripTestRunSummary(output), `TAP version 13
+# Subtest: example
+ok 1 - example
+1..1`)
+})
+
+test('portable test runner formats one aggregate Node-style summary', async () => {
+  const { formatTestRunSummary } = await import('../scripts/test-runner')
+
+  assert.equal(formatTestRunSummary({
+    tests: 1375,
+    suites: 216,
+    pass: 1375,
+    fail: 0,
+    cancelled: 0,
+    skipped: 0,
+    todo: 0,
+    durationMs: 29112.2802,
+  }), `ℹ tests 1375
+ℹ suites 216
+ℹ pass 1375
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 29112.2802`)
+})
