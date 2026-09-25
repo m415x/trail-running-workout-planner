@@ -45,6 +45,7 @@ export function buildAthleteMembershipViewModel({
     currentTerms: currentTerms
       ? {
           monthlyAmount: formatAmount(currentTerms.monthlyAmountMinor, locale),
+          monthlyAmountMinor: currentTerms.monthlyAmountMinor,
           currency: currentTerms.currency,
           effectiveFrom: currentTerms.effectiveFrom,
           effectiveUntil: currentTerms.effectiveUntil,
