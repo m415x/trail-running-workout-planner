@@ -24,6 +24,12 @@ import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@ui/accordion'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -166,6 +172,47 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 </dl>
               ) : <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{membership.emptyTerms}</p>}
             </section>
+            {membership.scheduledTerms.length > 0 && (
+              <Accordion type='single' collapsible>
+                <AccordionItem value='scheduled-terms' className='overflow-hidden rounded-lg border border-border bg-card'>
+                  <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
+                    {locale === 'en' ? `Scheduled changes (${membership.scheduledTerms.length})` : `Cambios programados (${membership.scheduledTerms.length})`}
+                  </AccordionTrigger>
+                  <AccordionContent className='px-4 pb-4'>
+                    <div className='divide-y divide-border'>
+                      {membership.scheduledTerms.map((terms) => (
+                        <dl key={terms.effectiveFrom} className='grid gap-4 py-4 first:pt-0 last:pb-0 sm:grid-cols-3'>
+                          <DetailItem label={locale === 'en' ? 'Monthly amount' : 'Importe mensual'} value={terms.monthlyAmount} fallback='—' />
+                          <DetailItem label={locale === 'en' ? 'Currency' : 'Moneda'} value={terms.currency} fallback='—' />
+                          <DetailItem label={locale === 'en' ? 'Effective from' : 'Vigente desde'} value={formatDate(terms.effectiveFrom, locale, '—')} fallback='—' />
+                        </dl>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
+            {membership.pastTerms.length > 0 && (
+              <Accordion type='single' collapsible>
+                <AccordionItem value='past-terms' className='overflow-hidden rounded-lg border border-border bg-card'>
+                  <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
+                    {locale === 'en' ? `Terms history (${membership.pastTerms.length})` : `Historial de condiciones (${membership.pastTerms.length})`}
+                  </AccordionTrigger>
+                  <AccordionContent className='px-4 pb-4'>
+                    <div className='divide-y divide-border'>
+                      {membership.pastTerms.map((terms) => (
+                        <dl key={terms.effectiveFrom} className='grid gap-4 py-4 first:pt-0 last:pb-0 sm:grid-cols-4'>
+                          <DetailItem label={locale === 'en' ? 'Monthly amount' : 'Importe mensual'} value={terms.monthlyAmount} fallback='—' />
+                          <DetailItem label={locale === 'en' ? 'Currency' : 'Moneda'} value={terms.currency} fallback='—' />
+                          <DetailItem label={locale === 'en' ? 'Effective from' : 'Vigente desde'} value={formatDate(terms.effectiveFrom, locale, '—')} fallback='—' />
+                          <DetailItem label={locale === 'en' ? 'Effective until' : 'Vigente hasta'} value={formatDate(terms.effectiveUntil, locale, '—')} fallback='—' />
+                        </dl>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            )}
             <section className='space-y-3'>
               <h3 className='font-medium'>{locale === 'en' ? 'Materialized charges' : 'Cuotas materializadas'}</h3>
               {membership.charges.length === 0 ? (
