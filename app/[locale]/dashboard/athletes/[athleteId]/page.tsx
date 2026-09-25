@@ -123,12 +123,13 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const upcomingRegistrations = raceCompetition.upcomingRegistrations
   const history = raceCompetition.history
   const es = locale === 'es'
+  const membershipTermsFormBase = membership.scheduledTerms.at(-1) ?? membership.currentTerms
   const membershipTermsForm = getAthleteBillingTermsFormModel({
     locale: es ? 'es' : 'en',
-    currentTerms: membership.currentTerms
+    currentTerms: membershipTermsFormBase
       ? {
-          monthlyAmountMinor: membership.currentTerms.monthlyAmountMinor,
-          currency: membership.currentTerms.currency,
+          monthlyAmountMinor: membershipTermsFormBase.monthlyAmountMinor,
+          currency: membershipTermsFormBase.currency,
         }
       : null,
   })
