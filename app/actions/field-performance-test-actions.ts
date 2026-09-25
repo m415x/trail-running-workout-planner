@@ -150,6 +150,7 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
           : null,
       resolveEligibleTestEvent: async (testEventId, athleteId) =>
         resolveEligibleTestEvent(testEventId, athleteId),
+      findActiveOfficialByAthleteAndTestEvent: repository.findActiveOfficialByAthleteAndTestEvent,
       insert: repository.insert,
       newId: randomUUID,
       now: () => new Date().toISOString(),
