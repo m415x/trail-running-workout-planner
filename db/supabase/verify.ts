@@ -120,13 +120,13 @@ async function main() {
       where tc.table_schema = 'public'
         and tc.table_name = 'monthly_charges'
         and tc.constraint_type in ('UNIQUE', 'FOREIGN KEY')
-    \`
+    `
     const billingIndexes = await sql<{ indexname: string }[]>`
       select indexname
       from pg_indexes
       where schemaname = 'public'
         and tablename = 'monthly_charges'
-    \`
+    `
     const billingForeignKeys = await sql<{ column_name: string; foreign_table_name: string; foreign_column_name: string }[]>`
       select
         kcu.column_name,
@@ -142,7 +142,7 @@ async function main() {
       where tc.table_schema = 'public'
         and tc.table_name = 'monthly_charges'
         and tc.constraint_type = 'FOREIGN KEY'
-    \`
+    `
     const monthlyChargeUnique = billingIndexes.some(
       index => index.indexname === 'monthly_charges_athlete_year_month_unique',
     )
