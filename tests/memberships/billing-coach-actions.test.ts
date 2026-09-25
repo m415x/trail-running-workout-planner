@@ -11,7 +11,7 @@ import {
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
   const dependencies: BillingCoachActionDependencies = {
-    transaction: async () => {
+    transaction: () => {
       transactions += 1
       throw new Error('transaction must not run')
     },
@@ -34,17 +34,17 @@ test('Coach action performs policy configuration inside one transaction', async 
   const calls: string[] = []
   const dependencies: BillingCoachActionDependencies = {
     createId: () => 'policy-b',
-    transaction: async (operation) => {
+    transaction: (operation) => {
       calls.push('transaction:start')
-      const result = await operation({
-        listTeamEconomicPolicies: async (teamId) => {
+      const result = operation({
+        listTeamEconomicPolicies: (teamId) => {
           calls.push(`list:${teamId}`)
           return []
         },
-        saveTeamEconomicPolicy: async (policy) => {
+        saveTeamEconomicPolicy: (policy) => {
           calls.push(`save:${policy.id}`)
         },
-        replaceTeamEconomicPolicy: async () => {
+        replaceTeamEconomicPolicy: () => {
           throw new Error('unexpected replacement')
         },
       })
@@ -73,7 +73,7 @@ test('Coach action performs policy configuration inside one transaction', async 
 test('Coach action returns a safe failure when transactional configuration fails', async () => {
   const dependencies: BillingCoachActionDependencies = {
     createId: () => 'policy-a',
-    transaction: async () => {
+    transaction: () => {
       throw new Error('database detail')
     },
   }
@@ -97,14 +97,14 @@ test('Coach action applies initial athlete billing terms inside one transaction'
   const calls: string[] = []
   const dependencies: BillingCoachActionDependencies = {
     createId: () => 'terms-a',
-    transaction: async (operation) => {
+    transaction: (operation) => {
       calls.push('transaction:start')
-      const result = await operation({
-        athleteBelongsToTeam: async (teamId, athleteId) => {
+      const result = operation({
+        athleteBelongsToTeam: (teamId, athleteId) => {
           calls.push(`belongs:${teamId}:${athleteId}`)
           return true
         },
-        listTeamEconomicPolicies: async () => [{
+        listTeamEconomicPolicies: () => [{
           id: 'policy-a',
           teamId: 'team-a',
           defaultMonthlyAmountMinor: 2_500_000,
@@ -113,11 +113,11 @@ test('Coach action applies initial athlete billing terms inside one transaction'
           effectiveFrom: '2026-10-01',
           effectiveUntil: null,
         }],
-        listAthleteBillingTerms: async () => [],
-        saveAthleteBillingTerms: async (terms) => {
+        listAthleteBillingTerms: () => [],
+        saveAthleteBillingTerms: (terms) => {
           calls.push(`save:${terms.id}`)
         },
-        replaceAthleteBillingTerms: async () => {
+        replaceAthleteBillingTerms: () => {
           throw new Error('unexpected replacement')
         },
       })
@@ -145,11 +145,11 @@ test('Coach action changes athlete billing terms inside one transaction', async 
   const calls: string[] = []
   const dependencies: BillingCoachActionDependencies = {
     createId: () => 'terms-b',
-    transaction: async (operation) => {
-      const result = await operation({
-        athleteBelongsToTeam: async () => true,
-        listTeamEconomicPolicies: async () => [],
-        listAthleteBillingTerms: async () => [{
+    transaction: (operation) => {
+      const result = operation({
+        athleteBelongsToTeam: () => true,
+        listTeamEconomicPolicies: () => [],
+        listAthleteBillingTerms: () => [{
           id: 'terms-a',
           athleteId: 'athlete-a',
           monthlyAmountMinor: 2_500_000,
@@ -157,8 +157,8 @@ test('Coach action changes athlete billing terms inside one transaction', async 
           effectiveFrom: '2026-10-18',
           effectiveUntil: null,
         }],
-        saveAthleteBillingTerms: async () => {},
-        replaceAthleteBillingTerms: async (current, replacement) => {
+        saveAthleteBillingTerms: () => {},
+        replaceAthleteBillingTerms: (current, replacement) => {
           calls.push(`${current.effectiveUntil}:${replacement.monthlyAmountMinor}`)
         },
       })
