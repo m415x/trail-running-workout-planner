@@ -56,7 +56,7 @@ export function TeamEconomicPolicyForm({
       })
 
       if (!result.success) {
-        setError(result.error || feedback.genericError)
+        setError(feedback.genericError)
       }
     })
   }
