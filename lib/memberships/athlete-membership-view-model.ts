@@ -21,10 +21,12 @@ export function buildAthleteMembershipViewModel({
   locale,
   terms,
   charges,
+  onDate,
 }: {
   locale: Locale
   terms: AthleteBillingTerms[]
   charges: MonthlyChargeCandidate[]
+  onDate: string
 }) {
   const copy = locale === 'en'
     ? {
@@ -38,19 +40,30 @@ export function buildAthleteMembershipViewModel({
         emptyCharges: 'Todavía no se materializaron cuotas mensuales.',
       }
 
-  const currentTerms = terms.find((item) => item.effectiveUntil === null) ?? null
+  const currentTerms = terms.find((item) =>
+    item.effectiveFrom <= onDate
+    && (item.effectiveUntil === null || onDate < item.effectiveUntil),
+  ) ?? null
+  const scheduledTerms = terms
+    .filter((item) => item.effectiveFrom > onDate)
+    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+  const pastTerms = terms
+    .filter((item) => item.effectiveUntil !== null && item.effectiveUntil <= onDate)
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
+
+  const mapTerms = (item: AthleteBillingTerms) => ({
+    monthlyAmount: formatAmount(item.monthlyAmountMinor, locale),
+    monthlyAmountMinor: item.monthlyAmountMinor,
+    currency: item.currency,
+    effectiveFrom: item.effectiveFrom,
+    effectiveUntil: item.effectiveUntil,
+  })
 
   return {
     title: copy.title,
-    currentTerms: currentTerms
-      ? {
-          monthlyAmount: formatAmount(currentTerms.monthlyAmountMinor, locale),
-          monthlyAmountMinor: currentTerms.monthlyAmountMinor,
-          currency: currentTerms.currency,
-          effectiveFrom: currentTerms.effectiveFrom,
-          effectiveUntil: currentTerms.effectiveUntil,
-        }
-      : null,
+    currentTerms: currentTerms ? mapTerms(currentTerms) : null,
+    scheduledTerms: scheduledTerms.map(mapTerms),
+    pastTerms: pastTerms.map(mapTerms),
     emptyTerms: copy.emptyTerms,
     charges: charges
       .slice()
