@@ -3,6 +3,8 @@ import test from 'node:test'
 
 import {
   configureTeamEconomicPolicyAction,
+  applyInitialAthleteBillingTermsAction,
+  changeAthleteBillingTermsAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
 
@@ -88,4 +90,90 @@ test('Coach action returns a safe failure when transactional configuration fails
     success: false,
     error: 'Could not configure team economic policy',
   })
+})
+
+
+test('Coach action applies initial athlete billing terms inside one transaction', async () => {
+  const calls: string[] = []
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => 'terms-a',
+    transaction: async (operation) => {
+      calls.push('transaction:start')
+      const result = await operation({
+        athleteBelongsToTeam: async (teamId, athleteId) => {
+          calls.push(`belongs:${teamId}:${athleteId}`)
+          return true
+        },
+        listTeamEconomicPolicies: async () => [{
+          id: 'policy-a',
+          teamId: 'team-a',
+          defaultMonthlyAmountMinor: 2_500_000,
+          currency: 'ARS',
+          ordinaryDueDay: 5,
+          effectiveFrom: '2026-10-01',
+          effectiveUntil: null,
+        }],
+        listAthleteBillingTerms: async () => [],
+        saveAthleteBillingTerms: async (terms) => {
+          calls.push(`save:${terms.id}`)
+        },
+        replaceAthleteBillingTerms: async () => {
+          throw new Error('unexpected replacement')
+        },
+      })
+      calls.push('transaction:end')
+      return result
+    },
+  }
+
+  const result = await applyInitialAthleteBillingTermsAction({
+    teamId: 'team-a',
+    athleteId: 'athlete-a',
+    effectiveFrom: '2026-10-18',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, [
+    'transaction:start',
+    'belongs:team-a:athlete-a',
+    'save:terms-a',
+    'transaction:end',
+  ])
+})
+
+test('Coach action changes athlete billing terms inside one transaction', async () => {
+  const calls: string[] = []
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => 'terms-b',
+    transaction: async (operation) => {
+      const result = await operation({
+        athleteBelongsToTeam: async () => true,
+        listTeamEconomicPolicies: async () => [],
+        listAthleteBillingTerms: async () => [{
+          id: 'terms-a',
+          athleteId: 'athlete-a',
+          monthlyAmountMinor: 2_500_000,
+          currency: 'ARS',
+          effectiveFrom: '2026-10-18',
+          effectiveUntil: null,
+        }],
+        saveAthleteBillingTerms: async () => {},
+        replaceAthleteBillingTerms: async (current, replacement) => {
+          calls.push(`${current.effectiveUntil}:${replacement.monthlyAmountMinor}`)
+        },
+      })
+      return result
+    },
+  }
+
+  const result = await changeAthleteBillingTermsAction({
+    teamId: 'team-a',
+    athleteId: 'athlete-a',
+    effectiveFrom: '2026-11-01',
+    monthlyAmountMinor: 3_000_000,
+    currency: 'ARS',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, ['2026-11-01:3000000'])
 })
