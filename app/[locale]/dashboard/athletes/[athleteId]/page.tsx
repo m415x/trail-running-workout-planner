@@ -173,7 +173,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               ) : <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{membership.emptyTerms}</p>}
             </section>
             {membership.scheduledTerms.length > 0 && (
-              <Accordion type='single' collapsible>
+              <Accordion>
                 <AccordionItem value='scheduled-terms' className='overflow-hidden rounded-lg border border-border bg-card'>
                   <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
                     {locale === 'en' ? `Scheduled changes (${membership.scheduledTerms.length})` : `Cambios programados (${membership.scheduledTerms.length})`}
@@ -193,7 +193,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               </Accordion>
             )}
             {membership.pastTerms.length > 0 && (
-              <Accordion type='single' collapsible>
+              <Accordion>
                 <AccordionItem value='past-terms' className='overflow-hidden rounded-lg border border-border bg-card'>
                   <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
                     {locale === 'en' ? `Terms history (${membership.pastTerms.length})` : `Historial de condiciones (${membership.pastTerms.length})`}
