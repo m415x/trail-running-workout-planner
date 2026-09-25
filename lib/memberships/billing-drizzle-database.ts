@@ -16,14 +16,16 @@ import type { SqliteBillingDatabase } from './billing-sqlite-persistence'
 type QueryResult = Record<string, unknown>
 
 type DrizzleQuery = {
-  from: (table: unknown) => {
-    innerJoin: (
-      table: unknown,
-      on: unknown,
-    ) => {
+  select: () => {
+    from: (table: unknown) => {
+      innerJoin: (
+        table: unknown,
+        on: unknown,
+      ) => {
+        where: (condition: unknown) => Promise<QueryResult[]>
+      }
       where: (condition: unknown) => Promise<QueryResult[]>
     }
-    where: (condition: unknown) => Promise<QueryResult[]>
   }
 }
 
@@ -78,6 +80,7 @@ export function createDrizzleBillingDatabase(
   const client = db as DrizzleBillingClient
   async function athleteBelongsToTeam(teamId: string, athleteId: string) {
     const rows = await client
+      .select()
       .from(athleteProfiles)
       .where(and(
         eq(athleteProfiles.id, athleteId),
