@@ -26,8 +26,8 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
       listMonthlyCharges: async (teamId, athleteId) => {
         calls.push(`charges:${teamId}:${athleteId}`)
         return [{
-          id: 'charge-2026-09',
           athleteId,
+          billingTermsId: 'terms-1',
           year: 2026,
           month: 9,
           baseAmountMinor: 2_500_000,
