@@ -128,6 +128,29 @@ export function replaceTeamEconomicPolicy(input: {
   }
 }
 
+export function applyAthleteBillingTerms(input: {
+  id: string
+  athleteId: string
+  policy: TeamEconomicPolicy
+  effectiveFrom: string
+  effectiveUntil?: string | null
+}): AthleteBillingTerms {
+  return createAthleteBillingTerms(input)
+}
+
+export function changeAthleteBillingTerms(input: {
+  current: AthleteBillingTerms
+  replacementId: string
+  effectiveFrom: string
+  monthlyAmountMinor: number
+  currency: CurrencyCode
+}): {
+  current: AthleteBillingTerms
+  replacement: AthleteBillingTerms
+} {
+  return replaceAthleteBillingTerms(input)
+}
+
 export function createAthleteBillingTerms(input: {
   id: string
   athleteId: string
