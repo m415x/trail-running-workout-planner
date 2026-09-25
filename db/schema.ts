@@ -677,7 +677,7 @@ export const monthlyCharges = sqliteTable(
     uniqueIndex('monthly_charges_athlete_year_month_unique').on(table.athleteId, table.year, table.month),
     index('monthly_charges_billing_terms_idx').on(table.billingTermsId),
     check('monthly_charges_month_check', sql`${table.month} between 1 and 12`),
-    check('monthly_charges_amount_positive_check', sql`${table.baseAmountMinor} > 0 and ${table.amountDueMinor} > 0`),
+    check('monthly_charges_amount_positive_check', sql`${table.baseAmountMinor} > 0 and ${table.amountDueMinor} >= 0`),
   ],
 )
 
