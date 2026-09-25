@@ -128,3 +128,64 @@ test('shows the current policy and the next scheduled policy from one scoped rea
   assert.equal(model.nextPolicy?.dueDay, '5')
   assert.equal(model.nextPolicy?.effectiveFrom, '2026-10-01')
 })
+
+
+test('partitions past current and scheduled policies and bases the form on the latest scheduled policy', async () => {
+  const model = await buildMembershipPageModel({
+    locale: 'es',
+    teamId: 'team_1',
+    onDate: '2026-09-25',
+    repository: {
+      listTeamEconomicPolicies: async () => [
+        {
+          id: 'policy-past',
+          teamId: 'team_1',
+          defaultMonthlyAmountMinor: 2_000_000,
+          currency: 'ARS',
+          ordinaryDueDay: 5,
+          effectiveFrom: '2026-08-01',
+          effectiveUntil: '2026-09-01',
+        },
+        {
+          id: 'policy-current',
+          teamId: 'team_1',
+          defaultMonthlyAmountMinor: 2_500_000,
+          currency: 'ARS',
+          ordinaryDueDay: 5,
+          effectiveFrom: '2026-09-01',
+          effectiveUntil: '2026-10-01',
+        },
+        {
+          id: 'policy-next',
+          teamId: 'team_1',
+          defaultMonthlyAmountMinor: 2_700_000,
+          currency: 'ARS',
+          ordinaryDueDay: 5,
+          effectiveFrom: '2026-10-01',
+          effectiveUntil: '2026-11-01',
+        },
+        {
+          id: 'policy-later',
+          teamId: 'team_1',
+          defaultMonthlyAmountMinor: 3_000_000,
+          currency: 'ARS',
+          ordinaryDueDay: 10,
+          effectiveFrom: '2026-11-01',
+          effectiveUntil: null,
+        },
+      ],
+    },
+  })
+
+  assert.equal(model.currentPolicy.monthlyAmount, '$25.000')
+  assert.deepEqual(
+    model.scheduledPolicies.map((policy) => policy.monthlyAmount),
+    ['$27.000', '$30.000'],
+  )
+  assert.deepEqual(
+    model.pastPolicies.map((policy) => policy.monthlyAmount),
+    ['$20.000'],
+  )
+  assert.equal(model.form.monthlyAmountMinor, 3_000_000)
+  assert.equal(model.form.ordinaryDueDay, 10)
+})
