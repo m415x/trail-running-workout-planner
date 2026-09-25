@@ -79,7 +79,7 @@ export function AthleteBillingTermsForm({
           })
 
       if (!result.success) {
-        setError(result.error || copy.genericError)
+        setError(copy.genericError)
       }
     })
   }
