@@ -48,3 +48,50 @@ test('builds EN empty state without H2+ payment or debt semantics', () => {
   assert.equal(model.emptyCharges, 'No monthly charges have been materialized yet.')
   assert.doesNotMatch(JSON.stringify(model), /paid|pending|overdue|balance|debt|scholarship|extension/i)
 })
+
+
+test('partitions athlete billing terms into current, scheduled, and past on the requested date', () => {
+  const model = buildAthleteMembershipViewModel({
+    locale: 'es',
+    onDate: '2026-09-25',
+    terms: [
+      {
+        id: 'terms-past',
+        athleteId: 'athlete-1',
+        monthlyAmountMinor: 2_000_000,
+        currency: 'ARS',
+        effectiveFrom: '2026-08-01',
+        effectiveUntil: '2026-09-25',
+      },
+      {
+        id: 'terms-current',
+        athleteId: 'athlete-1',
+        monthlyAmountMinor: 2_500_000,
+        currency: 'ARS',
+        effectiveFrom: '2026-09-25',
+        effectiveUntil: '2026-10-01',
+      },
+      {
+        id: 'terms-scheduled',
+        athleteId: 'athlete-1',
+        monthlyAmountMinor: 2_600_000,
+        currency: 'ARS',
+        effectiveFrom: '2026-10-01',
+        effectiveUntil: null,
+      },
+    ],
+    charges: [],
+  })
+
+  assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.currentTerms?.effectiveFrom, '2026-09-25')
+  assert.equal(model.currentTerms?.effectiveUntil, '2026-10-01')
+  assert.deepEqual(
+    model.scheduledTerms.map((item) => item.monthlyAmount),
+    ['$26.000'],
+  )
+  assert.deepEqual(
+    model.pastTerms.map((item) => item.monthlyAmount),
+    ['$20.000'],
+  )
+})
