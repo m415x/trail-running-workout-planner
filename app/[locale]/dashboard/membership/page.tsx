@@ -30,6 +30,23 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
       </div>
 
       <MembershipPolicyCard model={model.policy} />
+
+      {model.nextPolicy ? (
+        <section className='space-y-3'>
+          <h3 className='text-lg font-semibold'>
+            {supportedLocale === 'es' ? 'Próximo cambio programado' : 'Next scheduled change'}
+          </h3>
+          <MembershipPolicyCard model={model.nextPolicy} />
+        </section>
+      ) : null}
+
+      {model.policy.effectiveUntil ? (
+        <p className='text-sm text-muted-foreground'>
+          {supportedLocale === 'es' ? 'Política vigente hasta' : 'Current policy effective until'}{' '}
+          {model.policy.effectiveUntil}
+        </p>
+      ) : null}
+
       <TeamEconomicPolicyForm
         model={model.form}
         locale={supportedLocale}
