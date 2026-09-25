@@ -1,7 +1,8 @@
 type SqliteTransactionRunner = {
-  transaction: (operation: () => unknown) => {
-    immediate: () => unknown
-  }
+  transaction: <T>(
+    operation: () => T,
+    config?: { behavior?: 'deferred' | 'immediate' | 'exclusive' },
+  ) => T
 }
 
 function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
@@ -17,7 +18,7 @@ export function createSqliteBillingTransaction(db: unknown) {
   const runner = db as SqliteTransactionRunner
 
   return function runBillingTransaction<T>(operation: () => T): T {
-    const result = runner.transaction(() => {
+    return runner.transaction(() => {
       const result = operation()
 
       if (isPromiseLike(result)) {
@@ -25,8 +26,6 @@ export function createSqliteBillingTransaction(db: unknown) {
       }
 
       return result
-    }).immediate()
-
-    return result as T
+    }, { behavior: 'immediate' })
   }
 }
