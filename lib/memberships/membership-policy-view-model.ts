@@ -24,11 +24,11 @@ const copy = {
 } as const
 
 function formatAmount(locale: Locale, amountMinor: number) {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
-    style: 'currency',
-    currency: 'ARS',
+  const amount = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
     maximumFractionDigits: 0,
-  }).format(amountMinor / 100).replace(/\s/g, '')
+  }).format(amountMinor / 100)
+
+  return `${amount}`
 }
 
 export function getMembershipPolicyViewModel({
