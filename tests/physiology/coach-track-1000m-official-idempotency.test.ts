@@ -9,9 +9,20 @@ describe('coach official 1000m evidence idempotency', () => {
     const existing = {
       id: 'evidence-1',
       athleteId: 'athlete-1',
+      performedAt: '2026-09-24',
+      protocol: '1000m_track' as const,
+      source: 'coach_manual' as const,
+      distanceM: 1000,
+      elapsedTimeSec: 300,
       testEventId: 'event-1',
       executionContext: 'official' as const,
+      recordedBy: 'coach' as const,
+      recordedByUserId: null,
+      reviewStatus: 'accepted' as const,
+      notes: null,
       isDeleted: false,
+      createdAt: '2026-09-24T12:00:00.000Z',
+      updatedAt: '2026-09-24T12:00:00.000Z',
     }
 
     const result = await createCoachTrack1000mEvidence(
