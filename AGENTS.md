@@ -54,12 +54,12 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 - `pn tdd:red <test-file> [...]` — sync + focused RED-phase test run with compact output
 - `pn tdd <test-file> [...]` — sync + focused tests + `pn tsc` with compact output; add `--verbose` for diagnostics
 - `pn build` — production build
-- `pn db:push` / `pn db:seed` — local SQLite
-- `pn db:generate:supabase` — generate PostgreSQL migration
-- `pn db:check:supabase` — validate migration journal
-- `pn db:migrate:supabase` — apply pending migrations
-- `pn db:verify:supabase` — verify remote application tables + RLS
-- `pn db:verify:h11:supabase` — H11 transaction semantics probe
+- `pn db:sqlite:push` / `pn db:sqlite:generate` — local SQLite schema tooling
+- `pn db:sqlite:upgrade` / `pn db:sqlite:verify` / `pn db:sqlite:check` — supported local SQLite lifecycle and scenario gate
+- `pn db:seed` — compose the complete local development dataset; `db:seed:*` scripts expose individual fixture layers
+- `pn db:supabase:generate` / `pn db:supabase:check` / `pn db:supabase:migrate` — PostgreSQL migration lifecycle
+- `pn db:supabase:verify` — verify remote application tables + RLS
+- `pn db:supabase:verify:h11` — H11 transaction semantics probe
 
 ## Source-of-truth order
 
@@ -169,6 +169,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - User-facing times use the shared 24-hour formatter and the documented Argentina time-zone convention until user/team time-zone preferences exist; do not rely on runtime AM/PM defaults.
 - When a row, card, or page header has three or more peer secondary actions, group them in the shared Shadcn `DropdownMenu`; keep destructive styling and required confirmation semantics.
 - Preserve `unknown != 0`, absence != negative assertion, generated != manual.
+- `GroupSessionPrescription.durationMin` is explicit coach-planned **group** duration in minutes: absent is `null`/unknown, an explicit value must be greater than zero, and it is never realized duration or an individual athlete prediction. Trail/Hills may display that planned group duration but must not derive athlete-facing pace/speed targets from it.
 - Apply JSDoc incrementally to exported/non-obvious domain contracts and side effects; document intent/invariants, not trivial implementation.
 - Do not implement future-epic work as incidental refactoring. Record the gap instead.
 - Do not introduce a second policy/model where a durable boundary already exists.

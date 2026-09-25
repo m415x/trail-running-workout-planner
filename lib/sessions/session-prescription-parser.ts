@@ -18,7 +18,10 @@ export const sessionPrescriptionSchema = z.object({
   groupId: z.string().trim().min(1),
   microcycleId: z.string().trim().min(1),
   distanceKm: optionalNumber,
-  durationMin: optionalNumber,
+  durationMin: z.preprocess(
+    (value) => value === '' || value == null ? null : Number(value),
+    z.number().finite().positive().nullable(),
+  ),
   elevationGain: optionalNumber,
   intensityMethod: z.enum(['hr_zone', 'reference_percentage']).nullable(),
   zone: z.enum(['Z1', 'Z2', 'Z3', 'Z4', 'Z5']).nullable(),

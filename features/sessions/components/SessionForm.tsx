@@ -313,7 +313,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
                   <div className='grid gap-4 sm:grid-cols-3'>
                     <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
-                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='0' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
+                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
                     <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(group.id, 'elevationGain', event.target.value)} />
                   </div>
 

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import { parseSessionPrescriptions } from '@/lib/sessions/session-prescription-parser'
+import { readFileSync } from 'node:fs'
 import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 
 describe('prescripciones grupales de una sesión', () => {
@@ -79,6 +80,27 @@ describe('prescripciones grupales de una sesión', () => {
     }
   })
 
+  it('preserva durationMin como planning grupal y mantiene ausencia como unknown', () => {
+    const planned = prescriptionForm('group_s2', 'micro_1')
+    planned.set('durationMin:group_s2', '75')
+
+    const plannedResult = parseSessionPrescriptions(planned)
+    assert.equal(plannedResult.success, true)
+    if (plannedResult.success) assert.equal(plannedResult.data[0].durationMin, 75)
+
+    const unknown = prescriptionForm('group_s2', 'micro_1')
+    const unknownResult = parseSessionPrescriptions(unknown)
+    assert.equal(unknownResult.success, true)
+    if (unknownResult.success) assert.equal(unknownResult.data[0].durationMin, null)
+  })
+
+  it('rechaza cero como duración grupal planificada explícita', () => {
+    const form = prescriptionForm('group_s2', 'micro_1')
+    form.set('durationMin:group_s2', '0')
+
+    assert.equal(getErrorCode(form), 'invalidVolume')
+  })
+
   it('admite varios grupos y elimina selecciones duplicadas', () => {
     const form = prescriptionForm('group_s2', 'micro_s2')
     form.append('prescriptionGroupId', 'group_s2')
@@ -89,6 +111,33 @@ describe('prescripciones grupales de una sesión', () => {
     assert.equal(result.success, true)
     if (result.success) assert.deepEqual(result.data.map((item) => item.groupId), ['group_s2', 'group_m1'])
   })
+})
+
+it('identifica durationMin como duración grupal planificada en el copy Coach ES/EN', () => {
+  const es = JSON.parse(readFileSync('messages/es/planning/sessions.json', 'utf8'))
+  const en = JSON.parse(readFileSync('messages/en/planning/sessions.json', 'utf8'))
+
+  assert.equal(es.Sessions.form.prescriptions.duration, 'Duración grupal planificada (min)')
+  assert.equal(en.Sessions.form.prescriptions.duration, 'Planned group duration (min)')
+  it('alinea el input Coach y el error ES/EN con duración planificada estrictamente positiva', () => {
+    const form = readFileSync('features/sessions/components/SessionForm.tsx', 'utf8')
+    const es = JSON.parse(readFileSync('messages/es/planning/sessions.json', 'utf8'))
+    const en = JSON.parse(readFileSync('messages/en/planning/sessions.json', 'utf8'))
+
+    assert.match(
+      form,
+      /name={`durationMin:\${group\.id}`} type='number' min='1' step='1'/,
+    )
+    assert.equal(
+      es.Sessions.form.errors.server.invalidVolume,
+      'Revisá los valores de volumen. Distancia y desnivel pueden ser 0; la duración planificada debe ser mayor que 0.',
+    )
+    assert.equal(
+      en.Sessions.form.errors.server.invalidVolume,
+      'Review the volume values. Distance and elevation gain may be 0; planned duration must be greater than 0.',
+    )
+  })
+
 })
 
 function prescriptionForm(groupId: string, microcycleId: string) {

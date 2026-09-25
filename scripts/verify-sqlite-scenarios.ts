@@ -20,6 +20,7 @@ import { seedFeature, seedFull } from '@/db/seeds'
 export type SqliteVerificationScenario =
   | 'empty'
   | 'full-seed'
+  | 'base-seed'
   | 'partial-seed'
   | 'upgrade'
   | 'preservation'
@@ -30,6 +31,7 @@ export type SqliteVerificationScenario =
 export const sqliteVerificationScenarios: SqliteVerificationScenario[] = [
   'empty',
   'full-seed',
+  'base-seed',
   'partial-seed',
   'upgrade',
   'preservation',
@@ -130,6 +132,46 @@ export async function runFullSeedScenario(projectRoot = process.cwd()): Promise<
     }
 
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+  } finally {
+    removeScenarioWorkspace(workspace)
+  }
+}
+
+export function runBaseSeedScenario(projectRoot = process.cwd()): void {
+  const workspace = createScenarioWorkspace('base-seed')
+  try {
+    const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
+    const seedScript = resolve(projectRoot, 'db/seed.ts')
+    const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
+
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
+
+    const sqlite = new Database(workspace.sqlitePath, { fileMustExist: true })
+    try {
+      const overlappingPlanning = sqlite.prepare(`
+        SELECT g.category_code || g.level_code AS group_code, COUNT(*) AS count
+        FROM microcycles mi
+        INNER JOIN mesocycles me ON me.id = mi.mesocycle_id
+        INNER JOIN macrocycles ma ON ma.id = me.macrocycle_id
+        INNER JOIN group_training_plans gp ON gp.id = ma.group_training_plan_id
+        INNER JOIN athlete_groups g ON g.id = gp.group_id
+        WHERE mi.is_deleted = 0
+          AND me.is_deleted = 0
+          AND ma.is_deleted = 0
+          AND gp.is_deleted = 0
+          AND mi.start_date <= '2026-09-21'
+          AND mi.end_date >= '2026-09-21'
+        GROUP BY gp.group_id
+        HAVING COUNT(*) > 1
+      `).all() as Array<{ group_code: string; count: number }>
+
+      if (overlappingPlanning.length > 0) {
+        throw new Error(`Base seed contains ambiguous active microcycles: ${overlappingPlanning.map(row => `${row.group_code}=${row.count}`).join(', ')}`)
+      }
+    } finally {
+      sqlite.close()
+    }
   } finally {
     removeScenarioWorkspace(workspace)
   }
@@ -549,6 +591,11 @@ async function main(): Promise<void> {
 
   if (scenario === 'full-seed') {
     await runFullSeedScenario()
+    return
+  }
+
+  if (scenario === 'base-seed') {
+    runBaseSeedScenario()
     return
   }
 

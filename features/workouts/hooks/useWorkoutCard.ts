@@ -144,7 +144,7 @@ export function useWorkoutCard({
       {
         kind: 'duration' as const,
         icon: Clock,
-        label: t('card.estimatedTime'),
+        label: t('card.plannedDuration'),
         value: timeDisplay,
         unit: 'min',
       },
