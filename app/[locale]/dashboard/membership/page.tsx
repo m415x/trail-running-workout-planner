@@ -52,19 +52,41 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
 
       {model.scheduledPolicies.length > 0 ? (
         <Accordion>
-          <AccordionItem value='scheduled-policies'>
-            <AccordionTrigger className='rounded-lg border border-border bg-card px-4 py-3 text-base font-semibold hover:no-underline'>
+          <AccordionItem
+            value='scheduled-policies'
+            className='overflow-hidden rounded-lg border border-border bg-card'
+          >
+            <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
               {es
                 ? `Cambios programados (${model.scheduledPolicies.length})`
                 : `Scheduled changes (${model.scheduledPolicies.length})`}
             </AccordionTrigger>
-            <AccordionContent className='space-y-4'>
-              {model.scheduledPolicies.map((policy) => (
-                <MembershipPolicyCard
-                  key={policy.effectiveFrom}
-                  model={policy}
-                />
-              ))}
+            <AccordionContent className='px-4 pb-4'>
+              <div className='divide-y divide-border'>
+                {model.scheduledPolicies.map((policy) => (
+                  <dl
+                    key={policy.effectiveFrom}
+                    className='grid gap-4 py-4 first:pt-2 last:pb-0 sm:grid-cols-2'
+                  >
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.monthlyAmountLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.monthlyAmount}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.currencyLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.currency}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.dueDayLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.dueDay}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.effectiveFromLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.effectiveFrom}</dd>
+                    </div>
+                  </dl>
+                ))}
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
@@ -72,19 +94,41 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
 
       {model.pastPolicies.length > 0 ? (
         <Accordion>
-          <AccordionItem value='policy-history'>
-            <AccordionTrigger className='rounded-lg border border-border bg-card px-4 py-3 text-base font-semibold hover:no-underline'>
+          <AccordionItem
+            value='policy-history'
+            className='overflow-hidden rounded-lg border border-border bg-card'
+          >
+            <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
               {es
                 ? `Historial de políticas (${model.pastPolicies.length})`
                 : `Policy history (${model.pastPolicies.length})`}
             </AccordionTrigger>
-            <AccordionContent className='space-y-4'>
-              {model.pastPolicies.map((policy) => (
-                <MembershipPolicyCard
-                  key={policy.effectiveFrom}
-                  model={policy}
-                />
-              ))}
+            <AccordionContent className='px-4 pb-4'>
+              <div className='divide-y divide-border'>
+                {model.pastPolicies.map((policy) => (
+                  <dl
+                    key={policy.effectiveFrom}
+                    className='grid gap-4 py-4 first:pt-2 last:pb-0 sm:grid-cols-2'
+                  >
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.monthlyAmountLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.monthlyAmount}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.currencyLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.currency}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.dueDayLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.dueDay}</dd>
+                    </div>
+                    <div>
+                      <dt className='text-sm text-muted-foreground'>{policy.effectiveFromLabel}</dt>
+                      <dd className='mt-1 font-medium'>{policy.effectiveFrom}</dd>
+                    </div>
+                  </dl>
+                ))}
+              </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
