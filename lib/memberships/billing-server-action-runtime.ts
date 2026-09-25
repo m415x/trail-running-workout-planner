@@ -51,7 +51,7 @@ export function createMembershipServerActionRuntime({
       athleteId: string
       effectiveFrom: string
     }): Promise<BillingActionResult> {
-      if (!input.teamId || !input.athleteId || !/^\\d{4}-\\d{2}-\\d{2}$/.test(input.effectiveFrom)) {
+      if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
         return { success: false, error: 'Invalid athlete billing terms input' }
       }
 
@@ -78,7 +78,7 @@ export function createMembershipServerActionRuntime({
       if (
         !input.teamId
         || !input.athleteId
-        || !/^\\d{4}-\\d{2}-01$/.test(input.effectiveFrom)
+        || !/^\d{4}-\d{2}-01$/.test(input.effectiveFrom)
         || !Number.isSafeInteger(input.monthlyAmountMinor)
         || input.monthlyAmountMinor <= 0
         || !input.currency.trim()
