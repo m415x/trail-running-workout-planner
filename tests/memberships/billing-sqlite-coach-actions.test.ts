@@ -12,14 +12,14 @@ import {
 test('SQLite Coach policy action keeps repository work inside the synchronous transaction', () => {
   const calls: string[] = []
   const db = {
-    transaction: (operation: () => unknown) => ({
-      immediate: () => {
+    transaction: (operation: () => unknown) => {
+      {
         calls.push('begin')
         const result = operation()
         calls.push('commit')
         return result
-      },
-    }),
+      }
+    },
     select: () => ({
       from: () => ({
         where: () => ({
@@ -73,14 +73,14 @@ test('SQLite Coach athlete terms actions keep scope reads and writes inside the 
   }> = []
 
   const db = {
-    transaction: (operation: () => unknown) => ({
-      immediate: () => {
+    transaction: (operation: () => unknown) => {
+      {
         calls.push('begin')
         const result = operation()
         calls.push('commit')
         return result
-      },
-    }),
+      }
+    },
     select: () => ({
       from: (table: unknown) => ({
         where: () => ({
