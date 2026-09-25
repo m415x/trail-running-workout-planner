@@ -34,7 +34,9 @@ Heart-rate guidance may be shown only from explicit athlete HR evidence or a fut
 
 For Trail, Hills or known positive grade, intensity intent remains valid but level-track pace/speed is not presented as an execution target. Execution is effort-led; RPE/Talk Test may support the athlete. Coach notes are the surface for context-specific instructions such as prioritizing effort over pace.
 
-Legacy group `durationMin` and its arithmetic pace/speed derivatives are not presented as individual athlete targets on variable terrain. Persistence is unchanged; defining duration semantics or individual trail-time estimation is deferred.
+`GroupSessionPrescription.durationMin` is explicit coach-planned group duration in minutes. Absence is null/unknown; a planned value is positive and is distinct from realized duration and from any athlete-specific duration estimate.
+
+On Trail/Hills, planned group duration may remain visible, but it must not be converted into athlete-facing pace/speed or presented as an individual predicted completion time. Individual trail-time estimation remains outside the current contract.
 
 ## Persistence and isolation
 

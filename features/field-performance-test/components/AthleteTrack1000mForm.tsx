@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { getCurrentAthleteTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
@@ -9,6 +10,7 @@ type TestEventOption = { id: string; scheduledAt: string }
 
 export function AthleteTrack1000mForm({ locale, events }: { locale: string; events: TestEventOption[] }) {
   const es = locale === 'es'
+  const router = useRouter()
   const [executionContext, setExecutionContext] = useState<'official' | 'self_directed'>(events.length ? 'official' : 'self_directed')
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
   const [performedAt, setPerformedAt] = useState('')
@@ -23,6 +25,11 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
   function localizeError(error: string) {
     if (error === 'test_event_not_yet_occurred') {
       return es ? 'Este test oficial todavía no ocurrió.' : 'This official test has not occurred yet.'
+    }
+    if (error === 'official_evidence_already_exists') {
+      return es
+        ? 'Ya registraste un resultado para esta instancia oficial.'
+        : 'You already recorded a result for this official test event.'
     }
     return error
   }
@@ -43,6 +50,7 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
         ? es ? 'Registro enviado para revisión del coach.' : 'Submission sent for coach review.'
         : es ? 'Test oficial registrado.' : 'Official test recorded.'
       : localizeError(result.error))
+    if (result.success) router.refresh()
   }
 
   return <form onSubmit={submit} className='mt-4 grid gap-3'>

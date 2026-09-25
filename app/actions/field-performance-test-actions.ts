@@ -1,6 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { revalidatePath } from 'next/cache'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
@@ -149,6 +150,7 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
           : null,
       resolveEligibleTestEvent: async (testEventId, athleteId) =>
         resolveEligibleTestEvent(testEventId, athleteId),
+      findActiveOfficialByAthleteAndTestEvent: repository.findActiveOfficialByAthleteAndTestEvent,
       insert: repository.insert,
       newId: randomUUID,
       now: () => new Date().toISOString(),
@@ -169,14 +171,22 @@ export async function createCoachTrack1000mEvidenceAction(
     return { success: false as const, error: 'test_event_not_yet_occurred' as const }
   }
 
-  return createCoachTrack1000mEvidence({
+  const result = await createCoachTrack1000mEvidence({
     ...input,
     performedAt,
   }, {
     ...dependencies,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
+    findActiveOfficialByAthleteAndTestEvent: repository.findActiveOfficialByAthleteAndTestEvent,
   })
+
+  if (result.success) {
+    revalidatePath(`/dashboard/athletes/${input.athleteId}`)
+    revalidatePath(`/en/dashboard/athletes/${input.athleteId}`)
+  }
+
+  return result
 }
 
 export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
@@ -242,7 +252,9 @@ export async function getCoachTrack1000mHistoryAction(athleteId: string, effecti
   if (!evolution.success) return evolution
   if (!reference.success) return reference
 
-  const history = repository.listActiveByAthlete(athleteId)
+  const history = repository
+    .listActiveByAthlete(athleteId)
+    .filter((evidence) => (evidence.reviewStatus ?? 'accepted') !== 'rejected')
   const officialResults = history.filter(
     (evidence) =>
       evidence.executionContext === 'official' &&
