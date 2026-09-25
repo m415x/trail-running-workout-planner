@@ -1,25 +1,94 @@
 import type { db as sqliteDb } from '@/db/index'
-import { sessions } from '@/db/schema'
+import { groupTrainingPlans, macrocycles, mesocycles, microcycles, sessions } from '@/db/schema'
 
 import type { SeededAthleteGroup } from '@/db/seeds/groups'
 import { createSeedContext } from '@/db/seeds/context'
 
 type SeedDb = typeof sqliteDb
 
+function groupId(groups: SeededAthleteGroup[], code: string): string {
+  const group = groups.find((candidate) => `${candidate.categoryCode}${candidate.levelCode}` === code)
+  if (!group) throw new Error(`Missing seed group dependency: ${code}`)
+  return group.id
+}
+
 /**
- * Owns the composable planning/templates/sessions fixture boundary.
+ * Owns the canonical S2 planning hierarchy used by the composable seed.
  *
- * The canonical development planning hierarchy is still created by the legacy
- * base-seed block until that richer strategy/template ownership is extracted.
- * This fixture must not create a second active plan hierarchy for the same
- * group/date while both paths coexist.
+ * The legacy base-seed block still enriches this same hierarchy with load,
+ * intensity and session-generation strategy fixtures. IDs therefore match the
+ * canonical legacy hierarchy until that remaining ownership is extracted.
  */
 export async function seedPlanningTemplatesAndSessions(
   db: SeedDb,
-  _groups: SeededAthleteGroup[],
+  groups: SeededAthleteGroup[],
   currentWeekStart: string,
-  _shiftISODate: (value: string, days: number) => string,
+  shiftISODate: (value: string, days: number) => string,
 ): Promise<void> {
+  const s2GroupId = groupId(groups, 'S2')
+  const planId = 'group_plan_s2_12k'
+  const macrocycleId = 'macro_s2_12k'
+  const generalMesocycleId = 'meso_s2_12k_general'
+  const specificMesocycleId = 'meso_s2_12k_specific'
+
+  await db.insert(groupTrainingPlans).values({
+    id: planId,
+    groupId: s2GroupId,
+    title: 'Plan base S2 — Short Trail 12K',
+    status: 'active',
+    notes: 'Fixture de desarrollo para validar el flujo actual de planificación de Epic 2.',
+  }).onConflictDoNothing().run()
+
+  await db.insert(macrocycles).values({
+    id: macrocycleId,
+    title: 'Plan base S2 — Short Trail 12K',
+    groupTrainingPlanId: planId,
+    startDate: currentWeekStart,
+    endDate: shiftISODate(currentWeekStart, 8 * 7 - 1),
+    taperingWeeksCount: 2,
+    targetRaceName: 'Short Trail 12K',
+    targetRaceDistanceKm: 12,
+    targetRaceElevationGain: 600,
+    notes: null,
+  }).onConflictDoNothing().run()
+
+  await db.insert(mesocycles).values([
+    {
+      id: generalMesocycleId,
+      macrocycleId,
+      title: 'Preparación general',
+      number: 1,
+      period: 'general_preparatory',
+      objective: 'Consolidar base aeróbica y fuerza para esfuerzos cortos de trail.',
+    },
+    {
+      id: specificMesocycleId,
+      macrocycleId,
+      title: 'Preparación específica y competencia',
+      number: 2,
+      period: 'competitive',
+      objective: 'Aumentar especificidad, calidad y frescura para la carrera Short.',
+    },
+  ]).onConflictDoNothing().run()
+
+  const weekTypes = ['base', 'development', 'development', 'deload', 'development', 'shock', 'tapering', 'race'] as const
+  const microcycleRows = weekTypes.map((type, index) => ({
+    id: `s2_12k_micro_${index + 1}`,
+    mesocycleId: index < 4 ? generalMesocycleId : specificMesocycleId,
+    weekNumber: index + 1,
+    type,
+    startDate: shiftISODate(currentWeekStart, index * 7),
+    endDate: shiftISODate(currentWeekStart, index * 7 + 6),
+    targetVolumeKm: index === 0 ? 18 : 0,
+    targetVolumeSource: 'generated' as const,
+    targetElevationGain: index === 0 ? 450 : 0,
+    targetElevationSource: 'generated' as const,
+    targetDurationMin: null,
+    notes: null,
+  }))
+
+  await db.insert(microcycles).values(microcycleRows).onConflictDoNothing().run()
+
   await db.insert(sessions).values({
     id: 'session_s2_seed_fixture',
     teamId: createSeedContext().teamId,
