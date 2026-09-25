@@ -14,16 +14,19 @@ export function createAthleteMembershipPageLoader<TDatabase>({
     locale,
     teamId,
     athleteId,
+    onDate,
   }: {
     db: TDatabase
     locale: 'es' | 'en'
     teamId: string
     athleteId: string
+    onDate: string
   }) {
     return loadAthleteMembership({
       locale,
       teamId,
       athleteId,
+      onDate,
       getSnapshot: ({ teamId: scopedTeamId, athleteId: scopedAthleteId }) =>
         readSnapshot({
           db,
