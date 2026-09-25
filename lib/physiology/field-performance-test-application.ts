@@ -123,6 +123,7 @@ export interface CreateCoachTrack1000mEvidenceInput {
 interface CoachFieldPerformanceCreateDependencies {
   resolveOwnedAthlete(athleteId: string): Promise<{ id: string } | null>
   resolveEligibleTestEvent(testEventId: string, athleteId: string): Promise<{ id: string } | null>
+  findActiveOfficialByAthleteAndTestEvent(athleteId: string, testEventId: string): FieldPerformanceTestRow | undefined
   insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
   newId(): string
   now(): string
@@ -137,6 +138,9 @@ export async function createCoachTrack1000mEvidence(
 
   const testEvent = await dependencies.resolveEligibleTestEvent(input.testEventId, athlete.id)
   if (!testEvent) return { success: false, error: 'test_event_not_found' }
+
+  const existing = dependencies.findActiveOfficialByAthleteAndTestEvent(athlete.id, testEvent.id)
+  if (existing) return { success: false, error: 'official_evidence_already_exists' }
 
   return createTrack1000mEvidence(
     {
