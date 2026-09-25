@@ -7,11 +7,13 @@ const surface = 'features/field-performance-test/components/CoachTrack1000mForm.
 describe('coach track 1000m registration refresh', () => {
   it('refreshes server-derived history after a successful official test registration', async () => {
     const source = await readFile(surface, 'utf8')
-    const registerBody = source.match(
-      /async function register[\s\S]*?\n  }\n\n  async function correct/,
-    )?.[0]
+    const registerStart = source.indexOf('async function register(')
+    const correctStart = source.indexOf('async function correct(', registerStart)
 
-    assert.ok(registerBody, 'register handler should be present')
+    assert.notEqual(registerStart, -1, 'register handler should be present')
+    assert.notEqual(correctStart, -1, 'correct handler should follow register')
+    const registerBody = source.slice(registerStart, correctStart)
+
     assert.match(registerBody, /if \(result\.success\) router\.refresh\(\)/)
   })
 })
