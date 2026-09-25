@@ -53,8 +53,8 @@ test('membership timeline accordions expose visible triggers with item counts', 
   )
 
   assert.match(source, /AccordionTrigger className=/)
-  assert.match(source, /Cambios programados \(\{model\.scheduledPolicies\.length\}\)/)
-  assert.match(source, /Scheduled changes \(\{model\.scheduledPolicies\.length\}\)/)
-  assert.match(source, /Historial de políticas \(\{model\.pastPolicies\.length\}\)/)
-  assert.match(source, /Policy history \(\{model\.pastPolicies\.length\}\)/)
+  assert.match(source, /Cambios programados \\(\\$\\{model\\.scheduledPolicies\\.length\\}\\)/)
+  assert.match(source, /Scheduled changes \\(\\$\\{model\\.scheduledPolicies\\.length\\}\\)/)
+  assert.match(source, /Historial de políticas \\(\\$\\{model\\.pastPolicies\\.length\\}\\)/)
+  assert.match(source, /Policy history \\(\\$\\{model\\.pastPolicies\\.length\\}\\)/)
 })
