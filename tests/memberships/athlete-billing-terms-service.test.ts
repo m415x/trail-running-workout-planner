@@ -22,7 +22,7 @@ test('Coach applies initial athlete billing terms from the effective team policy
     athleteBelongsToTeam: async () => true,
     listTeamEconomicPolicies: async () => [policy],
     listAthleteBillingTerms: async () => [],
-    saveAthleteBillingTerms: async (terms) => saved.push(`${terms.id}:${terms.monthlyAmountMinor}`),
+    saveAthleteBillingTerms: async (terms) => {\n      saved.push(`${terms.id}:${terms.monthlyAmountMinor}`)\n    },
     replaceAthleteBillingTerms: async () => {
       throw new Error('unexpected replacement')
     },
