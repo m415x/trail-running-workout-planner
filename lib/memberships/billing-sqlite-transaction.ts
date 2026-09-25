@@ -13,9 +13,11 @@ function isPromiseLike(value: unknown): value is PromiseLike<unknown> {
   )
 }
 
-export function createSqliteBillingTransaction(db: SqliteTransactionRunner) {
+export function createSqliteBillingTransaction(db: unknown) {
+  const runner = db as SqliteTransactionRunner
+
   return function runBillingTransaction<T>(operation: () => T): T {
-    const result = db.transaction(() => {
+    const result = runner.transaction(() => {
       const result = operation()
 
       if (isPromiseLike(result)) {
