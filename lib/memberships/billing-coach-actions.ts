@@ -21,8 +21,8 @@ type BillingCoachActionResult =
 
 export type BillingCoachActionDependencies = {
   createId: () => string
-  transaction: <T>(
-    operation: (repository: BillingCoachRepository & AthleteBillingTermsRepository) => Promise<T>,
+  transaction: <T, TRepository extends BillingCoachRepository | AthleteBillingTermsRepository>(
+    operation: (repository: TRepository) => Promise<T>,
   ) => Promise<T>
 }
 
