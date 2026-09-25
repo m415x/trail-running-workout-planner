@@ -84,3 +84,47 @@ test('builds policy presentation and prospective form model from the same policy
   assert.equal(model.form.currency, 'ARS')
   assert.equal(model.form.ordinaryDueDay, 5)
 })
+
+
+test('shows the current policy and the next scheduled policy from one scoped read', async () => {
+  let reads = 0
+
+  const model = await buildMembershipPageModel({
+    locale: 'es',
+    teamId: 'team_1',
+    onDate: '2026-09-25',
+    repository: {
+      listTeamEconomicPolicies: async () => {
+        reads += 1
+        return [
+          {
+            id: 'policy-current',
+            teamId: 'team_1',
+            defaultMonthlyAmountMinor: 2_500_000,
+            currency: 'ARS',
+            ordinaryDueDay: 5,
+            effectiveFrom: '2026-09-01',
+            effectiveUntil: '2026-10-01',
+          },
+          {
+            id: 'policy-next',
+            teamId: 'team_1',
+            defaultMonthlyAmountMinor: 2_700_000,
+            currency: 'ARS',
+            ordinaryDueDay: 5,
+            effectiveFrom: '2026-10-01',
+            effectiveUntil: null,
+          },
+        ]
+      },
+    },
+  })
+
+  assert.equal(reads, 1)
+  assert.equal(model.policy.monthlyAmount, '$25.000')
+  assert.equal(model.policy.effectiveUntil, '2026-10-01')
+  assert.equal(model.nextPolicy?.monthlyAmount, '$27.000')
+  assert.equal(model.nextPolicy?.currency, 'ARS')
+  assert.equal(model.nextPolicy?.dueDay, '5')
+  assert.equal(model.nextPolicy?.effectiveFrom, '2026-10-01')
+})
