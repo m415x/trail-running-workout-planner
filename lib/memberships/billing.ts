@@ -68,6 +68,15 @@ export function createAthleteBillingTerms(input: {
   effectiveFrom: string
   effectiveUntil?: string | null
 }): AthleteBillingTerms {
+  if (!Number.isSafeInteger(input.policy.defaultMonthlyAmountMinor) || input.policy.defaultMonthlyAmountMinor <= 0) {
+    throw new Error('Monthly amount must be a positive integer in minor units')
+  }
+
+  const start = parseDate(input.effectiveFrom)
+  if (input.effectiveUntil && parseDate(input.effectiveUntil) <= start) {
+    throw new Error('effectiveUntil must be after effectiveFrom')
+  }
+
   return {
     id: input.id,
     athleteId: input.athleteId,
@@ -120,6 +129,10 @@ export function createMonthlyChargeCandidate(input: {
   year: number
   month: number
 }): MonthlyChargeCandidate | null {
+  if (!Number.isInteger(input.policy.ordinaryDueDay) || input.policy.ordinaryDueDay < 1 || input.policy.ordinaryDueDay > 31) {
+    throw new Error('Ordinary due day must be an integer between 1 and 31')
+  }
+
   const matchingTerms = input.terms.filter((terms) => intersectsMonth(terms, input.year, input.month))
 
   if (matchingTerms.length === 0) return null
