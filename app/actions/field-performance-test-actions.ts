@@ -252,7 +252,9 @@ export async function getCoachTrack1000mHistoryAction(athleteId: string, effecti
   if (!evolution.success) return evolution
   if (!reference.success) return reference
 
-  const history = repository.listActiveByAthlete(athleteId)
+  const history = repository
+    .listActiveByAthlete(athleteId)
+    .filter((evidence) => (evidence.reviewStatus ?? 'accepted') !== 'rejected')
   const officialResults = history.filter(
     (evidence) =>
       evidence.executionContext === 'official' &&
