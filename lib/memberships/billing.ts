@@ -61,6 +61,73 @@ function formatDate(year: number, month: number, day: number): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(safeDay).padStart(2, '0')}`
 }
 
+export function createTeamEconomicPolicy(input: {
+  id: string
+  teamId: string
+  defaultMonthlyAmountMinor: number
+  currency: CurrencyCode
+  ordinaryDueDay: number
+  effectiveFrom: string
+}): TeamEconomicPolicy {
+  const start = parseDate(input.effectiveFrom)
+
+  if (start.getUTCDate() !== 1) {
+    throw new Error('Team economic policy must start on a monthly boundary')
+  }
+
+  if (!Number.isSafeInteger(input.defaultMonthlyAmountMinor) || input.defaultMonthlyAmountMinor <= 0) {
+    throw new Error('Default monthly amount must be a positive integer in minor units')
+  }
+
+  if (!Number.isInteger(input.ordinaryDueDay) || input.ordinaryDueDay < 1 || input.ordinaryDueDay > 31) {
+    throw new Error('Ordinary due day must be an integer between 1 and 31')
+  }
+
+  return {
+    ...input,
+    effectiveUntil: null,
+  }
+}
+
+export function replaceTeamEconomicPolicy(input: {
+  current: TeamEconomicPolicy
+  replacementId: string
+  effectiveFrom: string
+  defaultMonthlyAmountMinor: number
+  currency: CurrencyCode
+  ordinaryDueDay: number
+}): {
+  current: TeamEconomicPolicy
+  replacement: TeamEconomicPolicy
+} {
+  const replacementStart = parseDate(input.effectiveFrom)
+
+  if (replacementStart.getUTCDate() !== 1) {
+    throw new Error('Team economic policy replacement must start on a monthly boundary')
+  }
+
+  if (replacementStart <= parseDate(input.current.effectiveFrom)) {
+    throw new Error('Replacement team economic policy must start after the current policy')
+  }
+
+  const replacement = createTeamEconomicPolicy({
+    id: input.replacementId,
+    teamId: input.current.teamId,
+    defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
+    currency: input.currency,
+    ordinaryDueDay: input.ordinaryDueDay,
+    effectiveFrom: input.effectiveFrom,
+  })
+
+  return {
+    current: {
+      ...input.current,
+      effectiveUntil: input.effectiveFrom,
+    },
+    replacement,
+  }
+}
+
 export function createAthleteBillingTerms(input: {
   id: string
   athleteId: string
