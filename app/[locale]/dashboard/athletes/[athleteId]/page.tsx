@@ -107,6 +107,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
     locale: locale === 'en' ? 'en' : 'es',
     teamId: athlete.teamId,
     athleteId,
+    onDate: today,
   })
 
   const raceCompetition = projectAthleteRaceCompetition(listRaceRegistrationsForAthlete({ teamId: athlete.teamId, athleteProfileId: athleteId }))
