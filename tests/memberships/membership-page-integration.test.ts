@@ -8,7 +8,7 @@ test('Coach membership page renders the policy snapshot and prospective form', a
     'utf8',
   )
 
-  assert.match(source, /MembershipPolicyCard model=\{model\.policy\}/)
+  assert.match(source, /MembershipPolicyCard model=\{model\.currentPolicy\}/)
   assert.match(source, /TeamEconomicPolicyForm/)
   assert.match(source, /model=\{model\.form\}/)
   assert.match(source, /locale=\{supportedLocale\}/)
@@ -21,10 +21,10 @@ test('Coach membership page exposes the next scheduled policy in ES and EN', asy
     'utf8',
   )
 
-  assert.match(source, /model\.nextPolicy/)
+  assert.match(source, /model\.scheduledPolicies/)
   assert.match(source, /Próximo cambio programado/)
   assert.match(source, /Next scheduled change/)
-  assert.match(source, /effectiveUntil/)
+  assert.match(source, /model\.currentPolicy\.effectiveUntil/)
 })
 
 
