@@ -44,3 +44,17 @@ test('Coach membership page groups scheduled and past policies in localized acco
   assert.match(source, /Accordion/)
   assert.doesNotMatch(source, /MembershipPolicyCard model=\{model\.nextPolicy\}/)
 })
+
+
+test('membership timeline accordions expose visible triggers with item counts', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+
+  assert.match(source, /AccordionTrigger className=/)
+  assert.match(source, /Cambios programados \(\{model\.scheduledPolicies\.length\}\)/)
+  assert.match(source, /Scheduled changes \(\{model\.scheduledPolicies\.length\}\)/)
+  assert.match(source, /Historial de políticas \(\{model\.pastPolicies\.length\}\)/)
+  assert.match(source, /Policy history \(\{model\.pastPolicies\.length\}\)/)
+})
