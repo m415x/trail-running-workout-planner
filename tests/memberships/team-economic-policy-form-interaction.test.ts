@@ -26,3 +26,14 @@ test('TeamEconomicPolicyForm does not duplicate server revalidation', async () =
 
   assert.doesNotMatch(source, /revalidatePath/)
 })
+
+
+test('team economic policy form localizes action errors instead of exposing backend copy', async () => {
+  const source = await readFile(
+    'features/memberships/components/TeamEconomicPolicyForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(source, /setError\(result\.error/)
+  assert.match(source, /setError\(feedback\.genericError\)/)
+})
