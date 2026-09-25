@@ -8,6 +8,7 @@ import { TeamEconomicPolicyForm } from '../../features/memberships/components/Te
 test('renders the initial team economic policy form', () => {
   const html = renderToStaticMarkup(
     <TeamEconomicPolicyForm
+      locale='es'
       model={{
         mode: 'initial',
         title: 'Configurar política económica',
@@ -37,6 +38,7 @@ test('renders the initial team economic policy form', () => {
 test('renders a prospective replacement without H2+ controls', () => {
   const html = renderToStaticMarkup(
     <TeamEconomicPolicyForm
+      locale='en'
       model={{
         mode: 'replacement',
         title: 'Schedule economic policy change',
