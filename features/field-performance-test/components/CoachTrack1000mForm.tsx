@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { correctTrack1000mEvidenceAction, createCoachTrack1000mEvidenceAction, reviewCoachTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 
 type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
@@ -20,6 +21,11 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
   const [message, setMessage] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [reviewingEvidenceId, setReviewingEvidenceId] = useState<string | null>(null)
+  const [correctingEvidence, setCorrectingEvidence] = useState<HistoryEvidence | null>(null)
+  const [correctionMinutes, setCorrectionMinutes] = useState('')
+  const [correctionSeconds, setCorrectionSeconds] = useState('')
+  const correctionElapsedTimeSec = Number(correctionMinutes) * 60 + Number(correctionSeconds)
+  const hasCorrectionTime = correctionMinutes !== '' && correctionSeconds !== '' && correctionElapsedTimeSec > 0
   const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
   const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
 
@@ -32,20 +38,23 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
     if (result.success) router.refresh()
   }
 
-  async function correct(evidence: HistoryEvidence) {
-    const nextElapsedTime = window.prompt(
-      es ? 'Nuevo tiempo en segundos' : 'New time in seconds',
-      String(evidence.elapsedTimeSec),
-    )
-    if (nextElapsedTime === null) return
+  function openCorrection(evidence: HistoryEvidence) {
+    setCorrectingEvidence(evidence)
+    setCorrectionMinutes(String(Math.floor(evidence.elapsedTimeSec / 60)))
+    setCorrectionSeconds(String(evidence.elapsedTimeSec % 60))
+  }
+
+  async function correct() {
+    if (!correctingEvidence || !hasCorrectionTime) return
 
     setBusy(true)
+    const evidence = correctingEvidence
     const result = await correctTrack1000mEvidenceAction({
       athleteId,
       evidenceId: evidence.id,
       replacement: {
         performedAt: evidence.performedAt,
-        elapsedTimeSec: Number(nextElapsedTime),
+        elapsedTimeSec: correctionElapsedTimeSec,
         ...(evidence.notes === null ? {} : { notes: evidence.notes }),
         ...(evidence.testEventId == null ? {} : { testEventId: evidence.testEventId }),
         ...(evidence.executionContext === undefined ? {} : { executionContext: evidence.executionContext }),
@@ -55,6 +64,10 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
     })
     setBusy(false)
     setMessage(result.success ? (es ? 'Corrección guardada.' : 'Correction saved.') : result.error)
+    if (result.success) {
+      setCorrectingEvidence(null)
+      router.refresh()
+    }
   }
 
   async function review(evidenceId: string, reviewStatus: 'accepted' | 'rejected') {
@@ -87,10 +100,26 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
         <AccordionTrigger>{es ? `Historial (${history.length})` : `History (${history.length})`}</AccordionTrigger>
         <AccordionContent>
           {(reference || factualTrend) && <div className='mb-3 grid gap-1 rounded-lg border p-3 text-sm'>{reference && <p><span className='font-medium'>{es ? 'Referencia vigente' : 'Current reference'}:</span> {reference}</p>}{factualTrend && <p><span className='font-medium'>{es ? 'Evolución factual' : 'Factual evolution'}:</span> {factualTrend}</p>}</div>}
-          {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {item.elapsedTimeSec} s</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => correct(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
+          {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {item.elapsedTimeSec} s</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => openCorrection(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
+    <AlertDialog open={correctingEvidence !== null} onOpenChange={(open) => { if (!open && !busy) setCorrectingEvidence(null) }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{es ? 'Corregir tiempo' : 'Correct time'}</AlertDialogTitle>
+          <AlertDialogDescription>{es ? 'Ingresá el tiempo corregido del test de 1000 m.' : 'Enter the corrected 1000 m test time.'}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className='grid grid-cols-2 gap-3'>
+          <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos de corrección' : 'Correction minutes'} type='number' min='0' step='1' required value={correctionMinutes} onChange={event => setCorrectionMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+          <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos de corrección' : 'Correction seconds'} type='number' min='0' max='59' step='1' required value={correctionSeconds} onChange={event => setCorrectionSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+        </div>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>{es ? 'Cancelar' : 'Cancel'}</AlertDialogCancel>
+          <AlertDialogAction type='button' disabled={busy || !hasCorrectionTime} onClick={correct}>{es ? 'Guardar corrección' : 'Save correction'}</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
     {message && <p role='status' className='text-sm text-muted-foreground'>{message}</p>}
   </div>
 }
