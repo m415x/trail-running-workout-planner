@@ -13,6 +13,7 @@ export interface SqliteFieldPerformanceTestRepository {
   insert(evaluation: InsertFieldPerformanceTest): FieldPerformanceTestRow
   listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
   listActiveByAthleteThroughDate(athleteId: string, effectiveDate: string): FieldPerformanceTestRow[]
+  findActiveOfficialByAthleteAndTestEvent(athleteId: string, testEventId: string): FieldPerformanceTestRow | undefined
   getById(id: string): FieldPerformanceTestRow | undefined
   invalidate(id: string, updatedAt: string): void
   review(id: string, reviewStatus: Exclude<FieldPerformanceTestReviewStatus, 'pending_review'>, updatedAt: string): FieldPerformanceTestRow
@@ -69,6 +70,21 @@ export function createSqliteFieldPerformanceTestRepository(
           asc(fieldPerformanceTests.id),
         )
         .all() as FieldPerformanceTestRow[]
+    },
+
+    findActiveOfficialByAthleteAndTestEvent(athleteId, testEventId) {
+      return db
+        .select()
+        .from(fieldPerformanceTests)
+        .where(
+          and(
+            eq(fieldPerformanceTests.athleteId, athleteId),
+            eq(fieldPerformanceTests.testEventId, testEventId),
+            eq(fieldPerformanceTests.executionContext, 'official'),
+            eq(fieldPerformanceTests.isDeleted, false),
+          ),
+        )
+        .get() as FieldPerformanceTestRow | undefined
     },
 
     getById(id) {
