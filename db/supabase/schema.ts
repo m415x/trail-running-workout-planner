@@ -614,7 +614,77 @@ export const workoutLogs = pgTable('workout_logs', {
 })
 
 /* -------------------------------------------------------------------------- */
-/* 13. MEMBRESÍAS (Para el dashboard del coach)                               */
+/* 13. BILLING H1                                                             */
+/* -------------------------------------------------------------------------- */
+
+export const teamEconomicPolicies = pgTable(
+  'team_economic_policies',
+  {
+    ...baseColumns,
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    defaultMonthlyAmountMinor: integer('default_monthly_amount_minor').notNull(),
+    currency: text('currency').notNull(),
+    ordinaryDueDay: integer('ordinary_due_day').notNull(),
+    effectiveFrom: text('effective_from').notNull(),
+    effectiveUntil: text('effective_until'),
+  },
+  (table) => [
+    index('team_economic_policies_team_dates_idx').on(table.teamId, table.effectiveFrom, table.effectiveUntil),
+    check('team_economic_policies_amount_positive_check', sql`${table.defaultMonthlyAmountMinor} > 0`),
+    check('team_economic_policies_due_day_check', sql`${table.ordinaryDueDay} between 1 and 31`),
+    check('team_economic_policies_date_order_check', sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`),
+  ],
+)
+
+export const athleteBillingTerms = pgTable(
+  'athlete_billing_terms',
+  {
+    ...baseColumns,
+    athleteId: text('athlete_id')
+      .notNull()
+      .references(() => athleteProfiles.id, { onDelete: 'cascade' }),
+    monthlyAmountMinor: integer('monthly_amount_minor').notNull(),
+    currency: text('currency').notNull(),
+    effectiveFrom: text('effective_from').notNull(),
+    effectiveUntil: text('effective_until'),
+  },
+  (table) => [
+    index('athlete_billing_terms_athlete_dates_idx').on(table.athleteId, table.effectiveFrom, table.effectiveUntil),
+    check('athlete_billing_terms_amount_positive_check', sql`${table.monthlyAmountMinor} > 0`),
+    check('athlete_billing_terms_date_order_check', sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`),
+  ],
+)
+
+export const monthlyCharges = pgTable(
+  'monthly_charges',
+  {
+    ...baseColumns,
+    athleteId: text('athlete_id')
+      .notNull()
+      .references(() => athleteProfiles.id, { onDelete: 'restrict' }),
+    billingTermsId: text('billing_terms_id')
+      .notNull()
+      .references(() => athleteBillingTerms.id, { onDelete: 'restrict' }),
+    year: integer('year').notNull(),
+    month: integer('month').notNull(),
+    baseAmountMinor: integer('base_amount_minor').notNull(),
+    amountDueMinor: integer('amount_due_minor').notNull(),
+    currency: text('currency').notNull(),
+    baseDueDate: text('base_due_date').notNull(),
+    effectiveDueDate: text('effective_due_date').notNull(),
+  },
+  (table) => [
+    uniqueIndex('monthly_charges_athlete_year_month_unique').on(table.athleteId, table.year, table.month),
+    index('monthly_charges_billing_terms_idx').on(table.billingTermsId),
+    check('monthly_charges_month_check', sql`${table.month} between 1 and 12`),
+    check('monthly_charges_amount_positive_check', sql`${table.baseAmountMinor} > 0 and ${table.amountDueMinor} >= 0`),
+  ],
+)
+
+/* -------------------------------------------------------------------------- */
+/* 13A. LEGACY MEMBERSHIPS                                                    */
 /* -------------------------------------------------------------------------- */
 
 export const memberships = pgTable('memberships', {
