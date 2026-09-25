@@ -131,7 +131,15 @@ export function createMonthlyChargeCandidate(input: {
   const terms = matchingTerms[0]
   if (!terms) return null
 
-  const dueDate = formatDate(input.year, input.month, input.policy.ordinaryDueDay)
+  const ordinaryDueDate = formatDate(input.year, input.month, input.policy.ordinaryDueDay)
+  const termsStart = parseDate(terms.effectiveFrom)
+  const isFirstReachedMonth =
+    termsStart.getUTCFullYear() === input.year &&
+    termsStart.getUTCMonth() + 1 === input.month
+  const dueDate =
+    isFirstReachedMonth && parseDate(ordinaryDueDate) < termsStart
+      ? terms.effectiveFrom
+      : ordinaryDueDate
 
   return {
     athleteId: terms.athleteId,
