@@ -2,6 +2,10 @@ import {
   createBillingCoachService,
   type BillingCoachRepository,
 } from './billing-coach-service'
+import {
+  createAthleteBillingTermsService,
+  type AthleteBillingTermsRepository,
+} from './athlete-billing-terms-service'
 
 type ConfigureTeamEconomicPolicyInput = {
   teamId: string
@@ -18,7 +22,7 @@ type BillingCoachActionResult =
 export type BillingCoachActionDependencies = {
   createId: () => string
   transaction: <T>(
-    operation: (repository: BillingCoachRepository) => Promise<T>,
+    operation: (repository: BillingCoachRepository & AthleteBillingTermsRepository) => Promise<T>,
   ) => Promise<T>
 }
 
@@ -58,5 +62,69 @@ export async function configureTeamEconomicPolicyAction(
       success: false,
       error: 'Could not configure team economic policy',
     }
+  }
+}
+
+
+export async function applyInitialAthleteBillingTermsAction(
+  input: {
+    teamId: string
+    athleteId: string
+    effectiveFrom: string
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BillingCoachActionResult> {
+  if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
+    return { success: false, error: 'Invalid athlete billing terms input' }
+  }
+
+  try {
+    await dependencies.transaction(async (repository) => {
+      const service = createAthleteBillingTermsService(repository)
+      await service.applyInitialTerms({
+        ...input,
+        termsId: dependencies.createId(),
+      })
+    })
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Could not apply athlete billing terms' }
+  }
+}
+
+export async function changeAthleteBillingTermsAction(
+  input: {
+    teamId: string
+    athleteId: string
+    effectiveFrom: string
+    monthlyAmountMinor: number
+    currency: string
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BillingCoachActionResult> {
+  if (
+    !input.teamId
+    || !input.athleteId
+    || !/^\d{4}-\d{2}-01$/.test(input.effectiveFrom)
+    || !Number.isSafeInteger(input.monthlyAmountMinor)
+    || input.monthlyAmountMinor <= 0
+    || !input.currency.trim()
+  ) {
+    return { success: false, error: 'Invalid athlete billing terms input' }
+  }
+
+  try {
+    await dependencies.transaction(async (repository) => {
+      const service = createAthleteBillingTermsService(repository)
+      await service.changeTerms({
+        ...input,
+        termsId: dependencies.createId(),
+      })
+    })
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Could not change athlete billing terms' }
   }
 }
