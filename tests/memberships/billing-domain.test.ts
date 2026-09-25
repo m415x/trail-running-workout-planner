@@ -244,3 +244,76 @@ test('only the first reached month moves an already-passed ordinary due date to 
     ],
   )
 })
+
+
+test('billing terms reject invalid economic values and invalid temporal intervals', () => {
+  assert.throws(
+    () =>
+      createAthleteBillingTerms({
+        id: 'terms-zero',
+        athleteId: 'athlete-1',
+        policy: { ...policy, defaultMonthlyAmountMinor: 0 },
+        effectiveFrom: '2026-10-01',
+      }),
+    /amount.*positive/i,
+  )
+
+  assert.throws(
+    () =>
+      createAthleteBillingTerms({
+        id: 'terms-invalid-range',
+        athleteId: 'athlete-1',
+        policy,
+        effectiveFrom: '2026-10-18',
+        effectiveUntil: '2026-10-18',
+      }),
+    /effectiveUntil.*effectiveFrom/i,
+  )
+})
+
+test('monthly charge creation rejects an invalid ordinary due day', () => {
+  const terms = createAthleteBillingTerms({
+    id: 'terms-1',
+    athleteId: 'athlete-1',
+    policy,
+    effectiveFrom: '2026-10-01',
+  })
+
+  assert.throws(
+    () =>
+      createMonthlyChargeCandidate({
+        terms: [terms],
+        policy: { ...policy, ordinaryDueDay: 32 },
+        year: 2026,
+        month: 10,
+      }),
+    /due day/i,
+  )
+})
+
+test('materialization rejects ambiguous temporal policies instead of selecting a winner', () => {
+  const terms = createAthleteBillingTerms({
+    id: 'terms-1',
+    athleteId: 'athlete-1',
+    policy,
+    effectiveFrom: '2026-10-01',
+  })
+
+  assert.throws(
+    () =>
+      materializeMonthlyChargesThrough({
+        terms: [terms],
+        policies: [
+          policy,
+          {
+            ...policy,
+            id: 'policy-overlap',
+            effectiveFrom: '2026-09-01',
+          },
+        ],
+        existingCharges: [],
+        through: { year: 2026, month: 10 },
+      }),
+    /exactly one team economic policy/i,
+  )
+})
