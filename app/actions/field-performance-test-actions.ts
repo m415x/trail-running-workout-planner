@@ -1,6 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
+import { revalidatePath } from 'next/cache'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
@@ -169,7 +170,7 @@ export async function createCoachTrack1000mEvidenceAction(
     return { success: false as const, error: 'test_event_not_yet_occurred' as const }
   }
 
-  return createCoachTrack1000mEvidence({
+  const result = await createCoachTrack1000mEvidence({
     ...input,
     performedAt,
   }, {
@@ -177,6 +178,13 @@ export async function createCoachTrack1000mEvidenceAction(
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
   })
+
+  if (result.success) {
+    revalidatePath(`/dashboard/athletes/${input.athleteId}`)
+    revalidatePath(`/en/dashboard/athletes/${input.athleteId}`)
+  }
+
+  return result
 }
 
 export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
