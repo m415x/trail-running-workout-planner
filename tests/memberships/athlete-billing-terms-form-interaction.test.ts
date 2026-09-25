@@ -29,3 +29,14 @@ test('athlete billing terms form keeps initial and replacement inputs distinct',
   assert.match(source, /name='currency'/)
   assert.doesNotMatch(source, /scholarship|beca|payment|pago|overdue|deuda|extension|prórroga/i)
 })
+
+
+test('athlete billing terms form localizes action errors instead of exposing backend copy', async () => {
+  const source = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(source, /setError\(result\.error/)
+  assert.match(source, /setError\(copy\.genericError\)/)
+})
