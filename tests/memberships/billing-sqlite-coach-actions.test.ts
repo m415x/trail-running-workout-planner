@@ -63,14 +63,14 @@ test('SQLite Coach policy action keeps repository work inside the synchronous tr
 
 test('SQLite Coach athlete terms actions keep scope reads and writes inside the transaction', () => {
   const calls: string[] = []
-  let terms = [{
-    id: 'terms-a',
-    athleteId: 'athlete-a',
-    monthlyAmountMinor: 2_500_000,
-    currency: 'ARS',
-    effectiveFrom: '2026-10-18',
-    effectiveUntil: null as string | null,
-  }]
+  let terms: Array<{
+    id: string
+    athleteId: string
+    monthlyAmountMinor: number
+    currency: string
+    effectiveFrom: string
+    effectiveUntil: string | null
+  }> = []
 
   const db = {
     transaction: (operation: () => unknown) => ({
