@@ -1,4 +1,5 @@
 import { createSynchronousBillingCoachService } from './billing-coach-service'
+import { createSynchronousAthleteBillingTermsService } from './athlete-billing-terms-service'
 import { createSynchronousDrizzleBillingRepository } from './billing-drizzle-write-repository'
 import { createSqliteBillingTransaction } from './billing-sqlite-transaction'
 
@@ -39,7 +40,65 @@ export function createMembershipServerActionRuntime({
 }) {
   const transaction = createSqliteBillingTransaction(db)
 
+  function athleteTermsService() {
+    const repository = createSynchronousDrizzleBillingRepository(db)
+    return createSynchronousAthleteBillingTermsService(repository)
+  }
+
   return {
+    async applyInitialAthleteBillingTerms(input: {
+      teamId: string
+      athleteId: string
+      effectiveFrom: string
+    }): Promise<BillingActionResult> {
+      if (!input.teamId || !input.athleteId || !/^\\d{4}-\\d{2}-\\d{2}$/.test(input.effectiveFrom)) {
+        return { success: false, error: 'Invalid athlete billing terms input' }
+      }
+
+      try {
+        transaction(() => {
+          athleteTermsService().applyInitialTerms({
+            ...input,
+            termsId: createId(),
+          })
+        })
+        return { success: true }
+      } catch {
+        return { success: false, error: 'Could not apply athlete billing terms' }
+      }
+    },
+
+    async changeAthleteBillingTerms(input: {
+      teamId: string
+      athleteId: string
+      effectiveFrom: string
+      monthlyAmountMinor: number
+      currency: string
+    }): Promise<BillingActionResult> {
+      if (
+        !input.teamId
+        || !input.athleteId
+        || !/^\\d{4}-\\d{2}-01$/.test(input.effectiveFrom)
+        || !Number.isSafeInteger(input.monthlyAmountMinor)
+        || input.monthlyAmountMinor <= 0
+        || !input.currency.trim()
+      ) {
+        return { success: false, error: 'Invalid athlete billing terms input' }
+      }
+
+      try {
+        transaction(() => {
+          athleteTermsService().changeTerms({
+            ...input,
+            termsId: createId(),
+          })
+        })
+        return { success: true }
+      } catch {
+        return { success: false, error: 'Could not change athlete billing terms' }
+      }
+    },
+
     async configureTeamEconomicPolicy(
       input: ConfigureTeamEconomicPolicyInput,
     ): Promise<BillingActionResult> {
