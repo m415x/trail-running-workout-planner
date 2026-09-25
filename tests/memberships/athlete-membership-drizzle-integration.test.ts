@@ -25,11 +25,11 @@ test('athlete detail membership integration uses the real Drizzle read adapter w
     },
   }
 
+  const drizzleDatabase = createDrizzleBillingDatabase(db)
+
   const loadMembership = createAthleteMembershipPageLoader({
-    createPort: (database) =>
-      createSqliteBillingPersistencePort(
-        createDrizzleBillingDatabase(database),
-      ),
+    createPort: () =>
+      createSqliteBillingPersistencePort(drizzleDatabase),
   })
 
   const model = await loadMembership({
