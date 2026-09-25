@@ -8,16 +8,17 @@ function makeQuery(result: unknown[]) {
     select() {
       return {
         from() {
-      return {
-        innerJoin() {
           return {
+            innerJoin() {
+              return {
+                where: async () => result,
+              }
+            },
             where: async () => result,
           }
         },
-          where: async () => result,
-        }
-      },
-    }
+      }
+    },
   }
 }
 
