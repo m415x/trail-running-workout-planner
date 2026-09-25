@@ -64,3 +64,19 @@ test('portable test runner preserves child termination signals', async () => {
     signal: 'SIGTERM',
   })
 })
+
+
+test('portable test runner batches a large test inventory without losing deterministic order', async () => {
+  const { planTestFileBatches } = await import('../scripts/test-runner')
+  const files = Array.from({ length: 342 }, (_, index) =>
+    join('C:\\DEV\\EPT-app\\trail-running-workout-planner\\tests', `suite-${String(index).padStart(3, '0')}.test.ts`),
+  )
+
+  const batches = planTestFileBatches(files, 8_000)
+
+  assert.ok(batches.length > 1)
+  assert.deepEqual(batches.flat(), files)
+  assert.ok(batches.every((batch) =>
+    batch.reduce((length, file) => length + file.length + 1, 0) <= 8_000,
+  ))
+})
