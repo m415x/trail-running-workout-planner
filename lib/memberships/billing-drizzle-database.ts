@@ -73,10 +73,11 @@ function mapCharge(row: QueryResult): MonthlyChargeCandidate {
 }
 
 export function createDrizzleBillingDatabase(
-  db: DrizzleBillingClient,
+  db: unknown,
 ): SqliteBillingDatabase {
+  const client = db as DrizzleBillingClient
   async function athleteBelongsToTeam(teamId: string, athleteId: string) {
-    const rows = await db
+    const rows = await client
       .from(athleteProfiles)
       .where(and(
         eq(athleteProfiles.id, athleteId),
@@ -153,10 +154,10 @@ export function createDrizzleBillingDatabase(
       }
 
       if (charges.length === 0) return
-      if (!db.insert) throw new Error('Drizzle client does not support inserts')
+      if (!client.insert) throw new Error('Drizzle client does not support inserts')
 
       const now = new Date().toISOString()
-      await db.insert(monthlyCharges).values(
+      await client.insert(monthlyCharges).values(
         charges.map((charge) => ({
           id: crypto.randomUUID(),
           ...charge,
