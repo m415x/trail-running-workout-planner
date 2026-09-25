@@ -12,7 +12,7 @@ describe('coach official 1000m evidence idempotency', () => {
       performedAt: '2026-09-24',
       protocol: '1000m_track' as const,
       source: 'coach_manual' as const,
-      distanceM: 1000,
+      distanceM: 1000 as const,
       elapsedTimeSec: 300,
       testEventId: 'event-1',
       executionContext: 'official' as const,
