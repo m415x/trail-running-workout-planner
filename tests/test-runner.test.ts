@@ -185,3 +185,17 @@ test('portable test runner formats one aggregate Node-style summary', async () =
 ℹ todo 0
 ℹ duration_ms 29112.2802`)
 })
+
+
+test('portable test runner builds a captured TAP invocation for aggregate reporting', async () => {
+  const { createTestBatchInvocation } = await import('../scripts/test-runner')
+  const files = ['tests/a.test.ts', 'tests/b.test.ts']
+
+  assert.deepEqual(createTestBatchInvocation(files), {
+    args: ['--import', 'tsx', '--test', '--test-reporter=tap', ...files],
+    options: {
+      shell: false,
+      encoding: 'utf8',
+    },
+  })
+})
