@@ -40,6 +40,7 @@ test('athlete membership read adapter matches the real better-sqlite3 Drizzle se
     locale: 'es',
     teamId: 'team_1',
     athleteId: 'athlete-1',
+    onDate: '2026-09-25',
   })
 
   assert.equal(model.title, 'Membresía')
