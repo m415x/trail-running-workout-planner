@@ -112,6 +112,29 @@ export function parseTestRunSummary(output: string): TestRunSummary {
   return values as TestRunSummary
 }
 
+export function stripTestRunSummary(output: string): string {
+  const summaryLine = /^# (?:tests|suites|pass|fail|cancelled|skipped|todo|duration_ms) (?:\d+(?:\.\d+)?)$/
+
+  return output
+    .split(/\r?\n/)
+    .filter((line) => !summaryLine.test(line))
+    .join('\n')
+    .trimEnd()
+}
+
+export function formatTestRunSummary(summary: TestRunSummary): string {
+  return [
+    `ℹ tests ${summary.tests}`,
+    `ℹ suites ${summary.suites}`,
+    `ℹ pass ${summary.pass}`,
+    `ℹ fail ${summary.fail}`,
+    `ℹ cancelled ${summary.cancelled}`,
+    `ℹ skipped ${summary.skipped}`,
+    `ℹ todo ${summary.todo}`,
+    `ℹ duration_ms ${summary.durationMs}`,
+  ].join('\n')
+}
+
 export function aggregateTestRunSummaries(summaries: TestRunSummary[]): TestRunSummary {
   return summaries.reduce<TestRunSummary>((total, summary) => ({
     tests: total.tests + summary.tests,
