@@ -60,3 +60,24 @@ test('membership timeline accordions expose visible triggers with item counts', 
   assert.match(source, /model\.scheduledPolicies\.length/)
   assert.match(source, /model\.pastPolicies\.length/)
 })
+
+
+test('membership timeline accordions render as one card surface when expanded', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+
+  assert.match(source, /AccordionItem[^>]*className=/)
+  assert.match(source, /border-border/)
+  assert.match(source, /scheduledPolicies\.map/)
+  assert.match(source, /pastPolicies\.map/)
+  assert.doesNotMatch(
+    source,
+    /scheduledPolicies\.map\([\s\S]*?<MembershipPolicyCard/,
+  )
+  assert.doesNotMatch(
+    source,
+    /pastPolicies\.map\([\s\S]*?<MembershipPolicyCard/,
+  )
+})
