@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
+import { athleteBillingTerms, teamEconomicPolicies } from '../../db/schema'
+
 import {
   configureTeamEconomicPolicySynchronously,
   applyInitialAthleteBillingTermsSynchronously,
@@ -87,8 +89,7 @@ test('SQLite Coach athlete terms actions keep scope reads and writes inside the 
             return { id: 'athlete-a', teamId: 'team-a' }
           },
           all: () => {
-            const name = String(table)
-            if (name.includes('team_economic_policies')) return [{
+            if (table === teamEconomicPolicies) return [{
               id: 'policy-a',
               teamId: 'team-a',
               defaultMonthlyAmountMinor: 2_500_000,
@@ -97,7 +98,7 @@ test('SQLite Coach athlete terms actions keep scope reads and writes inside the 
               effectiveFrom: '2026-10-01',
               effectiveUntil: null,
             }]
-            if (name.includes('athlete_billing_terms')) return terms
+            if (table === athleteBillingTerms) return terms
             return []
           },
         }),
