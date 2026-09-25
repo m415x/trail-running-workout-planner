@@ -46,5 +46,6 @@ export function getMembershipPolicyViewModel({
     currency: policy?.currency ?? null,
     dueDay: policy ? String(policy.ordinaryDueDay) : null,
     effectiveFrom: policy?.effectiveFrom ?? null,
+    effectiveUntil: policy?.effectiveUntil ?? null,
   }
 }
