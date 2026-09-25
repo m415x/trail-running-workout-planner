@@ -210,6 +210,9 @@ export async function correctTrack1000mEvidence(
     const replacement = {
       id: dependencies.newId(),
       ...evaluation,
+      // A correction made through the Coach boundary is authoritative even
+      // when the original observation was self-directed.
+      reviewStatus: 'accepted' as const,
       notes: evaluation.notes ?? null,
       createdAt: timestamp,
       updatedAt: timestamp,
