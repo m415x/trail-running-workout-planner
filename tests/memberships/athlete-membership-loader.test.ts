@@ -10,6 +10,7 @@ test('loads the scoped athlete billing snapshot and builds the membership view m
     locale: 'es',
     teamId: 'team_1',
     athleteId: 'athlete-1',
+    onDate: '2026-09-25',
     getSnapshot: async (input) => {
       snapshotReads += 1
       assert.deepEqual(input, {
@@ -41,6 +42,7 @@ test('athlete membership loader has no materialization dependency', async () => 
     locale: 'en',
     teamId: 'team_1',
     athleteId: 'athlete-1',
+    onDate: '2026-09-25',
     getSnapshot: async () => ({
       terms: [],
       charges: [],
