@@ -15,7 +15,7 @@ type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number
 function formatElapsedTime(elapsedTimeSec: number) {
   const minutes = Math.floor(elapsedTimeSec / 60)
   const seconds = elapsedTimeSec % 60
-  return `${minutes}:${String(seconds).padStart(2, '0')}`
+  return `${minutes} min ${String(seconds).padStart(2, '0')} s`
 }
 
 export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history, reference, factualTrend, eventsError = false, pendingError = false }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[]; reference?: string | null; factualTrend?: string | null; eventsError?: boolean; pendingError?: boolean }) {
