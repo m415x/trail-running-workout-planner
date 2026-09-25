@@ -83,6 +83,35 @@ type TestRunSummary = {
   durationMs: number
 }
 
+export function parseTestRunSummary(output: string): TestRunSummary {
+  const patterns = {
+    tests: /^# tests (\d+)$/m,
+    suites: /^# suites (\d+)$/m,
+    pass: /^# pass (\d+)$/m,
+    fail: /^# fail (\d+)$/m,
+    cancelled: /^# cancelled (\d+)$/m,
+    skipped: /^# skipped (\d+)$/m,
+    todo: /^# todo (\d+)$/m,
+    durationMs: /^# duration_ms ([\d.]+)$/m,
+  } as const
+
+  const values: Partial<TestRunSummary> = {}
+
+  for (const [key, pattern] of Object.entries(patterns) as Array<
+    [keyof TestRunSummary, RegExp]
+  >) {
+    const match = output.match(pattern)
+
+    if (!match) {
+      throw new Error('Node TAP output does not contain a complete test summary')
+    }
+
+    values[key] = Number(match[1])
+  }
+
+  return values as TestRunSummary
+}
+
 export function aggregateTestRunSummaries(summaries: TestRunSummary[]): TestRunSummary {
   return summaries.reduce<TestRunSummary>((total, summary) => ({
     tests: total.tests + summary.tests,
