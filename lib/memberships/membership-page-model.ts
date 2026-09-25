@@ -24,22 +24,40 @@ export async function buildMembershipPageModel({
     throw new Error('Team economic policy history is ambiguous')
   }
 
-  const policy = effective[0] ?? null
-  const next = policies
-    .filter((candidate) => candidate.effectiveFrom > onDate)
-    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))[0] ?? null
+  const current = effective[0] ?? null
+  const scheduled = policies
+    .filter((policy) => policy.effectiveFrom > onDate)
+    .sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom))
+  const past = policies
+    .filter(
+      (policy) =>
+        policy.effectiveUntil !== null
+        && policy.effectiveUntil <= onDate,
+    )
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
 
-  const policyViewModel = getMembershipPolicyViewModel({ locale, policy })
+  const policyViewModel = getMembershipPolicyViewModel({
+    locale,
+    policy: current,
+  })
+  const scheduledPolicies = scheduled.map((policy) =>
+    getMembershipPolicyViewModel({ locale, policy }),
+  )
+  const pastPolicies = past.map((policy) =>
+    getMembershipPolicyViewModel({ locale, policy }),
+  )
+  const formBasePolicy = scheduled.at(-1) ?? current
 
   return {
     ...policyViewModel,
     policy: policyViewModel,
-    nextPolicy: next
-      ? getMembershipPolicyViewModel({ locale, policy: next })
-      : null,
+    currentPolicy: policyViewModel,
+    nextPolicy: scheduledPolicies[0] ?? null,
+    scheduledPolicies,
+    pastPolicies,
     form: getTeamEconomicPolicyFormModel({
       locale,
-      policy,
+      policy: formBasePolicy,
     }),
   }
 }
