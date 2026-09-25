@@ -47,7 +47,9 @@ Run the aggregate SQLite gate with:
 pn db:sqlite:check
 ```
 
-It executes eight isolated temporary-database scenarios: empty bootstrap, full seed, representative partial seeds, representative legacy upgrade to HEAD, existing-data preservation, fresh-versus-upgraded schema drift detection, safe rerun at HEAD, and recovery when the physical schema already verifies at HEAD but canonical migration metadata is only partially recorded.
+It executes nine isolated temporary-database scenarios: empty bootstrap, full seed, canonical base-seed regression, representative partial seeds, representative legacy upgrade to HEAD, existing-data preservation, fresh-versus-upgraded schema drift detection, safe rerun at HEAD, and recovery when the physical schema already verifies at HEAD but canonical migration metadata is only partially recorded.
+
+The base-seed scenario executes the real `db/seed.ts` entrypoint and protects the current planning-fixture ownership contract, including the regression against multiple active microcycles for one group/date.
 
 For that partial-metadata HEAD state, the canonical runner first verifies the physical schema. Only a database that already satisfies the HEAD verifier is allowed to have the missing canonical metadata reconciled; otherwise the normal migration path remains authoritative.
 
