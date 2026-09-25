@@ -53,8 +53,10 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
       {model.scheduledPolicies.length > 0 ? (
         <Accordion>
           <AccordionItem value='scheduled-policies'>
-            <AccordionTrigger>
-              {es ? 'Cambios programados' : 'Scheduled changes'}
+            <AccordionTrigger className='rounded-lg border border-border bg-card px-4 py-3 text-base font-semibold hover:no-underline'>
+              {es
+                ? `Cambios programados (${model.scheduledPolicies.length})`
+                : `Scheduled changes (${model.scheduledPolicies.length})`}
             </AccordionTrigger>
             <AccordionContent className='space-y-4'>
               {model.scheduledPolicies.map((policy) => (
@@ -71,8 +73,10 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
       {model.pastPolicies.length > 0 ? (
         <Accordion>
           <AccordionItem value='policy-history'>
-            <AccordionTrigger>
-              {es ? 'Historial de políticas' : 'Policy history'}
+            <AccordionTrigger className='rounded-lg border border-border bg-card px-4 py-3 text-base font-semibold hover:no-underline'>
+              {es
+                ? `Historial de políticas (${model.pastPolicies.length})`
+                : `Policy history (${model.pastPolicies.length})`}
             </AccordionTrigger>
             <AccordionContent className='space-y-4'>
               {model.pastPolicies.map((policy) => (
