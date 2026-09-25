@@ -24,6 +24,11 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
     if (error === 'test_event_not_yet_occurred') {
       return es ? 'Este test oficial todavía no ocurrió.' : 'This official test has not occurred yet.'
     }
+    if (error === 'official_evidence_already_exists') {
+      return es
+        ? 'Ya registraste un resultado para esta instancia oficial.'
+        : 'You already recorded a result for this official test event.'
+    }
     return error
   }
 
