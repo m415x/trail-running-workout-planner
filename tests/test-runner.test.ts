@@ -102,3 +102,42 @@ test('portable test runner aggregates batch summaries into one final result', as
     durationMs: 29112.2802,
   })
 })
+
+
+test('portable test runner parses a Node TAP batch summary without depending on test diagnostics', async () => {
+  const { parseTestRunSummary } = await import('../scripts/test-runner')
+  const output = [
+    'TAP version 13',
+    '# Subtest: example',
+    'ok 1 - example',
+    '1..1',
+    '# tests 3',
+    '# suites 1',
+    '# pass 3',
+    '# fail 0',
+    '# cancelled 0',
+    '# skipped 0',
+    '# todo 0',
+    '# duration_ms 42.125',
+  ].join('\\n')
+
+  assert.deepEqual(parseTestRunSummary(output), {
+    tests: 3,
+    suites: 1,
+    pass: 3,
+    fail: 0,
+    cancelled: 0,
+    skipped: 0,
+    todo: 0,
+    durationMs: 42.125,
+  })
+})
+
+test('portable test runner rejects incomplete TAP summaries instead of inventing totals', async () => {
+  const { parseTestRunSummary } = await import('../scripts/test-runner')
+
+  assert.throws(
+    () => parseTestRunSummary('# tests 3\\n# pass 3\\n# fail 0'),
+    /complete.*summary|summary.*complete/i,
+  )
+})
