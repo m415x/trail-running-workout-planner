@@ -1,3 +1,13 @@
+'use client'
+
+import { useState, useTransition } from 'react'
+
+import { configureTeamEconomicPolicyAction } from '@/app/actions/membership-actions'
+import { createTeamEconomicPolicyFormController } from '@/lib/memberships/membership-policy-form-controller'
+import {
+  getTeamEconomicPolicyFormFeedback,
+  type MembershipLocale,
+} from '@/lib/memberships/membership-policy-form-feedback'
 import { Button } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { Input } from '@ui/input'
@@ -19,12 +29,37 @@ type TeamEconomicPolicyFormModel = {
 
 export function TeamEconomicPolicyForm({
   model,
+  locale,
 }: {
   model: TeamEconomicPolicyFormModel
+  locale: MembershipLocale
 }) {
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  const feedback = getTeamEconomicPolicyFormFeedback(locale)
+  const controller = createTeamEconomicPolicyFormController({
+    submitAction: configureTeamEconomicPolicyAction,
+  })
   const monthlyAmount = model.monthlyAmountMinor == null
     ? undefined
     : model.monthlyAmountMinor / 100
+
+  function handleSubmit(formData: FormData) {
+    setError(null)
+
+    startTransition(async () => {
+      const result = await controller.submit({
+        monthlyAmount: String(formData.get('monthlyAmount') ?? ''),
+        currency: String(formData.get('currency') ?? ''),
+        ordinaryDueDay: String(formData.get('ordinaryDueDay') ?? ''),
+        effectiveFrom: String(formData.get('effectiveFrom') ?? ''),
+      })
+
+      if (!result.success) {
+        setError(result.error || feedback.genericError)
+      }
+    })
+  }
 
   return (
     <Card>
@@ -32,7 +67,7 @@ export function TeamEconomicPolicyForm({
         <CardTitle>{model.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <form className='space-y-4'>
+        <form action={handleSubmit} className='space-y-4'>
           <div className='grid gap-4 sm:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='monthlyAmount'>{model.monthlyAmountLabel}</Label>
@@ -82,7 +117,11 @@ export function TeamEconomicPolicyForm({
             </div>
           </div>
 
-          <Button type='submit'>{model.submitLabel}</Button>
+          {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+
+          <Button type='submit' disabled={isPending}>
+            {isPending ? feedback.pendingLabel : model.submitLabel}
+          </Button>
         </form>
       </CardContent>
     </Card>
