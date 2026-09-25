@@ -345,3 +345,41 @@ export function materializeMonthlyChargesThrough(input: {
     (a, b) => a.year - b.year || a.month - b.month,
   )
 }
+
+
+export type BillingMaterializationRepository = {
+  getBillingTerms: (athleteId: string) => Promise<AthleteBillingTerms[]>
+  getTeamEconomicPolicies: (athleteId: string) => Promise<TeamEconomicPolicy[]>
+  getMonthlyCharges: (athleteId: string) => Promise<MonthlyChargeCandidate[]>
+  insertMonthlyCharges: (charges: MonthlyChargeCandidate[]) => Promise<void>
+}
+
+export async function materializeMonthlyCharges(input: {
+  athleteId: string
+  through: { year: number; month: number }
+  repository: BillingMaterializationRepository
+}): Promise<MonthlyChargeCandidate[]> {
+  const terms = await input.repository.getBillingTerms(input.athleteId)
+  const policies = await input.repository.getTeamEconomicPolicies(input.athleteId)
+  const existingCharges = await input.repository.getMonthlyCharges(input.athleteId)
+
+  const materialized = materializeMonthlyChargesThrough({
+    terms,
+    policies,
+    existingCharges,
+    through: input.through,
+  })
+
+  const existingMonths = new Set(
+    existingCharges.map(charge => monthKey(charge.year, charge.month)),
+  )
+  const missingCharges = materialized.filter(
+    charge => !existingMonths.has(monthKey(charge.year, charge.month)),
+  )
+
+  if (missingCharges.length > 0) {
+    await input.repository.insertMonthlyCharges(missingCharges)
+  }
+
+  return materialized
+}
