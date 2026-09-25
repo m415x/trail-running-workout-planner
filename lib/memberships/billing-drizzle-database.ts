@@ -96,6 +96,7 @@ export function createDrizzleBillingDatabase(
 
     async listBillingTerms(teamId, athleteId) {
       const rows = await client
+        .select()
         .from(athleteBillingTerms)
         .innerJoin(
           athleteProfiles,
@@ -117,6 +118,7 @@ export function createDrizzleBillingDatabase(
 
     async listMonthlyCharges(teamId, athleteId) {
       const rows = await client
+        .select()
         .from(monthlyCharges)
         .innerJoin(
           athleteProfiles,
@@ -138,6 +140,7 @@ export function createDrizzleBillingDatabase(
 
     async listTeamEconomicPolicies(teamId) {
       const rows = await client
+        .select()
         .from(teamEconomicPolicies)
         .where(and(
           eq(teamEconomicPolicies.teamId, teamId),
