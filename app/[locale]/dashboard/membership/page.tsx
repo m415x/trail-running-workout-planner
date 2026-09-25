@@ -1,5 +1,6 @@
 import { db } from '@/db'
 import { MembershipPolicyCard } from '@/features/memberships/components/MembershipPolicyCard'
+import { TeamEconomicPolicyForm } from '@/features/memberships/components/TeamEconomicPolicyForm'
 import { createMembershipPageLoader } from '@/lib/memberships/membership-page-loader'
 import { todayInArgentina } from '@/lib/memberships/membership-page-date'
 import { createTeamEconomicPolicyQueryRepository } from '@/lib/memberships/membership-policy-drizzle-query'
@@ -28,7 +29,11 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
         <h2 className='text-3xl font-bold tracking-tight'>{model.title}</h2>
       </div>
 
-      <MembershipPolicyCard model={model} />
+      <MembershipPolicyCard model={model.policy} />
+      <TeamEconomicPolicyForm
+        model={model.form}
+        locale={supportedLocale}
+      />
     </div>
   )
 }
