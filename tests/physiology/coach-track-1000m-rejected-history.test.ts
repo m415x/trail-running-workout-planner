@@ -13,6 +13,6 @@ test('coach visible 1000m history excludes rejected evidence', () => {
   const action = source.slice(start, end)
   assert.match(
     action,
-    /const history = repository\.listActiveByAthlete\(athleteId\)\.filter\([\s\S]*reviewStatus[\s\S]*!== 'rejected'/,
+    /const history = repository[\s\S]*?\.listActiveByAthlete\(athleteId\)[\s\S]*?\.filter\([\s\S]*?reviewStatus[\s\S]*?!== 'rejected'/,
   )
 })
