@@ -401,6 +401,7 @@ test('athlete records official evidence only against an eligible owned TestEvent
         testEventId === 'event_2026_09' && athleteId === 'athlete_1'
           ? { id: testEventId }
           : null,
+      findActiveOfficialByAthleteAndTestEvent: () => undefined,
       insert: evidence => {
         inserted.push(evidence)
         return { ...evidence, isDeleted: false }
@@ -498,6 +499,7 @@ test('coach registration authorizes athlete before resolving TestEvent or persis
         eventCalls += 1
         return { id: 'event_2026_09' }
       },
+      findActiveOfficialByAthleteAndTestEvent: () => undefined,
       insert: evidence => {
         insertCalls += 1
         return { ...evidence, isDeleted: false }
