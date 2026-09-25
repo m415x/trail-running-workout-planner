@@ -12,6 +12,12 @@ type TestEventOption = { id: string; scheduledAt: string }
 type PendingEvidence = { id: string; performedAt: string; elapsedTimeSec: number }
 type HistoryEvidence = { id: string; performedAt: string; elapsedTimeSec: number; notes: string | null; testEventId?: string | null; executionContext?: 'official' | 'self_directed'; recordedBy?: 'coach' | 'athlete'; recordedByUserId?: string | null }
 
+function formatElapsedTime(elapsedTimeSec: number) {
+  const minutes = Math.floor(elapsedTimeSec / 60)
+  const seconds = elapsedTimeSec % 60
+  return `${minutes}:${String(seconds).padStart(2, '0')}`
+}
+
 export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence, history, reference, factualTrend, eventsError = false, pendingError = false }: { athleteId: string; locale: string; events: TestEventOption[]; pendingEvidence: PendingEvidence[]; history: HistoryEvidence[]; reference?: string | null; factualTrend?: string | null; eventsError?: boolean; pendingError?: boolean }) {
   const es = locale === 'es'
   const router = useRouter()
@@ -83,7 +89,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
       <AccordionItem value='pending'>
         <AccordionTrigger>{es ? `Pendientes de revisión (${pendingEvidence.length})` : `Pending review (${pendingEvidence.length})`}</AccordionTrigger>
         <AccordionContent>
-          {pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : <div className='divide-y rounded-lg border'>{pendingEvidence.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><p className='text-sm'>{item.performedAt} · {item.elapsedTimeSec} s</p><div className='flex gap-2'><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</div>}
+          {pendingError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar los pendientes.' : 'Pending submissions could not be loaded.'}</p> : pendingEvidence.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros pendientes.' : 'There are no pending submissions.'}</p> : <div className='divide-y rounded-lg border'>{pendingEvidence.map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><p className='text-sm'>{item.performedAt} · {formatElapsedTime(item.elapsedTimeSec)}</p><div className='flex gap-2'><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'accepted')} className={buttonVariants({ size: 'sm' })}>{es ? 'Aceptar' : 'Accept'}</button><button type='button' disabled={reviewingEvidenceId === item.id} onClick={() => review(item.id, 'rejected')} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Rechazar' : 'Reject'}</button></div></div>)}</div>}
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value='register'>
@@ -100,7 +106,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
         <AccordionTrigger>{es ? `Historial (${history.length})` : `History (${history.length})`}</AccordionTrigger>
         <AccordionContent>
           {(reference || factualTrend) && <div className='mb-3 grid gap-1 rounded-lg border p-3 text-sm'>{reference && <p><span className='font-medium'>{es ? 'Referencia vigente' : 'Current reference'}:</span> {reference}</p>}{factualTrend && <p><span className='font-medium'>{es ? 'Evolución factual' : 'Factual evolution'}:</span> {factualTrend}</p>}</div>}
-          {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {item.elapsedTimeSec} s</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => openCorrection(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
+          {history.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{es ? 'No hay registros activos.' : 'There are no active records.'}</p> : <div className='divide-y rounded-lg border'>{[...history].reverse().map(item => <div key={item.id} className='flex flex-wrap items-center justify-between gap-3 p-3'><div><p className='text-sm font-medium'>{item.performedAt} · {formatElapsedTime(item.elapsedTimeSec)}</p><p className='text-xs text-muted-foreground'>{item.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div><button type='button' disabled={busy} onClick={() => openCorrection(item)} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{es ? 'Corregir' : 'Correct'}</button></div>)}</div>}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
