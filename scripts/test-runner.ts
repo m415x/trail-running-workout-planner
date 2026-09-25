@@ -47,19 +47,50 @@ export function interpretTestRunResult(result: TestRunResult): {
   return { exitCode: result.status ?? 1, signal: null }
 }
 
-export function runTestFiles(testFiles: string[]): number {
-  const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...testFiles], {
-    shell: false,
-    stdio: 'inherit',
-  })
-  const outcome = interpretTestRunResult(result)
+export function planTestFileBatches(testFiles: string[], maxArgumentLength = 8_000): string[][] {
+  const batches: string[][] = []
+  let batch: string[] = []
+  let argumentLength = 0
 
-  if (outcome.signal) {
-    process.kill(process.pid, outcome.signal)
-    return 1
+  for (const testFile of testFiles) {
+    const nextLength = testFile.length + 1
+
+    if (batch.length > 0 && argumentLength + nextLength > maxArgumentLength) {
+      batches.push(batch)
+      batch = []
+      argumentLength = 0
+    }
+
+    batch.push(testFile)
+    argumentLength += nextLength
   }
 
-  return outcome.exitCode ?? 1
+  if (batch.length > 0) {
+    batches.push(batch)
+  }
+
+  return batches
+}
+
+export function runTestFiles(testFiles: string[]): number {
+  for (const batch of planTestFileBatches(testFiles)) {
+    const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
+      shell: false,
+      stdio: 'inherit',
+    })
+    const outcome = interpretTestRunResult(result)
+
+    if (outcome.signal) {
+      process.kill(process.pid, outcome.signal)
+      return 1
+    }
+
+    if (outcome.exitCode !== 0) {
+      return outcome.exitCode ?? 1
+    }
+  }
+
+  return 0
 }
 
 async function main(): Promise<void> {
