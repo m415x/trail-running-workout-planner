@@ -7,7 +7,7 @@ const root = process.cwd()
 const schema = fs.readFileSync(path.join(root, 'db', 'schema.ts'), 'utf8')
 
 test('SQLite H1 schema persists temporal team economic policies with minor-unit money', () => {
-  assert.match(schema, /teamEconomicPolicies\s*=\s*sqliteTable\(['"]team_economic_policies['"]/) 
+  assert.match(schema, /teamEconomicPolicies\s*=\s*sqliteTable\(\s*['"]team_economic_policies['"]/) 
   assert.match(schema, /defaultMonthlyAmountMinor:\s*integer\(['"]default_monthly_amount_minor['"]\)\.notNull\(\)/)
   assert.match(schema, /ordinaryDueDay:\s*integer\(['"]ordinary_due_day['"]\)\.notNull\(\)/)
   assert.match(schema, /team_economic_policies_amount_positive_check/)
@@ -16,14 +16,14 @@ test('SQLite H1 schema persists temporal team economic policies with minor-unit 
 })
 
 test('SQLite H1 schema persists athlete billing terms as independent economic snapshots', () => {
-  assert.match(schema, /athleteBillingTerms\s*=\s*sqliteTable\(['"]athlete_billing_terms['"]/) 
+  assert.match(schema, /athleteBillingTerms\s*=\s*sqliteTable\(\s*['"]athlete_billing_terms['"]/) 
   assert.match(schema, /monthlyAmountMinor:\s*integer\(['"]monthly_amount_minor['"]\)\.notNull\(\)/)
   assert.match(schema, /athlete_billing_terms_amount_positive_check/)
   assert.match(schema, /athlete_billing_terms_date_order_check/)
 })
 
 test('SQLite H1 monthly charges enforce one logical snapshot per athlete month', () => {
-  assert.match(schema, /monthlyCharges\s*=\s*sqliteTable\(['"]monthly_charges['"]/) 
+  assert.match(schema, /monthlyCharges\s*=\s*sqliteTable\(\s*['"]monthly_charges['"]/) 
   for (const column of ['billing_terms_id','year','month','base_amount_minor','amount_due_minor','currency','base_due_date','effective_due_date']) assert.match(schema, new RegExp(column))
   assert.match(schema, /monthly_charges_athlete_year_month_unique/)
   assert.match(schema, /monthly_charges_month_check/)
