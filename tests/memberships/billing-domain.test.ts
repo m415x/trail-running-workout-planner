@@ -4,6 +4,7 @@ import { test } from 'node:test'
 import {
   createAthleteBillingTerms,
   createMonthlyChargeCandidate,
+  materializeMonthlyChargesThrough,
   replaceAthleteBillingTerms,
   type AthleteBillingTerms,
   type TeamEconomicPolicy,
@@ -137,5 +138,84 @@ test('two terms cannot claim the same athlete calendar month even without interv
         month: 10,
       }),
     /more than one billing terms.*month/i,
+  )
+})
+
+
+test('monthly materialization through a target month is idempotent and preserves existing snapshots', () => {
+  const terms: AthleteBillingTerms = {
+    id: 'terms-1',
+    athleteId: 'athlete-1',
+    monthlyAmountMinor: 2_500_000,
+    currency: 'ARS',
+    effectiveFrom: '2026-10-18',
+    effectiveUntil: null,
+  }
+
+  const first = materializeMonthlyChargesThrough({
+    terms: [terms],
+    policies: [policy],
+    existingCharges: [],
+    through: { year: 2026, month: 12 },
+  })
+
+  assert.deepEqual(
+    first.map((charge) => [charge.year, charge.month, charge.billingTermsId, charge.amountDueMinor]),
+    [
+      [2026, 10, 'terms-1', 2_500_000],
+      [2026, 11, 'terms-1', 2_500_000],
+      [2026, 12, 'terms-1', 2_500_000],
+    ],
+  )
+
+  const existingOctober = {
+    ...first[0]!,
+    baseAmountMinor: 2_400_000,
+    amountDueMinor: 2_400_000,
+  }
+
+  const repeated = materializeMonthlyChargesThrough({
+    terms: [{ ...terms, monthlyAmountMinor: 3_000_000 }],
+    policies: [policy],
+    existingCharges: [existingOctober, first[1]!, first[2]!],
+    through: { year: 2026, month: 12 },
+  })
+
+  assert.deepEqual(repeated, [existingOctober, first[1], first[2]])
+})
+
+test('monthly materialization assigns a monthly-boundary replacement to the correct months', () => {
+  const current: AthleteBillingTerms = {
+    id: 'terms-a',
+    athleteId: 'athlete-1',
+    monthlyAmountMinor: 2_500_000,
+    currency: 'ARS',
+    effectiveFrom: '2026-10-18',
+    effectiveUntil: '2026-12-01',
+  }
+  const replacement: AthleteBillingTerms = {
+    id: 'terms-b',
+    athleteId: 'athlete-1',
+    monthlyAmountMinor: 3_000_000,
+    currency: 'ARS',
+    effectiveFrom: '2026-12-01',
+    effectiveUntil: null,
+  }
+
+  const charges = materializeMonthlyChargesThrough({
+    terms: [current, replacement],
+    policies: [policy],
+    existingCharges: [],
+    through: { year: 2027, month: 1 },
+  })
+
+  assert.deepEqual(
+    charges.map((charge) => [charge.year, charge.month, charge.billingTermsId, charge.amountDueMinor]),
+    [
+      [2026, 10, 'terms-a', 2_500_000],
+      [2026, 11, 'terms-a', 2_500_000],
+      [2026, 12, 'terms-b', 3_000_000],
+      [2027, 1, 'terms-b', 3_000_000],
+    ],
   )
 })
