@@ -10,14 +10,14 @@ import {
 test('membership server action runtime uses the synchronous SQLite transaction repository', async () => {
   const calls: string[] = []
   const db = {
-    transaction: (operation: () => unknown) => ({
-      immediate: () => {
+    transaction: (operation: () => unknown) => {
+      {
         calls.push('begin')
         const result = operation()
         calls.push('commit')
         return result
-      },
-    }),
+      }
+    },
     select: () => ({
       from: () => ({
         where: () => ({
@@ -61,14 +61,14 @@ test('membership Server Action runtime applies and changes athlete terms inside 
   const calls: string[] = []
   let terms: Array<Record<string, unknown>> = []
   const db = {
-    transaction: (operation: () => unknown) => ({
-      immediate: () => {
+    transaction: (operation: () => unknown) => {
+      {
         calls.push('begin')
         const result = operation()
         calls.push('commit')
         return result
-      },
-    }),
+      }
+    },
     select: () => ({
       from: (table: unknown) => ({
         where: () => ({
@@ -146,9 +146,7 @@ test('membership Server Action runtime reports the original policy write failure
   const failure = new Error('SQLITE_CONSTRAINT diagnostic')
   const reported: unknown[] = []
   const db = {
-    transaction: (operation: () => unknown) => ({
-      immediate: () => operation(),
-    }),
+    transaction: (operation: () => unknown) => operation(),
     select: () => ({
       from: () => ({
         where: () => ({
