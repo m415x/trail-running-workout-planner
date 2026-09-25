@@ -1,6 +1,7 @@
 import type { TeamEconomicPolicyQueryRepository } from './membership-policy-query'
 import { getCurrentTeamEconomicPolicy } from './membership-policy-query'
 import { getMembershipPolicyViewModel } from './membership-policy-view-model'
+import { getTeamEconomicPolicyFormModel } from './membership-policy-form-model'
 
 export async function buildMembershipPageModel({
   locale,
@@ -19,8 +20,17 @@ export async function buildMembershipPageModel({
     repository,
   })
 
-  return getMembershipPolicyViewModel({
+  const policyViewModel = getMembershipPolicyViewModel({
     locale,
     policy,
   })
+
+  return {
+    ...policyViewModel,
+    policy: policyViewModel,
+    form: getTeamEconomicPolicyFormModel({
+      locale,
+      policy,
+    }),
+  }
 }
