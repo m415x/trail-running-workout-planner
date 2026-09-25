@@ -15,7 +15,7 @@ test('coach 1000m correction refreshes the visible history after success', () =>
   assert.notEqual(end, -1)
 
   const correction = source.slice(start, end)
-  assert.match(correction, /if \(result\.success\) router\.refresh\(\)/)
+  assert.match(correction, /if \(result\.success\) \{[\s\S]*?router\.refresh\(\)/)
 })
 
 test('coach 1000m correction uses an AlertDialog with minute and second fields', () => {
