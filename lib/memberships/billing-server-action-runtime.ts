@@ -34,9 +34,11 @@ function validPolicyInput(input: ConfigureTeamEconomicPolicyInput) {
 export function createMembershipServerActionRuntime({
   db,
   createId,
+  reportError = console.error,
 }: {
   db: RuntimeDatabase
   createId: () => string
+  reportError?: (error: unknown) => void
 }) {
   const transaction = createSqliteBillingTransaction(db)
 
@@ -63,7 +65,8 @@ export function createMembershipServerActionRuntime({
           })
         })
         return { success: true }
-      } catch {
+      } catch (error) {
+        reportError(error)
         return { success: false, error: 'Could not apply athlete billing terms' }
       }
     },
@@ -94,7 +97,8 @@ export function createMembershipServerActionRuntime({
           })
         })
         return { success: true }
-      } catch {
+      } catch (error) {
+        reportError(error)
         return { success: false, error: 'Could not change athlete billing terms' }
       }
     },
@@ -118,7 +122,8 @@ export function createMembershipServerActionRuntime({
         })
 
         return { success: true }
-      } catch {
+      } catch (error) {
+        reportError(error)
         return {
           success: false,
           error: 'Could not configure team economic policy',
