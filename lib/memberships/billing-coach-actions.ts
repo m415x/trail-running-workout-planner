@@ -1,10 +1,10 @@
 import {
-  createBillingCoachService,
-  type BillingCoachRepository,
+  createSynchronousBillingCoachService,
+  type SynchronousBillingCoachRepository,
 } from './billing-coach-service'
 import {
-  createAthleteBillingTermsService,
-  type AthleteBillingTermsRepository,
+  createSynchronousAthleteBillingTermsService,
+  type SynchronousAthleteBillingTermsRepository,
 } from './athlete-billing-terms-service'
 
 type ConfigureTeamEconomicPolicyInput = {
@@ -23,9 +23,9 @@ export type BillingCoachActionDependencies = {
   createId: () => string
   transaction: <T>(
     operation: (
-      repository: BillingCoachRepository | AthleteBillingTermsRepository,
-    ) => Promise<T>,
-  ) => Promise<T>
+      repository: SynchronousBillingCoachRepository | SynchronousAthleteBillingTermsRepository,
+    ) => T,
+  ) => T
 }
 
 function isValidInput(input: ConfigureTeamEconomicPolicyInput) {
@@ -49,11 +49,11 @@ export async function configureTeamEconomicPolicyAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
-      const coachRepository = repository as BillingCoachRepository
-      const service = createBillingCoachService(coachRepository)
+    dependencies.transaction((repository) => {
+      const coachRepository = repository as SynchronousBillingCoachRepository
+      const service = createSynchronousBillingCoachService(coachRepository)
 
-      await service.configureTeamEconomicPolicy({
+      service.configureTeamEconomicPolicy({
         ...input,
         policyId: dependencies.createId(),
       })
@@ -82,10 +82,10 @@ export async function applyInitialAthleteBillingTermsAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
-      const termsRepository = repository as AthleteBillingTermsRepository
-      const service = createAthleteBillingTermsService(termsRepository)
-      await service.applyInitialTerms({
+    dependencies.transaction((repository) => {
+      const termsRepository = repository as SynchronousAthleteBillingTermsRepository
+      const service = createSynchronousAthleteBillingTermsService(termsRepository)
+      service.applyInitialTerms({
         ...input,
         termsId: dependencies.createId(),
       })
@@ -119,10 +119,10 @@ export async function changeAthleteBillingTermsAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
-      const termsRepository = repository as AthleteBillingTermsRepository
-      const service = createAthleteBillingTermsService(termsRepository)
-      await service.changeTerms({
+    dependencies.transaction((repository) => {
+      const termsRepository = repository as SynchronousAthleteBillingTermsRepository
+      const service = createSynchronousAthleteBillingTermsService(termsRepository)
+      service.changeTerms({
         ...input,
         termsId: dependencies.createId(),
       })
