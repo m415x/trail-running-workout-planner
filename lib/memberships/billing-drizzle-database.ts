@@ -92,7 +92,7 @@ export function createDrizzleBillingDatabase(
     athleteBelongsToTeam,
 
     async listBillingTerms(teamId, athleteId) {
-      const rows = await db
+      const rows = await client
         .from(athleteBillingTerms)
         .innerJoin(
           athleteProfiles,
@@ -107,13 +107,13 @@ export function createDrizzleBillingDatabase(
           eq(athleteBillingTerms.isDeleted, false),
         ))
 
-      return rows.map((row) =>
+      return rows.map((row: QueryResult) =>
         mapTerms((row.athlete_billing_terms ?? row.athleteBillingTerms ?? row) as QueryResult),
       )
     },
 
     async listMonthlyCharges(teamId, athleteId) {
-      const rows = await db
+      const rows = await client
         .from(monthlyCharges)
         .innerJoin(
           athleteProfiles,
@@ -128,13 +128,13 @@ export function createDrizzleBillingDatabase(
           eq(monthlyCharges.isDeleted, false),
         ))
 
-      return rows.map((row) =>
+      return rows.map((row: QueryResult) =>
         mapCharge((row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult),
       )
     },
 
     async listTeamEconomicPolicies(teamId) {
-      const rows = await db
+      const rows = await client
         .from(teamEconomicPolicies)
         .where(and(
           eq(teamEconomicPolicies.teamId, teamId),
