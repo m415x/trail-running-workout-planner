@@ -28,27 +28,7 @@ function formatAmount(locale: Locale, amountMinor: number) {
     maximumFractionDigits: 0,
   }).format(amountMinor / 100)
 
-  return '
-}
-
-export function getMembershipPolicyViewModel({
-  locale,
-  policy,
-}: {
-  locale: Locale
-  policy: TeamEconomicPolicy | null
-}) {
-  const labels = copy[locale]
-
-  return {
-    ...labels,
-    monthlyAmount: policy ? formatAmount(locale, policy.defaultMonthlyAmountMinor) : null,
-    currency: policy?.currency ?? null,
-    dueDay: policy ? String(policy.ordinaryDueDay) : null,
-    effectiveFrom: policy?.effectiveFrom ?? null,
-  }
-}
- + amount
+  return String.fromCharCode(36) + amount
 }
 
 export function getMembershipPolicyViewModel({
