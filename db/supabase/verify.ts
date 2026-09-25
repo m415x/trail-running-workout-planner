@@ -114,20 +114,20 @@ async function main() {
       console.log(`Legacy intensity values: ${remainingLegacyMethods.map(entry => `${entry.source} (${entry.count})`).join(', ')}`)
     }
 
-    const billingConstraints = await sql<{ constraint_name: string; constraint_type: string }[]>\`
+    const billingConstraints = await sql<{ constraint_name: string; constraint_type: string }[]>`
       select tc.constraint_name, tc.constraint_type
       from information_schema.table_constraints tc
       where tc.table_schema = 'public'
         and tc.table_name = 'monthly_charges'
         and tc.constraint_type in ('UNIQUE', 'FOREIGN KEY')
     \`
-    const billingIndexes = await sql<{ indexname: string }[]>\`
+    const billingIndexes = await sql<{ indexname: string }[]>`
       select indexname
       from pg_indexes
       where schemaname = 'public'
         and tablename = 'monthly_charges'
     \`
-    const billingForeignKeys = await sql<{ column_name: string; foreign_table_name: string; foreign_column_name: string }[]>\`
+    const billingForeignKeys = await sql<{ column_name: string; foreign_table_name: string; foreign_column_name: string }[]>`
       select
         kcu.column_name,
         ccu.table_name as foreign_table_name,
@@ -153,7 +153,7 @@ async function main() {
     )
     const billingContractValid = monthlyChargeUnique && billingTermsForeignKey
       && billingConstraints.some(constraint => constraint.constraint_type === 'FOREIGN KEY')
-    console.log(\`H1 billing persistence contract: \${billingContractValid ? 'OK' : 'FAIL'}\`)
+    console.log(`H1 billing persistence contract: ${billingContractValid ? 'OK' : 'FAIL'}`)
 
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
