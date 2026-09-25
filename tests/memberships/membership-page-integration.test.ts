@@ -57,6 +57,6 @@ test('membership timeline accordions expose visible triggers with item counts', 
   assert.match(source, /Scheduled changes/)
   assert.match(source, /Historial de políticas/)
   assert.match(source, /Policy history/)
-  assert.match(source, /model\\.scheduledPolicies\\.length/)
-  assert.match(source, /model\\.pastPolicies\\.length/)
+  assert.match(source, /model\.scheduledPolicies\.length/)
+  assert.match(source, /model\.pastPolicies\.length/)
 })
