@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ReceiptText, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
+import { AthleteBillingTermsForm } from '@/features/memberships/components/AthleteBillingTermsForm'
 import { CoachTrack1000mForm } from '@/features/field-performance-test/components/CoachTrack1000mForm'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
@@ -12,6 +13,7 @@ import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohor
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
 import { db } from '@/db'
 import { createAthleteMembershipPageLoader } from '@/lib/memberships/athlete-membership-page-loader'
+import { getAthleteBillingTermsFormModel } from '@/lib/memberships/athlete-billing-terms-form-model'
 import { createDrizzleBillingDatabase } from '@/lib/memberships/billing-drizzle-database'
 import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sqlite-persistence'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
@@ -114,6 +116,15 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   const upcomingRegistrations = raceCompetition.upcomingRegistrations
   const history = raceCompetition.history
   const es = locale === 'es'
+  const membershipTermsForm = getAthleteBillingTermsFormModel({
+    locale: es ? 'es' : 'en',
+    currentTerms: membership.currentTerms
+      ? {
+          monthlyAmountMinor: membership.currentTerms.monthlyAmountMinor,
+          currency: membership.currentTerms.currency,
+        }
+      : null,
+  })
   const participationLabels: Record<string, string> = es
     ? { started: 'Inició', finished: 'Finalizó', dnf: 'DNF', dns: 'DNS', unknown: 'Desconocido' }
     : { started: 'Started', finished: 'Finished', dnf: 'DNF', dns: 'DNS', unknown: 'Unknown' }
@@ -170,6 +181,11 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 </div>
               )}
             </section>
+            <AthleteBillingTermsForm
+              athleteId={athleteId}
+              locale={es ? 'es' : 'en'}
+              model={membershipTermsForm}
+            />
           </CardContent>
         </Card>
 
