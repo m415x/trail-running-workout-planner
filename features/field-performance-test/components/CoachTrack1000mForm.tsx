@@ -29,6 +29,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
     const result = await createCoachTrack1000mEvidenceAction({ athleteId, testEventId, elapsedTimeSec })
     setBusy(false)
     setMessage(result.success ? (es ? 'Test oficial registrado.' : 'Official test recorded.') : result.error)
+    if (result.success) router.refresh()
   }
 
   async function correct(evidence: HistoryEvidence) {
