@@ -32,3 +32,14 @@ test('athlete detail separates current, scheduled, and past billing terms', asyn
   assert.match(source, /Terms history/)
   assert.match(source, /Accordion/)
 })
+
+
+test('athlete terms form is based on the latest scheduled or current terms', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+
+  assert.match(source, /membership\.scheduledTerms\.at\(-1\) \?\? membership\.currentTerms/)
+  assert.match(source, /currentTerms: membershipTermsFormBase/)
+})
