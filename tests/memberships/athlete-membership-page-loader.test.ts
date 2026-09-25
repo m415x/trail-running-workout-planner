@@ -39,6 +39,7 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
     locale: 'es',
     teamId: 'team_1',
     athleteId: 'athlete-1',
+    onDate: '2026-09-25',
   })
 
   assert.equal(model.title, 'Membresía')
