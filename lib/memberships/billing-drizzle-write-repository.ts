@@ -18,7 +18,7 @@ type SyncResult<T> = {
   run?: () => unknown
 }
 
-type SyncDrizzleClient = {
+export type SyncDrizzleClient = {
   select: () => {
     from: (table: unknown) => {
       where: (condition: unknown) => SyncResult<Record<string, unknown>>
@@ -65,13 +65,14 @@ export type SynchronousDrizzleBillingRepository =
   SynchronousBillingCoachRepository & SynchronousAthleteBillingTermsRepository
 
 export function createSynchronousDrizzleBillingRepository(
-  db: SyncDrizzleClient,
+  db: unknown,
 ): SynchronousDrizzleBillingRepository {
+  const client = db as SyncDrizzleClient
   const now = () => new Date().toISOString()
 
   return {
     athleteBelongsToTeam(teamId, athleteId) {
-      const result = db.select().from(athleteProfiles).where(and(
+      const result = client.select().from(athleteProfiles).where(and(
         eq(athleteProfiles.id, athleteId),
         eq(athleteProfiles.teamId, teamId),
         eq(athleteProfiles.isDeleted, false),
@@ -82,7 +83,7 @@ export function createSynchronousDrizzleBillingRepository(
 
     listTeamEconomicPolicies(teamId) {
       return rows(
-        db.select().from(teamEconomicPolicies).where(and(
+        client.select().from(teamEconomicPolicies).where(and(
           eq(teamEconomicPolicies.teamId, teamId),
           eq(teamEconomicPolicies.isDeleted, false),
         )),
@@ -90,7 +91,7 @@ export function createSynchronousDrizzleBillingRepository(
     },
 
     saveTeamEconomicPolicy(policy) {
-      db.insert(teamEconomicPolicies).values({
+      client.insert(teamEconomicPolicies).values({
         ...policy,
         isDeleted: false,
         createdAt: now(),
@@ -99,11 +100,11 @@ export function createSynchronousDrizzleBillingRepository(
     },
 
     replaceTeamEconomicPolicy(current, replacement) {
-      db.update(teamEconomicPolicies)
+      client.update(teamEconomicPolicies)
         .set({ effectiveUntil: current.effectiveUntil, updatedAt: now() })
         .where(eq(teamEconomicPolicies.id, current.id))
         .run?.()
-      db.insert(teamEconomicPolicies).values({
+      client.insert(teamEconomicPolicies).values({
         ...replacement,
         isDeleted: false,
         createdAt: now(),
@@ -116,7 +117,7 @@ export function createSynchronousDrizzleBillingRepository(
         throw new Error('Athlete does not belong to the requested team')
       }
       return rows(
-        db.select().from(athleteBillingTerms).where(and(
+        client.select().from(athleteBillingTerms).where(and(
           eq(athleteBillingTerms.athleteId, athleteId),
           eq(athleteBillingTerms.isDeleted, false),
         )),
@@ -124,7 +125,7 @@ export function createSynchronousDrizzleBillingRepository(
     },
 
     saveAthleteBillingTerms(terms) {
-      db.insert(athleteBillingTerms).values({
+      client.insert(athleteBillingTerms).values({
         ...terms,
         isDeleted: false,
         createdAt: now(),
@@ -133,11 +134,11 @@ export function createSynchronousDrizzleBillingRepository(
     },
 
     replaceAthleteBillingTerms(current, replacement) {
-      db.update(athleteBillingTerms)
+      client.update(athleteBillingTerms)
         .set({ effectiveUntil: current.effectiveUntil, updatedAt: now() })
         .where(eq(athleteBillingTerms.id, current.id))
         .run?.()
-      db.insert(athleteBillingTerms).values({
+      client.insert(athleteBillingTerms).values({
         ...replacement,
         isDeleted: false,
         createdAt: now(),
