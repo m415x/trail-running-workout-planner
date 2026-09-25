@@ -62,8 +62,8 @@ test('a mid-month initial economic enrollment claims the full month', () => {
     baseAmountMinor: 2_500_000,
     amountDueMinor: 2_500_000,
     currency: 'ARS',
-    baseDueDate: '2026-10-05',
-    effectiveDueDate: '2026-10-05',
+    baseDueDate: '2026-10-18',
+    effectiveDueDate: '2026-10-18',
   })
 })
 
@@ -216,6 +216,31 @@ test('monthly materialization assigns a monthly-boundary replacement to the corr
       [2026, 11, 'terms-a', 2_500_000],
       [2026, 12, 'terms-b', 3_000_000],
       [2027, 1, 'terms-b', 3_000_000],
+    ],
+  )
+})
+
+
+test('only the first reached month moves an already-passed ordinary due date to economic activation', () => {
+  const terms = createAthleteBillingTerms({
+    id: 'terms-1',
+    athleteId: 'athlete-1',
+    policy,
+    effectiveFrom: '2026-10-18',
+  })
+
+  const charges = materializeMonthlyChargesThrough({
+    terms: [terms],
+    policies: [policy],
+    existingCharges: [],
+    through: { year: 2026, month: 11 },
+  })
+
+  assert.deepEqual(
+    charges.map((charge) => [charge.year, charge.month, charge.baseDueDate, charge.effectiveDueDate]),
+    [
+      [2026, 10, '2026-10-18', '2026-10-18'],
+      [2026, 11, '2026-11-05', '2026-11-05'],
     ],
   )
 })
