@@ -111,8 +111,8 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
           <AlertDialogDescription>{es ? 'Ingresá el tiempo corregido del test de 1000 m.' : 'Enter the corrected 1000 m test time.'}</AlertDialogDescription>
         </AlertDialogHeader>
         <div className='grid grid-cols-2 gap-3'>
-          <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos de corrección' : 'Correction minutes'} type='number' min='0' step='1' required value={correctionMinutes} onChange={event => setCorrectionMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
-          <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos de corrección' : 'Correction seconds'} type='number' min='0' max='59' step='1' required value={correctionSeconds} onChange={event => setCorrectionSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos de corrección' : 'Correction minutes'} type='number' min='0' step='1' required value={correctionMinutes} onChange={event => setCorrectionMinutes(event.target.value)} className='h-10 w-full min-w-0 rounded-md border border-input bg-background px-3' /></label>
+          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos de corrección' : 'Correction seconds'} type='number' min='0' max='59' step='1' required value={correctionSeconds} onChange={event => setCorrectionSeconds(event.target.value)} className='h-10 w-full min-w-0 rounded-md border border-input bg-background px-3' /></label>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>{es ? 'Cancelar' : 'Cancel'}</AlertDialogCancel>
