@@ -72,6 +72,39 @@ export function planTestFileBatches(testFiles: string[], maxArgumentLength = 8_0
   return batches
 }
 
+type TestRunSummary = {
+  tests: number
+  suites: number
+  pass: number
+  fail: number
+  cancelled: number
+  skipped: number
+  todo: number
+  durationMs: number
+}
+
+export function aggregateTestRunSummaries(summaries: TestRunSummary[]): TestRunSummary {
+  return summaries.reduce<TestRunSummary>((total, summary) => ({
+    tests: total.tests + summary.tests,
+    suites: total.suites + summary.suites,
+    pass: total.pass + summary.pass,
+    fail: total.fail + summary.fail,
+    cancelled: total.cancelled + summary.cancelled,
+    skipped: total.skipped + summary.skipped,
+    todo: total.todo + summary.todo,
+    durationMs: total.durationMs + summary.durationMs,
+  }), {
+    tests: 0,
+    suites: 0,
+    pass: 0,
+    fail: 0,
+    cancelled: 0,
+    skipped: 0,
+    todo: 0,
+    durationMs: 0,
+  })
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
