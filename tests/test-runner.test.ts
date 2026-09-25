@@ -80,3 +80,25 @@ test('portable test runner batches a large test inventory without losing determi
     batch.reduce((length, file) => length + file.length + 1, 0) <= 8_000,
   ))
 })
+
+
+test('portable test runner aggregates batch summaries into one final result', async () => {
+  const { aggregateTestRunSummaries } = await import('../scripts/test-runner')
+
+  assert.deepEqual(aggregateTestRunSummaries([
+    { tests: 335, suites: 31, pass: 335, fail: 0, cancelled: 0, skipped: 0, todo: 0, durationMs: 5806.0146 },
+    { tests: 333, suites: 47, pass: 333, fail: 0, cancelled: 0, skipped: 0, todo: 0, durationMs: 6407.5506 },
+    { tests: 268, suites: 67, pass: 268, fail: 0, cancelled: 0, skipped: 0, todo: 0, durationMs: 4891.6559 },
+    { tests: 351, suites: 57, pass: 351, fail: 0, cancelled: 0, skipped: 0, todo: 0, durationMs: 10253.2463 },
+    { tests: 88, suites: 14, pass: 88, fail: 0, cancelled: 0, skipped: 0, todo: 0, durationMs: 1753.8128 },
+  ]), {
+    tests: 1375,
+    suites: 216,
+    pass: 1375,
+    fail: 0,
+    cancelled: 0,
+    skipped: 0,
+    todo: 0,
+    durationMs: 29112.2802,
+  })
+})
