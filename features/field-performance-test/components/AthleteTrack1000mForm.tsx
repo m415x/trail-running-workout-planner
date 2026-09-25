@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 import { getCurrentAthleteTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
@@ -9,6 +10,7 @@ type TestEventOption = { id: string; scheduledAt: string }
 
 export function AthleteTrack1000mForm({ locale, events }: { locale: string; events: TestEventOption[] }) {
   const es = locale === 'es'
+  const router = useRouter()
   const [executionContext, setExecutionContext] = useState<'official' | 'self_directed'>(events.length ? 'official' : 'self_directed')
   const [testEventId, setTestEventId] = useState(events[0]?.id ?? '')
   const [performedAt, setPerformedAt] = useState('')
@@ -48,6 +50,7 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
         ? es ? 'Registro enviado para revisión del coach.' : 'Submission sent for coach review.'
         : es ? 'Test oficial registrado.' : 'Official test recorded.'
       : localizeError(result.error))
+    if (result.success) router.refresh()
   }
 
   return <form onSubmit={submit} className='mt-4 grid gap-3'>
