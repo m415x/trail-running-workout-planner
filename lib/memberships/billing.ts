@@ -383,3 +383,33 @@ export async function materializeMonthlyCharges(input: {
 
   return materialized
 }
+
+
+export type AthleteBillingSnapshotRepository = {
+  athleteBelongsToTeam: (teamId: string, athleteId: string) => Promise<boolean>
+  getBillingTerms: (athleteId: string) => Promise<AthleteBillingTerms[]>
+  getMonthlyCharges: (athleteId: string) => Promise<MonthlyChargeCandidate[]>
+}
+
+export async function getAthleteBillingSnapshot(input: {
+  teamId: string
+  athleteId: string
+  repository: AthleteBillingSnapshotRepository
+}): Promise<{
+  terms: AthleteBillingTerms[]
+  charges: MonthlyChargeCandidate[]
+}> {
+  const belongsToTeam = await input.repository.athleteBelongsToTeam(
+    input.teamId,
+    input.athleteId,
+  )
+
+  if (!belongsToTeam) {
+    throw new Error('Athlete does not belong to the requested team')
+  }
+
+  const terms = await input.repository.getBillingTerms(input.athleteId)
+  const charges = await input.repository.getMonthlyCharges(input.athleteId)
+
+  return { terms, charges }
+}
