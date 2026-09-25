@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
-import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ShieldAlert, Target, UsersRound } from 'lucide-react'
+import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Pencil, Phone, ReceiptText, ShieldAlert, Target, UsersRound } from 'lucide-react'
 
 import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
 import { CoachTrack1000mForm } from '@/features/field-performance-test/components/CoachTrack1000mForm'
@@ -10,6 +10,10 @@ import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getCoachPendingTrack1000mEvidenceAction, getCoachTrack1000mHistoryAction, getCoachTrack1000mTestEventsAction } from '@/app/actions/field-performance-test-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getTrainingGoalsForAthlete } from '@/app/actions/training-goal-actions'
+import { db } from '@/db'
+import { createAthleteMembershipPageLoader } from '@/lib/memberships/athlete-membership-page-loader'
+import { createDrizzleBillingDatabase } from '@/lib/memberships/billing-drizzle-database'
+import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sqlite-persistence'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
 import { listRaceCourses, listRaceEditions, listRaceEvents } from '@/lib/race-catalog/catalog-repository'
 import { listRaceRegistrationsForAthlete } from '@/lib/competitions/race-registration-repository'
@@ -92,6 +96,17 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
   ])
   if (!athlete) notFound()
 
+  const membershipLoader = createAthleteMembershipPageLoader({
+    createPort: (database: typeof db) =>
+      createSqliteBillingPersistencePort(createDrizzleBillingDatabase(database)),
+  })
+  const membership = await membershipLoader({
+    db,
+    locale: locale === 'en' ? 'en' : 'es',
+    teamId: athlete.teamId,
+    athleteId,
+  })
+
   const raceCompetition = projectAthleteRaceCompetition(listRaceRegistrationsForAthlete({ teamId: athlete.teamId, athleteProfileId: athleteId }))
   const raceEvents = listRaceEvents()
   const raceEditions = raceEvents.flatMap((event) => listRaceEditions(event.id))
@@ -126,6 +141,37 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         <CoachTrack1000mPanel athleteId={athleteId} locale={locale} labels={{ faster: t('faster'), slower: t('slower'), same: t('same'), insufficientEvidence: t('insufficientEvidence'), unavailable: t('unavailable'), historyLoadError: t('historyLoadError') }} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} eventsError={!testEventsResult.success} pendingError={!pendingEvidenceResult.success} historyResult={testHistoryResult} />
         <Card><CardHeader><CardTitle>{t('personalData')}</CardTitle></CardHeader><CardContent><dl className='grid gap-5 sm:grid-cols-2'><DetailItem label='DNI' value={athlete.dni} fallback={t('notProvided')} /><DetailItem label={t('birthDate')} value={formatDate(athlete.birthday, locale, t('notProvided'))} fallback={t('notProvided')} /><DetailItem label={t('nickname')} value={athlete.nickName} fallback={t('notProvided')} /><div><dt className='text-sm text-muted-foreground'>{t('group')}</dt><dd className='mt-1'>{groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>{t('noGroup')}</Badge>}</dd></div></dl></CardContent></Card>
         <Card><CardHeader><CardTitle>{t('contact')}</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>{t('phone')}</p><p className='font-medium'>{athlete.phone || t('notProvided')}</p></div></div></CardContent></Card>
+
+        <Card className='md:col-span-2'>
+          <CardHeader><CardTitle className='flex items-center gap-2'><ReceiptText className='size-5' />{membership.title}</CardTitle></CardHeader>
+          <CardContent className='space-y-6'>
+            <section className='space-y-3'>
+              {membership.currentTerms ? (
+                <dl className='grid gap-4 sm:grid-cols-3'>
+                  <DetailItem label={locale === 'en' ? 'Monthly amount' : 'Importe mensual'} value={membership.currentTerms.monthlyAmount} fallback='—' />
+                  <DetailItem label={locale === 'en' ? 'Currency' : 'Moneda'} value={membership.currentTerms.currency} fallback='—' />
+                  <DetailItem label={locale === 'en' ? 'Effective from' : 'Vigente desde'} value={formatDate(membership.currentTerms.effectiveFrom, locale, '—')} fallback='—' />
+                </dl>
+              ) : <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{membership.emptyTerms}</p>}
+            </section>
+            <section className='space-y-3'>
+              <h3 className='font-medium'>{locale === 'en' ? 'Materialized charges' : 'Cuotas materializadas'}</h3>
+              {membership.charges.length === 0 ? (
+                <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{membership.emptyCharges}</p>
+              ) : (
+                <div className='space-y-3'>
+                  {membership.charges.map((charge) => (
+                    <dl key={charge.period} className='grid gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3'>
+                      <DetailItem label={locale === 'en' ? 'Period' : 'Período'} value={charge.period} fallback='—' />
+                      <DetailItem label={locale === 'en' ? 'Amount' : 'Importe'} value={charge.amountDue} fallback='—' />
+                      <DetailItem label={locale === 'en' ? 'Due date' : 'Vencimiento'} value={formatDate(charge.effectiveDueDate, locale, '—')} fallback='—' />
+                    </dl>
+                  ))}
+                </div>
+              )}
+            </section>
+          </CardContent>
+        </Card>
 
         <Card className='md:col-span-2'><CardHeader><div className='flex flex-wrap items-center justify-between gap-3'><CardTitle className='flex items-center gap-2'><Target className='size-5' />{t('goals')}</CardTitle><Link href={newGoalPath} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{t('newGoal')}</Link></div></CardHeader><CardContent>{goals.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{t('noGoals')}</p> : <div className='space-y-3'>{goals.map((goal) => <div key={goal.id} className='rounded-lg border p-4'><div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start'><div className='min-w-0'><div className='flex flex-wrap items-center gap-2'><p className='font-medium'>{goal.title}</p><Badge variant={goal.status === 'draft' ? 'outline' : 'secondary'}>{goal.status === 'draft' ? t('goalDraft') : goal.status === 'active' ? t('active') : goal.status === 'completed' ? t('goalCompleted') : goal.status === 'cancelled' ? t('goalCancelled') : goal.status}</Badge></div>{goal.type === 'race' && goal.raceName && goal.raceName !== goal.title && <p className='mt-1 text-sm text-muted-foreground'>{goal.raceName}</p>}{goal.description && <p className='mt-2 text-sm'>{goal.description}</p>}{goal.notes && <p className='mt-2 text-sm text-muted-foreground'>{goal.notes}</p>}</div><dl className='grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:min-w-[24rem] lg:text-right'><div><dt className='text-muted-foreground'>{t('date')}</dt><dd className='mt-0.5 font-medium'>{formatDate(goal.targetDate, locale, t('notProvided'))}</dd></div>{goal.type === 'race' && <><div><dt className='text-muted-foreground'>{t('distance')}</dt><dd className='mt-0.5 font-medium'>{goal.raceDistanceKm == null ? '—' : `${goal.raceDistanceKm} km`}</dd></div><div><dt className='text-muted-foreground'>D+</dt><dd className='mt-0.5 font-medium'>{goal.raceElevationGain == null ? '—' : `+${goal.raceElevationGain} m`}</dd></div></>}</dl></div></div>)}</div>}</CardContent></Card>
 
