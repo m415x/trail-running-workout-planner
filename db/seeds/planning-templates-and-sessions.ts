@@ -71,17 +71,26 @@ export async function seedPlanningTemplatesAndSessions(
     },
   ]).onConflictDoNothing().run()
 
-  const weekTypes = ['base', 'development', 'development', 'deload', 'development', 'shock', 'tapering', 'race'] as const
-  const microcycleRows = weekTypes.map((type, index) => ({
+  const weekDefinitions = [
+    { type: 'base', targetVolumeKm: 36, targetElevationGain: 720 },
+    { type: 'development', targetVolumeKm: 39.3, targetElevationGain: 786 },
+    { type: 'development', targetVolumeKm: 39.3, targetElevationGain: 786 },
+    { type: 'deload', targetVolumeKm: 27, targetElevationGain: 540 },
+    { type: 'development', targetVolumeKm: 39.3, targetElevationGain: 786 },
+    { type: 'shock', targetVolumeKm: 42, targetElevationGain: 840 },
+    { type: 'tapering', targetVolumeKm: 25.2, targetElevationGain: 504 },
+    { type: 'race', targetVolumeKm: 19.8, targetElevationGain: 600 },
+  ] as const
+  const microcycleRows = weekDefinitions.map(({ type, targetVolumeKm, targetElevationGain }, index) => ({
     id: `s2_12k_micro_${index + 1}`,
     mesocycleId: index < 4 ? generalMesocycleId : specificMesocycleId,
     weekNumber: index + 1,
     type,
     startDate: shiftISODate(currentWeekStart, index * 7),
     endDate: shiftISODate(currentWeekStart, index * 7 + 6),
-    targetVolumeKm: index === 0 ? 18 : 0,
+    targetVolumeKm,
     targetVolumeSource: 'generated' as const,
-    targetElevationGain: index === 0 ? 450 : 0,
+    targetElevationGain,
     targetElevationSource: 'generated' as const,
     targetDurationMin: null,
     notes: null,
