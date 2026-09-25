@@ -120,3 +120,100 @@ export function createAthleteBillingTermsService(
     },
   }
 }
+
+
+export type SynchronousAthleteBillingTermsRepository = {
+  athleteBelongsToTeam: (teamId: string, athleteId: string) => boolean
+  listTeamEconomicPolicies: (teamId: string) => TeamEconomicPolicy[]
+  listAthleteBillingTerms: (
+    teamId: string,
+    athleteId: string,
+  ) => AthleteBillingTerms[]
+  saveAthleteBillingTerms: (terms: AthleteBillingTerms) => void
+  replaceAthleteBillingTerms: (
+    current: AthleteBillingTerms,
+    replacement: AthleteBillingTerms,
+  ) => void
+}
+
+function assertSynchronousAthleteScope(
+  repository: SynchronousAthleteBillingTermsRepository,
+  teamId: string,
+  athleteId: string,
+) {
+  if (!repository.athleteBelongsToTeam(teamId, athleteId)) {
+    throw new Error('Athlete does not belong to the requested team')
+  }
+}
+
+export function createSynchronousAthleteBillingTermsService(
+  repository: SynchronousAthleteBillingTermsRepository,
+) {
+  return {
+    applyInitialTerms(input: {
+      teamId: string
+      athleteId: string
+      termsId: string
+      effectiveFrom: string
+    }) {
+      assertSynchronousAthleteScope(repository, input.teamId, input.athleteId)
+
+      const existing = repository.listAthleteBillingTerms(
+        input.teamId,
+        input.athleteId,
+      )
+
+      if (existing.length > 0) {
+        throw new Error('Athlete billing terms already exist')
+      }
+
+      const policies = repository.listTeamEconomicPolicies(input.teamId)
+      const policy = effectivePolicyAt(policies, input.effectiveFrom)
+      const terms = applyAthleteBillingTerms({
+        id: input.termsId,
+        athleteId: input.athleteId,
+        policy,
+        effectiveFrom: input.effectiveFrom,
+      })
+
+      repository.saveAthleteBillingTerms(terms)
+      return terms
+    },
+
+    changeTerms(input: {
+      teamId: string
+      athleteId: string
+      termsId: string
+      effectiveFrom: string
+      monthlyAmountMinor: number
+      currency: string
+    }) {
+      assertSynchronousAthleteScope(repository, input.teamId, input.athleteId)
+
+      const terms = repository.listAthleteBillingTerms(
+        input.teamId,
+        input.athleteId,
+      )
+      const openTerms = terms.filter((item) => item.effectiveUntil === null)
+
+      if (openTerms.length !== 1) {
+        throw new Error(
+          openTerms.length === 0
+            ? 'No open athlete billing terms found'
+            : 'Athlete billing terms history is ambiguous',
+        )
+      }
+
+      const { current, replacement } = changeAthleteBillingTerms({
+        current: openTerms[0]!,
+        replacementId: input.termsId,
+        effectiveFrom: input.effectiveFrom,
+        monthlyAmountMinor: input.monthlyAmountMinor,
+        currency: input.currency,
+      })
+
+      repository.replaceAthleteBillingTerms(current, replacement)
+      return replacement
+    },
+  }
+}
