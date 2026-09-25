@@ -21,9 +21,10 @@ type BillingCoachActionResult =
 
 export type BillingCoachActionDependencies = {
   createId: () => string
-  transaction: <T, TRepository extends BillingCoachRepository | AthleteBillingTermsRepository>(
-    operation: (repository: TRepository) => Promise<T>,
-  ) => Promise<T>
+  transaction: {
+    <T>(operation: (repository: BillingCoachRepository) => Promise<T>): Promise<T>
+    <T>(operation: (repository: AthleteBillingTermsRepository) => Promise<T>): Promise<T>
+  }
 }
 
 function isValidInput(input: ConfigureTeamEconomicPolicyInput) {
@@ -47,7 +48,7 @@ export async function configureTeamEconomicPolicyAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
+    await dependencies.transaction(async (repository: BillingCoachRepository) => {
       const service = createBillingCoachService(repository)
 
       await service.configureTeamEconomicPolicy({
@@ -79,7 +80,7 @@ export async function applyInitialAthleteBillingTermsAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
+    await dependencies.transaction(async (repository: AthleteBillingTermsRepository) => {
       const service = createAthleteBillingTermsService(repository)
       await service.applyInitialTerms({
         ...input,
@@ -115,7 +116,7 @@ export async function changeAthleteBillingTermsAction(
   }
 
   try {
-    await dependencies.transaction(async (repository) => {
+    await dependencies.transaction(async (repository: AthleteBillingTermsRepository) => {
       const service = createAthleteBillingTermsService(repository)
       await service.changeTerms({
         ...input,
