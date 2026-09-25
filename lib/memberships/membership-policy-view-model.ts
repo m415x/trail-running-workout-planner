@@ -28,7 +28,7 @@ function formatAmount(locale: Locale, amountMinor: number) {
     style: 'currency',
     currency: 'ARS',
     maximumFractionDigits: 0,
-  }).format(amountMinor / 100)
+  }).format(amountMinor / 100).replace(/\s/g, '')
 }
 
 export function getMembershipPolicyViewModel({
