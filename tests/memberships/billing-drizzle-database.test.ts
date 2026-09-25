@@ -5,16 +5,19 @@ import { createDrizzleBillingDatabase } from '../../lib/memberships/billing-driz
 
 function makeQuery(result: unknown[]) {
   return {
-    from() {
+    select() {
+      return {
+        from() {
       return {
         innerJoin() {
           return {
             where: async () => result,
           }
         },
-        where: async () => result,
-      }
-    },
+          where: async () => result,
+        }
+      },
+    }
   }
 }
 
