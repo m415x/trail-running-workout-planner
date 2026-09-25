@@ -14,6 +14,7 @@ test('builds ES athlete membership presentation from terms and materialized char
       effectiveFrom: '2026-09-15',
       effectiveUntil: null,
     }],
+    onDate: '2026-09-25',
     charges: [{
       athleteId: 'athlete-1',
       billingTermsId: 'terms-1',
@@ -40,6 +41,7 @@ test('builds EN empty state without H2+ payment or debt semantics', () => {
     locale: 'en',
     terms: [],
     charges: [],
+    onDate: '2026-09-25',
   })
 
   assert.equal(model.title, 'Membership')
