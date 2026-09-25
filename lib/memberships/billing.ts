@@ -145,3 +145,92 @@ export function createMonthlyChargeCandidate(input: {
     effectiveDueDate: dueDate,
   }
 }
+
+
+function monthKey(year: number, month: number): string {
+  return `${year}-${String(month).padStart(2, '0')}`
+}
+
+function nextMonth(year: number, month: number): { year: number; month: number } {
+  return month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 }
+}
+
+function policyForMonth(
+  policies: TeamEconomicPolicy[],
+  year: number,
+  month: number,
+): TeamEconomicPolicy {
+  const date = monthStart(year, month)
+  const matching = policies.filter((policy) => {
+    const start = parseDate(policy.effectiveFrom)
+    const end = policy.effectiveUntil ? parseDate(policy.effectiveUntil) : null
+    return start <= date && (end === null || date < end)
+  })
+
+  if (matching.length !== 1) {
+    throw new Error('Exactly one team economic policy must apply to the materialized month')
+  }
+
+  return matching[0]!
+}
+
+export function materializeMonthlyChargesThrough(input: {
+  terms: AthleteBillingTerms[]
+  policies: TeamEconomicPolicy[]
+  existingCharges: MonthlyChargeCandidate[]
+  through: { year: number; month: number }
+}): MonthlyChargeCandidate[] {
+  if (input.terms.length === 0) return [...input.existingCharges]
+
+  const athleteIds = new Set(input.terms.map((terms) => terms.athleteId))
+  if (athleteIds.size !== 1) {
+    throw new Error('Monthly materialization requires billing terms for exactly one athlete')
+  }
+
+  const firstTermsStart = input.terms
+    .map((terms) => parseDate(terms.effectiveFrom))
+    .sort((a, b) => a.getTime() - b.getTime())[0]!
+
+  let cursor = {
+    year: firstTermsStart.getUTCFullYear(),
+    month: firstTermsStart.getUTCMonth() + 1,
+  }
+
+  const targetKey = monthKey(input.through.year, input.through.month)
+  const byMonth = new Map(
+    input.existingCharges.map((charge) => [monthKey(charge.year, charge.month), charge]),
+  )
+
+  while (monthKey(cursor.year, cursor.month) <= targetKey) {
+    const key = monthKey(cursor.year, cursor.month)
+
+    if (!byMonth.has(key)) {
+      const matchingTerms = input.terms.filter((terms) =>
+        intersectsMonth(terms, cursor.year, cursor.month),
+      )
+
+      if (matchingTerms.length > 1) {
+        throw new Error('More than one billing terms can claim the same athlete month')
+      }
+
+      const terms = matchingTerms[0]
+      if (terms) {
+        const policy = policyForMonth(input.policies, cursor.year, cursor.month)
+        const candidate = createMonthlyChargeCandidate({
+          terms: [terms],
+          policy,
+          year: cursor.year,
+          month: cursor.month,
+        })
+
+        if (candidate) byMonth.set(key, candidate)
+      }
+    }
+
+    cursor = nextMonth(cursor.year, cursor.month)
+  }
+
+  return [...byMonth.values()].sort(
+    (a, b) => a.year - b.year || a.month - b.month,
+  )
+}
