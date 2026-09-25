@@ -51,7 +51,7 @@ CREATE TABLE `monthly_charges` (
   FOREIGN KEY (`athlete_id`) REFERENCES `athlete_profiles`(`id`) ON UPDATE no action ON DELETE restrict,
   FOREIGN KEY (`billing_terms_id`) REFERENCES `athlete_billing_terms`(`id`) ON UPDATE no action ON DELETE restrict,
   CONSTRAINT `monthly_charges_month_check` CHECK (`monthly_charges`."month" between 1 and 12),
-  CONSTRAINT `monthly_charges_amount_positive_check` CHECK (`monthly_charges`."base_amount_minor" > 0 and `monthly_charges`."amount_due_minor" > 0)
+  CONSTRAINT `monthly_charges_amount_positive_check` CHECK (`monthly_charges`."base_amount_minor" > 0 and `monthly_charges`."amount_due_minor" >= 0)
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `monthly_charges_athlete_year_month_unique` ON `monthly_charges` (`athlete_id`,`year`,`month`);
