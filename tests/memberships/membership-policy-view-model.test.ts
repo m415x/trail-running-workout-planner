@@ -25,6 +25,7 @@ test('builds the Coach membership policy view model in ES and EN without H2+ con
     dueDay: '5',
     effectiveFromLabel: 'Vigente desde',
     effectiveFrom: '2026-10-01',
+    effectiveUntil: null,
     emptyState: 'Todavía no hay una política económica configurada.',
   })
 
@@ -39,6 +40,7 @@ test('builds the Coach membership policy view model in ES and EN without H2+ con
     dueDay: '5',
     effectiveFromLabel: 'Effective from',
     effectiveFrom: '2026-10-01',
+    effectiveUntil: null,
     emptyState: 'No economic policy has been configured yet.',
   })
 })
