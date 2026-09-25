@@ -22,8 +22,8 @@ test('Coach membership page exposes the next scheduled policy in ES and EN', asy
   )
 
   assert.match(source, /model\.scheduledPolicies/)
-  assert.match(source, /Próximo cambio programado/)
-  assert.match(source, /Next scheduled change/)
+  assert.match(source, /Cambios programados/)
+  assert.match(source, /Scheduled changes/)
   assert.match(source, /model\.currentPolicy\.effectiveUntil/)
 })
 
