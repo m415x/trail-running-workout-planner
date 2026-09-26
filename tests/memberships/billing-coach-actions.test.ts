@@ -6,6 +6,8 @@ import {
   applyInitialAthleteBillingTermsAction,
   changeAthleteBillingTermsAction,
   applyGlobalDueDateExceptionAction,
+  applyMonthlyChargeReductionAction,
+  applyMonthlyChargeExtensionAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
 
@@ -229,5 +231,98 @@ test('Coach global monthly due-date exception rejects incomplete input before op
   }, dependencies)
 
   assert.equal(result.success, false)
+  assert.equal(transactions, 0)
+})
+
+
+test('Coach actions delegate reduction and extension decisions to the established H2 ports', async () => {
+  const calls: string[] = []
+  let nextId = 0
+  const dependencies = {
+    createId: () => `h2-${++nextId}`,
+    transaction: (operation: (repository: any) => unknown) => operation({
+      listMonthlyCharges: () => [{
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-05',
+      }],
+      listMonthlyChargeReductionRevisions: () => [],
+      applyMonthlyChargeReductionAtomically: (
+        teamId: string,
+        monthlyChargeId: string,
+        revision: any,
+      ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`),
+      listMonthlyChargeExtensionRevisions: () => [],
+      applyMonthlyChargeExtensionAtomically: (
+        teamId: string,
+        monthlyChargeId: string,
+        revision: any,
+      ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`),
+    }),
+  } as BillingCoachActionDependencies
+
+  assert.deepEqual(await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca deportiva',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-15',
+    reason: 'Prórroga acordada',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(calls, [
+    'reduction:team-a:charge-a:h2-1:500000:Beca deportiva',
+    'extension:team-a:charge-a:h2-2:2026-10-15:Prórroga acordada',
+  ])
+})
+
+test('Coach reduction and extension actions reject missing reasons before transaction', async () => {
+  let transactions = 0
+  const dependencies = {
+    createId: () => 'unused',
+    transaction: () => {
+      transactions += 1
+      throw new Error('transaction must not run')
+    },
+  } as BillingCoachActionDependencies
+
+  const reduction = await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: '',
+  }, dependencies)
+  const extension = await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-15',
+    reason: '   ',
+  }, dependencies)
+
+  assert.equal(reduction.success, false)
+  assert.equal(extension.success, false)
   assert.equal(transactions, 0)
 })
