@@ -141,6 +141,7 @@ test('global due-date exception service updates an already materialized charge b
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
     listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
       athleteId: 'athlete-a',
       billingTermsId: 'terms-a',
       year: 2026,
@@ -263,6 +264,7 @@ test('global due-date exception preserves a later effective due date from an exi
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
     listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
       athleteId: 'athlete-a',
       billingTermsId: 'terms-a',
       year: 2026,
@@ -325,6 +327,7 @@ test('global due-date exception application uses the atomic persistence boundary
       separateWrites += 1
     },
     listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
       athleteId: 'athlete-a',
       billingTermsId: 'terms-a',
       year: 2026,
@@ -1024,6 +1027,7 @@ test('a later global due-date exception keeps a later current individual extensi
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
     listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
       athleteId: 'athlete-a',
       billingTermsId: 'terms-a',
       year: 2026,
@@ -1088,6 +1092,7 @@ test('a global due-date exception can shadow a current extension without withdra
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
     listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
       athleteId: 'athlete-a',
       billingTermsId: 'terms-a',
       year: 2026,
