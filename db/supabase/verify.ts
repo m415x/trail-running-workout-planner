@@ -171,6 +171,29 @@ async function main() {
       'monthly_charge_reductions_charge_current_unique',
       'monthly_charge_extensions_charge_current_unique',
     ]
+    const h2ConstraintNames = [
+      'global_monthly_due_date_exceptions_month_check',
+      'monthly_charge_reductions_amount_check',
+      'global_monthly_due_date_exceptions_team_id_teams_id_fk',
+      'monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk',
+      'monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk',
+    ]
+    const h2BillingConstraints = await sql<{ constraint_name: string }[]>`
+      select con.conname as constraint_name
+      from pg_constraint con
+      join pg_class rel on rel.oid = con.conrelid
+      join pg_namespace nsp on nsp.oid = rel.relnamespace
+      where nsp.nspname = 'public'
+        and rel.relname in (
+          'global_monthly_due_date_exceptions',
+          'monthly_charge_reductions',
+          'monthly_charge_extensions'
+        )
+        and con.conname in ${sql(h2ConstraintNames)}
+    `
+    const presentH2Constraints = new Set(
+      h2BillingConstraints.map(constraint => constraint.constraint_name),
+    )
     const h2BillingContractValid = h2RequiredIndexes.every(indexName =>
       h2BillingIndexes.some(index =>
         index.indexname === indexName
@@ -178,7 +201,7 @@ async function main() {
         && index.indexdef.toLowerCase().includes('where')
         && index.indexdef.toLowerCase().includes('is_current')
       ),
-    )
+    ) && h2ConstraintNames.every(constraintName => presentH2Constraints.has(constraintName))
     console.log(`H2 billing persistence contract: ${h2BillingContractValid ? 'OK' : 'FAIL'}`)
 
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
