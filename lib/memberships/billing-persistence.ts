@@ -133,8 +133,40 @@ export function createBillingPersistenceAdapter(
             port.listTeamEconomicPolicies(input.teamId),
           getMonthlyCharges: (athleteId) =>
             port.listMonthlyCharges(input.teamId, athleteId),
-          insertMonthlyCharges: (charges) =>
-            port.insertMonthlyCharges(input.teamId, input.athleteId, charges),
+          insertMonthlyCharges: async (charges) => {
+            const h2Port = port as BillingPersistencePort & Partial<GlobalDueDateExceptionPersistencePort>
+            if (!h2Port.listGlobalDueDateExceptionRevisions) {
+              return port.insertMonthlyCharges(input.teamId, input.athleteId, charges)
+            }
+
+            const terms = await port.listBillingTerms(input.teamId, input.athleteId)
+            const projectedCharges = await Promise.all(charges.map(async (charge) => {
+              const revisions = await h2Port.listGlobalDueDateExceptionRevisions!(
+                input.teamId,
+                charge.year,
+                charge.month,
+              )
+              const current = revisions.find((revision) => revision.isCurrent)
+              if (!current) return charge
+
+              const chargeTerms = terms.find((term) => term.id === charge.billingTermsId)
+              if (!chargeTerms) throw new Error('Billing terms not found for monthly charge')
+
+              return projectMonthlyChargeWithExceptions({
+                charge,
+                globalDueDateException: current,
+                reductionRevisions: [],
+                extensionRevisions: [],
+                economicActivationDate: chargeTerms.effectiveFrom,
+              })
+            }))
+
+            return port.insertMonthlyCharges(
+              input.teamId,
+              input.athleteId,
+              projectedCharges,
+            )
+          },
         },
       })
     },
