@@ -718,6 +718,23 @@ export const monthlyChargeReductions = sqliteTable(
   ],
 )
 
+
+export const monthlyChargeExtensions = sqliteTable(
+  'monthly_charge_extensions',
+  {
+    ...baseColumns,
+    monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
+    extendedDueDate: text('extended_due_date'),
+    reason: text('reason').notNull(),
+    isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+  },
+  (table) => [
+    uniqueIndex('monthly_charge_extensions_charge_current_unique')
+      .on(table.monthlyChargeId)
+      .where(sql`${table.isCurrent} = 1`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 14. SHOES (Calzado del atleta)                                              */
 /* -------------------------------------------------------------------------- */
