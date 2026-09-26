@@ -42,6 +42,13 @@ export type SqliteBillingDatabase = {
     teamId: string,
     charge: MonthlyChargeCandidate,
   ) => Promise<void>
+  applyGlobalDueDateExceptionAtomically?: (
+    teamId: string,
+    year: number,
+    month: number,
+    revision: GlobalDueDateExceptionRevision,
+    charges: MonthlyChargeCandidate[],
+  ) => Promise<void>
 }
 
 export function createSqliteBillingPersistencePort(
