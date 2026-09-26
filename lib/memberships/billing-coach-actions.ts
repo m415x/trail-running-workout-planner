@@ -1,5 +1,15 @@
-import type { GlobalDueDateExceptionRevision } from './billing'
-import type { GlobalDueDateExceptionPersistencePort } from './billing-persistence'
+import type {
+  GlobalDueDateExceptionRevision,
+  MonthlyChargeReductionRevision,
+  MonthlyChargeExtensionRevision,
+} from './billing'
+import {
+  createBillingPersistenceAdapter,
+  type BillingPersistencePort,
+  type GlobalDueDateExceptionPersistencePort,
+  type MonthlyChargeReductionPersistencePort,
+  type MonthlyChargeExtensionPersistencePort,
+} from './billing-persistence'
 import {
   createSynchronousBillingCoachService,
   type SynchronousBillingCoachRepository,
@@ -27,7 +37,9 @@ export type BillingCoachActionDependencies = {
     operation: (
       repository: SynchronousBillingCoachRepository
         | SynchronousAthleteBillingTermsRepository
-        | GlobalDueDateExceptionPersistencePort,
+        | GlobalDueDateExceptionPersistencePort
+        | (BillingPersistencePort & MonthlyChargeReductionPersistencePort)
+        | (BillingPersistencePort & MonthlyChargeExtensionPersistencePort),
     ) => T,
   ) => T
 }
@@ -191,5 +203,117 @@ export async function applyGlobalDueDateExceptionAction(
     return { success: true }
   } catch {
     return { success: false, error: 'Could not apply global due-date exception' }
+  }
+}
+
+
+export async function applyMonthlyChargeReductionAction(
+  input: {
+    teamId: string
+    monthlyChargeId: string
+    athleteId: string
+    year: number
+    month: number
+    reductionAmountMinor: number
+    reason: string
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BillingCoachActionResult> {
+  if (
+    !input.teamId
+    || !input.monthlyChargeId
+    || !input.athleteId
+    || !Number.isInteger(input.year)
+    || input.year < 1
+    || !Number.isInteger(input.month)
+    || input.month < 1
+    || input.month > 12
+    || !Number.isSafeInteger(input.reductionAmountMinor)
+    || input.reductionAmountMinor <= 0
+    || !input.reason.trim()
+  ) {
+    return { success: false, error: 'Invalid monthly charge reduction input' }
+  }
+
+  try {
+    const operation = dependencies.transaction((repository) => {
+      const revision: MonthlyChargeReductionRevision = {
+        id: dependencies.createId(),
+        athleteId: input.athleteId,
+        year: input.year,
+        month: input.month,
+        reductionAmountMinor: input.reductionAmountMinor,
+        reason: input.reason.trim(),
+        isCurrent: true,
+      }
+      const adapter = createBillingPersistenceAdapter(
+        repository as BillingPersistencePort & MonthlyChargeReductionPersistencePort,
+      )
+      return adapter.applyMonthlyChargeReduction({
+        teamId: input.teamId,
+        monthlyChargeId: input.monthlyChargeId,
+        revision,
+      })
+    })
+    await operation
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Could not apply monthly charge reduction' }
+  }
+}
+
+export async function applyMonthlyChargeExtensionAction(
+  input: {
+    teamId: string
+    monthlyChargeId: string
+    athleteId: string
+    year: number
+    month: number
+    extendedDueDate: string
+    reason: string
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BillingCoachActionResult> {
+  if (
+    !input.teamId
+    || !input.monthlyChargeId
+    || !input.athleteId
+    || !Number.isInteger(input.year)
+    || input.year < 1
+    || !Number.isInteger(input.month)
+    || input.month < 1
+    || input.month > 12
+    || !/^\d{4}-\d{2}-\d{2}$/.test(input.extendedDueDate)
+    || !input.reason.trim()
+  ) {
+    return { success: false, error: 'Invalid monthly charge extension input' }
+  }
+
+  try {
+    const operation = dependencies.transaction((repository) => {
+      const revision: MonthlyChargeExtensionRevision = {
+        id: dependencies.createId(),
+        athleteId: input.athleteId,
+        year: input.year,
+        month: input.month,
+        extendedDueDate: input.extendedDueDate,
+        reason: input.reason.trim(),
+        isCurrent: true,
+      }
+      const adapter = createBillingPersistenceAdapter(
+        repository as BillingPersistencePort & MonthlyChargeExtensionPersistencePort,
+      )
+      return adapter.applyMonthlyChargeExtension({
+        teamId: input.teamId,
+        monthlyChargeId: input.monthlyChargeId,
+        revision,
+      })
+    })
+    await operation
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Could not apply monthly charge extension' }
   }
 }
