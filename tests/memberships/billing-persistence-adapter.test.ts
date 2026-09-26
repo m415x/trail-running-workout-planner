@@ -525,3 +525,108 @@ test('monthly charge reduction supports a total reduction without producing a ne
 
   assert.equal(amountDueMinor, 0)
 })
+
+
+test('withdrawing a monthly charge reduction restores amount due to the immutable base amount', async () => {
+  let projected: { baseAmountMinor: number; amountDueMinor: number } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [{
+      id: 'reduction-current',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseAmountMinor: number; amountDueMinor: number },
+    ) => {
+      projected = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-withdrawn',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 0,
+      reason: 'Finaliza la beca',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(projected)
+  assert.equal(projected.baseAmountMinor, 2_500_000)
+  assert.equal(projected.amountDueMinor, 2_500_000)
+})
+
+test('monthly charge reduction rejects an amount above the immutable base before persistence', async () => {
+  let persisted = false
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async () => {
+      persisted = true
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await assert.rejects(
+    () => adapter.applyMonthlyChargeReduction({
+      teamId: 'team-a',
+      monthlyChargeId: 'charge-a',
+      revision: {
+        id: 'reduction-invalid',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 2_500_001,
+        reason: 'Importe inválido',
+        isCurrent: true,
+      },
+    }),
+    /reduction|base|amount/i,
+  )
+  assert.equal(persisted, false)
+})
