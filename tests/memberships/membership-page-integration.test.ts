@@ -187,3 +187,24 @@ test('KAN-479 Coach UI exposes explicit reduction and extension withdrawal contr
   assert.match(actions, /reductionAmountMinor:\s*number/)
   assert.match(actions, /extendedDueDate:\s*string \| null/)
 })
+
+
+test('KAN-479 athlete detail wires persisted charge identities and H2 revision history into Coach forms', async () => {
+  const athletePage = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+  const athleteLoader = await readFile(
+    'lib/memberships/athlete-membership-page-loader.ts',
+    'utf8',
+  )
+
+  assert.match(athleteLoader, /monthlyCharges/)
+  assert.match(athleteLoader, /reductionHistory/)
+  assert.match(athleteLoader, /extensionHistory/)
+  assert.match(athleteLoader, /listMonthlyChargeReductionRevisions/)
+  assert.match(athleteLoader, /listMonthlyChargeExtensionRevisions/)
+  assert.match(athletePage, /monthlyCharges=\{membership\.monthlyCharges\}/)
+  assert.match(athletePage, /reductionHistory=\{membership\.reductionHistory\}/)
+  assert.match(athletePage, /extensionHistory=\{membership\.extensionHistory\}/)
+})
