@@ -57,7 +57,11 @@ type DrizzleUpdate = {
   }
 }
 
-type DrizzleBillingClient = DrizzleQuery & Partial<DrizzleInsert> & Partial<DrizzleUpdate>
+type DrizzleMutationClient = DrizzleInsert & Partial<DrizzleUpdate>
+
+type DrizzleBillingClient = DrizzleQuery & Partial<DrizzleInsert> & Partial<DrizzleUpdate> & {
+  transaction?: (callback: (tx: DrizzleMutationClient) => Promise<void>) => Promise<void>
+}
 
 function mapTerms(row: QueryResult): AthleteBillingTerms {
   return {
@@ -206,23 +210,25 @@ export function createDrizzleBillingDatabase(
         return
       }
 
-      if (!client.insert) throw new Error('Drizzle client does not support inserts')
-      if (active && !client.update) throw new Error('Drizzle client does not support updates')
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
       const now = new Date().toISOString()
-      if (active && client.update) {
-        await client.update(globalMonthlyDueDateExceptions)
-          .set({ isCurrent: false, updatedAt: now })
-          .where(eq(globalMonthlyDueDateExceptions.id, active.id))
-      }
+      await client.transaction(async (tx) => {
+        if (active) {
+          if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+          await tx.update(globalMonthlyDueDateExceptions)
+            .set({ isCurrent: false, updatedAt: now })
+            .where(eq(globalMonthlyDueDateExceptions.id, active.id))
+        }
 
-      await client.insert(globalMonthlyDueDateExceptions).values([{
-        ...revision,
-        isCurrent: true,
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-      }])
+        await tx.insert(globalMonthlyDueDateExceptions).values([{
+          ...revision,
+          isCurrent: true,
+          isDeleted: false,
+          createdAt: now,
+          updatedAt: now,
+        }])
+      })
     },
 
     async insertMonthlyCharges(teamId, athleteId, charges) {
