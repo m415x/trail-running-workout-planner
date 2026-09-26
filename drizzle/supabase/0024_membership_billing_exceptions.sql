@@ -46,3 +46,9 @@ CREATE UNIQUE INDEX "global_monthly_due_date_exceptions_team_period_current_uniq
 CREATE UNIQUE INDEX "monthly_charge_reductions_charge_current_unique" ON "monthly_charge_reductions" USING btree ("monthly_charge_id") WHERE "is_current" = true;
 --> statement-breakpoint
 CREATE UNIQUE INDEX "monthly_charge_extensions_charge_current_unique" ON "monthly_charge_extensions" USING btree ("monthly_charge_id") WHERE "is_current" = true;
+--> statement-breakpoint
+ALTER TABLE "global_monthly_due_date_exceptions" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "monthly_charge_reductions" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "monthly_charge_extensions" ENABLE ROW LEVEL SECURITY;
