@@ -619,7 +619,7 @@ test('Drizzle billing database treats the same monthly charge reduction decision
 test('atomic monthly charge reduction persists the revision and projected amount due together', async () => {
   const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
   const db = createDrizzleBillingDatabase({
-    ...makeQuery([]),
+    ...makeQuery([{ id: 'athlete-a' }]),
     transaction: async (callback: (tx: unknown) => Promise<void>) => {
       await callback({
         update(table: unknown) {
