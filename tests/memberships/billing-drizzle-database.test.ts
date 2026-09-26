@@ -359,3 +359,71 @@ test('atomic global exception replacement preserves revision history when a curr
   assert.equal(writes[1].kind, 'insert')
   assert.equal(writes[1].value.isCurrent, true)
 })
+
+
+test('atomic global exception retry does not duplicate the revision and still converges charge projections', async () => {
+  const writes: string[] = []
+  const current = [{
+    id: 'exception-current',
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-15',
+    reason: 'Vencimiento excepcional',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery(current),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
+          return {
+            set() {
+              return {
+                where: async () => {
+                  writes.push('charge-update')
+                },
+              }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async () => {
+              writes.push('revision-insert')
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.applyGlobalDueDateExceptionAtomically?.(
+    'team-a',
+    2026,
+    10,
+    {
+      id: 'retry-with-different-id',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+    [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-15',
+      effectiveDueDate: '2026-10-15',
+    }],
+  )
+
+  assert.deepEqual(writes, ['charge-update'])
+})
