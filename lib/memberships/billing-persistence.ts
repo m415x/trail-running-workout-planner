@@ -45,6 +45,13 @@ export type GlobalDueDateExceptionPersistencePort = {
     teamId: string,
     charge: MonthlyChargeCandidate,
   ) => Promise<void>
+  applyGlobalDueDateExceptionAtomically?: (
+    teamId: string,
+    year: number,
+    month: number,
+    revision: GlobalDueDateExceptionRevision,
+    charges: MonthlyChargeCandidate[],
+  ) => Promise<void>
 }
 
 export function createBillingPersistenceAdapter(
@@ -67,18 +74,12 @@ export function createBillingPersistenceAdapter(
         throw new Error('Billing persistence does not support global due-date exceptions')
       }
 
-      await h2Port.replaceCurrentGlobalDueDateException(
-        input.teamId,
-        input.year,
-        input.month,
-        input.revision,
-      )
-
       const charges = await h2Port.listTeamMonthlyCharges(
         input.teamId,
         input.year,
         input.month,
       )
+      const projectedCharges: MonthlyChargeCandidate[] = []
 
       for (const charge of charges) {
         const terms = await h2Port.getBillingTermsById(charge.billingTermsId)
@@ -89,13 +90,34 @@ export function createBillingPersistenceAdapter(
           extensionRevisions: [],
           economicActivationDate: terms.effectiveFrom,
         })
-        const effectiveDueDate = charge.effectiveDueDate > projected.effectiveDueDate
-          ? charge.effectiveDueDate
-          : projected.effectiveDueDate
-        await h2Port.updateMonthlyChargeDueDates(input.teamId, {
+        projectedCharges.push({
           ...projected,
-          effectiveDueDate,
+          effectiveDueDate: charge.effectiveDueDate > projected.effectiveDueDate
+            ? charge.effectiveDueDate
+            : projected.effectiveDueDate,
         })
+      }
+
+      if (h2Port.applyGlobalDueDateExceptionAtomically) {
+        await h2Port.applyGlobalDueDateExceptionAtomically(
+          input.teamId,
+          input.year,
+          input.month,
+          input.revision,
+          projectedCharges,
+        )
+        return
+      }
+
+      await h2Port.replaceCurrentGlobalDueDateException(
+        input.teamId,
+        input.year,
+        input.month,
+        input.revision,
+      )
+      for (const charge of projectedCharges) {
+        await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
+      }
       }
     },
 
