@@ -234,6 +234,9 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               athleteId={athleteId}
               locale={es ? 'es' : 'en'}
               model={membershipTermsForm}
+              monthlyCharges={membership.monthlyCharges}
+              reductionHistory={membership.reductionHistory}
+              extensionHistory={membership.extensionHistory}
             />
           </CardContent>
         </Card>
