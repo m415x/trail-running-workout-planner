@@ -1,6 +1,7 @@
 import {
   applyGlobalDueDateException as applyGlobalDueDateExceptionRevision,
   applyMonthlyChargeReduction as applyMonthlyChargeReductionRevision,
+  applyMonthlyChargeExtension as applyMonthlyChargeExtensionRevision,
   getAthleteBillingSnapshot,
   materializeMonthlyCharges,
   type AthleteBillingTerms,
@@ -57,6 +58,12 @@ export type MonthlyChargeExtensionPersistencePort = {
     monthlyChargeId: string,
     revision: PersistedMonthlyChargeExtensionRevision,
   ) => Promise<void>
+  applyMonthlyChargeExtensionAtomically?: (
+    teamId: string,
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeExtensionRevision,
+    charge: MonthlyChargeCandidate,
+  ) => Promise<void>
 }
 
 export type GlobalDueDateExceptionPersistencePort = {
@@ -93,7 +100,7 @@ export type GlobalDueDateExceptionPersistencePort = {
 }
 
 export function createBillingPersistenceAdapter(
-  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort) | (BillingPersistencePort & MonthlyChargeReductionPersistencePort),
+  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort) | (BillingPersistencePort & MonthlyChargeReductionPersistencePort) | (BillingPersistencePort & MonthlyChargeExtensionPersistencePort),
 ) {
   return {
     async applyGlobalDueDateException(input: {
@@ -224,6 +231,47 @@ export function createBillingPersistenceAdapter(
         },
         projected,
       )
+    },
+
+    async applyMonthlyChargeExtension(input: {
+      teamId: string
+      monthlyChargeId: string
+      revision: MonthlyChargeExtensionRevision
+    }) {
+      const h2Port = port as BillingPersistencePort & MonthlyChargeExtensionPersistencePort
+      if (!h2Port.applyMonthlyChargeExtensionAtomically) {
+        throw new Error('Billing persistence does not support atomic monthly charge extensions')
+      }
+
+      const charges = await port.listMonthlyCharges(input.teamId, input.revision.athleteId)
+      const charge = charges.find((candidate) => candidate.year === input.revision.year && candidate.month === input.revision.month)
+      if (!charge) throw new Error('Monthly charge not found')
+
+      const persistedRevisions = await h2Port.listMonthlyChargeExtensionRevisions(input.monthlyChargeId)
+      const validatedRevisions = applyMonthlyChargeExtensionRevision({
+        revisions: persistedRevisions,
+        charge,
+        id: input.revision.id,
+        extendedDueDate: input.revision.extendedDueDate,
+        reason: input.revision.reason,
+      })
+      const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
+      if (!validatedRevision) throw new Error('Current monthly charge extension revision not found')
+      const persistedCurrent = persistedRevisions.find((revision) => revision.isCurrent)
+      if (persistedCurrent && validatedRevision.id === persistedCurrent.id) return
+
+      const projected = projectMonthlyChargeWithExceptions({
+        charge,
+        globalDueDateException: null,
+        reductionRevisions: [],
+        extensionRevisions: validatedRevisions,
+        economicActivationDate: charge.baseDueDate,
+      })
+
+      await h2Port.applyMonthlyChargeExtensionAtomically(input.teamId, input.monthlyChargeId, {
+        ...validatedRevision,
+        monthlyChargeId: input.monthlyChargeId,
+      }, projected)
     },
 
     async getAthleteBillingSnapshot(input: {
