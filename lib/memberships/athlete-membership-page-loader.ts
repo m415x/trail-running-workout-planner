@@ -1,11 +1,18 @@
-import type { BillingPersistencePort } from './billing-persistence'
+import type {
+  BillingPersistencePort,
+  MonthlyChargeExtensionPersistencePort,
+  MonthlyChargeReductionPersistencePort,
+} from './billing-persistence'
 import { loadAthleteMembership } from './athlete-membership-loader'
 import { createAthleteMembershipSnapshotReader } from './athlete-membership-snapshot-reader'
 
 export function createAthleteMembershipPageLoader<TDatabase>({
   createPort,
 }: {
-  createPort: (db: TDatabase) => BillingPersistencePort
+  createPort: (db: TDatabase) =>
+    BillingPersistencePort
+    & MonthlyChargeReductionPersistencePort
+    & MonthlyChargeExtensionPersistencePort
 }) {
   const readSnapshot = createAthleteMembershipSnapshotReader({ createPort })
 
@@ -22,7 +29,16 @@ export function createAthleteMembershipPageLoader<TDatabase>({
     athleteId: string
     onDate: string
   }) {
-    return loadAthleteMembership({
+    const port = createPort(db)
+    const monthlyCharges = await port.listMonthlyCharges(teamId, athleteId)
+    const reductionHistory = (await Promise.all(
+      monthlyCharges.map((charge) => port.listMonthlyChargeReductionRevisions(charge.id)),
+    )).flat()
+    const extensionHistory = (await Promise.all(
+      monthlyCharges.map((charge) => port.listMonthlyChargeExtensionRevisions(charge.id)),
+    )).flat()
+
+    const membership = await loadAthleteMembership({
       locale,
       teamId,
       athleteId,
@@ -34,5 +50,18 @@ export function createAthleteMembershipPageLoader<TDatabase>({
           athleteId: scopedAthleteId,
         }),
     })
+
+    return {
+      ...membership,
+      monthlyCharges: monthlyCharges.map((charge) => ({
+        id: charge.id,
+        year: charge.year,
+        month: charge.month,
+        currency: charge.currency,
+        amountDueMinor: charge.amountDueMinor,
+      })),
+      reductionHistory,
+      extensionHistory,
+    }
   }
 }
