@@ -321,16 +321,16 @@ export function createDrizzleBillingDatabase(
         && active.reason === revision.reason
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(globalMonthlyDueDateExceptions)
+          tx.update(globalMonthlyDueDateExceptions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(globalMonthlyDueDateExceptions.id, active.id))
         }
 
         if (!isRetry) {
-          await tx.insert(globalMonthlyDueDateExceptions).values([{
+          tx.insert(globalMonthlyDueDateExceptions).values([{
             ...revision,
             isCurrent: true,
             isDeleted: false,
@@ -343,7 +343,7 @@ export function createDrizzleBillingDatabase(
           throw new Error('Drizzle transaction does not support updates')
         }
         for (const charge of charges) {
-          await tx.update!(monthlyCharges)
+          tx.update!monthlyCharges)
             .set({
               baseDueDate: charge.baseDueDate,
               effectiveDueDate: charge.effectiveDueDate,
@@ -395,15 +395,15 @@ export function createDrizzleBillingDatabase(
       if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(globalMonthlyDueDateExceptions)
+          tx.update(globalMonthlyDueDateExceptions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(globalMonthlyDueDateExceptions.id, active.id))
         }
 
-        await tx.insert(globalMonthlyDueDateExceptions).values([{
+        tx.insert(globalMonthlyDueDateExceptions).values([{
           ...revision,
           isCurrent: true,
           isDeleted: false,
@@ -445,16 +445,16 @@ export function createDrizzleBillingDatabase(
         && active.reason === revision.reason
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(monthlyChargeReductions)
+          tx.update(monthlyChargeReductions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(monthlyChargeReductions.id, active.id))
         }
 
         if (!isRetry) {
-          await tx.insert(monthlyChargeReductions).values([{
+          tx.insert(monthlyChargeReductions).values([{
             id: revision.id,
             monthlyChargeId,
             reductionAmountMinor: revision.reductionAmountMinor,
@@ -467,7 +467,7 @@ export function createDrizzleBillingDatabase(
         }
 
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-        await tx.update(monthlyCharges)
+        tx.update(monthlyCharges)
           .set({
             amountDueMinor: charge.amountDueMinor,
             updatedAt: now,
@@ -536,15 +536,15 @@ export function createDrizzleBillingDatabase(
       if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(monthlyChargeReductions)
+          tx.update(monthlyChargeReductions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(monthlyChargeReductions.id, active.id))
         }
 
-        await tx.insert(monthlyChargeReductions).values([{
+        tx.insert(monthlyChargeReductions).values([{
           id: revision.id,
           monthlyChargeId: revision.monthlyChargeId,
           reductionAmountMinor: revision.reductionAmountMinor,
@@ -589,16 +589,16 @@ export function createDrizzleBillingDatabase(
         && active.reason === revision.reason
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(monthlyChargeExtensions)
+          tx.update(monthlyChargeExtensions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(monthlyChargeExtensions.id, active.id))
         }
 
         if (!isRetry) {
-          await tx.insert(monthlyChargeExtensions).values([{
+          tx.insert(monthlyChargeExtensions).values([{
             id: revision.id,
             monthlyChargeId,
             extendedDueDate: revision.extendedDueDate,
@@ -611,7 +611,7 @@ export function createDrizzleBillingDatabase(
         }
 
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-        await tx.update(monthlyCharges)
+        tx.update(monthlyCharges)
           .set({
             effectiveDueDate: charge.effectiveDueDate,
             updatedAt: now,
@@ -680,15 +680,15 @@ export function createDrizzleBillingDatabase(
       if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
       const now = new Date().toISOString()
-      await client.transaction(async (tx) => {
+      await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          await tx.update(monthlyChargeExtensions)
+          tx.update(monthlyChargeExtensions)
             .set({ isCurrent: false, updatedAt: now })
             .where(eq(monthlyChargeExtensions.id, active.id))
         }
 
-        await tx.insert(monthlyChargeExtensions).values([{
+        tx.insert(monthlyChargeExtensions).values([{
           id: revision.id,
           monthlyChargeId: revision.monthlyChargeId,
           extendedDueDate: revision.extendedDueDate,
