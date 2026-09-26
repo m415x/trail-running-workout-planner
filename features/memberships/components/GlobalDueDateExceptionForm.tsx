@@ -13,10 +13,12 @@ type Locale = 'es' | 'en'
 export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function handleSubmit(formData: FormData) {
     setError(null)
+    setSuccess(null)
     const period = String(formData.get('period') ?? '')
     const [year, month] = period.split('-').map(Number)
 
@@ -30,7 +32,9 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
       })
       if (!result.success) {
         setError(es ? 'No se pudo aplicar la excepción.' : 'Could not apply the exception.')
+        return
       }
+      setSuccess(es ? 'Excepción aplicada.' : 'Exception applied.')
     })
   }
 
@@ -60,6 +64,7 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
             <Input id='exceptionReason' name='reason' required />
           </div>
           {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+          {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
           <Button type='submit' disabled={isPending}>
             {isPending
               ? (es ? 'Aplicando…' : 'Applying…')
