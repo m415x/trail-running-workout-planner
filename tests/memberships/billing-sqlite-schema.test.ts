@@ -62,3 +62,33 @@ test('SQLite H2 global due-date exception migration follows the H1 billing migra
   assert.match(sql, /reason/)
   assert.match(sql, /is_current/)
 })
+
+
+test('SQLite schema defines append-only monthly charge reduction revisions', () => {
+  const schema = readFileSync(resolve('db/schema.ts'), 'utf8')
+
+  assert.match(schema, /monthlyChargeReductions\s*=\s*sqliteTable\(\s*['"]monthly_charge_reductions['"]/)
+  assert.match(schema, /monthly_charge_id/)
+  assert.match(schema, /reduction_amount_minor/)
+  assert.match(schema, /reason/)
+  assert.match(schema, /is_current/)
+  assert.match(schema, /monthly_charge_reductions_amount_check/)
+  assert.match(schema, /monthly_charge_reductions_charge_current_unique/)
+})
+
+test('SQLite migrations version monthly charge reductions after the global due-date exception slice', () => {
+  const journal = JSON.parse(readFileSync(resolve('drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+    entries: Array<{ idx: number; tag: string }>
+  }
+  const migration = journal.entries.find(entry => entry.tag.startsWith('0010_'))
+
+  assert.ok(migration)
+  assert.equal(migration.tag, '0010_membership_monthly_charge_reductions')
+
+  const sql = readFileSync(resolve('drizzle/sqlite', migration.tag + '.sql'), 'utf8')
+  assert.match(sql, /CREATE TABLE [^\n]*monthly_charge_reductions/)
+  assert.match(sql, /monthly_charge_id/)
+  assert.match(sql, /reduction_amount_minor/)
+  assert.match(sql, /reason/)
+  assert.match(sql, /is_current/)
+})
