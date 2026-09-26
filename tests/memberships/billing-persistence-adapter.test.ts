@@ -1161,3 +1161,77 @@ test('a global due-date exception can shadow a current extension without withdra
   assert.equal(extensionReads, 1)
   assert.equal(projectedEffectiveDueDate, '2026-10-28')
 })
+
+
+test('a current extension re-emerges when a later global due-date correction moves base back before it', async () => {
+  let projectedBaseDueDate: string | undefined
+  let projectedEffectiveDueDate: string | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-28',
+      effectiveDueDate: '2026-10-28',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async (monthlyChargeId: string) => {
+      assert.equal(monthlyChargeId, 'charge-a')
+      return [{
+        id: 'extension-current',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual',
+        isCurrent: true,
+      }]
+    },
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+    }) => {
+      projectedBaseDueDate = charge.baseDueDate
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-corrected-back',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-20',
+      reason: 'Corrección del vencimiento global',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(projectedBaseDueDate, '2026-10-20')
+  assert.equal(projectedEffectiveDueDate, '2026-10-25')
+})
