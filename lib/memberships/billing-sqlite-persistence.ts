@@ -30,6 +30,18 @@ export type SqliteBillingDatabase = {
     month: number,
     revision: GlobalDueDateExceptionRevision,
   ) => Promise<void>
+  listTeamMonthlyCharges: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) => Promise<MonthlyChargeCandidate[]>
+  getBillingTermsById: (
+    billingTermsId: string,
+  ) => Promise<AthleteBillingTerms>
+  updateMonthlyChargeDueDates: (
+    teamId: string,
+    charge: MonthlyChargeCandidate,
+  ) => Promise<void>
 }
 
 export function createSqliteBillingPersistencePort(
@@ -74,6 +86,16 @@ export function createSqliteBillingPersistencePort(
         month,
         revision,
       )
-    },
+    },,
+
+    listTeamMonthlyCharges: (teamId, year, month) =>
+      database.listTeamMonthlyCharges(teamId, year, month),
+
+    getBillingTermsById: (billingTermsId) =>
+      database.getBillingTermsById(billingTermsId),
+
+    async updateMonthlyChargeDueDates(teamId, charge) {
+      await database.updateMonthlyChargeDueDates(teamId, charge)
+    }
   }
 }
