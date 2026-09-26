@@ -716,3 +716,27 @@ test('atomic monthly charge reduction rejects a charge projection outside the re
 
   assert.equal(transactionStarted, false)
 })
+
+
+test('reduction revision history reconstructs economic identity from the linked monthly charge', async () => {
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([{
+      id: 'reduction-1',
+      monthlyChargeId: 'charge-a',
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+      isDeleted: false,
+      createdAt: '2026-09-26T12:00:00.000Z',
+      updatedAt: '2026-09-26T12:00:00.000Z',
+    }]),
+  } as never)
+
+  const revisions = await db.listMonthlyChargeReductionRevisions?.('charge-a')
+
+  assert.equal(revisions?.length, 1)
+  assert.equal(revisions?.[0].monthlyChargeId, 'charge-a')
+  assert.equal(revisions?.[0].athleteId, 'athlete-a')
+  assert.equal(revisions?.[0].year, 2026)
+  assert.equal(revisions?.[0].month, 10)
+})
