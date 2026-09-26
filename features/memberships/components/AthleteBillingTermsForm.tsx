@@ -311,18 +311,22 @@ export function AthleteBillingTermsForm({
           {isPending ? copy.pending : model.submitLabel}
         </Button>
       </form>
-      <MonthlyChargeReductionForm
-        athleteId={athleteId}
-        locale={locale}
-        monthlyCharges={monthlyCharges}
-        reductionHistory={reductionHistory}
-      />
-      <MonthlyChargeExtensionForm
-        athleteId={athleteId}
-        locale={locale}
-        monthlyCharges={monthlyCharges}
-        extensionHistory={extensionHistory}
-      />
+      {monthlyCharges.length > 0 && (
+        <div className='space-y-6 border-t pt-6'>
+          <MonthlyChargeReductionForm
+            athleteId={athleteId}
+            locale={locale}
+            monthlyCharges={monthlyCharges}
+            reductionHistory={reductionHistory}
+          />
+          <MonthlyChargeExtensionForm
+            athleteId={athleteId}
+            locale={locale}
+            monthlyCharges={monthlyCharges}
+            extensionHistory={extensionHistory}
+          />
+        </div>
+      )}
     </section>
   )
 }
