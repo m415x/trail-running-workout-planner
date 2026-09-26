@@ -57,3 +57,28 @@ export async function applyGlobalDueDateExceptionAction(input: {
 }) {
   return handlers.applyGlobalDueDateException(input)
 }
+
+
+export async function applyMonthlyChargeReductionAction(input: {
+  monthlyChargeId: string
+  athleteId: string
+  year: number
+  month: number
+  reductionAmountMinor: number
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyMonthlyChargeReduction(input)
+}
+
+export async function applyMonthlyChargeExtensionAction(input: {
+  monthlyChargeId: string
+  athleteId: string
+  year: number
+  month: number
+  extendedDueDate: string
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyMonthlyChargeExtension(input)
+}
