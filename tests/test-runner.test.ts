@@ -348,7 +348,7 @@ ok 1 - second
 
   const exitCode = executeTestRunBatches(
     invocations,
-    (executable, args, options) => {
+    (executable, args) => {
       calls.push([executable, ...args])
       const stdout = outputs[calls.length - 1]
       return { status: 0, signal: null, error: undefined, stdout, stderr: '' }
