@@ -136,3 +136,17 @@ test('SQLite HEAD verification requires every KAN-460 H2 billing table before mi
     )
   }
 })
+
+
+test('SQLite upgrade repairs falsely reconciled H2 migration metadata before running pending H2 migrations', () => {
+  const upgrade = fs.readFileSync(path.join(root, 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(upgrade, /global_monthly_due_date_exceptions/)
+  assert.match(upgrade, /monthly_charge_reductions/)
+  assert.match(upgrade, /monthly_charge_extensions/)
+  assert.match(
+    upgrade,
+    /DELETE FROM __drizzle_migrations/,
+    'upgrade must remove falsely reconciled H2 metadata when the physical H2 schema is absent',
+  )
+})
