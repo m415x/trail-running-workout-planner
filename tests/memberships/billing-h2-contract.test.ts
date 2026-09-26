@@ -673,3 +673,97 @@ test('projection rejects reduction and extension revisions belonging to another 
     /identity|charge/i,
   )
 })
+
+
+test('withdrawal is a current auditable revision and a later correction can reactivate a reduction', () => {
+  const applied = applyMonthlyChargeReduction({
+    revisions: [],
+    id: 'reduction-1',
+    charge,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca parcial',
+  })
+  const withdrawn = applyMonthlyChargeReduction({
+    revisions: applied,
+    id: 'reduction-2',
+    charge,
+    reductionAmountMinor: 0,
+    reason: 'Retiro de beca',
+  })
+  const reactivated = applyMonthlyChargeReduction({
+    revisions: withdrawn,
+    id: 'reduction-3',
+    charge,
+    reductionAmountMinor: 250_000,
+    reason: 'Nueva decisión de beca',
+  })
+
+  assert.equal(reactivated.length, 3)
+  assert.equal(reactivated.filter(revision => revision.isCurrent).length, 1)
+  assert.equal(reactivated.find(revision => revision.isCurrent)?.id, 'reduction-3')
+
+  const projected = projectMonthlyChargeWithExceptions({
+    charge,
+    globalDueDateException: null,
+    reductionRevisions: reactivated,
+    extensionRevisions: [],
+  })
+  assert.equal(projected.amountDueMinor, 2_250_000)
+})
+
+test('withdrawal is a current auditable revision and a later correction can reactivate an extension', () => {
+  const applied = applyMonthlyChargeExtension({
+    revisions: [],
+    id: 'extension-1',
+    charge,
+    extendedDueDate: '2026-10-20',
+    reason: 'Prórroga inicial',
+  })
+  const withdrawn = applyMonthlyChargeExtension({
+    revisions: applied,
+    id: 'extension-2',
+    charge,
+    extendedDueDate: null,
+    reason: 'Retiro de prórroga',
+  })
+  const reactivated = applyMonthlyChargeExtension({
+    revisions: withdrawn,
+    id: 'extension-3',
+    charge,
+    extendedDueDate: '2026-10-25',
+    reason: 'Nueva decisión de prórroga',
+  })
+
+  assert.equal(reactivated.length, 3)
+  assert.equal(reactivated.filter(revision => revision.isCurrent).length, 1)
+  assert.equal(reactivated.find(revision => revision.isCurrent)?.id, 'extension-3')
+
+  const projected = projectMonthlyChargeWithExceptions({
+    charge,
+    globalDueDateException: null,
+    reductionRevisions: [],
+    extensionRevisions: reactivated,
+  })
+  assert.equal(projected.effectiveDueDate, '2026-10-25')
+})
+
+test('a materially different correction creates history even when the projected economic value is unchanged', () => {
+  const applied = applyMonthlyChargeReduction({
+    revisions: [],
+    id: 'reduction-1',
+    charge,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca por situación económica',
+  })
+  const correctedReason = applyMonthlyChargeReduction({
+    revisions: applied,
+    id: 'reduction-2',
+    charge,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca por convenio institucional',
+  })
+
+  assert.equal(correctedReason.length, 2)
+  assert.equal(correctedReason.filter(revision => revision.isCurrent).length, 1)
+  assert.equal(correctedReason.find(revision => revision.isCurrent)?.id, 'reduction-2')
+})
