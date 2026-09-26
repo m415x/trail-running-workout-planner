@@ -190,6 +190,15 @@ export function combineTestBatchResults(outputs: string[]): {
   }
 }
 
+export function renderTestBatchResults(outputs: string[]): string {
+  const { diagnostics, summary } = combineTestBatchResults(outputs)
+
+  return [
+    ...diagnostics.filter((diagnostic) => diagnostic.length > 0),
+    formatTestRunSummary(summary),
+  ].join('\n')
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
