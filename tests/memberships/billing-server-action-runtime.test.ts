@@ -190,3 +190,24 @@ test('membership Server Action runtime reports the original policy write failure
   })
   assert.deepEqual(reported, [failure])
 })
+
+
+test('membership Server Action runtime exposes the three H2 Coach operations without implicit writes on creation', async () => {
+  const db = {
+    transaction: () => {
+      throw new Error('transaction must not run while creating runtime')
+    },
+    select: () => {
+      throw new Error('read must not run while creating runtime')
+    },
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: db as any,
+    createId: () => 'h2-a',
+  })
+
+  assert.equal(typeof runtime.applyGlobalDueDateException, 'function')
+  assert.equal(typeof runtime.applyMonthlyChargeReduction, 'function')
+  assert.equal(typeof runtime.applyMonthlyChargeExtension, 'function')
+})
