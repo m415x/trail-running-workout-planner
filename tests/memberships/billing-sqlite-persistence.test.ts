@@ -247,3 +247,55 @@ test('SQLite billing persistence rejects a reduction revision outside the reques
     /charge|scope|identity/i,
   )
 })
+
+
+test('SQLite billing persistence validates atomic reduction charge identity before delegation', async () => {
+  let delegated = false
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async () => {
+      delegated = true
+    },
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  await assert.rejects(
+    () => port.applyMonthlyChargeReductionAtomically!(
+      'team-a',
+      'charge-a',
+      {
+        id: 'reduction-foreign',
+        monthlyChargeId: 'charge-b',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca deportiva',
+        isCurrent: true,
+      },
+      {
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_000_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-10',
+        effectiveDueDate: '2026-10-10',
+      },
+    ),
+    /charge|scope|identity/i,
+  )
+
+  assert.equal(delegated, false)
+})
