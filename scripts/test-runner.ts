@@ -254,25 +254,25 @@ export function executeTestRunBatches(
   return 0
 }
 
+export function runTestFilesWith(
+  testFiles: string[],
+  spawn: TestBatchSpawn,
+  report: (output: string) => void,
+  maxArgumentLength = 8_000,
+): number {
+  return executeTestRunBatches(
+    prepareTestRunBatches(testFiles, maxArgumentLength),
+    spawn,
+    report,
+  )
+}
+
 export function runTestFiles(testFiles: string[]): number {
-  for (const batch of planTestFileBatches(testFiles)) {
-    const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
-      shell: false,
-      stdio: 'inherit',
-    })
-    const outcome = interpretTestRunResult(result)
-
-    if (outcome.signal) {
-      process.kill(process.pid, outcome.signal)
-      return 1
-    }
-
-    if (outcome.exitCode !== 0) {
-      return outcome.exitCode ?? 1
-    }
-  }
-
-  return 0
+  return runTestFilesWith(
+    testFiles,
+    (executable, args, options) => spawnSync(executable, args, options),
+    (output) => console.log(output),
+  )
 }
 
 async function main(): Promise<void> {
