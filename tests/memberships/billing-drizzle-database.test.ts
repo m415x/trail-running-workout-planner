@@ -962,3 +962,17 @@ test('Drizzle team monthly charge reads retain the physical charge id required b
   assert.equal(charges[0].id, 'charge-a')
   assert.equal(charges[0].effectiveDueDate, '2026-10-25')
 })
+
+
+test('KAN-479 SQLite-compatible H2 atomic writes use synchronous Drizzle transaction callbacks', () => {
+  const source = fs.readFileSync(
+    path.join(process.cwd(), 'lib', 'memberships', 'billing-drizzle-database.ts'),
+    'utf8',
+  )
+
+  assert.doesNotMatch(
+    source,
+    /transaction\(async\s*\(/,
+    'better-sqlite3 transactions reject Promise-returning callbacks',
+  )
+})
