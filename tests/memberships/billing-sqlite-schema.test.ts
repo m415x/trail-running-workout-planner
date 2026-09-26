@@ -65,7 +65,7 @@ test('SQLite H2 global due-date exception migration follows the H1 billing migra
 
 
 test('SQLite schema defines append-only monthly charge reduction revisions', () => {
-  const schema = readFileSync(resolve('db/schema.ts'), 'utf8')
+  const schema = fs.readFileSync(path.join(root, 'db', 'schema.ts'), 'utf8')
 
   assert.match(schema, /monthlyChargeReductions\s*=\s*sqliteTable\(\s*['"]monthly_charge_reductions['"]/)
   assert.match(schema, /monthly_charge_id/)
@@ -77,7 +77,7 @@ test('SQLite schema defines append-only monthly charge reduction revisions', () 
 })
 
 test('SQLite migrations version monthly charge reductions after the global due-date exception slice', () => {
-  const journal = JSON.parse(readFileSync(resolve('drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8')) as {
     entries: Array<{ idx: number; tag: string }>
   }
   const migration = journal.entries.find(entry => entry.tag.startsWith('0010_'))
@@ -85,7 +85,7 @@ test('SQLite migrations version monthly charge reductions after the global due-d
   assert.ok(migration)
   assert.equal(migration.tag, '0010_membership_monthly_charge_reductions')
 
-  const sql = readFileSync(resolve('drizzle/sqlite', migration.tag + '.sql'), 'utf8')
+  const sql = fs.readFileSync(path.join(root, 'drizzle', 'sqlite', migration.tag + '.sql'), 'utf8')
   assert.match(sql, /CREATE TABLE [^\n]*monthly_charge_reductions/)
   assert.match(sql, /monthly_charge_id/)
   assert.match(sql, /reduction_amount_minor/)
