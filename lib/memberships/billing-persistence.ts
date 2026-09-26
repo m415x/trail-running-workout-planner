@@ -1,4 +1,5 @@
 import {
+  applyGlobalDueDateException as applyGlobalDueDateExceptionRevision,
   getAthleteBillingSnapshot,
   materializeMonthlyCharges,
   type AthleteBillingTerms,
@@ -64,6 +65,17 @@ export function createBillingPersistenceAdapter(
       month: number
       revision: GlobalDueDateExceptionRevision
     }) {
+      const validatedRevisions = applyGlobalDueDateExceptionRevision({
+        revisions: [],
+        id: input.revision.id,
+        teamId: input.revision.teamId,
+        year: input.revision.year,
+        month: input.revision.month,
+        dueDate: input.revision.dueDate,
+        reason: input.revision.reason,
+      })
+      const validatedRevision = validatedRevisions[0]
+
       const h2Port = port as BillingPersistencePort & GlobalDueDateExceptionPersistencePort
       if (
         !h2Port.replaceCurrentGlobalDueDateException
@@ -85,7 +97,7 @@ export function createBillingPersistenceAdapter(
         const terms = await h2Port.getBillingTermsById(charge.billingTermsId)
         const projected = projectMonthlyChargeWithExceptions({
           charge,
-          globalDueDateException: input.revision,
+          globalDueDateException: validatedRevision,
           reductionRevisions: [],
           extensionRevisions: [],
           economicActivationDate: terms.effectiveFrom,
@@ -103,7 +115,7 @@ export function createBillingPersistenceAdapter(
           input.teamId,
           input.year,
           input.month,
-          input.revision,
+          validatedRevision,
           projectedCharges,
         )
         return
@@ -113,7 +125,7 @@ export function createBillingPersistenceAdapter(
         input.teamId,
         input.year,
         input.month,
-        input.revision,
+        validatedRevision,
       )
       for (const charge of projectedCharges) {
         await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
