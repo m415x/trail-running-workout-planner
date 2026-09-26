@@ -168,3 +168,19 @@ test('Supabase H2 migration does not introduce permissive RLS policies before id
   assert.doesNotMatch(migration, /USING\s*\(\s*true\s*\)/i)
   assert.doesNotMatch(migration, /WITH\s+CHECK\s*\(\s*true\s*\)/i)
 })
+
+
+test('Supabase H2 migration leaves no direct athlete or payment representation in exception facts', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  const reduction = migration.match(/CREATE TABLE "monthly_charge_reductions" \(([\s\S]*?)\);/)?.[1] ?? ''
+  const extension = migration.match(/CREATE TABLE "monthly_charge_extensions" \(([\s\S]*?)\);/)?.[1] ?? ''
+  for (const definition of [reduction, extension]) {
+    assert.match(definition, /"monthly_charge_id" text NOT NULL/)
+    assert.doesNotMatch(definition, /"athlete_id"/)
+    assert.doesNotMatch(definition, /"team_id"/)
+    assert.doesNotMatch(definition, /"payment_id"/)
+  }
+})
