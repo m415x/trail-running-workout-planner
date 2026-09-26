@@ -630,3 +630,66 @@ test('monthly charge reduction rejects an amount above the immutable base before
   )
   assert.equal(persisted, false)
 })
+
+
+test('monthly charge reduction uses persisted current history when correcting an existing reduction', async () => {
+  let projectedAmount: number | undefined
+  let historyReads = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => {
+      historyReads += 1
+      return [{
+        id: 'reduction-old',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca inicial',
+        isCurrent: true,
+      }]
+    },
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { amountDueMinor: number },
+    ) => {
+      projectedAmount = charge.amountDueMinor
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-corrected',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 750_000,
+      reason: 'Corrección de beca',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(historyReads, 1)
+  assert.equal(projectedAmount, 1_750_000)
+})
