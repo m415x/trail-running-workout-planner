@@ -470,3 +470,55 @@ test('team monthly charge reprojection is constrained by team ownership', async 
 
   assert.equal(teamScopeChecked, true)
 })
+
+
+test('atomic global exception application rejects charge projections outside the requested team', async () => {
+  let transactionStarted = false
+  const db = createDrizzleBillingDatabase({
+    select() {
+      return {
+        from() {
+          return {
+            where: async () => [],
+            innerJoin() {
+              return { where: async () => [] }
+            },
+          }
+        },
+      }
+    },
+    transaction: async () => {
+      transactionStarted = true
+    },
+  } as never)
+
+  await assert.rejects(
+    () => db.applyGlobalDueDateExceptionAtomically!(
+      'team-a',
+      2026,
+      10,
+      {
+        id: 'exception-scope',
+        teamId: 'team-a',
+        year: 2026,
+        month: 10,
+        dueDate: '2026-10-15',
+        reason: 'Vencimiento excepcional',
+        isCurrent: true,
+      },
+      [{
+        athleteId: 'athlete-from-other-team',
+        billingTermsId: 'terms-b',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-15',
+        effectiveDueDate: '2026-10-15',
+      }],
+    ),
+    /team.*scope|outside.*team/i,
+  )
+  assert.equal(transactionStarted, false)
+})
