@@ -119,3 +119,20 @@ test('SQLite migrations version monthly charge extensions after reductions', () 
   assert.match(sql, /reason/)
   assert.match(sql, /is_current/)
 })
+
+
+test('SQLite HEAD verification requires every KAN-460 H2 billing table before migration metadata can be reconciled', () => {
+  const verifier = fs.readFileSync(path.join(root, 'scripts', 'verify-sqlite.ts'), 'utf8')
+
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(
+      verifier,
+      new RegExp(`['"]${table}['"]`),
+      `SQLite HEAD verification must require ${table}`,
+    )
+  }
+})
