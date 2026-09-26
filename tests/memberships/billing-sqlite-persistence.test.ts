@@ -171,3 +171,70 @@ test('SQLite billing persistence rejects a global due-date revision outside the 
     /team|period|scope|identity/i,
   )
 })
+
+
+test('SQLite billing persistence exposes append-only monthly charge reduction revision operations', async () => {
+  const calls: string[] = []
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listMonthlyChargeReductionRevisions: async (monthlyChargeId: string) => {
+      calls.push(\`list:\${monthlyChargeId}\`)
+      return []
+    },
+    replaceCurrentMonthlyChargeReduction: async (monthlyChargeId: string, revision: {
+      id: string
+      monthlyChargeId: string
+      reductionAmountMinor: number
+      reason: string
+      isCurrent: boolean
+    }) => {
+      calls.push(\`replace:\${monthlyChargeId}:\${revision.id}\`)
+    },
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  assert.deepEqual(await port.listMonthlyChargeReductionRevisions('charge-a'), [])
+  await port.replaceCurrentMonthlyChargeReduction('charge-a', {
+    id: 'reduction-1',
+    monthlyChargeId: 'charge-a',
+    reductionAmountMinor: 500_000,
+    reason: 'Beca deportiva',
+    isCurrent: true,
+  })
+
+  assert.deepEqual(calls, ['list:charge-a', 'replace:charge-a:reduction-1'])
+})
+
+test('SQLite billing persistence rejects a reduction revision outside the requested charge identity', async () => {
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  await assert.rejects(
+    () => port.replaceCurrentMonthlyChargeReduction('charge-a', {
+      id: 'reduction-foreign',
+      monthlyChargeId: 'charge-b',
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    }),
+    /charge|scope|identity/i,
+  )
+})
