@@ -375,3 +375,46 @@ test('SQLite billing persistence rejects an extension revision outside the reque
     /charge|scope|identity/i,
   )
 })
+
+
+test('SQLite global due-date reads expose persisted monthly charge identity for extension precedence', async () => {
+  const database = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async () => {},
+  }
+
+  const port = createSqliteBillingPersistencePort(database)
+  const charges = await port.listTeamMonthlyCharges('team-a', 2026, 10)
+
+  assert.equal(charges.length, 1)
+  assert.equal(charges[0].id, 'charge-a')
+})
