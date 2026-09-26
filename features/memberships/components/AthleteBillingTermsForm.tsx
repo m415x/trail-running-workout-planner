@@ -57,10 +57,12 @@ function MonthlyChargeReductionForm({
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function submitReduction(formData: FormData, withdraw = false) {
     setError(null)
+    setSuccess(null)
     const period = String(formData.get('reductionPeriod') ?? '')
     const [year, month] = period.split('-').map(Number)
     const amount = Number(formData.get('reductionAmount'))
@@ -77,7 +79,11 @@ function MonthlyChargeReductionForm({
       })
       if (!result.success) {
         setError(es ? 'No se pudo aplicar la reducción.' : 'Could not apply the reduction.')
+        return
       }
+      setSuccess(withdraw
+        ? (es ? 'Reducción retirada.' : 'Reduction withdrawn.')
+        : (es ? 'Reducción aplicada.' : 'Reduction applied.'))
     })
   }
 
@@ -97,6 +103,7 @@ function MonthlyChargeReductionForm({
         <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
         <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
         </Button>
@@ -128,10 +135,12 @@ function MonthlyChargeExtensionForm({
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
   function submitExtension(formData: FormData, withdraw = false) {
     setError(null)
+    setSuccess(null)
     const period = String(formData.get('extensionPeriod') ?? '')
     const [year, month] = period.split('-').map(Number)
 
@@ -147,7 +156,11 @@ function MonthlyChargeExtensionForm({
       })
       if (!result.success) {
         setError(es ? 'No se pudo aplicar la prórroga.' : 'Could not apply the extension.')
+        return
       }
+      setSuccess(withdraw
+        ? (es ? 'Prórroga retirada.' : 'Extension withdrawn.')
+        : (es ? 'Prórroga aplicada.' : 'Extension applied.'))
     })
   }
 
@@ -167,6 +180,7 @@ function MonthlyChargeExtensionForm({
         <Input name='extendedDueDate' type='date' required />
         <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
         </Button>
