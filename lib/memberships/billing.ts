@@ -471,6 +471,13 @@ export function applyGlobalDueDateException(input: {
 }): GlobalDueDateExceptionRevision[] {
   parseDate(input.dueDate)
   const reason = requireReason(input.reason)
+  if (input.revisions.some(revision =>
+    revision.teamId !== input.teamId
+    || revision.year !== input.year
+    || revision.month !== input.month
+  )) {
+    throw new Error('Global due-date revision stream must keep one team/month identity')
+  }
   const current = input.revisions.find(revision =>
     revision.isCurrent
     && revision.teamId === input.teamId
@@ -511,6 +518,9 @@ export function applyMonthlyChargeReduction(input: {
   reason: string
 }): MonthlyChargeReductionRevision[] {
   const reason = requireReason(input.reason)
+  if (input.revisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Reduction revision stream must keep one charge identity')
+  }
   if (
     !Number.isSafeInteger(input.reductionAmountMinor)
     || input.reductionAmountMinor < 0
@@ -552,6 +562,9 @@ export function applyMonthlyChargeExtension(input: {
   reason: string
 }): MonthlyChargeExtensionRevision[] {
   const reason = requireReason(input.reason)
+  if (input.revisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Extension revision stream must keep one charge identity')
+  }
   if (input.extendedDueDate !== null && parseDate(input.extendedDueDate) <= parseDate(input.charge.baseDueDate)) {
     throw new Error('Extension due date must be after the current base due date')
   }
@@ -596,14 +609,22 @@ export function projectMonthlyChargeWithExceptions(input: {
     baseDueDate = input.economicActivationDate
   }
 
-  const currentReduction = input.reductionRevisions.find(revision =>
+  const currentReductions = input.reductionRevisions.filter(revision =>
     revision.isCurrent && sameChargeRevision(revision, input.charge),
   )
+  if (currentReductions.length > 1) {
+    throw new Error('Ambiguous H2 state: more than one current reduction revision')
+  }
+  const currentReduction = currentReductions[0]
   const amountDueMinor = input.charge.baseAmountMinor - (currentReduction?.reductionAmountMinor ?? 0)
 
-  const currentExtension = input.extensionRevisions.find(revision =>
+  const currentExtensions = input.extensionRevisions.filter(revision =>
     revision.isCurrent && sameChargeRevision(revision, input.charge),
   )
+  if (currentExtensions.length > 1) {
+    throw new Error('Ambiguous H2 state: more than one current extension revision')
+  }
+  const currentExtension = currentExtensions[0]
   const extendedDueDate = currentExtension?.extendedDueDate ?? null
   const effectiveDueDate = extendedDueDate && parseDate(extendedDueDate) > parseDate(baseDueDate)
     ? extendedDueDate
