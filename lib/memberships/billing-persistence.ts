@@ -171,18 +171,22 @@ export function createBillingPersistenceAdapter(
       )
       if (!charge) throw new Error('Monthly charge not found')
 
+      const persistedRevisions = await h2Port.listMonthlyChargeReductionRevisions(
+        input.monthlyChargeId,
+      )
       const validatedRevisions = applyMonthlyChargeReductionRevision({
-        revisions: [],
+        revisions: persistedRevisions,
         charge,
         id: input.revision.id,
         reductionAmountMinor: input.revision.reductionAmountMinor,
         reason: input.revision.reason,
       })
-      const validatedRevision = validatedRevisions[0]
+      const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
+      if (!validatedRevision) throw new Error('Current monthly charge reduction revision not found')
       const projected = projectMonthlyChargeWithExceptions({
         charge,
         globalDueDateException: null,
-        reductionRevisions: [validatedRevision],
+        reductionRevisions: validatedRevisions,
         extensionRevisions: [],
         economicActivationDate: charge.baseDueDate,
       })
