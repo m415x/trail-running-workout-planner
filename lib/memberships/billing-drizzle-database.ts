@@ -433,11 +433,29 @@ export function createDrizzleBillingDatabase(
     },
 
     async listMonthlyChargeReductionRevisions(monthlyChargeId) {
-      const rows = await client.select().from(monthlyChargeReductions).where(and(
-        eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
-        eq(monthlyChargeReductions.isDeleted, false),
-      ))
-      return rows.map(mapMonthlyChargeReduction)
+      const rows = await client
+        .select()
+        .from(monthlyChargeReductions)
+        .innerJoin(
+          monthlyCharges,
+          eq(monthlyCharges.id, monthlyChargeReductions.monthlyChargeId),
+        )
+        .where(and(
+          eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
+          eq(monthlyChargeReductions.isDeleted, false),
+          eq(monthlyCharges.isDeleted, false),
+        ))
+
+      return rows.map((row: QueryResult) => {
+        const reduction = (row.monthly_charge_reductions ?? row.monthlyChargeReductions ?? row) as QueryResult
+        const charge = (row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult
+        return mapMonthlyChargeReduction({
+          ...reduction,
+          athleteId: charge.athleteId,
+          year: charge.year,
+          month: charge.month,
+        })
+      })
     },
 
     async replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision) {
