@@ -522,3 +522,103 @@ test('atomic global exception application rejects charge projections outside the
   )
   assert.equal(transactionStarted, false)
 })
+
+
+test('Drizzle billing database replaces the current monthly charge reduction append-only', async () => {
+  const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
+  const current = [{
+    id: 'reduction-current',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 250_000,
+    reason: 'Beca inicial',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    query: {
+      monthlyChargeReductions: {
+        findMany: async () => current,
+      },
+    },
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
+          return {
+            set(value: Record<string, unknown>) {
+              return {
+                where: async () => {
+                  writes.push({ kind: 'update', value })
+                },
+              }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async (value: Record<string, unknown>) => {
+              writes.push({ kind: 'insert', value })
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.replaceCurrentMonthlyChargeReduction?.('charge-a', {
+    id: 'reduction-new',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca ampliada',
+    isCurrent: true,
+  })
+
+  assert.equal(writes.length, 2)
+  assert.equal(writes[0].kind, 'update')
+  assert.equal(writes[0].value.isCurrent, false)
+  assert.equal(writes[1].kind, 'insert')
+  assert.equal(writes[1].value.isCurrent, true)
+})
+
+test('Drizzle billing database treats the same monthly charge reduction decision as an idempotent retry', async () => {
+  let transactionStarted = false
+  const current = [{
+    id: 'reduction-current',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca deportiva',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    query: {
+      monthlyChargeReductions: {
+        findMany: async () => current,
+      },
+    },
+    transaction: async () => {
+      transactionStarted = true
+    },
+  } as never)
+
+  await db.replaceCurrentMonthlyChargeReduction?.('charge-a', {
+    id: 'retry-with-different-id',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca deportiva',
+    isCurrent: true,
+  })
+
+  assert.equal(transactionStarted, false)
+})
