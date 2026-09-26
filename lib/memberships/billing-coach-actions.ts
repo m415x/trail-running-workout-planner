@@ -190,6 +190,8 @@ export async function applyGlobalDueDateExceptionAction(
       )
       return adapter.applyGlobalDueDateException({
         teamId: input.teamId,
+        year: input.year,
+        month: input.month,
         revision,
       })
     })
