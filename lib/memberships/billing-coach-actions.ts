@@ -1,3 +1,5 @@
+import type { GlobalDueDateExceptionRevision } from './billing'
+import type { GlobalDueDateExceptionPersistencePort } from './billing-persistence'
 import {
   createSynchronousBillingCoachService,
   type SynchronousBillingCoachRepository,
@@ -23,7 +25,9 @@ export type BillingCoachActionDependencies = {
   createId: () => string
   transaction: <T>(
     operation: (
-      repository: SynchronousBillingCoachRepository | SynchronousAthleteBillingTermsRepository,
+      repository: SynchronousBillingCoachRepository
+        | SynchronousAthleteBillingTermsRepository
+        | GlobalDueDateExceptionPersistencePort,
     ) => T,
   ) => T
 }
@@ -131,5 +135,61 @@ export async function changeAthleteBillingTermsAction(
     return { success: true }
   } catch {
     return { success: false, error: 'Could not change athlete billing terms' }
+  }
+}
+
+
+export async function applyGlobalDueDateExceptionAction(
+  input: {
+    teamId: string
+    year: number
+    month: number
+    dueDate: string
+    reason: string
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BillingCoachActionResult> {
+  if (
+    !input.teamId
+    || !Number.isInteger(input.year)
+    || input.year < 1
+    || !Number.isInteger(input.month)
+    || input.month < 1
+    || input.month > 12
+    || !/^\d{4}-\d{2}-\d{2}$/.test(input.dueDate)
+    || !input.reason.trim()
+  ) {
+    return { success: false, error: 'Invalid global due-date exception input' }
+  }
+
+  try {
+    dependencies.transaction((repository) => {
+      const h2Repository = repository as GlobalDueDateExceptionPersistencePort
+      if (!h2Repository.applyGlobalDueDateExceptionAtomically) {
+        throw new Error('Billing persistence does not support atomic global due-date exceptions')
+      }
+
+      const revision: GlobalDueDateExceptionRevision = {
+        id: dependencies.createId(),
+        teamId: input.teamId,
+        year: input.year,
+        month: input.month,
+        dueDate: input.dueDate,
+        reason: input.reason.trim(),
+        isCurrent: true,
+      }
+
+      h2Repository.applyGlobalDueDateExceptionAtomically(
+        input.teamId,
+        input.year,
+        input.month,
+        revision,
+        [],
+      )
+    })
+
+    return { success: true }
+  } catch {
+    return { success: false, error: 'Could not apply global due-date exception' }
   }
 }
