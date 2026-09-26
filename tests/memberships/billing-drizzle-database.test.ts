@@ -932,3 +932,35 @@ test('atomic monthly charge extension rejects a projection outside the requested
 
   assert.equal(transactionStarted, false)
 })
+
+
+test('Drizzle team monthly charge reads retain the physical charge id required by H2 extension precedence', async () => {
+  const client = createFakeClient({
+    selectRows: [{
+      monthly_charges: {
+        id: 'charge-a',
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-10',
+        effectiveDueDate: '2026-10-25',
+      },
+      athlete_profiles: {
+        id: 'athlete-a',
+        teamId: 'team-a',
+      },
+    }],
+  })
+  const db = createDrizzleBillingDatabase(client)
+
+  const charges = await db.listTeamMonthlyCharges?.('team-a', 2026, 10)
+
+  assert.ok(charges)
+  assert.equal(charges.length, 1)
+  assert.equal(charges[0].id, 'charge-a')
+  assert.equal(charges[0].effectiveDueDate, '2026-10-25')
+})
