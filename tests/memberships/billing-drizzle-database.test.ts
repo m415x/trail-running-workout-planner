@@ -157,3 +157,66 @@ test('Drizzle billing database treats an identical current global due-date excep
 
   assert.equal(writeCount, 0)
 })
+
+
+test('Drizzle billing database replaces a current global due-date exception inside one transaction', async () => {
+  let transactionCount = 0
+  let updateInsideTransaction = false
+  let insertInsideTransaction = false
+  const current = [{
+    id: 'exception-old',
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Primer ajuste',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery(current),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      transactionCount += 1
+      await callback({
+        update() {
+          return {
+            set() {
+              return {
+                where: async () => {
+                  updateInsideTransaction = true
+                },
+              }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async () => {
+              insertInsideTransaction = true
+            },
+          }
+        },
+      })
+    },
+    update() {
+      throw new Error('replacement update must run inside transaction')
+    },
+    insert() {
+      throw new Error('replacement insert must run inside transaction')
+    },
+  } as never)
+
+  await db.replaceCurrentGlobalDueDateException('team-a', 2026, 10, {
+    id: 'exception-new',
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-15',
+    reason: 'Segundo ajuste',
+    isCurrent: true,
+  })
+
+  assert.equal(transactionCount, 1)
+  assert.equal(updateInsideTransaction, true)
+  assert.equal(insertInsideTransaction, true)
+})
