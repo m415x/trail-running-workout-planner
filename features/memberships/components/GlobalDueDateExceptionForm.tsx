@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useMemo, useState, useTransition } from 'react'
 
 import { applyGlobalDueDateExceptionAction } from '@/app/actions/membership-actions'
 import { Button } from '@ui/button'
@@ -15,18 +15,27 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [period, setPeriod] = useState('')
+
+  const daysInMonth = useMemo(() => {
+    const [year, month] = period.split('-').map(Number)
+    if (!year || !month) return 31
+    return new Date(year, month, 0).getDate()
+  }, [period])
 
   function handleSubmit(formData: FormData) {
     setError(null)
     setSuccess(null)
-    const period = String(formData.get('period') ?? '')
-    const [year, month] = period.split('-').map(Number)
+    const selectedPeriod = String(formData.get('period') ?? '')
+    const [year, month] = selectedPeriod.split('-').map(Number)
+    const dueDay = Number(formData.get('dueDay'))
+    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
 
     startTransition(async () => {
       const result = await applyGlobalDueDateExceptionAction({
         year,
         month,
-        dueDate: String(formData.get('dueDate') ?? ''),
+        dueDate,
         reason: String(formData.get('reason') ?? ''),
         locale,
       })
@@ -50,13 +59,30 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
           <div className='grid gap-4 sm:grid-cols-2'>
             <div className='space-y-2'>
               <Label htmlFor='exceptionPeriod'>{es ? 'Mes' : 'Month'}</Label>
-              <Input id='exceptionPeriod' name='period' type='month' required />
+              <Input
+                id='exceptionPeriod'
+                name='period'
+                type='month'
+                value={period}
+                onChange={(event) => setPeriod(event.target.value)}
+                required
+              />
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='exceptionDueDate'>
-                {es ? 'Nuevo vencimiento' : 'New due date'}
+              <Label htmlFor='exceptionDueDay'>
+                {es ? 'Día de vencimiento' : 'Due day'}
               </Label>
-              <Input id='exceptionDueDate' name='dueDate' type='date' required />
+              <select
+                id='exceptionDueDay'
+                name='dueDay'
+                className='h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs'
+                required
+              >
+                <option value=''>{es ? 'Seleccionar día' : 'Select day'}</option>
+                {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
+                  <option key={day} value={day}>{day}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className='space-y-2'>
