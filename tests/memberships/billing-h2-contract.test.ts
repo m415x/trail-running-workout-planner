@@ -767,3 +767,39 @@ test('a materially different correction creates history even when the projected 
   assert.equal(correctedReason.filter(revision => revision.isCurrent).length, 1)
   assert.equal(correctedReason.find(revision => revision.isCurrent)?.id, 'reduction-2')
 })
+
+
+test('a global due-date exception must belong to the same calendar month as its due date', () => {
+  assert.throws(
+    () => applyGlobalDueDateException({
+      revisions: [],
+      id: 'cross-month-exception',
+      teamId: 'team-1',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-11-05',
+      reason: 'Fecha fuera del período',
+    }),
+    /same month|period/i,
+  )
+})
+
+test('global due-date projection requires the current revision rather than a superseded historical revision', () => {
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: {
+        id: 'superseded-exception',
+        teamId: 'team-1',
+        year: 2026,
+        month: 10,
+        dueDate: '2026-10-15',
+        reason: 'Revisión histórica',
+        isCurrent: false,
+      },
+      reductionRevisions: [],
+      extensionRevisions: [],
+    }),
+    /current|historical|superseded/i,
+  )
+})
