@@ -180,6 +180,16 @@ export function prepareTestRunBatches(
   return planTestFileBatches(testFiles, maxArgumentLength).map(createTestBatchInvocation)
 }
 
+export function combineTestBatchResults(outputs: string[]): {
+  diagnostics: string[]
+  summary: TestRunSummary
+} {
+  return {
+    diagnostics: outputs.map(stripTestRunSummary),
+    summary: aggregateTestRunSummaries(outputs.map(parseTestRunSummary)),
+  }
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
