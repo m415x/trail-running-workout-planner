@@ -190,12 +190,38 @@ export function createDrizzleBillingDatabase(
       ) {
         throw new Error('Global due-date exception identity is outside the requested team period scope')
       }
+
+      const revisions = await this.listGlobalDueDateExceptionRevisions(teamId, year, month)
+      const current = revisions.filter((candidate) => candidate.isCurrent)
+      if (current.length > 1) {
+        throw new Error('Ambiguous current global due-date exception revisions')
+      }
+
+      const active = current[0]
+      if (
+        active
+        && active.dueDate === revision.dueDate
+        && active.reason === revision.reason
+      ) {
+        return
+      }
+
       if (!client.insert) throw new Error('Drizzle client does not support inserts')
+      if (active && !client.update) throw new Error('Drizzle client does not support updates')
+
+      const now = new Date().toISOString()
+      if (active && client.update) {
+        await client.update(globalMonthlyDueDateExceptions)
+          .set({ isCurrent: false, updatedAt: now })
+          .where(eq(globalMonthlyDueDateExceptions.id, active.id))
+      }
+
       await client.insert(globalMonthlyDueDateExceptions).values([{
         ...revision,
+        isCurrent: true,
         isDeleted: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       }])
     },
 
