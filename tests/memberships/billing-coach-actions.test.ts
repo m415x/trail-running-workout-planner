@@ -185,8 +185,13 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
   const dependencies = {
     createId: () => 'global-exception-a',
     transaction: (operation: (repository: any) => unknown) => operation({
-      applyGlobalDueDateExceptionAtomically: (input: any) => {
-        calls.push(`apply:${input.revision.id}:${input.revision.teamId}:${input.revision.year}-${input.revision.month}:${input.revision.dueDate}:${input.revision.reason}`)
+      applyGlobalDueDateExceptionAtomically: (
+        teamId: string,
+        year: number,
+        month: number,
+        revision: any,
+      ) => {
+        calls.push(`apply:${revision.id}:${teamId}:${year}-${month}:${revision.dueDate}:${revision.reason}`)
       },
     }),
   } as BillingCoachActionDependencies
