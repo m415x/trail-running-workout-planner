@@ -188,9 +188,13 @@ export function createDrizzleBillingDatabase(
           eq(monthlyCharges.isDeleted, false),
         ))
 
-      return rows.map((row: QueryResult) =>
-        mapCharge((row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult),
-      )
+      return rows.map((row: QueryResult) => {
+        const persisted = (row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult
+        return {
+          id: String(persisted.id),
+          ...mapCharge(persisted),
+        }
+      })
     },
 
     async listTeamEconomicPolicies(teamId) {
