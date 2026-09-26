@@ -33,3 +33,29 @@ test('PostgreSQL H1 monthly charges enforce one snapshot per athlete month and H
   assert.match(schema, /baseAmountMinor}\s*>\s*0[\s\S]*amountDueMinor}\s*>=\s*0/)
   assert.match(schema, /billingTermsId:[\s\S]*references\(\(\) => athleteBillingTerms\.id, \{ onDelete: ['"]restrict['"] \}\)/)
 })
+
+
+test('PostgreSQL H2 schema persists global monthly due-date exception revisions', () => {
+  assert.match(schema, /globalMonthlyDueDateExceptions\s*=\s*pgTable\(\s*['"]global_monthly_due_date_exceptions['"]/)
+  for (const column of ['team_id', 'year', 'month', 'due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /global_monthly_due_date_exceptions_team_period_current_unique/)
+})
+
+test('PostgreSQL H2 schema persists monthly charge reduction revisions', () => {
+  assert.match(schema, /monthlyChargeReductions\s*=\s*pgTable\(\s*['"]monthly_charge_reductions['"]/)
+  for (const column of ['monthly_charge_id', 'reduction_amount_minor', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /monthly_charge_reductions_amount_check/)
+  assert.match(schema, /monthly_charge_reductions_charge_current_unique/)
+})
+
+test('PostgreSQL H2 schema persists monthly charge extension revisions', () => {
+  assert.match(schema, /monthlyChargeExtensions\s*=\s*pgTable\(\s*['"]monthly_charge_extensions['"]/)
+  for (const column of ['monthly_charge_id', 'extended_due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /monthly_charge_extensions_charge_current_unique/)
+})
