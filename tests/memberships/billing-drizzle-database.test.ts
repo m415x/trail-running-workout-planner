@@ -235,7 +235,7 @@ test('Drizzle billing database can atomically persist a global exception and cha
       return {
         from() {
           return {
-            where: async () => [],
+            where: async () => [{ id: 'athlete-a' }],
             innerJoin() {
               return { where: async () => [] }
             },
