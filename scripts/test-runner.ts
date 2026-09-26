@@ -157,6 +157,22 @@ export function aggregateTestRunSummaries(summaries: TestRunSummary[]): TestRunS
   })
 }
 
+export function createTestBatchInvocation(testFiles: string[]): {
+  args: string[]
+  options: {
+    shell: false
+    encoding: 'utf8'
+  }
+} {
+  return {
+    args: ['--import', 'tsx', '--test', '--test-reporter=tap', ...testFiles],
+    options: {
+      shell: false,
+      encoding: 'utf8',
+    },
+  }
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
