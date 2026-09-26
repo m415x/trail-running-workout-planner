@@ -207,6 +207,9 @@ test('SQLite billing persistence exposes append-only monthly charge reduction re
   await port.replaceCurrentMonthlyChargeReduction('charge-a', {
     id: 'reduction-1',
     monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
     reductionAmountMinor: 500_000,
     reason: 'Beca deportiva',
     isCurrent: true,
