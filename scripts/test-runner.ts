@@ -47,19 +47,232 @@ export function interpretTestRunResult(result: TestRunResult): {
   return { exitCode: result.status ?? 1, signal: null }
 }
 
-export function runTestFiles(testFiles: string[]): number {
-  const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...testFiles], {
-    shell: false,
-    stdio: 'inherit',
-  })
-  const outcome = interpretTestRunResult(result)
+export function planTestFileBatches(testFiles: string[], maxArgumentLength = 8_000): string[][] {
+  const batches: string[][] = []
+  let batch: string[] = []
+  let argumentLength = 0
 
-  if (outcome.signal) {
-    process.kill(process.pid, outcome.signal)
-    return 1
+  for (const testFile of testFiles) {
+    const nextLength = testFile.length + 1
+
+    if (batch.length > 0 && argumentLength + nextLength > maxArgumentLength) {
+      batches.push(batch)
+      batch = []
+      argumentLength = 0
+    }
+
+    batch.push(testFile)
+    argumentLength += nextLength
   }
 
-  return outcome.exitCode ?? 1
+  if (batch.length > 0) {
+    batches.push(batch)
+  }
+
+  return batches
+}
+
+type TestRunSummary = {
+  tests: number
+  suites: number
+  pass: number
+  fail: number
+  cancelled: number
+  skipped: number
+  todo: number
+  durationMs: number
+}
+
+export function parseTestRunSummary(output: string): TestRunSummary {
+  const patterns = {
+    tests: /^# tests (\d+)$/m,
+    suites: /^# suites (\d+)$/m,
+    pass: /^# pass (\d+)$/m,
+    fail: /^# fail (\d+)$/m,
+    cancelled: /^# cancelled (\d+)$/m,
+    skipped: /^# skipped (\d+)$/m,
+    todo: /^# todo (\d+)$/m,
+    durationMs: /^# duration_ms ([\d.]+)$/m,
+  } as const
+
+  const values: Partial<TestRunSummary> = {}
+
+  for (const [key, pattern] of Object.entries(patterns) as Array<
+    [keyof TestRunSummary, RegExp]
+  >) {
+    const match = output.match(pattern)
+
+    if (!match) {
+      throw new Error('Node TAP output does not contain a complete test summary')
+    }
+
+    values[key] = Number(match[1])
+  }
+
+  return values as TestRunSummary
+}
+
+export function stripTestRunSummary(output: string): string {
+  const summaryLine = /^# (?:tests|suites|pass|fail|cancelled|skipped|todo|duration_ms) (?:\d+(?:\.\d+)?)$/
+
+  return output
+    .split(/\r?\n/)
+    .filter((line) => !summaryLine.test(line))
+    .join('\n')
+    .trimEnd()
+}
+
+export function formatTestRunSummary(summary: TestRunSummary): string {
+  return [
+    `ℹ tests ${summary.tests}`,
+    `ℹ suites ${summary.suites}`,
+    `ℹ pass ${summary.pass}`,
+    `ℹ fail ${summary.fail}`,
+    `ℹ cancelled ${summary.cancelled}`,
+    `ℹ skipped ${summary.skipped}`,
+    `ℹ todo ${summary.todo}`,
+    `ℹ duration_ms ${summary.durationMs}`,
+  ].join('\n')
+}
+
+export function aggregateTestRunSummaries(summaries: TestRunSummary[]): TestRunSummary {
+  return summaries.reduce<TestRunSummary>((total, summary) => ({
+    tests: total.tests + summary.tests,
+    suites: total.suites + summary.suites,
+    pass: total.pass + summary.pass,
+    fail: total.fail + summary.fail,
+    cancelled: total.cancelled + summary.cancelled,
+    skipped: total.skipped + summary.skipped,
+    todo: total.todo + summary.todo,
+    durationMs: total.durationMs + summary.durationMs,
+  }), {
+    tests: 0,
+    suites: 0,
+    pass: 0,
+    fail: 0,
+    cancelled: 0,
+    skipped: 0,
+    todo: 0,
+    durationMs: 0,
+  })
+}
+
+export function createTestBatchInvocation(testFiles: string[]): {
+  args: string[]
+  options: {
+    shell: false
+    encoding: 'utf8'
+  }
+} {
+  return {
+    args: ['--import', 'tsx', '--test', '--test-reporter=tap', ...testFiles],
+    options: {
+      shell: false,
+      encoding: 'utf8',
+    },
+  }
+}
+
+export function prepareTestRunBatches(
+  testFiles: string[],
+  maxArgumentLength = 8_000,
+): ReturnType<typeof createTestBatchInvocation>[] {
+  return planTestFileBatches(testFiles, maxArgumentLength).map(createTestBatchInvocation)
+}
+
+export function combineTestBatchResults(outputs: string[]): {
+  diagnostics: string[]
+  summary: TestRunSummary
+} {
+  return {
+    diagnostics: outputs.map(stripTestRunSummary),
+    summary: aggregateTestRunSummaries(outputs.map(parseTestRunSummary)),
+  }
+}
+
+export function renderTestBatchResults(outputs: string[]): string {
+  const { diagnostics, summary } = combineTestBatchResults(outputs)
+
+  return [
+    ...diagnostics.filter((diagnostic) => diagnostic.length > 0),
+    formatTestRunSummary(summary),
+  ].join('\n')
+}
+
+type TestBatchInvocation = ReturnType<typeof createTestBatchInvocation>
+type TestBatchSpawnResult = TestRunResult & { stdout?: string | Buffer | null; stderr?: string | Buffer | null }
+type TestBatchSpawn = (
+  executable: string,
+  args: string[],
+  options: TestBatchInvocation['options'],
+) => TestBatchSpawnResult
+
+export function executeTestRunBatches(
+  invocations: TestBatchInvocation[],
+  spawn: TestBatchSpawn,
+  report: (output: string) => void,
+): number {
+  const outputs: string[] = []
+
+  for (const invocation of invocations) {
+    const result = spawn(process.execPath, invocation.args, invocation.options)
+    const outcome = interpretTestRunResult(result)
+    const stdout = typeof result.stdout === 'string'
+      ? result.stdout
+      : result.stdout?.toString() ?? ''
+    const stderr = typeof result.stderr === 'string'
+      ? result.stderr
+      : result.stderr?.toString() ?? ''
+
+    if (stdout) {
+      outputs.push(stdout)
+    }
+
+    if (outcome.signal) {
+      if (stdout) {
+        report(stdout)
+      }
+      if (stderr) {
+        report(stderr)
+      }
+      process.kill(process.pid, outcome.signal)
+      return 1
+    }
+
+    if (outcome.exitCode !== 0) {
+      if (stdout) {
+        report(stdout)
+      }
+      if (stderr) {
+        report(stderr)
+      }
+      return outcome.exitCode ?? 1
+    }
+  }
+
+  report(renderTestBatchResults(outputs))
+  return 0
+}
+
+export function runTestFilesWith(
+  testFiles: string[],
+  spawn: TestBatchSpawn,
+  report: (output: string) => void,
+  maxArgumentLength = 8_000,
+): number {
+  return executeTestRunBatches(
+    prepareTestRunBatches(testFiles, maxArgumentLength),
+    spawn,
+    report,
+  )
+}
+
+export function runTestFiles(testFiles: string[]): number {
+  return runTestFilesWith(
+    testFiles,
+    (executable, args, options) => spawnSync(executable, args, options),
+    (output) => console.log(output),
+  )
 }
 
 async function main(): Promise<void> {

@@ -72,7 +72,24 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
       }
     }
 
-    if (hasMigrationMetadata) return 'versioned'
+    if (hasMigrationMetadata) {
+      const billingTables = [
+        'team_economic_policies',
+        'athlete_billing_terms',
+        'monthly_charges',
+      ]
+      const presentBillingTables = billingTables.filter(table => tables.has(table))
+      if (
+        presentBillingTables.length > 0
+        && presentBillingTables.length !== billingTables.length
+      ) {
+        throw new Error(
+          'SQLite billing schema is inconsistent: H1 billing tables are only partially present; refusing automatic migration until the database is restored to a recognized versioned state',
+        )
+      }
+
+      return 'versioned'
+    }
 
     const reviewedLegacyTables = ['workout_logs', 'group_training_plans', 'macrocycles']
     const isReviewedLegacy = reviewedLegacyTables.every(table => tables.has(table))

@@ -2,7 +2,14 @@ import Database from 'better-sqlite3'
 
 const sqlite = new Database(process.env.SQLITE_SCENARIO_MODE === '1' ? (process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()) : 'sqlite.db', { fileMustExist: true })
 try {
-  const requiredTables = ['users', 'athlete_profiles', 'field_performance_tests']
+  const requiredTables = [
+    'users',
+    'athlete_profiles',
+    'field_performance_tests',
+    'team_economic_policies',
+    'athlete_billing_terms',
+    'monthly_charges',
+  ]
   const tables = new Set(
     (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
       .map(row => row.name),
@@ -54,6 +61,38 @@ try {
   ) {
     throw new Error(
       'SQLite schema is inconsistent: field_performance_tests.recorded_by_user_id must reference users(id) ON DELETE SET NULL',
+    )
+  }
+
+  const monthlyChargeIndexes = sqlite.pragma('index_list(monthly_charges)') as Array<{
+    name: string
+    unique: number
+  }>
+  const monthlyChargeUniqueIndex = monthlyChargeIndexes.find(
+    index => index.name === 'monthly_charges_athlete_year_month_unique',
+  )
+  if (monthlyChargeUniqueIndex?.unique !== 1) {
+    throw new Error(
+      'SQLite schema is inconsistent: monthly_charges must enforce one charge per athlete calendar month',
+    )
+  }
+
+  const monthlyChargeForeignKeys = sqlite.pragma('foreign_key_list(monthly_charges)') as Array<{
+    table: string
+    from: string
+    to: string
+    on_delete: string
+  }>
+  const billingTermsForeignKey = monthlyChargeForeignKeys.find(
+    foreignKey => foreignKey.from === 'billing_terms_id',
+  )
+  if (
+    billingTermsForeignKey?.table !== 'athlete_billing_terms'
+    || billingTermsForeignKey.to !== 'id'
+    || billingTermsForeignKey.on_delete !== 'RESTRICT'
+  ) {
+    throw new Error(
+      'SQLite schema is inconsistent: monthly_charges.billing_terms_id must reference athlete_billing_terms(id) ON DELETE RESTRICT',
     )
   }
 

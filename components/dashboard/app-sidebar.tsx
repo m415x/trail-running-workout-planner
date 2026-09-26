@@ -7,11 +7,12 @@ import {
   GitBranch,
   LayoutDashboard,
   Mountain,
+  ReceiptText,
   Trophy,
   Users,
   UsersRound,
 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
@@ -55,6 +56,11 @@ const navigationItems = [
     icon: CalendarRange,
   },
   {
+    label: 'membership',
+    href: '/dashboard/membership',
+    icon: ReceiptText,
+  },
+  {
     label: 'competitions',
     href: '/dashboard/competitions',
     icon: Trophy,
@@ -73,6 +79,7 @@ const navigationItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const locale = useLocale()
   const router = useRouter()
   const { guardNavigation } = useDashboardDirtyFormGuard()
   const t = useTranslations('WorkoutTemplates')
@@ -104,7 +111,9 @@ export function AppSidebar() {
                     ? t('navigation')
                     : item.label === 'competitions'
                       ? catalog('navigation')
-                      : item.label
+                      : item.label === 'membership'
+                        ? locale === 'en' ? 'Membership' : 'Membresía'
+                        : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>

@@ -279,6 +279,14 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
         VALUES
           ('preservation-log', '${now}', '${now}', 'preservation-athlete',
            '2026-09-22', 'completed', 10.5, 64, 420, 6, '${now}');
+
+        INSERT INTO memberships
+          (id, created_at, updated_at, athlete_id, start_date, end_date, amount,
+           status, payment_method, notes)
+        VALUES
+          ('preservation-membership', '${now}', '${now}', 'preservation-athlete',
+           '2026-09-01', '2026-09-30', 25000, 'active', 'transfer',
+           'legacy membership preservation fixture');
       `)
     } finally {
       sqlite.close()
@@ -315,6 +323,41 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
         row.performed_at !== null
       ) {
         throw new Error('Supported SQLite upgrade did not preserve the representative workout log')
+      }
+
+      const legacyMembership = upgraded.prepare(`
+        SELECT id, athlete_id, start_date, end_date, amount, status, payment_method, notes
+        FROM memberships
+        WHERE id = ?
+      `).get('preservation-membership') as {
+        id: string
+        athlete_id: string
+        start_date: string
+        end_date: string
+        amount: number
+        status: string
+        payment_method: string | null
+        notes: string | null
+      } | undefined
+
+      if (
+        !legacyMembership ||
+        legacyMembership.athlete_id !== 'preservation-athlete' ||
+        legacyMembership.start_date !== '2026-09-01' ||
+        legacyMembership.end_date !== '2026-09-30' ||
+        legacyMembership.amount !== 25000 ||
+        legacyMembership.status !== 'active' ||
+        legacyMembership.payment_method !== 'transfer' ||
+        legacyMembership.notes !== 'legacy membership preservation fixture'
+      ) {
+        throw new Error('Supported SQLite upgrade did not preserve the representative legacy membership')
+      }
+
+      for (const table of ['team_economic_policies', 'athlete_billing_terms', 'monthly_charges']) {
+        const inferred = upgraded.prepare(`SELECT COUNT(*) AS count FROM ${table}`).get() as { count: number }
+        if (inferred.count !== 0) {
+          throw new Error(`Supported SQLite upgrade inferred H1 billing facts from a legacy membership: ${table}`)
+        }
       }
     } finally {
       upgraded.close()

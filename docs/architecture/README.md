@@ -28,6 +28,10 @@ Key competition documents:
 
 `planning/` owns planning contracts. `CompetitionEntry` remains a planning fact and must not imply individual registration.
 
+### Memberships
+
+`memberships.md` owns the Epic 5 membership economic foundation: temporal team policy, athlete billing terms, monthly charge snapshots, materialization semantics and the H1/H2 boundary.
+
 ### Platform
 
 `platform/` owns cross-cutting platform/infrastructure contracts.

@@ -7,6 +7,7 @@ const applicationTables = [
   'athlete_groups', 'athlete_profiles', 'competition_entries', 'competition_entry_race_courses',
   'group_history_records', 'group_session_prescriptions', 'group_training_plans',
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
+  'team_economic_policies', 'athlete_billing_terms', 'monthly_charges',
   'microcycle_intensity_targets', 'physiology_records', 'field_performance_test_events', 'field_performance_tests',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
   'race_courses', 'race_editions', 'race_events', 'race_registrations',
@@ -113,6 +114,47 @@ async function main() {
       console.log(`Legacy intensity values: ${remainingLegacyMethods.map(entry => `${entry.source} (${entry.count})`).join(', ')}`)
     }
 
+    const billingConstraints = await sql<{ constraint_name: string; constraint_type: string }[]>`
+      select tc.constraint_name, tc.constraint_type
+      from information_schema.table_constraints tc
+      where tc.table_schema = 'public'
+        and tc.table_name = 'monthly_charges'
+        and tc.constraint_type in ('UNIQUE', 'FOREIGN KEY')
+    `
+    const billingIndexes = await sql<{ indexname: string }[]>`
+      select indexname
+      from pg_indexes
+      where schemaname = 'public'
+        and tablename = 'monthly_charges'
+    `
+    const billingForeignKeys = await sql<{ column_name: string; foreign_table_name: string; foreign_column_name: string }[]>`
+      select
+        kcu.column_name,
+        ccu.table_name as foreign_table_name,
+        ccu.column_name as foreign_column_name
+      from information_schema.table_constraints tc
+      join information_schema.key_column_usage kcu
+        on tc.constraint_name = kcu.constraint_name
+       and tc.constraint_schema = kcu.constraint_schema
+      join information_schema.constraint_column_usage ccu
+        on tc.constraint_name = ccu.constraint_name
+       and tc.constraint_schema = ccu.constraint_schema
+      where tc.table_schema = 'public'
+        and tc.table_name = 'monthly_charges'
+        and tc.constraint_type = 'FOREIGN KEY'
+    `
+    const monthlyChargeUnique = billingIndexes.some(
+      index => index.indexname === 'monthly_charges_athlete_year_month_unique',
+    )
+    const billingTermsForeignKey = billingForeignKeys.some(
+      foreignKey => foreignKey.column_name === 'billing_terms_id'
+        && foreignKey.foreign_table_name === 'athlete_billing_terms'
+        && foreignKey.foreign_column_name === 'id',
+    )
+    const billingContractValid = monthlyChargeUnique && billingTermsForeignKey
+      && billingConstraints.some(constraint => constraint.constraint_type === 'FOREIGN KEY')
+    console.log(`H1 billing persistence contract: ${billingContractValid ? 'OK' : 'FAIL'}`)
+
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
     const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
@@ -129,7 +171,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid) {
       process.exitCode = 1
     }
   } finally {
