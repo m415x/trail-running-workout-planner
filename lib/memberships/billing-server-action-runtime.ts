@@ -52,8 +52,8 @@ export function createMembershipServerActionRuntime({
 
   const h2Dependencies: BillingCoachActionDependencies = {
     createId,
-    transaction: (operation) => transaction(() =>
-      operation(createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)))),
+    transaction: (operation) =>
+      operation(createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db))),
   }
 
   function athleteTermsService() {
