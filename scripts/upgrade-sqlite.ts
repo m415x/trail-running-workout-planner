@@ -140,6 +140,55 @@ function establishCanonicalMigrationMetadata(
   }
 }
 
+function repairFalselyReconciledBillingH2Metadata(): void {
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    const tables = new Set(
+      (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
+        .map(row => row.name),
+    )
+    const h2Tables = [
+      'global_monthly_due_date_exceptions',
+      'monthly_charge_reductions',
+      'monthly_charge_extensions',
+    ]
+    const presentH2Tables = h2Tables.filter(table => tables.has(table))
+
+    if (presentH2Tables.length === h2Tables.length) return
+    if (presentH2Tables.length > 0) {
+      throw new Error(
+        'SQLite billing H2 schema is inconsistent: H2 tables are only partially present; refusing automatic metadata repair',
+      )
+    }
+
+    const h1Tables = [
+      'team_economic_policies',
+      'athlete_billing_terms',
+      'monthly_charges',
+    ]
+    if (!h1Tables.every(table => tables.has(table))) return
+
+    const journal = JSON.parse(
+      readFileSync(resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'), 'utf8'),
+    ) as { entries: Array<{ tag: string; when: number }> }
+    const firstH2Index = journal.entries.findIndex(
+      entry => entry.tag === '0009_membership_global_due_date_exceptions',
+    )
+    if (firstH2Index < 0) {
+      throw new Error('SQLite migration journal is missing canonical H2 billing migration 0009')
+    }
+
+    const h2Timestamps = journal.entries.slice(firstH2Index).map(entry => entry.when)
+    const deleteMigration = sqlite.prepare('DELETE FROM __drizzle_migrations WHERE created_at = ?')
+
+    sqlite.transaction(() => {
+      for (const timestamp of h2Timestamps) deleteMigration.run(timestamp)
+    })()
+  } finally {
+    sqlite.close()
+  }
+}
+
 function reconcileVersionedHeadMetadata(): boolean {
   const verification = spawnSync(process.execPath, [tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')], {
     stdio: 'ignore',
@@ -159,6 +208,7 @@ function reconcileVersionedHeadMetadata(): boolean {
 }
 
 const state = classifyExistingSqlite()
+if (state === 'versioned') repairFalselyReconciledBillingH2Metadata()
 if (state === 'unrecognized') {
   throw new Error(
     'Unrecognized SQLite schema; refusing automatic migration before destructive mutation',
