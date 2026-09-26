@@ -554,8 +554,8 @@ test('Drizzle billing database replaces the current monthly charge reduction app
         },
         insert() {
           return {
-            values: async (value: Record<string, unknown>) => {
-              writes.push({ kind: 'insert', value })
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
             },
           }
         },
