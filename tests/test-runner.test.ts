@@ -199,3 +199,20 @@ test('portable test runner builds a captured TAP invocation for aggregate report
     },
   })
 })
+
+
+test('portable test runner prepares captured TAP batches for one aggregate result', async () => {
+  const { prepareTestRunBatches } = await import('../scripts/test-runner')
+  const files = ['tests/a.test.ts', 'tests/b.test.ts']
+
+  assert.deepEqual(prepareTestRunBatches(files, 20), [
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/a.test.ts'],
+      options: { shell: false, encoding: 'utf8' },
+    },
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/b.test.ts'],
+      options: { shell: false, encoding: 'utf8' },
+    },
+  ])
+})
