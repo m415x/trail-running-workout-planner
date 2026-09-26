@@ -184,7 +184,7 @@ test('SQLite billing persistence exposes append-only monthly charge reduction re
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
     listMonthlyChargeReductionRevisions: async (monthlyChargeId: string) => {
-      calls.push(\`list:\${monthlyChargeId}\`)
+      calls.push(`list:${monthlyChargeId}`)
       return []
     },
     replaceCurrentMonthlyChargeReduction: async (monthlyChargeId: string, revision: {
@@ -194,7 +194,7 @@ test('SQLite billing persistence exposes append-only monthly charge reduction re
       reason: string
       isCurrent: boolean
     }) => {
-      calls.push(\`replace:\${monthlyChargeId}:\${revision.id}\`)
+      calls.push(`replace:${monthlyChargeId}:${revision.id}`)
     },
   } satisfies SqliteBillingDatabase
 
