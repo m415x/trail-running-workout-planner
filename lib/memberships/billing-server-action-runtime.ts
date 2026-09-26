@@ -91,7 +91,7 @@ export function createMembershipServerActionRuntime({
       athleteId: string
       year: number
       month: number
-      extendedDueDate: string
+      extendedDueDate: string | null
       reason: string
     }): Promise<BillingActionResult> {
       return applyMonthlyChargeExtensionAction(input, h2Dependencies)
