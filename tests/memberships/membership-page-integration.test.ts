@@ -245,3 +245,20 @@ test('KAN-479 H2 Coach forms expose localized success feedback in ES and EN', as
   assert.match(athleteForm, /Prórroga retirada/)
   assert.match(athleteForm, /Extension withdrawn/)
 })
+
+
+test('KAN-479 global exception selects one month and a due day within that same month', async () => {
+  const form = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /name='period'[^>]*type='month'/)
+  assert.match(form, /Día de vencimiento/)
+  assert.match(form, /Due day/)
+  assert.match(form, /name='dueDay'/)
+  assert.doesNotMatch(form, /name='dueDate'[^>]*type='date'/)
+  assert.match(form, /daysInMonth/)
+  assert.match(form, /String\(month\)\.padStart\(2, '0'\)/)
+  assert.match(form, /String\(dueDay\)\.padStart\(2, '0'\)/)
+})
