@@ -834,3 +834,101 @@ test('Drizzle billing database treats the same monthly charge extension decision
 
   assert.equal(transactionStarted, false)
 })
+
+
+test('atomic monthly charge extension persists the revision and effective due date together', async () => {
+  const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([{ id: 'athlete-a' }]),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
+          return {
+            set(value: Record<string, unknown>) {
+              return { where: async () => writes.push({ kind: 'update', value }) }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.applyMonthlyChargeExtensionAtomically?.(
+    'team-a',
+    'charge-a',
+    {
+      id: 'extension-atomic',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    },
+    {
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    },
+  )
+
+  assert.equal(writes.filter((write) => write.kind === 'insert').length, 1)
+  const dueDateUpdate = writes.find((write) => write.value.effectiveDueDate === '2026-10-25')
+  assert.ok(dueDateUpdate)
+  assert.equal(dueDateUpdate.value.baseDueDate, undefined)
+})
+
+test('atomic monthly charge extension rejects a projection outside the requested team before writing', async () => {
+  let transactionStarted = false
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([]),
+    transaction: async () => {
+      transactionStarted = true
+    },
+  } as never)
+
+  await assert.rejects(
+    () => db.applyMonthlyChargeExtensionAtomically!(
+      'team-a',
+      'charge-a',
+      {
+        id: 'extension-scope',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-other-team',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual',
+        isCurrent: true,
+      },
+      {
+        athleteId: 'athlete-other-team',
+        billingTermsId: 'terms-b',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-10',
+        effectiveDueDate: '2026-10-25',
+      },
+    ),
+    /team.*scope|outside.*team/i,
+  )
+
+  assert.equal(transactionStarted, false)
+})
