@@ -66,6 +66,10 @@ export type MonthlyChargeExtensionPersistencePort = {
   ) => Promise<void>
 }
 
+export type PersistedMonthlyCharge = MonthlyChargeCandidate & {
+  id: string
+}
+
 export type GlobalDueDateExceptionPersistencePort = {
   listGlobalDueDateExceptionRevisions: (
     teamId: string,
@@ -82,7 +86,7 @@ export type GlobalDueDateExceptionPersistencePort = {
     teamId: string,
     year: number,
     month: number,
-  ) => Promise<MonthlyChargeCandidate[]>
+  ) => Promise<PersistedMonthlyCharge[]>
   getBillingTermsById: (
     billingTermsId: string,
   ) => Promise<AthleteBillingTerms>
@@ -120,7 +124,7 @@ export function createBillingPersistenceAdapter(
       })
       const validatedRevision = validatedRevisions[0]
 
-      const h2Port = port as BillingPersistencePort & GlobalDueDateExceptionPersistencePort
+      const h2Port = port as BillingPersistencePort & GlobalDueDateExceptionPersistencePort & Partial<MonthlyChargeExtensionPersistencePort>
       if (
         !h2Port.replaceCurrentGlobalDueDateException
         || !h2Port.listTeamMonthlyCharges
@@ -139,19 +143,17 @@ export function createBillingPersistenceAdapter(
 
       for (const charge of charges) {
         const terms = await h2Port.getBillingTermsById(charge.billingTermsId)
+        const extensionRevisions = h2Port.listMonthlyChargeExtensionRevisions
+          ? await h2Port.listMonthlyChargeExtensionRevisions(charge.id)
+          : []
         const projected = projectMonthlyChargeWithExceptions({
           charge,
           globalDueDateException: validatedRevision,
           reductionRevisions: [],
-          extensionRevisions: [],
+          extensionRevisions,
           economicActivationDate: terms.effectiveFrom,
         })
-        projectedCharges.push({
-          ...projected,
-          effectiveDueDate: charge.effectiveDueDate > projected.effectiveDueDate
-            ? charge.effectiveDueDate
-            : projected.effectiveDueDate,
-        })
+        projectedCharges.push(projected)
       }
 
       if (h2Port.applyGlobalDueDateExceptionAtomically) {
