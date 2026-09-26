@@ -12,6 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
+- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1 economic foundation: temporal team policy, athlete terms, monthly charge snapshots and materialization boundaries.
 
 ### Monitoring baseline
 
@@ -38,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current closure handoff is [`handoffs/kan-414.md`](handoffs/kan-414.md), covering the KAN-408 stabilized-baseline audit, ES/EN walkthrough evidence, closure regressions and remaining KAN-458 gate/integration work. [`handoffs/kan-413.md`](handoffs/kan-413.md) records the preceding integrated planned group-duration story and KAN-454 seed-ownership regression; [`handoffs/kan-412.md`](handoffs/kan-412.md) records the integrated reference-percentage story. Earlier handoffs are navigation context only and may be consolidated/removed. When no story is active, the most recent completed handoff is a bootstrap aid rather than execution authority: new work must still verify current `dev`, read only relevant durable domain docs, and then consult current Jira.
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-459.md`](handoffs/kan-459.md), covering the Epic 5 H1 membership-billing foundation and KAN-471 closure work. Earlier KAN-414/KAN-413/KAN-412 handoffs remain navigation context for the preceding stabilized Epic 4 baseline and must not override current code, architecture or Jira.
 
 ## Agent harness
 
@@ -48,7 +49,7 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
+Epics 1–4 are complete. Epic 5 is active; KAN-459 establishes its H1 membership-billing foundation and is in closure verification. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
 No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
