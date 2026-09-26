@@ -74,14 +74,14 @@ function mapGlobalDueDateException(row: QueryResult): GlobalDueDateExceptionRevi
 
 type DrizzleInsert = {
   insert: (table: unknown) => {
-    values: (values: Record<string, unknown>[]) => Promise<unknown>
+    values: (values: Record<string, unknown>[]) => unknown
   }
 }
 
 type DrizzleUpdate = {
   update: (table: unknown) => {
     set: (values: Record<string, unknown>) => {
-      where: (condition: unknown) => Promise<unknown>
+      where: (condition: unknown) => unknown
     }
   }
 }
@@ -89,7 +89,7 @@ type DrizzleUpdate = {
 type DrizzleMutationClient = DrizzleInsert & Partial<DrizzleUpdate>
 
 type DrizzleBillingClient = DrizzleQuery & Partial<DrizzleInsert> & Partial<DrizzleUpdate> & {
-  transaction?: (callback: (tx: DrizzleMutationClient) => Promise<void>) => Promise<void>
+  transaction?: (callback: (tx: DrizzleMutationClient) => void) => void | Promise<void>
 }
 
 function mapTerms(row: QueryResult): AthleteBillingTerms {
