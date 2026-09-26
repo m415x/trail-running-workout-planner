@@ -700,6 +700,24 @@ export const globalMonthlyDueDateExceptions = sqliteTable(
   ],
 )
 
+
+export const monthlyChargeReductions = sqliteTable(
+  'monthly_charge_reductions',
+  {
+    ...baseColumns,
+    monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
+    reductionAmountMinor: integer('reduction_amount_minor').notNull(),
+    reason: text('reason').notNull(),
+    isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+  },
+  (table) => [
+    check('monthly_charge_reductions_amount_check', sql`${table.reductionAmountMinor} >= 0`),
+    uniqueIndex('monthly_charge_reductions_charge_current_unique')
+      .on(table.monthlyChargeId)
+      .where(sql`${table.isCurrent} = 1`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 14. SHOES (Calzado del atleta)                                              */
 /* -------------------------------------------------------------------------- */
