@@ -189,3 +189,61 @@ test('global due-date exception service updates an already materialized charge b
   assert.equal(updates[0].effectiveDueDate, '2026-10-18')
   assert.equal(updates[0].amountDueMinor, 2_500_000)
 })
+
+
+test('materialization applies the current global due-date exception to future charges', async () => {
+  const inserted: Array<{ baseDueDate: string; effectiveDueDate: string }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [{
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [{
+      id: 'policy-a',
+      teamId: 'team-a',
+      defaultMonthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      ordinaryDueDay: 5,
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }],
+    insertMonthlyCharges: async (_teamId: string, _athleteId: string, charges: Array<{
+      baseDueDate: string
+      effectiveDueDate: string
+    }>) => {
+      inserted.push(...charges)
+    },
+    listGlobalDueDateExceptionRevisions: async () => [{
+      id: 'exception-1',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    }],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [],
+    getBillingTermsById: async () => {
+      throw new Error('not used')
+    },
+    updateMonthlyChargeDueDates: async () => {},
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.materializeMonthlyCharges({
+    teamId: 'team-a',
+    athleteId: 'athlete-a',
+    through: { year: 2026, month: 10 },
+  })
+
+  const october = inserted.find((charge) => charge.baseDueDate === '2026-10-15')
+  assert.ok(october)
+  assert.equal(october.effectiveDueDate, '2026-10-15')
+})
