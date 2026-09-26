@@ -2,6 +2,7 @@ import {
   getAthleteBillingSnapshot,
   materializeMonthlyCharges,
   type AthleteBillingTerms,
+  projectMonthlyChargeWithExceptions,
   type GlobalDueDateExceptionRevision,
   type MonthlyChargeCandidate,
   type TeamEconomicPolicy,
@@ -32,10 +33,66 @@ export type GlobalDueDateExceptionPersistencePort = {
     month: number,
     revision: GlobalDueDateExceptionRevision,
   ) => Promise<void>
+  listTeamMonthlyCharges: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) => Promise<MonthlyChargeCandidate[]>
+  getBillingTermsById: (
+    billingTermsId: string,
+  ) => Promise<AthleteBillingTerms>
+  updateMonthlyChargeDueDates: (
+    teamId: string,
+    charge: MonthlyChargeCandidate,
+  ) => Promise<void>
 }
 
-export function createBillingPersistenceAdapter(port: BillingPersistencePort) {
+export function createBillingPersistenceAdapter(
+  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort),
+) {
   return {
+    async applyGlobalDueDateException(input: {
+      teamId: string
+      year: number
+      month: number
+      revision: GlobalDueDateExceptionRevision
+    }) {
+      const h2Port = port as BillingPersistencePort & GlobalDueDateExceptionPersistencePort
+      if (
+        !h2Port.replaceCurrentGlobalDueDateException
+        || !h2Port.listTeamMonthlyCharges
+        || !h2Port.getBillingTermsById
+        || !h2Port.updateMonthlyChargeDueDates
+      ) {
+        throw new Error('Billing persistence does not support global due-date exceptions')
+      }
+
+      await h2Port.replaceCurrentGlobalDueDateException(
+        input.teamId,
+        input.year,
+        input.month,
+        input.revision,
+      )
+
+      const charges = await h2Port.listTeamMonthlyCharges(
+        input.teamId,
+        input.year,
+        input.month,
+      )
+
+      for (const charge of charges) {
+        const terms = await h2Port.getBillingTermsById(charge.billingTermsId)
+        const projected = projectMonthlyChargeWithExceptions({
+          charge,
+          globalDueDateException: input.revision,
+          reductionRevisions: [],
+          extensionRevisions: [],
+          economicActivationDate: terms.effectiveFrom,
+        })
+        await h2Port.updateMonthlyChargeDueDates(input.teamId, projected)
+      }
+    },
+
     async getAthleteBillingSnapshot(input: {
       teamId: string
       athleteId: string
