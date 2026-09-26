@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-459.md`](handoffs/kan-459.md), covering the Epic 5 H1 membership-billing foundation and KAN-471 closure work. Earlier KAN-414/KAN-413/KAN-412 handoffs remain navigation context for the preceding stabilized Epic 4 baseline and must not override current code, architecture or Jira.
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-459.md`](handoffs/kan-459.md), covering the Epic 5 H1 membership-billing foundation and KAN-471 closure work. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
