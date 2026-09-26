@@ -603,3 +603,73 @@ test('projection rejects a global due-date exception from a different charge per
     /period|month|identity/i,
   )
 })
+
+
+test('H2 facts reject invalid calendar periods and malformed dates', () => {
+  assert.throws(
+    () => applyGlobalDueDateException({
+      revisions: [],
+      id: 'invalid-month',
+      teamId: 'team-1',
+      year: 2026,
+      month: 13,
+      dueDate: '2026-12-15',
+      reason: 'Período inválido',
+    }),
+    /month|period/i,
+  )
+
+  assert.throws(
+    () => applyGlobalDueDateException({
+      revisions: [],
+      id: 'invalid-date',
+      teamId: 'team-1',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-99',
+      reason: 'Fecha inválida',
+    }),
+    /invalid date|date/i,
+  )
+})
+
+test('projection rejects reduction and extension revisions belonging to another charge', () => {
+  const foreignReduction: MonthlyChargeReductionRevision = {
+    id: 'foreign-reduction',
+    athleteId: charge.athleteId,
+    year: 2026,
+    month: 11,
+    reductionAmountMinor: 500_000,
+    reason: 'Otra cuota',
+    isCurrent: true,
+  }
+  const foreignExtension: MonthlyChargeExtensionRevision = {
+    id: 'foreign-extension',
+    athleteId: 'athlete-2',
+    year: charge.year,
+    month: charge.month,
+    extendedDueDate: '2026-10-20',
+    reason: 'Otro atleta',
+    isCurrent: true,
+  }
+
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: null,
+      reductionRevisions: [foreignReduction],
+      extensionRevisions: [],
+    }),
+    /identity|charge/i,
+  )
+
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: null,
+      reductionRevisions: [],
+      extensionRevisions: [foreignExtension],
+    }),
+    /identity|charge/i,
+  )
+})
