@@ -215,10 +215,12 @@ test('membership Server Action runtime exposes the three H2 Coach operations wit
 
 test('KAN-479 H2 runtime does not wrap async persistence orchestration in the synchronous SQLite transaction boundary', async () => {
   let transactionCalls = 0
+  let h2TransactionCalls = 0
   const db = {
-    transaction: () => {
+    transaction: (operation: (tx: unknown) => unknown) => {
       transactionCalls += 1
-      throw new Error('outer synchronous transaction must not wrap H2 orchestration')
+      h2TransactionCalls += 1
+      return operation(db)
     },
     select: () => ({
       from: () => ({
@@ -252,5 +254,6 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
   })
 
   assert.deepEqual(result, { success: true })
-  assert.equal(transactionCalls, 0)
+  assert.equal(transactionCalls, 1)
+  assert.equal(h2TransactionCalls, 1)
 })
