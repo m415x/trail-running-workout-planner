@@ -2,6 +2,7 @@ import {
   getAthleteBillingSnapshot,
   materializeMonthlyCharges,
   type AthleteBillingTerms,
+  type GlobalDueDateExceptionRevision,
   type MonthlyChargeCandidate,
   type TeamEconomicPolicy,
 } from './billing'
@@ -16,12 +17,12 @@ export type BillingPersistencePort = {
     athleteId: string,
     charges: MonthlyChargeCandidate[],
   ) => Promise<void>
-  listGlobalDueDateExceptionRevisions: (
+  listGlobalDueDateExceptionRevisions?: (
     teamId: string,
     year: number,
     month: number,
   ) => Promise<GlobalDueDateExceptionRevision[]>
-  replaceCurrentGlobalDueDateException: (
+  replaceCurrentGlobalDueDateException?: (
     teamId: string,
     year: number,
     month: number,
