@@ -326,3 +326,68 @@ test('Coach reduction and extension actions reject missing reasons before transa
   assert.equal(extension.success, false)
   assert.equal(transactions, 0)
 })
+
+
+test('Coach global exception reprojects existing materialized charges through the established H2 adapter', async () => {
+  const calls: string[] = []
+  const dependencies = {
+    createId: () => 'global-exception-b',
+    transaction: (operation: (repository: any) => unknown) => operation({
+      listGlobalDueDateExceptionRevisions: () => [],
+      listTeamMonthlyCharges: () => [{
+        id: 'charge-a',
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-15',
+      }],
+      getBillingTermsById: () => ({
+        id: 'terms-a',
+        athleteId: 'athlete-a',
+        monthlyAmountMinor: 2_500_000,
+        currency: 'ARS',
+        effectiveFrom: '2026-10-01',
+        effectiveUntil: null,
+      }),
+      listMonthlyChargeExtensionRevisions: () => [{
+        id: 'extension-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-15',
+        reason: 'Prórroga acordada',
+        isCurrent: true,
+      }],
+      applyGlobalDueDateExceptionAtomically: (
+        teamId: string,
+        year: number,
+        month: number,
+        revision: any,
+        charges: any[],
+      ) => {
+        calls.push(`apply:${teamId}:${year}-${month}:${revision.id}`)
+        calls.push(`charge:${charges[0]?.baseDueDate}:${charges[0]?.effectiveDueDate}`)
+      },
+    }),
+  } as BillingCoachActionDependencies
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Feriado bancario',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, [
+    'apply:team-a:2026-10:global-exception-b',
+    'charge:2026-10-10:2026-10-15',
+  ])
+})
