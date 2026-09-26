@@ -427,3 +427,46 @@ test('atomic global exception retry does not duplicate the revision and still co
 
   assert.deepEqual(writes, ['charge-update'])
 })
+
+
+test('team monthly charge reprojection is constrained by team ownership', async () => {
+  let teamScopeChecked = false
+  const db = createDrizzleBillingDatabase({
+    select() {
+      return {
+        from() {
+          return {
+            where: async () => {
+              teamScopeChecked = true
+              return [{ id: 'athlete-a' }]
+            },
+            innerJoin() {
+              return { where: async () => [] }
+            },
+          }
+        },
+      }
+    },
+    update() {
+      return {
+        set() {
+          return { where: async () => {} }
+        },
+      }
+    },
+  } as never)
+
+  await db.updateMonthlyChargeDueDates?.('team-a', {
+    athleteId: 'athlete-a',
+    billingTermsId: 'terms-a',
+    year: 2026,
+    month: 10,
+    baseAmountMinor: 2_500_000,
+    amountDueMinor: 2_500_000,
+    currency: 'ARS',
+    baseDueDate: '2026-10-15',
+    effectiveDueDate: '2026-10-15',
+  })
+
+  assert.equal(teamScopeChecked, true)
+})
