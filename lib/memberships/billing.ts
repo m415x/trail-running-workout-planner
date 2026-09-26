@@ -475,7 +475,10 @@ export function applyGlobalDueDateException(input: {
   if (!Number.isInteger(input.year) || input.year < 1 || !Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
     throw new Error('Global due-date exception requires a valid year/month period')
   }
-  parseDate(input.dueDate)
+  const dueDate = parseDate(input.dueDate)
+  if (dueDate.getUTCFullYear() !== input.year || dueDate.getUTCMonth() + 1 !== input.month) {
+    throw new Error('Global due-date exception date must belong to the same month period')
+  }
   const reason = requireReason(input.reason)
   if (input.revisions.some(revision =>
     revision.teamId !== input.teamId
@@ -607,6 +610,9 @@ export function projectMonthlyChargeWithExceptions(input: {
   reductionRevisions: MonthlyChargeReductionRevision[]
   extensionRevisions: MonthlyChargeExtensionRevision[]
 }): MonthlyChargeCandidate {
+  if (input.globalDueDateException && !input.globalDueDateException.isCurrent) {
+    throw new Error('Global due-date projection requires the current revision, not a historical revision')
+  }
   if (
     input.globalDueDateException
     && (
