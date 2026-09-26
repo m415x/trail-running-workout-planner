@@ -32,10 +32,10 @@ export type SqliteBillingDatabase = {
     month: number,
     revision: GlobalDueDateExceptionRevision,
   ) => Promise<void>
-  listMonthlyChargeReductionRevisions: (
+  listMonthlyChargeReductionRevisions?: (
     monthlyChargeId: string,
   ) => Promise<MonthlyChargeReductionRevision[]>
-  replaceCurrentMonthlyChargeReduction: (
+  replaceCurrentMonthlyChargeReduction?: (
     monthlyChargeId: string,
     revision: MonthlyChargeReductionRevision,
   ) => Promise<void>
@@ -104,14 +104,21 @@ export function createSqliteBillingPersistencePort(
       )
     },
 
-    listMonthlyChargeReductionRevisions: (monthlyChargeId) =>
-      database.listMonthlyChargeReductionRevisions(monthlyChargeId),
+    async listMonthlyChargeReductionRevisions(monthlyChargeId) {
+      if (!database.listMonthlyChargeReductionRevisions) {
+        throw new Error('SQLite billing database does not support monthly charge reduction reads')
+      }
+      return database.listMonthlyChargeReductionRevisions(monthlyChargeId)
+    },
 
     async replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision) {
       if (revision.monthlyChargeId !== monthlyChargeId) {
         throw new Error('Monthly charge reduction identity is outside the requested charge scope')
       }
 
+      if (!database.replaceCurrentMonthlyChargeReduction) {
+        throw new Error('SQLite billing database does not support monthly charge reduction replacement')
+      }
       await database.replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision)
     },
 
