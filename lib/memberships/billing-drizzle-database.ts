@@ -238,15 +238,34 @@ export function createDrizzleBillingDatabase(
       }
       if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
+      const revisions = await this.listGlobalDueDateExceptionRevisions(teamId, year, month)
+      const current = revisions.filter((candidate) => candidate.isCurrent)
+      if (current.length > 1) {
+        throw new Error('Ambiguous current global due-date exception revisions')
+      }
+      const active = current[0]
+      const isRetry = active
+        && active.dueDate === revision.dueDate
+        && active.reason === revision.reason
+
       const now = new Date().toISOString()
       await client.transaction(async (tx) => {
-        await tx.insert(globalMonthlyDueDateExceptions).values([{
-          ...revision,
-          isCurrent: true,
-          isDeleted: false,
-          createdAt: now,
-          updatedAt: now,
-        }])
+        if (active && !isRetry) {
+          if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+          await tx.update(globalMonthlyDueDateExceptions)
+            .set({ isCurrent: false, updatedAt: now })
+            .where(eq(globalMonthlyDueDateExceptions.id, active.id))
+        }
+
+        if (!isRetry) {
+          await tx.insert(globalMonthlyDueDateExceptions).values([{
+            ...revision,
+            isCurrent: true,
+            isDeleted: false,
+            createdAt: now,
+            updatedAt: now,
+          }])
+        }
 
         if (!tx.update && charges.length > 0) {
           throw new Error('Drizzle transaction does not support updates')
