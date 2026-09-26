@@ -241,6 +241,12 @@ export function createDrizzleBillingDatabase(
       }
       if (!client.transaction) throw new Error('Drizzle client does not support transactions')
 
+      for (const charge of charges) {
+        if (!(await athleteBelongsToTeam(teamId, charge.athleteId))) {
+          throw new Error('Monthly charge projection is outside the requested team scope')
+        }
+      }
+
       const revisions = await this.listGlobalDueDateExceptionRevisions(teamId, year, month)
       const current = revisions.filter((candidate) => candidate.isCurrent)
       if (current.length > 1) {
