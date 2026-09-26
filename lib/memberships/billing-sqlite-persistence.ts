@@ -30,15 +30,15 @@ export type SqliteBillingDatabase = {
     month: number,
     revision: GlobalDueDateExceptionRevision,
   ) => Promise<void>
-  listTeamMonthlyCharges: (
+  listTeamMonthlyCharges?: (
     teamId: string,
     year: number,
     month: number,
   ) => Promise<MonthlyChargeCandidate[]>
-  getBillingTermsById: (
+  getBillingTermsById?: (
     billingTermsId: string,
   ) => Promise<AthleteBillingTerms>
-  updateMonthlyChargeDueDates: (
+  updateMonthlyChargeDueDates?: (
     teamId: string,
     charge: MonthlyChargeCandidate,
   ) => Promise<void>
@@ -88,13 +88,24 @@ export function createSqliteBillingPersistencePort(
       )
     },
 
-    listTeamMonthlyCharges: (teamId, year, month) =>
-      database.listTeamMonthlyCharges(teamId, year, month),
+    async listTeamMonthlyCharges(teamId, year, month) {
+      if (!database.listTeamMonthlyCharges) {
+        throw new Error('SQLite billing database does not support team monthly charge reads')
+      }
+      return database.listTeamMonthlyCharges(teamId, year, month)
+    },
 
-    getBillingTermsById: (billingTermsId) =>
-      database.getBillingTermsById(billingTermsId),
+    async getBillingTermsById(billingTermsId) {
+      if (!database.getBillingTermsById) {
+        throw new Error('SQLite billing database does not support billing terms lookup')
+      }
+      return database.getBillingTermsById(billingTermsId)
+    },
 
     async updateMonthlyChargeDueDates(teamId, charge) {
+      if (!database.updateMonthlyChargeDueDates) {
+        throw new Error('SQLite billing database does not support charge due-date updates')
+      }
       await database.updateMonthlyChargeDueDates(teamId, charge)
     },
   }
