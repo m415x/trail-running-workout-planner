@@ -39,6 +39,12 @@ export type SqliteBillingDatabase = {
     monthlyChargeId: string,
     revision: PersistedMonthlyChargeReductionRevision,
   ) => Promise<void>
+  applyMonthlyChargeReductionAtomically?: (
+    teamId: string,
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeReductionRevision,
+    charge: MonthlyChargeCandidate,
+  ) => Promise<void>
   listTeamMonthlyCharges?: (
     teamId: string,
     year: number,
@@ -120,6 +126,18 @@ export function createSqliteBillingPersistencePort(
         throw new Error('SQLite billing database does not support monthly charge reduction replacement')
       }
       await database.replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision)
+    },
+
+    async applyMonthlyChargeReductionAtomically(teamId, monthlyChargeId, revision, charge) {
+      if (!database.applyMonthlyChargeReductionAtomically) {
+        throw new Error('SQLite billing database does not support atomic monthly charge reductions')
+      }
+      await database.applyMonthlyChargeReductionAtomically(
+        teamId,
+        monthlyChargeId,
+        revision,
+        charge,
+      )
     },
 
     async listTeamMonthlyCharges(teamId, year, month) {
