@@ -224,3 +224,76 @@ test('Drizzle billing database replaces a current global due-date exception insi
   assert.equal(updateInsideTransaction, true)
   assert.equal(insertInsideTransaction, true)
 })
+
+
+test('Drizzle billing database can atomically persist a global exception and charge due-date projections', async () => {
+  let transactionCount = 0
+  const writes: string[] = []
+
+  const db = createDrizzleBillingDatabase({
+    select() {
+      return {
+        from() {
+          return {
+            where: async () => [],
+            innerJoin() {
+              return { where: async () => [] }
+            },
+          }
+        },
+      }
+    },
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      transactionCount += 1
+      await callback({
+        insert() {
+          return {
+            values: async () => {
+              writes.push('revision')
+            },
+          }
+        },
+        update() {
+          return {
+            set() {
+              return {
+                where: async () => {
+                  writes.push('charge')
+                },
+              }
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.applyGlobalDueDateExceptionAtomically?.(
+    'team-a',
+    2026,
+    10,
+    {
+      id: 'exception-atomic',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+    [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-15',
+      effectiveDueDate: '2026-10-15',
+    }],
+  )
+
+  assert.equal(transactionCount, 1)
+  assert.deepEqual(writes, ['revision', 'charge'])
+})
