@@ -681,6 +681,25 @@ export const monthlyCharges = sqliteTable(
   ],
 )
 
+export const globalMonthlyDueDateExceptions = sqliteTable(
+  'global_monthly_due_date_exceptions',
+  {
+    ...baseColumns,
+    teamId: text('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    year: integer('year').notNull(),
+    month: integer('month').notNull(),
+    dueDate: text('due_date').notNull(),
+    reason: text('reason').notNull(),
+    isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+  },
+  (table) => [
+    check('global_monthly_due_date_exceptions_month_check', sql`${table.month} between 1 and 12`),
+    uniqueIndex('global_monthly_due_date_exceptions_team_period_current_unique')
+      .on(table.teamId, table.year, table.month)
+      .where(sql`${table.isCurrent} = 1`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 14. SHOES (Calzado del atleta)                                              */
 /* -------------------------------------------------------------------------- */
