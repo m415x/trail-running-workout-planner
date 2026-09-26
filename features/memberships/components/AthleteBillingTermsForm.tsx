@@ -100,7 +100,7 @@ function MonthlyChargeReductionForm({
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
         </Button>
-        <Button type='submit' variant='outline' disabled={isPending} formAction={(formData) => submitReduction(formData, true)}>
+        <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitReduction(formData, true)}>
           {es ? 'Retirar reducción' : 'Withdraw reduction'}
         </Button>
       </form>
@@ -170,7 +170,7 @@ function MonthlyChargeExtensionForm({
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
         </Button>
-        <Button type='submit' variant='outline' disabled={isPending} formAction={(formData) => submitExtension(formData, true)}>
+        <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitExtension(formData, true)}>
           {es ? 'Retirar prórroga' : 'Withdraw extension'}
         </Button>
       </form>
