@@ -81,3 +81,22 @@ test('membership timeline accordions render as one card surface when expanded', 
     /pastPolicies\.map\([\s\S]*?<MembershipPolicyCard/,
   )
 })
+
+
+test('Coach membership page exposes a localized global monthly due-date exception surface', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(source, /GlobalDueDateExceptionForm/)
+  assert.match(source, /Excepción mensual de vencimiento/)
+  assert.match(source, /Monthly due-date exception/)
+  assert.match(source, /locale=\{supportedLocale\}/)
+  assert.match(actions, /applyGlobalDueDateExceptionAction/)
+  assert.match(actions, /handlers\.applyGlobalDueDateException/)
+})
