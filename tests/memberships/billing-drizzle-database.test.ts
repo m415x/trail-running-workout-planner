@@ -538,11 +538,7 @@ test('Drizzle billing database replaces the current monthly charge reduction app
   }]
 
   const db = createDrizzleBillingDatabase({
-    query: {
-      monthlyChargeReductions: {
-        findMany: async () => current,
-      },
-    },
+    ...makeQuery(current),
     transaction: async (callback: (tx: unknown) => Promise<void>) => {
       await callback({
         update() {
@@ -599,11 +595,7 @@ test('Drizzle billing database treats the same monthly charge reduction decision
   }]
 
   const db = createDrizzleBillingDatabase({
-    query: {
-      monthlyChargeReductions: {
-        findMany: async () => current,
-      },
-    },
+    ...makeQuery(current),
     transaction: async () => {
       transactionStarted = true
     },
