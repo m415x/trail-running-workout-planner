@@ -378,7 +378,11 @@ export function createDrizzleBillingDatabase(
         throw new Error('Monthly charge reduction identity is outside the requested charge scope')
       }
 
-      const revisions = await this.listMonthlyChargeReductionRevisions(monthlyChargeId)
+      const rows = await client.select().from(monthlyChargeReductions).where(and(
+        eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
+        eq(monthlyChargeReductions.isDeleted, false),
+      ))
+      const revisions = rows.map(mapMonthlyChargeReduction)
       const current = revisions.filter((candidate) => candidate.isCurrent)
       if (current.length > 1) {
         throw new Error('Ambiguous current monthly charge reduction revisions')
