@@ -187,6 +187,10 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
   const dependencies = {
     createId: () => 'global-exception-a',
     transaction: (operation: (repository: any) => unknown) => operation({
+      listTeamMonthlyCharges: () => [],
+      getBillingTermsById: () => { throw new Error('unexpected terms lookup') },
+      replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
+      updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
       applyGlobalDueDateExceptionAtomically: (
         teamId: string,
         year: number,
