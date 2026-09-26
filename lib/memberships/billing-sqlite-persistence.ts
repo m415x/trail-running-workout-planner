@@ -4,7 +4,10 @@ import type {
   MonthlyChargeCandidate,
   TeamEconomicPolicy,
 } from './billing'
-import type { BillingPersistencePort } from './billing-persistence'
+import type {
+  BillingPersistencePort,
+  GlobalDueDateExceptionPersistencePort,
+} from './billing-persistence'
 
 export type SqliteBillingDatabase = {
   athleteBelongsToTeam: (teamId: string, athleteId: string) => Promise<boolean>
@@ -31,7 +34,7 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
