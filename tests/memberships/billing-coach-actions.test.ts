@@ -187,6 +187,7 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
   const dependencies = {
     createId: () => 'global-exception-a',
     transaction: (operation: (repository: any) => unknown) => operation({
+      listGlobalDueDateExceptionRevisions: () => [],
       listTeamMonthlyCharges: () => [],
       getBillingTermsById: () => { throw new Error('unexpected terms lookup') },
       replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
@@ -350,6 +351,8 @@ test('Coach global exception reprojects existing materialized charges through th
         baseDueDate: '2026-10-05',
         effectiveDueDate: '2026-10-15',
       }],
+      replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
+      updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
       getBillingTermsById: () => ({
         id: 'terms-a',
         athleteId: 'athlete-a',
