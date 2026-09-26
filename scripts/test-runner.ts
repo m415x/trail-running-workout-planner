@@ -199,6 +199,61 @@ export function renderTestBatchResults(outputs: string[]): string {
   ].join('\n')
 }
 
+type TestBatchInvocation = ReturnType<typeof createTestBatchInvocation>
+type TestBatchSpawnResult = TestRunResult & { stdout?: string | Buffer | null; stderr?: string | Buffer | null }
+type TestBatchSpawn = (
+  executable: string,
+  args: string[],
+  options: TestBatchInvocation['options'],
+) => TestBatchSpawnResult
+
+export function executeTestRunBatches(
+  invocations: TestBatchInvocation[],
+  spawn: TestBatchSpawn,
+  report: (output: string) => void,
+): number {
+  const outputs: string[] = []
+
+  for (const invocation of invocations) {
+    const result = spawn(process.execPath, invocation.args, invocation.options)
+    const outcome = interpretTestRunResult(result)
+    const stdout = typeof result.stdout === 'string'
+      ? result.stdout
+      : result.stdout?.toString() ?? ''
+    const stderr = typeof result.stderr === 'string'
+      ? result.stderr
+      : result.stderr?.toString() ?? ''
+
+    if (stdout) {
+      outputs.push(stdout)
+    }
+
+    if (outcome.signal) {
+      if (stdout) {
+        report(stdout)
+      }
+      if (stderr) {
+        report(stderr)
+      }
+      process.kill(process.pid, outcome.signal)
+      return 1
+    }
+
+    if (outcome.exitCode !== 0) {
+      if (stdout) {
+        report(stdout)
+      }
+      if (stderr) {
+        report(stderr)
+      }
+      return outcome.exitCode ?? 1
+    }
+  }
+
+  report(renderTestBatchResults(outputs))
+  return 0
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
