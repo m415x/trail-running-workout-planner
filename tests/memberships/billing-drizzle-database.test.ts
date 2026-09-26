@@ -83,23 +83,27 @@ test('Drizzle billing database replaces the current global due-date exception wi
 
   const db = createDrizzleBillingDatabase({
     ...makeQuery(existing),
-    update() {
-      return {
-        set(value: Record<string, unknown>) {
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
           return {
-            where: async () => {
-              writes.push({ kind: 'update', value })
+            set(value: Record<string, unknown>) {
+              return {
+                where: async () => {
+                  writes.push({ kind: 'update', value })
+                },
+              }
             },
           }
         },
-      }
-    },
-    insert() {
-      return {
-        values: async (values: Record<string, unknown>[]) => {
-          writes.push({ kind: 'insert', value: values[0] })
+        insert() {
+          return {
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
+            },
+          }
         },
-      }
+      })
     },
   } as never)
 
