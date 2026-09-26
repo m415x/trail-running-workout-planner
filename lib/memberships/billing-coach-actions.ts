@@ -226,7 +226,7 @@ export async function applyMonthlyChargeReductionAction(
     || input.month < 1
     || input.month > 12
     || !Number.isSafeInteger(input.reductionAmountMinor)
-    || input.reductionAmountMinor <= 0
+    || input.reductionAmountMinor < 0
     || !input.reason.trim()
   ) {
     return { success: false, error: 'Invalid monthly charge reduction input' }
@@ -267,7 +267,7 @@ export async function applyMonthlyChargeExtensionAction(
     athleteId: string
     year: number
     month: number
-    extendedDueDate: string
+    extendedDueDate: string | null
     reason: string
   },
   dependencies: BillingCoachActionDependencies,
@@ -281,7 +281,7 @@ export async function applyMonthlyChargeExtensionAction(
     || !Number.isInteger(input.month)
     || input.month < 1
     || input.month > 12
-    || !/^\d{4}-\d{2}-\d{2}$/.test(input.extendedDueDate)
+    || (input.extendedDueDate !== null && !/^\d{4}-\d{2}-\d{2}$/.test(input.extendedDueDate))
     || !input.reason.trim()
   ) {
     return { success: false, error: 'Invalid monthly charge extension input' }
