@@ -92,10 +92,14 @@ test('Coach membership page exposes a localized global monthly due-date exceptio
     'app/actions/membership-actions.ts',
     'utf8',
   )
+  const form = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
 
   assert.match(source, /GlobalDueDateExceptionForm/)
-  assert.match(source, /Excepción mensual de vencimiento/)
-  assert.match(source, /Monthly due-date exception/)
+  assert.match(form, /Excepción mensual de vencimiento/)
+  assert.match(form, /Monthly due-date exception/)
   assert.match(source, /locale=\{supportedLocale\}/)
   assert.match(actions, /applyGlobalDueDateExceptionAction/)
   assert.match(actions, /handlers\.applyGlobalDueDateException/)
