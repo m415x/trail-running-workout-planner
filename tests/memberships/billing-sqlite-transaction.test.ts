@@ -8,7 +8,10 @@ test('SQLite billing transaction does not accept an async operation', () => {
     transaction: (
       operation: () => unknown,
       _config?: { behavior?: 'deferred' | 'immediate' | 'exclusive' },
-    ) => operation(),
+    ) => {
+      void _config
+      return operation()
+    },
   }
 
   const transaction = createSqliteBillingTransaction(db)
@@ -26,6 +29,7 @@ test('SQLite billing transaction completes synchronous work before returning', (
       operation: () => unknown,
       _config?: { behavior?: 'deferred' | 'immediate' | 'exclusive' },
     ) => {
+      void _config
       calls.push('begin')
       const result = operation()
       calls.push('commit')
