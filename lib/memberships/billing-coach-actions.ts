@@ -27,9 +27,9 @@ type ConfigureTeamEconomicPolicyInput = {
   ordinaryDueDay: number
 }
 
-type BillingCoachActionResult =
+export type BillingCoachActionResult =
   | { success: true }
-  | { success: false; error?: string }
+  | { success: false; error: string }
 
 export type BillingCoachActionDependencies = {
   createId: () => string
