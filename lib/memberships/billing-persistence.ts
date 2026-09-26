@@ -23,13 +23,17 @@ export type BillingPersistencePort = {
 
 }
 
+export type PersistedMonthlyChargeReductionRevision = MonthlyChargeReductionRevision & {
+  monthlyChargeId: string
+}
+
 export type MonthlyChargeReductionPersistencePort = {
   listMonthlyChargeReductionRevisions: (
     monthlyChargeId: string,
-  ) => Promise<MonthlyChargeReductionRevision[]>
+  ) => Promise<PersistedMonthlyChargeReductionRevision[]>
   replaceCurrentMonthlyChargeReduction: (
     monthlyChargeId: string,
-    revision: MonthlyChargeReductionRevision,
+    revision: PersistedMonthlyChargeReductionRevision,
   ) => Promise<void>
 }
 
