@@ -250,3 +250,62 @@ test('materialization applies the current global due-date exception to future ch
   assert.ok(october)
   assert.equal(october.effectiveDueDate, '2026-10-15')
 })
+
+
+test('global due-date exception preserves a later effective due date from an existing individual extension', async () => {
+  const updates: Array<{ baseDueDate: string; effectiveDueDate: string }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-05',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+    }) => {
+      updates.push(charge)
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-2',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Nuevo vencimiento global',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].baseDueDate, '2026-10-15')
+  assert.equal(updates[0].effectiveDueDate, '2026-10-25')
+})
