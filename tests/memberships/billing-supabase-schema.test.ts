@@ -157,3 +157,14 @@ test('Supabase verifier validates H2 foreign keys and reduction/month constraint
   assert.match(verify, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
   assert.match(verify, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
 })
+
+
+test('Supabase H2 migration does not introduce permissive RLS policies before identity authorization', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  assert.doesNotMatch(migration, /CREATE\s+POLICY/i)
+  assert.doesNotMatch(migration, /USING\s*\(\s*true\s*\)/i)
+  assert.doesNotMatch(migration, /WITH\s+CHECK\s*\(\s*true\s*\)/i)
+})
