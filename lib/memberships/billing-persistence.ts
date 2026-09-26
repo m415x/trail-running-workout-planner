@@ -183,6 +183,15 @@ export function createBillingPersistenceAdapter(
       })
       const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
       if (!validatedRevision) throw new Error('Current monthly charge reduction revision not found')
+      const persistedCurrent = persistedRevisions.find((revision) => revision.isCurrent)
+      if (
+        persistedCurrent
+        && validatedRevision.id === persistedCurrent.id
+        && validatedRevision.reductionAmountMinor === persistedCurrent.reductionAmountMinor
+        && validatedRevision.reason === persistedCurrent.reason
+      ) {
+        return
+      }
       const projected = projectMonthlyChargeWithExceptions({
         charge,
         globalDueDateException: null,
