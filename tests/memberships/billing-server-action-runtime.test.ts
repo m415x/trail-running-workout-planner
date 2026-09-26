@@ -228,6 +228,14 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
         where: async () => [],
       }),
     }),
+    insert: () => ({
+      values: () => undefined,
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => undefined,
+      }),
+    }),
   }
 
   const runtime = createMembershipServerActionRuntime({
