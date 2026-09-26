@@ -112,3 +112,20 @@ test('Supabase H2 migration enables RLS on every economic fact table', () => {
     assert.match(migration, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`))
   }
 })
+
+
+test('Supabase H2 schema is consumable by the shared Drizzle billing adapter', () => {
+  const adapter = fs.readFileSync(
+    path.join(root, 'lib', 'memberships', 'billing-drizzle-database.ts'),
+    'utf8',
+  )
+  assert.match(adapter, /from ['"]@\/db\/schema['"]/)
+  assert.match(adapter, /globalMonthlyDueDateExceptions/)
+  assert.match(adapter, /monthlyChargeReductions/)
+  assert.match(adapter, /monthlyChargeExtensions/)
+
+  const supabaseSchema = fs.readFileSync(path.join(root, 'db', 'supabase', 'schema.ts'), 'utf8')
+  assert.match(supabaseSchema, /export const globalMonthlyDueDateExceptions/)
+  assert.match(supabaseSchema, /export const monthlyChargeReductions/)
+  assert.match(supabaseSchema, /export const monthlyChargeExtensions/)
+})
