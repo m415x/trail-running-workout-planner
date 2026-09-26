@@ -173,6 +173,13 @@ export function createTestBatchInvocation(testFiles: string[]): {
   }
 }
 
+export function prepareTestRunBatches(
+  testFiles: string[],
+  maxArgumentLength = 8_000,
+): ReturnType<typeof createTestBatchInvocation>[] {
+  return planTestFileBatches(testFiles, maxArgumentLength).map(createTestBatchInvocation)
+}
+
 export function runTestFiles(testFiles: string[]): number {
   for (const batch of planTestFileBatches(testFiles)) {
     const result = spawnSync(process.execPath, ['--import', 'tsx', '--test', ...batch], {
