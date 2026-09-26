@@ -398,3 +398,80 @@ test('Coach global exception reprojects existing materialized charges through th
     'charge:2026-10-10:2026-10-15',
   ])
 })
+
+
+test('KAN-479 Coach actions support explicit reduction and extension withdrawals as auditable H2 revisions', async () => {
+  const calls: string[] = []
+  let nextId = 0
+  const dependencies = {
+    createId: () => `withdrawal-${++nextId}`,
+    transaction: (operation: (repository: any) => unknown) => operation({
+      listMonthlyCharges: () => [{
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_000_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-15',
+      }],
+      listMonthlyChargeReductionRevisions: () => [{
+        id: 'reduction-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca deportiva',
+        isCurrent: true,
+      }],
+      applyMonthlyChargeReductionAtomically: (
+        _teamId: string,
+        _monthlyChargeId: string,
+        revision: any,
+      ) => calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`),
+      listMonthlyChargeExtensionRevisions: () => [{
+        id: 'extension-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-15',
+        reason: 'Prórroga acordada',
+        isCurrent: true,
+      }],
+      applyMonthlyChargeExtensionAtomically: (
+        _teamId: string,
+        _monthlyChargeId: string,
+        revision: any,
+      ) => calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`),
+    }),
+  } as BillingCoachActionDependencies
+
+  assert.deepEqual(await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 0,
+    reason: 'Retiro de beca',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: null,
+    reason: 'Retiro de prórroga',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(calls, [
+    'reduction:0:Retiro de beca',
+    'extension:null:Retiro de prórroga',
+  ])
+})
