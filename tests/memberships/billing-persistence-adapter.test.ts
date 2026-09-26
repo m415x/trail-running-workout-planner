@@ -283,6 +283,19 @@ test('global due-date exception preserves a later effective due date from an exi
       effectiveFrom: '2026-09-01',
       effectiveUntil: null,
     }),
+    listMonthlyChargeExtensionRevisions: async (monthlyChargeId: string) => {
+      assert.equal(monthlyChargeId, 'charge-a')
+      return [{
+        id: 'extension-existing',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual vigente',
+        isCurrent: true,
+      }]
+    },
     updateMonthlyChargeDueDates: async (_teamId: string, charge: {
       baseDueDate: string
       effectiveDueDate: string
