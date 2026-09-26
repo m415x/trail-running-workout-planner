@@ -89,7 +89,13 @@ export function createBillingPersistenceAdapter(
           extensionRevisions: [],
           economicActivationDate: terms.effectiveFrom,
         })
-        await h2Port.updateMonthlyChargeDueDates(input.teamId, projected)
+        const effectiveDueDate = charge.effectiveDueDate > projected.effectiveDueDate
+          ? charge.effectiveDueDate
+          : projected.effectiveDueDate
+        await h2Port.updateMonthlyChargeDueDates(input.teamId, {
+          ...projected,
+          effectiveDueDate,
+        })
       }
     },
 
