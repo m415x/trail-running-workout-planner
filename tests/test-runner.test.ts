@@ -216,3 +216,48 @@ test('portable test runner prepares captured TAP batches for one aggregate resul
     },
   ])
 })
+
+
+test('portable test runner combines captured TAP batch results into one report', async () => {
+  const { combineTestBatchResults } = await import('../scripts/test-runner')
+  const first = `TAP version 13
+ok 1 - first
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.25`
+  const second = `TAP version 13
+ok 1 - second
+1..1
+# tests 3
+# suites 2
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20.5`
+
+  assert.deepEqual(combineTestBatchResults([first, second]), {
+    diagnostics: [`TAP version 13
+ok 1 - first
+1..1`, `TAP version 13
+ok 1 - second
+1..1`],
+    summary: {
+      tests: 5,
+      suites: 3,
+      pass: 5,
+      fail: 0,
+      cancelled: 0,
+      skipped: 0,
+      todo: 0,
+      durationMs: 30.75,
+    },
+  })
+})
