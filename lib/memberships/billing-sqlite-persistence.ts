@@ -1,5 +1,6 @@
 import type {
   AthleteBillingTerms,
+  GlobalDueDateExceptionRevision,
   MonthlyChargeCandidate,
   TeamEconomicPolicy,
 } from './billing'
@@ -14,6 +15,17 @@ export type SqliteBillingDatabase = {
     teamId: string,
     athleteId: string,
     charges: MonthlyChargeCandidate[],
+  ) => Promise<void>
+  listGlobalDueDateExceptionRevisions: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) => Promise<GlobalDueDateExceptionRevision[]>
+  replaceCurrentGlobalDueDateException: (
+    teamId: string,
+    year: number,
+    month: number,
+    revision: GlobalDueDateExceptionRevision,
   ) => Promise<void>
 }
 
@@ -39,6 +51,26 @@ export function createSqliteBillingPersistencePort(
       }
 
       await database.insertMonthlyCharges(teamId, athleteId, charges)
+    },
+
+    listGlobalDueDateExceptionRevisions: (teamId, year, month) =>
+      database.listGlobalDueDateExceptionRevisions(teamId, year, month),
+
+    async replaceCurrentGlobalDueDateException(teamId, year, month, revision) {
+      if (
+        revision.teamId !== teamId
+        || revision.year !== year
+        || revision.month !== month
+      ) {
+        throw new Error('Global due-date exception identity is outside the requested team period scope')
+      }
+
+      await database.replaceCurrentGlobalDueDateException(
+        teamId,
+        year,
+        month,
+        revision,
+      )
     },
   }
 }
