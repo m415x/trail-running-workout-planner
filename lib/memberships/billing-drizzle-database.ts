@@ -227,6 +227,46 @@ export function createDrizzleBillingDatabase(
         ))
     },
 
+    async applyGlobalDueDateExceptionAtomically(teamId, year, month, revision, charges) {
+      if (
+        revision.teamId !== teamId
+        || revision.year !== year
+        || revision.month !== month
+        || charges.some((charge) => charge.year !== year || charge.month !== month)
+      ) {
+        throw new Error('Global due-date exception application is outside the requested team period scope')
+      }
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
+
+      const now = new Date().toISOString()
+      await client.transaction(async (tx) => {
+        await tx.insert(globalMonthlyDueDateExceptions).values([{
+          ...revision,
+          isCurrent: true,
+          isDeleted: false,
+          createdAt: now,
+          updatedAt: now,
+        }])
+
+        if (!tx.update && charges.length > 0) {
+          throw new Error('Drizzle transaction does not support updates')
+        }
+        for (const charge of charges) {
+          await tx.update!(monthlyCharges)
+            .set({
+              baseDueDate: charge.baseDueDate,
+              effectiveDueDate: charge.effectiveDueDate,
+              updatedAt: now,
+            })
+            .where(and(
+              eq(monthlyCharges.athleteId, charge.athleteId),
+              eq(monthlyCharges.year, charge.year),
+              eq(monthlyCharges.month, charge.month),
+            ))
+        }
+      })
+    },
+
     async listGlobalDueDateExceptionRevisions(teamId, year, month) {
       const rows = await client.select().from(globalMonthlyDueDateExceptions).where(and(
         eq(globalMonthlyDueDateExceptions.teamId, teamId),
