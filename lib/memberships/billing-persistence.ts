@@ -8,6 +8,7 @@ import {
   type GlobalDueDateExceptionRevision,
   type MonthlyChargeCandidate,
   type MonthlyChargeReductionRevision,
+  type MonthlyChargeExtensionRevision,
   type TeamEconomicPolicy,
 } from './billing'
 
@@ -41,6 +42,20 @@ export type MonthlyChargeReductionPersistencePort = {
     monthlyChargeId: string,
     revision: PersistedMonthlyChargeReductionRevision,
     charge: MonthlyChargeCandidate,
+  ) => Promise<void>
+}
+
+export type PersistedMonthlyChargeExtensionRevision = MonthlyChargeExtensionRevision & {
+  monthlyChargeId: string
+}
+
+export type MonthlyChargeExtensionPersistencePort = {
+  listMonthlyChargeExtensionRevisions: (
+    monthlyChargeId: string,
+  ) => Promise<PersistedMonthlyChargeExtensionRevision[]>
+  replaceCurrentMonthlyChargeExtension: (
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeExtensionRevision,
   ) => Promise<void>
 }
 
