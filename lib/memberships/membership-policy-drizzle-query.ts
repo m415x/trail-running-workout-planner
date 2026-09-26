@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 
-import { teamEconomicPolicies } from '@/db/schema'
-import type { TeamEconomicPolicy } from './billing'
+import { globalMonthlyDueDateExceptions, teamEconomicPolicies } from '@/db/schema'
+import type { GlobalDueDateExceptionRevision, TeamEconomicPolicy } from './billing'
 import type { TeamEconomicPolicyQueryRepository } from './membership-policy-query'
 
 type QueryResult = Record<string, unknown>
@@ -13,6 +13,18 @@ type SyncDrizzlePolicyQueryClient = {
         all: () => QueryResult[]
       }
     }
+  }
+}
+
+function mapGlobalException(row: QueryResult): GlobalDueDateExceptionRevision {
+  return {
+    id: String(row.id),
+    teamId: String(row.teamId),
+    year: Number(row.year),
+    month: Number(row.month),
+    dueDate: String(row.dueDate),
+    reason: String(row.reason),
+    isCurrent: Boolean(row.isCurrent),
   }
 }
 
@@ -34,6 +46,19 @@ export function createTeamEconomicPolicyQueryRepository(
   const client = db as SyncDrizzlePolicyQueryClient
 
   return {
+    async listGlobalDueDateExceptionRevisions(teamId) {
+      const rows = client
+        .select()
+        .from(globalMonthlyDueDateExceptions)
+        .where(and(
+          eq(globalMonthlyDueDateExceptions.teamId, teamId),
+          eq(globalMonthlyDueDateExceptions.isDeleted, false),
+        ))
+        .all()
+
+      return rows.map(mapGlobalException)
+    },
+
     async listTeamEconomicPolicies(teamId) {
       const rows = client
         .select()
