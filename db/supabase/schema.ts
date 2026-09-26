@@ -683,6 +683,64 @@ export const monthlyCharges = pgTable(
   ],
 )
 
+export const globalMonthlyDueDateExceptions = pgTable(
+  'global_monthly_due_date_exceptions',
+  {
+    ...baseColumns,
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'cascade' }),
+    year: integer('year').notNull(),
+    month: integer('month').notNull(),
+    dueDate: text('due_date').notNull(),
+    reason: text('reason').notNull(),
+    isCurrent: boolean('is_current').notNull().default(true),
+  },
+  (table) => [
+    check('global_monthly_due_date_exceptions_month_check', sql`${table.month} between 1 and 12`),
+    uniqueIndex('global_monthly_due_date_exceptions_team_period_current_unique')
+      .on(table.teamId, table.year, table.month)
+      .where(sql`${table.isCurrent} = true`),
+  ],
+)
+
+export const monthlyChargeReductions = pgTable(
+  'monthly_charge_reductions',
+  {
+    ...baseColumns,
+    monthlyChargeId: text('monthly_charge_id')
+      .notNull()
+      .references(() => monthlyCharges.id, { onDelete: 'restrict' }),
+    reductionAmountMinor: integer('reduction_amount_minor').notNull(),
+    reason: text('reason').notNull(),
+    isCurrent: boolean('is_current').notNull().default(true),
+  },
+  (table) => [
+    check('monthly_charge_reductions_amount_check', sql`${table.reductionAmountMinor} >= 0`),
+    uniqueIndex('monthly_charge_reductions_charge_current_unique')
+      .on(table.monthlyChargeId)
+      .where(sql`${table.isCurrent} = true`),
+  ],
+)
+
+export const monthlyChargeExtensions = pgTable(
+  'monthly_charge_extensions',
+  {
+    ...baseColumns,
+    monthlyChargeId: text('monthly_charge_id')
+      .notNull()
+      .references(() => monthlyCharges.id, { onDelete: 'restrict' }),
+    extendedDueDate: text('extended_due_date'),
+    reason: text('reason').notNull(),
+    isCurrent: boolean('is_current').notNull().default(true),
+  },
+  (table) => [
+    uniqueIndex('monthly_charge_extensions_charge_current_unique')
+      .on(table.monthlyChargeId)
+      .where(sql`${table.isCurrent} = true`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 13A. LEGACY MEMBERSHIPS                                                    */
 /* -------------------------------------------------------------------------- */
