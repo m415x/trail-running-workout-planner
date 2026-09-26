@@ -6,6 +6,7 @@ import {
   globalMonthlyDueDateExceptions,
   monthlyCharges,
   monthlyChargeReductions,
+  monthlyChargeExtensions,
   teamEconomicPolicies,
 } from '@/db/schema'
 import type {
@@ -15,7 +16,7 @@ import type {
   TeamEconomicPolicy,
 } from './billing'
 import type { SqliteBillingDatabase } from './billing-sqlite-persistence'
-import type { PersistedMonthlyChargeReductionRevision } from './billing-persistence'
+import type { PersistedMonthlyChargeReductionRevision, PersistedMonthlyChargeExtensionRevision } from './billing-persistence'
 
 type QueryResult = Record<string, unknown>
 
@@ -41,6 +42,19 @@ function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeRedu
     year: Number(row.year),
     month: Number(row.month),
     reductionAmountMinor: Number(row.reductionAmountMinor),
+    reason: String(row.reason),
+    isCurrent: Boolean(row.isCurrent),
+  }
+}
+
+function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExtensionRevision {
+  return {
+    id: String(row.id),
+    monthlyChargeId: String(row.monthlyChargeId),
+    athleteId: String(row.athleteId),
+    year: Number(row.year),
+    month: Number(row.month),
+    extendedDueDate: row.extendedDueDate === null ? null : String(row.extendedDueDate),
     reason: String(row.reason),
     isCurrent: Boolean(row.isCurrent),
   }
@@ -500,6 +514,83 @@ export function createDrizzleBillingDatabase(
           id: revision.id,
           monthlyChargeId: revision.monthlyChargeId,
           reductionAmountMinor: revision.reductionAmountMinor,
+          reason: revision.reason,
+          isCurrent: true,
+          isDeleted: false,
+          createdAt: now,
+          updatedAt: now,
+        }])
+      })
+    },
+
+    async listMonthlyChargeExtensionRevisions(monthlyChargeId) {
+      const rows = await client
+        .select()
+        .from(monthlyChargeExtensions)
+        .innerJoin(
+          monthlyCharges,
+          eq(monthlyCharges.id, monthlyChargeExtensions.monthlyChargeId),
+        )
+        .where(and(
+          eq(monthlyChargeExtensions.monthlyChargeId, monthlyChargeId),
+          eq(monthlyChargeExtensions.isDeleted, false),
+          eq(monthlyCharges.isDeleted, false),
+        ))
+
+      return rows.map((row: QueryResult) => {
+        const extension = (row.monthly_charge_extensions ?? row.monthlyChargeExtensions ?? row) as QueryResult
+        const charge = (row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult
+        return mapMonthlyChargeExtension({
+          ...extension,
+          athleteId: charge.athleteId,
+          year: charge.year,
+          month: charge.month,
+        })
+      })
+    },
+
+    async replaceCurrentMonthlyChargeExtension(monthlyChargeId, revision) {
+      if (revision.monthlyChargeId !== monthlyChargeId) {
+        throw new Error('Monthly charge extension identity is outside the requested charge scope')
+      }
+
+      const rows = await client.select().from(monthlyChargeExtensions).where(and(
+        eq(monthlyChargeExtensions.monthlyChargeId, monthlyChargeId),
+        eq(monthlyChargeExtensions.isDeleted, false),
+      ))
+      const revisions = rows.map(mapMonthlyChargeExtension)
+      const current = revisions.filter((candidate) => candidate.isCurrent)
+      if (current.length > 1) {
+        throw new Error('Ambiguous current monthly charge extension revisions')
+      }
+
+      const active = current[0]
+      if (
+        active
+        && active.athleteId === revision.athleteId
+        && active.year === revision.year
+        && active.month === revision.month
+        && active.extendedDueDate === revision.extendedDueDate
+        && active.reason === revision.reason
+      ) {
+        return
+      }
+
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
+
+      const now = new Date().toISOString()
+      await client.transaction(async (tx) => {
+        if (active) {
+          if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+          await tx.update(monthlyChargeExtensions)
+            .set({ isCurrent: false, updatedAt: now })
+            .where(eq(monthlyChargeExtensions.id, active.id))
+        }
+
+        await tx.insert(monthlyChargeExtensions).values([{
+          id: revision.id,
+          monthlyChargeId: revision.monthlyChargeId,
+          extendedDueDate: revision.extendedDueDate,
           reason: revision.reason,
           isCurrent: true,
           isDeleted: false,
