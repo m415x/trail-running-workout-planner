@@ -5,11 +5,7 @@ import { createSqliteBillingTransaction } from '../../lib/memberships/billing-sq
 
 test('SQLite billing transaction does not accept an async operation', () => {
   const db = {
-    transaction: (
-      operation: () => unknown,
-      _config?: { behavior?: 'deferred' | 'immediate' | 'exclusive' },
-    ) => {
-      void _config
+    transaction: (operation: () => unknown) => {
       return operation()
     },
   }
@@ -25,11 +21,7 @@ test('SQLite billing transaction does not accept an async operation', () => {
 test('SQLite billing transaction completes synchronous work before returning', () => {
   const calls: string[] = []
   const db = {
-    transaction: (
-      operation: () => unknown,
-      _config?: { behavior?: 'deferred' | 'immediate' | 'exclusive' },
-    ) => {
-      void _config
+    transaction: (operation: () => unknown) => {
       calls.push('begin')
       const result = operation()
       calls.push('commit')
