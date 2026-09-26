@@ -86,7 +86,7 @@ export function createSqliteBillingPersistencePort(
         month,
         revision,
       )
-    },,
+    },
 
     listTeamMonthlyCharges: (teamId, year, month) =>
       database.listTeamMonthlyCharges(teamId, year, month),
@@ -96,6 +96,6 @@ export function createSqliteBillingPersistencePort(
 
     async updateMonthlyChargeDueDates(teamId, charge) {
       await database.updateMonthlyChargeDueDates(teamId, charge)
-    }
+    },
   }
 }
