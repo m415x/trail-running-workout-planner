@@ -56,6 +56,8 @@ test('SQLite billing persistence port persists only charges belonging to the req
       assert.ok(charges.every((charge) => charge.athleteId === athleteId))
       inserted.push(...charges.map((charge) => charge.athleteId))
     },
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
   } satisfies SqliteBillingDatabase
 
   const port = createSqliteBillingPersistencePort(db)
@@ -99,8 +101,6 @@ test('SQLite billing persistence exposes append-only global due-date exception r
     listMonthlyCharges: async () => [],
     listTeamEconomicPolicies: async () => [],
     insertMonthlyCharges: async () => {},
-    listGlobalDueDateExceptionRevisions: async () => [],
-    replaceCurrentGlobalDueDateException: async () => {},
     listGlobalDueDateExceptionRevisions: async (teamId: string, year: number, month: number) => {
       calls.push(`list:${teamId}:${year}:${month}`)
       return []
