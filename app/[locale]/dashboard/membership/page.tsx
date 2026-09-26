@@ -1,6 +1,7 @@
 import { db } from '@/db'
 import { MembershipPolicyCard } from '@/features/memberships/components/MembershipPolicyCard'
 import { TeamEconomicPolicyForm } from '@/features/memberships/components/TeamEconomicPolicyForm'
+import { GlobalDueDateExceptionForm } from '@/features/memberships/components/GlobalDueDateExceptionForm'
 import {
   Accordion,
   AccordionContent,
@@ -133,6 +134,8 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
           </AccordionItem>
         </Accordion>
       ) : null}
+
+      <GlobalDueDateExceptionForm locale={supportedLocale} />
 
       <TeamEconomicPolicyForm
         model={model.form}
