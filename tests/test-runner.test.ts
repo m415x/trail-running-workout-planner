@@ -305,3 +305,60 @@ ok 1 - second
 ℹ todo 0
 ℹ duration_ms 30.75`)
 })
+
+
+test('portable test runner executes prepared batches and emits one aggregate report', async () => {
+  const { executeTestRunBatches } = await import('../scripts/test-runner')
+  const invocations = [
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/a.test.ts'],
+      options: { shell: false as const, encoding: 'utf8' as const },
+    },
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/b.test.ts'],
+      options: { shell: false as const, encoding: 'utf8' as const },
+    },
+  ]
+  const outputs = [
+    `TAP version 13
+ok 1 - first
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.25`,
+    `TAP version 13
+ok 1 - second
+1..1
+# tests 3
+# suites 2
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20.5`,
+  ]
+  const calls: string[][] = []
+  const reports: string[] = []
+
+  const exitCode = executeTestRunBatches(
+    invocations,
+    (executable, args, options) => {
+      calls.push([executable, ...args])
+      const stdout = outputs[calls.length - 1]
+      return { status: 0, signal: null, error: undefined, stdout, stderr: '' }
+    },
+    (report) => reports.push(report),
+  )
+
+  assert.equal(exitCode, 0)
+  assert.equal(calls.length, 2)
+  assert.equal(reports.length, 1)
+  assert.match(reports[0] ?? '', /ℹ tests 5/)
+  assert.doesNotMatch(reports[0] ?? '', /# tests [23]/)
+})
