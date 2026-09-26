@@ -37,7 +37,7 @@ export type BillingCoachActionDependencies = {
     operation: (
       repository: SynchronousBillingCoachRepository
         | SynchronousAthleteBillingTermsRepository
-        | GlobalDueDateExceptionPersistencePort
+        | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort)
         | (BillingPersistencePort & MonthlyChargeReductionPersistencePort)
         | (BillingPersistencePort & MonthlyChargeExtensionPersistencePort),
     ) => T,
@@ -175,12 +175,7 @@ export async function applyGlobalDueDateExceptionAction(
   }
 
   try {
-    dependencies.transaction((repository) => {
-      const h2Repository = repository as GlobalDueDateExceptionPersistencePort
-      if (!h2Repository.applyGlobalDueDateExceptionAtomically) {
-        throw new Error('Billing persistence does not support atomic global due-date exceptions')
-      }
-
+    const operation = dependencies.transaction((repository) => {
       const revision: GlobalDueDateExceptionRevision = {
         id: dependencies.createId(),
         teamId: input.teamId,
@@ -190,15 +185,15 @@ export async function applyGlobalDueDateExceptionAction(
         reason: input.reason.trim(),
         isCurrent: true,
       }
-
-      h2Repository.applyGlobalDueDateExceptionAtomically(
-        input.teamId,
-        input.year,
-        input.month,
-        revision,
-        [],
+      const adapter = createBillingPersistenceAdapter(
+        repository as BillingPersistencePort & GlobalDueDateExceptionPersistencePort,
       )
+      return adapter.applyGlobalDueDateException({
+        teamId: input.teamId,
+        revision,
+      })
     })
+    await operation
 
     return { success: true }
   } catch {
