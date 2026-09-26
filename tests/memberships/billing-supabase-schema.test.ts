@@ -147,3 +147,13 @@ test('Supabase H2 migration preserves SQLite-equivalent foreign-key and reductio
   assert.equal((migration.match(/ON DELETE restrict/gi) ?? []).length >= 2, true)
   assert.match(migration, /"extended_due_date" text,/)
 })
+
+
+test('Supabase verifier validates H2 foreign keys and reduction/month constraints, not only current indexes', () => {
+  const verify = fs.readFileSync(path.join(root, 'db', 'supabase', 'verify.ts'), 'utf8')
+  assert.match(verify, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(verify, /monthly_charge_reductions_amount_check/)
+  assert.match(verify, /global_monthly_due_date_exceptions_team_id_teams_id_fk/)
+  assert.match(verify, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.match(verify, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
+})
