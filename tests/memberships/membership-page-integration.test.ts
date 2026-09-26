@@ -208,3 +208,17 @@ test('KAN-479 athlete detail wires persisted charge identities and H2 revision h
   assert.match(athletePage, /reductionHistory=\{membership\.reductionHistory\}/)
   assert.match(athletePage, /extensionHistory=\{membership\.extensionHistory\}/)
 })
+
+
+test('KAN-479 withdrawal controls do not require an active reduction amount or extension date', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(athleteForm, /name='reductionAmount'[\s\S]*?required/)
+  assert.match(athleteForm, /Retirar reducción[\s\S]*?Withdraw reduction/)
+  assert.match(athleteForm, /formNoValidate/)
+  assert.match(athleteForm, /name='extendedDueDate'[\s\S]*?required/)
+  assert.match(athleteForm, /Retirar prórroga[\s\S]*?Withdraw extension/)
+})
