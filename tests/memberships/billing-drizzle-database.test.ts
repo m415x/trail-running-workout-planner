@@ -746,3 +746,91 @@ test('reduction revision history reconstructs economic identity from the linked 
   assert.equal(revisions?.[0].year, 2026)
   assert.equal(revisions?.[0].month, 10)
 })
+
+
+test('Drizzle billing database replaces the current monthly charge extension append-only', async () => {
+  const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
+  const current = [{
+    id: 'extension-current',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-20',
+    reason: 'Prórroga inicial',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery(current),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
+          return {
+            set(value: Record<string, unknown>) {
+              return { where: async () => writes.push({ kind: 'update', value }) }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.replaceCurrentMonthlyChargeExtension?.('charge-a', {
+    id: 'extension-new',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-25',
+    reason: 'Prórroga corregida',
+    isCurrent: true,
+  })
+
+  assert.equal(writes.length, 2)
+  assert.equal(writes[0].kind, 'update')
+  assert.equal(writes[0].value.isCurrent, false)
+  assert.equal(writes[1].kind, 'insert')
+  assert.equal(writes[1].value.isCurrent, true)
+})
+
+test('Drizzle billing database treats the same monthly charge extension decision as an idempotent retry', async () => {
+  let transactionStarted = false
+  const current = [{
+    id: 'extension-current',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-25',
+    reason: 'Prórroga individual',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery(current),
+    transaction: async () => {
+      transactionStarted = true
+    },
+  } as never)
+
+  await db.replaceCurrentMonthlyChargeExtension?.('charge-a', {
+    id: 'retry-with-different-id',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-25',
+    reason: 'Prórroga individual',
+    isCurrent: true,
+  })
+
+  assert.equal(transactionStarted, false)
+})
