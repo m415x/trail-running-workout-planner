@@ -11,6 +11,7 @@ import type {
   PersistedMonthlyChargeReductionRevision,
   MonthlyChargeExtensionPersistencePort,
   PersistedMonthlyChargeExtensionRevision,
+  PersistedMonthlyCharge,
 } from './billing-persistence'
 
 export type SqliteBillingDatabase = {
@@ -64,7 +65,7 @@ export type SqliteBillingDatabase = {
     teamId: string,
     year: number,
     month: number,
-  ) => Promise<MonthlyChargeCandidate[]>
+  ) => Promise<PersistedMonthlyCharge[]>
   getBillingTermsById?: (
     billingTermsId: string,
   ) => Promise<AthleteBillingTerms>
