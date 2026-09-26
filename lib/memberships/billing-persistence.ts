@@ -16,7 +16,7 @@ import {
 export type BillingPersistencePort = {
   athleteBelongsToTeam: (teamId: string, athleteId: string) => Promise<boolean>
   listBillingTerms: (teamId: string, athleteId: string) => Promise<AthleteBillingTerms[]>
-  listMonthlyCharges: (teamId: string, athleteId: string) => Promise<MonthlyChargeCandidate[]>
+  listMonthlyCharges: (teamId: string, athleteId: string) => Promise<PersistedMonthlyCharge[]>
   listTeamEconomicPolicies: (teamId: string) => Promise<TeamEconomicPolicy[]>
   insertMonthlyCharges: (
     teamId: string,
