@@ -978,3 +978,51 @@ test('KAN-479 SQLite-compatible H2 atomic writes use synchronous Drizzle transac
     'better-sqlite3 transactions reject Promise-returning callbacks',
   )
 })
+
+
+test('KAN-479 SQLite H2 atomic transaction executes Drizzle writes before returning success', async () => {
+  const writes: string[] = []
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([]),
+    transaction: (callback: (tx: unknown) => void) => callback({
+      insert() {
+        return {
+          values() {
+            writes.push('insert')
+            return { run: () => writes.push('insert:run') }
+          },
+        }
+      },
+      update() {
+        return {
+          set() {
+            return {
+              where() {
+                writes.push('update')
+                return { run: () => writes.push('update:run') }
+              },
+            }
+          },
+        }
+      },
+    }),
+  } as never)
+
+  await db.applyGlobalDueDateExceptionAtomically?.(
+    'team-a',
+    2026,
+    11,
+    {
+      id: 'global-november',
+      teamId: 'team-a',
+      year: 2026,
+      month: 11,
+      dueDate: '2026-11-12',
+      reason: 'Una vez',
+      isCurrent: true,
+    },
+    [],
+  )
+
+  assert.deepEqual(writes, ['insert', 'insert:run'])
+})
