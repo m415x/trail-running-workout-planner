@@ -115,5 +115,18 @@ export function createSqliteBillingPersistencePort(
       }
       await database.updateMonthlyChargeDueDates(teamId, charge)
     },
+
+    async applyGlobalDueDateExceptionAtomically(teamId, year, month, revision, charges) {
+      if (!database.applyGlobalDueDateExceptionAtomically) {
+        throw new Error('SQLite billing database does not support atomic global due-date exception application')
+      }
+      await database.applyGlobalDueDateExceptionAtomically(
+        teamId,
+        year,
+        month,
+        revision,
+        charges,
+      )
+    },
   }
 }
