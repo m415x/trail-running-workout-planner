@@ -9,7 +9,8 @@ test('builds the membership page model from the current scoped team policy', asy
     teamId: 'team_1',
     onDate: '2026-10-15',
     repository: {
-      listTeamEconomicPolicies: async (teamId) => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async (teamId) => {
         assert.equal(teamId, 'team_1')
         return [{
           id: 'policy-1',
@@ -40,7 +41,8 @@ test('builds the empty membership page model without causing materialization', a
     teamId: 'team_1',
     onDate: '2026-10-15',
     repository: {
-      listTeamEconomicPolicies: async () => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => {
         reads += 1
         return []
       },
@@ -62,7 +64,8 @@ test('builds policy presentation and prospective form model from the same policy
     teamId: 'team_1',
     onDate: '2026-10-15',
     repository: {
-      listTeamEconomicPolicies: async () => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => {
         reads += 1
         return [{
           id: 'policy-1',
@@ -94,7 +97,8 @@ test('shows the current policy and the next scheduled policy from one scoped rea
     teamId: 'team_1',
     onDate: '2026-09-25',
     repository: {
-      listTeamEconomicPolicies: async () => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => {
         reads += 1
         return [
           {
@@ -136,7 +140,8 @@ test('partitions past current and scheduled policies and bases the form on the l
     teamId: 'team_1',
     onDate: '2026-09-25',
     repository: {
-      listTeamEconomicPolicies: async () => [
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => [
         {
           id: 'policy-past',
           teamId: 'team_1',
