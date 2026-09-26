@@ -40,3 +40,25 @@ test('SQLite H1 migration is versioned after 0007 and preserves legacy membershi
   assert.match(sql, /monthly_charges/)
   assert.doesNotMatch(sql, /INSERT INTO [`"]athlete_billing_terms[`\"][\s\S]*SELECT[\s\S]*FROM [`"]memberships[`"]|INSERT INTO [`"]monthly_charges[`\"][\s\S]*SELECT[\s\S]*FROM [`"]memberships[`"]|DROP TABLE [`"]memberships[`"]|DROP TABLE memberships/i)
 })
+
+
+test('SQLite H2 persists append-only global monthly due-date exception revisions', () => {
+  assert.match(schema, /globalMonthlyDueDateExceptions\s*=\s*sqliteTable\(\s*['"]global_monthly_due_date_exceptions['"]/)
+  for (const column of ['team_id', 'year', 'month', 'due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(schema, /global_monthly_due_date_exceptions_team_period_current_unique/)
+})
+
+test('SQLite H2 global due-date exception migration follows the H1 billing migration', () => {
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8')) as { entries: Array<{ tag: string }> }
+  const migration = journal.entries.find((entry) => entry.tag.startsWith('0009_'))
+  assert.ok(migration, 'missing versioned SQLite H2 global due-date exception migration after 0008')
+  const sql = fs.readFileSync(path.join(root, 'drizzle', 'sqlite', migration.tag + '.sql'), 'utf8')
+  assert.match(sql, /global_monthly_due_date_exceptions/)
+  assert.match(sql, /team_id/)
+  assert.match(sql, /due_date/)
+  assert.match(sql, /reason/)
+  assert.match(sql, /is_current/)
+})
