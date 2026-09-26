@@ -8,6 +8,7 @@ const applicationTables = [
   'group_history_records', 'group_session_prescriptions', 'group_training_plans',
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'team_economic_policies', 'athlete_billing_terms', 'monthly_charges',
+  'global_monthly_due_date_exceptions', 'monthly_charge_reductions', 'monthly_charge_extensions',
   'microcycle_intensity_targets', 'physiology_records', 'field_performance_test_events', 'field_performance_tests',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
   'race_courses', 'race_editions', 'race_events', 'race_registrations',
@@ -155,6 +156,31 @@ async function main() {
       && billingConstraints.some(constraint => constraint.constraint_type === 'FOREIGN KEY')
     console.log(`H1 billing persistence contract: ${billingContractValid ? 'OK' : 'FAIL'}`)
 
+    const h2BillingIndexes = await sql<{ tablename: string; indexname: string; indexdef: string }[]>`
+      select tablename, indexname, indexdef
+      from pg_indexes
+      where schemaname = 'public'
+        and tablename in (
+          'global_monthly_due_date_exceptions',
+          'monthly_charge_reductions',
+          'monthly_charge_extensions'
+        )
+    `
+    const h2RequiredIndexes = [
+      'global_monthly_due_date_exceptions_team_period_current_unique',
+      'monthly_charge_reductions_charge_current_unique',
+      'monthly_charge_extensions_charge_current_unique',
+    ]
+    const h2BillingContractValid = h2RequiredIndexes.every(indexName =>
+      h2BillingIndexes.some(index =>
+        index.indexname === indexName
+        && index.indexdef.toLowerCase().includes('unique')
+        && index.indexdef.toLowerCase().includes('where')
+        && index.indexdef.toLowerCase().includes('is_current')
+      ),
+    )
+    console.log(`H2 billing persistence contract: ${h2BillingContractValid ? 'OK' : 'FAIL'}`)
+
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
     const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
@@ -171,7 +197,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid || !h2BillingContractValid) {
       process.exitCode = 1
     }
   } finally {
