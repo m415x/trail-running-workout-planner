@@ -118,7 +118,6 @@ export function createBillingPersistenceAdapter(
       for (const charge of projectedCharges) {
         await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
       }
-      }
     },
 
     async getAthleteBillingSnapshot(input: {
