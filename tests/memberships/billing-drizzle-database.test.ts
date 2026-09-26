@@ -614,3 +614,105 @@ test('Drizzle billing database treats the same monthly charge reduction decision
 
   assert.equal(transactionStarted, false)
 })
+
+
+test('atomic monthly charge reduction persists the revision and projected amount due together', async () => {
+  const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([]),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update(table: unknown) {
+          return {
+            set(value: Record<string, unknown>) {
+              return {
+                where: async () => {
+                  writes.push({ kind: table === undefined ? 'unknown-update' : 'update', value })
+                },
+              }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.applyMonthlyChargeReductionAtomically?.(
+    'team-a',
+    'charge-a',
+    {
+      id: 'reduction-atomic',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    },
+    {
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    },
+  )
+
+  assert.equal(writes.filter((write) => write.kind === 'insert').length, 1)
+  const amountUpdate = writes.find((write) => write.value.amountDueMinor === 2_000_000)
+  assert.ok(amountUpdate)
+  assert.equal(amountUpdate.value.baseAmountMinor, undefined)
+})
+
+test('atomic monthly charge reduction rejects a charge projection outside the requested team before writing', async () => {
+  let transactionStarted = false
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery([]),
+    transaction: async () => {
+      transactionStarted = true
+    },
+  } as never)
+
+  await assert.rejects(
+    () => db.applyMonthlyChargeReductionAtomically!(
+      'team-a',
+      'charge-a',
+      {
+        id: 'reduction-scope',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-other-team',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca deportiva',
+        isCurrent: true,
+      },
+      {
+        athleteId: 'athlete-other-team',
+        billingTermsId: 'terms-b',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_000_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-10',
+        effectiveDueDate: '2026-10-10',
+      },
+    ),
+    /team.*scope|outside.*team/i,
+  )
+
+  assert.equal(transactionStarted, false)
+})
