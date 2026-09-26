@@ -379,3 +379,50 @@ test('global due-date exception application uses the atomic persistence boundary
   assert.equal(atomicCalls, 1)
   assert.equal(separateWrites, 0)
 })
+
+
+test('global due-date exception rejects a blank audit reason before persistence', async () => {
+  let persisted = false
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {
+      persisted = true
+    },
+    listTeamMonthlyCharges: async () => [],
+    getBillingTermsById: async () => {
+      throw new Error('not used')
+    },
+    updateMonthlyChargeDueDates: async () => {
+      persisted = true
+    },
+    applyGlobalDueDateExceptionAtomically: async () => {
+      persisted = true
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+
+  await assert.rejects(
+    () => adapter.applyGlobalDueDateException({
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      revision: {
+        id: 'exception-invalid',
+        teamId: 'team-a',
+        year: 2026,
+        month: 10,
+        dueDate: '2026-10-15',
+        reason: '   ',
+        isCurrent: true,
+      },
+    }),
+    /reason/i,
+  )
+  assert.equal(persisted, false)
+})
