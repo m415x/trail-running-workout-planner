@@ -16,6 +16,17 @@ export type BillingPersistencePort = {
     athleteId: string,
     charges: MonthlyChargeCandidate[],
   ) => Promise<void>
+  listGlobalDueDateExceptionRevisions: (
+    teamId: string,
+    year: number,
+    month: number,
+  ) => Promise<GlobalDueDateExceptionRevision[]>
+  replaceCurrentGlobalDueDateException: (
+    teamId: string,
+    year: number,
+    month: number,
+    revision: GlobalDueDateExceptionRevision,
+  ) => Promise<void>
 }
 
 export function createBillingPersistenceAdapter(port: BillingPersistencePort) {
