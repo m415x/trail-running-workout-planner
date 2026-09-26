@@ -549,3 +549,57 @@ test('reduction, global due-date exception, and extension compose without crossi
   assert.equal(projected.baseDueDate, '2026-10-15')
   assert.equal(projected.effectiveDueDate, '2026-10-20')
 })
+
+
+test('projection rejects more than one current extension revision for the same charge', () => {
+  const ambiguousExtensions: MonthlyChargeExtensionRevision[] = [
+    {
+      id: 'extension-1',
+      athleteId: charge.athleteId,
+      year: charge.year,
+      month: charge.month,
+      extendedDueDate: '2026-10-20',
+      reason: 'Primera prórroga',
+      isCurrent: true,
+    },
+    {
+      id: 'extension-2',
+      athleteId: charge.athleteId,
+      year: charge.year,
+      month: charge.month,
+      extendedDueDate: '2026-10-25',
+      reason: 'Segunda prórroga',
+      isCurrent: true,
+    },
+  ]
+
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: null,
+      reductionRevisions: [],
+      extensionRevisions: ambiguousExtensions,
+    }),
+    /more than one current|ambiguous/i,
+  )
+})
+
+test('projection rejects a global due-date exception from a different charge period', () => {
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: {
+        id: 'due-exception-november',
+        teamId: 'team-1',
+        year: 2026,
+        month: 11,
+        dueDate: '2026-11-15',
+        reason: 'Excepción de otro período',
+        isCurrent: true,
+      },
+      reductionRevisions: [],
+      extensionRevisions: [],
+    }),
+    /period|month|identity/i,
+  )
+})
