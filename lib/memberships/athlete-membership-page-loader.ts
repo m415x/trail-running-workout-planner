@@ -30,7 +30,10 @@ export function createAthleteMembershipPageLoader<TDatabase>({
     onDate: string
   }) {
     const port = createPort(db)
-    const monthlyCharges = await port.listMonthlyCharges(teamId, athleteId)
+    if (!port.listPersistedMonthlyCharges) {
+      throw new Error('Billing persistence does not support persisted monthly charge reads')
+    }
+    const monthlyCharges = await port.listPersistedMonthlyCharges(teamId, athleteId)
     const reductionHistory = (await Promise.all(
       monthlyCharges.map((charge) => port.listMonthlyChargeReductionRevisions(charge.id)),
     )).flat()
