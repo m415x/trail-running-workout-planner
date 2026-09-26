@@ -104,3 +104,26 @@ test('Coach membership page exposes a localized global monthly due-date exceptio
   assert.match(actions, /applyGlobalDueDateExceptionAction/)
   assert.match(actions, /handlers\.applyGlobalDueDateException/)
 })
+
+
+test('Coach athlete billing surface exposes localized reduction and extension controls', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(form, /MonthlyChargeReductionForm/)
+  assert.match(form, /MonthlyChargeExtensionForm/)
+  assert.match(form, /Reducción o beca/)
+  assert.match(form, /Reduction or scholarship/)
+  assert.match(form, /Prórroga individual/)
+  assert.match(form, /Individual extension/)
+  assert.match(actions, /applyMonthlyChargeReductionAction/)
+  assert.match(actions, /handlers\.applyMonthlyChargeReduction/)
+  assert.match(actions, /applyMonthlyChargeExtensionAction/)
+  assert.match(actions, /handlers\.applyMonthlyChargeExtension/)
+})
