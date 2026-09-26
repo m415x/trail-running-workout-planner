@@ -2,11 +2,13 @@ import type {
   AthleteBillingTerms,
   GlobalDueDateExceptionRevision,
   MonthlyChargeCandidate,
+  MonthlyChargeReductionRevision,
   TeamEconomicPolicy,
 } from './billing'
 import type {
   BillingPersistencePort,
   GlobalDueDateExceptionPersistencePort,
+  MonthlyChargeReductionPersistencePort,
 } from './billing-persistence'
 
 export type SqliteBillingDatabase = {
@@ -29,6 +31,13 @@ export type SqliteBillingDatabase = {
     year: number,
     month: number,
     revision: GlobalDueDateExceptionRevision,
+  ) => Promise<void>
+  listMonthlyChargeReductionRevisions: (
+    monthlyChargeId: string,
+  ) => Promise<MonthlyChargeReductionRevision[]>
+  replaceCurrentMonthlyChargeReduction: (
+    monthlyChargeId: string,
+    revision: MonthlyChargeReductionRevision,
   ) => Promise<void>
   listTeamMonthlyCharges?: (
     teamId: string,
@@ -53,7 +62,7 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort & GlobalDueDateExceptionPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
@@ -93,6 +102,17 @@ export function createSqliteBillingPersistencePort(
         month,
         revision,
       )
+    },
+
+    listMonthlyChargeReductionRevisions: (monthlyChargeId) =>
+      database.listMonthlyChargeReductionRevisions(monthlyChargeId),
+
+    async replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision) {
+      if (revision.monthlyChargeId !== monthlyChargeId) {
+        throw new Error('Monthly charge reduction identity is outside the requested charge scope')
+      }
+
+      await database.replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision)
     },
 
     async listTeamMonthlyCharges(teamId, year, month) {
