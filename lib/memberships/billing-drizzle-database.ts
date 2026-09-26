@@ -365,6 +365,73 @@ export function createDrizzleBillingDatabase(
       })
     },
 
+    async applyMonthlyChargeReductionAtomically(teamId, monthlyChargeId, revision, charge) {
+      if (
+        revision.monthlyChargeId !== monthlyChargeId
+        || revision.athleteId !== charge.athleteId
+        || revision.year !== charge.year
+        || revision.month !== charge.month
+      ) {
+        throw new Error('Monthly charge reduction application is outside the requested charge scope')
+      }
+      if (!(await athleteBelongsToTeam(teamId, charge.athleteId))) {
+        throw new Error('Monthly charge reduction is outside the requested team scope')
+      }
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
+
+      const rows = await client.select().from(monthlyChargeReductions).where(and(
+        eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
+        eq(monthlyChargeReductions.isDeleted, false),
+      ))
+      const revisions = rows.map(mapMonthlyChargeReduction)
+      const current = revisions.filter((candidate) => candidate.isCurrent)
+      if (current.length > 1) {
+        throw new Error('Ambiguous current monthly charge reduction revisions')
+      }
+      const active = current[0]
+      const isRetry = active
+        && active.athleteId === revision.athleteId
+        && active.year === revision.year
+        && active.month === revision.month
+        && active.reductionAmountMinor === revision.reductionAmountMinor
+        && active.reason === revision.reason
+
+      const now = new Date().toISOString()
+      await client.transaction(async (tx) => {
+        if (active && !isRetry) {
+          if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+          await tx.update(monthlyChargeReductions)
+            .set({ isCurrent: false, updatedAt: now })
+            .where(eq(monthlyChargeReductions.id, active.id))
+        }
+
+        if (!isRetry) {
+          await tx.insert(monthlyChargeReductions).values([{
+            id: revision.id,
+            monthlyChargeId,
+            reductionAmountMinor: revision.reductionAmountMinor,
+            reason: revision.reason,
+            isCurrent: true,
+            isDeleted: false,
+            createdAt: now,
+            updatedAt: now,
+          }])
+        }
+
+        if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+        await tx.update(monthlyCharges)
+          .set({
+            amountDueMinor: charge.amountDueMinor,
+            updatedAt: now,
+          })
+          .where(and(
+            eq(monthlyCharges.athleteId, charge.athleteId),
+            eq(monthlyCharges.year, charge.year),
+            eq(monthlyCharges.month, charge.month),
+          ))
+      })
+    },
+
     async listMonthlyChargeReductionRevisions(monthlyChargeId) {
       const rows = await client.select().from(monthlyChargeReductions).where(and(
         eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
