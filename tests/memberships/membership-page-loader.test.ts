@@ -10,7 +10,8 @@ test('loads the Coach membership page through the scoped repository and requeste
     createRepository: (db) => {
       assert.equal(db, 'db-client')
       return {
-        listTeamEconomicPolicies: async (teamId: string) => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamEconomicPolicies: async (teamId: string) => {
           calls.push(`team:${teamId}`)
           return [{
             id: 'policy-1',
@@ -40,7 +41,8 @@ test('loads the Coach membership page through the scoped repository and requeste
 
 test('membership page loading remains read-only', async () => {
   const repository = {
-    listTeamEconomicPolicies: async () => [],
+    listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => [],
   }
 
   const loadPage = createMembershipPageLoader({
@@ -56,5 +58,5 @@ test('membership page loading remains read-only', async () => {
 
   assert.equal(model.title, 'Membership')
   assert.equal(model.monthlyAmount, null)
-  assert.deepEqual(Object.keys(repository), ['listTeamEconomicPolicies'])
+  assert.deepEqual(Object.keys(repository).sort(), ['listGlobalDueDateExceptionRevisions', 'listTeamEconomicPolicies'])
 })
