@@ -261,3 +261,47 @@ ok 1 - second
     },
   })
 })
+
+
+test('portable test runner renders captured batches with one aggregate summary', async () => {
+  const { renderTestBatchResults } = await import('../scripts/test-runner')
+  const outputs = [
+    `TAP version 13
+ok 1 - first
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.25`,
+    `TAP version 13
+ok 1 - second
+1..1
+# tests 3
+# suites 2
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20.5`,
+  ]
+
+  assert.equal(renderTestBatchResults(outputs), `TAP version 13
+ok 1 - first
+1..1
+TAP version 13
+ok 1 - second
+1..1
+ℹ tests 5
+ℹ suites 3
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 30.75`)
+})
