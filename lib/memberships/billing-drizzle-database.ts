@@ -212,7 +212,10 @@ export function createDrizzleBillingDatabase(
       return mapTerms(row)
     },
 
-    async updateMonthlyChargeDueDates(_teamId, charge) {
+    async updateMonthlyChargeDueDates(teamId, charge) {
+      if (!(await athleteBelongsToTeam(teamId, charge.athleteId))) {
+        throw new Error('Monthly charge athlete is outside the requested team scope')
+      }
       if (!client.update) throw new Error('Drizzle client does not support updates')
       await client.update(monthlyCharges)
         .set({
