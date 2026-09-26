@@ -362,3 +362,38 @@ ok 1 - second
   assert.match(reports[0] ?? '', /ℹ tests 5/)
   assert.doesNotMatch(reports[0] ?? '', /# tests [23]/)
 })
+
+
+test('portable test runner delegates the full inventory to captured aggregate execution', async () => {
+  const { runTestFilesWith } = await import('../scripts/test-runner')
+  const files = ['tests/a.test.ts', 'tests/b.test.ts']
+  const reports: string[] = []
+  const calls: string[][] = []
+  const output = `TAP version 13
+ok 1 - batch
+1..1
+# tests 2
+# suites 1
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 12.5`
+
+  const exitCode = runTestFilesWith(
+    files,
+    (executable, args) => {
+      calls.push([executable, ...args])
+      return { status: 0, signal: null, error: undefined, stdout: output, stderr: '' }
+    },
+    (report) => reports.push(report),
+    8_000,
+  )
+
+  assert.equal(exitCode, 0)
+  assert.equal(calls.length, 1)
+  assert.ok(calls[0]?.includes('--test-reporter=tap'))
+  assert.equal(reports.length, 1)
+  assert.match(reports[0] ?? '', /ℹ tests 2/)
+})
