@@ -309,3 +309,73 @@ test('global due-date exception preserves a later effective due date from an exi
   assert.equal(updates[0].baseDueDate, '2026-10-15')
   assert.equal(updates[0].effectiveDueDate, '2026-10-25')
 })
+
+
+test('global due-date exception application uses the atomic persistence boundary', async () => {
+  let atomicCalls = 0
+  let separateWrites = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {
+      separateWrites += 1
+    },
+    listTeamMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-05',
+      effectiveDueDate: '2026-10-05',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async () => {
+      separateWrites += 1
+    },
+    applyGlobalDueDateExceptionAtomically: async (
+      _teamId: string,
+      _year: number,
+      _month: number,
+      _revision: unknown,
+      charges: Array<{ baseDueDate: string; effectiveDueDate: string }>,
+    ) => {
+      atomicCalls += 1
+      assert.equal(charges.length, 1)
+      assert.equal(charges[0].baseDueDate, '2026-10-15')
+      assert.equal(charges[0].effectiveDueDate, '2026-10-15')
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-atomic',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(atomicCalls, 1)
+  assert.equal(separateWrites, 0)
+})
