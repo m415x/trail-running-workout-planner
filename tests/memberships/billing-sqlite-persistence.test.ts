@@ -190,6 +190,9 @@ test('SQLite billing persistence exposes append-only monthly charge reduction re
     replaceCurrentMonthlyChargeReduction: async (monthlyChargeId: string, revision: {
       id: string
       monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
       reductionAmountMinor: number
       reason: string
       isCurrent: boolean
@@ -231,6 +234,9 @@ test('SQLite billing persistence rejects a reduction revision outside the reques
     () => port.replaceCurrentMonthlyChargeReduction('charge-a', {
       id: 'reduction-foreign',
       monthlyChargeId: 'charge-b',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
       isCurrent: true,
