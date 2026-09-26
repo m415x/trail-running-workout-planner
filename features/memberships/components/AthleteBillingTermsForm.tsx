@@ -59,7 +59,7 @@ function MonthlyChargeReductionForm({
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  function handleSubmit(formData: FormData) {
+  function submitReduction(formData: FormData, withdraw = false) {
     setError(null)
     const period = String(formData.get('reductionPeriod') ?? '')
     const [year, month] = period.split('-').map(Number)
@@ -71,7 +71,7 @@ function MonthlyChargeReductionForm({
         athleteId,
         year,
         month,
-        reductionAmountMinor: Math.round(amount * 100),
+        reductionAmountMinor: withdraw ? 0 : Math.round(amount * 100),
         reason: String(formData.get('reductionReason') ?? ''),
         locale,
       })
@@ -84,7 +84,7 @@ function MonthlyChargeReductionForm({
   return (
     <section className='space-y-4'>
       <h3 className='font-medium'>{es ? 'Reducción o beca' : 'Reduction or scholarship'}</h3>
-      <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
+      <form action={submitReduction} className='grid gap-4 sm:grid-cols-2'>
         <select name='reductionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
           <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
           {monthlyCharges.map((charge) => (
@@ -99,6 +99,9 @@ function MonthlyChargeReductionForm({
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
+        </Button>
+        <Button type='submit' variant='outline' disabled={isPending} formAction={(formData) => submitReduction(formData, true)}>
+          {es ? 'Retirar reducción' : 'Withdraw reduction'}
         </Button>
       </form>
       {reductionHistory.length > 0 && (
@@ -127,7 +130,7 @@ function MonthlyChargeExtensionForm({
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
 
-  function handleSubmit(formData: FormData) {
+  function submitExtension(formData: FormData, withdraw = false) {
     setError(null)
     const period = String(formData.get('extensionPeriod') ?? '')
     const [year, month] = period.split('-').map(Number)
@@ -138,7 +141,7 @@ function MonthlyChargeExtensionForm({
         athleteId,
         year,
         month,
-        extendedDueDate: String(formData.get('extendedDueDate') ?? ''),
+        extendedDueDate: withdraw ? null : String(formData.get('extendedDueDate') ?? ''),
         reason: String(formData.get('extensionReason') ?? ''),
         locale,
       })
@@ -151,7 +154,7 @@ function MonthlyChargeExtensionForm({
   return (
     <section className='space-y-4'>
       <h3 className='font-medium'>{es ? 'Prórroga individual' : 'Individual extension'}</h3>
-      <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
+      <form action={submitExtension} className='grid gap-4 sm:grid-cols-2'>
         <select name='extensionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
           <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
           {monthlyCharges.map((charge) => (
@@ -166,6 +169,9 @@ function MonthlyChargeExtensionForm({
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         <Button type='submit' disabled={isPending}>
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
+        </Button>
+        <Button type='submit' variant='outline' disabled={isPending} formAction={(formData) => submitExtension(formData, true)}>
+          {es ? 'Retirar prórroga' : 'Withdraw extension'}
         </Button>
       </form>
       {extensionHistory.length > 0 && (
