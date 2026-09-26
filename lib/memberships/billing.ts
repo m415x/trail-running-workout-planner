@@ -601,6 +601,16 @@ export function projectMonthlyChargeWithExceptions(input: {
   reductionRevisions: MonthlyChargeReductionRevision[]
   extensionRevisions: MonthlyChargeExtensionRevision[]
 }): MonthlyChargeCandidate {
+  if (
+    input.globalDueDateException
+    && (
+      input.globalDueDateException.year !== input.charge.year
+      || input.globalDueDateException.month !== input.charge.month
+    )
+  ) {
+    throw new Error('Global due-date exception period must match the charge month identity')
+  }
+
   let baseDueDate = input.globalDueDateException?.dueDate ?? input.charge.baseDueDate
   if (
     input.economicActivationDate
