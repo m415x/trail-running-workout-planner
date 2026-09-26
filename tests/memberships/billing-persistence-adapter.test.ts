@@ -1011,3 +1011,135 @@ test('monthly charge extension semantic retry does not create a new atomic write
 
   assert.equal(atomicCalls, 0)
 })
+
+
+test('a later global due-date exception keeps a later current individual extension effective', async () => {
+  let projectedEffectiveDueDate: string | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async () => [{
+      id: 'extension-current',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    }],
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: { effectiveDueDate: string }) => {
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-after-extension',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento global posterior',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(projectedEffectiveDueDate, '2026-10-25')
+})
+
+test('a global due-date exception can shadow a current extension without withdrawing it', async () => {
+  let projectedEffectiveDueDate: string | undefined
+  let extensionReads = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async () => {
+      extensionReads += 1
+      return [{
+        id: 'extension-current',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual',
+        isCurrent: true,
+      }]
+    },
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: { effectiveDueDate: string }) => {
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-shadowing-extension',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-28',
+      reason: 'Vencimiento global extraordinario',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(extensionReads, 1)
+  assert.equal(projectedEffectiveDueDate, '2026-10-28')
+})
