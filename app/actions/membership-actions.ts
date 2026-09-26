@@ -76,7 +76,7 @@ export async function applyMonthlyChargeExtensionAction(input: {
   athleteId: string
   year: number
   month: number
-  extendedDueDate: string
+  extendedDueDate: string | null
   reason: string
   locale: 'es' | 'en'
 }) {
