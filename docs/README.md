@@ -12,7 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
-- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1 economic foundation: temporal team policy, athlete terms, monthly charge snapshots and materialization boundaries.
+- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1/H2 economic contract: temporal policy/terms/charges plus auditable reductions, monthly due-date exceptions and individual extensions.
 
 ### Monitoring baseline
 
@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-459.md`](handoffs/kan-459.md), covering the Epic 5 H1 membership-billing foundation and KAN-471 closure work. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-478.md`](handoffs/kan-478.md), covering KAN-460 H2 through PostgreSQL/Supabase parity and the KAN-479 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
@@ -49,7 +49,7 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 5 is active; KAN-459 establishes its H1 membership-billing foundation and is in closure verification. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
+Epics 1–4 are complete. Epic 5 is active. KAN-459 H1 is integrated; KAN-460 H2 has completed its contract, SQLite vertical slices and PostgreSQL/Supabase parity through KAN-478. KAN-479 is next for Coach ES/EN integration. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
 No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
