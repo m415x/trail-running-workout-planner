@@ -129,3 +129,21 @@ test('Supabase H2 schema is consumable by the shared Drizzle billing adapter', (
   assert.match(supabaseSchema, /export const monthlyChargeReductions/)
   assert.match(supabaseSchema, /export const monthlyChargeExtensions/)
 })
+
+
+test('Supabase H2 migration preserves SQLite-equivalent foreign-key and reduction constraints', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  assert.match(migration, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(migration, /"month" between 1 and 12/)
+  assert.match(migration, /monthly_charge_reductions_amount_check/)
+  assert.match(migration, /"reduction_amount_minor" >= 0/)
+  assert.match(migration, /global_monthly_due_date_exceptions_team_id_teams_id_fk/)
+  assert.match(migration, /ON DELETE cascade/i)
+  assert.match(migration, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.match(migration, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.equal((migration.match(/ON DELETE restrict/gi) ?? []).length >= 2, true)
+  assert.match(migration, /"extended_due_date" text,/)
+})
