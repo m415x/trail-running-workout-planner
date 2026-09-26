@@ -197,6 +197,32 @@ export function createDrizzleBillingDatabase(
       })
     },
 
+    async listPersistedMonthlyCharges(teamId, athleteId) {
+      const rows = await client
+        .select()
+        .from(monthlyCharges)
+        .innerJoin(
+          athleteProfiles,
+          and(
+            eq(athleteProfiles.id, monthlyCharges.athleteId),
+            eq(athleteProfiles.teamId, teamId),
+            eq(athleteProfiles.isDeleted, false),
+          ),
+        )
+        .where(and(
+          eq(monthlyCharges.athleteId, athleteId),
+          eq(monthlyCharges.isDeleted, false),
+        ))
+
+      return rows.map((row: QueryResult) => {
+        const persisted = (row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult
+        return {
+          id: String(persisted.id),
+          ...mapCharge(persisted),
+        }
+      })
+    },
+
     async listTeamEconomicPolicies(teamId) {
       const rows = await client
         .select()
