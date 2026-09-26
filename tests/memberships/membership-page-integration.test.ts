@@ -145,3 +145,26 @@ test('KAN-479 Coach exception forms select persisted charges and expose H2 trace
   assert.match(athleteForm, /extensionHistory/)
   assert.match(membershipPage, /globalDueDateExceptionHistory/)
 })
+
+
+test('KAN-479 H2 Coach surfaces load persisted charges and revision history instead of placeholder arrays', async () => {
+  const membershipPage = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const pageModel = await readFile(
+    'lib/memberships/membership-page-model.ts',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(membershipPage, /globalDueDateExceptionHistory:[\s\S]*= \[\]/)
+  assert.match(pageModel, /globalDueDateExceptionHistory/)
+  assert.match(pageModel, /listGlobalDueDateExceptionRevisions/)
+  assert.match(athleteForm, /monthlyCharges/)
+  assert.match(athleteForm, /reductionHistory/)
+  assert.match(athleteForm, /extensionHistory/)
+})
