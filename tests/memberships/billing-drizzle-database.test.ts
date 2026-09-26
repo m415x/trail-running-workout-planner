@@ -297,3 +297,65 @@ test('Drizzle billing database can atomically persist a global exception and cha
   assert.equal(transactionCount, 1)
   assert.deepEqual(writes, ['revision', 'charge'])
 })
+
+
+test('atomic global exception replacement preserves revision history when a current revision already exists', async () => {
+  const writes: Array<{ kind: string; value: Record<string, unknown> }> = []
+  const current = [{
+    id: 'exception-old',
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Primer ajuste',
+    isCurrent: true,
+  }]
+
+  const db = createDrizzleBillingDatabase({
+    ...makeQuery(current),
+    transaction: async (callback: (tx: unknown) => Promise<void>) => {
+      await callback({
+        update() {
+          return {
+            set(value: Record<string, unknown>) {
+              return {
+                where: async () => {
+                  writes.push({ kind: 'update', value })
+                },
+              }
+            },
+          }
+        },
+        insert() {
+          return {
+            values: async (values: Record<string, unknown>[]) => {
+              writes.push({ kind: 'insert', value: values[0] })
+            },
+          }
+        },
+      })
+    },
+  } as never)
+
+  await db.applyGlobalDueDateExceptionAtomically?.(
+    'team-a',
+    2026,
+    10,
+    {
+      id: 'exception-new',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Segundo ajuste',
+      isCurrent: true,
+    },
+    [],
+  )
+
+  assert.equal(writes.length, 2)
+  assert.equal(writes[0].kind, 'update')
+  assert.equal(writes[0].value.isCurrent, false)
+  assert.equal(writes[1].kind, 'insert')
+  assert.equal(writes[1].value.isCurrent, true)
+})
