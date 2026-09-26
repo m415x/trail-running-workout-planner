@@ -3,11 +3,13 @@ import { and, eq } from 'drizzle-orm'
 import {
   athleteBillingTerms,
   athleteProfiles,
+  globalMonthlyDueDateExceptions,
   monthlyCharges,
   teamEconomicPolicies,
 } from '@/db/schema'
 import type {
   AthleteBillingTerms,
+  GlobalDueDateExceptionRevision,
   MonthlyChargeCandidate,
   TeamEconomicPolicy,
 } from './billing'
@@ -29,13 +31,33 @@ type DrizzleQuery = {
   }
 }
 
+function mapGlobalDueDateException(row: QueryResult): GlobalDueDateExceptionRevision {
+  return {
+    id: String(row.id),
+    teamId: String(row.teamId),
+    year: Number(row.year),
+    month: Number(row.month),
+    dueDate: String(row.dueDate),
+    reason: String(row.reason),
+    isCurrent: Boolean(row.isCurrent),
+  }
+}
+
 type DrizzleInsert = {
   insert: (table: unknown) => {
     values: (values: Record<string, unknown>[]) => Promise<unknown>
   }
 }
 
-type DrizzleBillingClient = DrizzleQuery & Partial<DrizzleInsert>
+type DrizzleUpdate = {
+  update: (table: unknown) => {
+    set: (values: Record<string, unknown>) => {
+      where: (condition: unknown) => Promise<unknown>
+    }
+  }
+}
+
+type DrizzleBillingClient = DrizzleQuery & Partial<DrizzleInsert> & Partial<DrizzleUpdate>
 
 function mapTerms(row: QueryResult): AthleteBillingTerms {
   return {
@@ -148,6 +170,33 @@ export function createDrizzleBillingDatabase(
         ))
 
       return rows.map(mapPolicy)
+    },
+
+    async listGlobalDueDateExceptionRevisions(teamId, year, month) {
+      const rows = await client.select().from(globalMonthlyDueDateExceptions).where(and(
+        eq(globalMonthlyDueDateExceptions.teamId, teamId),
+        eq(globalMonthlyDueDateExceptions.year, year),
+        eq(globalMonthlyDueDateExceptions.month, month),
+        eq(globalMonthlyDueDateExceptions.isDeleted, false),
+      ))
+      return rows.map(mapGlobalDueDateException)
+    },
+
+    async replaceCurrentGlobalDueDateException(teamId, year, month, revision) {
+      if (
+        revision.teamId !== teamId
+        || revision.year !== year
+        || revision.month !== month
+      ) {
+        throw new Error('Global due-date exception identity is outside the requested team period scope')
+      }
+      if (!client.insert) throw new Error('Drizzle client does not support inserts')
+      await client.insert(globalMonthlyDueDateExceptions).values([{
+        ...revision,
+        isDeleted: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }])
     },
 
     async insertMonthlyCharges(teamId, athleteId, charges) {
