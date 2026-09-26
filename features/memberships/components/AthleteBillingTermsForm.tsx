@@ -5,6 +5,8 @@ import { useState, useTransition } from 'react'
 import {
   applyInitialAthleteBillingTermsAction,
   changeAthleteBillingTermsAction,
+  applyMonthlyChargeReductionAction,
+  applyMonthlyChargeExtensionAction,
 } from '@/app/actions/membership-actions'
 import { submitAthleteBillingTermsForm } from '@/lib/memberships/athlete-billing-terms-form-submit'
 import { Button } from '@ui/button'
@@ -26,6 +28,107 @@ type AthleteBillingTermsFormModel =
       monthlyAmount: string
       currency: string
     }
+
+function MonthlyChargeReductionForm({
+  athleteId,
+  locale,
+}: {
+  athleteId: string
+  locale: 'es' | 'en'
+}) {
+  const es = locale === 'es'
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function handleSubmit(formData: FormData) {
+    setError(null)
+    const period = String(formData.get('reductionPeriod') ?? '')
+    const [year, month] = period.split('-').map(Number)
+    const amount = Number(formData.get('reductionAmount'))
+
+    startTransition(async () => {
+      const result = await applyMonthlyChargeReductionAction({
+        monthlyChargeId: String(formData.get('reductionChargeId') ?? ''),
+        athleteId,
+        year,
+        month,
+        reductionAmountMinor: Math.round(amount * 100),
+        reason: String(formData.get('reductionReason') ?? ''),
+        locale,
+      })
+      if (!result.success) {
+        setError(es ? 'No se pudo aplicar la reducción.' : 'Could not apply the reduction.')
+      }
+    })
+  }
+
+  return (
+    <section className='space-y-4'>
+      <h3 className='font-medium'>{es ? 'Reducción o beca' : 'Reduction or scholarship'}</h3>
+      <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
+        <Input name='reductionChargeId' placeholder={es ? 'ID del cargo' : 'Charge ID'} required />
+        <Input name='reductionPeriod' type='month' required />
+        <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
+        <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        <Button type='submit' disabled={isPending}>
+          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
+        </Button>
+      </form>
+      <MonthlyChargeReductionForm athleteId={athleteId} locale={locale} />
+      <MonthlyChargeExtensionForm athleteId={athleteId} locale={locale} />
+    </section>
+  )
+}
+
+function MonthlyChargeExtensionForm({
+  athleteId,
+  locale,
+}: {
+  athleteId: string
+  locale: 'es' | 'en'
+}) {
+  const es = locale === 'es'
+  const [error, setError] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function handleSubmit(formData: FormData) {
+    setError(null)
+    const period = String(formData.get('extensionPeriod') ?? '')
+    const [year, month] = period.split('-').map(Number)
+
+    startTransition(async () => {
+      const result = await applyMonthlyChargeExtensionAction({
+        monthlyChargeId: String(formData.get('extensionChargeId') ?? ''),
+        athleteId,
+        year,
+        month,
+        extendedDueDate: String(formData.get('extendedDueDate') ?? ''),
+        reason: String(formData.get('extensionReason') ?? ''),
+        locale,
+      })
+      if (!result.success) {
+        setError(es ? 'No se pudo aplicar la prórroga.' : 'Could not apply the extension.')
+      }
+    })
+  }
+
+  return (
+    <section className='space-y-4'>
+      <h3 className='font-medium'>{es ? 'Prórroga individual' : 'Individual extension'}</h3>
+      <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
+        <Input name='extensionChargeId' placeholder={es ? 'ID del cargo' : 'Charge ID'} required />
+        <Input name='extensionPeriod' type='month' required />
+        <Input name='extendedDueDate' type='date' required />
+        <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        <Button type='submit' disabled={isPending}>
+          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
+        </Button>
+      </form>
+    </section>
+  )
+}
 
 export function AthleteBillingTermsForm({
   athleteId,
