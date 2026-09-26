@@ -97,3 +97,18 @@ test('Supabase verification includes H2 tables and validates their RLS plus pers
   assert.match(verify, /monthly_charge_reductions_charge_current_unique/)
   assert.match(verify, /monthly_charge_extensions_charge_current_unique/)
 })
+
+
+test('Supabase H2 migration enables RLS on every economic fact table', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(migration, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`))
+  }
+})
