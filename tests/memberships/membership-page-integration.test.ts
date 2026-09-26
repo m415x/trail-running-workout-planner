@@ -262,3 +262,23 @@ test('KAN-479 global exception selects one month and a due day within that same 
   assert.match(form, /String\(month\)\.padStart\(2, '0'\)/)
   assert.match(form, /String\(dueDay\)\.padStart\(2, '0'\)/)
 })
+
+
+test('KAN-479 athlete membership is compact by default and only exposes charge exceptions for materialized charges', async () => {
+  const athletePage = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(athletePage, /AccordionItem value='membership'/)
+  assert.match(athletePage, /AccordionTrigger/)
+  assert.match(athletePage, /membership\.currentTerms\?\.monthlyAmount/)
+  assert.match(athletePage, /AccordionContent/)
+  assert.match(athleteForm, /monthlyCharges\.length > 0/)
+  assert.match(athleteForm, /<MonthlyChargeReductionForm/)
+  assert.match(athleteForm, /<MonthlyChargeExtensionForm/)
+})
