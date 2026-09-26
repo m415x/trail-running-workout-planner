@@ -9,6 +9,8 @@ import type {
   GlobalDueDateExceptionPersistencePort,
   MonthlyChargeReductionPersistencePort,
   PersistedMonthlyChargeReductionRevision,
+  MonthlyChargeExtensionPersistencePort,
+  PersistedMonthlyChargeExtensionRevision,
 } from './billing-persistence'
 
 export type SqliteBillingDatabase = {
@@ -45,6 +47,13 @@ export type SqliteBillingDatabase = {
     revision: PersistedMonthlyChargeReductionRevision,
     charge: MonthlyChargeCandidate,
   ) => Promise<void>
+  listMonthlyChargeExtensionRevisions?: (
+    monthlyChargeId: string,
+  ) => Promise<PersistedMonthlyChargeExtensionRevision[]>
+  replaceCurrentMonthlyChargeExtension?: (
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeExtensionRevision,
+  ) => Promise<void>
   listTeamMonthlyCharges?: (
     teamId: string,
     year: number,
@@ -68,7 +77,7 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
@@ -147,6 +156,24 @@ export function createSqliteBillingPersistencePort(
         revision,
         charge,
       )
+    },
+
+    async listMonthlyChargeExtensionRevisions(monthlyChargeId) {
+      if (!database.listMonthlyChargeExtensionRevisions) {
+        throw new Error('SQLite billing database does not support monthly charge extension reads')
+      }
+      return database.listMonthlyChargeExtensionRevisions(monthlyChargeId)
+    },
+
+    async replaceCurrentMonthlyChargeExtension(monthlyChargeId, revision) {
+      if (revision.monthlyChargeId !== monthlyChargeId) {
+        throw new Error('Monthly charge extension identity is outside the requested charge scope')
+      }
+
+      if (!database.replaceCurrentMonthlyChargeExtension) {
+        throw new Error('SQLite billing database does not support monthly charge extension replacement')
+      }
+      await database.replaceCurrentMonthlyChargeExtension(monthlyChargeId, revision)
     },
 
     async listTeamMonthlyCharges(teamId, year, month) {
