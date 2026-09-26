@@ -176,6 +176,57 @@ export function createDrizzleBillingDatabase(
       return rows.map(mapPolicy)
     },
 
+    async listTeamMonthlyCharges(teamId, year, month) {
+      const rows = await client
+        .select()
+        .from(monthlyCharges)
+        .innerJoin(
+          athleteProfiles,
+          and(
+            eq(athleteProfiles.id, monthlyCharges.athleteId),
+            eq(athleteProfiles.teamId, teamId),
+            eq(athleteProfiles.isDeleted, false),
+          ),
+        )
+        .where(and(
+          eq(monthlyCharges.year, year),
+          eq(monthlyCharges.month, month),
+          eq(monthlyCharges.isDeleted, false),
+        ))
+
+      return rows.map((row: QueryResult) =>
+        mapCharge((row.monthly_charges ?? row.monthlyCharges ?? row) as QueryResult),
+      )
+    },
+
+    async getBillingTermsById(billingTermsId) {
+      const rows = await client
+        .select()
+        .from(athleteBillingTerms)
+        .where(and(
+          eq(athleteBillingTerms.id, billingTermsId),
+          eq(athleteBillingTerms.isDeleted, false),
+        ))
+      const row = rows[0]
+      if (!row) throw new Error('Billing terms not found')
+      return mapTerms(row)
+    },
+
+    async updateMonthlyChargeDueDates(_teamId, charge) {
+      if (!client.update) throw new Error('Drizzle client does not support updates')
+      await client.update(monthlyCharges)
+        .set({
+          baseDueDate: charge.baseDueDate,
+          effectiveDueDate: charge.effectiveDueDate,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(and(
+          eq(monthlyCharges.athleteId, charge.athleteId),
+          eq(monthlyCharges.year, charge.year),
+          eq(monthlyCharges.month, charge.month),
+        ))
+    },
+
     async listGlobalDueDateExceptionRevisions(teamId, year, month) {
       const rows = await client.select().from(globalMonthlyDueDateExceptions).where(and(
         eq(globalMonthlyDueDateExceptions.teamId, teamId),
