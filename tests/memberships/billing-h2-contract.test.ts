@@ -433,3 +433,119 @@ test('global exception identity is team/month while reductions and extensions ar
   assert.equal(extensions[0]?.year, charge.year)
   assert.equal(extensions[0]?.month, charge.month)
 })
+
+
+test('H2 revisions cannot mix a different logical identity into an existing revision stream', () => {
+  const globalRevisions = applyGlobalDueDateException({
+    revisions: [],
+    id: 'due-exception-1',
+    teamId: 'team-1',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-15',
+    reason: 'Excepción octubre',
+  })
+
+  assert.throws(
+    () => applyGlobalDueDateException({
+      revisions: globalRevisions,
+      id: 'due-exception-other-period',
+      teamId: 'team-1',
+      year: 2026,
+      month: 11,
+      dueDate: '2026-11-15',
+      reason: 'Excepción noviembre',
+    }),
+    /identity|revision stream|team.*month/i,
+  )
+
+  const reductions = applyMonthlyChargeReduction({
+    revisions: [],
+    id: 'reduction-1',
+    charge,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca parcial',
+  })
+  const otherCharge = { ...charge, month: 11, baseDueDate: '2026-11-05', effectiveDueDate: '2026-11-05' }
+
+  assert.throws(
+    () => applyMonthlyChargeReduction({
+      revisions: reductions,
+      id: 'reduction-other-charge',
+      charge: otherCharge,
+      reductionAmountMinor: 500_000,
+      reason: 'Otra cuota',
+    }),
+    /identity|revision stream|charge/i,
+  )
+})
+
+test('projection rejects more than one current revision for the same H2 fact', () => {
+  const ambiguousReductions: MonthlyChargeReductionRevision[] = [
+    {
+      id: 'reduction-1',
+      athleteId: charge.athleteId,
+      year: charge.year,
+      month: charge.month,
+      reductionAmountMinor: 500_000,
+      reason: 'Primera',
+      isCurrent: true,
+    },
+    {
+      id: 'reduction-2',
+      athleteId: charge.athleteId,
+      year: charge.year,
+      month: charge.month,
+      reductionAmountMinor: 750_000,
+      reason: 'Segunda',
+      isCurrent: true,
+    },
+  ]
+
+  assert.throws(
+    () => projectMonthlyChargeWithExceptions({
+      charge,
+      globalDueDateException: null,
+      reductionRevisions: ambiguousReductions,
+      extensionRevisions: [],
+    }),
+    /more than one current|ambiguous/i,
+  )
+})
+
+test('reduction, global due-date exception, and extension compose without crossing concerns', () => {
+  const reductions = applyMonthlyChargeReduction({
+    revisions: [],
+    id: 'reduction-1',
+    charge,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca parcial',
+  })
+  const extensions = applyMonthlyChargeExtension({
+    revisions: [],
+    id: 'extension-1',
+    charge: { ...charge, baseDueDate: '2026-10-15', effectiveDueDate: '2026-10-15' },
+    extendedDueDate: '2026-10-20',
+    reason: 'Prórroga individual',
+  })
+
+  const projected = projectMonthlyChargeWithExceptions({
+    charge,
+    globalDueDateException: {
+      id: 'due-exception-1',
+      teamId: 'team-1',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Excepción global',
+      isCurrent: true,
+    },
+    reductionRevisions: reductions,
+    extensionRevisions: extensions,
+  })
+
+  assert.equal(projected.baseAmountMinor, 2_500_000)
+  assert.equal(projected.amountDueMinor, 2_000_000)
+  assert.equal(projected.baseDueDate, '2026-10-15')
+  assert.equal(projected.effectiveDueDate, '2026-10-20')
+})
