@@ -219,15 +219,18 @@ test('materialization applies the current global due-date exception to future ch
     }>) => {
       inserted.push(...charges)
     },
-    listGlobalDueDateExceptionRevisions: async () => [{
-      id: 'exception-1',
-      teamId: 'team-a',
-      year: 2026,
-      month: 10,
-      dueDate: '2026-10-15',
-      reason: 'Vencimiento excepcional',
-      isCurrent: true,
-    }],
+    listGlobalDueDateExceptionRevisions: async (_teamId: string, year: number, month: number) =>
+      year === 2026 && month === 10
+        ? [{
+            id: 'exception-1',
+            teamId: 'team-a',
+            year: 2026,
+            month: 10,
+            dueDate: '2026-10-15',
+            reason: 'Vencimiento excepcional',
+            isCurrent: true,
+          }]
+        : [],
     replaceCurrentGlobalDueDateException: async () => {},
     listTeamMonthlyCharges: async () => [],
     getBillingTermsById: async () => {
