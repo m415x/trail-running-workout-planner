@@ -81,3 +81,19 @@ test('PostgreSQL H2 migration materializes all three revision tables and partial
   assert.match(migration, /monthly_charge_extensions_charge_current_unique/)
   assert.match(migration, /WHERE "is_current" = true/)
 })
+
+
+test('Supabase verification includes H2 tables and validates their RLS plus persistence contract', () => {
+  const verify = fs.readFileSync(path.join(root, 'db', 'supabase', 'verify.ts'), 'utf8')
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(verify, new RegExp(`['"]${table}['"]`))
+  }
+  assert.match(verify, /H2 billing persistence contract/)
+  assert.match(verify, /global_monthly_due_date_exceptions_team_period_current_unique/)
+  assert.match(verify, /monthly_charge_reductions_charge_current_unique/)
+  assert.match(verify, /monthly_charge_extensions_charge_current_unique/)
+})
