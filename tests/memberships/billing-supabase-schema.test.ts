@@ -59,3 +59,25 @@ test('PostgreSQL H2 schema persists monthly charge extension revisions', () => {
   }
   assert.match(schema, /monthly_charge_extensions_charge_current_unique/)
 })
+
+
+test('PostgreSQL H2 migration materializes all three revision tables and partial current indexes', () => {
+  const journal = fs.readFileSync(path.join(root, 'drizzle', 'supabase', 'meta', '_journal.json'), 'utf8')
+  assert.match(journal, /0024_membership_billing_exceptions/)
+
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE "${table}"`))
+  }
+  assert.match(migration, /global_monthly_due_date_exceptions_team_period_current_unique/)
+  assert.match(migration, /monthly_charge_reductions_charge_current_unique/)
+  assert.match(migration, /monthly_charge_extensions_charge_current_unique/)
+  assert.match(migration, /WHERE "is_current" = true/)
+})
