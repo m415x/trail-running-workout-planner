@@ -129,6 +129,15 @@ export function createSqliteBillingPersistencePort(
     },
 
     async applyMonthlyChargeReductionAtomically(teamId, monthlyChargeId, revision, charge) {
+      if (
+        revision.monthlyChargeId !== monthlyChargeId
+        || revision.athleteId !== charge.athleteId
+        || revision.year !== charge.year
+        || revision.month !== charge.month
+      ) {
+        throw new Error('Monthly charge reduction identity is outside the requested charge scope')
+      }
+
       if (!database.applyMonthlyChargeReductionAtomically) {
         throw new Error('SQLite billing database does not support atomic monthly charge reductions')
       }
