@@ -693,3 +693,56 @@ test('monthly charge reduction uses persisted current history when correcting an
   assert.equal(historyReads, 1)
   assert.equal(projectedAmount, 1_750_000)
 })
+
+
+test('monthly charge reduction semantic retry does not create a new atomic write', async () => {
+  let atomicCalls = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [{
+      id: 'reduction-existing',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async () => {
+      atomicCalls += 1
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-retry-with-different-id',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(atomicCalls, 0)
+})
