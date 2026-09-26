@@ -44,7 +44,7 @@ type MembershipActionRuntime = {
     athleteId: string
     year: number
     month: number
-    extendedDueDate: string
+    extendedDueDate: string | null
     reason: string
   }) => Promise<BillingActionResult>
 }
@@ -160,7 +160,7 @@ export function createMembershipActionHandlers({
       athleteId: string
       year: number
       month: number
-      extendedDueDate: string
+      extendedDueDate: string | null
       reason: string
       locale: Locale
     }) {
