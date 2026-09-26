@@ -78,6 +78,13 @@
       "when": 1790370001000,
       "tag": "0010_membership_monthly_charge_reductions",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1790450000000,
+      "tag": "0011_membership_monthly_charge_extensions",
+      "breakpoints": true
     }
   ]
 }
