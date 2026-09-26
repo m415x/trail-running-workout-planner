@@ -2,13 +2,13 @@ import type {
   AthleteBillingTerms,
   GlobalDueDateExceptionRevision,
   MonthlyChargeCandidate,
-  MonthlyChargeReductionRevision,
   TeamEconomicPolicy,
 } from './billing'
 import type {
   BillingPersistencePort,
   GlobalDueDateExceptionPersistencePort,
   MonthlyChargeReductionPersistencePort,
+  PersistedMonthlyChargeReductionRevision,
 } from './billing-persistence'
 
 export type SqliteBillingDatabase = {
@@ -34,10 +34,10 @@ export type SqliteBillingDatabase = {
   ) => Promise<void>
   listMonthlyChargeReductionRevisions?: (
     monthlyChargeId: string,
-  ) => Promise<MonthlyChargeReductionRevision[]>
+  ) => Promise<PersistedMonthlyChargeReductionRevision[]>
   replaceCurrentMonthlyChargeReduction?: (
     monthlyChargeId: string,
-    revision: MonthlyChargeReductionRevision,
+    revision: PersistedMonthlyChargeReductionRevision,
   ) => Promise<void>
   listTeamMonthlyCharges?: (
     teamId: string,
