@@ -719,8 +719,8 @@ test('atomic monthly charge reduction rejects a charge projection outside the re
 
 
 test('reduction revision history reconstructs economic identity from the linked monthly charge', async () => {
-  const db = createDrizzleBillingDatabase({
-    ...makeQuery([{
+  const db = createDrizzleBillingDatabase(makeQuery([{
+    monthly_charge_reductions: {
       id: 'reduction-1',
       monthlyChargeId: 'charge-a',
       reductionAmountMinor: 500_000,
@@ -729,8 +729,14 @@ test('reduction revision history reconstructs economic identity from the linked 
       isDeleted: false,
       createdAt: '2026-09-26T12:00:00.000Z',
       updatedAt: '2026-09-26T12:00:00.000Z',
-    }]),
-  } as never)
+    },
+    monthly_charges: {
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+    },
+  }]) as never)
 
   const revisions = await db.listMonthlyChargeReductionRevisions?.('charge-a')
 
