@@ -111,3 +111,81 @@ test('billing persistence adapter materializes with team-scoped policies and ath
   assert.equal(result.length, 1)
   assert.deepEqual(calls, ['policies:team-a', 'insert:team-a:athlete-a:1'])
 })
+
+
+test('global due-date exception service updates an already materialized charge base date without changing its amount', async () => {
+  const updates: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [{
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-18',
+      effectiveUntil: null,
+    }],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-18',
+      effectiveDueDate: '2026-10-18',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-18',
+      effectiveDueDate: '2026-10-18',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-18',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+      amountDueMinor: number
+    }) => {
+      updates.push(charge)
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-1',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-10',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].baseDueDate, '2026-10-18')
+  assert.equal(updates[0].effectiveDueDate, '2026-10-18')
+  assert.equal(updates[0].amountDueMinor, 2_500_000)
+})
