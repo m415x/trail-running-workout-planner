@@ -299,3 +299,79 @@ test('SQLite billing persistence validates atomic reduction charge identity befo
 
   assert.equal(delegated, false)
 })
+
+
+test('SQLite billing persistence exposes append-only monthly charge extension revision operations', async () => {
+  const calls: string[] = []
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listMonthlyChargeExtensionRevisions: async (monthlyChargeId: string) => {
+      calls.push(`list:${monthlyChargeId}`)
+      return []
+    },
+    replaceCurrentMonthlyChargeExtension: async (monthlyChargeId: string, revision: {
+      id: string
+      monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
+      extendedDueDate: string | null
+      reason: string
+      isCurrent: boolean
+    }) => {
+      calls.push(`replace:${monthlyChargeId}:${revision.id}`)
+    },
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  assert.deepEqual(await port.listMonthlyChargeExtensionRevisions('charge-a'), [])
+  await port.replaceCurrentMonthlyChargeExtension('charge-a', {
+    id: 'extension-1',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-25',
+    reason: 'Prórroga individual',
+    isCurrent: true,
+  })
+
+  assert.deepEqual(calls, ['list:charge-a', 'replace:charge-a:extension-1'])
+})
+
+test('SQLite billing persistence rejects an extension revision outside the requested charge identity', async () => {
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  await assert.rejects(
+    () => port.replaceCurrentMonthlyChargeExtension('charge-a', {
+      id: 'extension-foreign',
+      monthlyChargeId: 'charge-b',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    }),
+    /charge|scope|identity/i,
+  )
+})
