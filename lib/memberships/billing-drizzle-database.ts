@@ -5,6 +5,7 @@ import {
   athleteProfiles,
   globalMonthlyDueDateExceptions,
   monthlyCharges,
+  monthlyChargeReductions,
   teamEconomicPolicies,
 } from '@/db/schema'
 import type {
@@ -14,6 +15,7 @@ import type {
   TeamEconomicPolicy,
 } from './billing'
 import type { SqliteBillingDatabase } from './billing-sqlite-persistence'
+import type { PersistedMonthlyChargeReductionRevision } from './billing-persistence'
 
 type QueryResult = Record<string, unknown>
 
@@ -28,6 +30,19 @@ type DrizzleQuery = {
       }
       where: (condition: unknown) => Promise<QueryResult[]>
     }
+  }
+}
+
+function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeReductionRevision {
+  return {
+    id: String(row.id),
+    monthlyChargeId: String(row.monthlyChargeId),
+    athleteId: String(row.athleteId),
+    year: Number(row.year),
+    month: Number(row.month),
+    reductionAmountMinor: Number(row.reductionAmountMinor),
+    reason: String(row.reason),
+    isCurrent: Boolean(row.isCurrent),
   }
 }
 
@@ -342,6 +357,61 @@ export function createDrizzleBillingDatabase(
 
         await tx.insert(globalMonthlyDueDateExceptions).values([{
           ...revision,
+          isCurrent: true,
+          isDeleted: false,
+          createdAt: now,
+          updatedAt: now,
+        }])
+      })
+    },
+
+    async listMonthlyChargeReductionRevisions(monthlyChargeId) {
+      const rows = await client.select().from(monthlyChargeReductions).where(and(
+        eq(monthlyChargeReductions.monthlyChargeId, monthlyChargeId),
+        eq(monthlyChargeReductions.isDeleted, false),
+      ))
+      return rows.map(mapMonthlyChargeReduction)
+    },
+
+    async replaceCurrentMonthlyChargeReduction(monthlyChargeId, revision) {
+      if (revision.monthlyChargeId !== monthlyChargeId) {
+        throw new Error('Monthly charge reduction identity is outside the requested charge scope')
+      }
+
+      const revisions = await this.listMonthlyChargeReductionRevisions(monthlyChargeId)
+      const current = revisions.filter((candidate) => candidate.isCurrent)
+      if (current.length > 1) {
+        throw new Error('Ambiguous current monthly charge reduction revisions')
+      }
+
+      const active = current[0]
+      if (
+        active
+        && active.athleteId === revision.athleteId
+        && active.year === revision.year
+        && active.month === revision.month
+        && active.reductionAmountMinor === revision.reductionAmountMinor
+        && active.reason === revision.reason
+      ) {
+        return
+      }
+
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
+
+      const now = new Date().toISOString()
+      await client.transaction(async (tx) => {
+        if (active) {
+          if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+          await tx.update(monthlyChargeReductions)
+            .set({ isCurrent: false, updatedAt: now })
+            .where(eq(monthlyChargeReductions.id, active.id))
+        }
+
+        await tx.insert(monthlyChargeReductions).values([{
+          id: revision.id,
+          monthlyChargeId: revision.monthlyChargeId,
+          reductionAmountMinor: revision.reductionAmountMinor,
+          reason: revision.reason,
           isCurrent: true,
           isDeleted: false,
           createdAt: now,
