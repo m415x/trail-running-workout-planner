@@ -64,6 +64,13 @@
       "when": 1790280000000,
       "tag": "0008_membership_billing_foundation",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790370000000,
+      "tag": "0009_membership_global_due_date_exceptions",
+      "breakpoints": true
     }
   ]
 }
