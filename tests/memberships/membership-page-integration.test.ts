@@ -127,3 +127,21 @@ test('Coach athlete billing surface exposes localized reduction and extension co
   assert.match(actions, /applyMonthlyChargeExtensionAction/)
   assert.match(actions, /handlers\.applyMonthlyChargeExtension/)
 })
+
+
+test('KAN-479 Coach exception forms select persisted charges and expose H2 traceability instead of requesting internal IDs', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const membershipPage = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(athleteForm, /placeholder=\{es \? 'ID del cargo'/)
+  assert.match(athleteForm, /monthlyCharges/)
+  assert.match(athleteForm, /reductionHistory/)
+  assert.match(athleteForm, /extensionHistory/)
+  assert.match(membershipPage, /globalDueDateExceptionHistory/)
+})
