@@ -17,7 +17,7 @@ import type {
 export type SqliteBillingDatabase = {
   athleteBelongsToTeam: (teamId: string, athleteId: string) => Promise<boolean>
   listBillingTerms: (teamId: string, athleteId: string) => Promise<AthleteBillingTerms[]>
-  listMonthlyCharges: (teamId: string, athleteId: string) => Promise<PersistedMonthlyCharge[]>
+  listMonthlyCharges: (teamId: string, athleteId: string) => Promise<MonthlyChargeCandidate[]>\n  listPersistedMonthlyCharges?: (teamId: string, athleteId: string) => Promise<PersistedMonthlyCharge[]>
   listTeamEconomicPolicies: (teamId: string) => Promise<TeamEconomicPolicy[]>
   insertMonthlyCharges: (
     teamId: string,
@@ -94,6 +94,12 @@ export function createSqliteBillingPersistencePort(
 
     listMonthlyCharges: (teamId, athleteId) =>
       database.listMonthlyCharges(teamId, athleteId),
+
+    listPersistedMonthlyCharges: (teamId, athleteId) =>
+      database.listPersistedMonthlyCharges
+        ? database.listPersistedMonthlyCharges(teamId, athleteId)
+        : Promise.resolve(database.listMonthlyCharges(teamId, athleteId)).then((charges) =>
+            charges.filter((charge): charge is PersistedMonthlyCharge => 'id' in charge)),
 
     listTeamEconomicPolicies: (teamId) =>
       database.listTeamEconomicPolicies(teamId),
