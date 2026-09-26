@@ -13,6 +13,21 @@ import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
 
+type MonthlyChargeOption = {
+  id: string
+  year: number
+  month: number
+  currency: string
+  amountDueMinor: number
+}
+
+type ChargeRevisionHistory = {
+  id: string
+  monthlyChargeId: string
+  reason: string
+  isCurrent: boolean
+}
+
 type AthleteBillingTermsFormModel =
   | {
       mode: 'initial'
@@ -32,9 +47,13 @@ type AthleteBillingTermsFormModel =
 function MonthlyChargeReductionForm({
   athleteId,
   locale,
+  monthlyCharges,
+  reductionHistory,
 }: {
   athleteId: string
   locale: 'es' | 'en'
+  monthlyCharges: MonthlyChargeOption[]
+  reductionHistory: ChargeRevisionHistory[]
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
@@ -66,7 +85,14 @@ function MonthlyChargeReductionForm({
     <section className='space-y-4'>
       <h3 className='font-medium'>{es ? 'Reducción o beca' : 'Reduction or scholarship'}</h3>
       <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
-        <Input name='reductionChargeId' placeholder={es ? 'ID del cargo' : 'Charge ID'} required />
+        <select name='reductionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          {monthlyCharges.map((charge) => (
+            <option key={charge.id} value={charge.id}>
+              {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
+            </option>
+          ))}
+        </select>
         <Input name='reductionPeriod' type='month' required />
         <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
         <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
@@ -75,8 +101,13 @@ function MonthlyChargeReductionForm({
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
         </Button>
       </form>
-      <MonthlyChargeReductionForm athleteId={athleteId} locale={locale} />
-      <MonthlyChargeExtensionForm athleteId={athleteId} locale={locale} />
+      {reductionHistory.length > 0 && (
+        <ul className='text-sm text-muted-foreground'>
+          {reductionHistory.map((revision) => (
+            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ' · vigente' : ''}</li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -84,9 +115,13 @@ function MonthlyChargeReductionForm({
 function MonthlyChargeExtensionForm({
   athleteId,
   locale,
+  monthlyCharges,
+  extensionHistory,
 }: {
   athleteId: string
   locale: 'es' | 'en'
+  monthlyCharges: MonthlyChargeOption[]
+  extensionHistory: ChargeRevisionHistory[]
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
@@ -117,7 +152,14 @@ function MonthlyChargeExtensionForm({
     <section className='space-y-4'>
       <h3 className='font-medium'>{es ? 'Prórroga individual' : 'Individual extension'}</h3>
       <form action={handleSubmit} className='grid gap-4 sm:grid-cols-2'>
-        <Input name='extensionChargeId' placeholder={es ? 'ID del cargo' : 'Charge ID'} required />
+        <select name='extensionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          {monthlyCharges.map((charge) => (
+            <option key={charge.id} value={charge.id}>
+              {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
+            </option>
+          ))}
+        </select>
         <Input name='extensionPeriod' type='month' required />
         <Input name='extendedDueDate' type='date' required />
         <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
@@ -126,6 +168,13 @@ function MonthlyChargeExtensionForm({
           {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
         </Button>
       </form>
+      {extensionHistory.length > 0 && (
+        <ul className='text-sm text-muted-foreground'>
+          {extensionHistory.map((revision) => (
+            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ' · vigente' : ''}</li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -134,10 +183,16 @@ export function AthleteBillingTermsForm({
   athleteId,
   locale,
   model,
+  monthlyCharges = [],
+  reductionHistory = [],
+  extensionHistory = [],
 }: {
   athleteId: string
   locale: 'es' | 'en'
   model: AthleteBillingTermsFormModel
+  monthlyCharges?: MonthlyChargeOption[]
+  reductionHistory?: ChargeRevisionHistory[]
+  extensionHistory?: ChargeRevisionHistory[]
 }) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -236,6 +291,18 @@ export function AthleteBillingTermsForm({
           {isPending ? copy.pending : model.submitLabel}
         </Button>
       </form>
+      <MonthlyChargeReductionForm
+        athleteId={athleteId}
+        locale={locale}
+        monthlyCharges={monthlyCharges}
+        reductionHistory={reductionHistory}
+      />
+      <MonthlyChargeExtensionForm
+        athleteId={athleteId}
+        locale={locale}
+        monthlyCharges={monthlyCharges}
+        extensionHistory={extensionHistory}
+      />
     </section>
   )
 }
