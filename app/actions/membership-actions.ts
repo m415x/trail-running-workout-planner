@@ -46,3 +46,14 @@ export async function changeAthleteBillingTermsAction(input: {
 }) {
   return handlers.changeAthleteBillingTerms(input)
 }
+
+
+export async function applyGlobalDueDateExceptionAction(input: {
+  year: number
+  month: number
+  dueDate: string
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyGlobalDueDateException(input)
+}
