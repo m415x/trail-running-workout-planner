@@ -5,6 +5,7 @@ import {
   configureTeamEconomicPolicyAction,
   applyInitialAthleteBillingTermsAction,
   changeAthleteBillingTermsAction,
+  applyGlobalDueDateExceptionAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
 
@@ -176,4 +177,52 @@ test('Coach action changes athlete billing terms inside one transaction', async 
 
   assert.deepEqual(result, { success: true })
   assert.deepEqual(calls, ['2026-11-01:3000000'])
+})
+
+
+test('Coach action applies a global monthly due-date exception through the H2 persistence port', async () => {
+  const calls: string[] = []
+  const dependencies = {
+    createId: () => 'global-exception-a',
+    transaction: (operation: (repository: any) => unknown) => operation({
+      applyGlobalDueDateExceptionAtomically: (input: any) => {
+        calls.push(`apply:${input.revision.id}:${input.revision.teamId}:${input.revision.year}-${input.revision.month}:${input.revision.dueDate}:${input.revision.reason}`)
+      },
+    }),
+  } as BillingCoachActionDependencies
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Feriado bancario',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, [
+    'apply:global-exception-a:team-a:2026-10:2026-10-10:Feriado bancario',
+  ])
+})
+
+test('Coach global monthly due-date exception rejects incomplete input before opening a transaction', async () => {
+  let transactions = 0
+  const dependencies = {
+    createId: () => 'global-exception-a',
+    transaction: () => {
+      transactions += 1
+      throw new Error('transaction must not run')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: '   ',
+  }, dependencies)
+
+  assert.equal(result.success, false)
+  assert.equal(transactions, 0)
 })
