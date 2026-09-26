@@ -32,8 +32,11 @@ export type MonthlyChargeCandidate = {
 }
 
 function parseDate(value: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`Invalid date: ${value}`)
   const date = new Date(`${value}T00:00:00.000Z`)
-  if (Number.isNaN(date.getTime())) throw new Error(`Invalid date: ${value}`)
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error(`Invalid date: ${value}`)
+  }
   return date
 }
 
@@ -469,6 +472,9 @@ export function applyGlobalDueDateException(input: {
   dueDate: string
   reason: string
 }): GlobalDueDateExceptionRevision[] {
+  if (!Number.isInteger(input.year) || input.year < 1 || !Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
+    throw new Error('Global due-date exception requires a valid year/month period')
+  }
   parseDate(input.dueDate)
   const reason = requireReason(input.reason)
   if (input.revisions.some(revision =>
@@ -609,6 +615,12 @@ export function projectMonthlyChargeWithExceptions(input: {
     )
   ) {
     throw new Error('Global due-date exception period must match the charge month identity')
+  }
+  if (input.reductionRevisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Reduction revision identity must match the projected charge')
+  }
+  if (input.extensionRevisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Extension revision identity must match the projected charge')
   }
 
   let baseDueDate = input.globalDueDateException?.dueDate ?? input.charge.baseDueDate
