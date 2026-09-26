@@ -426,3 +426,102 @@ test('global due-date exception rejects a blank audit reason before persistence'
   )
   assert.equal(persisted, false)
 })
+
+
+test('monthly charge reduction derives amount due without mutating the base amount', async () => {
+  let applied: { baseAmountMinor: number; amountDueMinor: number } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseAmountMinor: number; amountDueMinor: number },
+    ) => {
+      applied = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-1',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(applied)
+  assert.equal(applied.baseAmountMinor, 2_500_000)
+  assert.equal(applied.amountDueMinor, 2_000_000)
+})
+
+test('monthly charge reduction supports a total reduction without producing a negative amount due', async () => {
+  let amountDueMinor: number | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { amountDueMinor: number },
+    ) => {
+      amountDueMinor = charge.amountDueMinor
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-total',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 2_500_000,
+      reason: 'Beca total',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(amountDueMinor, 0)
+})
