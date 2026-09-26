@@ -222,3 +222,26 @@ test('KAN-479 withdrawal controls do not require an active reduction amount or e
   assert.match(athleteForm, /name='extendedDueDate'[\s\S]*?required/)
   assert.match(athleteForm, /Retirar prórroga[\s\S]*?Withdraw extension/)
 })
+
+
+test('KAN-479 H2 Coach forms expose localized success feedback in ES and EN', async () => {
+  const globalForm = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(globalForm, /Excepción aplicada/)
+  assert.match(globalForm, /Exception applied/)
+  assert.match(athleteForm, /Reducción aplicada/)
+  assert.match(athleteForm, /Reduction applied/)
+  assert.match(athleteForm, /Reducción retirada/)
+  assert.match(athleteForm, /Reduction withdrawn/)
+  assert.match(athleteForm, /Prórroga aplicada/)
+  assert.match(athleteForm, /Extension applied/)
+  assert.match(athleteForm, /Prórroga retirada/)
+  assert.match(athleteForm, /Extension withdrawn/)
+})
