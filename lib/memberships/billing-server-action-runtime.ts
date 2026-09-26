@@ -1,4 +1,12 @@
 import { createSynchronousBillingCoachService } from './billing-coach-service'
+import {
+  applyGlobalDueDateExceptionAction,
+  applyMonthlyChargeReductionAction,
+  applyMonthlyChargeExtensionAction,
+  type BillingCoachActionDependencies,
+} from './billing-coach-actions'
+import { createDrizzleBillingDatabase } from './billing-drizzle-database'
+import { createSqliteBillingPersistencePort } from './billing-sqlite-persistence'
 import { createSynchronousAthleteBillingTermsService } from './athlete-billing-terms-service'
 import { createSynchronousDrizzleBillingRepository } from './billing-drizzle-write-repository'
 import { createSqliteBillingTransaction } from './billing-sqlite-transaction'
@@ -42,12 +50,53 @@ export function createMembershipServerActionRuntime({
 }) {
   const transaction = createSqliteBillingTransaction(db)
 
+  const h2Dependencies: BillingCoachActionDependencies = {
+    createId,
+    transaction: (operation) => transaction(() =>
+      operation(createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)))),
+  }
+
   function athleteTermsService() {
     const repository = createSynchronousDrizzleBillingRepository(db)
     return createSynchronousAthleteBillingTermsService(repository)
   }
 
   return {
+
+    async applyGlobalDueDateException(input: {
+      teamId: string
+      year: number
+      month: number
+      dueDate: string
+      reason: string
+    }): Promise<BillingActionResult> {
+      return applyGlobalDueDateExceptionAction(input, h2Dependencies)
+    },
+
+    async applyMonthlyChargeReduction(input: {
+      teamId: string
+      monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
+      reductionAmountMinor: number
+      reason: string
+    }): Promise<BillingActionResult> {
+      return applyMonthlyChargeReductionAction(input, h2Dependencies)
+    },
+
+    async applyMonthlyChargeExtension(input: {
+      teamId: string
+      monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
+      extendedDueDate: string
+      reason: string
+    }): Promise<BillingActionResult> {
+      return applyMonthlyChargeExtensionAction(input, h2Dependencies)
+    },
+
     async applyInitialAthleteBillingTerms(input: {
       teamId: string
       athleteId: string
