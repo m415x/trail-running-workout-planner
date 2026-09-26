@@ -1,5 +1,6 @@
 import {
   applyGlobalDueDateException as applyGlobalDueDateExceptionRevision,
+  applyMonthlyChargeReduction as applyMonthlyChargeReductionRevision,
   getAthleteBillingSnapshot,
   materializeMonthlyCharges,
   type AthleteBillingTerms,
@@ -34,6 +35,12 @@ export type MonthlyChargeReductionPersistencePort = {
   replaceCurrentMonthlyChargeReduction: (
     monthlyChargeId: string,
     revision: PersistedMonthlyChargeReductionRevision,
+  ) => Promise<void>
+  applyMonthlyChargeReductionAtomically?: (
+    teamId: string,
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeReductionRevision,
+    charge: MonthlyChargeCandidate,
   ) => Promise<void>
 }
 
@@ -71,7 +78,7 @@ export type GlobalDueDateExceptionPersistencePort = {
 }
 
 export function createBillingPersistenceAdapter(
-  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort),
+  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort) | (BillingPersistencePort & MonthlyChargeReductionPersistencePort),
 ) {
   return {
     async applyGlobalDueDateException(input: {
@@ -145,6 +152,50 @@ export function createBillingPersistenceAdapter(
       for (const charge of projectedCharges) {
         await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
       }
+    },
+
+    async applyMonthlyChargeReduction(input: {
+      teamId: string
+      monthlyChargeId: string
+      revision: MonthlyChargeReductionRevision
+    }) {
+      const h2Port = port as BillingPersistencePort & MonthlyChargeReductionPersistencePort
+      if (!h2Port.applyMonthlyChargeReductionAtomically) {
+        throw new Error('Billing persistence does not support atomic monthly charge reductions')
+      }
+
+      const charges = await port.listMonthlyCharges(input.teamId, input.revision.athleteId)
+      const charge = charges.find((candidate) =>
+        candidate.year === input.revision.year
+        && candidate.month === input.revision.month
+      )
+      if (!charge) throw new Error('Monthly charge not found')
+
+      const validatedRevisions = applyMonthlyChargeReductionRevision({
+        revisions: [],
+        charge,
+        id: input.revision.id,
+        reductionAmountMinor: input.revision.reductionAmountMinor,
+        reason: input.revision.reason,
+      })
+      const validatedRevision = validatedRevisions[0]
+      const projected = projectMonthlyChargeWithExceptions({
+        charge,
+        globalDueDateException: null,
+        reductionRevisions: [validatedRevision],
+        extensionRevisions: [],
+        economicActivationDate: charge.baseDueDate,
+      })
+
+      await h2Port.applyMonthlyChargeReductionAtomically(
+        input.teamId,
+        input.monthlyChargeId,
+        {
+          ...validatedRevision,
+          monthlyChargeId: input.monthlyChargeId,
+        },
+        projected,
+      )
     },
 
     async getAthleteBillingSnapshot(input: {
