@@ -343,7 +343,7 @@ export function createDrizzleBillingDatabase(
           throw new Error('Drizzle transaction does not support updates')
         }
         for (const charge of charges) {
-          tx.update!monthlyCharges)
+          tx.update!(monthlyCharges)
             .set({
               baseDueDate: charge.baseDueDate,
               effectiveDueDate: charge.effectiveDueDate,
