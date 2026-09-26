@@ -87,3 +87,83 @@ test('SQLite billing persistence port persists only charges belonging to the req
     /athlete.*scope/i,
   )
 })
+
+
+test('SQLite billing persistence exposes append-only global due-date exception revision operations', async () => {
+  const calls: string[] = []
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async (teamId: string, year: number, month: number) => {
+      calls.push(`list:${teamId}:${year}:${month}`)
+      return []
+    },
+    replaceCurrentGlobalDueDateException: async (
+      teamId: string,
+      year: number,
+      month: number,
+      revision: {
+        id: string
+        teamId: string
+        year: number
+        month: number
+        dueDate: string
+        reason: string
+        isCurrent: boolean
+      },
+    ) => {
+      calls.push(`replace:${teamId}:${year}:${month}:${revision.id}`)
+    },
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  assert.deepEqual(
+    await port.listGlobalDueDateExceptionRevisions('team-a', 2026, 10),
+    [],
+  )
+  await port.replaceCurrentGlobalDueDateException('team-a', 2026, 10, {
+    id: 'exception-1',
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-15',
+    reason: 'Vencimiento excepcional',
+    isCurrent: true,
+  })
+
+  assert.deepEqual(calls, [
+    'list:team-a:2026:10',
+    'replace:team-a:2026:10:exception-1',
+  ])
+})
+
+test('SQLite billing persistence rejects a global due-date revision outside the requested team period', async () => {
+  const db = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+  } satisfies SqliteBillingDatabase
+
+  const port = createSqliteBillingPersistencePort(db)
+
+  await assert.rejects(
+    () => port.replaceCurrentGlobalDueDateException('team-a', 2026, 10, {
+      id: 'exception-foreign',
+      teamId: 'team-b',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Otro equipo',
+      isCurrent: true,
+    }),
+    /team|period|scope|identity/i,
+  )
+})
