@@ -31,14 +31,6 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
   })
 
   const es = supportedLocale === 'es'
-  const globalDueDateExceptionHistory: Array<{
-    id: string
-    year: number
-    month: number
-    dueDate: string
-    reason: string
-    isCurrent: boolean
-  }> = []
 
   return (
     <div className='space-y-6'>
@@ -144,11 +136,11 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
       ) : null}
 
       <GlobalDueDateExceptionForm locale={supportedLocale} />
-      {globalDueDateExceptionHistory.length > 0 ? (
+      {model.globalDueDateExceptionHistory.length > 0 ? (
         <section className='space-y-2'>
           <h3 className='font-medium'>{es ? 'Historial de excepciones' : 'Exception history'}</h3>
           <ul className='text-sm text-muted-foreground'>
-            {globalDueDateExceptionHistory.map((revision) => (
+            {model.globalDueDateExceptionHistory.map((revision) => (
               <li key={revision.id}>
                 {`${revision.year}-${String(revision.month).padStart(2, '0')} · ${revision.dueDate} · ${revision.reason}`}
               </li>
