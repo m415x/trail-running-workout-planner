@@ -54,6 +54,12 @@ export type SqliteBillingDatabase = {
     monthlyChargeId: string,
     revision: PersistedMonthlyChargeExtensionRevision,
   ) => Promise<void>
+  applyMonthlyChargeExtensionAtomically?: (
+    teamId: string,
+    monthlyChargeId: string,
+    revision: PersistedMonthlyChargeExtensionRevision,
+    charge: MonthlyChargeCandidate,
+  ) => Promise<void>
   listTeamMonthlyCharges?: (
     teamId: string,
     year: number,
@@ -174,6 +180,21 @@ export function createSqliteBillingPersistencePort(
         throw new Error('SQLite billing database does not support monthly charge extension replacement')
       }
       await database.replaceCurrentMonthlyChargeExtension(monthlyChargeId, revision)
+    },
+
+    async applyMonthlyChargeExtensionAtomically(teamId, monthlyChargeId, revision, charge) {
+      if (
+        revision.monthlyChargeId !== monthlyChargeId
+        || revision.athleteId !== charge.athleteId
+        || revision.year !== charge.year
+        || revision.month !== charge.month
+      ) {
+        throw new Error('Monthly charge extension identity is outside the requested charge scope')
+      }
+      if (!database.applyMonthlyChargeExtensionAtomically) {
+        throw new Error('SQLite billing database does not support atomic monthly charge extensions')
+      }
+      await database.applyMonthlyChargeExtensionAtomically(teamId, monthlyChargeId, revision, charge)
     },
 
     async listTeamMonthlyCharges(teamId, year, month) {
