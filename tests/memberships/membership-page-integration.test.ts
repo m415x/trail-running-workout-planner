@@ -168,3 +168,22 @@ test('KAN-479 H2 Coach surfaces load persisted charges and revision history inst
   assert.match(athleteForm, /reductionHistory/)
   assert.match(athleteForm, /extensionHistory/)
 })
+
+
+test('KAN-479 Coach UI exposes explicit reduction and extension withdrawal controls in ES/EN', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(athleteForm, /Retirar (?:reducción|beca)/)
+  assert.match(athleteForm, /Withdraw (?:reduction|scholarship)/)
+  assert.match(athleteForm, /Retirar prórroga/)
+  assert.match(athleteForm, /Withdraw extension/)
+  assert.match(actions, /reductionAmountMinor:\s*number/)
+  assert.match(actions, /extendedDueDate:\s*string \| null/)
+})
