@@ -72,18 +72,26 @@ function mapGlobalDueDateException(row: QueryResult): GlobalDueDateExceptionRevi
   }
 }
 
+type DrizzleExecutableMutation = {
+  run?: () => unknown
+}
+
 type DrizzleInsert = {
   insert: (table: unknown) => {
-    values: (values: Record<string, unknown>[]) => unknown
+    values: (values: Record<string, unknown>[]) => DrizzleExecutableMutation
   }
 }
 
 type DrizzleUpdate = {
   update: (table: unknown) => {
     set: (values: Record<string, unknown>) => {
-      where: (condition: unknown) => unknown
+      where: (condition: unknown) => DrizzleExecutableMutation
     }
   }
+}
+
+function executeMutation(statement: DrizzleExecutableMutation) {
+  statement.run?.()
 }
 
 type DrizzleMutationClient = DrizzleInsert & Partial<DrizzleUpdate>
@@ -324,26 +332,26 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(globalMonthlyDueDateExceptions)
+          executeMutation(tx.update(globalMonthlyDueDateExceptions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(globalMonthlyDueDateExceptions.id, active.id))
+            .where(eq(globalMonthlyDueDateExceptions.id, active.id)))
         }
 
         if (!isRetry) {
-          tx.insert(globalMonthlyDueDateExceptions).values([{
+          executeMutation(tx.insert(globalMonthlyDueDateExceptions).values([{
             ...revision,
             isCurrent: true,
             isDeleted: false,
             createdAt: now,
             updatedAt: now,
-          }])
+          }]))
         }
 
         if (!tx.update && charges.length > 0) {
           throw new Error('Drizzle transaction does not support updates')
         }
         for (const charge of charges) {
-          tx.update!(monthlyCharges)
+          executeMutation(tx.update!(monthlyCharges)
             .set({
               baseDueDate: charge.baseDueDate,
               effectiveDueDate: charge.effectiveDueDate,
@@ -353,7 +361,7 @@ export function createDrizzleBillingDatabase(
               eq(monthlyCharges.athleteId, charge.athleteId),
               eq(monthlyCharges.year, charge.year),
               eq(monthlyCharges.month, charge.month),
-            ))
+            )))
         }
       })
     },
@@ -398,18 +406,18 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(globalMonthlyDueDateExceptions)
+          executeMutation(tx.update(globalMonthlyDueDateExceptions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(globalMonthlyDueDateExceptions.id, active.id))
+            .where(eq(globalMonthlyDueDateExceptions.id, active.id)))
         }
 
-        tx.insert(globalMonthlyDueDateExceptions).values([{
+        executeMutation(tx.insert(globalMonthlyDueDateExceptions).values([{
           ...revision,
           isCurrent: true,
           isDeleted: false,
           createdAt: now,
           updatedAt: now,
-        }])
+          }]))
       })
     },
 
@@ -448,13 +456,13 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(monthlyChargeReductions)
+          executeMutation(tx.update(monthlyChargeReductions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(monthlyChargeReductions.id, active.id))
+            .where(eq(monthlyChargeReductions.id, active.id)))
         }
 
         if (!isRetry) {
-          tx.insert(monthlyChargeReductions).values([{
+          executeMutation(tx.insert(monthlyChargeReductions).values([{
             id: revision.id,
             monthlyChargeId,
             reductionAmountMinor: revision.reductionAmountMinor,
@@ -463,11 +471,11 @@ export function createDrizzleBillingDatabase(
             isDeleted: false,
             createdAt: now,
             updatedAt: now,
-          }])
+          }]))
         }
 
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-        tx.update(monthlyCharges)
+        executeMutation(tx.update(monthlyCharges)
           .set({
             amountDueMinor: charge.amountDueMinor,
             updatedAt: now,
@@ -476,7 +484,7 @@ export function createDrizzleBillingDatabase(
             eq(monthlyCharges.athleteId, charge.athleteId),
             eq(monthlyCharges.year, charge.year),
             eq(monthlyCharges.month, charge.month),
-          ))
+          )))
       })
     },
 
@@ -539,12 +547,12 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(monthlyChargeReductions)
+          executeMutation(tx.update(monthlyChargeReductions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(monthlyChargeReductions.id, active.id))
+            .where(eq(monthlyChargeReductions.id, active.id)))
         }
 
-        tx.insert(monthlyChargeReductions).values([{
+        executeMutation(tx.insert(monthlyChargeReductions).values([{
           id: revision.id,
           monthlyChargeId: revision.monthlyChargeId,
           reductionAmountMinor: revision.reductionAmountMinor,
@@ -553,7 +561,7 @@ export function createDrizzleBillingDatabase(
           isDeleted: false,
           createdAt: now,
           updatedAt: now,
-        }])
+          }]))
       })
     },
 
@@ -592,13 +600,13 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active && !isRetry) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(monthlyChargeExtensions)
+          executeMutation(tx.update(monthlyChargeExtensions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(monthlyChargeExtensions.id, active.id))
+            .where(eq(monthlyChargeExtensions.id, active.id)))
         }
 
         if (!isRetry) {
-          tx.insert(monthlyChargeExtensions).values([{
+          executeMutation(tx.insert(monthlyChargeExtensions).values([{
             id: revision.id,
             monthlyChargeId,
             extendedDueDate: revision.extendedDueDate,
@@ -607,11 +615,11 @@ export function createDrizzleBillingDatabase(
             isDeleted: false,
             createdAt: now,
             updatedAt: now,
-          }])
+          }]))
         }
 
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-        tx.update(monthlyCharges)
+        executeMutation(tx.update(monthlyCharges)
           .set({
             effectiveDueDate: charge.effectiveDueDate,
             updatedAt: now,
@@ -620,7 +628,7 @@ export function createDrizzleBillingDatabase(
             eq(monthlyCharges.athleteId, charge.athleteId),
             eq(monthlyCharges.year, charge.year),
             eq(monthlyCharges.month, charge.month),
-          ))
+          )))
       })
     },
 
@@ -683,12 +691,12 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (active) {
           if (!tx.update) throw new Error('Drizzle transaction does not support updates')
-          tx.update(monthlyChargeExtensions)
+          executeMutation(tx.update(monthlyChargeExtensions)
             .set({ isCurrent: false, updatedAt: now })
-            .where(eq(monthlyChargeExtensions.id, active.id))
+            .where(eq(monthlyChargeExtensions.id, active.id)))
         }
 
-        tx.insert(monthlyChargeExtensions).values([{
+        executeMutation(tx.insert(monthlyChargeExtensions).values([{
           id: revision.id,
           monthlyChargeId: revision.monthlyChargeId,
           extendedDueDate: revision.extendedDueDate,
@@ -697,7 +705,7 @@ export function createDrizzleBillingDatabase(
           isDeleted: false,
           createdAt: now,
           updatedAt: now,
-        }])
+          }]))
       })
     },
 
