@@ -465,6 +465,7 @@ test('KAN-479 atomic new-athlete billing applies the current global exception be
                 effectiveUntil: null,
               }]
             }
+            if (table === athleteBillingTerms) return []
             return [{
               id: 'exception-a',
               teamId: 'team_1',
