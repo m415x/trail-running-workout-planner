@@ -21,9 +21,15 @@ import type {
   PersistedMonthlyChargeExtensionRevision,
 } from '../../lib/memberships/billing-persistence'
 
-type GlobalRepository = BillingPersistencePort & GlobalDueDateExceptionPersistencePort
-type ReductionRepository = BillingPersistencePort & MonthlyChargeReductionPersistencePort
-type ExtensionRepository = BillingPersistencePort & MonthlyChargeExtensionPersistencePort
+type GlobalRepository = GlobalDueDateExceptionPersistencePort
+  & Pick<BillingPersistencePort, 'listMonthlyCharges'>
+  & Partial<BillingPersistencePort>
+type ReductionRepository = MonthlyChargeReductionPersistencePort
+  & Pick<BillingPersistencePort, 'listMonthlyCharges'>
+  & Partial<BillingPersistencePort>
+type ExtensionRepository = MonthlyChargeExtensionPersistencePort
+  & Pick<BillingPersistencePort, 'listMonthlyCharges'>
+  & Partial<BillingPersistencePort>
 
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
@@ -260,7 +266,7 @@ test('Coach actions delegate reduction and extension decisions to the establishe
   let nextId = 0
   const dependencies = {
     createId: () => `h2-${++nextId}`,
-    transaction: (operation: (repository: ReductionRepository) => unknown) => operation({
+    transaction: (operation: (repository: ReductionRepository | ExtensionRepository) => unknown) => operation({
       listMonthlyCharges: async () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
@@ -278,14 +284,16 @@ test('Coach actions delegate reduction and extension decisions to the establishe
         monthlyChargeId: string,
         revision: PersistedMonthlyChargeReductionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`),
+      ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`)
+      },
       listMonthlyChargeExtensionRevisions: async () => [],
       applyMonthlyChargeExtensionAtomically: async (
         teamId: string,
         monthlyChargeId: string,
         revision: PersistedMonthlyChargeExtensionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`),
+      ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`)
+      },
     }),
   } as BillingCoachActionDependencies
 
@@ -354,7 +362,7 @@ test('Coach global exception reprojects existing materialized charges through th
   const calls: string[] = []
   const dependencies = {
     createId: () => 'global-exception-b',
-    transaction: (operation: (repository: GlobalRepository) => unknown) => operation({
+    transaction: (operation: (repository: GlobalRepository & ExtensionRepository) => unknown) => operation({
       listGlobalDueDateExceptionRevisions: async () => [],
       listTeamMonthlyCharges: async () => [{
         id: 'charge-a',
@@ -422,7 +430,7 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
   let nextId = 0
   const dependencies = {
     createId: () => `withdrawal-${++nextId}`,
-    transaction: (operation: (repository: ReductionRepository) => unknown) => operation({
+    transaction: (operation: (repository: ReductionRepository | ExtensionRepository) => unknown) => operation({
       listMonthlyCharges: async () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
@@ -447,9 +455,11 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
       applyMonthlyChargeReductionAtomically: async (
         _teamId: string,
         _monthlyChargeId: string,
-        revision: GlobalDueDateExceptionRevision,
+        revision: PersistedMonthlyChargeReductionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`),
+      ) => {
+        calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`)
+      },
       listMonthlyChargeExtensionRevisions: async () => [{
         id: 'extension-a',
         monthlyChargeId: 'charge-a',
@@ -463,9 +473,11 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
       applyMonthlyChargeExtensionAtomically: async (
         _teamId: string,
         _monthlyChargeId: string,
-        revision: GlobalDueDateExceptionRevision,
+        revision: PersistedMonthlyChargeExtensionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`),
+      ) => {
+        calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`)
+      },
     }),
   } as BillingCoachActionDependencies
 
