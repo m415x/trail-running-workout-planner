@@ -11,6 +11,7 @@ import {
 import { createMembershipPageLoader } from '@/lib/memberships/membership-page-loader'
 import { todayInArgentina } from '@/lib/memberships/membership-page-date'
 import { createTeamEconomicPolicyQueryRepository } from '@/lib/memberships/membership-policy-drizzle-query'
+import { materializeTeamMonthlyChargesAction } from '@/app/actions/membership-actions'
 
 interface MembershipPageProps {
   params: Promise<{ locale: string }>
@@ -134,6 +135,46 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
           </AccordionItem>
         </Accordion>
       ) : null}
+
+      <form
+        action={async (formData) => {
+          'use server'
+          const period = String(formData.get('period') ?? '')
+          const [year, month] = period.split('-').map(Number)
+          await materializeTeamMonthlyChargesAction({
+            year,
+            month,
+            locale: supportedLocale,
+          })
+        }}
+        className='space-y-3 rounded-lg border border-border bg-card p-4'
+      >
+        <h3 className='font-medium'>
+          {es ? 'Materializar cuotas' : 'Materialize charges'}
+        </h3>
+        <p className='text-sm text-muted-foreground'>
+          {es
+            ? 'Genera las cuotas faltantes del equipo para el mes seleccionado.'
+            : 'Creates missing team charges for the selected month.'}
+        </p>
+        <div className='flex flex-wrap items-end gap-3'>
+          <label className='space-y-1 text-sm'>
+            <span>{es ? 'Mes' : 'Month'}</span>
+            <input
+              name='period'
+              type='month'
+              required
+              className='block rounded-md border border-input bg-background px-3 py-2'
+            />
+          </label>
+          <button
+            type='submit'
+            className='rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground'
+          >
+            {es ? 'Materializar cuotas' : 'Materialize charges'}
+          </button>
+        </div>
+      </form>
 
       <GlobalDueDateExceptionForm locale={supportedLocale} />
       {model.globalDueDateExceptionHistory.length > 0 ? (
