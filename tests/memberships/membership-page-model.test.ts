@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { buildMembershipPageModel } from '../../lib/memberships/membership-page-model'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('builds the membership page model from the current scoped team policy', async () => {
   const model = await buildMembershipPageModel({
     locale: 'es',
@@ -27,7 +35,7 @@ test('builds the membership page model from the current scoped team policy', asy
 
   assert.equal(model.title, 'Membresía')
   assert.equal(model.policyTitle, 'Política económica del equipo')
-  assert.equal(model.monthlyAmount, '$25.000')
+  assert.equal(model.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.currency, 'ARS')
   assert.equal(model.dueDay, '5')
   assert.equal(model.effectiveFrom, '2026-10-01')
@@ -81,7 +89,7 @@ test('builds policy presentation and prospective form model from the same policy
   })
 
   assert.equal(reads, 1)
-  assert.equal(model.policy.monthlyAmount, '$25.000')
+  assert.equal(model.policy.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.form.mode, 'replacement')
   assert.equal(model.form.monthlyAmountMinor, 2_500_000)
   assert.equal(model.form.currency, 'ARS')
@@ -125,9 +133,9 @@ test('shows the current policy and the next scheduled policy from one scoped rea
   })
 
   assert.equal(reads, 1)
-  assert.equal(model.policy.monthlyAmount, '$25.000')
+  assert.equal(model.policy.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.policy.effectiveUntil, '2026-10-01')
-  assert.equal(model.nextPolicy?.monthlyAmount, '$27.000')
+  assert.equal(model.nextPolicy?.monthlyAmount, formatCurrency('es', 2_700_000, 'ARS'))
   assert.equal(model.nextPolicy?.currency, 'ARS')
   assert.equal(model.nextPolicy?.dueDay, '5')
   assert.equal(model.nextPolicy?.effectiveFrom, '2026-10-01')
@@ -182,14 +190,14 @@ test('partitions past current and scheduled policies and bases the form on the l
     },
   })
 
-  assert.equal(model.currentPolicy.monthlyAmount, '$25.000')
+  assert.equal(model.currentPolicy.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.deepEqual(
     model.scheduledPolicies.map((policy) => policy.monthlyAmount),
-    ['$27.000', '$30.000'],
+    [formatCurrency('es', 2_700_000, 'ARS'), formatCurrency('es', 3_000_000, 'ARS')],
   )
   assert.deepEqual(
     model.pastPolicies.map((policy) => policy.monthlyAmount),
-    ['$20.000'],
+    [formatCurrency('es', 2_000_000, 'ARS')],
   )
   assert.equal(model.form.monthlyAmountMinor, 3_000_000)
   assert.equal(model.form.ordinaryDueDay, 10)
