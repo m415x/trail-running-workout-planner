@@ -31,8 +31,22 @@ export type BillingCoachActionResult =
   | { success: true }
   | { success: false; error: string }
 
+export type BulkMonthlyMaterializationResult =
+  | {
+      success: true
+      processedAthletes: number
+      materializedCharges: number
+    }
+  | { success: false; error: string }
+
 export type BillingCoachActionDependencies = {
   createId: () => string
+  listTeamAthleteIds?: (teamId: string) => Promise<string[]>
+  materializeMonthlyCharges?: (input: {
+    teamId: string
+    athleteId: string
+    through: { year: number; month: number }
+  }) => Promise<unknown[]>
   transaction: <T>(
     operation: (
       repository: SynchronousBillingCoachRepository
@@ -312,5 +326,55 @@ export async function applyMonthlyChargeExtensionAction(
     return { success: true }
   } catch {
     return { success: false, error: 'Could not apply monthly charge extension' }
+  }
+}
+
+
+export async function materializeTeamMonthlyChargesAction(
+  input: {
+    teamId: string
+    year: number
+    month: number
+  },
+  dependencies: BillingCoachActionDependencies,
+): Promise<BulkMonthlyMaterializationResult> {
+  if (
+    !input.teamId
+    || !Number.isInteger(input.year)
+    || input.year < 1
+    || !Number.isInteger(input.month)
+    || input.month < 1
+    || input.month > 12
+  ) {
+    return { success: false, error: 'Invalid monthly materialization input' }
+  }
+
+  if (!dependencies.listTeamAthleteIds || !dependencies.materializeMonthlyCharges) {
+    return { success: false, error: 'Monthly materialization is not available' }
+  }
+
+  try {
+    const athleteIds = await dependencies.listTeamAthleteIds(input.teamId)
+    let materializedCharges = 0
+
+    for (const athleteId of athleteIds) {
+      const charges = await dependencies.materializeMonthlyCharges({
+        teamId: input.teamId,
+        athleteId,
+        through: {
+          year: input.year,
+          month: input.month,
+        },
+      })
+      materializedCharges += charges.length
+    }
+
+    return {
+      success: true,
+      processedAthletes: athleteIds.length,
+      materializedCharges,
+    }
+  } catch {
+    return { success: false, error: 'Could not materialize monthly charges' }
   }
 }
