@@ -257,3 +257,20 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
   assert.equal(transactionCalls, 1)
   assert.equal(h2TransactionCalls, 1)
 })
+
+
+test('KAN-479 runtime exposes bulk monthly materialization through the established H1 persistence adapter', async () => {
+  const runtime = createMembershipServerActionRuntime({
+    db: {
+      transaction: () => {
+        throw new Error('bulk orchestration must not open the synchronous H1 transaction')
+      },
+      select: () => {
+        throw new Error('runtime creation must not read')
+      },
+    } as any,
+    createId: () => 'unused',
+  })
+
+  assert.equal(typeof runtime.materializeTeamMonthlyCharges, 'function')
+})
