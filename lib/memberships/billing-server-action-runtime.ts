@@ -88,6 +88,47 @@ export function createMembershipServerActionRuntime({
       return materializeTeamMonthlyChargesAction(input, bulkMaterializationDependencies())
     },
 
+    async initializeNewAthleteBilling(input: {
+      teamId: string
+      athleteId: string
+      effectiveFrom: string
+    }): Promise<BillingActionResult> {
+      if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
+        return { success: false, error: 'Invalid new athlete billing input' }
+      }
+
+      const [year, month] = input.effectiveFrom.split('-').map(Number)
+      if (!year || !month) {
+        return { success: false, error: 'Invalid new athlete billing input' }
+      }
+
+      try {
+        transaction(() => {
+          athleteTermsService().applyInitialTerms({
+            ...input,
+            termsId: createId(),
+          })
+        })
+
+        const result = await createBillingPersistenceAdapter(
+          createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
+        ).materializeMonthlyCharges({
+          teamId: input.teamId,
+          athleteId: input.athleteId,
+          through: { year, month },
+        })
+
+        if (result.length !== 1) {
+          throw new Error('New athlete join-month charge was not materialized')
+        }
+
+        return { success: true }
+      } catch (error) {
+        reportError(error)
+        return { success: false, error: 'Could not initialize new athlete billing' }
+      }
+    },
+
     async applyGlobalDueDateException(input: {
       teamId: string
       year: number
