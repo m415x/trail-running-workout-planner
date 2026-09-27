@@ -301,3 +301,18 @@ test('KAN-479 Coach membership page exposes localized team monthly materializati
   assert.match(actions, /materializeTeamMonthlyChargesAction/)
   assert.match(actions, /handlers\.materializeTeamMonthlyCharges/)
 })
+
+
+test('KAN-479 bulk monthly materialization reports localized processed and created counts to Coach', async () => {
+  const page = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+
+  assert.match(page, /processedAthletes/)
+  assert.match(page, /materializedCharges/)
+  assert.match(page, /Atletas procesados/)
+  assert.match(page, /Athletes processed/)
+  assert.match(page, /Cuotas creadas/)
+  assert.match(page, /Charges created/)
+})
