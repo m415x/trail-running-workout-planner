@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { loadAthleteMembership } from '../../lib/memberships/athlete-membership-loader'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('loads the scoped athlete billing snapshot and builds the membership view model', async () => {
   let snapshotReads = 0
 
@@ -34,7 +42,7 @@ test('loads the scoped athlete billing snapshot and builds the membership view m
 
   assert.equal(snapshotReads, 1)
   assert.equal(model.title, 'Membresía')
-  assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.currentTerms?.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
 })
 
 test('athlete membership loader has no materialization dependency', async () => {
