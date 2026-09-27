@@ -384,3 +384,63 @@ test('KAN-479 new athlete billing initialization can participate in an existing 
 
   assert.equal(typeof runtime.initializeNewAthleteBillingInTransaction, 'function')
 })
+
+
+test('KAN-479 atomic new-athlete billing materializes exactly the effective join month', () => {
+  const insertedTables: unknown[] = []
+  const insertedValues: Record<string, unknown>[] = []
+  const db = {
+    select: () => ({
+      from: (table: unknown) => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => table === teamEconomicPolicies
+            ? [{
+                id: 'policy-a',
+                teamId: 'team_1',
+                defaultMonthlyAmountMinor: 2500000,
+                currency: 'ARS',
+                ordinaryDueDay: 10,
+                effectiveFrom: '2026-09-01',
+                effectiveUntil: null,
+              }]
+            : [],
+        }),
+      }),
+    }),
+    insert: (table: unknown) => ({
+      values: (value: Record<string, unknown>) => ({
+        run: () => {
+          insertedTables.push(table)
+          insertedValues.push(value)
+        },
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  let id = 0
+  const runtime = createMembershipServerActionRuntime({
+    db: db as any,
+    createId: () => `generated-${++id}`,
+  })
+
+  const charge = runtime.initializeNewAthleteBillingInTransaction({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-27',
+  })
+
+  assert.equal(charge.year, 2026)
+  assert.equal(charge.month, 9)
+  assert.equal(charge.baseAmountMinor, 2500000)
+  assert.equal(charge.baseDueDate, '2026-09-27')
+  assert.equal(charge.effectiveDueDate, '2026-09-27')
+  assert.equal(insertedValues.length, 2)
+})
