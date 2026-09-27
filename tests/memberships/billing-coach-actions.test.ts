@@ -284,7 +284,8 @@ test('Coach actions delegate reduction and extension decisions to the establishe
         monthlyChargeId: string,
         revision: PersistedMonthlyChargeReductionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`)
+      ) => {
+        calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`)
       },
       listMonthlyChargeExtensionRevisions: async () => [],
       applyMonthlyChargeExtensionAtomically: async (
@@ -292,7 +293,8 @@ test('Coach actions delegate reduction and extension decisions to the establishe
         monthlyChargeId: string,
         revision: PersistedMonthlyChargeExtensionRevision,
         _charge: MonthlyChargeCandidate,
-      ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`)
+      ) => {
+        calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`)
       },
     }),
   } as BillingCoachActionDependencies
