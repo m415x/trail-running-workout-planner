@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { buildAthleteMembershipViewModel } from '../../lib/memberships/athlete-membership-view-model'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('builds ES athlete membership presentation from terms and materialized charges only', () => {
   const model = buildAthleteMembershipViewModel({
     locale: 'es',
@@ -29,10 +37,10 @@ test('builds ES athlete membership presentation from terms and materialized char
   })
 
   assert.equal(model.title, 'Membresía')
-  assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.currentTerms?.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.currentTerms?.effectiveFrom, '2026-09-15')
   assert.equal(model.charges[0]?.period, '09/2026')
-  assert.equal(model.charges[0]?.amountDue, '$25.000')
+  assert.equal(model.charges[0]?.amountDue, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.charges[0]?.effectiveDueDate, '2026-09-15')
 })
 
@@ -85,15 +93,15 @@ test('partitions athlete billing terms into current, scheduled, and past on the 
     charges: [],
   })
 
-  assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.currentTerms?.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.currentTerms?.effectiveFrom, '2026-09-25')
   assert.equal(model.currentTerms?.effectiveUntil, '2026-10-01')
   assert.deepEqual(
     model.scheduledTerms.map((item) => item.monthlyAmount),
-    ['$26.000'],
+    [formatCurrency('es', 2_600_000, 'ARS')],
   )
   assert.deepEqual(
     model.pastTerms.map((item) => item.monthlyAmount),
-    ['$20.000'],
+    [formatCurrency('es', 2_000_000, 'ARS')],
   )
 })
