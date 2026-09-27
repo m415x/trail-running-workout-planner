@@ -137,8 +137,9 @@ export function createMembershipServerActionRuntime({
       const charge = projectMonthlyChargeWithExceptions({
         charge: charges[0]!,
         globalDueDateException: currentGlobalExceptions[0] ?? null,
-        reduction: null,
-        extension: null,
+        economicActivationDate: input.effectiveFrom,
+        reductionRevisions: [],
+        extensionRevisions: [],
       })
 
       const now = new Date().toISOString()
