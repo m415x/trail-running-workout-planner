@@ -8,6 +8,7 @@ import {
   applyGlobalDueDateExceptionAction,
   applyMonthlyChargeReductionAction,
   applyMonthlyChargeExtensionAction,
+  materializeTeamMonthlyChargesAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
 
@@ -474,4 +475,71 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
     'reduction:0:Retiro de beca',
     'extension:null:Retiro de prórroga',
   ])
+})
+
+
+test('KAN-479 Coach can materialize one month for every eligible athlete without duplicating H1 rules', async () => {
+  const calls: string[] = []
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async (teamId: string) => {
+      calls.push(`athletes:${teamId}`)
+      return ['athlete-a', 'athlete-b', 'athlete-c']
+    },
+    materializeMonthlyCharges: async (input: {
+      teamId: string
+      athleteId: string
+      through: { year: number; month: number }
+    }) => {
+      calls.push(`materialize:${input.athleteId}:${input.through.year}-${input.through.month}`)
+      return input.athleteId === 'athlete-b' ? [] : [{}]
+    },
+    transaction: () => {
+      throw new Error('bulk materialization must use the established H1 materialization boundary')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+  }, dependencies)
+
+  assert.deepEqual(result, {
+    success: true,
+    processedAthletes: 3,
+    materializedCharges: 2,
+  })
+  assert.deepEqual(calls, [
+    'athletes:team-a',
+    'materialize:athlete-a:2026-10',
+    'materialize:athlete-b:2026-10',
+    'materialize:athlete-c:2026-10',
+  ])
+})
+
+test('KAN-479 bulk materialization validates the requested team month before any write', async () => {
+  let reads = 0
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async () => {
+      reads += 1
+      return []
+    },
+    materializeMonthlyCharges: async () => {
+      throw new Error('must not materialize')
+    },
+    transaction: () => {
+      throw new Error('must not open transaction')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 13,
+  }, dependencies)
+
+  assert.equal(result.success, false)
+  assert.equal(reads, 0)
 })
