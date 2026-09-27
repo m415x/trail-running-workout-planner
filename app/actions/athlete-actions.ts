@@ -16,7 +16,6 @@ import {
 } from '@/db/schema'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
-import type { SyncDrizzleClient } from '@/lib/memberships/billing-drizzle-write-repository'
 
 export interface AthleteFormState {
   error?: string
@@ -207,7 +206,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
       }).run()
 
       createMembershipServerActionRuntime({
-        db: tx as typeof db & SyncDrizzleClient,
+        db: tx,
         createId: randomUUID,
       }).initializeNewAthleteBillingInTransaction({
         teamId: CURRENT_TEAM_ID,
