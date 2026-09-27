@@ -21,9 +21,18 @@ type MonthlyChargeOption = {
   amountDueMinor: number
 }
 
-type ChargeRevisionHistory = {
+type ReductionRevisionHistory = {
   id: string
   monthlyChargeId: string
+  reductionAmountMinor: number
+  reason: string
+  isCurrent: boolean
+}
+
+type ExtensionRevisionHistory = {
+  id: string
+  monthlyChargeId: string
+  extendedDueDate: string | null
   reason: string
   isCurrent: boolean
 }
@@ -53,7 +62,7 @@ function MonthlyChargeReductionForm({
   athleteId: string
   locale: 'es' | 'en'
   monthlyCharges: MonthlyChargeOption[]
-  reductionHistory: ChargeRevisionHistory[]
+  reductionHistory: ReductionRevisionHistory[]
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
@@ -118,7 +127,11 @@ function MonthlyChargeReductionForm({
       {reductionHistory.length > 0 && (
         <ul className='text-sm text-muted-foreground'>
           {reductionHistory.map((revision) => (
-            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}</li>
+            <li key={revision.id}>
+              {revision.reason} · {(revision.reductionAmountMinor / 100).toFixed(2)}
+              {revision.reductionAmountMinor === 0 ? ` · ${es ? 'Retiro' : 'Withdrawn'}` : ''}
+              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+            </li>
           ))}
         </ul>
       )}
@@ -135,7 +148,7 @@ function MonthlyChargeExtensionForm({
   athleteId: string
   locale: 'es' | 'en'
   monthlyCharges: MonthlyChargeOption[]
-  extensionHistory: ChargeRevisionHistory[]
+  extensionHistory: ExtensionRevisionHistory[]
 }) {
   const es = locale === 'es'
   const [error, setError] = useState<string | null>(null)
@@ -199,7 +212,10 @@ function MonthlyChargeExtensionForm({
       {extensionHistory.length > 0 && (
         <ul className='text-sm text-muted-foreground'>
           {extensionHistory.map((revision) => (
-            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}</li>
+            <li key={revision.id}>
+              {revision.reason} · {revision.extendedDueDate ?? (es ? 'Retiro' : 'Withdrawn')}
+              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+            </li>
           ))}
         </ul>
       )}
@@ -219,8 +235,8 @@ export function AthleteBillingTermsForm({
   locale: 'es' | 'en'
   model: AthleteBillingTermsFormModel
   monthlyCharges?: MonthlyChargeOption[]
-  reductionHistory?: ChargeRevisionHistory[]
-  extensionHistory?: ChargeRevisionHistory[]
+  reductionHistory?: ReductionRevisionHistory[]
+  extensionHistory?: ExtensionRevisionHistory[]
 }) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
