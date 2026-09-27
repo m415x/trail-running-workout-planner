@@ -11,6 +11,7 @@ import {
   materializeTeamMonthlyChargesAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
+import type { GlobalDueDateExceptionRevision, MonthlyChargeReductionRevision, MonthlyChargeExtensionRevision, MonthlyChargeCandidate } from '../../lib/memberships/billing'
 
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
@@ -187,7 +188,7 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
   const calls: string[] = []
   const dependencies = {
     createId: () => 'global-exception-a',
-    transaction: (operation: (repository: any) => unknown) => operation({
+    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
       listGlobalDueDateExceptionRevisions: () => [],
       listTeamMonthlyCharges: () => [],
       getBillingTermsById: () => { throw new Error('unexpected terms lookup') },
@@ -197,7 +198,7 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
         teamId: string,
         year: number,
         month: number,
-        revision: any,
+        revision: GlobalDueDateExceptionRevision,
       ) => {
         calls.push(`apply:${revision.id}:${teamId}:${year}-${month}:${revision.dueDate}:${revision.reason}`)
       },
@@ -246,7 +247,7 @@ test('Coach actions delegate reduction and extension decisions to the establishe
   let nextId = 0
   const dependencies = {
     createId: () => `h2-${++nextId}`,
-    transaction: (operation: (repository: any) => unknown) => operation({
+    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
       listMonthlyCharges: () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
@@ -262,13 +263,13 @@ test('Coach actions delegate reduction and extension decisions to the establishe
       applyMonthlyChargeReductionAtomically: (
         teamId: string,
         monthlyChargeId: string,
-        revision: any,
+        revision: MonthlyChargeReductionRevision,
       ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`),
       listMonthlyChargeExtensionRevisions: () => [],
       applyMonthlyChargeExtensionAtomically: (
         teamId: string,
         monthlyChargeId: string,
-        revision: any,
+        revision: MonthlyChargeExtensionRevision,
       ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`),
     }),
   } as BillingCoachActionDependencies
@@ -338,7 +339,7 @@ test('Coach global exception reprojects existing materialized charges through th
   const calls: string[] = []
   const dependencies = {
     createId: () => 'global-exception-b',
-    transaction: (operation: (repository: any) => unknown) => operation({
+    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
       listGlobalDueDateExceptionRevisions: () => [],
       listTeamMonthlyCharges: () => [{
         id: 'charge-a',
@@ -376,8 +377,8 @@ test('Coach global exception reprojects existing materialized charges through th
         teamId: string,
         year: number,
         month: number,
-        revision: any,
-        charges: any[],
+        revision: GlobalDueDateExceptionRevision,
+        charges: MonthlyChargeCandidate[],
       ) => {
         calls.push(`apply:${teamId}:${year}-${month}:${revision.id}`)
         calls.push(`charge:${charges[0]?.baseDueDate}:${charges[0]?.effectiveDueDate}`)
@@ -406,7 +407,7 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
   let nextId = 0
   const dependencies = {
     createId: () => `withdrawal-${++nextId}`,
-    transaction: (operation: (repository: any) => unknown) => operation({
+    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
       listMonthlyCharges: () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
@@ -431,7 +432,7 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
       applyMonthlyChargeReductionAtomically: (
         _teamId: string,
         _monthlyChargeId: string,
-        revision: any,
+        revision: GlobalDueDateExceptionRevision,
       ) => calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`),
       listMonthlyChargeExtensionRevisions: () => [{
         id: 'extension-a',
@@ -446,7 +447,7 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
       applyMonthlyChargeExtensionAtomically: (
         _teamId: string,
         _monthlyChargeId: string,
-        revision: any,
+        revision: GlobalDueDateExceptionRevision,
       ) => calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`),
     }),
   } as BillingCoachActionDependencies
