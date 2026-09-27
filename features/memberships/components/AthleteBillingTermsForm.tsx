@@ -63,16 +63,21 @@ function MonthlyChargeReductionForm({
   function submitReduction(formData: FormData, withdraw = false) {
     setError(null)
     setSuccess(null)
-    const period = String(formData.get('reductionPeriod') ?? '')
-    const [year, month] = period.split('-').map(Number)
+    const monthlyChargeId = String(formData.get('reductionChargeId') ?? '')
+    const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
     const amount = Number(formData.get('reductionAmount'))
+
+    if (!selectedCharge) {
+      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      return
+    }
 
     startTransition(async () => {
       const result = await applyMonthlyChargeReductionAction({
-        monthlyChargeId: String(formData.get('reductionChargeId') ?? ''),
+        monthlyChargeId,
         athleteId,
-        year,
-        month,
+        year: selectedCharge.year,
+        month: selectedCharge.month,
         reductionAmountMinor: withdraw ? 0 : Math.round(amount * 100),
         reason: String(formData.get('reductionReason') ?? ''),
         locale,
@@ -99,7 +104,6 @@ function MonthlyChargeReductionForm({
             </option>
           ))}
         </select>
-        <Input name='reductionPeriod' type='month' required />
         <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
         <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
@@ -141,15 +145,20 @@ function MonthlyChargeExtensionForm({
   function submitExtension(formData: FormData, withdraw = false) {
     setError(null)
     setSuccess(null)
-    const period = String(formData.get('extensionPeriod') ?? '')
-    const [year, month] = period.split('-').map(Number)
+    const monthlyChargeId = String(formData.get('extensionChargeId') ?? '')
+    const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
+
+    if (!selectedCharge) {
+      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      return
+    }
 
     startTransition(async () => {
       const result = await applyMonthlyChargeExtensionAction({
-        monthlyChargeId: String(formData.get('extensionChargeId') ?? ''),
+        monthlyChargeId,
         athleteId,
-        year,
-        month,
+        year: selectedCharge.year,
+        month: selectedCharge.month,
         extendedDueDate: withdraw ? null : String(formData.get('extendedDueDate') ?? ''),
         reason: String(formData.get('extensionReason') ?? ''),
         locale,
@@ -176,7 +185,6 @@ function MonthlyChargeExtensionForm({
             </option>
           ))}
         </select>
-        <Input name='extensionPeriod' type='month' required />
         <Input name='extendedDueDate' type='date' required />
         <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
