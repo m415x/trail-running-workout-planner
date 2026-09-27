@@ -294,25 +294,31 @@ test('KAN-479 Coach membership page exposes localized team monthly materializati
     'utf8',
   )
 
-  assert.match(page, /Materializar cuotas/)
-  assert.match(page, /Materialize charges/)
-  assert.match(page, /type=['"]month['"]/)
-  assert.match(page, /materializeTeamMonthlyChargesAction/)
+  const form = await readFile(
+    'features/memberships/components/TeamMonthlyMaterializationForm.tsx',
+    'utf8',
+  )
+
+  assert.match(page, /TeamMonthlyMaterializationForm/)
+  assert.match(form, /Materializar cuotas/)
+  assert.match(form, /Materialize charges/)
+  assert.match(form, /type=['"]month['"]/)
+  assert.match(form, /materializeTeamMonthlyChargesAction/)
   assert.match(actions, /materializeTeamMonthlyChargesAction/)
   assert.match(actions, /handlers\.materializeTeamMonthlyCharges/)
 })
 
 
 test('KAN-479 bulk monthly materialization reports localized processed and created counts to Coach', async () => {
-  const page = await readFile(
-    'app/[locale]/dashboard/membership/page.tsx',
+  const form = await readFile(
+    'features/memberships/components/TeamMonthlyMaterializationForm.tsx',
     'utf8',
   )
 
-  assert.match(page, /processedAthletes/)
-  assert.match(page, /materializedCharges/)
-  assert.match(page, /Atletas procesados/)
-  assert.match(page, /Athletes processed/)
-  assert.match(page, /Cuotas creadas/)
-  assert.match(page, /Charges created/)
+  assert.match(form, /processedAthletes/)
+  assert.match(form, /materializedCharges/)
+  assert.match(form, /Atletas procesados/)
+  assert.match(form, /Athletes processed/)
+  assert.match(form, /Cuotas creadas/)
+  assert.match(form, /Charges created/)
 })
