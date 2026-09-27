@@ -444,3 +444,66 @@ test('KAN-479 atomic new-athlete billing materializes exactly the effective join
   assert.equal(charge.effectiveDueDate, '2026-09-27')
   assert.equal(insertedValues.length, 2)
 })
+
+
+test('KAN-479 atomic new-athlete billing applies the current global exception before the first-month clamp', () => {
+  const insertedValues: Record<string, unknown>[] = []
+  const db = {
+    select: () => ({
+      from: (table: unknown) => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => {
+            if (table === teamEconomicPolicies) {
+              return [{
+                id: 'policy-a',
+                teamId: 'team_1',
+                defaultMonthlyAmountMinor: 2500000,
+                currency: 'ARS',
+                ordinaryDueDay: 10,
+                effectiveFrom: '2026-09-01',
+                effectiveUntil: null,
+              }]
+            }
+            return [{
+              id: 'exception-a',
+              teamId: 'team_1',
+              year: 2026,
+              month: 9,
+              dueDate: '2026-09-20',
+              reason: 'Feriado',
+              isCurrent: true,
+            }]
+          },
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: (value: Record<string, unknown>) => ({
+        run: () => insertedValues.push(value),
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  let id = 0
+  const runtime = createMembershipServerActionRuntime({
+    db: db as any,
+    createId: () => `generated-${++id}`,
+  })
+
+  const charge = runtime.initializeNewAthleteBillingInTransaction({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-15',
+  })
+
+  assert.equal(charge.baseDueDate, '2026-09-20')
+  assert.equal(charge.effectiveDueDate, '2026-09-20')
+})
