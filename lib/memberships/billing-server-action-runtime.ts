@@ -1,6 +1,6 @@
 import { createSynchronousBillingCoachService } from './billing-coach-service'
-import { materializeMonthlyChargesThrough } from './billing'
-import { monthlyCharges } from '@/db/schema'
+import { materializeMonthlyChargesThrough, projectMonthlyChargeWithExceptions } from './billing'
+import { globalMonthlyDueDateExceptions, monthlyCharges } from '@/db/schema'
 import {
   applyGlobalDueDateExceptionAction,
   applyMonthlyChargeReductionAction,
@@ -119,16 +119,38 @@ export function createMembershipServerActionRuntime({
         throw new Error('New athlete join-month charge was not materialized')
       }
 
+      const currentGlobalExceptions = (db as any)
+        .select()
+        .from(globalMonthlyDueDateExceptions)
+        .where()
+        .all()
+        .filter((revision: any) =>
+          revision.teamId === input.teamId
+          && revision.year === year
+          && revision.month === month
+          && revision.isCurrent,
+        )
+      if (currentGlobalExceptions.length > 1) {
+        throw new Error('More than one current global due-date exception exists for the join month')
+      }
+
+      const charge = projectMonthlyChargeWithExceptions({
+        charge: charges[0]!,
+        globalDueDateException: currentGlobalExceptions[0] ?? null,
+        reduction: null,
+        extension: null,
+      })
+
       const now = new Date().toISOString()
       ;(db as any).insert(monthlyCharges).values({
         id: createId(),
-        ...charges[0],
+        ...charge,
         isDeleted: false,
         createdAt: now,
         updatedAt: now,
       }).run?.()
 
-      return charges[0]
+      return charge
     },
 
     async initializeNewAthleteBilling(input: {
