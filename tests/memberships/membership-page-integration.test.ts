@@ -348,3 +348,15 @@ test('KAN-479 athlete H2 forms derive the billing period from the selected persi
   assert.match(form, /selectedCharge\.year/)
   assert.match(form, /selectedCharge\.month/)
 })
+
+
+test('KAN-479 athlete H2 history renders the economic value of every revision', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /reductionAmountMinor/)
+  assert.match(form, /extendedDueDate/)
+  assert.match(form, /Retiro|Withdrawn/)
+})
