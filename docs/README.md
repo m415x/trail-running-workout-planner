@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-479.md`](handoffs/kan-479.md), covering completed KAN-479 Coach ES/EN integration and the KAN-480 closure entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-480.md`](handoffs/kan-480.md), covering completed KAN-460 H2 closure and the KAN-461 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
@@ -49,7 +49,7 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 5 is active. KAN-459 H1 is integrated; KAN-460 H2 has completed its contract, SQLite vertical slices, PostgreSQL/Supabase parity and Coach ES/EN integration through KAN-479. KAN-480 is next for final KAN-460 closure. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
+Epics 1–4 are complete. Epic 5 is active. KAN-459 H1 is integrated; KAN-460 H2 is complete on its story branch with domain, SQLite, PostgreSQL/Supabase, Coach ES/EN and closure evidence reconciled through KAN-480. KAN-461 is the next Epic 5 story after KAN-460 is integrated into `dev`. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
 No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
 
