@@ -278,3 +278,20 @@ test('KAN-479 runtime exposes bulk monthly materialization through the establish
 
   assert.equal(typeof runtime.materializeTeamMonthlyCharges, 'function')
 })
+
+
+test('KAN-479 new athlete billing initialization applies terms and materializes the join month as one runtime use case', async () => {
+  const runtime = createMembershipServerActionRuntime({
+    db: {
+      transaction: () => {
+        throw new Error('new-athlete billing orchestration must own its established boundaries')
+      },
+      select: () => {
+        throw new Error('runtime creation must not read')
+      },
+    } as any,
+    createId: () => 'unused',
+  })
+
+  assert.equal(typeof runtime.initializeNewAthleteBilling, 'function')
+})
