@@ -141,11 +141,14 @@ function MonthlyChargeReductionForm({
         <ul className='text-sm text-muted-foreground'>
           {reductionHistory.map((revision) => (
             <li key={revision.id}>
-              {revision.reason} · {formatAuditAmount(
-                revision.reductionAmountMinor,
-                monthlyCharges.find((charge) => charge.id === revision.monthlyChargeId)?.currency ?? 'ARS',
-                locale,
-              )}
+              {revision.reason} · {(() => {
+                const currency = monthlyCharges.find(
+                  (charge) => charge.id === revision.monthlyChargeId,
+                )?.currency
+                return currency
+                  ? formatAuditAmount(revision.reductionAmountMinor, currency, locale)
+                  : String(revision.reductionAmountMinor / 100)
+              })()}
               {revision.reductionAmountMinor === 0 ? ` · ${es ? 'Retiro' : 'Withdrawn'}` : ''}
               {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
             </li>
