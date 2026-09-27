@@ -7,6 +7,12 @@ import {
   createMembershipServerActionRuntime,
 } from '../../lib/memberships/billing-server-action-runtime'
 
+type RuntimeDatabase = Parameters<typeof createMembershipServerActionRuntime>[0]['db']
+
+function runtimeDb<T extends object>(db: T): RuntimeDatabase {
+  return db as unknown as RuntimeDatabase
+}
+
 test('membership server action runtime uses the synchronous SQLite transaction repository', async () => {
   const calls: string[] = []
   const db = {
@@ -203,7 +209,7 @@ test('membership Server Action runtime exposes the three H2 Coach operations wit
   }
 
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => 'h2-a',
   })
 
@@ -245,7 +251,7 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
   }
 
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => 'global-a',
   })
 
@@ -265,14 +271,14 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
 
 test('KAN-479 runtime exposes bulk monthly materialization through the established H1 persistence adapter', async () => {
   const runtime = createMembershipServerActionRuntime({
-    db: {
+    db: runtimeDb({
       transaction: () => {
         throw new Error('bulk orchestration must not open the synchronous H1 transaction')
       },
       select: () => {
         throw new Error('runtime creation must not read')
       },
-    } as any,
+    }),
     createId: () => 'unused',
   })
 
@@ -282,14 +288,14 @@ test('KAN-479 runtime exposes bulk monthly materialization through the establish
 
 test('KAN-479 new athlete billing initialization applies terms and materializes the join month as one runtime use case', async () => {
   const runtime = createMembershipServerActionRuntime({
-    db: {
+    db: runtimeDb({
       transaction: () => {
         throw new Error('new-athlete billing orchestration must own its established boundaries')
       },
       select: () => {
         throw new Error('runtime creation must not read')
       },
-    } as any,
+    }),
     createId: () => 'unused',
   })
 
@@ -326,7 +332,7 @@ test('KAN-479 new athlete billing initialization rejects creation without an eff
   }
 
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => 'terms-new',
     reportError: () => undefined,
   })
@@ -378,7 +384,7 @@ test('KAN-479 new athlete billing initialization can participate in an existing 
   }
 
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => 'terms-new',
   })
 
@@ -427,7 +433,7 @@ test('KAN-479 atomic new-athlete billing materializes exactly the effective join
 
   let id = 0
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => `generated-${++id}`,
   })
 
@@ -495,7 +501,7 @@ test('KAN-479 atomic new-athlete billing applies the current global exception be
 
   let id = 0
   const runtime = createMembershipServerActionRuntime({
-    db: db as any,
+    db: runtimeDb(db),
     createId: () => `generated-${++id}`,
   })
 
