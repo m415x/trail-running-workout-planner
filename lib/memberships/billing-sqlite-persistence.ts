@@ -16,6 +16,7 @@ import type {
 
 export type SqliteBillingDatabase = {
   athleteBelongsToTeam: (teamId: string, athleteId: string) => Promise<boolean>
+  listTeamAthleteIds?: (teamId: string) => Promise<string[]>
   listBillingTerms: (teamId: string, athleteId: string) => Promise<AthleteBillingTerms[]>
   listMonthlyCharges: (teamId: string, athleteId: string) => Promise<MonthlyChargeCandidate[]>
   listPersistedMonthlyCharges?: (teamId: string, athleteId: string) => Promise<PersistedMonthlyCharge[]>
