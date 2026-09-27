@@ -282,3 +282,22 @@ test('KAN-479 athlete membership is compact by default and only exposes charge e
   assert.match(athleteForm, /<MonthlyChargeReductionForm/)
   assert.match(athleteForm, /<MonthlyChargeExtensionForm/)
 })
+
+
+test('KAN-479 Coach membership page exposes localized team monthly materialization', async () => {
+  const page = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(page, /Materializar cuotas/)
+  assert.match(page, /Materialize charges/)
+  assert.match(page, /type=['"]month['"]/)
+  assert.match(page, /materializeTeamMonthlyChargesAction/)
+  assert.match(actions, /materializeTeamMonthlyChargesAction/)
+  assert.match(actions, /handlers\.materializeTeamMonthlyCharges/)
+})
