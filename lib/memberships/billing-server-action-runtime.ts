@@ -52,22 +52,25 @@ export function createMembershipServerActionRuntime({
 }) {
   const transaction = createSqliteBillingTransaction(db)
 
-  const billingDatabase = createDrizzleBillingDatabase(db)
-  const billingPersistence = createSqliteBillingPersistencePort(billingDatabase)
-
   const h2Dependencies: BillingCoachActionDependencies = {
     createId,
-    transaction: (operation) => operation(billingPersistence),
+    transaction: (operation) =>
+      operation(createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db))),
   }
 
-  const bulkMaterializationDependencies: BillingCoachActionDependencies = {
-    ...h2Dependencies,
-    listTeamAthleteIds: async (teamId) => {
-      const candidates = await billingDatabase.listTeamAthleteIds?.(teamId)
-      return candidates ?? []
-    },
-    materializeMonthlyCharges: (input) =>
-      createBillingPersistenceAdapter(billingPersistence).materializeMonthlyCharges(input),
+  function bulkMaterializationDependencies(): BillingCoachActionDependencies {
+    const billingDatabase = createDrizzleBillingDatabase(db)
+    const billingPersistence = createSqliteBillingPersistencePort(billingDatabase)
+
+    return {
+      ...h2Dependencies,
+      listTeamAthleteIds: async (teamId) => {
+        const candidates = await billingDatabase.listTeamAthleteIds?.(teamId)
+        return candidates ?? []
+      },
+      materializeMonthlyCharges: (input) =>
+        createBillingPersistenceAdapter(billingPersistence).materializeMonthlyCharges(input),
+    }
   }
 
   function athleteTermsService() {
@@ -82,7 +85,7 @@ export function createMembershipServerActionRuntime({
       year: number
       month: number
     }) {
-      return materializeTeamMonthlyChargesAction(input, bulkMaterializationDependencies)
+      return materializeTeamMonthlyChargesAction(input, bulkMaterializationDependencies())
     },
 
     async applyGlobalDueDateException(input: {
