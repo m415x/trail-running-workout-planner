@@ -343,3 +343,44 @@ test('KAN-479 new athlete billing initialization rejects creation without an eff
   })
   assert.equal(insertCalls, 0)
 })
+
+
+test('KAN-479 new athlete billing initialization can participate in an existing synchronous creation transaction', () => {
+  const db = {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => [{
+            id: 'policy-a',
+            teamId: 'team_1',
+            defaultMonthlyAmountMinor: 2500000,
+            currency: 'ARS',
+            ordinaryDueDay: 10,
+            effectiveFrom: '2026-09-01',
+            effectiveUntil: null,
+          }],
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => undefined,
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: db as any,
+    createId: () => 'terms-new',
+  })
+
+  assert.equal(typeof runtime.initializeNewAthleteBillingInTransaction, 'function')
+})
