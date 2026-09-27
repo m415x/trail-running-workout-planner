@@ -13,6 +13,7 @@ import { createBillingPersistenceAdapter } from './billing-persistence'
 import { createSqliteBillingPersistencePort } from './billing-sqlite-persistence'
 import { createSynchronousAthleteBillingTermsService } from './athlete-billing-terms-service'
 import { createSynchronousDrizzleBillingRepository } from './billing-drizzle-write-repository'
+import type { SyncDrizzleClient } from './billing-drizzle-write-repository'
 import { createSqliteBillingTransaction } from './billing-sqlite-transaction'
 
 type RuntimeDatabase =
