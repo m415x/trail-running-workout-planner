@@ -13,12 +13,35 @@ import { createBillingPersistenceAdapter } from './billing-persistence'
 import { createSqliteBillingPersistencePort } from './billing-sqlite-persistence'
 import { createSynchronousAthleteBillingTermsService } from './athlete-billing-terms-service'
 import { createSynchronousDrizzleBillingRepository } from './billing-drizzle-write-repository'
-import type { SyncDrizzleClient } from './billing-drizzle-write-repository'
 import { createSqliteBillingTransaction } from './billing-sqlite-transaction'
 
 type RuntimeDatabase =
   Parameters<typeof createSynchronousDrizzleBillingRepository>[0]
   & Parameters<typeof createSqliteBillingTransaction>[0]
+
+type CurrentGlobalExceptionRow = {
+  teamId: string
+  year: number
+  month: number
+  dueDate: string
+  reason: string
+  isCurrent: boolean
+}
+
+type JoinMonthBillingClient = RuntimeDatabase & {
+  select: () => {
+    from: (table: unknown) => {
+      where: () => {
+        all: () => CurrentGlobalExceptionRow[]
+      }
+    }
+  }
+  insert: (table: unknown) => {
+    values: (values: Record<string, unknown>) => {
+      run?: () => unknown
+    }
+  }
+}
 
 type ConfigureTeamEconomicPolicyInput = {
   teamId: string
@@ -120,12 +143,13 @@ export function createMembershipServerActionRuntime({
         throw new Error('New athlete join-month charge was not materialized')
       }
 
-      const currentGlobalExceptions = (db as any)
+      const joinMonthDb = db as JoinMonthBillingClient
+      const currentGlobalExceptions = joinMonthDb
         .select()
         .from(globalMonthlyDueDateExceptions)
         .where()
         .all()
-        .filter((revision: any) =>
+        .filter((revision) =>
           revision.teamId === input.teamId
           && revision.year === year
           && revision.month === month
@@ -144,7 +168,7 @@ export function createMembershipServerActionRuntime({
       })
 
       const now = new Date().toISOString()
-      ;(db as any).insert(monthlyCharges).values({
+      joinMonthDb.insert(monthlyCharges).values({
         id: createId(),
         ...charge,
         isDeleted: false,
