@@ -20,6 +20,7 @@ type RuntimeDatabase =
   & Parameters<typeof createSqliteBillingTransaction>[0]
 
 type CurrentGlobalExceptionRow = {
+  id: string
   teamId: string
   year: number
   month: number
