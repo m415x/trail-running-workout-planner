@@ -11,7 +11,19 @@ import {
   materializeTeamMonthlyChargesAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
-import type { GlobalDueDateExceptionRevision, MonthlyChargeReductionRevision, MonthlyChargeExtensionRevision, MonthlyChargeCandidate } from '../../lib/memberships/billing'
+import type { GlobalDueDateExceptionRevision, MonthlyChargeCandidate } from '../../lib/memberships/billing'
+import type {
+  BillingPersistencePort,
+  GlobalDueDateExceptionPersistencePort,
+  MonthlyChargeReductionPersistencePort,
+  MonthlyChargeExtensionPersistencePort,
+  PersistedMonthlyChargeReductionRevision,
+  PersistedMonthlyChargeExtensionRevision,
+} from '../../lib/memberships/billing-persistence'
+
+type GlobalRepository = BillingPersistencePort & GlobalDueDateExceptionPersistencePort
+type ReductionRepository = BillingPersistencePort & MonthlyChargeReductionPersistencePort
+type ExtensionRepository = BillingPersistencePort & MonthlyChargeExtensionPersistencePort
 
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
@@ -188,17 +200,18 @@ test('Coach action applies a global monthly due-date exception through the H2 pe
   const calls: string[] = []
   const dependencies = {
     createId: () => 'global-exception-a',
-    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
-      listGlobalDueDateExceptionRevisions: () => [],
-      listTeamMonthlyCharges: () => [],
+    transaction: (operation: (repository: GlobalRepository) => unknown) => operation({
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamMonthlyCharges: async () => [],
       getBillingTermsById: () => { throw new Error('unexpected terms lookup') },
       replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
       updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
-      applyGlobalDueDateExceptionAtomically: (
+      applyGlobalDueDateExceptionAtomically: async (
         teamId: string,
         year: number,
         month: number,
         revision: GlobalDueDateExceptionRevision,
+        _charges: MonthlyChargeCandidate[],
       ) => {
         calls.push(`apply:${revision.id}:${teamId}:${year}-${month}:${revision.dueDate}:${revision.reason}`)
       },
@@ -247,8 +260,8 @@ test('Coach actions delegate reduction and extension decisions to the establishe
   let nextId = 0
   const dependencies = {
     createId: () => `h2-${++nextId}`,
-    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
-      listMonthlyCharges: () => [{
+    transaction: (operation: (repository: ReductionRepository) => unknown) => operation({
+      listMonthlyCharges: async () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
         year: 2026,
@@ -259,17 +272,19 @@ test('Coach actions delegate reduction and extension decisions to the establishe
         baseDueDate: '2026-10-05',
         effectiveDueDate: '2026-10-05',
       }],
-      listMonthlyChargeReductionRevisions: () => [],
-      applyMonthlyChargeReductionAtomically: (
+      listMonthlyChargeReductionRevisions: async () => [],
+      applyMonthlyChargeReductionAtomically: async (
         teamId: string,
         monthlyChargeId: string,
-        revision: MonthlyChargeReductionRevision,
+        revision: PersistedMonthlyChargeReductionRevision,
+        _charge: MonthlyChargeCandidate,
       ) => calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`),
-      listMonthlyChargeExtensionRevisions: () => [],
-      applyMonthlyChargeExtensionAtomically: (
+      listMonthlyChargeExtensionRevisions: async () => [],
+      applyMonthlyChargeExtensionAtomically: async (
         teamId: string,
         monthlyChargeId: string,
-        revision: MonthlyChargeExtensionRevision,
+        revision: PersistedMonthlyChargeExtensionRevision,
+        _charge: MonthlyChargeCandidate,
       ) => calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`),
     }),
   } as BillingCoachActionDependencies
@@ -339,9 +354,9 @@ test('Coach global exception reprojects existing materialized charges through th
   const calls: string[] = []
   const dependencies = {
     createId: () => 'global-exception-b',
-    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
-      listGlobalDueDateExceptionRevisions: () => [],
-      listTeamMonthlyCharges: () => [{
+    transaction: (operation: (repository: GlobalRepository) => unknown) => operation({
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamMonthlyCharges: async () => [{
         id: 'charge-a',
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
@@ -355,7 +370,7 @@ test('Coach global exception reprojects existing materialized charges through th
       }],
       replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
       updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
-      getBillingTermsById: () => ({
+      getBillingTermsById: async () => ({
         id: 'terms-a',
         athleteId: 'athlete-a',
         monthlyAmountMinor: 2_500_000,
@@ -363,7 +378,7 @@ test('Coach global exception reprojects existing materialized charges through th
         effectiveFrom: '2026-10-01',
         effectiveUntil: null,
       }),
-      listMonthlyChargeExtensionRevisions: () => [{
+      listMonthlyChargeExtensionRevisions: async () => [{
         id: 'extension-a',
         monthlyChargeId: 'charge-a',
         athleteId: 'athlete-a',
@@ -373,7 +388,7 @@ test('Coach global exception reprojects existing materialized charges through th
         reason: 'Prórroga acordada',
         isCurrent: true,
       }],
-      applyGlobalDueDateExceptionAtomically: (
+      applyGlobalDueDateExceptionAtomically: async (
         teamId: string,
         year: number,
         month: number,
@@ -407,8 +422,8 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
   let nextId = 0
   const dependencies = {
     createId: () => `withdrawal-${++nextId}`,
-    transaction: (operation: (repository: Parameters<BillingCoachActionDependencies['transaction']>[0] extends (repository: infer R) => unknown ? R : never) => unknown) => operation({
-      listMonthlyCharges: () => [{
+    transaction: (operation: (repository: ReductionRepository) => unknown) => operation({
+      listMonthlyCharges: async () => [{
         athleteId: 'athlete-a',
         billingTermsId: 'terms-a',
         year: 2026,
@@ -419,7 +434,7 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
         baseDueDate: '2026-10-05',
         effectiveDueDate: '2026-10-15',
       }],
-      listMonthlyChargeReductionRevisions: () => [{
+      listMonthlyChargeReductionRevisions: async () => [{
         id: 'reduction-a',
         monthlyChargeId: 'charge-a',
         athleteId: 'athlete-a',
@@ -429,12 +444,13 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
         reason: 'Beca deportiva',
         isCurrent: true,
       }],
-      applyMonthlyChargeReductionAtomically: (
+      applyMonthlyChargeReductionAtomically: async (
         _teamId: string,
         _monthlyChargeId: string,
         revision: GlobalDueDateExceptionRevision,
+        _charge: MonthlyChargeCandidate,
       ) => calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`),
-      listMonthlyChargeExtensionRevisions: () => [{
+      listMonthlyChargeExtensionRevisions: async () => [{
         id: 'extension-a',
         monthlyChargeId: 'charge-a',
         athleteId: 'athlete-a',
@@ -444,10 +460,11 @@ test('KAN-479 Coach actions support explicit reduction and extension withdrawals
         reason: 'Prórroga acordada',
         isCurrent: true,
       }],
-      applyMonthlyChargeExtensionAtomically: (
+      applyMonthlyChargeExtensionAtomically: async (
         _teamId: string,
         _monthlyChargeId: string,
         revision: GlobalDueDateExceptionRevision,
+        _charge: MonthlyChargeCandidate,
       ) => calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`),
     }),
   } as BillingCoachActionDependencies
