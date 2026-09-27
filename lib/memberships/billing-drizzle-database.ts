@@ -157,6 +157,18 @@ export function createDrizzleBillingDatabase(
   return {
     athleteBelongsToTeam,
 
+    async listTeamAthleteIds(teamId) {
+      const rows = await client
+        .select()
+        .from(athleteProfiles)
+        .where(and(
+          eq(athleteProfiles.teamId, teamId),
+          eq(athleteProfiles.isDeleted, false),
+        ))
+
+      return rows.map((row: QueryResult) => String(row.id))
+    },
+
     async listBillingTerms(teamId, athleteId) {
       const rows = await client
         .select()
