@@ -82,3 +82,12 @@ export async function applyMonthlyChargeExtensionAction(input: {
 }) {
   return handlers.applyMonthlyChargeExtension(input)
 }
+
+
+export async function materializeTeamMonthlyChargesAction(input: {
+  year: number
+  month: number
+  locale: 'es' | 'en'
+}) {
+  return handlers.materializeTeamMonthlyCharges(input)
+}
