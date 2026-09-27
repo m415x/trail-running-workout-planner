@@ -199,6 +199,47 @@ export function renderTestBatchResults(outputs: string[]): string {
   ].join('\n')
 }
 
+const ANSI_GREEN = '\u001b[32m'
+const ANSI_RED = '\u001b[31m'
+const ANSI_RESET = '\u001b[0m'
+
+export function extractFailedTestNames(output: string): string[] {
+  const names: string[] = []
+
+  for (const line of output.split(/\r?\n/)) {
+    const match = line.match(/^\s*not ok \d+ - (.+)$/)
+    if (match?.[1]) names.push(match[1].trim())
+  }
+
+  return names
+}
+
+function colorSummaryLine(line: string, color: string): string {
+  return `${color}${line}${ANSI_RESET}`
+}
+
+export function renderFinalTestRunReport(outputs: string[]): string {
+  const { summary } = combineTestBatchResults(outputs)
+  const failedTests = [...new Set(outputs.flatMap(extractFailedTestNames))]
+  const summaryLines = formatTestRunSummary(summary).split('\n').map((line) => {
+    if (line.startsWith('ℹ pass ')) return colorSummaryLine(line, ANSI_GREEN)
+    if (line.startsWith('ℹ fail ')) {
+      return colorSummaryLine(line, summary.fail > 0 ? ANSI_RED : ANSI_GREEN)
+    }
+    return line
+  })
+
+  if (failedTests.length === 0) {
+    return summaryLines.join('\n')
+  }
+
+  return [
+    ...summaryLines,
+    `${ANSI_RED}Failed tests:${ANSI_RESET}`,
+    ...failedTests.map((name) => `${ANSI_RED}✖ ${name}${ANSI_RESET}`),
+  ].join('\n')
+}
+
 type TestBatchInvocation = ReturnType<typeof createTestBatchInvocation>
 type TestBatchSpawnResult = TestRunResult & { stdout?: string | Buffer | null; stderr?: string | Buffer | null }
 type TestBatchSpawn = (
@@ -213,6 +254,8 @@ export function executeTestRunBatches(
   report: (output: string) => void,
 ): number {
   const outputs: string[] = []
+  const stderrOutputs: string[] = []
+  let exitCode = 0
 
   for (const invocation of invocations) {
     const result = spawn(process.execPath, invocation.args, invocation.options)
@@ -224,34 +267,32 @@ export function executeTestRunBatches(
       ? result.stderr
       : result.stderr?.toString() ?? ''
 
-    if (stdout) {
-      outputs.push(stdout)
-    }
+    if (stdout) outputs.push(stdout)
+    if (stderr) stderrOutputs.push(stderr)
 
     if (outcome.signal) {
-      if (stdout) {
-        report(stdout)
-      }
-      if (stderr) {
-        report(stderr)
-      }
+      if (stdout) report(stdout)
+      if (stderr) report(stderr)
       process.kill(process.pid, outcome.signal)
       return 1
     }
 
-    if (outcome.exitCode !== 0) {
-      if (stdout) {
-        report(stdout)
-      }
-      if (stderr) {
-        report(stderr)
-      }
-      return outcome.exitCode ?? 1
+    if (outcome.exitCode !== 0 && exitCode === 0) {
+      exitCode = outcome.exitCode ?? 1
     }
   }
 
-  report(renderTestBatchResults(outputs))
-  return 0
+  const finalReport = outputs.length > 0
+    ? renderFinalTestRunReport(outputs)
+    : 'Test process failed without TAP output'
+
+  report(
+    stderrOutputs.length > 0
+      ? `${stderrOutputs.join('\n')}\n${finalReport}`
+      : finalReport,
+  )
+
+  return exitCode
 }
 
 export function runTestFilesWith(
