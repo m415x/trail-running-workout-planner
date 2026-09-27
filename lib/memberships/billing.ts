@@ -384,7 +384,7 @@ export async function materializeMonthlyCharges(input: {
     await input.repository.insertMonthlyCharges(missingCharges)
   }
 
-  return materialized
+  return missingCharges
 }
 
 
