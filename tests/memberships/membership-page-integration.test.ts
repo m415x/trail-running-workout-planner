@@ -322,3 +322,15 @@ test('KAN-479 bulk monthly materialization reports localized processed and creat
   assert.match(form, /Cuotas creadas/)
   assert.match(form, /Charges created/)
 })
+
+
+test('KAN-479 athlete billing history localizes the current revision marker in ES and EN', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(form, /['"] · vigente['"]/)
+  assert.match(form, /vigente/)
+  assert.match(form, /current/)
+})
