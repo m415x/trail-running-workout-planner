@@ -52,6 +52,22 @@ SQLite migrations `0009_membership_global_due_date_exceptions.sql`, `0010_member
 
 Supabase H2 tables are RLS-enabled but KAN-460 deliberately does not invent permissive policies before the identity/authentication/authorization phase. Reduction and extension facts remain charge-scoped; athlete/team identity is reached through `MonthlyCharge` and guarded at application/persistence boundaries. A versioned migration and `db:supabase:check` are not evidence that a remote Supabase instance has received migration 0024; `db:supabase:verify` is the remote deployment verifier.
 
+## Coach operations and presentation
+
+KAN-479 exposes the established H1/H2 contract through localized Coach ES/EN workflows without making the UI a second economic authority.
+
+Monthly materialization has an explicit team-wide Coach trigger for an exact calendar month. The use case processes only athletes that already have valid billing terms for the team, skips already materialized months and reports only newly inserted charges as created. A future scheduler may invoke the same application use case; navigation and read loaders remain read-only.
+
+New athlete creation initializes billing atomically when Membership is enabled. The athlete receives initial `AthleteBillingTerms` from the team policy effective on the creation date and the join/current-month `MonthlyCharge` is materialized in the same synchronous SQLite transaction. The effective creation date uses the established Argentina-local civil date. If no team economic policy is effective on that date, creation fails rather than leaving an economically incomplete athlete. Existing legacy athletes without terms are not silently backfilled or assigned historical debt.
+
+Join-month materialization applies the current global monthly due-date exception before the first-month activation clamp. This preserves the H2 precedence contract while still allowing a mid-month athlete to use the later of the exception/policy candidate and the economic activation date.
+
+Coach H2 controls operate only on persisted monthly charges. Reduction and extension forms derive period identity from the selected charge, explicit withdrawals create append-only revisions, and histories show their persisted economic value and current/historical status. Global due-date history is likewise auditable.
+
+Money presentation derives from persisted `amountMinor` plus `currency`; locale affects formatting only. UI projections must not invent ARS or hard-code a currency symbol. The current product still uses ARS as the approved initial/default configuration, while broader team locale/currency/time-zone preferences remain deferred. Civil billing dates remain `YYYY-MM-DD` facts; UI formatting uses controlled UTC interpretation so due dates and exception/extension dates do not shift calendar day.
+
+KAN-479 also hardened the local operational path required by these flows: H2 SQLite verification/recovery recognizes partially reconciled migration metadata, better-sqlite3 transactions remain synchronous, and Drizzle SQLite mutation statements are explicitly executed rather than relying on lazy statement construction.
+
 ## Reserved for later Epic 5 stories
 
 H2 does not implement payments, credits, balances, derived `settled | pending | overdue` state, notices, Athlete blocking, additional charges, authentication or authorization. It also introduces no implicit proration.
