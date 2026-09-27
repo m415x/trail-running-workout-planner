@@ -360,3 +360,16 @@ test('KAN-479 athlete H2 history renders the economic value of every revision', 
   assert.match(form, /extendedDueDate/)
   assert.match(form, /Retiro|Withdrawn/)
 })
+
+
+test('KAN-479 athlete H2 audit history localizes monetary amounts and dates', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /Intl\.NumberFormat/)
+  assert.match(form, /revision\.reductionAmountMinor/)
+  assert.match(form, /revision\.extendedDueDate/)
+  assert.match(form, /Intl\.DateTimeFormat/)
+})
