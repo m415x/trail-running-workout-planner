@@ -334,3 +334,17 @@ test('KAN-479 athlete billing history localizes the current revision marker in E
   assert.match(form, /vigente/)
   assert.match(form, /current/)
 })
+
+
+test('KAN-479 athlete H2 forms derive the billing period from the selected persisted charge', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(form, /name=['"]reductionPeriod['"]/)
+  assert.doesNotMatch(form, /name=['"]extensionPeriod['"]/)
+  assert.match(form, /monthlyCharges\.find/)
+  assert.match(form, /selectedCharge\.year/)
+  assert.match(form, /selectedCharge\.month/)
+})
