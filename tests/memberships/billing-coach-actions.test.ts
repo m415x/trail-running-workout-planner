@@ -543,3 +543,42 @@ test('KAN-479 bulk materialization validates the requested team month before any
   assert.equal(result.success, false)
   assert.equal(reads, 0)
 })
+
+
+test('KAN-479 bulk materialization reports only newly created charges on an idempotent retry', async () => {
+  let alreadyMaterialized = false
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async () => ['athlete-a'],
+    materializeMonthlyCharges: async () => {
+      if (alreadyMaterialized) return []
+      alreadyMaterialized = true
+      return [{}]
+    },
+    transaction: () => {
+      throw new Error('bulk materialization must use the established H1 materialization boundary')
+    },
+  } as BillingCoachActionDependencies
+
+  const first = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 9,
+  }, dependencies)
+  const retry = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 9,
+  }, dependencies)
+
+  assert.deepEqual(first, {
+    success: true,
+    processedAthletes: 1,
+    materializedCharges: 1,
+  })
+  assert.deepEqual(retry, {
+    success: true,
+    processedAthletes: 1,
+    materializedCharges: 0,
+  })
+})
