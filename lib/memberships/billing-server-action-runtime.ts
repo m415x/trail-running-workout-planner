@@ -1,4 +1,6 @@
 import { createSynchronousBillingCoachService } from './billing-coach-service'
+import { materializeMonthlyChargesThrough } from './billing'
+import { monthlyCharges } from '@/db/schema'
 import {
   applyGlobalDueDateExceptionAction,
   applyMonthlyChargeReductionAction,
@@ -86,6 +88,47 @@ export function createMembershipServerActionRuntime({
       month: number
     }) {
       return materializeTeamMonthlyChargesAction(input, bulkMaterializationDependencies())
+    },
+
+    initializeNewAthleteBillingInTransaction(input: {
+      teamId: string
+      athleteId: string
+      effectiveFrom: string
+    }) {
+      if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
+        throw new Error('Invalid new athlete billing input')
+      }
+
+      const [year, month] = input.effectiveFrom.split('-').map(Number)
+      if (!year || !month) throw new Error('Invalid new athlete billing input')
+
+      const repository = createSynchronousDrizzleBillingRepository(db)
+      const terms = createSynchronousAthleteBillingTermsService(repository).applyInitialTerms({
+        ...input,
+        termsId: createId(),
+      })
+      const policies = repository.listTeamEconomicPolicies(input.teamId)
+      const charges = materializeMonthlyChargesThrough({
+        terms: [terms],
+        policies,
+        existingCharges: [],
+        through: { year, month },
+      })
+
+      if (charges.length !== 1) {
+        throw new Error('New athlete join-month charge was not materialized')
+      }
+
+      const now = new Date().toISOString()
+      ;(db as any).insert(monthlyCharges).values({
+        id: createId(),
+        ...charges[0],
+        isDeleted: false,
+        createdAt: now,
+        updatedAt: now,
+      }).run?.()
+
+      return charges[0]
     },
 
     async initializeNewAthleteBilling(input: {
