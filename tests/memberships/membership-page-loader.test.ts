@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { createMembershipPageLoader } from '../../lib/memberships/membership-page-loader'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('loads the Coach membership page through the scoped repository and requested date', async () => {
   const calls: string[] = []
 
@@ -36,7 +44,7 @@ test('loads the Coach membership page through the scoped repository and requeste
 
   assert.deepEqual(calls, ['team:team_1'])
   assert.equal(model.title, 'Membresía')
-  assert.equal(model.monthlyAmount, '$25.000')
+  assert.equal(model.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
 })
 
 test('membership page loading remains read-only', async () => {
