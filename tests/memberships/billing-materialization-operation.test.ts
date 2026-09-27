@@ -55,7 +55,7 @@ test('monthly materialization loads state and persists only missing charge snaps
   })
 
   assert.deepEqual(inserted.map(charge => charge.month), [11, 12])
-  assert.deepEqual(result.map(charge => charge.month), [10, 11, 12])
+  assert.deepEqual(result.map(charge => charge.month), [11, 12])
 })
 
 test('repeating monthly materialization does not persist existing snapshots again', async () => {
@@ -115,4 +115,32 @@ test('monthly materialization is an application operation independent of UI navi
     'charges:athlete-a',
     'insert:1',
   ])
+})
+
+
+test('repeating monthly materialization reports no newly created snapshots', async () => {
+  const stored: MonthlyChargeCandidate[] = []
+
+  const repository = {
+    getBillingTerms: async () => terms,
+    getTeamEconomicPolicies: async () => policies,
+    getMonthlyCharges: async () => [...stored],
+    insertMonthlyCharges: async (charges: MonthlyChargeCandidate[]) => {
+      stored.push(...charges)
+    },
+  }
+
+  const first = await materializeMonthlyCharges({
+    athleteId: 'athlete-a',
+    through: { year: 2026, month: 11 },
+    repository,
+  })
+  const retry = await materializeMonthlyCharges({
+    athleteId: 'athlete-a',
+    through: { year: 2026, month: 11 },
+    repository,
+  })
+
+  assert.deepEqual(first.map(charge => charge.month), [10, 11])
+  assert.deepEqual(retry, [])
 })
