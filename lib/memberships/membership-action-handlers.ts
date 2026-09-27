@@ -22,6 +22,14 @@ type MembershipActionRuntime = {
     monthlyAmountMinor: number
     currency: string
   }) => Promise<BillingActionResult>
+  materializeTeamMonthlyCharges: (input: {
+    teamId: string
+    year: number
+    month: number
+  }) => Promise<
+    | { success: true; processedAthletes: number; materializedCharges: number }
+    | { success: false; error: string }
+  >
   applyGlobalDueDateException: (input: {
     teamId: string
     year: number
@@ -116,6 +124,22 @@ export function createMembershipActionHandlers({
       return result
     },
 
+
+    async materializeTeamMonthlyCharges(input: {
+      year: number
+      month: number
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.materializeTeamMonthlyCharges({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, '/dashboard/membership'))
+      }
+      return result
+    },
 
     async applyGlobalDueDateException(input: {
       year: number
