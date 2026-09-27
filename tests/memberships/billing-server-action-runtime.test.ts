@@ -295,3 +295,51 @@ test('KAN-479 new athlete billing initialization applies terms and materializes 
 
   assert.equal(typeof runtime.initializeNewAthleteBilling, 'function')
 })
+
+
+test('KAN-479 new athlete billing initialization rejects creation without an effective economic policy', async () => {
+  let insertCalls = 0
+  const db = {
+    transaction: (operation: (tx: unknown) => unknown) => operation(db),
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => [],
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => {
+          insertCalls += 1
+        },
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: db as any,
+    createId: () => 'terms-new',
+    reportError: () => undefined,
+  })
+
+  const result = await runtime.initializeNewAthleteBilling({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-27',
+  })
+
+  assert.deepEqual(result, {
+    success: false,
+    error: 'Could not initialize new athlete billing',
+  })
+  assert.equal(insertCalls, 0)
+})
