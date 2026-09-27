@@ -29,7 +29,8 @@ test('returns the policy effective on the requested date', async () => {
     teamId: 'team_1',
     onDate: '2026-10-15',
     repository: {
-      listTeamEconomicPolicies: async (teamId) => {
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async (teamId) => {
         assert.equal(teamId, 'team_1')
         return policies
       },
@@ -44,7 +45,8 @@ test('returns null when the team has no policy effective on the requested date',
     teamId: 'team_1',
     onDate: '2026-09-15',
     repository: {
-      listTeamEconomicPolicies: async () => [{
+      listGlobalDueDateExceptionRevisions: async () => [],
+        listTeamEconomicPolicies: async () => [{
         id: 'policy-future',
         teamId: 'team_1',
         defaultMonthlyAmountMinor: 2_500_000,
@@ -65,7 +67,8 @@ test('rejects ambiguous effective policies instead of choosing one heuristically
       teamId: 'team_1',
       onDate: '2026-10-15',
       repository: {
-        listTeamEconomicPolicies: async () => [
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamEconomicPolicies: async () => [
           {
             id: 'policy-a',
             teamId: 'team_1',

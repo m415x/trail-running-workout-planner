@@ -397,3 +397,77 @@ ok 1 - batch
   assert.equal(reports.length, 1)
   assert.match(reports[0] ?? '', /ℹ tests 2/)
 })
+
+
+test('portable test runner keeps executing batches and ends failed runs with a colored aggregate failure summary', async () => {
+  const { executeTestRunBatches } = await import('../scripts/test-runner')
+  const invocations = [
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/a.test.ts'],
+      options: { shell: false as const, encoding: 'utf8' as const },
+    },
+    {
+      args: ['--import', 'tsx', '--test', '--test-reporter=tap', 'tests/b.test.ts'],
+      options: { shell: false as const, encoding: 'utf8' as const },
+    },
+  ]
+  const outputs = [
+    `TAP version 13
+# Subtest: first failure
+not ok 1 - first failure
+  ---
+  error: 'boom'
+  ...
+1..1
+# tests 2
+# suites 1
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.25`,
+    `TAP version 13
+ok 1 - later success
+1..1
+# tests 3
+# suites 2
+# pass 3
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 20.5`,
+  ]
+  const reports: string[] = []
+  let calls = 0
+
+  const exitCode = executeTestRunBatches(
+    invocations,
+    () => ({
+      status: calls++ === 0 ? 1 : 0,
+      signal: null,
+      error: undefined,
+      stdout: outputs[calls - 1],
+      stderr: '',
+    }),
+    (report) => reports.push(report),
+  )
+
+  assert.equal(exitCode, 1)
+  assert.equal(calls, 2, 'a failed batch must not hide failures from later batches')
+  assert.equal(reports.length, 1)
+
+  const report = reports[0] ?? ''
+  assert.match(report, /ℹ tests 5/)
+  assert.match(report, /ℹ pass 4/)
+  assert.match(report, /ℹ fail 1/)
+  assert.match(report, /Failed tests:/)
+  assert.match(report, /first failure/)
+  assert.match(report, /\u001b\[31m/)
+  assert.match(report, /\u001b\[32m/)
+  assert.ok(
+    report.lastIndexOf('first failure') > report.lastIndexOf('ℹ fail 1'),
+    'failed test names must be repeated after the aggregate summary',
+  )
+})

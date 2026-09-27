@@ -51,13 +51,13 @@ pn db:sqlite:upgrade
 pn db:sqlite:verify
 pn db:sqlite:check
 pn db:seed
-pn db:generate:supabase
-pn db:check:supabase
-pn db:migrate:supabase
-pn db:verify:supabase
+pn db:supabase:generate
+pn db:supabase:check
+pn db:supabase:migrate
+pn db:supabase:verify
 ```
 
-Always review generated SQL before applying a migration. `db:check:supabase` validates the migration chain; `db:verify:supabase` checks the actual table/RLS state of the connected project.
+Always review generated SQL before applying a migration. `db:supabase:check` validates the migration chain; `db:supabase:verify` checks the actual table/RLS state of the connected project.
 
 ## Database and secrets
 

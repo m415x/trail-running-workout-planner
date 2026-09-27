@@ -162,8 +162,18 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         <Card><CardHeader><CardTitle>{t('contact')}</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>{t('phone')}</p><p className='font-medium'>{athlete.phone || t('notProvided')}</p></div></div></CardContent></Card>
 
         <Card className='md:col-span-2'>
-          <CardHeader><CardTitle className='flex items-center gap-2'><ReceiptText className='size-5' />{membership.title}</CardTitle></CardHeader>
-          <CardContent className='space-y-6'>
+          <Accordion>
+            <AccordionItem value='membership' className='border-0'>
+              <AccordionTrigger className='px-6 py-5 hover:no-underline'>
+                <span className='flex w-full items-center justify-between gap-4 pr-2'>
+                  <span className='flex items-center gap-2 text-base font-semibold'><ReceiptText className='size-5' />{membership.title}</span>
+                  {membership.currentTerms?.monthlyAmount && (
+                    <span className='text-sm font-medium text-muted-foreground'>{membership.currentTerms.monthlyAmount}</span>
+                  )}
+                </span>
+              </AccordionTrigger>
+              <AccordionContent>
+                <CardContent className='space-y-6 pt-0'>
             <section className='space-y-3'>
               {membership.currentTerms ? (
                 <dl className='grid gap-4 sm:grid-cols-3'>
@@ -234,8 +244,14 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               athleteId={athleteId}
               locale={es ? 'es' : 'en'}
               model={membershipTermsForm}
+              monthlyCharges={membership.monthlyCharges}
+              reductionHistory={membership.reductionHistory}
+              extensionHistory={membership.extensionHistory}
             />
-          </CardContent>
+                </CardContent>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </Card>
 
         <Card className='md:col-span-2'><CardHeader><div className='flex flex-wrap items-center justify-between gap-3'><CardTitle className='flex items-center gap-2'><Target className='size-5' />{t('goals')}</CardTitle><Link href={newGoalPath} className={buttonVariants({ variant: 'outline', size: 'sm' })}>{t('newGoal')}</Link></div></CardHeader><CardContent>{goals.length === 0 ? <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{t('noGoals')}</p> : <div className='space-y-3'>{goals.map((goal) => <div key={goal.id} className='rounded-lg border p-4'><div className='grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start'><div className='min-w-0'><div className='flex flex-wrap items-center gap-2'><p className='font-medium'>{goal.title}</p><Badge variant={goal.status === 'draft' ? 'outline' : 'secondary'}>{goal.status === 'draft' ? t('goalDraft') : goal.status === 'active' ? t('active') : goal.status === 'completed' ? t('goalCompleted') : goal.status === 'cancelled' ? t('goalCancelled') : goal.status}</Badge></div>{goal.type === 'race' && goal.raceName && goal.raceName !== goal.title && <p className='mt-1 text-sm text-muted-foreground'>{goal.raceName}</p>}{goal.description && <p className='mt-2 text-sm'>{goal.description}</p>}{goal.notes && <p className='mt-2 text-sm text-muted-foreground'>{goal.notes}</p>}</div><dl className='grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-3 lg:min-w-[24rem] lg:text-right'><div><dt className='text-muted-foreground'>{t('date')}</dt><dd className='mt-0.5 font-medium'>{formatDate(goal.targetDate, locale, t('notProvided'))}</dd></div>{goal.type === 'race' && <><div><dt className='text-muted-foreground'>{t('distance')}</dt><dd className='mt-0.5 font-medium'>{goal.raceDistanceKm == null ? '—' : `${goal.raceDistanceKm} km`}</dd></div><div><dt className='text-muted-foreground'>D+</dt><dd className='mt-0.5 font-medium'>{goal.raceElevationGain == null ? '—' : `+${goal.raceElevationGain} m`}</dd></div></>}</dl></div></div>)}</div>}</CardContent></Card>

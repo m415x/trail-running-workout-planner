@@ -5,11 +5,37 @@ import { useState, useTransition } from 'react'
 import {
   applyInitialAthleteBillingTermsAction,
   changeAthleteBillingTermsAction,
+  applyMonthlyChargeReductionAction,
+  applyMonthlyChargeExtensionAction,
 } from '@/app/actions/membership-actions'
 import { submitAthleteBillingTermsForm } from '@/lib/memberships/athlete-billing-terms-form-submit'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
+
+type MonthlyChargeOption = {
+  id: string
+  year: number
+  month: number
+  currency: string
+  amountDueMinor: number
+}
+
+type ReductionRevisionHistory = {
+  id: string
+  monthlyChargeId: string
+  reductionAmountMinor: number
+  reason: string
+  isCurrent: boolean
+}
+
+type ExtensionRevisionHistory = {
+  id: string
+  monthlyChargeId: string
+  extendedDueDate: string | null
+  reason: string
+  isCurrent: boolean
+}
 
 type AthleteBillingTermsFormModel =
   | {
@@ -27,14 +53,212 @@ type AthleteBillingTermsFormModel =
       currency: string
     }
 
+function formatAuditAmount(amountMinor: number, currency: string, locale: 'es' | 'en') {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+  }).format(amountMinor / 100)
+}
+
+function formatAuditDate(value: string, locale: 'es' | 'en') {
+  return new Intl.DateTimeFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    timeZone: 'UTC',
+  }).format(new Date(`${value}T00:00:00Z`))
+}
+
+function MonthlyChargeReductionForm({
+  athleteId,
+  locale,
+  monthlyCharges,
+  reductionHistory,
+}: {
+  athleteId: string
+  locale: 'es' | 'en'
+  monthlyCharges: MonthlyChargeOption[]
+  reductionHistory: ReductionRevisionHistory[]
+}) {
+  const es = locale === 'es'
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function submitReduction(formData: FormData, withdraw = false) {
+    setError(null)
+    setSuccess(null)
+    const monthlyChargeId = String(formData.get('reductionChargeId') ?? '')
+    const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
+    const amount = Number(formData.get('reductionAmount'))
+
+    if (!selectedCharge) {
+      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      return
+    }
+
+    startTransition(async () => {
+      const result = await applyMonthlyChargeReductionAction({
+        monthlyChargeId,
+        athleteId,
+        year: selectedCharge.year,
+        month: selectedCharge.month,
+        reductionAmountMinor: withdraw ? 0 : Math.round(amount * 100),
+        reason: String(formData.get('reductionReason') ?? ''),
+        locale,
+      })
+      if (!result.success) {
+        setError(es ? 'No se pudo aplicar la reducción.' : 'Could not apply the reduction.')
+        return
+      }
+      setSuccess(withdraw
+        ? (es ? 'Reducción retirada.' : 'Reduction withdrawn.')
+        : (es ? 'Reducción aplicada.' : 'Reduction applied.'))
+    })
+  }
+
+  return (
+    <section className='space-y-4'>
+      <h3 className='font-medium'>{es ? 'Reducción o beca' : 'Reduction or scholarship'}</h3>
+      <form action={submitReduction} className='grid gap-4 sm:grid-cols-2'>
+        <select name='reductionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          {monthlyCharges.map((charge) => (
+            <option key={charge.id} value={charge.id}>
+              {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
+            </option>
+          ))}
+        </select>
+        <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
+        <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
+        <Button type='submit' disabled={isPending}>
+          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
+        </Button>
+        <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitReduction(formData, true)}>
+          {es ? 'Retirar reducción' : 'Withdraw reduction'}
+        </Button>
+      </form>
+      {reductionHistory.length > 0 && (
+        <ul className='text-sm text-muted-foreground'>
+          {reductionHistory.map((revision) => (
+            <li key={revision.id}>
+              {revision.reason} · {(() => {
+                const currency = monthlyCharges.find(
+                  (charge) => charge.id === revision.monthlyChargeId,
+                )?.currency
+                return currency
+                  ? formatAuditAmount(revision.reductionAmountMinor, currency, locale)
+                  : String(revision.reductionAmountMinor / 100)
+              })()}
+              {revision.reductionAmountMinor === 0 ? ` · ${es ? 'Retiro' : 'Withdrawn'}` : ''}
+              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function MonthlyChargeExtensionForm({
+  athleteId,
+  locale,
+  monthlyCharges,
+  extensionHistory,
+}: {
+  athleteId: string
+  locale: 'es' | 'en'
+  monthlyCharges: MonthlyChargeOption[]
+  extensionHistory: ExtensionRevisionHistory[]
+}) {
+  const es = locale === 'es'
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function submitExtension(formData: FormData, withdraw = false) {
+    setError(null)
+    setSuccess(null)
+    const monthlyChargeId = String(formData.get('extensionChargeId') ?? '')
+    const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
+
+    if (!selectedCharge) {
+      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      return
+    }
+
+    startTransition(async () => {
+      const result = await applyMonthlyChargeExtensionAction({
+        monthlyChargeId,
+        athleteId,
+        year: selectedCharge.year,
+        month: selectedCharge.month,
+        extendedDueDate: withdraw ? null : String(formData.get('extendedDueDate') ?? ''),
+        reason: String(formData.get('extensionReason') ?? ''),
+        locale,
+      })
+      if (!result.success) {
+        setError(es ? 'No se pudo aplicar la prórroga.' : 'Could not apply the extension.')
+        return
+      }
+      setSuccess(withdraw
+        ? (es ? 'Prórroga retirada.' : 'Extension withdrawn.')
+        : (es ? 'Prórroga aplicada.' : 'Extension applied.'))
+    })
+  }
+
+  return (
+    <section className='space-y-4'>
+      <h3 className='font-medium'>{es ? 'Prórroga individual' : 'Individual extension'}</h3>
+      <form action={submitExtension} className='grid gap-4 sm:grid-cols-2'>
+        <select name='extensionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          {monthlyCharges.map((charge) => (
+            <option key={charge.id} value={charge.id}>
+              {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
+            </option>
+          ))}
+        </select>
+        <Input name='extendedDueDate' type='date' required />
+        <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
+        <Button type='submit' disabled={isPending}>
+          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
+        </Button>
+        <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitExtension(formData, true)}>
+          {es ? 'Retirar prórroga' : 'Withdraw extension'}
+        </Button>
+      </form>
+      {extensionHistory.length > 0 && (
+        <ul className='text-sm text-muted-foreground'>
+          {extensionHistory.map((revision) => (
+            <li key={revision.id}>
+              {revision.reason} · {revision.extendedDueDate
+                ? formatAuditDate(revision.extendedDueDate, locale)
+                : (es ? 'Retiro' : 'Withdrawn')}
+              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export function AthleteBillingTermsForm({
   athleteId,
   locale,
   model,
+  monthlyCharges = [],
+  reductionHistory = [],
+  extensionHistory = [],
 }: {
   athleteId: string
   locale: 'es' | 'en'
   model: AthleteBillingTermsFormModel
+  monthlyCharges?: MonthlyChargeOption[]
+  reductionHistory?: ReductionRevisionHistory[]
+  extensionHistory?: ExtensionRevisionHistory[]
 }) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -133,6 +357,22 @@ export function AthleteBillingTermsForm({
           {isPending ? copy.pending : model.submitLabel}
         </Button>
       </form>
+      {monthlyCharges.length > 0 && (
+        <div className='space-y-6 border-t pt-6'>
+          <MonthlyChargeReductionForm
+            athleteId={athleteId}
+            locale={locale}
+            monthlyCharges={monthlyCharges}
+            reductionHistory={reductionHistory}
+          />
+          <MonthlyChargeExtensionForm
+            athleteId={athleteId}
+            locale={locale}
+            monthlyCharges={monthlyCharges}
+            extensionHistory={extensionHistory}
+          />
+        </div>
+      )}
     </section>
   )
 }

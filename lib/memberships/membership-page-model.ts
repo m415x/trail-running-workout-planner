@@ -13,7 +13,10 @@ export async function buildMembershipPageModel({
   onDate: string
   repository: TeamEconomicPolicyQueryRepository
 }) {
-  const policies = await repository.listTeamEconomicPolicies(teamId)
+  const [policies, globalDueDateExceptionHistory] = await Promise.all([
+    repository.listTeamEconomicPolicies(teamId),
+    repository.listGlobalDueDateExceptionRevisions(teamId),
+  ])
   const effective = policies.filter(
     (policy) =>
       policy.effectiveFrom <= onDate
@@ -55,6 +58,7 @@ export async function buildMembershipPageModel({
     nextPolicy: scheduledPolicies[0] ?? null,
     scheduledPolicies,
     pastPolicies,
+    globalDueDateExceptionHistory,
     form: getTeamEconomicPolicyFormModel({
       locale,
       policy: formBasePolicy,

@@ -40,3 +40,113 @@ test('SQLite H1 migration is versioned after 0007 and preserves legacy membershi
   assert.match(sql, /monthly_charges/)
   assert.doesNotMatch(sql, /INSERT INTO [`"]athlete_billing_terms[`\"][\s\S]*SELECT[\s\S]*FROM [`"]memberships[`"]|INSERT INTO [`"]monthly_charges[`\"][\s\S]*SELECT[\s\S]*FROM [`"]memberships[`"]|DROP TABLE [`"]memberships[`"]|DROP TABLE memberships/i)
 })
+
+
+test('SQLite H2 persists append-only global monthly due-date exception revisions', () => {
+  assert.match(schema, /globalMonthlyDueDateExceptions\s*=\s*sqliteTable\(\s*['"]global_monthly_due_date_exceptions['"]/)
+  for (const column of ['team_id', 'year', 'month', 'due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(schema, /global_monthly_due_date_exceptions_team_period_current_unique/)
+})
+
+test('SQLite H2 global due-date exception migration follows the H1 billing migration', () => {
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8')) as { entries: Array<{ tag: string }> }
+  const migration = journal.entries.find((entry) => entry.tag.startsWith('0009_'))
+  assert.ok(migration, 'missing versioned SQLite H2 global due-date exception migration after 0008')
+  const sql = fs.readFileSync(path.join(root, 'drizzle', 'sqlite', migration.tag + '.sql'), 'utf8')
+  assert.match(sql, /global_monthly_due_date_exceptions/)
+  assert.match(sql, /team_id/)
+  assert.match(sql, /due_date/)
+  assert.match(sql, /reason/)
+  assert.match(sql, /is_current/)
+})
+
+
+test('SQLite schema defines append-only monthly charge reduction revisions', () => {
+  const schema = fs.readFileSync(path.join(root, 'db', 'schema.ts'), 'utf8')
+
+  assert.match(schema, /monthlyChargeReductions\s*=\s*sqliteTable\(\s*['"]monthly_charge_reductions['"]/)
+  assert.match(schema, /monthly_charge_id/)
+  assert.match(schema, /reduction_amount_minor/)
+  assert.match(schema, /reason/)
+  assert.match(schema, /is_current/)
+  assert.match(schema, /monthly_charge_reductions_amount_check/)
+  assert.match(schema, /monthly_charge_reductions_charge_current_unique/)
+})
+
+test('SQLite migrations version monthly charge reductions after the global due-date exception slice', () => {
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8')) as {
+    entries: Array<{ idx: number; tag: string }>
+  }
+  const migration = journal.entries.find(entry => entry.tag.startsWith('0010_'))
+
+  assert.ok(migration)
+  assert.equal(migration.tag, '0010_membership_monthly_charge_reductions')
+
+  const sql = fs.readFileSync(path.join(root, 'drizzle', 'sqlite', migration.tag + '.sql'), 'utf8')
+  assert.match(sql, /CREATE TABLE [^\n]*monthly_charge_reductions/)
+  assert.match(sql, /monthly_charge_id/)
+  assert.match(sql, /reduction_amount_minor/)
+  assert.match(sql, /reason/)
+  assert.match(sql, /is_current/)
+})
+
+
+test('SQLite schema defines append-only monthly charge extension revisions', () => {
+  assert.match(schema, /monthlyChargeExtensions\s*=\s*sqliteTable\(\s*['"]monthly_charge_extensions['"]/)
+  assert.match(schema, /monthly_charge_id/)
+  assert.match(schema, /extended_due_date/)
+  assert.match(schema, /reason/)
+  assert.match(schema, /is_current/)
+  assert.match(schema, /monthly_charge_extensions_charge_current_unique/)
+})
+
+test('SQLite migrations version monthly charge extensions after reductions', () => {
+  const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle', 'sqlite', 'meta', '_journal.json'), 'utf8')) as {
+    entries: Array<{ idx: number; tag: string }>
+  }
+  const migration = journal.entries.find(entry => entry.tag.startsWith('0011_'))
+
+  assert.ok(migration)
+  assert.equal(migration.tag, '0011_membership_monthly_charge_extensions')
+
+  const sql = fs.readFileSync(path.join(root, 'drizzle', 'sqlite', migration.tag + '.sql'), 'utf8')
+  assert.match(sql, /CREATE TABLE [^\n]*monthly_charge_extensions/)
+  assert.match(sql, /monthly_charge_id/)
+  assert.match(sql, /extended_due_date/)
+  assert.match(sql, /reason/)
+  assert.match(sql, /is_current/)
+})
+
+
+test('SQLite HEAD verification requires every KAN-460 H2 billing table before migration metadata can be reconciled', () => {
+  const verifier = fs.readFileSync(path.join(root, 'scripts', 'verify-sqlite.ts'), 'utf8')
+
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(
+      verifier,
+      new RegExp(`['"]${table}['"]`),
+      `SQLite HEAD verification must require ${table}`,
+    )
+  }
+})
+
+
+test('SQLite upgrade repairs falsely reconciled H2 migration metadata before running pending H2 migrations', () => {
+  const upgrade = fs.readFileSync(path.join(root, 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(upgrade, /global_monthly_due_date_exceptions/)
+  assert.match(upgrade, /monthly_charge_reductions/)
+  assert.match(upgrade, /monthly_charge_extensions/)
+  assert.match(
+    upgrade,
+    /DELETE FROM __drizzle_migrations/,
+    'upgrade must remove falsely reconciled H2 metadata when the physical H2 schema is absent',
+  )
+})

@@ -5,12 +5,12 @@ import type {
 
 type Locale = 'es' | 'en'
 
-function formatAmount(amountMinor: number, locale: Locale) {
-  const amount = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+function formatAmount(amountMinor: number, currency: string, locale: Locale) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
     maximumFractionDigits: 0,
   }).format(amountMinor / 100)
-
-  return String.fromCharCode(36) + amount
 }
 
 function formatPeriod(year: number, month: number) {
@@ -52,7 +52,7 @@ export function buildAthleteMembershipViewModel({
     .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))
 
   const mapTerms = (item: AthleteBillingTerms) => ({
-    monthlyAmount: formatAmount(item.monthlyAmountMinor, locale),
+    monthlyAmount: formatAmount(item.monthlyAmountMinor, item.currency, locale),
     monthlyAmountMinor: item.monthlyAmountMinor,
     currency: item.currency,
     effectiveFrom: item.effectiveFrom,
@@ -70,7 +70,7 @@ export function buildAthleteMembershipViewModel({
       .sort((a, b) => b.year - a.year || b.month - a.month)
       .map((charge) => ({
         period: formatPeriod(charge.year, charge.month),
-        amountDue: formatAmount(charge.amountDueMinor, locale),
+        amountDue: formatAmount(charge.amountDueMinor, charge.currency, locale),
         currency: charge.currency,
         effectiveDueDate: charge.effectiveDueDate,
       })),

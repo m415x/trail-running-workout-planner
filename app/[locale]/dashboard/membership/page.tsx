@@ -1,6 +1,7 @@
 import { db } from '@/db'
 import { MembershipPolicyCard } from '@/features/memberships/components/MembershipPolicyCard'
 import { TeamEconomicPolicyForm } from '@/features/memberships/components/TeamEconomicPolicyForm'
+import { GlobalDueDateExceptionForm } from '@/features/memberships/components/GlobalDueDateExceptionForm'
 import {
   Accordion,
   AccordionContent,
@@ -10,6 +11,7 @@ import {
 import { createMembershipPageLoader } from '@/lib/memberships/membership-page-loader'
 import { todayInArgentina } from '@/lib/memberships/membership-page-date'
 import { createTeamEconomicPolicyQueryRepository } from '@/lib/memberships/membership-policy-drizzle-query'
+import { TeamMonthlyMaterializationForm } from '@/features/memberships/components/TeamMonthlyMaterializationForm'
 
 interface MembershipPageProps {
   params: Promise<{ locale: string }>
@@ -132,6 +134,22 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
+      ) : null}
+
+      <TeamMonthlyMaterializationForm locale={supportedLocale} />
+
+      <GlobalDueDateExceptionForm locale={supportedLocale} />
+      {model.globalDueDateExceptionHistory.length > 0 ? (
+        <section className='space-y-2'>
+          <h3 className='font-medium'>{es ? 'Historial de excepciones' : 'Exception history'}</h3>
+          <ul className='text-sm text-muted-foreground'>
+            {model.globalDueDateExceptionHistory.map((revision) => (
+              <li key={revision.id}>
+                {`${revision.year}-${String(revision.month).padStart(2, '0')} · ${revision.dueDate} · ${revision.reason}`}
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
 
       <TeamEconomicPolicyForm

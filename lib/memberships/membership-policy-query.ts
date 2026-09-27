@@ -1,7 +1,8 @@
-import type { TeamEconomicPolicy } from './billing'
+import type { GlobalDueDateExceptionRevision, TeamEconomicPolicy } from './billing'
 
 export type TeamEconomicPolicyQueryRepository = {
   listTeamEconomicPolicies: (teamId: string) => Promise<TeamEconomicPolicy[]>
+  listGlobalDueDateExceptionRevisions: (teamId: string) => Promise<GlobalDueDateExceptionRevision[]>
 }
 
 function isEffectiveOn(policy: TeamEconomicPolicy, onDate: string) {

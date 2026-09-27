@@ -32,8 +32,11 @@ export type MonthlyChargeCandidate = {
 }
 
 function parseDate(value: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`Invalid date: ${value}`)
   const date = new Date(`${value}T00:00:00.000Z`)
-  if (Number.isNaN(date.getTime())) throw new Error(`Invalid date: ${value}`)
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new Error(`Invalid date: ${value}`)
+  }
   return date
 }
 
@@ -381,7 +384,7 @@ export async function materializeMonthlyCharges(input: {
     await input.repository.insertMonthlyCharges(missingCharges)
   }
 
-  return materialized
+  return missingCharges
 }
 
 
@@ -412,4 +415,254 @@ export async function getAthleteBillingSnapshot(input: {
   const charges = await input.repository.getMonthlyCharges(input.athleteId)
 
   return { terms, charges }
+}
+
+
+export type GlobalDueDateExceptionRevision = {
+  id: string
+  teamId: string
+  year: number
+  month: number
+  dueDate: string
+  reason: string
+  isCurrent: boolean
+}
+
+export type MonthlyChargeReductionRevision = {
+  id: string
+  athleteId: string
+  year: number
+  month: number
+  reductionAmountMinor: number
+  reason: string
+  isCurrent: boolean
+}
+
+export type MonthlyChargeExtensionRevision = {
+  id: string
+  athleteId: string
+  year: number
+  month: number
+  extendedDueDate: string | null
+  reason: string
+  isCurrent: boolean
+}
+
+function requireReason(reason: string): string {
+  const normalized = reason.trim()
+  if (!normalized) throw new Error('H2 economic fact requires a reason')
+  return normalized
+}
+
+function sameChargeRevision(
+  revision: { athleteId: string; year: number; month: number },
+  charge: MonthlyChargeCandidate,
+): boolean {
+  return revision.athleteId === charge.athleteId
+    && revision.year === charge.year
+    && revision.month === charge.month
+}
+
+export function applyGlobalDueDateException(input: {
+  revisions: GlobalDueDateExceptionRevision[]
+  id: string
+  teamId: string
+  year: number
+  month: number
+  dueDate: string
+  reason: string
+}): GlobalDueDateExceptionRevision[] {
+  if (!Number.isInteger(input.year) || input.year < 1 || !Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
+    throw new Error('Global due-date exception requires a valid year/month period')
+  }
+  const dueDate = parseDate(input.dueDate)
+  if (dueDate.getUTCFullYear() !== input.year || dueDate.getUTCMonth() + 1 !== input.month) {
+    throw new Error('Global due-date exception date must belong to the same month period')
+  }
+  const reason = requireReason(input.reason)
+  if (input.revisions.some(revision =>
+    revision.teamId !== input.teamId
+    || revision.year !== input.year
+    || revision.month !== input.month
+  )) {
+    throw new Error('Global due-date revision stream must keep one team/month identity')
+  }
+  const current = input.revisions.find(revision =>
+    revision.isCurrent
+    && revision.teamId === input.teamId
+    && revision.year === input.year
+    && revision.month === input.month,
+  )
+
+  if (current?.dueDate === input.dueDate && current.reason === reason) {
+    return input.revisions
+  }
+
+  return [
+    ...input.revisions.map(revision =>
+      revision.isCurrent
+      && revision.teamId === input.teamId
+      && revision.year === input.year
+      && revision.month === input.month
+        ? { ...revision, isCurrent: false }
+        : revision,
+    ),
+    {
+      id: input.id,
+      teamId: input.teamId,
+      year: input.year,
+      month: input.month,
+      dueDate: input.dueDate,
+      reason,
+      isCurrent: true,
+    },
+  ]
+}
+
+export function applyMonthlyChargeReduction(input: {
+  revisions: MonthlyChargeReductionRevision[]
+  id: string
+  charge: MonthlyChargeCandidate
+  reductionAmountMinor: number
+  reason: string
+}): MonthlyChargeReductionRevision[] {
+  const reason = requireReason(input.reason)
+  if (input.revisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Reduction revision stream must keep one charge identity')
+  }
+  if (
+    !Number.isSafeInteger(input.reductionAmountMinor)
+    || input.reductionAmountMinor < 0
+    || input.reductionAmountMinor > input.charge.baseAmountMinor
+  ) {
+    throw new Error('Reduction amount must be an integer between zero and the base amount')
+  }
+
+  const current = input.revisions.find(revision =>
+    revision.isCurrent && sameChargeRevision(revision, input.charge),
+  )
+  if (current?.reductionAmountMinor === input.reductionAmountMinor && current.reason === reason) {
+    return input.revisions
+  }
+
+  return [
+    ...input.revisions.map(revision =>
+      revision.isCurrent && sameChargeRevision(revision, input.charge)
+        ? { ...revision, isCurrent: false }
+        : revision,
+    ),
+    {
+      id: input.id,
+      athleteId: input.charge.athleteId,
+      year: input.charge.year,
+      month: input.charge.month,
+      reductionAmountMinor: input.reductionAmountMinor,
+      reason,
+      isCurrent: true,
+    },
+  ]
+}
+
+export function applyMonthlyChargeExtension(input: {
+  revisions: MonthlyChargeExtensionRevision[]
+  id: string
+  charge: MonthlyChargeCandidate
+  extendedDueDate: string | null
+  reason: string
+}): MonthlyChargeExtensionRevision[] {
+  const reason = requireReason(input.reason)
+  if (input.revisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Extension revision stream must keep one charge identity')
+  }
+  if (input.extendedDueDate !== null && parseDate(input.extendedDueDate) <= parseDate(input.charge.baseDueDate)) {
+    throw new Error('Extension due date must be after the current base due date')
+  }
+
+  const current = input.revisions.find(revision =>
+    revision.isCurrent && sameChargeRevision(revision, input.charge),
+  )
+  if (current?.extendedDueDate === input.extendedDueDate && current.reason === reason) {
+    return input.revisions
+  }
+
+  return [
+    ...input.revisions.map(revision =>
+      revision.isCurrent && sameChargeRevision(revision, input.charge)
+        ? { ...revision, isCurrent: false }
+        : revision,
+    ),
+    {
+      id: input.id,
+      athleteId: input.charge.athleteId,
+      year: input.charge.year,
+      month: input.charge.month,
+      extendedDueDate: input.extendedDueDate,
+      reason,
+      isCurrent: true,
+    },
+  ]
+}
+
+export function projectMonthlyChargeWithExceptions(input: {
+  charge: MonthlyChargeCandidate
+  economicActivationDate?: string
+  globalDueDateException: GlobalDueDateExceptionRevision | null
+  reductionRevisions: MonthlyChargeReductionRevision[]
+  extensionRevisions: MonthlyChargeExtensionRevision[]
+}): MonthlyChargeCandidate {
+  if (input.globalDueDateException && !input.globalDueDateException.isCurrent) {
+    throw new Error('Global due-date projection requires the current revision, not a historical revision')
+  }
+  if (
+    input.globalDueDateException
+    && (
+      input.globalDueDateException.year !== input.charge.year
+      || input.globalDueDateException.month !== input.charge.month
+    )
+  ) {
+    throw new Error('Global due-date exception period must match the charge month identity')
+  }
+  if (input.reductionRevisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Reduction revision identity must match the projected charge')
+  }
+  if (input.extensionRevisions.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Extension revision identity must match the projected charge')
+  }
+
+  let baseDueDate = input.globalDueDateException?.dueDate ?? input.charge.baseDueDate
+  if (
+    input.economicActivationDate
+    && parseDate(baseDueDate) < parseDate(input.economicActivationDate)
+  ) {
+    baseDueDate = input.economicActivationDate
+  }
+
+  const currentReductions = input.reductionRevisions.filter(revision =>
+    revision.isCurrent && sameChargeRevision(revision, input.charge),
+  )
+  if (currentReductions.length > 1) {
+    throw new Error('Ambiguous H2 state: more than one current reduction revision')
+  }
+  const currentReduction = currentReductions[0]
+  const amountDueMinor = input.charge.baseAmountMinor - (currentReduction?.reductionAmountMinor ?? 0)
+
+  const currentExtensions = input.extensionRevisions.filter(revision =>
+    revision.isCurrent && sameChargeRevision(revision, input.charge),
+  )
+  if (currentExtensions.length > 1) {
+    throw new Error('Ambiguous H2 state: more than one current extension revision')
+  }
+  const currentExtension = currentExtensions[0]
+  const extendedDueDate = currentExtension?.extendedDueDate ?? null
+  const effectiveDueDate = extendedDueDate && parseDate(extendedDueDate) > parseDate(baseDueDate)
+    ? extendedDueDate
+    : baseDueDate
+
+  return {
+    ...input.charge,
+    baseAmountMinor: input.charge.baseAmountMinor,
+    amountDueMinor,
+    baseDueDate,
+    effectiveDueDate,
+  }
 }

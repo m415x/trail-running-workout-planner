@@ -15,6 +15,7 @@ import {
   users,
 } from '@/db/schema'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
+import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 
 export interface AthleteFormState {
   error?: string
@@ -203,6 +204,15 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         createdAt: now,
         updatedAt: now,
       }).run()
+
+      createMembershipServerActionRuntime({
+        db: tx,
+        createId: randomUUID,
+      }).initializeNewAthleteBillingInTransaction({
+        teamId: CURRENT_TEAM_ID,
+        athleteId,
+        effectiveFrom: getCurrentDateInArgentina(),
+      })
     })
   } catch (error) {
     console.error('Error creating athlete:', error)

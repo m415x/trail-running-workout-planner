@@ -7,6 +7,12 @@ import {
   createMembershipServerActionRuntime,
 } from '../../lib/memberships/billing-server-action-runtime'
 
+type RuntimeDatabase = Parameters<typeof createMembershipServerActionRuntime>[0]['db']
+
+function runtimeDb<T extends object>(db: T): RuntimeDatabase {
+  return db as unknown as RuntimeDatabase
+}
+
 test('membership server action runtime uses the synchronous SQLite transaction repository', async () => {
   const calls: string[] = []
   const db = {
@@ -189,4 +195,322 @@ test('membership Server Action runtime reports the original policy write failure
     error: 'Could not configure team economic policy',
   })
   assert.deepEqual(reported, [failure])
+})
+
+
+test('membership Server Action runtime exposes the three H2 Coach operations without implicit writes on creation', async () => {
+  const db = {
+    transaction: () => {
+      throw new Error('transaction must not run while creating runtime')
+    },
+    select: () => {
+      throw new Error('read must not run while creating runtime')
+    },
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => 'h2-a',
+  })
+
+  assert.equal(typeof runtime.applyGlobalDueDateException, 'function')
+  assert.equal(typeof runtime.applyMonthlyChargeReduction, 'function')
+  assert.equal(typeof runtime.applyMonthlyChargeExtension, 'function')
+})
+
+
+test('KAN-479 H2 runtime does not wrap async persistence orchestration in the synchronous SQLite transaction boundary', async () => {
+  let transactionCalls = 0
+  let h2TransactionCalls = 0
+  const db = {
+    transaction: (operation: (tx: unknown) => unknown) => {
+      transactionCalls += 1
+      h2TransactionCalls += 1
+      return operation(db)
+    },
+    select: () => ({
+      from: () => ({
+        innerJoin: () => ({
+          where: async () => [],
+        }),
+        where: async () => [],
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => undefined,
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => 'global-a',
+  })
+
+  const result = await runtime.applyGlobalDueDateException({
+    teamId: 'team_1',
+    year: 2026,
+    month: 11,
+    dueDate: '2026-11-12',
+    reason: 'Una vez',
+  })
+
+  assert.deepEqual(result, { success: true })
+  assert.equal(transactionCalls, 1)
+  assert.equal(h2TransactionCalls, 1)
+})
+
+
+test('KAN-479 runtime exposes bulk monthly materialization through the established H1 persistence adapter', async () => {
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb({
+      transaction: () => {
+        throw new Error('bulk orchestration must not open the synchronous H1 transaction')
+      },
+      select: () => {
+        throw new Error('runtime creation must not read')
+      },
+    }),
+    createId: () => 'unused',
+  })
+
+  assert.equal(typeof runtime.materializeTeamMonthlyCharges, 'function')
+})
+
+
+test('KAN-479 new athlete billing initialization applies terms and materializes the join month as one runtime use case', async () => {
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb({
+      transaction: () => {
+        throw new Error('new-athlete billing orchestration must own its established boundaries')
+      },
+      select: () => {
+        throw new Error('runtime creation must not read')
+      },
+    }),
+    createId: () => 'unused',
+  })
+
+  assert.equal(typeof runtime.initializeNewAthleteBilling, 'function')
+})
+
+
+test('KAN-479 new athlete billing initialization rejects creation without an effective economic policy', async () => {
+  let insertCalls = 0
+  const db = {
+    transaction: (operation: (tx: unknown) => unknown) => operation(db),
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => [],
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => {
+          insertCalls += 1
+        },
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => 'terms-new',
+    reportError: () => undefined,
+  })
+
+  const result = await runtime.initializeNewAthleteBilling({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-27',
+  })
+
+  assert.deepEqual(result, {
+    success: false,
+    error: 'Could not initialize new athlete billing',
+  })
+  assert.equal(insertCalls, 0)
+})
+
+
+test('KAN-479 new athlete billing initialization can participate in an existing synchronous creation transaction', () => {
+  const db = {
+    select: () => ({
+      from: () => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => [{
+            id: 'policy-a',
+            teamId: 'team_1',
+            defaultMonthlyAmountMinor: 2500000,
+            currency: 'ARS',
+            ordinaryDueDay: 10,
+            effectiveFrom: '2026-09-01',
+            effectiveUntil: null,
+          }],
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: () => ({
+        run: () => undefined,
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => 'terms-new',
+  })
+
+  assert.equal(typeof runtime.initializeNewAthleteBillingInTransaction, 'function')
+})
+
+
+test('KAN-479 atomic new-athlete billing materializes exactly the effective join month', () => {
+  const insertedTables: unknown[] = []
+  const insertedValues: Record<string, unknown>[] = []
+  const db = {
+    select: () => ({
+      from: (table: unknown) => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => table === teamEconomicPolicies
+            ? [{
+                id: 'policy-a',
+                teamId: 'team_1',
+                defaultMonthlyAmountMinor: 2500000,
+                currency: 'ARS',
+                ordinaryDueDay: 10,
+                effectiveFrom: '2026-09-01',
+                effectiveUntil: null,
+              }]
+            : [],
+        }),
+      }),
+    }),
+    insert: (table: unknown) => ({
+      values: (value: Record<string, unknown>) => ({
+        run: () => {
+          insertedTables.push(table)
+          insertedValues.push(value)
+        },
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  let id = 0
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => `generated-${++id}`,
+  })
+
+  const charge = runtime.initializeNewAthleteBillingInTransaction({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-27',
+  })
+
+  assert.equal(charge.year, 2026)
+  assert.equal(charge.month, 9)
+  assert.equal(charge.baseAmountMinor, 2500000)
+  assert.equal(charge.baseDueDate, '2026-09-27')
+  assert.equal(charge.effectiveDueDate, '2026-09-27')
+  assert.equal(insertedValues.length, 2)
+})
+
+
+test('KAN-479 atomic new-athlete billing applies the current global exception before the first-month clamp', () => {
+  const insertedValues: Record<string, unknown>[] = []
+  const db = {
+    select: () => ({
+      from: (table: unknown) => ({
+        where: () => ({
+          get: () => ({ id: 'athlete-new' }),
+          all: () => {
+            if (table === teamEconomicPolicies) {
+              return [{
+                id: 'policy-a',
+                teamId: 'team_1',
+                defaultMonthlyAmountMinor: 2500000,
+                currency: 'ARS',
+                ordinaryDueDay: 10,
+                effectiveFrom: '2026-09-01',
+                effectiveUntil: null,
+              }]
+            }
+            if (table === athleteBillingTerms) return []
+            return [{
+              id: 'exception-a',
+              teamId: 'team_1',
+              year: 2026,
+              month: 9,
+              dueDate: '2026-09-20',
+              reason: 'Feriado',
+              isCurrent: true,
+            }]
+          },
+        }),
+      }),
+    }),
+    insert: () => ({
+      values: (value: Record<string, unknown>) => ({
+        run: () => insertedValues.push(value),
+      }),
+    }),
+    update: () => ({
+      set: () => ({
+        where: () => ({
+          run: () => undefined,
+        }),
+      }),
+    }),
+  }
+
+  let id = 0
+  const runtime = createMembershipServerActionRuntime({
+    db: runtimeDb(db),
+    createId: () => `generated-${++id}`,
+  })
+
+  const charge = runtime.initializeNewAthleteBillingInTransaction({
+    teamId: 'team_1',
+    athleteId: 'athlete-new',
+    effectiveFrom: '2026-09-15',
+  })
+
+  assert.equal(charge.baseDueDate, '2026-09-20')
+  assert.equal(charge.effectiveDueDate, '2026-09-20')
 })

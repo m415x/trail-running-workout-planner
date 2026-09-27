@@ -46,3 +46,48 @@ export async function changeAthleteBillingTermsAction(input: {
 }) {
   return handlers.changeAthleteBillingTerms(input)
 }
+
+
+export async function applyGlobalDueDateExceptionAction(input: {
+  year: number
+  month: number
+  dueDate: string
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyGlobalDueDateException(input)
+}
+
+
+export async function applyMonthlyChargeReductionAction(input: {
+  monthlyChargeId: string
+  athleteId: string
+  year: number
+  month: number
+  reductionAmountMinor: number
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyMonthlyChargeReduction(input)
+}
+
+export async function applyMonthlyChargeExtensionAction(input: {
+  monthlyChargeId: string
+  athleteId: string
+  year: number
+  month: number
+  extendedDueDate: string | null
+  reason: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.applyMonthlyChargeExtension(input)
+}
+
+
+export async function materializeTeamMonthlyChargesAction(input: {
+  year: number
+  month: number
+  locale: 'es' | 'en'
+}) {
+  return handlers.materializeTeamMonthlyCharges(input)
+}

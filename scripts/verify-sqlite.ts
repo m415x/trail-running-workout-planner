@@ -9,6 +9,9 @@ try {
     'team_economic_policies',
     'athlete_billing_terms',
     'monthly_charges',
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
   ]
   const tables = new Set(
     (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])

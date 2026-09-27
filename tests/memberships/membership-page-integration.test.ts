@@ -81,3 +81,295 @@ test('membership timeline accordions render as one card surface when expanded', 
     /pastPolicies\.map\([\s\S]*?<MembershipPolicyCard/,
   )
 })
+
+
+test('Coach membership page exposes a localized global monthly due-date exception surface', async () => {
+  const source = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+  const form = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
+
+  assert.match(source, /GlobalDueDateExceptionForm/)
+  assert.match(form, /Excepción mensual de vencimiento/)
+  assert.match(form, /Monthly due-date exception/)
+  assert.match(source, /locale=\{supportedLocale\}/)
+  assert.match(actions, /applyGlobalDueDateExceptionAction/)
+  assert.match(actions, /handlers\.applyGlobalDueDateException/)
+})
+
+
+test('Coach athlete billing surface exposes localized reduction and extension controls', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(form, /MonthlyChargeReductionForm/)
+  assert.match(form, /MonthlyChargeExtensionForm/)
+  assert.match(form, /Reducción o beca/)
+  assert.match(form, /Reduction or scholarship/)
+  assert.match(form, /Prórroga individual/)
+  assert.match(form, /Individual extension/)
+  assert.match(actions, /applyMonthlyChargeReductionAction/)
+  assert.match(actions, /handlers\.applyMonthlyChargeReduction/)
+  assert.match(actions, /applyMonthlyChargeExtensionAction/)
+  assert.match(actions, /handlers\.applyMonthlyChargeExtension/)
+})
+
+
+test('KAN-479 Coach exception forms select persisted charges and expose H2 traceability instead of requesting internal IDs', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const membershipPage = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(athleteForm, /placeholder=\{es \? 'ID del cargo'/)
+  assert.match(athleteForm, /monthlyCharges/)
+  assert.match(athleteForm, /reductionHistory/)
+  assert.match(athleteForm, /extensionHistory/)
+  assert.match(membershipPage, /globalDueDateExceptionHistory/)
+})
+
+
+test('KAN-479 H2 Coach surfaces load persisted charges and revision history instead of placeholder arrays', async () => {
+  const membershipPage = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const pageModel = await readFile(
+    'lib/memberships/membership-page-model.ts',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(membershipPage, /globalDueDateExceptionHistory:[\s\S]*= \[\]/)
+  assert.match(pageModel, /globalDueDateExceptionHistory/)
+  assert.match(pageModel, /listGlobalDueDateExceptionRevisions/)
+  assert.match(athleteForm, /monthlyCharges/)
+  assert.match(athleteForm, /reductionHistory/)
+  assert.match(athleteForm, /extensionHistory/)
+})
+
+
+test('KAN-479 Coach UI exposes explicit reduction and extension withdrawal controls in ES/EN', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  assert.match(athleteForm, /Retirar (?:reducción|beca)/)
+  assert.match(athleteForm, /Withdraw (?:reduction|scholarship)/)
+  assert.match(athleteForm, /Retirar prórroga/)
+  assert.match(athleteForm, /Withdraw extension/)
+  assert.match(actions, /reductionAmountMinor:\s*number/)
+  assert.match(actions, /extendedDueDate:\s*string \| null/)
+})
+
+
+test('KAN-479 athlete detail wires persisted charge identities and H2 revision history into Coach forms', async () => {
+  const athletePage = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+  const athleteLoader = await readFile(
+    'lib/memberships/athlete-membership-page-loader.ts',
+    'utf8',
+  )
+
+  assert.match(athleteLoader, /monthlyCharges/)
+  assert.match(athleteLoader, /reductionHistory/)
+  assert.match(athleteLoader, /extensionHistory/)
+  assert.match(athleteLoader, /listMonthlyChargeReductionRevisions/)
+  assert.match(athleteLoader, /listMonthlyChargeExtensionRevisions/)
+  assert.match(athletePage, /monthlyCharges=\{membership\.monthlyCharges\}/)
+  assert.match(athletePage, /reductionHistory=\{membership\.reductionHistory\}/)
+  assert.match(athletePage, /extensionHistory=\{membership\.extensionHistory\}/)
+})
+
+
+test('KAN-479 withdrawal controls do not require an active reduction amount or extension date', async () => {
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(athleteForm, /name='reductionAmount'[\s\S]*?required/)
+  assert.match(athleteForm, /Retirar reducción[\s\S]*?Withdraw reduction/)
+  assert.match(athleteForm, /formNoValidate/)
+  assert.match(athleteForm, /name='extendedDueDate'[\s\S]*?required/)
+  assert.match(athleteForm, /Retirar prórroga[\s\S]*?Withdraw extension/)
+})
+
+
+test('KAN-479 H2 Coach forms expose localized success feedback in ES and EN', async () => {
+  const globalForm = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(globalForm, /Excepción aplicada/)
+  assert.match(globalForm, /Exception applied/)
+  assert.match(athleteForm, /Reducción aplicada/)
+  assert.match(athleteForm, /Reduction applied/)
+  assert.match(athleteForm, /Reducción retirada/)
+  assert.match(athleteForm, /Reduction withdrawn/)
+  assert.match(athleteForm, /Prórroga aplicada/)
+  assert.match(athleteForm, /Extension applied/)
+  assert.match(athleteForm, /Prórroga retirada/)
+  assert.match(athleteForm, /Extension withdrawn/)
+})
+
+
+test('KAN-479 global exception selects one month and a due day within that same month', async () => {
+  const form = await readFile(
+    'features/memberships/components/GlobalDueDateExceptionForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /name='period'[^>]*type='month'/)
+  assert.match(form, /Día de vencimiento/)
+  assert.match(form, /Due day/)
+  assert.match(form, /name='dueDay'/)
+  assert.doesNotMatch(form, /name='dueDate'[^>]*type='date'/)
+  assert.match(form, /daysInMonth/)
+  assert.match(form, /String\(month\)\.padStart\(2, '0'\)/)
+  assert.match(form, /String\(dueDay\)\.padStart\(2, '0'\)/)
+})
+
+
+test('KAN-479 athlete membership is compact by default and only exposes charge exceptions for materialized charges', async () => {
+  const athletePage = await readFile(
+    'app/[locale]/dashboard/athletes/[athleteId]/page.tsx',
+    'utf8',
+  )
+  const athleteForm = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(athletePage, /AccordionItem value='membership'/)
+  assert.match(athletePage, /AccordionTrigger/)
+  assert.match(athletePage, /membership\.currentTerms\?\.monthlyAmount/)
+  assert.match(athletePage, /AccordionContent/)
+  assert.match(athleteForm, /monthlyCharges\.length > 0/)
+  assert.match(athleteForm, /<MonthlyChargeReductionForm/)
+  assert.match(athleteForm, /<MonthlyChargeExtensionForm/)
+})
+
+
+test('KAN-479 Coach membership page exposes localized team monthly materialization', async () => {
+  const page = await readFile(
+    'app/[locale]/dashboard/membership/page.tsx',
+    'utf8',
+  )
+  const actions = await readFile(
+    'app/actions/membership-actions.ts',
+    'utf8',
+  )
+
+  const form = await readFile(
+    'features/memberships/components/TeamMonthlyMaterializationForm.tsx',
+    'utf8',
+  )
+
+  assert.match(page, /TeamMonthlyMaterializationForm/)
+  assert.match(form, /Materializar cuotas/)
+  assert.match(form, /Materialize charges/)
+  assert.match(form, /type=['"]month['"]/)
+  assert.match(form, /materializeTeamMonthlyChargesAction/)
+  assert.match(actions, /materializeTeamMonthlyChargesAction/)
+  assert.match(actions, /handlers\.materializeTeamMonthlyCharges/)
+})
+
+
+test('KAN-479 bulk monthly materialization reports localized processed and created counts to Coach', async () => {
+  const form = await readFile(
+    'features/memberships/components/TeamMonthlyMaterializationForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /processedAthletes/)
+  assert.match(form, /materializedCharges/)
+  assert.match(form, /Atletas procesados/)
+  assert.match(form, /Athletes processed/)
+  assert.match(form, /Cuotas creadas/)
+  assert.match(form, /Charges created/)
+})
+
+
+test('KAN-479 athlete billing history localizes the current revision marker in ES and EN', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(form, /['"] · vigente['"]/)
+  assert.match(form, /vigente/)
+  assert.match(form, /current/)
+})
+
+
+test('KAN-479 athlete H2 forms derive the billing period from the selected persisted charge', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.doesNotMatch(form, /name=['"]reductionPeriod['"]/)
+  assert.doesNotMatch(form, /name=['"]extensionPeriod['"]/)
+  assert.match(form, /monthlyCharges\.find/)
+  assert.match(form, /selectedCharge\.year/)
+  assert.match(form, /selectedCharge\.month/)
+})
+
+
+test('KAN-479 athlete H2 history renders the economic value of every revision', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /reductionAmountMinor/)
+  assert.match(form, /extendedDueDate/)
+  assert.match(form, /Retiro|Withdrawn/)
+})
+
+
+test('KAN-479 athlete H2 audit history localizes monetary amounts and dates', async () => {
+  const form = await readFile(
+    'features/memberships/components/AthleteBillingTermsForm.tsx',
+    'utf8',
+  )
+
+  assert.match(form, /Intl\.NumberFormat/)
+  assert.match(form, /revision\.reductionAmountMinor/)
+  assert.match(form, /revision\.extendedDueDate/)
+  assert.match(form, /Intl\.DateTimeFormat/)
+})

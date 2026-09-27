@@ -5,8 +5,24 @@ import {
   configureTeamEconomicPolicyAction,
   applyInitialAthleteBillingTermsAction,
   changeAthleteBillingTermsAction,
+  applyGlobalDueDateExceptionAction,
+  applyMonthlyChargeReductionAction,
+  applyMonthlyChargeExtensionAction,
+  materializeTeamMonthlyChargesAction,
   type BillingCoachActionDependencies,
 } from '../../lib/memberships/billing-coach-actions'
+import type { GlobalDueDateExceptionRevision, MonthlyChargeCandidate } from '../../lib/memberships/billing'
+import type {
+  PersistedMonthlyChargeReductionRevision,
+  PersistedMonthlyChargeExtensionRevision,
+} from '../../lib/memberships/billing-persistence'
+
+type TransactionRepository =
+  Parameters<Parameters<BillingCoachActionDependencies['transaction']>[0]>[0]
+
+function transactionRepository<T extends object>(repository: T): TransactionRepository {
+  return repository as unknown as TransactionRepository
+}
 
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
@@ -176,4 +192,413 @@ test('Coach action changes athlete billing terms inside one transaction', async 
 
   assert.deepEqual(result, { success: true })
   assert.deepEqual(calls, ['2026-11-01:3000000'])
+})
+
+
+test('Coach action applies a global monthly due-date exception through the H2 persistence port', async () => {
+  const calls: string[] = []
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => 'global-exception-a',
+    transaction: (operation) => operation(transactionRepository({
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamMonthlyCharges: async () => [],
+      getBillingTermsById: () => { throw new Error('unexpected terms lookup') },
+      replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
+      updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
+      applyGlobalDueDateExceptionAtomically: async (
+        teamId: string,
+        year: number,
+        month: number,
+        revision: GlobalDueDateExceptionRevision,
+      ) => {
+        calls.push(`apply:${revision.id}:${teamId}:${year}-${month}:${revision.dueDate}:${revision.reason}`)
+      },
+    })),
+  }
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Feriado bancario',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, [
+    'apply:global-exception-a:team-a:2026-10:2026-10-10:Feriado bancario',
+  ])
+})
+
+test('Coach global monthly due-date exception rejects incomplete input before opening a transaction', async () => {
+  let transactions = 0
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => 'global-exception-a',
+    transaction: () => {
+      transactions += 1
+      throw new Error('transaction must not run')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: '   ',
+  }, dependencies)
+
+  assert.equal(result.success, false)
+  assert.equal(transactions, 0)
+})
+
+
+test('Coach actions delegate reduction and extension decisions to the established H2 ports', async () => {
+  const calls: string[] = []
+  let nextId = 0
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => `h2-${++nextId}`,
+    transaction: (operation) => operation(transactionRepository({
+      listMonthlyCharges: async () => [{
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-05',
+      }],
+      listMonthlyChargeReductionRevisions: async () => [],
+      applyMonthlyChargeReductionAtomically: async (
+        teamId: string,
+        monthlyChargeId: string,
+        revision: PersistedMonthlyChargeReductionRevision,
+      ) => {
+        calls.push(`reduction:${teamId}:${monthlyChargeId}:${revision.id}:${revision.reductionAmountMinor}:${revision.reason}`)
+      },
+      listMonthlyChargeExtensionRevisions: async () => [],
+      applyMonthlyChargeExtensionAtomically: async (
+        teamId: string,
+        monthlyChargeId: string,
+        revision: PersistedMonthlyChargeExtensionRevision,
+      ) => {
+        calls.push(`extension:${teamId}:${monthlyChargeId}:${revision.id}:${revision.extendedDueDate}:${revision.reason}`)
+      },
+    })),
+  }
+
+  assert.deepEqual(await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: 'Beca deportiva',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-15',
+    reason: 'Prórroga acordada',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(calls, [
+    'reduction:team-a:charge-a:h2-1:500000:Beca deportiva',
+    'extension:team-a:charge-a:h2-2:2026-10-15:Prórroga acordada',
+  ])
+})
+
+test('Coach reduction and extension actions reject missing reasons before transaction', async () => {
+  let transactions = 0
+  const dependencies = {
+    createId: () => 'unused',
+    transaction: () => {
+      transactions += 1
+      throw new Error('transaction must not run')
+    },
+  } as BillingCoachActionDependencies
+
+  const reduction = await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 500_000,
+    reason: '',
+  }, dependencies)
+  const extension = await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: '2026-10-15',
+    reason: '   ',
+  }, dependencies)
+
+  assert.equal(reduction.success, false)
+  assert.equal(extension.success, false)
+  assert.equal(transactions, 0)
+})
+
+
+test('Coach global exception reprojects existing materialized charges through the established H2 adapter', async () => {
+  const calls: string[] = []
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => 'global-exception-b',
+    transaction: (operation) => operation(transactionRepository({
+      listGlobalDueDateExceptionRevisions: async () => [],
+      listTeamMonthlyCharges: async () => [{
+        id: 'charge-a',
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_500_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-15',
+      }],
+      replaceCurrentGlobalDueDateException: () => { throw new Error('unexpected non-atomic replacement') },
+      updateMonthlyChargeDueDates: () => { throw new Error('unexpected non-atomic charge update') },
+      getBillingTermsById: async () => ({
+        id: 'terms-a',
+        athleteId: 'athlete-a',
+        monthlyAmountMinor: 2_500_000,
+        currency: 'ARS',
+        effectiveFrom: '2026-10-01',
+        effectiveUntil: null,
+      }),
+      listMonthlyChargeExtensionRevisions: async () => [{
+        id: 'extension-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-15',
+        reason: 'Prórroga acordada',
+        isCurrent: true,
+      }],
+      applyGlobalDueDateExceptionAtomically: async (
+        teamId: string,
+        year: number,
+        month: number,
+        revision: GlobalDueDateExceptionRevision,
+        charges: MonthlyChargeCandidate[],
+      ) => {
+        calls.push(`apply:${teamId}:${year}-${month}:${revision.id}`)
+        calls.push(`charge:${charges[0]?.baseDueDate}:${charges[0]?.effectiveDueDate}`)
+      },
+    })),
+  }
+
+  const result = await applyGlobalDueDateExceptionAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    dueDate: '2026-10-10',
+    reason: 'Feriado bancario',
+  }, dependencies)
+
+  assert.deepEqual(result, { success: true })
+  assert.deepEqual(calls, [
+    'apply:team-a:2026-10:global-exception-b',
+    'charge:2026-10-10:2026-10-15',
+  ])
+})
+
+
+test('KAN-479 Coach actions support explicit reduction and extension withdrawals as auditable H2 revisions', async () => {
+  const calls: string[] = []
+  let nextId = 0
+  const dependencies: BillingCoachActionDependencies = {
+    createId: () => `withdrawal-${++nextId}`,
+    transaction: (operation) => operation(transactionRepository({
+      listMonthlyCharges: async () => [{
+        athleteId: 'athlete-a',
+        billingTermsId: 'terms-a',
+        year: 2026,
+        month: 10,
+        baseAmountMinor: 2_500_000,
+        amountDueMinor: 2_000_000,
+        currency: 'ARS',
+        baseDueDate: '2026-10-05',
+        effectiveDueDate: '2026-10-15',
+      }],
+      listMonthlyChargeReductionRevisions: async () => [{
+        id: 'reduction-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca deportiva',
+        isCurrent: true,
+      }],
+      applyMonthlyChargeReductionAtomically: async (
+        _teamId: string,
+        _monthlyChargeId: string,
+        revision: PersistedMonthlyChargeReductionRevision,
+      ) => {
+        calls.push(`reduction:${revision.reductionAmountMinor}:${revision.reason}`)
+      },
+      listMonthlyChargeExtensionRevisions: async () => [{
+        id: 'extension-a',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-15',
+        reason: 'Prórroga acordada',
+        isCurrent: true,
+      }],
+      applyMonthlyChargeExtensionAtomically: async (
+        _teamId: string,
+        _monthlyChargeId: string,
+        revision: PersistedMonthlyChargeExtensionRevision,
+      ) => {
+        calls.push(`extension:${revision.extendedDueDate}:${revision.reason}`)
+      },
+    })),
+  }
+
+  assert.deepEqual(await applyMonthlyChargeReductionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    reductionAmountMinor: 0,
+    reason: 'Retiro de beca',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(await applyMonthlyChargeExtensionAction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    athleteId: 'athlete-a',
+    year: 2026,
+    month: 10,
+    extendedDueDate: null,
+    reason: 'Retiro de prórroga',
+  }, dependencies), { success: true })
+
+  assert.deepEqual(calls, [
+    'reduction:0:Retiro de beca',
+    'extension:null:Retiro de prórroga',
+  ])
+})
+
+
+test('KAN-479 Coach can materialize one month for every eligible athlete without duplicating H1 rules', async () => {
+  const calls: string[] = []
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async (teamId: string) => {
+      calls.push(`athletes:${teamId}`)
+      return ['athlete-a', 'athlete-b', 'athlete-c']
+    },
+    materializeMonthlyCharges: async (input: {
+      teamId: string
+      athleteId: string
+      through: { year: number; month: number }
+    }) => {
+      calls.push(`materialize:${input.athleteId}:${input.through.year}-${input.through.month}`)
+      return input.athleteId === 'athlete-b' ? [] : [{}]
+    },
+    transaction: () => {
+      throw new Error('bulk materialization must use the established H1 materialization boundary')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+  }, dependencies)
+
+  assert.deepEqual(result, {
+    success: true,
+    processedAthletes: 3,
+    materializedCharges: 2,
+  })
+  assert.deepEqual(calls, [
+    'athletes:team-a',
+    'materialize:athlete-a:2026-10',
+    'materialize:athlete-b:2026-10',
+    'materialize:athlete-c:2026-10',
+  ])
+})
+
+test('KAN-479 bulk materialization validates the requested team month before any write', async () => {
+  let reads = 0
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async () => {
+      reads += 1
+      return []
+    },
+    materializeMonthlyCharges: async () => {
+      throw new Error('must not materialize')
+    },
+    transaction: () => {
+      throw new Error('must not open transaction')
+    },
+  } as BillingCoachActionDependencies
+
+  const result = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 13,
+  }, dependencies)
+
+  assert.equal(result.success, false)
+  assert.equal(reads, 0)
+})
+
+
+test('KAN-479 bulk materialization reports only newly created charges on an idempotent retry', async () => {
+  let alreadyMaterialized = false
+  const dependencies = {
+    createId: () => 'unused',
+    listTeamAthleteIds: async () => ['athlete-a'],
+    materializeMonthlyCharges: async () => {
+      if (alreadyMaterialized) return []
+      alreadyMaterialized = true
+      return [{}]
+    },
+    transaction: () => {
+      throw new Error('bulk materialization must use the established H1 materialization boundary')
+    },
+  } as BillingCoachActionDependencies
+
+  const first = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 9,
+  }, dependencies)
+  const retry = await materializeTeamMonthlyChargesAction({
+    teamId: 'team-a',
+    year: 2026,
+    month: 9,
+  }, dependencies)
+
+  assert.deepEqual(first, {
+    success: true,
+    processedAthletes: 1,
+    materializedCharges: 1,
+  })
+  assert.deepEqual(retry, {
+    success: true,
+    processedAthletes: 1,
+    materializedCharges: 0,
+  })
 })

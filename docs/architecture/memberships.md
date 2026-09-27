@@ -1,6 +1,6 @@
-# Membership billing foundation
+# Membership billing foundation and H2 exceptions
 
-KAN-459 establishes the H1 economic foundation for memberships. This contract is the baseline for later Epic 5 stories; later stories may extend it but must not reinterpret historical H1 facts.
+KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. Later Epic 5 stories may extend this contract but must not reinterpret historical H1 or H2 facts.
 
 ## Authorities and temporal model
 
@@ -38,8 +38,36 @@ The Coach membership surface is desktop-first and localized ES/EN. It exposes cu
 
 Forms chain prospective changes from the latest scheduled/open interval while presentation still distinguishes what is current on the Argentina-local date. Backend diagnostics are not exposed as raw user-facing errors.
 
+## H2 economic exceptions
+
+KAN-460 models reductions/scholarships, global monthly due-date exceptions and individual extensions as explicit auditable facts layered over H1. Revision history is append-only: corrections create a new current revision and explicit withdrawals create a replacement revision instead of deleting or silently editing history. Every decision requires a non-empty reason; semantic retries are idempotent.
+
+A global monthly due-date exception has one current decision per team/year/month and affects both existing and future charges for that period. Due-date precedence is: ordinary team-policy due date → current global monthly exception → first-month activation clamp → `MonthlyCharge.baseDueDate` → current individual extension → `MonthlyCharge.effectiveDueDate`. Reprojection is convergent and an individual extension is never destroyed by a later global exception. If the base date overtakes an extension, the extension remains auditable and can become effective again if the base date later moves back.
+
+A reduction has one current revision per charge. Active reductions use an absolute positive minor-unit amount no greater than the H1 base amount; withdrawal uses a zero-amount revision. The projection is `amountDueMinor = baseAmountMinor - reductionAmountMinor`; base amount and currency remain historical H1 facts. A reduction is not a payment, credit, balance or proration.
+
+An individual extension has one current revision per charge. An active date must be later than the current base due date; withdrawal uses a null date. Its projection is `effectiveDueDate = max(baseDueDate, currentExtendedDueDate)`.
+
+SQLite migrations `0009_membership_global_due_date_exceptions.sql`, `0010_membership_monthly_charge_reductions.sql` and `0011_membership_monthly_charge_extensions.sql` persist H2. PostgreSQL/Supabase migration `0024_membership_billing_exceptions.sql` provides the equivalent three revision tables, constraints, partial current-revision indexes and RLS enablement. The shared Drizzle billing adapter consumes the environment schema rather than duplicating H2 repository/domain logic.
+
+Supabase H2 tables are RLS-enabled but KAN-460 deliberately does not invent permissive policies before the identity/authentication/authorization phase. Reduction and extension facts remain charge-scoped; athlete/team identity is reached through `MonthlyCharge` and guarded at application/persistence boundaries. A versioned migration and `db:supabase:check` are not evidence that a remote Supabase instance has received migration 0024; `db:supabase:verify` is the remote deployment verifier.
+
+## Coach operations and presentation
+
+KAN-479 exposes the established H1/H2 contract through localized Coach ES/EN workflows without making the UI a second economic authority.
+
+Monthly materialization has an explicit team-wide Coach trigger for an exact calendar month. The use case processes only athletes that already have valid billing terms for the team, skips already materialized months and reports only newly inserted charges as created. A future scheduler may invoke the same application use case; navigation and read loaders remain read-only.
+
+New athlete creation initializes billing atomically when Membership is enabled. The athlete receives initial `AthleteBillingTerms` from the team policy effective on the creation date and the join/current-month `MonthlyCharge` is materialized in the same synchronous SQLite transaction. The effective creation date uses the established Argentina-local civil date. If no team economic policy is effective on that date, creation fails rather than leaving an economically incomplete athlete. Existing legacy athletes without terms are not silently backfilled or assigned historical debt.
+
+Join-month materialization applies the current global monthly due-date exception before the first-month activation clamp. This preserves the H2 precedence contract while still allowing a mid-month athlete to use the later of the exception/policy candidate and the economic activation date.
+
+Coach H2 controls operate only on persisted monthly charges. Reduction and extension forms derive period identity from the selected charge, explicit withdrawals create append-only revisions, and histories show their persisted economic value and current/historical status. Global due-date history is likewise auditable.
+
+Money presentation derives from persisted `amountMinor` plus `currency`; locale affects formatting only. UI projections must not invent ARS or hard-code a currency symbol. The current product still uses ARS as the approved initial/default configuration, while broader team locale/currency/time-zone preferences remain deferred. Civil billing dates remain `YYYY-MM-DD` facts; UI formatting uses controlled UTC interpretation so due dates and exception/extension dates do not shift calendar day.
+
+KAN-479 also hardened the local operational path required by these flows: H2 SQLite verification/recovery recognizes partially reconciled migration metadata, better-sqlite3 transactions remain synchronous, and Drizzle SQLite mutation statements are explicitly executed rather than relying on lazy statement construction.
+
 ## Reserved for later Epic 5 stories
 
-H1 does not implement reductions/scholarships, global monthly due-date exceptions, individual extensions, payments, derived `settled | pending | overdue` state, balances, notices, Athlete blocking, additional charges, authentication or authorization.
-
-The extension order reserved for H2 due-date work is: team policy → global monthly exception → `MonthlyCharge.baseDueDate` → individual extension → `MonthlyCharge.effectiveDueDate`. H2 reductions must modify the charge traceably rather than masquerading as payments.
+H2 does not implement payments, credits, balances, derived `settled | pending | overdue` state, notices, Athlete blocking, additional charges, authentication or authorization. It also introduces no implicit proration.

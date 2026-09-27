@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { getMembershipPolicyViewModel } from '../../lib/memberships/membership-policy-view-model'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('builds the Coach membership policy view model in ES and EN without H2+ concepts', () => {
   const policy = {
     id: 'policy-1',
@@ -18,7 +26,7 @@ test('builds the Coach membership policy view model in ES and EN without H2+ con
     title: 'Membresía',
     policyTitle: 'Política económica del equipo',
     monthlyAmountLabel: 'Cuota mensual predeterminada',
-    monthlyAmount: '$25.000',
+    monthlyAmount: formatCurrency('es', 2_500_000, 'ARS'),
     currencyLabel: 'Moneda',
     currency: 'ARS',
     dueDayLabel: 'Día de vencimiento ordinario',
@@ -33,7 +41,7 @@ test('builds the Coach membership policy view model in ES and EN without H2+ con
     title: 'Membership',
     policyTitle: 'Team economic policy',
     monthlyAmountLabel: 'Default monthly fee',
-    monthlyAmount: '$25,000',
+    monthlyAmount: formatCurrency('en', 2_500_000, 'ARS'),
     currencyLabel: 'Currency',
     currency: 'ARS',
     dueDayLabel: 'Ordinary due day',

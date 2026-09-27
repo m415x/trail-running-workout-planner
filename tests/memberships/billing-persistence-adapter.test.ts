@@ -111,3 +111,1127 @@ test('billing persistence adapter materializes with team-scoped policies and ath
   assert.equal(result.length, 1)
   assert.deepEqual(calls, ['policies:team-a', 'insert:team-a:athlete-a:1'])
 })
+
+
+test('global due-date exception service updates an already materialized charge base date without changing its amount', async () => {
+  const updates: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [{
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-18',
+      effectiveUntil: null,
+    }],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-18',
+      effectiveDueDate: '2026-10-18',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-18',
+      effectiveDueDate: '2026-10-18',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-18',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+      amountDueMinor: number
+    }) => {
+      updates.push(charge)
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-1',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-10',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].baseDueDate, '2026-10-18')
+  assert.equal(updates[0].effectiveDueDate, '2026-10-18')
+  assert.equal(updates[0].amountDueMinor, 2_500_000)
+})
+
+
+test('materialization applies the current global due-date exception to future charges', async () => {
+  const inserted: Array<{ baseDueDate: string; effectiveDueDate: string }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [{
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [{
+      id: 'policy-a',
+      teamId: 'team-a',
+      defaultMonthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      ordinaryDueDay: 5,
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }],
+    insertMonthlyCharges: async (_teamId: string, _athleteId: string, charges: Array<{
+      baseDueDate: string
+      effectiveDueDate: string
+    }>) => {
+      inserted.push(...charges)
+    },
+    listGlobalDueDateExceptionRevisions: async (_teamId: string, year: number, month: number) =>
+      year === 2026 && month === 10
+        ? [{
+            id: 'exception-1',
+            teamId: 'team-a',
+            year: 2026,
+            month: 10,
+            dueDate: '2026-10-15',
+            reason: 'Vencimiento excepcional',
+            isCurrent: true,
+          }]
+        : [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [],
+    getBillingTermsById: async () => {
+      throw new Error('not used')
+    },
+    updateMonthlyChargeDueDates: async () => {},
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.materializeMonthlyCharges({
+    teamId: 'team-a',
+    athleteId: 'athlete-a',
+    through: { year: 2026, month: 10 },
+  })
+
+  const october = inserted.find((charge) => charge.baseDueDate === '2026-10-15')
+  assert.ok(october)
+  assert.equal(october.effectiveDueDate, '2026-10-15')
+})
+
+
+test('global due-date exception preserves a later effective due date from an existing individual extension', async () => {
+  const updates: Array<{ baseDueDate: string; effectiveDueDate: string }> = []
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-05',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async (monthlyChargeId: string) => {
+      assert.equal(monthlyChargeId, 'charge-a')
+      return [{
+        id: 'extension-existing',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual vigente',
+        isCurrent: true,
+      }]
+    },
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+    }) => {
+      updates.push(charge)
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-2',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Nuevo vencimiento global',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(updates.length, 1)
+  assert.equal(updates[0].baseDueDate, '2026-10-15')
+  assert.equal(updates[0].effectiveDueDate, '2026-10-25')
+})
+
+
+test('global due-date exception application uses the atomic persistence boundary', async () => {
+  let atomicCalls = 0
+  let separateWrites = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {
+      separateWrites += 1
+    },
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-05',
+      effectiveDueDate: '2026-10-05',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-09-01',
+      effectiveUntil: null,
+    }),
+    updateMonthlyChargeDueDates: async () => {
+      separateWrites += 1
+    },
+    applyGlobalDueDateExceptionAtomically: async (
+      _teamId: string,
+      _year: number,
+      _month: number,
+      _revision: unknown,
+      charges: Array<{ baseDueDate: string; effectiveDueDate: string }>,
+    ) => {
+      atomicCalls += 1
+      assert.equal(charges.length, 1)
+      assert.equal(charges[0].baseDueDate, '2026-10-15')
+      assert.equal(charges[0].effectiveDueDate, '2026-10-15')
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'exception-atomic',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento excepcional',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(atomicCalls, 1)
+  assert.equal(separateWrites, 0)
+})
+
+
+test('global due-date exception rejects a blank audit reason before persistence', async () => {
+  let persisted = false
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {
+      persisted = true
+    },
+    listTeamMonthlyCharges: async () => [],
+    getBillingTermsById: async () => {
+      throw new Error('not used')
+    },
+    updateMonthlyChargeDueDates: async () => {
+      persisted = true
+    },
+    applyGlobalDueDateExceptionAtomically: async () => {
+      persisted = true
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+
+  await assert.rejects(
+    () => adapter.applyGlobalDueDateException({
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      revision: {
+        id: 'exception-invalid',
+        teamId: 'team-a',
+        year: 2026,
+        month: 10,
+        dueDate: '2026-10-15',
+        reason: '   ',
+        isCurrent: true,
+      },
+    }),
+    /reason/i,
+  )
+  assert.equal(persisted, false)
+})
+
+
+test('monthly charge reduction derives amount due without mutating the base amount', async () => {
+  let applied: { baseAmountMinor: number; amountDueMinor: number } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseAmountMinor: number; amountDueMinor: number },
+    ) => {
+      applied = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-1',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(applied)
+  assert.equal(applied.baseAmountMinor, 2_500_000)
+  assert.equal(applied.amountDueMinor, 2_000_000)
+})
+
+test('monthly charge reduction supports a total reduction without producing a negative amount due', async () => {
+  let amountDueMinor: number | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { amountDueMinor: number },
+    ) => {
+      amountDueMinor = charge.amountDueMinor
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-total',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 2_500_000,
+      reason: 'Beca total',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(amountDueMinor, 0)
+})
+
+
+test('withdrawing a monthly charge reduction restores amount due to the immutable base amount', async () => {
+  let projected: { baseAmountMinor: number; amountDueMinor: number } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [{
+      id: 'reduction-current',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseAmountMinor: number; amountDueMinor: number },
+    ) => {
+      projected = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-withdrawn',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 0,
+      reason: 'Finaliza la beca',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(projected)
+  assert.equal(projected.baseAmountMinor, 2_500_000)
+  assert.equal(projected.amountDueMinor, 2_500_000)
+})
+
+test('monthly charge reduction rejects an amount above the immutable base before persistence', async () => {
+  let persisted = false
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async () => {
+      persisted = true
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await assert.rejects(
+    () => adapter.applyMonthlyChargeReduction({
+      teamId: 'team-a',
+      monthlyChargeId: 'charge-a',
+      revision: {
+        id: 'reduction-invalid',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 2_500_001,
+        reason: 'Importe inválido',
+        isCurrent: true,
+      },
+    }),
+    /reduction|base|amount/i,
+  )
+  assert.equal(persisted, false)
+})
+
+
+test('monthly charge reduction uses persisted current history when correcting an existing reduction', async () => {
+  let projectedAmount: number | undefined
+  let historyReads = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => {
+      historyReads += 1
+      return [{
+        id: 'reduction-old',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        reductionAmountMinor: 500_000,
+        reason: 'Beca inicial',
+        isCurrent: true,
+      }]
+    },
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { amountDueMinor: number },
+    ) => {
+      projectedAmount = charge.amountDueMinor
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-corrected',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 750_000,
+      reason: 'Corrección de beca',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(historyReads, 1)
+  assert.equal(projectedAmount, 1_750_000)
+})
+
+
+test('monthly charge reduction semantic retry does not create a new atomic write', async () => {
+  let atomicCalls = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_000_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeReductionRevisions: async () => [{
+      id: 'reduction-existing',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeReduction: async () => {},
+    applyMonthlyChargeReductionAtomically: async () => {
+      atomicCalls += 1
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeReduction({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'reduction-retry-with-different-id',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      reductionAmountMinor: 500_000,
+      reason: 'Beca deportiva',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(atomicCalls, 0)
+})
+
+
+test('monthly charge extension projects effective due date without mutating base due date', async () => {
+  let applied: { baseDueDate: string; effectiveDueDate: string } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseDueDate: string; effectiveDueDate: string },
+    ) => {
+      applied = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeExtension({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'extension-1',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(applied)
+  assert.equal(applied.baseDueDate, '2026-10-10')
+  assert.equal(applied.effectiveDueDate, '2026-10-25')
+})
+
+test('monthly charge extension rejects a date that does not move beyond the current base due date', async () => {
+  let persisted = false
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-10',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async () => {
+      persisted = true
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await assert.rejects(
+    () => adapter.applyMonthlyChargeExtension({
+      teamId: 'team-a',
+      monthlyChargeId: 'charge-a',
+      revision: {
+        id: 'extension-invalid',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-10',
+        reason: 'Prórroga inválida',
+        isCurrent: true,
+      },
+    }),
+    /extension|due|base|date/i,
+  )
+  assert.equal(persisted, false)
+})
+
+
+test('withdrawing a monthly charge extension restores effective due date to the current base due date', async () => {
+  let projected: { baseDueDate: string; effectiveDueDate: string } | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-15',
+      effectiveDueDate: '2026-10-25',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [{
+      id: 'extension-current',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { baseDueDate: string; effectiveDueDate: string },
+    ) => {
+      projected = charge
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeExtension({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'extension-withdrawn',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: null,
+      reason: 'Finaliza la prórroga',
+      isCurrent: true,
+    },
+  })
+
+  assert.ok(projected)
+  assert.equal(projected.baseDueDate, '2026-10-15')
+  assert.equal(projected.effectiveDueDate, '2026-10-15')
+})
+
+test('monthly charge extension correction may move earlier than the previous extension while remaining after base due date', async () => {
+  let effectiveDueDate: string | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [{
+      id: 'extension-old',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga inicial',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async (
+      _teamId: string,
+      _monthlyChargeId: string,
+      _revision: unknown,
+      charge: { effectiveDueDate: string },
+    ) => {
+      effectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeExtension({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'extension-corrected',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-20',
+      reason: 'Corrección de prórroga',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(effectiveDueDate, '2026-10-20')
+})
+
+test('monthly charge extension semantic retry does not create a new atomic write', async () => {
+  let atomicCalls = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [{
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listMonthlyChargeExtensionRevisions: async () => [{
+      id: 'extension-existing',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    }],
+    replaceCurrentMonthlyChargeExtension: async () => {},
+    applyMonthlyChargeExtensionAtomically: async () => {
+      atomicCalls += 1
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyMonthlyChargeExtension({
+    teamId: 'team-a',
+    monthlyChargeId: 'charge-a',
+    revision: {
+      id: 'extension-retry-with-different-id',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(atomicCalls, 0)
+})
+
+
+test('a later global due-date exception keeps a later current individual extension effective', async () => {
+  let projectedEffectiveDueDate: string | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async () => [{
+      id: 'extension-current',
+      monthlyChargeId: 'charge-a',
+      athleteId: 'athlete-a',
+      year: 2026,
+      month: 10,
+      extendedDueDate: '2026-10-25',
+      reason: 'Prórroga individual',
+      isCurrent: true,
+    }],
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: { effectiveDueDate: string }) => {
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-after-extension',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-15',
+      reason: 'Vencimiento global posterior',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(projectedEffectiveDueDate, '2026-10-25')
+})
+
+test('a global due-date exception can shadow a current extension without withdrawing it', async () => {
+  let projectedEffectiveDueDate: string | undefined
+  let extensionReads = 0
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-10',
+      effectiveDueDate: '2026-10-25',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async () => {
+      extensionReads += 1
+      return [{
+        id: 'extension-current',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual',
+        isCurrent: true,
+      }]
+    },
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: { effectiveDueDate: string }) => {
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-shadowing-extension',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-28',
+      reason: 'Vencimiento global extraordinario',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(extensionReads, 1)
+  assert.equal(projectedEffectiveDueDate, '2026-10-28')
+})
+
+
+test('a current extension re-emerges when a later global due-date correction moves base back before it', async () => {
+  let projectedBaseDueDate: string | undefined
+  let projectedEffectiveDueDate: string | undefined
+  const port = {
+    athleteBelongsToTeam: async () => true,
+    listBillingTerms: async () => [],
+    listMonthlyCharges: async () => [],
+    listTeamEconomicPolicies: async () => [],
+    insertMonthlyCharges: async () => {},
+    listGlobalDueDateExceptionRevisions: async () => [],
+    replaceCurrentGlobalDueDateException: async () => {},
+    listTeamMonthlyCharges: async () => [{
+      id: 'charge-a',
+      athleteId: 'athlete-a',
+      billingTermsId: 'terms-a',
+      year: 2026,
+      month: 10,
+      baseAmountMinor: 2_500_000,
+      amountDueMinor: 2_500_000,
+      currency: 'ARS',
+      baseDueDate: '2026-10-28',
+      effectiveDueDate: '2026-10-28',
+    }],
+    getBillingTermsById: async () => ({
+      id: 'terms-a',
+      athleteId: 'athlete-a',
+      monthlyAmountMinor: 2_500_000,
+      currency: 'ARS',
+      effectiveFrom: '2026-10-01',
+      effectiveUntil: null,
+    }),
+    listMonthlyChargeExtensionRevisions: async (monthlyChargeId: string) => {
+      assert.equal(monthlyChargeId, 'charge-a')
+      return [{
+        id: 'extension-current',
+        monthlyChargeId: 'charge-a',
+        athleteId: 'athlete-a',
+        year: 2026,
+        month: 10,
+        extendedDueDate: '2026-10-25',
+        reason: 'Prórroga individual',
+        isCurrent: true,
+      }]
+    },
+    updateMonthlyChargeDueDates: async (_teamId: string, charge: {
+      baseDueDate: string
+      effectiveDueDate: string
+    }) => {
+      projectedBaseDueDate = charge.baseDueDate
+      projectedEffectiveDueDate = charge.effectiveDueDate
+    },
+  }
+
+  const adapter = createBillingPersistenceAdapter(port)
+  await adapter.applyGlobalDueDateException({
+    teamId: 'team-a',
+    year: 2026,
+    month: 10,
+    revision: {
+      id: 'global-corrected-back',
+      teamId: 'team-a',
+      year: 2026,
+      month: 10,
+      dueDate: '2026-10-20',
+      reason: 'Corrección del vencimiento global',
+      isCurrent: true,
+    },
+  })
+
+  assert.equal(projectedBaseDueDate, '2026-10-20')
+  assert.equal(projectedEffectiveDueDate, '2026-10-25')
+})

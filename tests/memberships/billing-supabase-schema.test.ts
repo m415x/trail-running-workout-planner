@@ -33,3 +33,154 @@ test('PostgreSQL H1 monthly charges enforce one snapshot per athlete month and H
   assert.match(schema, /baseAmountMinor}\s*>\s*0[\s\S]*amountDueMinor}\s*>=\s*0/)
   assert.match(schema, /billingTermsId:[\s\S]*references\(\(\) => athleteBillingTerms\.id, \{ onDelete: ['"]restrict['"] \}\)/)
 })
+
+
+test('PostgreSQL H2 schema persists global monthly due-date exception revisions', () => {
+  assert.match(schema, /globalMonthlyDueDateExceptions\s*=\s*pgTable\(\s*['"]global_monthly_due_date_exceptions['"]/)
+  for (const column of ['team_id', 'year', 'month', 'due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /global_monthly_due_date_exceptions_team_period_current_unique/)
+})
+
+test('PostgreSQL H2 schema persists monthly charge reduction revisions', () => {
+  assert.match(schema, /monthlyChargeReductions\s*=\s*pgTable\(\s*['"]monthly_charge_reductions['"]/)
+  for (const column of ['monthly_charge_id', 'reduction_amount_minor', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /monthly_charge_reductions_amount_check/)
+  assert.match(schema, /monthly_charge_reductions_charge_current_unique/)
+})
+
+test('PostgreSQL H2 schema persists monthly charge extension revisions', () => {
+  assert.match(schema, /monthlyChargeExtensions\s*=\s*pgTable\(\s*['"]monthly_charge_extensions['"]/)
+  for (const column of ['monthly_charge_id', 'extended_due_date', 'reason', 'is_current']) {
+    assert.match(schema, new RegExp(column))
+  }
+  assert.match(schema, /monthly_charge_extensions_charge_current_unique/)
+})
+
+
+test('PostgreSQL H2 migration materializes all three revision tables and partial current indexes', () => {
+  const journal = fs.readFileSync(path.join(root, 'drizzle', 'supabase', 'meta', '_journal.json'), 'utf8')
+  assert.match(journal, /0024_membership_billing_exceptions/)
+
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(migration, new RegExp(`CREATE TABLE "${table}"`))
+  }
+  assert.match(migration, /global_monthly_due_date_exceptions_team_period_current_unique/)
+  assert.match(migration, /monthly_charge_reductions_charge_current_unique/)
+  assert.match(migration, /monthly_charge_extensions_charge_current_unique/)
+  assert.match(migration, /WHERE "is_current" = true/)
+})
+
+
+test('Supabase verification includes H2 tables and validates their RLS plus persistence contract', () => {
+  const verify = fs.readFileSync(path.join(root, 'db', 'supabase', 'verify.ts'), 'utf8')
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(verify, new RegExp(`['"]${table}['"]`))
+  }
+  assert.match(verify, /H2 billing persistence contract/)
+  assert.match(verify, /global_monthly_due_date_exceptions_team_period_current_unique/)
+  assert.match(verify, /monthly_charge_reductions_charge_current_unique/)
+  assert.match(verify, /monthly_charge_extensions_charge_current_unique/)
+})
+
+
+test('Supabase H2 migration enables RLS on every economic fact table', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  for (const table of [
+    'global_monthly_due_date_exceptions',
+    'monthly_charge_reductions',
+    'monthly_charge_extensions',
+  ]) {
+    assert.match(migration, new RegExp(`ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY`))
+  }
+})
+
+
+test('Supabase H2 schema is consumable by the shared Drizzle billing adapter', () => {
+  const adapter = fs.readFileSync(
+    path.join(root, 'lib', 'memberships', 'billing-drizzle-database.ts'),
+    'utf8',
+  )
+  assert.match(adapter, /from ['"]@\/db\/schema['"]/)
+  assert.match(adapter, /globalMonthlyDueDateExceptions/)
+  assert.match(adapter, /monthlyChargeReductions/)
+  assert.match(adapter, /monthlyChargeExtensions/)
+
+  const supabaseSchema = fs.readFileSync(path.join(root, 'db', 'supabase', 'schema.ts'), 'utf8')
+  assert.match(supabaseSchema, /export const globalMonthlyDueDateExceptions/)
+  assert.match(supabaseSchema, /export const monthlyChargeReductions/)
+  assert.match(supabaseSchema, /export const monthlyChargeExtensions/)
+})
+
+
+test('Supabase H2 migration preserves SQLite-equivalent foreign-key and reduction constraints', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  assert.match(migration, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(migration, /"month" between 1 and 12/)
+  assert.match(migration, /monthly_charge_reductions_amount_check/)
+  assert.match(migration, /"reduction_amount_minor" >= 0/)
+  assert.match(migration, /global_monthly_due_date_exceptions_team_id_teams_id_fk/)
+  assert.match(migration, /ON DELETE cascade/i)
+  assert.match(migration, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.match(migration, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.equal((migration.match(/ON DELETE restrict/gi) ?? []).length >= 2, true)
+  assert.match(migration, /"extended_due_date" text,/)
+})
+
+
+test('Supabase verifier validates H2 foreign keys and reduction/month constraints, not only current indexes', () => {
+  const verify = fs.readFileSync(path.join(root, 'db', 'supabase', 'verify.ts'), 'utf8')
+  assert.match(verify, /global_monthly_due_date_exceptions_month_check/)
+  assert.match(verify, /monthly_charge_reductions_amount_check/)
+  assert.match(verify, /global_monthly_due_date_exceptions_team_id_teams_id_fk/)
+  assert.match(verify, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.match(verify, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
+})
+
+
+test('Supabase H2 migration does not introduce permissive RLS policies before identity authorization', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  assert.doesNotMatch(migration, /CREATE\s+POLICY/i)
+  assert.doesNotMatch(migration, /USING\s*\(\s*true\s*\)/i)
+  assert.doesNotMatch(migration, /WITH\s+CHECK\s*\(\s*true\s*\)/i)
+})
+
+
+test('Supabase H2 migration leaves no direct athlete or payment representation in exception facts', () => {
+  const migration = fs.readFileSync(
+    path.join(root, 'drizzle', 'supabase', '0024_membership_billing_exceptions.sql'),
+    'utf8',
+  )
+  const reduction = migration.match(/CREATE TABLE "monthly_charge_reductions" \(([\s\S]*?)\);/)?.[1] ?? ''
+  const extension = migration.match(/CREATE TABLE "monthly_charge_extensions" \(([\s\S]*?)\);/)?.[1] ?? ''
+  for (const definition of [reduction, extension]) {
+    assert.match(definition, /"monthly_charge_id" text NOT NULL/)
+    assert.doesNotMatch(definition, /"athlete_id"/)
+    assert.doesNotMatch(definition, /"team_id"/)
+    assert.doesNotMatch(definition, /"payment_id"/)
+  }
+})

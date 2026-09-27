@@ -204,9 +204,10 @@ test('fresh SQLite bootstrap establishes migration metadata compatible with late
 
 test('fresh SQLite bootstrap installs the cohort association triggers before marking HEAD', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+  const freshStart = runner.indexOf("if (state === 'fresh')")
   const freshBlock = runner.slice(
-    runner.indexOf("if (state === 'fresh')"),
-    runner.indexOf("if (state === 'versioned'"),
+    freshStart,
+    runner.indexOf("if (state === 'versioned'", freshStart),
   )
   const triggers = freshBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const metadata = freshBlock.indexOf('establishCanonicalMigrationMetadata(sqlite)')

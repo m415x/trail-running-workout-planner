@@ -23,12 +23,12 @@ const copy = {
   },
 } as const
 
-function formatAmount(locale: Locale, amountMinor: number) {
-  const amount = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+function formatAmount(locale: Locale, amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
     maximumFractionDigits: 0,
   }).format(amountMinor / 100)
-
-  return String.fromCharCode(36) + amount
 }
 
 export function getMembershipPolicyViewModel({
@@ -42,7 +42,7 @@ export function getMembershipPolicyViewModel({
 
   return {
     ...labels,
-    monthlyAmount: policy ? formatAmount(locale, policy.defaultMonthlyAmountMinor) : null,
+    monthlyAmount: policy ? formatAmount(locale, policy.defaultMonthlyAmountMinor, policy.currency) : null,
     currency: policy?.currency ?? null,
     dueDay: policy ? String(policy.ordinaryDueDay) : null,
     effectiveFrom: policy?.effectiveFrom ?? null,

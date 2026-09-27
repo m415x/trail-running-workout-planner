@@ -22,14 +22,18 @@ test('athlete billing terms form keeps initial and replacement inputs distinct',
     'features/memberships/components/AthleteBillingTermsForm.tsx',
     'utf8',
   )
+  const h1FormSource = source.slice(
+    source.indexOf('export function AthleteBillingTermsForm'),
+    source.indexOf('{monthlyCharges.length > 0'),
+  )
 
-  assert.match(source, /model\.mode === 'replacement'/)
-  assert.match(source, /name='effectiveFrom'/)
-  assert.match(source, /name='monthlyAmount'/)
-  assert.match(source, /name='currency'/)
-  assert.doesNotMatch(source, /scholarship|beca|payment|pago|overdue|deuda|extension|prórroga/i)
+  assert.match(h1FormSource, /model\.mode === 'replacement'/)
+  assert.match(h1FormSource, /name='effectiveFrom'/)
+  assert.match(h1FormSource, /name='monthlyAmount'/)
+  assert.match(h1FormSource, /name='currency'/)
+  assert.doesNotMatch(h1FormSource, /scholarship|beca|payment|pago|overdue|deuda|prórroga/i)
+  assert.doesNotMatch(h1FormSource, /Individual extension|applyMonthlyChargeExtensionAction/)
 })
-
 
 test('athlete billing terms form localizes action errors instead of exposing backend copy', async () => {
   const source = await readFile(

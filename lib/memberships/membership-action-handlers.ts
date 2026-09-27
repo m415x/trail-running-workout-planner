@@ -22,6 +22,39 @@ type MembershipActionRuntime = {
     monthlyAmountMinor: number
     currency: string
   }) => Promise<BillingActionResult>
+  materializeTeamMonthlyCharges: (input: {
+    teamId: string
+    year: number
+    month: number
+  }) => Promise<
+    | { success: true; processedAthletes: number; materializedCharges: number }
+    | { success: false; error: string }
+  >
+  applyGlobalDueDateException: (input: {
+    teamId: string
+    year: number
+    month: number
+    dueDate: string
+    reason: string
+  }) => Promise<BillingActionResult>
+  applyMonthlyChargeReduction: (input: {
+    teamId: string
+    monthlyChargeId: string
+    athleteId: string
+    year: number
+    month: number
+    reductionAmountMinor: number
+    reason: string
+  }) => Promise<BillingActionResult>
+  applyMonthlyChargeExtension: (input: {
+    teamId: string
+    monthlyChargeId: string
+    athleteId: string
+    year: number
+    month: number
+    extendedDueDate: string | null
+    reason: string
+  }) => Promise<BillingActionResult>
 }
 
 type Locale = 'es' | 'en'
@@ -85,6 +118,81 @@ export function createMembershipActionHandlers({
         teamId,
       })
 
+      if (result.success) {
+        revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
+      }
+      return result
+    },
+
+
+    async materializeTeamMonthlyCharges(input: {
+      year: number
+      month: number
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.materializeTeamMonthlyCharges({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, '/dashboard/membership'))
+      }
+      return result
+    },
+
+    async applyGlobalDueDateException(input: {
+      year: number
+      month: number
+      dueDate: string
+      reason: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.applyGlobalDueDateException({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, '/dashboard/membership'))
+      }
+      return result
+    },
+
+    async applyMonthlyChargeReduction(input: {
+      monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
+      reductionAmountMinor: number
+      reason: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.applyMonthlyChargeReduction({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
+      }
+      return result
+    },
+
+    async applyMonthlyChargeExtension(input: {
+      monthlyChargeId: string
+      athleteId: string
+      year: number
+      month: number
+      extendedDueDate: string | null
+      reason: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.applyMonthlyChargeExtension({
+        ...billingInput,
+        teamId,
+      })
       if (result.success) {
         revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
       }
