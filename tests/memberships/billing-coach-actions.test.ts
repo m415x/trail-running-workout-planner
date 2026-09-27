@@ -23,12 +23,6 @@ type TransactionRepository =
 function transactionRepository<T extends object>(repository: T): TransactionRepository {
   return repository as unknown as TransactionRepository
 }
-type ReductionRepository = MonthlyChargeReductionPersistencePort
-  & Pick<BillingPersistencePort, 'listMonthlyCharges'>
-  & Partial<BillingPersistencePort>
-type ExtensionRepository = MonthlyChargeExtensionPersistencePort
-  & Pick<BillingPersistencePort, 'listMonthlyCharges'>
-  & Partial<BillingPersistencePort>
 
 test('Coach action validates input before opening a transaction', async () => {
   let transactions = 0
