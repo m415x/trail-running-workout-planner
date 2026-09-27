@@ -3,9 +3,11 @@ import {
   applyGlobalDueDateExceptionAction,
   applyMonthlyChargeReductionAction,
   applyMonthlyChargeExtensionAction,
+  materializeTeamMonthlyChargesAction,
   type BillingCoachActionDependencies,
 } from './billing-coach-actions'
 import { createDrizzleBillingDatabase } from './billing-drizzle-database'
+import { createBillingPersistenceAdapter } from './billing-persistence'
 import { createSqliteBillingPersistencePort } from './billing-sqlite-persistence'
 import { createSynchronousAthleteBillingTermsService } from './athlete-billing-terms-service'
 import { createSynchronousDrizzleBillingRepository } from './billing-drizzle-write-repository'
@@ -50,10 +52,22 @@ export function createMembershipServerActionRuntime({
 }) {
   const transaction = createSqliteBillingTransaction(db)
 
+  const billingDatabase = createDrizzleBillingDatabase(db)
+  const billingPersistence = createSqliteBillingPersistencePort(billingDatabase)
+
   const h2Dependencies: BillingCoachActionDependencies = {
     createId,
-    transaction: (operation) =>
-      operation(createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db))),
+    transaction: (operation) => operation(billingPersistence),
+  }
+
+  const bulkMaterializationDependencies: BillingCoachActionDependencies = {
+    ...h2Dependencies,
+    listTeamAthleteIds: async (teamId) => {
+      const candidates = await billingDatabase.listTeamAthleteIds?.(teamId)
+      return candidates ?? []
+    },
+    materializeMonthlyCharges: (input) =>
+      createBillingPersistenceAdapter(billingPersistence).materializeMonthlyCharges(input),
   }
 
   function athleteTermsService() {
@@ -62,6 +76,14 @@ export function createMembershipServerActionRuntime({
   }
 
   return {
+
+    async materializeTeamMonthlyCharges(input: {
+      teamId: string
+      year: number
+      month: number
+    }) {
+      return materializeTeamMonthlyChargesAction(input, bulkMaterializationDependencies)
+    },
 
     async applyGlobalDueDateException(input: {
       teamId: string
