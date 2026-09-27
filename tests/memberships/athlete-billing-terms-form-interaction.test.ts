@@ -31,7 +31,8 @@ test('athlete billing terms form keeps initial and replacement inputs distinct',
   assert.match(h1FormSource, /name='effectiveFrom'/)
   assert.match(h1FormSource, /name='monthlyAmount'/)
   assert.match(h1FormSource, /name='currency'/)
-  assert.doesNotMatch(h1FormSource, /scholarship|beca|payment|pago|overdue|deuda|extension|prórroga/i)
+  assert.doesNotMatch(h1FormSource, /scholarship|beca|payment|pago|overdue|deuda|prórroga/i)
+  assert.doesNotMatch(h1FormSource, /Individual extension|applyMonthlyChargeExtensionAction/)
 })
 
 test('athlete billing terms form localizes action errors instead of exposing backend copy', async () => {
