@@ -53,6 +53,19 @@ type AthleteBillingTermsFormModel =
       currency: string
     }
 
+function formatAuditAmount(amountMinor: number, currency: string, locale: 'es' | 'en') {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+  }).format(amountMinor / 100)
+}
+
+function formatAuditDate(value: string, locale: 'es' | 'en') {
+  return new Intl.DateTimeFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    timeZone: 'UTC',
+  }).format(new Date(`${value}T00:00:00Z`))
+}
+
 function MonthlyChargeReductionForm({
   athleteId,
   locale,
@@ -128,7 +141,11 @@ function MonthlyChargeReductionForm({
         <ul className='text-sm text-muted-foreground'>
           {reductionHistory.map((revision) => (
             <li key={revision.id}>
-              {revision.reason} · {(revision.reductionAmountMinor / 100).toFixed(2)}
+              {revision.reason} · {formatAuditAmount(
+                revision.reductionAmountMinor,
+                monthlyCharges.find((charge) => charge.id === revision.monthlyChargeId)?.currency ?? 'ARS',
+                locale,
+              )}
               {revision.reductionAmountMinor === 0 ? ` · ${es ? 'Retiro' : 'Withdrawn'}` : ''}
               {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
             </li>
@@ -213,7 +230,9 @@ function MonthlyChargeExtensionForm({
         <ul className='text-sm text-muted-foreground'>
           {extensionHistory.map((revision) => (
             <li key={revision.id}>
-              {revision.reason} · {revision.extendedDueDate ?? (es ? 'Retiro' : 'Withdrawn')}
+              {revision.reason} · {revision.extendedDueDate
+                ? formatAuditDate(revision.extendedDueDate, locale)
+                : (es ? 'Retiro' : 'Withdrawn')}
               {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
             </li>
           ))}
