@@ -114,7 +114,7 @@ function MonthlyChargeReductionForm({
       {reductionHistory.length > 0 && (
         <ul className='text-sm text-muted-foreground'>
           {reductionHistory.map((revision) => (
-            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ' · vigente' : ''}</li>
+            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}</li>
           ))}
         </ul>
       )}
@@ -191,7 +191,7 @@ function MonthlyChargeExtensionForm({
       {extensionHistory.length > 0 && (
         <ul className='text-sm text-muted-foreground'>
           {extensionHistory.map((revision) => (
-            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ' · vigente' : ''}</li>
+            <li key={revision.id}>{revision.reason}{revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}</li>
           ))}
         </ul>
       )}
