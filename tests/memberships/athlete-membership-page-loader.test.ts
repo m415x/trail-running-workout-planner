@@ -3,6 +3,14 @@ import test from 'node:test'
 
 import { createAthleteMembershipPageLoader } from '../../lib/memberships/athlete-membership-page-loader'
 
+function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
+  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(amountMinor / 100)
+}
+
 test('production athlete membership loader composes Drizzle snapshot reading with presentation', async () => {
   const calls: string[] = []
 
@@ -53,9 +61,9 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
   })
 
   assert.equal(model.title, 'Membresía')
-  assert.equal(model.currentTerms?.monthlyAmount, '$25.000')
+  assert.equal(model.currentTerms?.monthlyAmount, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.charges.length, 1)
-  assert.equal(model.charges[0]?.amountDue, '$25.000')
+  assert.equal(model.charges[0]?.amountDue, formatCurrency('es', 2_500_000, 'ARS'))
   assert.equal(model.charges[0]?.period, '09/2026')
   assert.deepEqual(calls, [
     'belongs:team_1:athlete-1',
