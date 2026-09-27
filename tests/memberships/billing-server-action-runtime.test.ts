@@ -231,11 +231,15 @@ test('KAN-479 H2 runtime does not wrap async persistence orchestration in the sy
       }),
     }),
     insert: () => ({
-      values: () => undefined,
+      values: () => ({
+        run: () => undefined,
+      }),
     }),
     update: () => ({
       set: () => ({
-        where: () => undefined,
+        where: () => ({
+          run: () => undefined,
+        }),
       }),
     }),
   }
