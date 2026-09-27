@@ -20,6 +20,10 @@ test('membership action handlers enforce current team scope and revalidate Coach
       calls.push(`change:${String(input.teamId)}:${String(input.athleteId)}`)
       return { success: true as const }
     },
+    materializeTeamMonthlyCharges: async (input: Record<string, unknown>) => {
+      calls.push(`materialize:${String(input.teamId)}:${String(input.year)}-${String(input.month)}`)
+      return { success: true as const, processedAthletes: 3, materializedCharges: 2 }
+    },
     applyGlobalDueDateException: async (input: Record<string, unknown>) => {
       calls.push(`global:${String(input.teamId)}:${String(input.year)}-${String(input.month)}`)
       return { success: true as const }
@@ -59,6 +63,12 @@ test('membership action handlers enforce current team scope and revalidate Coach
     locale: 'en',
   })
 
+  await actions.materializeTeamMonthlyCharges({
+    year: 2026,
+    month: 10,
+    locale: 'en',
+  })
+
   await actions.applyGlobalDueDateException({
     year: 2026,
     month: 10,
@@ -92,6 +102,8 @@ test('membership action handlers enforce current team scope and revalidate Coach
     'revalidate:/dashboard/athletes/athlete-a',
     'change:team_1:athlete-a',
     'revalidate:/en/dashboard/athletes/athlete-a',
+    'materialize:team_1:2026-10',
+    'revalidate:/en/dashboard/membership',
     'global:team_1:2026-10',
     'revalidate:/en/dashboard/membership',
     'reduction:team_1:charge-a',
