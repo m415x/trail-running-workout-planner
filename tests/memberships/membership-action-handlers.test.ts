@@ -36,6 +36,7 @@ test('membership action handlers enforce current team scope and revalidate Coach
       calls.push(`extension:${String(input.teamId)}:${String(input.monthlyChargeId)}`)
       return { success: true as const }
     },
+    registerManualPayment: async () => ({ success: true as const }),
   }
 
   const actions = createMembershipActionHandlers({
