@@ -30,7 +30,7 @@ Key competition documents:
 
 ### Memberships
 
-`memberships.md` owns the Epic 5 membership economic foundation: temporal team policy, athlete billing terms, monthly charge snapshots, materialization semantics and the H1/H2 boundary.
+`memberships.md` owns the Epic 5 membership economic foundation: temporal team policy, athlete billing terms, monthly charge snapshots, H2 exceptions, H3 Payment revision history and per-charge balance derivation.
 
 ### Platform
 
