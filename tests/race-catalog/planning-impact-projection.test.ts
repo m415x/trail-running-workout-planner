@@ -112,20 +112,20 @@ describe('KAN-519 race course planning impact projection', () => {
       planningCohortName: item.planningCohortName,
     })), [
       {
-        competitionEntryId: 'entry-base-s2',
-        planId: 'base-s2',
-        planKind: 'base',
-        groupCode: 'S2',
-        planningCohortId: null,
-        planningCohortName: null,
-      },
-      {
         competitionEntryId: 'entry-variant-m1',
         planId: 'variant-m1',
         planKind: 'variant',
         groupCode: 'M1',
         planningCohortId: 'cohort-m1',
         planningCohortName: 'Maratón montaña',
+      },
+      {
+        competitionEntryId: 'entry-base-s2',
+        planId: 'base-s2',
+        planKind: 'base',
+        groupCode: 'S2',
+        planningCohortId: null,
+        planningCohortName: null,
       },
       {
         competitionEntryId: 'entry-variant-s2',
