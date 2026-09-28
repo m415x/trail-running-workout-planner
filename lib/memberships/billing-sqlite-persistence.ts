@@ -30,6 +30,10 @@ export type SqliteBillingDatabase = {
   ) => Promise<void>
   listPaymentRevisions?: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
   insertPaymentRevision?: (revision: PersistedPaymentRevision) => Promise<void>
+  replaceCurrentPaymentRevisionAtomically?: (
+    previous: PersistedPaymentRevision,
+    replacement: PersistedPaymentRevision,
+  ) => Promise<void>
   listGlobalDueDateExceptionRevisions: (
     teamId: string,
     year: number,
@@ -130,6 +134,19 @@ export function createSqliteBillingPersistencePort(
         throw new Error('SQLite billing database does not support Payment inserts')
       }
       await database.insertPaymentRevision(revision)
+    },
+
+    async replaceCurrentPaymentRevisionAtomically(previous, replacement) {
+      if (
+        previous.paymentId !== replacement.paymentId
+        || previous.monthlyChargeId !== replacement.monthlyChargeId
+      ) {
+        throw new Error('Payment revision replacement must preserve Payment and MonthlyCharge identity')
+      }
+      if (!database.replaceCurrentPaymentRevisionAtomically) {
+        throw new Error('SQLite billing database does not support atomic Payment revision replacement')
+      }
+      await database.replaceCurrentPaymentRevisionAtomically(previous, replacement)
     },
 
     listGlobalDueDateExceptionRevisions: (teamId, year, month) =>
