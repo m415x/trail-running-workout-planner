@@ -1,6 +1,6 @@
-# Membership billing foundation, H2 exceptions, H3 payments and H4 account projection
+# Membership billing foundation, H2 exceptions, H3 payments, H4 account projection and H5 experience
 
-KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. KAN-461 adds H3 payments and per-charge balance derivation. KAN-462 adds the H4 derived account state and explainable economic history. Later Epic 5 stories may extend this contract but must not reinterpret historical H1, H2 or H3 facts or persist H4 projections as mutable authority.
+KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. KAN-461 adds H3 payments and per-charge balance derivation. KAN-462 adds the H4 derived account state and explainable economic history. KAN-463 adds the H5 Coach/Athlete experience and prior-debt blocking projection. Later Epic 5 stories may extend this contract but must not reinterpret historical H1, H2 or H3 facts or persist H4/H5 projections as mutable authority.
 
 ## Authorities and temporal model
 
@@ -131,8 +131,29 @@ The athlete Membership read path accepts `cutoffDate` separately from general pa
 
 The Coach athlete Membership surface renders the derived H4 account state, paid/remaining values, per-currency total balance and explainable history in localized ES/EN. The UI formats dates/money only; it does not reimplement economic status or balance rules. Currency codes remain explicit in presentation.
 
-## Reserved for later Epic 5 stories
+## H5 Coach/Athlete experience and prior-debt blocking
 
-KAN-463 H5 owns Coach/Athlete experience built on the H4 projection, including pending/overdue visual signaling and derived `blocked_for_prior_debt` for prior-month debt. Those behaviors must consume H4 rather than add a mutable debt/blocking authority. They remain functional Membership behavior and do not introduce the identity/session/role/authorization model reserved for KAN-298.
+KAN-463 consumes the H4 projection without introducing a second economic authority.
 
-H1–H4 introduce no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
+Athlete presentation is per charge:
+
+- `pending` uses a yellow signal;
+- `overdue` uses a red signal;
+- `settled` uses the normal light/dark-compatible presentation.
+
+The functional H5 block is derived as `blocked_for_prior_debt`. It is true if and only if at least one charge belongs to a civil month before the current civil month and H4 has already classified that charge as `overdue`.
+
+This deliberately preserves H2/H4 extension semantics:
+
+- a prior-month charge with a still-effective extension remains H4 `pending` while `asOfDate <= effectiveDueDate` and therefore does not block;
+- once `asOfDate > effectiveDueDate`, H4 derives `overdue`; if the charge is from a prior month, H5 then blocks;
+- a current-month charge may already be `overdue` and appear red without causing `blocked_for_prior_debt`;
+- when payments make the relevant prior charge H4 `settled`, H5 clears the block by recomputation.
+
+Coach and Athlete consume the same derived `debtExperience` from the Membership read model. UI components present that projection only; they do not compare due dates or recompute debt rules.
+
+H5 is non-monetary. Existing H4 balances remain grouped by persisted currency. H5 does not sum unlike currencies, define a cross-currency account total or introduce FX conversion.
+
+H5 adds no table, schema field, migration, mutable blocking state, session, role, permission or authorization rule. Blocking is functional Membership behavior inside the application and remains separate from the identity/authentication/authorization model reserved for KAN-298.
+
+H1–H5 introduce no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
