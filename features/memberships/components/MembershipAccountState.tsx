@@ -1,15 +1,17 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
 import { Badge } from '@ui/badge'
-import type { deriveMembershipAccountState, explainMonthlyChargeEconomics } from '@/lib/memberships/billing'
+import type { deriveMembershipAccountState, deriveMembershipDebtExperience, explainMonthlyChargeEconomics } from '@/lib/memberships/billing'
 
 type AccountState = ReturnType<typeof deriveMembershipAccountState>
 type EconomicHistory = Array<ReturnType<typeof explainMonthlyChargeEconomics>>
+type DebtExperience = ReturnType<typeof deriveMembershipDebtExperience>
 
 export function MembershipAccountState({
   locale,
   labels,
   accountState,
   economicHistory,
+  debtExperience,
 }: {
   locale: 'es' | 'en'
   labels: {
@@ -32,9 +34,11 @@ export function MembershipAccountState({
     pending: string
     overdue: string
     noHistory: string
+    priorDebtBlocked: string
   }
   accountState: AccountState
   economicHistory: EconomicHistory
+  debtExperience: DebtExperience
 }) {
   const formatMoney = (minor: number, currency: string) => {
     const formatted = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
@@ -59,6 +63,15 @@ export function MembershipAccountState({
 
   return (
     <section className='space-y-4'>
+      {debtExperience.blockedForPriorDebt && (
+        <p
+          role='alert'
+          data-membership-blocked='true'
+          className='rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-950 dark:border-red-900 dark:bg-red-950/30 dark:text-red-100'
+        >
+          {labels.priorDebtBlocked}
+        </p>
+      )}
       <div className='flex flex-wrap items-center justify-between gap-3'>
         <h3 className='font-medium'>{labels.title}</h3>
         <div className='flex flex-wrap gap-2'>
