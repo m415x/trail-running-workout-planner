@@ -869,3 +869,117 @@ export function deriveMembershipAccountState(input: {
     ),
   }
 }
+
+
+export type EconomicRevisionState = 'historical' | 'current'
+export type EconomicPaymentRevisionState = EconomicRevisionState | 'voided'
+
+/**
+ * Builds an explanatory H4 projection for one persisted MonthlyCharge.
+ *
+ * This preserves the source facts as structured history rather than inventing a
+ * synthetic ledger or a total event chronology that the underlying contracts
+ * do not provide.
+ */
+export function explainMonthlyChargeEconomics(input: {
+  teamId: string
+  cutoffDate: string
+  monthlyChargeId: string
+  terms: AthleteBillingTerms
+  charge: MonthlyChargeCandidate
+  globalDueDateHistory: GlobalDueDateExceptionRevision[]
+  reductionHistory: MonthlyChargeReductionRevision[]
+  extensionHistory: MonthlyChargeExtensionRevision[]
+  paymentHistory: PaymentRevision[]
+}) {
+  parseDate(input.cutoffDate)
+
+  if (
+    input.terms.id !== input.charge.billingTermsId
+    || input.terms.athleteId !== input.charge.athleteId
+  ) {
+    throw new Error('Billing terms identity does not match the MonthlyCharge context')
+  }
+
+  if (input.globalDueDateHistory.some(revision =>
+    revision.teamId !== input.teamId
+    || revision.year !== input.charge.year
+    || revision.month !== input.charge.month
+  )) {
+    throw new Error('Global due-date history does not match the requested team/month context')
+  }
+
+  if (input.reductionHistory.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Reduction history does not match the MonthlyCharge context')
+  }
+
+  if (input.extensionHistory.some(revision => !sameChargeRevision(revision, input.charge))) {
+    throw new Error('Extension history does not match the MonthlyCharge context')
+  }
+
+  if (input.paymentHistory.some(revision => revision.monthlyChargeId !== input.monthlyChargeId)) {
+    throw new Error('Payment history does not match the MonthlyCharge context')
+  }
+
+  const account = deriveMembershipAccountState({
+    cutoffDate: input.cutoffDate,
+    charges: [{
+      id: input.monthlyChargeId,
+      charge: input.charge,
+      paymentRevisions: input.paymentHistory,
+    }],
+  })
+
+  const result = account.charges[0]
+  if (!result) {
+    throw new Error('Unable to derive H4 MonthlyCharge result')
+  }
+
+  return {
+    condition: {
+      billingTermsId: input.terms.id,
+      monthlyAmountMinor: input.terms.monthlyAmountMinor,
+      currency: input.terms.currency,
+      effectiveFrom: input.terms.effectiveFrom,
+      effectiveUntil: input.terms.effectiveUntil,
+    },
+    charge: {
+      monthlyChargeId: input.monthlyChargeId,
+      year: input.charge.year,
+      month: input.charge.month,
+      baseAmountMinor: input.charge.baseAmountMinor,
+      amountDueMinor: input.charge.amountDueMinor,
+      currency: input.charge.currency,
+      baseDueDate: input.charge.baseDueDate,
+      effectiveDueDate: input.charge.effectiveDueDate,
+    },
+    globalDueDateHistory: input.globalDueDateHistory.map(revision => ({
+      ...revision,
+      state: revision.isCurrent ? 'current' as const : 'historical' as const,
+    })),
+    reductionHistory: input.reductionHistory.map(revision => ({
+      ...revision,
+      state: revision.isCurrent ? 'current' as const : 'historical' as const,
+    })),
+    extensionHistory: input.extensionHistory.map(revision => ({
+      ...revision,
+      state: revision.isCurrent ? 'current' as const : 'historical' as const,
+    })),
+    paymentHistory: input.paymentHistory.map(revision => ({
+      ...revision,
+      state: revision.isCurrent && revision.voided
+        ? 'voided' as const
+        : revision.isCurrent
+          ? 'current' as const
+          : 'historical' as const,
+    })),
+    result: {
+      status: result.status,
+      amountDueMinor: result.amountDueMinor,
+      paidMinor: result.paidMinor,
+      remainingMinor: result.remainingMinor,
+      effectiveDueDate: result.effectiveDueDate,
+      currency: result.currency,
+    },
+  }
+}
