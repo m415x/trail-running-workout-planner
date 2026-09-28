@@ -147,3 +147,19 @@ Both stories support keeping the durable source-of-truth order, focused implemen
 KAN-282 improved task sizing and deferred the complete project gate until closure, but retry discipline remained the clearest weakness: repeated Jira creation attempts, dialog hypotheses and the inventory-test edit exceeded the intended two-attempt strategy. KAN-282 also exposed branch-aware source retrieval and durable shell state as explicit failure modes.
 
 For a future v2, classify the current observations as follows: **keep** source-of-truth ordering, focused verification, manual walkthrough and closure documentation; **revise** retry-budget enforcement and evidence-state tracking; **new failure mode** branch/default-branch search ambiguity and transient-component ownership not represented by structural tests. No v2 rules are published by this record.
+
+### KAN-462 — harness-eval-v1
+
+- Redundant/repeated tool calls: low; one full `billing.ts` reload was used during implementation after earlier focused reads, otherwise retrieval stayed path/section scoped.
+- Unnecessary large/full-source reloads: 1 observed (`billing.ts`); no repeated large documentation reloads after bootstrap.
+- Equivalent failed-operation loops: 0; retry budget respected: yes. Jira subtask creation hit one transient Atlassian database outage, then creation switched to the legacy create action after service recovery instead of repeating the same failing mechanism.
+- Context/source-of-truth mistakes: 0 material. A multi-currency aggregate risk was identified before implementation and resolved by deriving balances per persisted currency rather than inventing conversion.
+- Durable information unnecessarily requested from human: 0.
+- Premature task/branch creation or reopened settled decisions: 0; task/branch creation followed explicit decomposition approval.
+- Unnecessary local/full-gate requests during implementation: 0; focused TDD was used and the full gate remained reserved for KAN-493 closure.
+- Unsupported verification claims: 0. A structural integration test that was already GREEN when introduced was explicitly not recorded as RED evidence.
+- Missed acceptance criteria attributable to workflow/context handling: 0 known before closure walkthrough/full gate.
+- Corrective human interventions attributable to harness behavior: 0; human responses during TDD supplied expected execution evidence and surfaced normal failing assertions/typecheck output.
+- Durable documentation/handoff complete: yes; memberships architecture, documentation index and KAN-493 handoff were updated before final gate.
+- Evidence that reduced context/tool usage harmed correctness: none observed. Focused tests exposed legacy caller/type and UI presentation mismatches before closure.
+- Notes for post-experiment v2 (do not change v1 yet): explicit evidence-state tracking continued to prevent false RED/GREEN claims; retry-budget discipline worked for the transient Jira outage. Structural tests remain regression evidence, not substitutes for the manual closure walkthrough.
