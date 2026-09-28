@@ -75,7 +75,7 @@ function createFixture() {
   const insertUser=sqlite.prepare(`
     INSERT INTO users
     (id,is_deleted,created_at,updated_at,role,user_name,email,first_name,last_name)
-    VALUES (?,0,?,?,'athlete',?,?,?,?,?)
+    VALUES (?,0,?,?,'athlete',?,?,?,?)
   `)
   const insertAthlete=sqlite.prepare(`
     INSERT INTO athlete_profiles
