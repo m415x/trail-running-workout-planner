@@ -1,12 +1,11 @@
 import { and, eq, isNull, ne, or } from 'drizzle-orm'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
+import * as schema from '@/db/schema'
 import { athleteGroups, athleteProfiles } from '@/db/schema'
 
-export function getEligibleAthletesForSportingGroup<
-  TSchema extends Record<string, unknown> = Record<string, never>,
->(input: {
-  db: BetterSQLite3Database<TSchema>
+export function getEligibleAthletesForSportingGroup(input: {
+  db: BetterSQLite3Database<typeof schema>
   teamId: string
   groupId: string
 }) {
