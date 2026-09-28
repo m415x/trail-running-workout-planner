@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the approved KAN-473 decomposition and the KAN-504 H1 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the completed KAN-504 H1 baseline and the KAN-505 H2 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Agent harness
 
@@ -58,9 +58,11 @@ KAN-464 closure evidence includes the H1–H5 cross-contract regression, focused
 
 The legacy `memberships` table is preserved but is not the authority for the new economic domain. Epic 5 adds no authentication/session/role/permission model, gateway/webhook/checkout model or generic settings framework. Differential training fees and other additional charges remain an explicit future extension and must not be represented as a second membership or by deforming `MonthlyCharge`.
 
-KAN-473 — Consolidación funcional y UX pre-beta del MVP — is the current epic and runs before KAN-298. Its approved story sequence is KAN-504 → KAN-505 → KAN-506 → KAN-507 → KAN-508, with KAN-504 as the next story. KAN-298 remains the following phase after KAN-473; KAN-472 remains post-auth.
+KAN-473 — Consolidación funcional y UX pre-beta del MVP — is the current epic and runs before KAN-298. KAN-504 H1 has completed its Coach-workflow consolidation: explicit Sporting group / Planning subgroup vocabulary, canonical group-transfer entry points, transactional Base-plan → Variant persistence/review, and a read-only RaceCourse → planning-impact projection based only on persisted catalog links. Its final story gate was GREEN across tests, lint, typecheck, i18n, production build, SQLite lifecycle and remote Supabase verification (45/45 application tables with RLS).
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-473.md`](handoffs/kan-473.md), which points a fresh chat to KAN-504 while preserving KAN-298 as the next phase after KAN-473.
+After KAN-504 integration, KAN-505 — H2 · Hacer explicable la generación semanal — is the next story. KAN-505 must explain the existing weekly generation engine and real decision provenance without turning the weekly pattern into a rigid calendar or replacing reconciliation/ownership semantics. KAN-298 remains the phase after KAN-473; KAN-472 remains post-auth.
+
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-473.md`](handoffs/kan-473.md), which points a fresh chat to KAN-505 while preserving KAN-298 as the next phase after KAN-473.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
