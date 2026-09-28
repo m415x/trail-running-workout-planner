@@ -33,6 +33,7 @@ export interface RaceCoursePlanningImpactLinkedEntry {
   planningCohort: {
     id: string
     name: string
+    groupId?: string
   } | null
 }
 
@@ -58,7 +59,16 @@ export function projectRaceCoursePlanningImpact(input: {
 }): RaceCoursePlanningImpactItem[] {
   return input.linkedEntries
     .filter((entry) => entry.raceCourseId === input.raceCourseId)
-    .map((entry) => ({
+    .map((entry) => {
+      if (
+        entry.planningCohort
+        && entry.planningCohort.groupId
+        && entry.planningCohort.groupId !== entry.plan.groupId
+      ) {
+        throw new Error('Planning subgroup must belong to the same sporting group as the plan')
+      }
+
+      return {
       competitionEntryId: entry.competitionEntry.id,
       competitionName: entry.competitionEntry.name,
       competitionDate: entry.competitionEntry.date,
@@ -72,7 +82,8 @@ export function projectRaceCoursePlanningImpact(input: {
       groupCode: `${entry.group.categoryCode}${entry.group.levelCode}`,
       planningCohortId: entry.planningCohort?.id ?? null,
       planningCohortName: entry.planningCohort?.name ?? null,
-    }))
+      }
+    })
     .sort((first, second) => (
       first.groupCode.localeCompare(second.groupCode)
       || first.planKind.localeCompare(second.planKind)
