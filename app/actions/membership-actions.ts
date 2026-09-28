@@ -103,3 +103,25 @@ export async function registerManualPaymentAction(input: {
 }) {
   return handlers.registerManualPayment(input)
 }
+
+
+export async function correctManualPaymentAction(input: {
+  athleteId: string
+  monthlyChargeId: string
+  paymentId: string
+  amountMinor: number
+  paymentMethod: 'cash' | 'bank_transfer'
+  paidAt: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.correctManualPayment(input)
+}
+
+export async function voidManualPaymentAction(input: {
+  athleteId: string
+  monthlyChargeId: string
+  paymentId: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.voidManualPayment(input)
+}
