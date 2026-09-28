@@ -11,6 +11,7 @@ import {
   planningCohortMemberships,
 } from '@/db/schema'
 import { assignAthleteToGroupSynchronously } from '@/lib/athletes/group-assignment'
+import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
 import { resolveAthleteGroupOnDate } from '@/lib/planning-cohorts/planning-resolution'
 
 function createDatabase() {
@@ -366,6 +367,59 @@ describe('assignAthleteToGroup SQLite integration', () => {
         null,
       )
       assert.equal(fixture.db.select().from(groupHistoryRecords).all().length, 0)
+    } finally {
+      fixture.sqlite.close()
+    }
+  })
+})
+
+
+describe('assignAthleteToGroup Server Action boundary', () => {
+  it('routes validated form input through the canonical SQLite assignment and preserves navigation side effects', async () => {
+    const fixture = createDatabase()
+    const effects: string[] = []
+
+    try {
+      fixture.insertMembership({ id: 'open-action', startDate: '2026-06-01' })
+
+      const action = createAthleteGroupAssignmentAction({
+        db: fixture.db,
+        teamId: 'team_1',
+        createId: () => 'history-action',
+        now: () => '2026-09-28T15:00:00.000Z',
+        today: () => '2026-09-28',
+        revalidatePath: (path) => effects.push(`revalidate:${path}`),
+        redirect: (path) => effects.push(`redirect:${path}`),
+      })
+
+      const formData = new FormData()
+      formData.set('athleteId', 'athlete-1')
+      formData.set('newGroupId', 'group-new')
+      formData.set('effectiveDate', '2026-09-20')
+      formData.set('reason', 'Cambio desde la acción')
+      formData.set('locale', 'en')
+
+      const result = await action({}, formData)
+
+      assert.deepEqual(result, {})
+      assert.equal(
+        fixture.db.select({ groupId: athleteProfiles.groupId })
+          .from(athleteProfiles)
+          .get()?.groupId,
+        'group-new',
+      )
+      assert.equal(
+        fixture.db.select({ endDate: planningCohortMemberships.endDate })
+          .from(planningCohortMemberships)
+          .where(eq(planningCohortMemberships.id, 'open-action'))
+          .get()?.endDate,
+        '2026-09-19',
+      )
+      assert.deepEqual(effects, [
+        'revalidate:/en/dashboard/athletes',
+        'revalidate:/en/dashboard/athletes/athlete-1',
+        'redirect:/en/dashboard/athletes/athlete-1',
+      ])
     } finally {
       fixture.sqlite.close()
     }
