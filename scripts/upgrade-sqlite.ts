@@ -151,6 +151,7 @@ function repairFalselyReconciledBillingH2Metadata(): void {
       'global_monthly_due_date_exceptions',
       'monthly_charge_reductions',
       'monthly_charge_extensions',
+    'payment_revisions',
     ]
     const presentH2Tables = h2Tables.filter(table => tables.has(table))
 
