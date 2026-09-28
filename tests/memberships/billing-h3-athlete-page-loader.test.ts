@@ -55,6 +55,7 @@ test('athlete membership page loader exposes H3 payment history and derived char
     teamId: 'team_1',
     athleteId: 'athlete-1',
     onDate: '2026-09-27',
+    cutoffDate: '2026-09-27',
   })
 
   assert.deepEqual(model.monthlyCharges, [{
