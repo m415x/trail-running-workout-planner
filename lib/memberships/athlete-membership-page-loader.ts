@@ -82,8 +82,8 @@ export function createAthleteMembershipPageLoader<TDatabase>({
           month: charge.month,
           currency: charge.currency,
           amountDueMinor: charge.amountDueMinor,
-          paidAmountMinor: balance.paidAmountMinor,
-          remainingAmountMinor: balance.remainingAmountMinor,
+          paidAmountMinor: balance.paidMinor,
+          remainingAmountMinor: balance.remainingMinor,
         }
       }),
       reductionHistory,
