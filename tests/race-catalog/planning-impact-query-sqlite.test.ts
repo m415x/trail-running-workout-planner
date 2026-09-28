@@ -116,6 +116,7 @@ function createFixture() {
     VALUES (?,0,?,?,?,?,?,?,?,NULL)
   `)
   insertPlan.run('base-s2',now,now,'group-s2',null,null,'Plan base S2','active')
+  insertPlan.run('base-m1',now,now,'group-m1',null,null,'Plan base M1','active')
   insertPlan.run('variant-s2',now,now,'group-s2','cohort-s2','base-s2','Short Trail primavera · Variante','draft')
   insertPlan.run('variant-m1',now,now,'group-m1','cohort-m1','base-m1','Maratón montaña · Variante','draft')
   insertPlan.run('foreign-plan',now,now,'group-x1',null,null,'Foreign','active')
