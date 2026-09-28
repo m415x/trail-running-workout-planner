@@ -12,6 +12,8 @@ import type {
   MonthlyChargeExtensionPersistencePort,
   PersistedMonthlyChargeExtensionRevision,
   PersistedMonthlyCharge,
+  PaymentPersistencePort,
+  PersistedPaymentRevision,
 } from './billing-persistence'
 
 export type SqliteBillingDatabase = {
@@ -26,6 +28,8 @@ export type SqliteBillingDatabase = {
     athleteId: string,
     charges: MonthlyChargeCandidate[],
   ) => Promise<void>
+  listPaymentRevisions?: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
+  insertPaymentRevision?: (revision: PersistedPaymentRevision) => Promise<void>
   listGlobalDueDateExceptionRevisions: (
     teamId: string,
     year: number,
@@ -86,7 +90,7 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort & PaymentPersistencePort {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
@@ -112,6 +116,20 @@ export function createSqliteBillingPersistencePort(
       }
 
       await database.insertMonthlyCharges(teamId, athleteId, charges)
+    },
+
+    async listPaymentRevisions(monthlyChargeId) {
+      if (!database.listPaymentRevisions) {
+        throw new Error('SQLite billing database does not support Payment reads')
+      }
+      return database.listPaymentRevisions(monthlyChargeId)
+    },
+
+    async insertPaymentRevision(revision) {
+      if (!database.insertPaymentRevision) {
+        throw new Error('SQLite billing database does not support Payment inserts')
+      }
+      await database.insertPaymentRevision(revision)
     },
 
     listGlobalDueDateExceptionRevisions: (teamId, year, month) =>
