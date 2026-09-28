@@ -375,6 +375,88 @@ describe('assignAthleteToGroup SQLite integration', () => {
 
 
 describe('assignAthleteToGroup Server Action boundary', () => {
+  it('returns to the destination sporting group when the group workflow supplies matching context', async () => {
+    const fixture = createDatabase()
+    const effects: string[] = []
+
+    try {
+      const action = createAthleteGroupAssignmentAction({
+        db: fixture.db,
+        teamId: 'team_1',
+        createId: () => 'history-group-return',
+        now: () => '2026-09-28T15:00:00.000Z',
+        today: () => '2026-09-28',
+        revalidatePath: (path) => effects.push(`revalidate:${path}`),
+        redirect: (path) => effects.push(`redirect:${path}`),
+      })
+
+      const formData = new FormData()
+      formData.set('athleteId', 'athlete-1')
+      formData.set('newGroupId', 'group-new')
+      formData.set('effectiveDate', '2026-09-20')
+      formData.set('reason', 'Traslado desde grupo')
+      formData.set('locale', 'en')
+      formData.set('returnContext', 'group:group-new')
+
+      const result = await action({}, formData)
+
+      assert.deepEqual(result, {})
+      assert.equal(
+        fixture.db.select({ groupId: athleteProfiles.groupId })
+          .from(athleteProfiles)
+          .get()?.groupId,
+        'group-new',
+      )
+      assert.deepEqual(effects, [
+        'revalidate:/en/dashboard/athletes',
+        'revalidate:/en/dashboard/athletes/athlete-1',
+        'revalidate:/en/dashboard/groups',
+        'revalidate:/en/dashboard/groups/group-new',
+        'redirect:/en/dashboard/groups/group-new',
+      ])
+    } finally {
+      fixture.sqlite.close()
+    }
+  })
+
+  it('rejects a sporting-group return context that does not match the assignment destination', async () => {
+    const fixture = createDatabase()
+    const effects: string[] = []
+
+    try {
+      const action = createAthleteGroupAssignmentAction({
+        db: fixture.db,
+        teamId: 'team_1',
+        createId: () => 'history-invalid-return',
+        now: () => '2026-09-28T15:00:00.000Z',
+        today: () => '2026-09-28',
+        revalidatePath: (path) => effects.push(`revalidate:${path}`),
+        redirect: (path) => effects.push(`redirect:${path}`),
+      })
+
+      const formData = new FormData()
+      formData.set('athleteId', 'athlete-1')
+      formData.set('newGroupId', 'group-new')
+      formData.set('effectiveDate', '2026-09-20')
+      formData.set('reason', 'Contexto inconsistente')
+      formData.set('locale', 'en')
+      formData.set('returnContext', 'group:group-old')
+
+      const result = await action({}, formData)
+
+      assert.match(result.error ?? '', /context|grupo|group/i)
+      assert.equal(
+        fixture.db.select({ groupId: athleteProfiles.groupId })
+          .from(athleteProfiles)
+          .get()?.groupId,
+        'group-old',
+      )
+      assert.deepEqual(effects, [])
+    } finally {
+      fixture.sqlite.close()
+    }
+  })
+
   it('routes validated form input through the canonical SQLite assignment and preserves navigation side effects', async () => {
     const fixture = createDatabase()
     const effects: string[] = []
