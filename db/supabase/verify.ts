@@ -9,6 +9,7 @@ const applicationTables = [
   'macrocycles', 'intensity_strategies', 'load_strategies', 'memberships', 'mesocycles', 'microcycles',
   'team_economic_policies', 'athlete_billing_terms', 'monthly_charges',
   'global_monthly_due_date_exceptions', 'monthly_charge_reductions', 'monthly_charge_extensions',
+  'payment_revisions',
   'microcycle_intensity_targets', 'physiology_records', 'field_performance_test_events', 'field_performance_tests',
   'planning_cohort_memberships', 'planning_cohorts', 'planning_modification_records',
   'race_courses', 'race_editions', 'race_events', 'race_registrations',
@@ -204,6 +205,44 @@ async function main() {
     ) && h2ConstraintNames.every(constraintName => presentH2Constraints.has(constraintName))
     console.log(`H2 billing persistence contract: ${h2BillingContractValid ? 'OK' : 'FAIL'}`)
 
+    const h3PaymentIndexes = await sql<{ indexname: string; indexdef: string }[]>`
+      select indexname, indexdef
+      from pg_indexes
+      where schemaname = 'public'
+        and tablename = 'payment_revisions'
+    `
+    const h3PaymentConstraintNames = [
+      'payment_revisions_amount_positive_check',
+      'payment_revisions_method_check',
+      'payment_revisions_monthly_charge_id_monthly_charges_id_fk',
+    ]
+    const h3PaymentConstraints = await sql<{ constraint_name: string }[]>`
+      select con.conname as constraint_name
+      from pg_constraint con
+      join pg_class rel on rel.oid = con.conrelid
+      join pg_namespace nsp on nsp.oid = rel.relnamespace
+      where nsp.nspname = 'public'
+        and rel.relname = 'payment_revisions'
+        and con.conname in ${sql(h3PaymentConstraintNames)}
+    `
+    const presentH3PaymentConstraints = new Set(
+      h3PaymentConstraints.map(constraint => constraint.constraint_name),
+    )
+    const h3PaymentContractValid = [
+      'payment_revisions_monthly_charge_idx',
+      'payment_revisions_payment_current_unique',
+    ].every(indexName => h3PaymentIndexes.some(index => index.indexname === indexName))
+      && h3PaymentIndexes.some(index =>
+        index.indexname === 'payment_revisions_payment_current_unique'
+        && index.indexdef.toLowerCase().includes('unique')
+        && index.indexdef.toLowerCase().includes('where')
+        && index.indexdef.toLowerCase().includes('is_current')
+      )
+      && h3PaymentConstraintNames.every(
+        constraintName => presentH3PaymentConstraints.has(constraintName),
+      )
+    console.log(`H3 billing persistence contract: ${h3PaymentContractValid ? 'OK' : 'FAIL'}`)
+
     const occurrence = timingColumns.find(column => column.column_name === 'performed_at')
     const duration = timingColumns.find(column => column.column_name === 'duration_min')
     const timingValid = occurrence?.data_type === 'text' && occurrence.is_nullable === 'YES'
@@ -220,7 +259,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid || !h2BillingContractValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid || !h2BillingContractValid || !h3PaymentContractValid) {
       process.exitCode = 1
     }
   } finally {
