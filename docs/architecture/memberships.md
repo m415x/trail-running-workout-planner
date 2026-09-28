@@ -1,6 +1,6 @@
-# Membership billing foundation and H2 exceptions
+# Membership billing foundation, H2 exceptions and H3 payments
 
-KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. Later Epic 5 stories may extend this contract but must not reinterpret historical H1 or H2 facts.
+KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. KAN-461 adds H3 payments and per-charge balance derivation. Later Epic 5 stories may extend this contract but must not reinterpret historical H1, H2 or H3 facts.
 
 ## Authorities and temporal model
 
@@ -68,6 +68,39 @@ Money presentation derives from persisted `amountMinor` plus `currency`; locale 
 
 KAN-479 also hardened the local operational path required by these flows: H2 SQLite verification/recovery recognizes partially reconciled migration metadata, better-sqlite3 transactions remain synchronous, and Drizzle SQLite mutation statements are explicitly executed rather than relying on lazy statement construction.
 
+## H3 payments and per-charge balance
+
+KAN-461 introduces `Payment` as an explicit historical economic fact associated with one persisted `MonthlyCharge`. It is not a reduction, credit, charge mutation or account-status field. The MVP registers payments manually, and the only admitted methods are `cash` and `bank_transfer`. Mercado Pago remains a transfer provider/destination detail rather than a distinct `paymentMethod`.
+
+`paidAt` is the economic date of the payment and remains distinct from record creation time. Partial and full payments are supported. Effective paid amount is derived from the current non-void revision of each logical Payment identity; historical revisions remain auditable and never contribute twice.
+
+Payment correction and void are append-only revision operations. A correction preserves the logical `paymentId`, closes the previous current revision and appends a replacement revision. A void likewise appends an explicit current void revision instead of deleting or destructively updating the historical fact. Historical revisions are read-only in the Coach UI.
+
+The effective balance for one charge is derived as:
+
+- `paid = sum(current non-void Payment amounts)`
+- `remaining = amountDueMinor - paid`
+
+The effective paid amount may never exceed the H2-effective `amountDueMinor`. H2 reductions are therefore also guarded against lowering the effective amount due below already-effective payments. H3 creates neither credit balance nor automatic redistribution between months.
+
+SQLite persists H3 in `payment_revisions` with a positive-amount check, the closed payment-method set, a charge index and a partial unique current-revision index per logical Payment. PostgreSQL/Supabase migration `0025_robust_thunderbolt_ross.sql` provides the equivalent H3 delta and enables RLS. The generated 0025 snapshot/journal establish the repaired forward migration lineage after the previously missing H1/H2 Supabase snapshots; generated metadata was preserved rather than hand-edited.
+
+The local SQLite lifecycle similarly verifies `payment_revisions` at HEAD. If an existing development database predates H3, the supported recovery path is `pn db:sqlite:upgrade`; application runtime must not assume that merely updating source code mutates an existing local database.
+
+## Coach H3 operations and presentation
+
+The Coach athlete membership surface exposes payment entry, effective paid/remaining amounts and append-only history in ES/EN. Money display continues to derive from persisted minor units plus the persisted charge currency; locale affects formatting only.
+
+Correction controls and explicit void controls are shown only for the current non-void revision. Historical revisions remain visible without mutation controls. The UI delegates all economic validation to the established H3 application/persistence boundary rather than reimplementing overpayment or revision rules.
+
+The Coach surface remains desktop-first with deliberate responsive behavior. H3 does not introduce an aggregate account state, debt classification, blocking or notices.
+
+## Supabase deployment evidence for H3
+
+KAN-461 applied the pending H2/H3 migrations to the verified Supabase environment and then ran the remote verifier successfully. The verified result was 45/45 application tables and 45/45 tables with RLS, with H1, H2 and H3 persistence contracts all reported `OK`.
+
+PostgreSQL truncated two long H2 foreign-key identifiers to its 63-character limit. The verifier therefore validates those H2 foreign keys structurally by source table/column and referenced table/column rather than depending on long constraint names.
+
 ## Reserved for later Epic 5 stories
 
-H2 does not implement payments, credits, balances, derived `settled | pending | overdue` state, notices, Athlete blocking, additional charges, authentication or authorization. It also introduces no implicit proration.
+H4 remains responsible for aggregate account/history semantics such as derived `settled | pending | overdue` state, notices and Athlete blocking. H3 introduces no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
