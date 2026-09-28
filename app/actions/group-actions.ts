@@ -1,13 +1,14 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, isNull, ne, or } from 'drizzle-orm'
+import { and, eq, ne } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
 import { athleteGroups, athleteProfiles } from '@/db/schema'
+import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
 
 const CURRENT_TEAM_ID = 'team_1'
 
@@ -56,38 +57,11 @@ export async function getGroupById(groupId: string) {
 }
 
 export async function getEligibleAthletesForGroup(groupId: string) {
-  const group = await db.query.athleteGroups.findFirst({
-    where: and(
-      eq(athleteGroups.id, groupId),
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-      eq(athleteGroups.isActive, true),
-      eq(athleteGroups.isDeleted, false),
-    ),
+  return getEligibleAthletesForSportingGroup({
+    db,
+    teamId: CURRENT_TEAM_ID,
+    groupId,
   })
-
-  if (!group) return null
-
-  const athletes = await db.query.athleteProfiles.findMany({
-    where: and(
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
-      eq(athleteProfiles.isActive, true),
-      eq(athleteProfiles.isDeleted, false),
-      or(isNull(athleteProfiles.groupId), ne(athleteProfiles.groupId, groupId)),
-    ),
-    with: {
-      user: true,
-      group: true,
-    },
-  })
-
-  athletes.sort((first, second) => {
-    const firstName = `${first.user.lastName} ${first.user.firstName}`
-    const secondName = `${second.user.lastName} ${second.user.firstName}`
-
-    return firstName.localeCompare(secondName, 'es')
-  })
-
-  return { group, athletes }
 }
 
 export async function getGroupWithMembers(groupId: string) {
