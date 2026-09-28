@@ -180,3 +180,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes before final gate; Membership architecture, documentation index and KAN-499 handoff record the H5 contract and KAN-464 entry boundary.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused domain/read-model/UI tests plus cross-surface boundary regressions covered the intended seams; manual walkthrough remains required closure evidence.
 - Notes for post-experiment v2 (do not change v1 yet): querying project issue-type metadata immediately after the first Jira type mismatch avoided a retry loop. Continue distinguishing product-semantic changes from implementation defects and record GREEN-on-introduction regressions honestly.
+
+
+### KAN-504 — harness-eval-v1
+
+- Redundant/repeated tool calls: low; retrieval was generally task-scoped, with a few closure-time full-file reads used to reconcile current contracts.
+- Unnecessary large/full-source reloads: limited; one large competition route read and closure documentation reads were materially tied to integration/reconciliation.
+- Equivalent failed-operation loops: 0 material; retry budget respected: yes. Unexpected GREEN/RED results were diagnosed before changing strategy or assertions.
+- Context/source-of-truth mistakes: 1 minor test-design mistake. The first action-conflict structural test searched the whole action module and produced a false-positive GREEN; it was immediately narrowed to the target action body before implementation evidence was accepted.
+- Durable information unnecessarily requested from human: 0 material. Human execution was requested for the agreed local TDD/full-gate commands and manual walkthroughs.
+- Premature task/branch creation or reopened settled decisions: 0; the existing approved KAN-504 decomposition and story branch remained authoritative.
+- Unnecessary local/full-gate requests during implementation: 0; focused TDD was used per task and the complete project gate was reserved for KAN-520 closure.
+- Unsupported verification claims: 0 retained. Structural tests were treated as structural evidence; runtime/manual walkthroughs and SQLite integrations were used where required.
+- Missed acceptance criteria attributable to workflow/context handling: 0 at closure. Manual walkthrough clarified that the shared-race multi-group visual case was not naturally reproducible from the current seed; automated isolation evidence was recorded instead of fabricating data.
+- Corrective human interventions attributable to harness behavior: 1 minor. The human surfaced that the multi-group walkthrough case could not be reproduced naturally, which led to an evidence-class clarification rather than a product/code change.
+- Durable documentation/handoff complete: yes; planning-cohort and race-catalog planning contracts, architecture/documentation indexes and the KAN-473 handoff now encode the KAN-504 baseline and KAN-505 entry boundary.
+- Evidence that reduced context/tool usage harmed correctness: none observed. The one structural false-positive came from test scope, not reduced retrieval, and was corrected before implementation evidence was accepted.
+- Notes for post-experiment v2 (do not change v1 yet): continue treating structural tests as wiring hints rather than runtime proof. Preserve the distinction between naturally reproducible walkthrough evidence and deterministic automated evidence; do not manufacture demo data solely to satisfy a visual checklist.
