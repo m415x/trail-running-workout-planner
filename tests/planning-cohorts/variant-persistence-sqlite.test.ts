@@ -90,7 +90,7 @@ function createFixture() {
   const insertPlan = sqlite.prepare(`
     INSERT INTO group_training_plans
     (id,is_deleted,created_at,updated_at,group_id,planning_cohort_id,source_group_training_plan_id,title,status,notes)
-    VALUES (?,0,?,?,?,?,?,?,?,?,?)
+    VALUES (?,0,?,?,?,?,?,?,?,?)
   `)
   insertPlan.run('base-1',now,now,'group-1',null,null,'Base M1','active','Base')
   insertPlan.run('base-2',now,now,'group-2',null,null,'Base foreign','active',null)
