@@ -247,6 +247,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               monthlyCharges={membership.monthlyCharges}
               reductionHistory={membership.reductionHistory}
               extensionHistory={membership.extensionHistory}
+              paymentHistory={membership.paymentHistory}
             />
                 </CardContent>
               </AccordionContent>
