@@ -17,6 +17,8 @@ import {
   createAthleteGroupAssignmentAction,
   type AthleteGroupFormState,
 } from '@/lib/athletes/group-assignment-action'
+
+export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 
