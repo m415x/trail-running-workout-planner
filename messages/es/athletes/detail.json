@@ -46,6 +46,25 @@
     "groupPlanFallback": "Se usa el plan base del grupo porque no existe una variante de cohorte aplicable.",
     "viewPlanning": "Ver planificación",
     "planningConflict": "No se pudo resolver una planificación única. Revisá las membresías de cohorte y los planes que cubren esta fecha.",
-    "noActivePlanning": "No hay una planificación activa que cubra la fecha actual para el grupo del atleta."
+    "noActivePlanning": "No hay una planificación activa que cubra la fecha actual para el grupo del atleta.",
+    "membershipAccountTitle": "Estado de cuenta",
+    "membershipTotalBalance": "Saldo total",
+    "membershipPeriod": "Período",
+    "membershipStatus": "Estado",
+    "membershipAmountDue": "Importe",
+    "membershipPaid": "Pagado",
+    "membershipRemaining": "Saldo",
+    "membershipDueDate": "Vencimiento",
+    "membershipEconomicHistory": "Historial económico",
+    "membershipCondition": "Condición",
+    "membershipGlobalException": "Excepción global",
+    "membershipReduction": "Reducción / beca",
+    "membershipExtension": "Prórroga",
+    "membershipPayments": "Pagos",
+    "membershipResult": "Resultado",
+    "membershipSettled": "Al día",
+    "membershipPending": "Pendiente",
+    "membershipOverdue": "Vencida",
+    "membershipNoHistory": "Sin hechos adicionales"
   }
 }
