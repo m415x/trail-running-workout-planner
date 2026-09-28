@@ -6,30 +6,40 @@ function source(path: string) {
   return readFileSync(path, 'utf8')
 }
 
-describe('KAN-518 variant derivation action conflicts', () => {
-  it('validates the reviewed source plan against the subgroup before persistence', () => {
-    const actions = source('app/actions/planning-cohort-actions.ts')
+function actionBody() {
+  const actions = source('app/actions/planning-cohort-actions.ts')
+  const start = actions.indexOf('export async function derivePlanningCohortVariantAction')
+  const end = actions.indexOf('/** Creates an empty cohort', start)
 
-    assert.match(actions, /getPlanningCohortVariantDerivationContext/)
-    assert.match(actions, /sourcePlanId/)
-    assert.match(actions, /basePlans/)
-    assert.match(actions, /planningVariant/)
-    assert.match(actions, /selectedCompetitionEntryIds/)
+  assert.notEqual(start, -1)
+  assert.notEqual(end, -1)
+
+  return actions.slice(start, end)
+}
+
+describe('KAN-518 variant derivation action conflicts', () => {
+  it('revalidates the reviewed subgroup and source plan before persistence', () => {
+    const action = actionBody()
+
+    assert.match(action, /getPlanningCohortVariantDerivationContext/)
+    assert.match(action, /basePlans/)
+    assert.match(action, /planningVariant/)
+    assert.match(action, /sourcePlanId/)
   })
 
   it('rejects selected competitions that do not belong to the reviewed base plan', () => {
-    const actions = source('app/actions/planning-cohort-actions.ts')
+    const action = actionBody()
 
-    assert.match(actions, /competitionEntries/)
-    assert.match(actions, /groupTrainingPlanId/)
-    assert.match(actions, /selectedCompetitionEntryIds/)
-    assert.match(actions, /every|some/)
+    assert.match(action, /competitionEntries/)
+    assert.match(action, /selectedCompetitionEntryIds/)
+    assert.match(action, /every|some/)
+    assert.match(action, /groupTrainingPlanId|competitionEntryIds/)
   })
 
   it('keeps persistence delegated to the canonical transactional authority', () => {
-    const actions = source('app/actions/planning-cohort-actions.ts')
+    const action = actionBody()
 
-    assert.match(actions, /persistPlanningCohortVariantSynchronously/)
-    assert.doesNotMatch(actions, /insert\(groupTrainingPlans\)/)
+    assert.match(action, /persistPlanningCohortVariantSynchronously/)
+    assert.doesNotMatch(action, /insert\(groupTrainingPlans\)/)
   })
 })
