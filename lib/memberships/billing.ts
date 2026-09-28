@@ -777,3 +777,95 @@ export function deriveMonthlyChargePaymentBalance(input: {
     remainingMinor: input.charge.amountDueMinor - paidMinor,
   }
 }
+
+
+export type MembershipChargeStatus = 'settled' | 'pending' | 'overdue'
+
+export type MembershipAccountChargeState = {
+  id: string
+  currency: CurrencyCode
+  amountDueMinor: number
+  paidMinor: number
+  remainingMinor: number
+  effectiveDueDate: string
+  status: MembershipChargeStatus
+}
+
+export type MembershipAccountBalance = {
+  currency: CurrencyCode
+  amountDueMinor: number
+  paidMinor: number
+  remainingMinor: number
+}
+
+/**
+ * Derives the H4 economic account state from persisted H1/H2/H3 facts.
+ *
+ * The cutoff date is an explicit civil date and is never inferred from the
+ * runtime clock or timezone. Monetary totals are grouped by currency so unlike
+ * units are never added together.
+ */
+export function deriveMembershipAccountState(input: {
+  cutoffDate: string
+  charges: Array<{
+    id: string
+    charge: MonthlyChargeCandidate
+    paymentRevisions: PaymentRevision[]
+  }>
+}): {
+  cutoffDate: string
+  charges: MembershipAccountChargeState[]
+  balanceByCurrency: MembershipAccountBalance[]
+} {
+  parseDate(input.cutoffDate)
+
+  const charges = input.charges.map(({ id, charge, paymentRevisions }) => {
+    const balance = deriveMonthlyChargePaymentBalance({
+      charge,
+      monthlyChargeId: id,
+      paymentRevisions,
+    })
+
+    const status: MembershipChargeStatus = balance.remainingMinor === 0
+      ? 'settled'
+      : input.cutoffDate <= charge.effectiveDueDate
+        ? 'pending'
+        : 'overdue'
+
+    return {
+      id,
+      currency: charge.currency,
+      amountDueMinor: balance.amountDueMinor,
+      paidMinor: balance.paidMinor,
+      remainingMinor: balance.remainingMinor,
+      effectiveDueDate: charge.effectiveDueDate,
+      status,
+    }
+  })
+
+  const balances = new Map<CurrencyCode, MembershipAccountBalance>()
+
+  for (const charge of charges) {
+    const current = balances.get(charge.currency) ?? {
+      currency: charge.currency,
+      amountDueMinor: 0,
+      paidMinor: 0,
+      remainingMinor: 0,
+    }
+
+    balances.set(charge.currency, {
+      currency: charge.currency,
+      amountDueMinor: current.amountDueMinor + charge.amountDueMinor,
+      paidMinor: current.paidMinor + charge.paidMinor,
+      remainingMinor: current.remainingMinor + charge.remainingMinor,
+    })
+  }
+
+  return {
+    cutoffDate: input.cutoffDate,
+    charges,
+    balanceByCurrency: [...balances.values()].sort((a, b) =>
+      a.currency.localeCompare(b.currency),
+    ),
+  }
+}
