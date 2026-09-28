@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-503.md`](handoffs/kan-503.md), covering Epic 5 closure and the KAN-298 Phase 6 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the approved KAN-473 decomposition and the KAN-504 H1 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Agent harness
 
@@ -58,9 +58,9 @@ KAN-464 closure evidence includes the H1–H5 cross-contract regression, focused
 
 The legacy `memberships` table is preserved but is not the authority for the new economic domain. Epic 5 adds no authentication/session/role/permission model, gateway/webhook/checkout model or generic settings framework. Differential training fees and other additional charges remain an explicit future extension and must not be represented as a second membership or by deforming `MonthlyCharge`.
 
-KAN-298 — Phase 6 Identity, authentication and authorization — is the next phase. It must begin with the audit already required by Jira: existing Supabase Auth/RLS, users, teams, membership/belonging concepts, roles and server-side flows must be reconciled before new stories or implementation are defined.
+KAN-473 — Consolidación funcional y UX pre-beta del MVP — is the current epic and runs before KAN-298. Its approved story sequence is KAN-504 → KAN-505 → KAN-506 → KAN-507 → KAN-508, with KAN-504 as the next story. KAN-298 remains the following phase after KAN-473; KAN-472 remains post-auth.
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md), and its closure/next-phase baseline is [`handoffs/kan-503.md`](handoffs/kan-503.md).
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-473.md`](handoffs/kan-473.md), which points a fresh chat to KAN-504 while preserving KAN-298 as the next phase after KAN-473.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
