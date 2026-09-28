@@ -25,6 +25,8 @@ test('Coach manual Payment action delegates H3 semantics and revalidates athlete
         calls.push(input)
         return { success: true }
       },
+      correctManualPayment: async () => ({ success: true }),
+      voidManualPayment: async () => ({ success: true }),
     },
     revalidatePath: (path) => {
       paths.push(path)
