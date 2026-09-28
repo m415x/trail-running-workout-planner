@@ -63,6 +63,21 @@ type MembershipActionRuntime = {
     paymentMethod: 'cash' | 'bank_transfer'
     paidAt: string
   }) => Promise<BillingActionResult>
+  correctManualPayment: (input: {
+    teamId: string
+    athleteId: string
+    monthlyChargeId: string
+    paymentId: string
+    amountMinor: number
+    paymentMethod: 'cash' | 'bank_transfer'
+    paidAt: string
+  }) => Promise<BillingActionResult>
+  voidManualPayment: (input: {
+    teamId: string
+    athleteId: string
+    monthlyChargeId: string
+    paymentId: string
+  }) => Promise<BillingActionResult>
 }
 
 type Locale = 'es' | 'en'
@@ -217,6 +232,43 @@ export function createMembershipActionHandlers({
     }) {
       const { locale, ...billingInput } = input
       const result = await runtime.registerManualPayment({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
+      }
+      return result
+    },
+
+    async correctManualPayment(input: {
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.correctManualPayment({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
+      }
+      return result
+    },
+
+    async voidManualPayment(input: {
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.voidManualPayment({
         ...billingInput,
         teamId,
       })
