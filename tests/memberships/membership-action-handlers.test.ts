@@ -37,6 +37,8 @@ test('membership action handlers enforce current team scope and revalidate Coach
       return { success: true as const }
     },
     registerManualPayment: async () => ({ success: true as const }),
+    correctManualPayment: async () => ({ success: true as const }),
+    voidManualPayment: async () => ({ success: true as const }),
   }
 
   const actions = createMembershipActionHandlers({
