@@ -1,0 +1,36 @@
+{
+  "CoachPlanningAudience": {
+    "sportingGroups": {
+      "title": "Grupos deportivos",
+      "description": "Clasificación deportiva estable utilizada para organizar atletas y su entrenamiento.",
+      "new": "Nuevo grupo deportivo",
+      "emptyTitle": "Todavía no hay grupos deportivos",
+      "emptyDescription": "Creá el primer grupo deportivo para organizar atletas y habilitar sus recorridos de planificación.",
+      "viewMembers": "Ver integrantes",
+      "edit": "Editar",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "noDescription": "Sin descripción",
+      "back": "Volver a grupos deportivos",
+      "newTitle": "Nuevo grupo deportivo",
+      "newDescription": "Creá una clasificación deportiva estable combinando categoría y nivel de entrenamiento."
+    },
+    "planningSubgroups": {
+      "title": "Subgrupos de planificación",
+      "description": "Audiencias temporales de atletas de un mismo grupo deportivo que comparten un objetivo de planificación.",
+      "new": "Nuevo subgrupo de planificación",
+      "emptyTitle": "Todavía no hay subgrupos de planificación",
+      "emptyDescription": "Los subgrupos aparecerán acá cuando el Coach cree una audiencia temporal con una planificación compartida.",
+      "sportingGroup": "Grupo deportivo",
+      "currentMembers": "Integrantes vigentes",
+      "active": "Activo",
+      "archived": "Archivado",
+      "noVariant": "Sin variante asociada",
+      "viewDetail": "Ver detalle",
+      "relationshipHelp": "El subgrupo de planificación es temporal y no modifica el grupo deportivo estable del atleta.",
+      "back": "Volver a subgrupos de planificación",
+      "newTitle": "Nuevo subgrupo de planificación",
+      "newDescription": "Creá una audiencia temporal para atletas de un mismo grupo deportivo con un objetivo y una planificación compartidos."
+    }
+  }
+}
