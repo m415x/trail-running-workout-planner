@@ -346,6 +346,32 @@ export async function derivePlanningCohortVariantAction(
   }
 
   try {
+    const context = await getPlanningCohortVariantDerivationContext(cohortId)
+
+    if (!context || context.cohort.status !== 'active') {
+      return { error: 'El subgrupo de planificación ya no está disponible para derivar una variante', values }
+    }
+
+    if (context.cohort.planningVariant) {
+      return { error: 'Este subgrupo de planificación ya tiene una variante', values }
+    }
+
+    const reviewedBasePlan = context.basePlans.find((plan) => plan.id === sourcePlanId)
+    if (!reviewedBasePlan) {
+      return { error: 'El plan base seleccionado ya no está disponible para este subgrupo', values }
+    }
+
+    const reviewedCompetitionIds = new Set(
+      reviewedBasePlan.competitionEntries.map((competition) => competition.id),
+    )
+    const competitionsBelongToBasePlan = selectedCompetitionEntryIds.every(
+      (competitionEntryId) => reviewedCompetitionIds.has(competitionEntryId),
+    )
+
+    if (!competitionsBelongToBasePlan) {
+      return { error: 'Una o más competencias seleccionadas ya no pertenecen al plan base revisado', values }
+    }
+
     persistPlanningCohortVariantSynchronously({
       db,
       teamId: CURRENT_TEAM_ID,
