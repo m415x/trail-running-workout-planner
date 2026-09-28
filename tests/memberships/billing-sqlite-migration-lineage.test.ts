@@ -31,7 +31,7 @@ test('SQLite H3 migration bridges missing H1/H2 snapshots without recreating exi
   ]) {
     assert.doesNotMatch(
       sql,
-      new RegExp(`CREATE TABLE \\`${existingTable}\\``),
+      new RegExp('CREATE TABLE `' + existingTable + '`'),
       `H3 migration must not recreate existing H1/H2 table ${existingTable}`,
     )
   }
