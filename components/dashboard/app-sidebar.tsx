@@ -41,12 +41,12 @@ const navigationItems = [
     icon: Users,
   },
   {
-    label: 'Grupos',
+    label: 'sportingGroups',
     href: '/dashboard/groups',
     icon: UsersRound,
   },
   {
-    label: 'Cohortes',
+    label: 'planningSubgroups',
     href: '/dashboard/cohorts',
     icon: GitBranch,
   },
@@ -84,6 +84,7 @@ export function AppSidebar() {
   const { guardNavigation } = useDashboardDirtyFormGuard()
   const t = useTranslations('WorkoutTemplates')
   const catalog = useTranslations('RaceCatalog')
+  const audience = useTranslations('CoachPlanningAudience')
 
   return (
     <Sidebar collapsible='icon'>
@@ -113,7 +114,11 @@ export function AppSidebar() {
                       ? catalog('navigation')
                       : item.label === 'membership'
                         ? locale === 'en' ? 'Membership' : 'Membresía'
-                        : item.label
+                        : item.label === 'sportingGroups'
+                          ? audience('sportingGroups.title')
+                          : item.label === 'planningSubgroups'
+                            ? audience('planningSubgroups.title')
+                            : item.label
 
                 return (
                   <SidebarMenuItem key={item.href}>

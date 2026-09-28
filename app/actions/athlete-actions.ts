@@ -10,10 +10,12 @@ import { db } from '@/db'
 import {
   athleteGroups,
   athleteProfiles,
-  groupHistoryRecords,
   planningCohortMemberships,
   users,
 } from '@/db/schema'
+import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
+
+export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 
@@ -21,12 +23,7 @@ export interface AthleteFormState {
   error?: string
 }
 
-export interface AthleteGroupFormState {
-  error?: string
-}
-
 const CURRENT_TEAM_ID = 'team_1'
-const locales = ['es', 'en'] as const
 
 const athleteFormSchema = z.object({
   firstName: z.string().trim().min(2, 'Ingresá el nombre del atleta'),
@@ -44,13 +41,6 @@ const athleteFormSchema = z.object({
   locale: z.string().trim().default('es'),
 })
 
-const athleteGroupFormSchema = z.object({
-  athleteId: z.string().trim().min(1, 'No se pudo identificar al atleta'),
-  newGroupId: z.string().trim().min(1, 'Seleccioná un grupo'),
-  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
-  reason: z.string().trim().max(500, 'El motivo no puede superar los 500 caracteres').optional(),
-  locale: z.enum(locales).default('es'),
-})
 
 function nullable(value?: string) {
   return value || null
@@ -337,79 +327,12 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
   }
 }
 
-export async function assignAthleteToGroup(
-  _previousState: AthleteGroupFormState,
-  formData: FormData,
-): Promise<AthleteGroupFormState> {
-  const parsed = athleteGroupFormSchema.safeParse(Object.fromEntries(formData))
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
-  }
-
-  const data = parsed.data
-
-  try {
-    db.transaction((tx) => {
-      const athlete = tx.query.athleteProfiles.findFirst({
-        where: and(
-          eq(athleteProfiles.id, data.athleteId),
-          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
-          eq(athleteProfiles.isDeleted, false),
-        ),
-      }).sync()
-
-      if (!athlete) {
-        throw new Error('Atleta no encontrado')
-      }
-
-      const newGroup = tx.query.athleteGroups.findFirst({
-        where: and(
-          eq(athleteGroups.id, data.newGroupId),
-          eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-          eq(athleteGroups.isActive, true),
-          eq(athleteGroups.isDeleted, false),
-        ),
-      }).sync()
-
-      if (!newGroup) {
-        throw new Error('Grupo no encontrado o inactivo')
-      }
-
-      if (athlete.groupId === newGroup.id) {
-        throw new Error('El atleta ya pertenece al grupo seleccionado')
-      }
-
-      const now = new Date().toISOString()
-
-      tx
-        .update(athleteProfiles)
-        .set({
-          groupId: newGroup.id,
-          updatedAt: now,
-        })
-        .where(eq(athleteProfiles.id, athlete.id))
-        .run()
-
-      tx.insert(groupHistoryRecords).values({
-        id: randomUUID(),
-        athleteId: athlete.id,
-        previousGroupId: athlete.groupId,
-        newGroupId: newGroup.id,
-        changedByUserId: null,
-        date: data.effectiveDate,
-        reason: data.reason || null,
-        createdAt: now,
-        updatedAt: now,
-      }).run()
-    })
-  } catch (error) {
-    console.error('Error changing athlete group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo cambiar el grupo' }
-  }
-
-  const athleteDetailPath = `${athletesPath(data.locale)}/${data.athleteId}`
-  revalidatePath(athletesPath(data.locale))
-  revalidatePath(athleteDetailPath)
-  redirect(athleteDetailPath)
-}
+export const assignAthleteToGroup = createAthleteGroupAssignmentAction({
+  db,
+  teamId: CURRENT_TEAM_ID,
+  createId: randomUUID,
+  now: () => new Date().toISOString(),
+  today: getCurrentDateInArgentina,
+  revalidatePath,
+  redirect,
+})

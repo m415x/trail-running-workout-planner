@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Eye, Pencil, UsersRound } from 'lucide-react'
+import { ArrowLeft, Eye, Pencil, UserPlus, UsersRound } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getGroupWithMembers } from '@/app/actions/group-actions'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
@@ -19,6 +20,7 @@ function getInitials(firstName: string, lastName: string) {
 
 export default async function GroupDetailPage({ params }: GroupDetailPageProps) {
   const { locale, groupId } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanningAudience.sportingGroups' })
   const group = await getGroupWithMembers(groupId)
 
   if (!group) {
@@ -36,37 +38,42 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
         <div className='flex items-start gap-3'>
           <Link
             href={groupsPath}
-            aria-label='Volver al listado de grupos'
+            aria-label={t('backAria')}
             className={buttonVariants({ variant: 'ghost', size: 'icon' })}
           >
             <ArrowLeft />
           </Link>
           <div>
             <div className='flex flex-wrap items-center gap-2'>
-              <h2 className='text-3xl font-bold tracking-tight'>Grupo {groupCode}</h2>
+              <h2 className='text-3xl font-bold tracking-tight'>{t('detailTitle', { code: groupCode })}</h2>
               <Badge variant={group.isActive ? 'default' : 'secondary'}>
-                {group.isActive ? 'Activo' : 'Inactivo'}
+                {group.isActive ? t('active') : t('inactive')}
               </Badge>
             </div>
-            <p className='text-muted-foreground'>{group.description || 'Sin descripción'}</p>
+            <p className='text-muted-foreground'>{group.description || t('noDescription')}</p>
           </div>
         </div>
 
-        <Link href={`${groupsPath}/${group.id}/edit`} className={buttonVariants({ variant: 'outline' })}>
-          <Pencil /> Editar grupo
-        </Link>
+        <div className='flex flex-wrap gap-2'>
+          <Link href={`${groupsPath}/${group.id}/members/new`} className={buttonVariants()}>
+            <UserPlus /> {t('addMember')}
+          </Link>
+          <Link href={`${groupsPath}/${group.id}/edit`} className={buttonVariants({ variant: 'outline' })}>
+            <Pencil /> {t('editGroup')}
+          </Link>
+        </div>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
             <UsersRound className='size-5' />
-            Integrantes
+            {t('members')}
           </CardTitle>
           <CardDescription>
             {group.athletes.length === 0
-              ? 'Este grupo todavía no tiene atletas asignados.'
-              : `${group.athletes.length} ${group.athletes.length === 1 ? 'atleta asignado' : 'atletas asignados'} · ${activeMembers} ${activeMembers === 1 ? 'activo' : 'activos'}`}
+              ? t('noMembers')
+              : t('membersSummary', { total: group.athletes.length, active: activeMembers })}
           </CardDescription>
         </CardHeader>
 
@@ -76,10 +83,10 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Atleta</TableHead>
-                    <TableHead>Contacto</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead className='w-16'><span className='sr-only'>Acciones</span></TableHead>
+                    <TableHead>{t('athlete')}</TableHead>
+                    <TableHead>{t('contact')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className='w-16'><span className='sr-only'>{t('actions')}</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -110,14 +117,14 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                             variant='outline'
                             className={athlete.isActive ? 'border-emerald-500/40 text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground'}
                           >
-                            {athlete.isActive ? 'Activo' : 'Inactivo'}
+                            {athlete.isActive ? t('active') : t('inactive')}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Link
                             href={athletePath}
-                            aria-label={`Ver detalle de ${fullName}`}
-                            title='Ver atleta'
+                            aria-label={t('viewAthlete', { name: fullName })}
+                            title={t('viewAthlete', { name: fullName })}
                             className={buttonVariants({ variant: 'ghost', size: 'icon-sm' })}
                           >
                             <Eye />

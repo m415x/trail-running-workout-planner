@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 import { db } from '@/db'
 import { athleteGroups, athleteProfiles } from '@/db/schema'
+import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
 
 const CURRENT_TEAM_ID = 'team_1'
 
@@ -52,6 +53,14 @@ export async function getGroupById(groupId: string) {
       eq(athleteGroups.teamId, CURRENT_TEAM_ID),
       eq(athleteGroups.isDeleted, false),
     ),
+  })
+}
+
+export async function getEligibleAthletesForGroup(groupId: string) {
+  return getEligibleAthletesForSportingGroup({
+    db,
+    teamId: CURRENT_TEAM_ID,
+    groupId,
   })
 }
 

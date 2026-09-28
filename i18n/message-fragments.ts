@@ -5,6 +5,7 @@ export const messageFragmentPaths = [
   'planning/training-goals',
   'planning/workout-templates',
   'planning/sessions',
+  'planning/coach-audience',
   'competitions/race-distance-policy',
   'competitions/race-catalog',
   'realized-training/workouts',

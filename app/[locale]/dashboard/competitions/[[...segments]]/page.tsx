@@ -11,6 +11,7 @@ import {
   Search,
 } from 'lucide-react'
 
+import { db } from '@/db'
 import { CatalogForm } from '@/features/race-catalog/components/CatalogForm'
 import { CourseRegistration } from '@/features/race-registration/components/CourseRegistration'
 import { EditionRegistrations } from '@/features/race-registration/components/EditionRegistrations'
@@ -23,6 +24,7 @@ import {
   listRaceEditions,
   listRaceEvents,
 } from '@/lib/race-catalog/catalog-repository'
+import { loadRaceCoursePlanningImpactSynchronously } from '@/lib/race-catalog/planning-impact-query'
 import { deriveRaceCourseProfile } from '@/lib/race-catalog/race-course-derived-profile'
 import { projectRaceEditionRegistrations } from '@/lib/competitions/race-registration-application'
 import { loadCourseRegistrationData } from '@/lib/competitions/race-registration-course-query'
@@ -359,6 +361,11 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
 
   if (segments.length !== 5) notFound()
   const derived = deriveRaceCourseProfile(course)
+  const planningImpact = loadRaceCoursePlanningImpactSynchronously({
+    db,
+    teamId: 'team_1',
+    raceCourseId: course.id,
+  })
   const interaction = await loadCourseRegistrationData(
     {
       teamId: 'team_1',
@@ -408,6 +415,60 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
       </Card>
 
       <CourseRegistration event={event} edition={edition} course={course} interaction={interaction} locale={locale} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('planningImpact.title')}</CardTitle>
+          <CardDescription>{t('planningImpact.description')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {planningImpact.length === 0 ? (
+            <p className='text-sm text-muted-foreground'>{t('planningImpact.empty')}</p>
+          ) : (
+            <div className='space-y-3'>
+              {planningImpact.map((impact) => (
+                <div
+                  key={impact.competitionEntryId}
+                  className='flex flex-col gap-3 rounded-lg border p-4 lg:flex-row lg:items-center lg:justify-between'
+                >
+                  <div className='min-w-0 space-y-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <p className='font-medium'>{impact.planTitle}</p>
+                      <Badge variant={impact.planKind === 'variant' ? 'secondary' : 'outline'}>
+                        {t(`planningImpact.planKinds.${impact.planKind}`)}
+                      </Badge>
+                    </div>
+                    <div className='flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground'>
+                      <span>{t('planningImpact.sportingGroup')}: {impact.groupCode}</span>
+                      {impact.planningCohortName && (
+                        <span>{t('planningImpact.planningSubgroup')}: {impact.planningCohortName}</span>
+                      )}
+                      <span>{t('planningImpact.priority')}: {impact.competitionPriority}</span>
+                      <span>{t('planningImpact.status')}: {t(`planningImpact.competitionStatuses.${impact.competitionStatus}`)}</span>
+                    </div>
+                  </div>
+                  <div className='flex flex-wrap gap-2'>
+                    {impact.planningCohortId && (
+                      <Link
+                        href={`/dashboard/cohorts/${impact.planningCohortId}`}
+                        className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                      >
+                        {t('planningImpact.openPlanningSubgroup')}
+                      </Link>
+                    )}
+                    <Link
+                      href={`/dashboard/planning/${impact.planId}`}
+                      className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                    >
+                      {t('planningImpact.openPlan')} <ChevronRight />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

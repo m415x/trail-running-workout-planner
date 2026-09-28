@@ -137,6 +137,27 @@
       "declared_by_source": "Declared by source",
       "derived_from_source_rules": "Derived from source rules",
       "manual_reference": "Manual reference"
+    },
+    "planningImpact": {
+      "title": "Planning impact",
+      "description": "Plans and audiences that explicitly reference this course through a persisted competition.",
+      "empty": "This course is not referenced by any plan in the team.",
+      "sportingGroup": "Sporting group",
+      "planningSubgroup": "Planning subgroup",
+      "priority": "Priority",
+      "status": "Competition status",
+      "openPlan": "Open plan",
+      "openPlanningSubgroup": "Open planning subgroup",
+      "planKinds": {
+        "base": "Base plan",
+        "variant": "Variant"
+      },
+      "competitionStatuses": {
+        "planned": "Planned",
+        "confirmed": "Confirmed",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      }
     }
   }
 }

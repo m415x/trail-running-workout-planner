@@ -68,6 +68,11 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     ? competitionContextResult.context.primaryCompetition?.id ?? null
     : null
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const cohortPath = plan.planningCohortId
+    ? (locale === 'es'
+      ? `/dashboard/cohorts/${plan.planningCohortId}`
+      : `/${locale}/dashboard/cohorts/${plan.planningCohortId}`)
+    : null
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
   const loadStrategy: LoadStrategyDraft | null = plan.loadStrategy
@@ -294,6 +299,19 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <Badge variant='secondary'>Grupo {groupCode}</Badge>
           </div>
           <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
+          {plan.planningCohort && plan.sourceGroupTrainingPlan && cohortPath && (
+            <div className='mt-3 flex flex-wrap items-center gap-2 text-sm'>
+              <Badge variant='outline'>
+                {locale === 'en' ? 'Planning subgroup' : 'Subgrupo de planificación'}: {plan.planningCohort.name}
+              </Badge>
+              <Badge variant='outline'>
+                {locale === 'en' ? 'Base plan' : 'Plan base'}: {plan.sourceGroupTrainingPlan.title}
+              </Badge>
+              <Link href={cohortPath} className={buttonVariants({ variant:'ghost', size:'sm' })}>
+                {locale === 'en' ? 'Back to planning subgroup' : 'Volver al subgrupo de planificación'}
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

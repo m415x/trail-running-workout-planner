@@ -6,6 +6,16 @@
       "development": "Development: progressively improve the group's capabilities.",
       "base": "Aerobic base: build or rebuild general capacity with conservative progression.",
       "maintenance": "Maintenance: preserve current capacity without significant progression."
+    },
+    "planningAudience": {
+      "terms": {
+        "sportingGroup": "Sporting group",
+        "planningSubgroup": "Planning subgroup",
+        "basePlan": "Base plan",
+        "variant": "Variant"
+      },
+      "sportingGroupHelp": "The athlete's stable sporting classification within the team.",
+      "planningSubgroupHelp": "A temporary planning audience made up of athletes from the same sporting group who share an objective."
     }
   }
 }

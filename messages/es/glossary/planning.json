@@ -6,6 +6,16 @@
       "development": "Desarrollo: mejorar progresivamente las capacidades del grupo.",
       "base": "Base aeróbica: construir o recuperar capacidad general con una progresión conservadora.",
       "maintenance": "Mantenimiento: conservar la capacidad actual sin una progresión importante."
+    },
+    "planningAudience": {
+      "terms": {
+        "sportingGroup": "Grupo deportivo",
+        "planningSubgroup": "Subgrupo de planificación",
+        "basePlan": "Plan base",
+        "variant": "Variante"
+      },
+      "sportingGroupHelp": "Clasificación deportiva estable del atleta dentro del equipo.",
+      "planningSubgroupHelp": "Audiencia temporal de planificación formada por atletas de un mismo grupo deportivo con un objetivo compartido."
     }
   }
 }

@@ -137,6 +137,27 @@
       "declared_by_source": "Declarada por la fuente",
       "derived_from_source_rules": "Derivada de reglas de la fuente",
       "manual_reference": "Referencia manual"
+    },
+    "planningImpact": {
+      "title": "Impacto en planificación",
+      "description": "Planes y audiencias que referencian explícitamente este recorrido mediante una competencia persistida.",
+      "empty": "Este recorrido no está referenciado por ningún plan del equipo.",
+      "sportingGroup": "Grupo deportivo",
+      "planningSubgroup": "Subgrupo de planificación",
+      "priority": "Prioridad",
+      "status": "Estado de competencia",
+      "openPlan": "Abrir plan",
+      "openPlanningSubgroup": "Abrir subgrupo",
+      "planKinds": {
+        "base": "Plan base",
+        "variant": "Variante"
+      },
+      "competitionStatuses": {
+        "planned": "Planificada",
+        "confirmed": "Confirmada",
+        "completed": "Completada",
+        "cancelled": "Cancelada"
+      }
     }
   }
 }
