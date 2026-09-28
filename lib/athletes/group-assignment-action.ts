@@ -48,6 +48,13 @@ export function createAthleteGroupAssignmentAction<
     }
 
     const data = parsed.data
+    const returnGroupId = data.returnContext?.startsWith('group:')
+      ? data.returnContext.slice('group:'.length)
+      : null
+
+    if (returnGroupId !== null && returnGroupId !== data.newGroupId) {
+      return { error: 'El contexto de retorno no coincide con el grupo deportivo destino' }
+    }
 
     try {
       assignAthleteToGroupSynchronously({
@@ -70,9 +77,6 @@ export function createAthleteGroupAssignmentAction<
 
     const listPath = athletesPath(data.locale)
     const detailPath = `${listPath}/${data.athleteId}`
-    const returnGroupId = data.returnContext?.startsWith('group:')
-      ? data.returnContext.slice('group:'.length)
-      : null
 
     dependencies.revalidatePath(listPath)
     dependencies.revalidatePath(detailPath)
