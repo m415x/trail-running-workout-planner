@@ -13,10 +13,7 @@ import {
   planningCohortMemberships,
   users,
 } from '@/db/schema'
-import {
-  createAthleteGroupAssignmentAction,
-  type AthleteGroupFormState,
-} from '@/lib/athletes/group-assignment-action'
+import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
 
 export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
@@ -27,7 +24,6 @@ export interface AthleteFormState {
 }
 
 const CURRENT_TEAM_ID = 'team_1'
-const locales = ['es', 'en'] as const
 
 const athleteFormSchema = z.object({
   firstName: z.string().trim().min(2, 'Ingresá el nombre del atleta'),
