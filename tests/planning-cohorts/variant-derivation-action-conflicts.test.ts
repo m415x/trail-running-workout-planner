@@ -30,10 +30,9 @@ describe('KAN-518 variant derivation action conflicts', () => {
   it('rejects selected competitions that do not belong to the reviewed base plan', () => {
     const action = actionBody()
 
-    assert.match(action, /competitionEntries/)
-    assert.match(action, /selectedCompetitionEntryIds/)
-    assert.match(action, /every|some/)
-    assert.match(action, /groupTrainingPlanId|competitionEntryIds/)
+    assert.match(action, /reviewedBasePlan\.competitionEntries/)
+    assert.match(action, /selectedCompetitionEntryIds\.every/)
+    assert.match(action, /reviewedCompetitionIds\.has/)
   })
 
   it('keeps persistence delegated to the canonical transactional authority', () => {
