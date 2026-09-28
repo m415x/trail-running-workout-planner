@@ -871,6 +871,57 @@ export function deriveMembershipAccountState(input: {
 }
 
 
+export type MembershipDebtExperienceCharge = MembershipAccountChargeState & {
+  year: number
+  month: number
+}
+
+/**
+ * Derives the H5 functional debt experience from already-derived H4 charge
+ * states. H5 never reinterprets due dates, extensions, payments or money.
+ *
+ * A prior-debt block exists only when a charge belongs to a civil month before
+ * the as-of month and H4 has already classified that charge as overdue.
+ */
+export function deriveMembershipDebtExperience(input: {
+  asOfDate: string
+  charges: MembershipDebtExperienceCharge[]
+}): {
+  asOfDate: string
+  blockedForPriorDebt: boolean
+  blockingChargeIds: string[]
+  charges: MembershipDebtExperienceCharge[]
+} {
+  const asOf = parseDate(input.asOfDate)
+  const currentYear = asOf.getUTCFullYear()
+  const currentMonth = asOf.getUTCMonth() + 1
+
+  const blockingChargeIds = input.charges
+    .filter((charge) => {
+      if (!Number.isInteger(charge.year) || charge.year < 1) {
+        throw new Error('H5 debt experience requires a valid charge year')
+      }
+      if (!Number.isInteger(charge.month) || charge.month < 1 || charge.month > 12) {
+        throw new Error('H5 debt experience requires a valid charge month')
+      }
+
+      const isPriorPeriod =
+        charge.year < currentYear
+        || (charge.year === currentYear && charge.month < currentMonth)
+
+      return isPriorPeriod && charge.status === 'overdue'
+    })
+    .map((charge) => charge.id)
+
+  return {
+    asOfDate: input.asOfDate,
+    blockedForPriorDebt: blockingChargeIds.length > 0,
+    blockingChargeIds,
+    charges: input.charges.map((charge) => ({ ...charge })),
+  }
+}
+
+
 export type EconomicRevisionState = 'historical' | 'current'
 export type EconomicPaymentRevisionState = EconomicRevisionState | 'voided'
 
