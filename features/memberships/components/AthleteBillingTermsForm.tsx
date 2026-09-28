@@ -8,6 +8,8 @@ import {
   applyMonthlyChargeReductionAction,
   applyMonthlyChargeExtensionAction,
   registerManualPaymentAction,
+  correctManualPaymentAction,
+  voidManualPaymentAction,
 } from '@/app/actions/membership-actions'
 import { submitAthleteBillingTermsForm } from '@/lib/memberships/athlete-billing-terms-form-submit'
 import { Button } from '@ui/button'
@@ -341,17 +343,92 @@ function ManualPaymentSection({
       </form>
 
       {paymentHistory.length > 0 && (
-        <div className='space-y-2'>
+        <div className='space-y-3'>
           <h4 className='text-sm font-medium'>{es ? 'Historial de pagos' : 'Payment history'}</h4>
-          <ul className='text-sm text-muted-foreground'>
+          <ul className='space-y-3 text-sm text-muted-foreground'>
             {paymentHistory.map((revision) => {
               const currency = monthlyCharges.find((charge) => charge.id === revision.monthlyChargeId)?.currency
               return (
-                <li key={revision.revisionId}>
-                  {formatAuditDate(revision.paidAt, locale)} · {currency ? formatAuditAmount(revision.amountMinor, currency, locale) : revision.amountMinor / 100}
-                  {' · '}{revision.paymentMethod === 'cash' ? (es ? 'Efectivo' : 'Cash') : (es ? 'Transferencia bancaria' : 'Bank transfer')}
-                  {revision.voided ? ` · ${es ? 'Anulado' : 'Voided'}` : ''}
-                  {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+                <li key={revision.revisionId} className='rounded-lg border p-3'>
+                  <div>
+                    {formatAuditDate(revision.paidAt, locale)} · {currency ? formatAuditAmount(revision.amountMinor, currency, locale) : revision.amountMinor / 100}
+                    {' · '}{revision.paymentMethod === 'cash' ? (es ? 'Efectivo' : 'Cash') : (es ? 'Transferencia bancaria' : 'Bank transfer')}
+                    {revision.voided ? ` · ${es ? 'Anulado' : 'Voided'}` : ''}
+                    {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+                  </div>
+                  {revision.isCurrent && !revision.voided && (
+                    <div className='mt-3 grid gap-3 sm:grid-cols-2'>
+                      <form
+                        action={(formData) => {
+                          setError(null)
+                          setSuccess(null)
+                          startTransition(async () => {
+                            const amount = Number(formData.get('correctedPaymentAmount'))
+                            const paymentMethod = String(formData.get('correctedPaymentMethod')) as 'cash' | 'bank_transfer'
+                            const result = await correctManualPaymentAction({
+                              athleteId,
+                              monthlyChargeId: revision.monthlyChargeId,
+                              paymentId: revision.paymentId,
+                              amountMinor: Math.round(amount * 100),
+                              paymentMethod,
+                              paidAt: String(formData.get('correctedPaidAt') ?? ''),
+                              locale,
+                            })
+                            if (!result.success) {
+                              setError(es ? 'No se pudo corregir el pago.' : 'Could not correct the payment.')
+                              return
+                            }
+                            setSuccess(es ? 'Pago corregido.' : 'Payment corrected.')
+                          })
+                        }}
+                        className='grid gap-2'
+                      >
+                        <Input
+                          name='correctedPaymentAmount'
+                          type='number'
+                          min='0.01'
+                          step='0.01'
+                          defaultValue={(revision.amountMinor / 100).toFixed(2)}
+                          required
+                        />
+                        <select
+                          name='correctedPaymentMethod'
+                          defaultValue={revision.paymentMethod}
+                          className='h-10 rounded-md border border-input bg-background px-3'
+                        >
+                          <option value='cash'>{es ? 'Efectivo' : 'Cash'}</option>
+                          <option value='bank_transfer'>{es ? 'Transferencia bancaria' : 'Bank transfer'}</option>
+                        </select>
+                        <Input name='correctedPaidAt' type='date' defaultValue={revision.paidAt} required />
+                        <Button type='submit' variant='outline' disabled={isPending}>
+                          {es ? 'Corregir pago' : 'Correct payment'}
+                        </Button>
+                      </form>
+                      <form
+                        action={() => {
+                          setError(null)
+                          setSuccess(null)
+                          startTransition(async () => {
+                            const result = await voidManualPaymentAction({
+                              athleteId,
+                              monthlyChargeId: revision.monthlyChargeId,
+                              paymentId: revision.paymentId,
+                              locale,
+                            })
+                            if (!result.success) {
+                              setError(es ? 'No se pudo anular el pago.' : 'Could not void the payment.')
+                              return
+                            }
+                            setSuccess(es ? 'Pago anulado.' : 'Payment voided.')
+                          })
+                        }}
+                      >
+                        <Button type='submit' variant='outline' disabled={isPending}>
+                          {es ? 'Anular pago' : 'Void payment'}
+                        </Button>
+                      </form>
+                    </div>
+                  )}
                 </li>
               )
             })}
