@@ -1,5 +1,6 @@
 import {
   deriveMembershipAccountState,
+  deriveMembershipDebtExperience,
   deriveMonthlyChargePaymentBalance,
   explainMonthlyChargeEconomics,
 } from './billing'
@@ -100,6 +101,22 @@ export function createAthleteMembershipPageLoader<TDatabase>({
       })),
     })
 
+    const debtExperience = deriveMembershipDebtExperience({
+      asOfDate: cutoffDate,
+      charges: accountState.charges.map((charge) => {
+        const monthlyCharge = monthlyCharges.find((item) => item.id === charge.id)
+        if (!monthlyCharge) {
+          throw new Error('H5 debt experience cannot resolve MonthlyCharge period identity')
+        }
+
+        return {
+          ...charge,
+          year: monthlyCharge.year,
+          month: monthlyCharge.month,
+        }
+      }),
+    })
+
     const economicHistory = monthlyCharges.flatMap((charge) => {
       const terms = billingTerms.find((item) => item.id === charge.billingTermsId)
       if (!terms) return []
@@ -145,6 +162,7 @@ export function createAthleteMembershipPageLoader<TDatabase>({
         }
       }),
       accountState,
+      debtExperience,
       economicHistory,
       reductionHistory,
       extensionHistory,
