@@ -28,6 +28,7 @@ test('Coach H4 account UI renders derived status, balances and explainable histo
         pending: 'Pendiente',
         overdue: 'Vencida',
         noHistory: 'Sin hechos adicionales',
+        priorDebtBlocked: 'Bloqueado por deuda vencida de un mes anterior',
       }}
       accountState={{
         cutoffDate: '2026-09-13',
@@ -45,6 +46,22 @@ test('Coach H4 account UI renders derived status, balances and explainable histo
           amountDueMinor: 2_000_000,
           paidMinor: 750_000,
           remainingMinor: 1_250_000,
+        }],
+      }}
+      debtExperience={{
+        asOfDate: '2026-09-13',
+        blockedForPriorDebt: false,
+        blockingChargeIds: [],
+        charges: [{
+          id: 'charge-1',
+          year: 2026,
+          month: 9,
+          currency: 'ARS',
+          amountDueMinor: 2_000_000,
+          paidMinor: 750_000,
+          remainingMinor: 1_250_000,
+          effectiveDueDate: '2026-09-12',
+          status: 'overdue',
         }],
       }}
       economicHistory={[{
