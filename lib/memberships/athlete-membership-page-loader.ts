@@ -1,7 +1,9 @@
+import { deriveMonthlyChargePaymentBalance } from './billing'
 import type {
   BillingPersistencePort,
   MonthlyChargeExtensionPersistencePort,
   MonthlyChargeReductionPersistencePort,
+  PaymentPersistencePort,
 } from './billing-persistence'
 import { loadAthleteMembership } from './athlete-membership-loader'
 import { createAthleteMembershipSnapshotReader } from './athlete-membership-snapshot-reader'
@@ -13,6 +15,7 @@ export function createAthleteMembershipPageLoader<TDatabase>({
     BillingPersistencePort
     & Partial<MonthlyChargeReductionPersistencePort>
     & Partial<MonthlyChargeExtensionPersistencePort>
+    & Partial<PaymentPersistencePort>
 }) {
   const readSnapshot = createAthleteMembershipSnapshotReader({ createPort })
 
@@ -43,6 +46,11 @@ export function createAthleteMembershipPageLoader<TDatabase>({
           monthlyCharges.map((charge) => port.listMonthlyChargeExtensionRevisions!(charge.id)),
         )).flat()
       : []
+    const paymentHistory = port.listPaymentRevisions
+      ? (await Promise.all(
+          monthlyCharges.map((charge) => port.listPaymentRevisions!(charge.id)),
+        )).flat()
+      : []
 
     const membership = await loadAthleteMembership({
       locale,
@@ -59,15 +67,28 @@ export function createAthleteMembershipPageLoader<TDatabase>({
 
     return {
       ...membership,
-      monthlyCharges: monthlyCharges.map((charge) => ({
-        id: charge.id,
-        year: charge.year,
-        month: charge.month,
-        currency: charge.currency,
-        amountDueMinor: charge.amountDueMinor,
-      })),
+      monthlyCharges: monthlyCharges.map((charge) => {
+        const balance = deriveMonthlyChargePaymentBalance({
+          charge,
+          monthlyChargeId: charge.id,
+          paymentRevisions: paymentHistory.filter(
+            (revision) => revision.monthlyChargeId === charge.id,
+          ),
+        })
+
+        return {
+          id: charge.id,
+          year: charge.year,
+          month: charge.month,
+          currency: charge.currency,
+          amountDueMinor: charge.amountDueMinor,
+          paidAmountMinor: balance.paidAmountMinor,
+          remainingAmountMinor: balance.remainingAmountMinor,
+        }
+      }),
       reductionHistory,
       extensionHistory,
+      paymentHistory,
     }
   }
 }
