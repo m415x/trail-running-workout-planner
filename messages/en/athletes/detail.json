@@ -46,6 +46,25 @@
     "groupPlanFallback": "The group base plan is used because there is no applicable cohort variant.",
     "viewPlanning": "View planning",
     "planningConflict": "A unique planning could not be resolved. Review cohort memberships and plans covering this date.",
-    "noActivePlanning": "There is no active planning covering the current date for the athlete’s group."
+    "noActivePlanning": "There is no active planning covering the current date for the athlete’s group.",
+    "membershipAccountTitle": "Account status",
+    "membershipTotalBalance": "Total balance",
+    "membershipPeriod": "Period",
+    "membershipStatus": "Status",
+    "membershipAmountDue": "Amount due",
+    "membershipPaid": "Paid",
+    "membershipRemaining": "Balance",
+    "membershipDueDate": "Due date",
+    "membershipEconomicHistory": "Economic history",
+    "membershipCondition": "Terms",
+    "membershipGlobalException": "Global exception",
+    "membershipReduction": "Reduction / scholarship",
+    "membershipExtension": "Extension",
+    "membershipPayments": "Payments",
+    "membershipResult": "Result",
+    "membershipSettled": "Settled",
+    "membershipPending": "Pending",
+    "membershipOverdue": "Overdue",
+    "membershipNoHistory": "No additional facts"
   }
 }
