@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq, isNull, ne } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -304,8 +304,8 @@ export async function getPlanningCohortVariantDerivationContext(cohortId: string
   const basePlans = await db.query.groupTrainingPlans.findMany({
     where: and(
       eq(groupTrainingPlans.groupId, cohort.groupId),
-      eq(groupTrainingPlans.planningCohortId, null),
-      eq(groupTrainingPlans.sourceGroupTrainingPlanId, null),
+      isNull(groupTrainingPlans.planningCohortId),
+      isNull(groupTrainingPlans.sourceGroupTrainingPlanId),
       eq(groupTrainingPlans.isDeleted, false),
     ),
     with: { group: true },
