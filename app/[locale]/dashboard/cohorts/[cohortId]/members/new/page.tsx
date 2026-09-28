@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getAthletesForPlanningCohort } from '@/app/actions/planning-cohort-actions'
 import { PlanningCohortAssignmentForm } from '@/features/planning-cohorts/components/PlanningCohortMembershipForms'
@@ -14,6 +15,7 @@ function todayInArgentina() {
 
 export default async function NewCohortMembershipPage({ params }: NewCohortMembershipPageProps) {
   const { locale, cohortId } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanningAudience.planningSubgroups' })
   const context = await getAthletesForPlanningCohort(cohortId)
   if (!context || context.cohort.status !== 'active') notFound()
 
@@ -22,10 +24,10 @@ export default async function NewCohortMembershipPage({ params }: NewCohortMembe
   return (
     <div className='mx-auto w-full max-w-2xl space-y-6'>
       <div className='space-y-2'>
-        <Link href={detailPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}><ArrowLeft /> Volver a la cohorte</Link>
+        <Link href={detailPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}><ArrowLeft /> {t('backToSubgroup')}</Link>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Asignar atleta</h2>
-          <p className='text-muted-foreground'>Agregá un período fechado a {context.cohort.name}. El grupo deportivo del atleta no cambia.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('assignPageTitle')}</h2>
+          <p className='text-muted-foreground'>{t('assignPageDescription', { name: context.cohort.name })}</p>
         </div>
       </div>
       <PlanningCohortAssignmentForm locale={locale} cohortId={cohortId} athletes={context.athletes} defaultStartDate={todayInArgentina()} />
