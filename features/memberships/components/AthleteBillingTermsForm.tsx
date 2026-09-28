@@ -7,6 +7,7 @@ import {
   changeAthleteBillingTermsAction,
   applyMonthlyChargeReductionAction,
   applyMonthlyChargeExtensionAction,
+  registerManualPaymentAction,
 } from '@/app/actions/membership-actions'
 import { submitAthleteBillingTermsForm } from '@/lib/memberships/athlete-billing-terms-form-submit'
 import { Button } from '@ui/button'
@@ -19,6 +20,19 @@ type MonthlyChargeOption = {
   month: number
   currency: string
   amountDueMinor: number
+  paidAmountMinor?: number
+  remainingAmountMinor?: number
+}
+
+type PaymentRevisionHistory = {
+  revisionId: string
+  paymentId: string
+  monthlyChargeId: string
+  amountMinor: number
+  paymentMethod: 'cash' | 'bank_transfer'
+  paidAt: string
+  voided: boolean
+  isCurrent: boolean
 }
 
 type ReductionRevisionHistory = {
@@ -245,6 +259,109 @@ function MonthlyChargeExtensionForm({
   )
 }
 
+
+function ManualPaymentSection({
+  athleteId,
+  locale,
+  monthlyCharges,
+  paymentHistory,
+}: {
+  athleteId: string
+  locale: 'es' | 'en'
+  monthlyCharges: MonthlyChargeOption[]
+  paymentHistory: PaymentRevisionHistory[]
+}) {
+  const es = locale === 'es'
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+
+  function submitPayment(formData: FormData) {
+    setError(null)
+    setSuccess(null)
+    const monthlyChargeId = String(formData.get('paymentChargeId') ?? '')
+    const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
+    const amount = Number(formData.get('paymentAmount'))
+    const paymentMethod = String(formData.get('paymentMethod')) as 'cash' | 'bank_transfer'
+
+    if (!selectedCharge || !Number.isFinite(amount) || amount <= 0) {
+      setError(es ? 'Completá un pago válido.' : 'Enter a valid payment.')
+      return
+    }
+
+    startTransition(async () => {
+      const result = await registerManualPaymentAction({
+        athleteId,
+        monthlyChargeId,
+        amountMinor: Math.round(amount * 100),
+        paymentMethod,
+        paidAt: String(formData.get('paidAt') ?? ''),
+        locale,
+      })
+      if (!result.success) {
+        setError(es ? 'No se pudo registrar el pago.' : 'Could not register the payment.')
+        return
+      }
+      setSuccess(es ? 'Pago registrado.' : 'Payment registered.')
+    })
+  }
+
+  return (
+    <section className='space-y-4'>
+      <h3 className='font-medium'>{es ? 'Pagos' : 'Payments'}</h3>
+      <div className='grid gap-3 sm:grid-cols-2'>
+        {monthlyCharges.map((charge) => (
+          <div key={charge.id} className='rounded-lg border p-4 text-sm'>
+            <div className='font-medium'>{charge.year}-{String(charge.month).padStart(2, '0')}</div>
+            <div>{es ? 'Pagado' : 'Paid'}: {formatAuditAmount(charge.paidAmountMinor ?? 0, charge.currency, locale)}</div>
+            <div>{es ? 'Restante' : 'Remaining'}: {formatAuditAmount(charge.remainingAmountMinor ?? charge.amountDueMinor, charge.currency, locale)}</div>
+          </div>
+        ))}
+      </div>
+      <form action={submitPayment} className='grid gap-4 sm:grid-cols-2'>
+        <select name='paymentChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value=''>{es ? 'Seleccionar cuota' : 'Select charge'}</option>
+          {monthlyCharges.map((charge) => (
+            <option key={charge.id} value={charge.id}>
+              {charge.year}-{String(charge.month).padStart(2, '0')}
+            </option>
+          ))}
+        </select>
+        <Input name='paymentAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
+        <select name='paymentMethod' required className='h-10 rounded-md border border-input bg-background px-3'>
+          <option value='cash'>{es ? 'Efectivo' : 'Cash'}</option>
+          <option value='bank_transfer'>{es ? 'Transferencia bancaria' : 'Bank transfer'}</option>
+        </select>
+        <Input name='paidAt' type='date' required />
+        {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
+        {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
+        <Button type='submit' disabled={isPending}>
+          {isPending ? (es ? 'Registrando…' : 'Registering…') : (es ? 'Registrar pago' : 'Register payment')}
+        </Button>
+      </form>
+
+      {paymentHistory.length > 0 && (
+        <div className='space-y-2'>
+          <h4 className='text-sm font-medium'>{es ? 'Historial de pagos' : 'Payment history'}</h4>
+          <ul className='text-sm text-muted-foreground'>
+            {paymentHistory.map((revision) => {
+              const currency = monthlyCharges.find((charge) => charge.id === revision.monthlyChargeId)?.currency
+              return (
+                <li key={revision.revisionId}>
+                  {formatAuditDate(revision.paidAt, locale)} · {currency ? formatAuditAmount(revision.amountMinor, currency, locale) : revision.amountMinor / 100}
+                  {' · '}{revision.paymentMethod === 'cash' ? (es ? 'Efectivo' : 'Cash') : (es ? 'Transferencia bancaria' : 'Bank transfer')}
+                  {revision.voided ? ` · ${es ? 'Anulado' : 'Voided'}` : ''}
+                  {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+    </section>
+  )
+}
+
 export function AthleteBillingTermsForm({
   athleteId,
   locale,
@@ -252,6 +369,7 @@ export function AthleteBillingTermsForm({
   monthlyCharges = [],
   reductionHistory = [],
   extensionHistory = [],
+  paymentHistory = [],
 }: {
   athleteId: string
   locale: 'es' | 'en'
@@ -259,6 +377,7 @@ export function AthleteBillingTermsForm({
   monthlyCharges?: MonthlyChargeOption[]
   reductionHistory?: ReductionRevisionHistory[]
   extensionHistory?: ExtensionRevisionHistory[]
+  paymentHistory?: PaymentRevisionHistory[]
 }) {
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -370,6 +489,12 @@ export function AthleteBillingTermsForm({
             locale={locale}
             monthlyCharges={monthlyCharges}
             extensionHistory={extensionHistory}
+          />
+          <ManualPaymentSection
+            athleteId={athleteId}
+            locale={locale}
+            monthlyCharges={monthlyCharges}
+            paymentHistory={paymentHistory}
           />
         </div>
       )}
