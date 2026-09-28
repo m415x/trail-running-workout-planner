@@ -17,8 +17,7 @@ test('SQLite H3 migration bridges missing H1/H2 snapshots without recreating exi
     'utf8',
   )
 
-  assert.match(sql, /CREATE TABLE [^
-]*payment_revisions/)
+  assert.match(sql, /CREATE TABLE `payment_revisions`/)
   assert.match(sql, /payment_revisions_monthly_charge_idx/)
   assert.match(sql, /payment_revisions_payment_current_unique/)
 
@@ -32,7 +31,7 @@ test('SQLite H3 migration bridges missing H1/H2 snapshots without recreating exi
   ]) {
     assert.doesNotMatch(
       sql,
-      new RegExp(`CREATE TABLE [^\\n]*${existingTable}`),
+      new RegExp(`CREATE TABLE \\`${existingTable}\\``),
       `H3 migration must not recreate existing H1/H2 table ${existingTable}`,
     )
   }
