@@ -12,7 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
-- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1/H2 economic contract: temporal policy/terms/charges plus auditable reductions, monthly due-date exceptions and individual extensions.
+- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1/H2/H3 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments and per-charge balance derivation.
 
 ### Monitoring baseline
 
@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-480.md`](handoffs/kan-480.md), covering completed KAN-460 H2 closure and the KAN-461 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-486.md`](handoffs/kan-486.md), covering completed KAN-461 H3 closure and the KAN-462 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
@@ -49,11 +49,13 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 5 is active. KAN-459 H1 is integrated; KAN-460 H2 is complete on its story branch with domain, SQLite, PostgreSQL/Supabase, Coach ES/EN and closure evidence reconciled through KAN-480. KAN-461 is the next Epic 5 story after KAN-460 is integrated into `dev`. Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
+Epics 1–4 are complete. Epic 5 is active. KAN-459 H1, KAN-460 H2 and KAN-461 H3 are complete on their story progression through the current branch. KAN-461 delivers append-only `Payment` history, partial/full manual payments, correction/void lifecycle, per-charge paid/remaining derivation, SQLite and PostgreSQL/Supabase parity, and localized Coach ES/EN operation. Its durable contract is [`architecture/memberships.md`](architecture/memberships.md) and its closure/next-story baseline is [`handoffs/kan-486.md`](handoffs/kan-486.md).
 
-No later epic should infer PAM/MAS/VO2max/HR from the 1000 m result or reintroduce flat-reference pace targets on variable terrain. Monitoring/Training Response, physiology and coach-owned planning remain distinct authorities.
+The verified Supabase environment is current through H3: H1/H2/H3 billing persistence contracts report OK, with 45/45 application tables and 45/45 tables protected by RLS. This evidence belongs to the controlled KAN-461 deployment/verification run; later stories must reverify rather than treating it as timeless deployment state.
 
-KAN-411 is the preceding integrated Sessions baseline. KAN-412 is completed and integrated into `dev`; its implementation passed the local full gate and ES/EN Coach/Athlete walkthrough. See its handoff for exact evidence and the integration baseline. Its canonical contract is `reference_percentage` / `referencePercentage`, with the closed session-prescription options 50/60/70/80/90/100/110/115/120 and Z1-Z5 remaining independent. Supabase production migration 0022 is deliberately deferred to controlled deployment and must not be described as remotely applied. KAN-413 defines `GroupSessionPrescription.durationMin` as explicit positive-or-null coach-planned group duration, distinct from realized duration and individual prediction; Trail/Hills may display it but must not derive athlete-facing pace/speed from it. Its historical handoff records the KAN-413 verification state; the current KAN-408 closure state is in [`handoffs/kan-414.md`](handoffs/kan-414.md). Treat issue keys as navigation pointers and read current Jira before execution.
+KAN-462 — H4 Account status and economic history — is the next Epic 5 story after KAN-461 is integrated into `dev`. H4 may derive aggregate state/history from H1/H2/H3 facts but must not rewrite the append-only Payment authority or introduce a parallel balance model.
+
+Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
 Before starting the next story, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion throughout the story without treating its historical experiment record as current product state.
 
