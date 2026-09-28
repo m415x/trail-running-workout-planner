@@ -36,10 +36,11 @@ Completed epics are consolidated here. History explains evolution and prior deci
 - [`history/epic-2.md`](history/epic-2.md) — planning automation, safe persistence and readiness evidence.
 - [`history/epic-3.md`](history/epic-3.md) — realized training, plan-real monitoring, load/triage, Athlete Stats, competitive catalog/registration and action safety.
 - [`history/epic-4.md`](history/epic-4.md) — canonical 1000 m evidence, RunningReference, execution guidance, factual evolution, lifecycle and safe Coach/Athlete integration.
+- [`history/epic-5.md`](history/epic-5.md) — temporal membership economics, exceptions, payments, derived account state and Coach/Athlete debt experience.
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-499.md`](handoffs/kan-499.md), covering KAN-463 H5 closure and the KAN-464 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-503.md`](handoffs/kan-503.md), covering Epic 5 closure and the KAN-298 Phase 6 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Agent harness
 
@@ -49,17 +50,19 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 5 is active. KAN-459 H1, KAN-460 H2, KAN-461 H3 and KAN-462 H4 are complete through the current story progression once KAN-462 is integrated into `dev`.
+Epics 1–5 are complete through the KAN-464 closure branch. Epic 5 delivered the H1–H5 Membership billing contract: temporal team policy and athlete terms, immutable monthly charges without automatic proration, auditable H2 exceptions, append-only H3 payments, deterministic H4 account state/history and the shared H5 Coach/Athlete debt experience.
 
-KAN-462 delivers deterministic `settled | pending | overdue` account projection from an explicit civil cutoff date, paid/remaining and per-currency account balances derived from H2/H3 facts, an explainable economic history, and localized Coach ES/EN presentation. H4 adds no mutable balance/status persistence or parallel ledger. Its durable contract is [`architecture/memberships.md`](architecture/memberships.md) and its closure/next-story baseline is [`handoffs/kan-493.md`](handoffs/kan-493.md).
+The final H5 blocking rule is precise: `blocked_for_prior_debt` is true only when at least one charge belongs to a civil month before the current civil month and H4 already derives that charge as `overdue`. A prior-month charge under a still-effective extension remains `pending` and does not block. A current-month overdue charge does not create prior-debt blocking. Settlement clears the block by recomputation.
 
-The verified Supabase deployment evidence remains the KAN-461 H3 controlled run: H1/H2/H3 billing persistence contracts reported OK, with 45/45 application tables and 45/45 tables protected by RLS. KAN-462 adds no schema or RLS changes; later stories must reverify current deployment state rather than treating old evidence as timeless.
+KAN-464 closure evidence includes the H1–H5 cross-contract regression, focused persistence/isolation/UI suites, the full SQLite lifecycle scenarios, a local Supabase migration check and a successful remote Supabase verifier reporting H1/H2/H3 billing contracts OK with 45/45 application tables and 45/45 tables protected by RLS. Local `db:supabase:check` and remote `db:supabase:verify` remain distinct evidence classes.
 
-KAN-463 — H5 Experiencia Coach/Athlete y bloqueo por deuda anterior — is the next Epic 5 story after KAN-462 integration. H5 consumes the H4 projection for Coach/Athlete presentation and derived prior-debt blocking; it must not persist a second debt/account-state authority and must remain separate from the KAN-298 identity/session/authorization phase.
+The legacy `memberships` table is preserved but is not the authority for the new economic domain. Epic 5 adds no authentication/session/role/permission model, gateway/webhook/checkout model or generic settings framework. Differential training fees and other additional charges remain an explicit future extension and must not be represented as a second membership or by deforming `MonthlyCharge`.
 
-Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
+KAN-298 — Phase 6 Identity, authentication and authorization — is the next phase. It must begin with the audit already required by Jira: existing Supabase Auth/RLS, users, teams, membership/belonging concepts, roles and server-side flows must be reconciled before new stories or implementation are defined.
 
-Before starting the next story, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion throughout the story without treating its historical experiment record as current product state.
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md), and its closure/next-phase baseline is [`handoffs/kan-503.md`](handoffs/kan-503.md).
+
+Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
 ## Other documentation
 
