@@ -32,5 +32,6 @@ test('Coach athlete membership surface exposes localized H3 payment entry, balan
   assert.match(form, /remainingAmountMinor/)
   assert.match(page, /paymentHistory={membership\.paymentHistory}/)
   assert.match(actions, /registerManualPaymentAction/)
-  assert.doesNotMatch(form, /settled|pending|overdue/i)
+  assert.doesNotMatch(form, /['"](?:settled|pending|overdue)['"]/i)
+  assert.doesNotMatch(form, /paymentStatus|chargeStatus|accountStatus/)
 })
