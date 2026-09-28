@@ -114,7 +114,26 @@
       "assignPageDescription": "Agregá un período fechado a {name}. El grupo deportivo del atleta no cambia.",
       "closePageTitle": "Retirar atleta",
       "closePageDescription": "Cerrá la membresía sin borrar el período ni modificar su grupo deportivo.",
-      "backToSubgroup": "Volver al subgrupo de planificación"
+      "backToSubgroup": "Volver al subgrupo de planificación",
+      "planningSubgroupLabel": "Subgrupo de planificación",
+      "basePlanLabel": "Plan base",
+      "noBasePlans": "No hay planes base disponibles",
+      "noBasePlansDescription": "Este grupo deportivo no tiene un plan base directo disponible para derivar una variante.",
+      "basePlanHelp": "Sólo se muestran planes base directos del mismo grupo deportivo.",
+      "variantName": "Título de la variante",
+      "variantDefaultSuffix": "Variante",
+      "competitionsToCopy": "Competencias a copiar",
+      "competitionsToCopyHelp": "Seleccioná únicamente las competencias que deben formar parte del snapshot de la nueva variante.",
+      "noCompetitionsToCopy": "El plan base seleccionado no tiene competencias disponibles para copiar.",
+      "priorityLabel": "Prioridad",
+      "reviewBeforeCreate": "Revisá antes de crear",
+      "reviewBeforeCreateHelp": "La variante se crea como borrador. No se activará ni copiará sesiones automáticamente.",
+      "creatingVariant": "Creando variante…",
+      "createVariant": "Crear variante",
+      "deriveVariant": "Derivar variante",
+      "deriveVariantTitle": "Derivar variante",
+      "deriveVariantDescription": "Revisá el plan base, el título y las competencias antes de crear un borrador independiente para este subgrupo.",
+      "archivedCannotDerive": "Los subgrupos archivados conservan su historial y no pueden recibir nuevas variantes."
     }
   }
 }
