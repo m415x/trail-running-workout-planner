@@ -4,6 +4,7 @@ import { describe, it } from 'node:test'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 
+import * as schema from '@/db/schema'
 import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
 
 function createFixture() {
@@ -95,7 +96,7 @@ function createFixture() {
   athlete('deleted','team_1','other',1,1)
   athlete('foreign','team_2','foreign-target')
 
-  return { sqlite, db: drizzle(sqlite) }
+  return { sqlite, db: drizzle(sqlite, { schema }) }
 }
 
 describe('KAN-516 eligible sporting group athletes', () => {
