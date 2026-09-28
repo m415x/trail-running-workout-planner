@@ -1,6 +1,6 @@
-# Membership billing foundation, H2 exceptions and H3 payments
+# Membership billing foundation, H2 exceptions, H3 payments and H4 account projection
 
-KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. KAN-461 adds H3 payments and per-charge balance derivation. Later Epic 5 stories may extend this contract but must not reinterpret historical H1, H2 or H3 facts.
+KAN-459 establishes the H1 economic foundation for memberships. KAN-460 extends that foundation with H2 economic exceptions. KAN-461 adds H3 payments and per-charge balance derivation. KAN-462 adds the H4 derived account state and explainable economic history. Later Epic 5 stories may extend this contract but must not reinterpret historical H1, H2 or H3 facts or persist H4 projections as mutable authority.
 
 ## Authorities and temporal model
 
@@ -101,6 +101,38 @@ KAN-461 applied the pending H2/H3 migrations to the verified Supabase environmen
 
 PostgreSQL truncated two long H2 foreign-key identifiers to its 63-character limit. The verifier therefore validates those H2 foreign keys structurally by source table/column and referenced table/column rather than depending on long constraint names.
 
+## H4 account state and explainable economic history
+
+KAN-462 derives account state exclusively from persisted H1/H2/H3 facts. H4 does not add a mutable account-status column, balance ledger or parallel economic authority.
+
+The cutoff date is an explicit civil `YYYY-MM-DD` input. Domain derivation does not consult the runtime clock or runtime timezone. For one charge:
+
+- `remainingMinor === 0` → `settled`
+- `remainingMinor > 0` and `cutoffDate <= effectiveDueDate` → `pending`
+- `remainingMinor > 0` and `cutoffDate > effectiveDueDate` → `overdue`
+
+`effectiveDueDate` is therefore inclusive for `pending`. The calendar day 10 has no independent economic-state meaning; it may support later operational follow-up but does not create a fourth status or override the actual due date.
+
+Paid and remaining values continue to come from the H3 balance projection. Aggregate account balance is derived by persisted currency so unlike monetary units are never summed together or implicitly converted.
+
+H4 also exposes an explainable per-charge projection that relates:
+
+- the applicable `AthleteBillingTerms`;
+- the persisted `MonthlyCharge`;
+- global due-date exception revision history;
+- reduction/scholarship revision history;
+- individual extension revision history;
+- Payment correction/void history;
+- the final derived H4 result at the supplied cutoff date.
+
+This is structured explanation, not a synthetic ledger or invented total chronology. H2/H3 append-only revision authority remains intact. Current, historical and voided facts remain distinguishable.
+
+The athlete Membership read path accepts `cutoffDate` separately from general page `onDate`, gathers the required H1/H2/H3 facts under team + athlete isolation and remains side-effect-free. Reading H4 never materializes charges or mutates exceptions, reductions, extensions or payments.
+
+The Coach athlete Membership surface renders the derived H4 account state, paid/remaining values, per-currency total balance and explainable history in localized ES/EN. The UI formats dates/money only; it does not reimplement economic status or balance rules. Currency codes remain explicit in presentation.
+
 ## Reserved for later Epic 5 stories
 
-H4 remains responsible for aggregate account/history semantics such as derived `settled | pending | overdue` state, notices and Athlete blocking. H3 introduces no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
+KAN-463 H5 owns Coach/Athlete experience built on the H4 projection, including pending/overdue visual signaling and derived `blocked_for_prior_debt` for prior-month debt. Those behaviors must consume H4 rather than add a mutable debt/blocking authority. They remain functional Membership behavior and do not introduce the identity/session/role/authorization model reserved for KAN-298.
+
+H1–H4 introduce no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
