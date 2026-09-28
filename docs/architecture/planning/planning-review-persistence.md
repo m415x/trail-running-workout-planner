@@ -94,7 +94,7 @@ If any operation, audit, journal or revision update fails, the complete asynchro
 - cross-scope rejection without partial state;
 - revision locking and stale-submission rejection.
 
-The general `pn db:verify:supabase` inventory includes `competition_entries`. Do not generate a migration merely to run this probe; create a migration only for a real durable schema delta.
+The general `pn db:supabase:verify` inventory includes `competition_entries`. Do not generate a migration merely to run this probe; create a migration only for a real durable schema delta.
 
 ## End-to-end invariant
 

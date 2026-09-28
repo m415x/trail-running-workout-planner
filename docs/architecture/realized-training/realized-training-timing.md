@@ -6,7 +6,7 @@
 - `performedAt` / `performed_at` is the actual occurrence instant, stored as canonical ISO UTC text in both SQLite and PostgreSQL, consistent with the existing text timestamp convention. Storage is nullable, with no default or historical backfill.
 - `loggedAt` remains the server-generated entry instant. It never substitutes for a missing occurrence instant.
 - New manual capture requires an explicit-offset occurrence timestamp. The dialog starts empty, converts the entered device-local date/time to UTC, and rejects invalid calendar values. Legacy projections remain readable and normalize absent occurrence time to `null`.
-- Duration is `REAL` in SQLite and `double precision` in PostgreSQL. Capture uses hours * 60 + minutes + seconds / 60 without rounding to two decimal places. Floating-point representation is expected; no integer truncation is allowed.
+- Duration is `REAL` in SQLite and `double precision` in PostgreSQL. Capture uses hours \* 60 + minutes + seconds / 60 without rounding to two decimal places. Floating-point representation is expected; no integer truncation is allowed.
 - The existing atomic log + evidence boundary remains authoritative for known/unknown metrics. An empty duration stays unknown; an explicitly entered zero is known. Neither date nor metric similarity creates Session linkage.
 
 ## Migration procedure
@@ -25,14 +25,14 @@ pnpm db:migrate:realized-training:sqlite
 
 The targeted runner executes the reviewed delta atomically, disables foreign keys **before** BEGIN to avoid cascading deletion of evidence during DROP, checks referential integrity before commit, and restores the previous connection setting. Replay on the current schema is a no-op; unexpected/partial schemas are rejected. Do not apply the new baseline to an existing push-managed database. Retain a backup before upgrading a populated development database.
 
-For a fresh SQLite database, `pnpm db:push` creates the current schema. `pnpm db:generate:sqlite` maintains the separate migration history for future changes. The base seed explicitly leaves occurrence time null; its historical fixture metrics are not upgraded into observed evidence.
+For a fresh SQLite database, `pnpm db:sqlite:push` creates the current schema. `pnpm db:sqlite:generate` maintains the separate migration history for future changes. The base seed explicitly leaves occurrence time null; its historical fixture metrics are not upgraded into observed evidence.
 
 PostgreSQL deployment, once the existing project's server-only `.env.local` is configured:
 
 ```sh
-pnpm db:check:supabase
-pnpm db:migrate:supabase
-pnpm db:verify:supabase
+pnpm db:supabase:check
+pnpm db:supabase:migrate
+pnpm db:supabase:verify
 ```
 
 The verifier now checks the four timing columns as well as the existing 34-table/RLS inventory. No credentials or real remote application evidence were available during this implementation session.

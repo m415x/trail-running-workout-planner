@@ -38,7 +38,7 @@ Correction-history reads first prove that the requested athlete belongs to the c
 
 `db/supabase/verify.ts` treats all application tables as protected resources and now includes `workout_log_corrections`. The Supabase gate must fail if that table is missing or if RLS is not enabled.
 
-The current workstation does not have `SUPABASE_DIRECT_URL`, so runtime verification of the new table is deferred until a credentialed environment is available. KAN-294 must not be considered fully closed until the generated migration has been inspected/applied and `pn db:verify:supabase` confirms the table is present with RLS enabled.
+The current workstation does not have `SUPABASE_DIRECT_URL`, so runtime verification of the new table is deferred until a credentialed environment is available. KAN-294 must not be considered fully closed until the generated migration has been inspected/applied and `pn db:supabase:verify` confirms the table is present with RLS enabled.
 
 The verifier currently checks RLS enablement, consistent with the repository's existing Supabase gate. It does not prove the semantic correctness of every policy expression; if direct client-side Supabase access is introduced, policy-behavior tests must become a separate explicit gate.
 

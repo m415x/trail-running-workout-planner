@@ -18,7 +18,7 @@ export const sqliteUpgradeStateContract = {
   },
   legacyPushManaged: {
     description:
-      'The database predates the canonical chain or was evolved through db:push or historical one-off migrators.',
+      'The database predates the canonical chain or was evolved through db:sqlite:push or historical one-off migrators.',
     action:
       'reconcile only a recognized legacy shape, preserve existing data, then establish canonical versioned state',
     preserveExistingData: true,

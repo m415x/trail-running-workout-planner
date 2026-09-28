@@ -23,7 +23,7 @@ test('the supported SQLite upgrade owns the versioned Drizzle chain', () => {
   const command = scripts['db:sqlite:upgrade'] ?? ''
 
   assert.match(command, /sqlite/i)
-  assert.doesNotMatch(command, /db:push/)
+  assert.doesNotMatch(command, /db:sqlite:push/)
 })
 
 test('legacy one-off SQLite migrators are not package entrypoints', () => {
@@ -41,7 +41,6 @@ test('legacy one-off SQLite migrators are not package entrypoints', () => {
   }
 })
 
-
 test('the canonical upgrade contract defines supported legacy-state handling', () => {
   const contractPath = path.join(process.cwd(), 'db', 'sqlite', 'upgrade-contract.ts')
   assert.equal(fs.existsSync(contractPath), true, 'missing SQLite upgrade-state contract')
@@ -54,7 +53,6 @@ test('the canonical upgrade contract defines supported legacy-state handling', (
   assert.match(contract, /reject/i)
   assert.match(contract, /preserv/i)
 })
-
 
 test('the SQLite verifier owns detection of the recorded_by_user_id drift regression', () => {
   const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
@@ -73,7 +71,6 @@ test('the canonical upgrade runner invokes the verifier after migration', () => 
   assert.match(runner, /verify-sqlite/)
 })
 
-
 test('the canonical runner classifies the database before applying migrations', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -89,7 +86,6 @@ test('the canonical runner does not silently migrate contradictory version metad
   assert.match(runner, /reject|throw/i)
 })
 
-
 test('recognized legacy databases are reconciled instead of categorically rejected', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -99,7 +95,6 @@ test('recognized legacy databases are reconciled instead of categorically reject
   assert.match(runner, /migrateCompetitionEntriesSqlite/)
   assert.match(runner, /migrateMacrocycleTargetRaceDateSqlite/)
 })
-
 
 test('legacy reconciliation establishes canonical migration metadata before Drizzle continues', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
@@ -111,31 +106,22 @@ test('legacy reconciliation establishes canonical migration metadata before Driz
   assert.match(runner, /legacy/i)
 })
 
-
 test('legacy metadata establishment is safe to rerun without duplicate migration rows', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
-  assert.match(
-    runner,
-    /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
-  )
+  assert.match(runner, /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i)
   assert.match(runner, /if\s*\(row\)/)
   assert.match(runner, /continue/)
   assert.match(runner, /created_at/)
 })
 
-
 test('legacy metadata reconciliation rejects a conflicting canonical timestamp instead of trusting it', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
-  assert.match(
-    runner,
-    /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i,
-  )
+  assert.match(runner, /SELECT\s+hash\s+FROM\s+__drizzle_migrations\s+WHERE\s+created_at\s*=\s*\?/i)
   assert.match(runner, /hash[\s\S]*!==|!==[\s\S]*hash/i)
   assert.match(runner, /conflict|inconsistent/i)
 })
-
 
 test('legacy reconciliation is atomic with canonical metadata establishment', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
@@ -143,19 +129,24 @@ test('legacy reconciliation is atomic with canonical metadata establishment', ()
   const legacyBlock = runner.slice(runner.indexOf("if (state === 'legacy')"))
   const transactionIndex = legacyBlock.indexOf('sqlite.transaction(() => {')
   const firstMigrationIndex = legacyBlock.indexOf('migrateRealizedTrainingTimingSqlite(sqlite)')
-  const metadataIndex = legacyBlock.indexOf("establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')")
+  const metadataIndex = legacyBlock.indexOf(
+    "establishCanonicalMigrationMetadata(sqlite, '0001_realized_training_timing')",
+  )
 
   const planningIndex = legacyBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const competitionIndex = legacyBlock.indexOf('migrateCompetitionEntriesSqlite(sqlite)')
   const macrocycleIndex = legacyBlock.indexOf('migrateMacrocycleTargetRaceDateSqlite(sqlite)')
 
-  assert.notEqual(transactionIndex, -1, 'legacy reconciliation must open an outer transaction after realized-training timing')
+  assert.notEqual(
+    transactionIndex,
+    -1,
+    'legacy reconciliation must open an outer transaction after realized-training timing',
+  )
   assert.ok(firstMigrationIndex < transactionIndex, 'realized-training timing must retain its own transaction boundary')
   assert.ok(transactionIndex < planningIndex, 'outer transaction must start before the remaining legacy migrations')
   assert.ok(planningIndex < competitionIndex && competitionIndex < macrocycleIndex)
   assert.ok(metadataIndex > macrocycleIndex, 'canonical metadata must be established after physical reconciliation')
 })
-
 
 test('legacy reconciliation does not wrap the realized-training rebuild in an active transaction', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
@@ -169,7 +160,6 @@ test('legacy reconciliation does not wrap the realized-training rebuild in an ac
   )
 })
 
-
 test('legacy classification requires a reviewed schema fingerprint, not merely absence of Drizzle metadata', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -180,7 +170,6 @@ test('legacy classification requires a reviewed schema fingerprint, not merely a
   assert.doesNotMatch(runner, /return hasMigrationMetadata \? 'versioned' : 'legacy'/)
 })
 
-
 test('fresh SQLite bootstrap creates the current schema instead of relying on baseline migration replay', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -189,26 +178,18 @@ test('fresh SQLite bootstrap creates the current schema instead of relying on ba
   assert.match(runner, /migrate/)
 })
 
-
 test('fresh SQLite bootstrap establishes migration metadata compatible with later upgrades', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
-  const freshBlock = runner.slice(
-    runner.indexOf("if (state === 'fresh')"),
-    runner.indexOf("if (state === 'legacy')"),
-  )
+  const freshBlock = runner.slice(runner.indexOf("if (state === 'fresh')"), runner.indexOf("if (state === 'legacy')"))
 
   assert.match(freshBlock, /establishCanonicalMigrationMetadata\(sqlite\)/)
   assert.match(runner, /CREATE TABLE IF NOT EXISTS __drizzle_migrations/)
 })
 
-
 test('fresh SQLite bootstrap installs the cohort association triggers before marking HEAD', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
   const freshStart = runner.indexOf("if (state === 'fresh')")
-  const freshBlock = runner.slice(
-    freshStart,
-    runner.indexOf("if (state === 'versioned'", freshStart),
-  )
+  const freshBlock = runner.slice(freshStart, runner.indexOf("if (state === 'versioned'", freshStart))
   const triggers = freshBlock.indexOf('migratePlanningCohortsSqlite(sqlite)')
   const metadata = freshBlock.indexOf('establishCanonicalMigrationMetadata(sqlite)')
   assert.ok(triggers >= 0, 'fresh bootstrap must install cohort triggers')
@@ -221,7 +202,6 @@ test('fresh bootstrap records every migration already represented by the pushed 
   assert.match(runner, /appliedThroughTag === undefined[\s\S]*journal\.entries\.length/)
 })
 
-
 test('legacy reconciliation records only migrations physically reconciled before Drizzle migrate', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -229,14 +209,12 @@ test('legacy reconciliation records only migrations physically reconciled before
   assert.match(runner, /establishCanonicalMigrationMetadata\(sqlite\)/)
 })
 
-
 test('canonical migration metadata derives entries from the Drizzle journal instead of hard-coded counts', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
   assert.match(runner, /meta[/\\\\]_journal\.json/)
   assert.doesNotMatch(runner, /establishCanonicalMigrationMetadata\(sqlite,\s*6\)/)
 })
-
 
 test('SQLite verification covers empty, full-seed, partial-seed, upgrade, preservation, drift and rerun scenarios', () => {
   const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts')
@@ -253,7 +231,6 @@ test('SQLite verification covers empty, full-seed, partial-seed, upgrade, preser
   assert.match(verifier, /rerun|idempot/i)
 })
 
-
 test('SQLite scenario harness executes empty bootstrap without invoking seed composition', () => {
   const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts')
   const verifier = fs.readFileSync(verifierPath, 'utf8')
@@ -267,40 +244,25 @@ test('SQLite scenario harness executes empty bootstrap without invoking seed com
   )
 })
 
-
 test('SQLite scenario verifier can execute the empty bootstrap scenario from its CLI', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   assert.match(verifier, /process\.argv/)
   assert.match(verifier, /['"]empty['"]/)
   assert.match(verifier, /runEmptyBootstrapScenario\(/)
 })
 
-
 test('SQLite scenario harness implements full-seed execution with explicit seedFull composition', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   assert.match(verifier, /runFullSeedScenario/)
-  assert.match(
-    verifier.match(/function runFullSeedScenario[\s\S]*?\n}/)?.[0] ?? '',
-    /seedFull/,
-  )
+  assert.match(verifier.match(/function runFullSeedScenario[\s\S]*?\n}/)?.[0] ?? '', /seedFull/)
   assert.match(verifier, /scenario === ['"]full-seed['"]/)
   assert.match(verifier, /runFullSeedScenario\(/)
 })
 
-
 test('SQLite scenario harness implements useful partial-seed execution with seedFeature', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   const scenario = verifier.match(/function runPartialSeedScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runPartialSeedScenario/)
@@ -311,12 +273,8 @@ test('SQLite scenario harness implements useful partial-seed execution with seed
   assert.match(verifier, /runPartialSeedScenario\(/)
 })
 
-
 test('SQLite scenario harness implements a representative legacy upgrade to HEAD', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   const scenario = verifier.match(/function runUpgradeScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runUpgradeScenario/)
@@ -327,12 +285,8 @@ test('SQLite scenario harness implements a representative legacy upgrade to HEAD
   assert.match(verifier, /runUpgradeScenario\(/)
 })
 
-
 test('SQLite scenario harness verifies existing application data survives the supported upgrade', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   const scenario = verifier.match(/function runPreservationScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runPreservationScenario/)
@@ -344,12 +298,8 @@ test('SQLite scenario harness verifies existing application data survives the su
   assert.match(verifier, /runPreservationScenario\(/)
 })
 
-
 test('SQLite scenario harness detects schema drift between fresh and upgraded databases', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   const scenario = verifier.match(/function runDriftScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runDriftScenario/)
@@ -362,12 +312,8 @@ test('SQLite scenario harness detects schema drift between fresh and upgraded da
   assert.match(verifier, /runDriftScenario\(/)
 })
 
-
 test('SQLite scenario harness verifies the supported upgrade is safe to rerun at HEAD', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite-scenarios.ts'), 'utf8')
 
   const scenario = verifier.match(/function runRerunScenario[\s\S]*?\n}/)?.[0] ?? ''
   assert.match(verifier, /runRerunScenario/)
@@ -378,7 +324,6 @@ test('SQLite scenario harness verifies the supported upgrade is safe to rerun at
   assert.match(verifier, /scenario === ['"]rerun['"]/)
   assert.match(verifier, /runRerunScenario\(/)
 })
-
 
 test('SQLite seed ownership is consolidated under db/seeds with stable package entrypoints', () => {
   const scripts = packageJson.scripts ?? {}
@@ -406,7 +351,6 @@ test('SQLite seed ownership is consolidated under db/seeds with stable package e
   assert.match(scripts['db:seed:plan-real'] ?? '', /db\/seeds\/plan-real-comparison-fixtures\.ts/)
 })
 
-
 test('SQLite exposes one aggregate verification gate covering every supported scenario', () => {
   const scripts = packageJson.scripts ?? {}
   const command = scripts['db:sqlite:check'] ?? ''
@@ -416,7 +360,6 @@ test('SQLite exposes one aggregate verification gate covering every supported sc
     assert.match(command, new RegExp(`\\b${scenario}\\b`), `db:sqlite:check must include ${scenario}`)
   }
 })
-
 
 test('supported SQLite operations and recovery are durably documented', () => {
   const docPath = path.join(process.cwd(), 'docs', 'architecture', 'platform', 'sqlite-local-operations.md')
@@ -436,7 +379,6 @@ test('supported SQLite operations and recovery are durably documented', () => {
   assert.match(doc, /do not delete|do not overwrite/i)
 })
 
-
 test('canonical SQLite runner invokes Drizzle Kit through its supported package executable', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
@@ -444,13 +386,11 @@ test('canonical SQLite runner invokes Drizzle Kit through its supported package 
   assert.match(runner, /drizzle-kit/)
 })
 
-
 test('canonical SQLite runner does not resolve non-exported Drizzle Kit package metadata', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
 
   assert.doesNotMatch(runner, /require\.resolve\(['"]drizzle-kit\/package\.json['"]\)/)
 })
-
 
 test('versioned SQLite with a HEAD schema but partial canonical metadata is reconciled before migrate', () => {
   const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
@@ -461,10 +401,7 @@ test('versioned SQLite with a HEAD schema but partial canonical metadata is reco
 })
 
 test('SQLite HEAD verifier rejects legacy intensity columns before metadata reconciliation', () => {
-  const verifier = fs.readFileSync(
-    path.join(process.cwd(), 'scripts', 'verify-sqlite.ts'),
-    'utf8',
-  )
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite.ts'), 'utf8')
 
   assert.match(verifier, /microcycle_intensity_targets/)
   assert.match(verifier, /reference_percentage_target/)
@@ -547,18 +484,22 @@ test('SQLite Drizzle config loads from an isolated working directory', () => {
   try {
     const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
     const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
-    const result = spawnSync(process.execPath, [
-      tsxCli,
-      '-e',
-      `import config from ${JSON.stringify(configPath)}; console.log(JSON.stringify({ schema: config.schema, out: config.out, url: config.dbCredentials?.url }))`,
-    ], {
-      cwd: workspace,
-      encoding: 'utf8',
-      env: { ...process.env, TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') },
-    })
+    const result = spawnSync(
+      process.execPath,
+      [
+        tsxCli,
+        '-e',
+        `import config from ${JSON.stringify(configPath)}; console.log(JSON.stringify({ schema: config.schema, out: config.out, url: config.dbCredentials?.url }))`,
+      ],
+      {
+        cwd: workspace,
+        encoding: 'utf8',
+        env: { ...process.env, TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') },
+      },
+    )
     assert.equal(result.status, 0, result.stderr)
     const loaded = JSON.parse(result.stdout.trim()) as { schema: string[]; out: string; url: string }
-    assert.ok(loaded.schema.every(schemaPath => !path.isAbsolute(schemaPath)))
+    assert.ok(loaded.schema.every((schemaPath) => !path.isAbsolute(schemaPath)))
     assert.ok(!path.isAbsolute(loaded.out))
     assert.equal(loaded.url, 'sqlite.db')
   } finally {
@@ -572,20 +513,20 @@ test('SQLite Drizzle config requires an explicit isolated target when invoked by
   try {
     const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
     const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
-    const result = spawnSync(process.execPath, [
-      tsxCli,
-      '-e',
-      `import config from ${JSON.stringify(configPath)}; console.log(config.dbCredentials?.url)`,
-    ], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json'),
-        SQLITE_SCENARIO_MODE: '1',
-        SQLITE_DATABASE_PATH: path.join(workspace, 'sqlite.db'),
+    const result = spawnSync(
+      process.execPath,
+      [tsxCli, '-e', `import config from ${JSON.stringify(configPath)}; console.log(config.dbCredentials?.url)`],
+      {
+        cwd: projectRoot,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json'),
+          SQLITE_SCENARIO_MODE: '1',
+          SQLITE_DATABASE_PATH: path.join(workspace, 'sqlite.db'),
+        },
       },
-    })
+    )
     assert.equal(result.status, 0, result.stderr)
     assert.equal(result.stdout.trim(), path.join(workspace, 'sqlite.db'))
   } finally {
@@ -597,13 +538,17 @@ test('SQLite Drizzle config rejects scenario mode without an explicit database t
   const projectRoot = process.cwd()
   const tsxCli = path.resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
   const configPath = path.resolve(projectRoot, 'drizzle.sqlite.config.ts')
-  const env: NodeJS.ProcessEnv = { ...process.env, SQLITE_SCENARIO_MODE: '1', TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json') }
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    SQLITE_SCENARIO_MODE: '1',
+    TSX_TSCONFIG_PATH: path.resolve(projectRoot, 'tsconfig.json'),
+  }
   delete env.SQLITE_DATABASE_PATH
-  const result = spawnSync(process.execPath, [
-    tsxCli,
-    '-e',
-    `import ${JSON.stringify(configPath)}`,
-  ], { cwd: projectRoot, encoding: 'utf8', env })
+  const result = spawnSync(process.execPath, [tsxCli, '-e', `import ${JSON.stringify(configPath)}`], {
+    cwd: projectRoot,
+    encoding: 'utf8',
+    env,
+  })
   assert.notEqual(result.status, 0)
   assert.match(result.stderr + result.stdout, /SQLITE_DATABASE_PATH/)
 })
@@ -613,24 +558,32 @@ test('Drizzle Kit can push repository-relative schemas into an explicitly isolat
   const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-drizzle-kit-'))
   const databasePath = path.join(workspace, 'sqlite.db')
   try {
-    const drizzleKit = path.resolve(projectRoot, 'node_modules/.bin', process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit')
-    const result = spawnSync(drizzleKit, ['push', `--config=${path.resolve(projectRoot, 'drizzle.sqlite.config.ts')}`], {
-      cwd: projectRoot,
-      encoding: 'utf8',
-      shell: process.platform === 'win32',
-      env: {
-        ...process.env,
-        SQLITE_SCENARIO_MODE: '1',
-        SQLITE_DATABASE_PATH: databasePath,
+    const drizzleKit = path.resolve(
+      projectRoot,
+      'node_modules/.bin',
+      process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit',
+    )
+    const result = spawnSync(
+      drizzleKit,
+      ['push', `--config=${path.resolve(projectRoot, 'drizzle.sqlite.config.ts')}`],
+      {
+        cwd: projectRoot,
+        encoding: 'utf8',
+        shell: process.platform === 'win32',
+        env: {
+          ...process.env,
+          SQLITE_SCENARIO_MODE: '1',
+          SQLITE_DATABASE_PATH: databasePath,
+        },
       },
-    })
+    )
     assert.equal(result.status, 0, result.stderr + result.stdout)
     assert.equal(fs.existsSync(databasePath), true)
     const sqlite = new Database(databasePath, { fileMustExist: true })
     try {
       const columns = sqlite.prepare('PRAGMA table_info(microcycle_intensity_targets)').all() as Array<{ name: string }>
-      assert.ok(columns.some(column => column.name === 'reference_percentage_target'))
-      assert.ok(!columns.some(column => column.name === 'pam_percentage_target'))
+      assert.ok(columns.some((column) => column.name === 'reference_percentage_target'))
+      assert.ok(!columns.some((column) => column.name === 'pam_percentage_target'))
     } finally {
       sqlite.close()
     }
@@ -649,18 +602,22 @@ test('realized-training migration resolves its SQL file from the repository, not
 })
 
 test('SQLite versioned upgrade reconciles recorded-by foreign key deletion semantics', () => {
-  const journal = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+  const journal = JSON.parse(
+    fs.readFileSync(path.join(process.cwd(), 'drizzle/sqlite/meta/_journal.json'), 'utf8'),
+  ) as {
     entries: Array<{ tag: string }>
   }
-  const migration = journal.entries.find(entry => entry.tag.startsWith('0007_'))
+  const migration = journal.entries.find((entry) => entry.tag.startsWith('0007_'))
   assert.ok(migration, 'missing versioned SQLite recorded-by foreign key reconciliation')
   const sql = fs.readFileSync(path.join(process.cwd(), 'drizzle/sqlite', `${migration.tag}.sql`), 'utf8')
-  assert.ok(sql.includes('FOREIGN KEY (`recorded_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null'))
+  assert.ok(
+    sql.includes('FOREIGN KEY (`recorded_by_user_id`) REFERENCES `users`(`id`) ON UPDATE no action ON DELETE set null'),
+  )
   assert.match(sql, /INSERT INTO `__new_field_performance_tests`/)
   assert.match(sql, /DROP TABLE `field_performance_tests`/)
   assert.match(sql, /CREATE INDEX `field_performance_tests_athlete_date_idx`/)
   const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts/verify-sqlite.ts'), 'utf8')
-  assert.ok(verifier.includes("foreign_key_list(field_performance_tests)"))
+  assert.ok(verifier.includes('foreign_key_list(field_performance_tests)'))
   assert.match(verifier, /SET NULL/)
 })
 
@@ -669,7 +626,7 @@ test('versioned SQLite intensity migration covers every legacy percentage column
   const journal = JSON.parse(fs.readFileSync(path.join(root, 'drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
     entries: Array<{ tag: string }>
   }
-  const migration = journal.entries.find(entry => entry.tag.startsWith('0006_'))
+  const migration = journal.entries.find((entry) => entry.tag.startsWith('0006_'))
   assert.ok(migration, 'missing versioned SQLite intensity migration after 0005')
   const sql = fs.readFileSync(path.join(root, 'drizzle/sqlite', `${migration.tag}.sql`), 'utf8')
   for (const [table, oldColumn, newColumn] of [

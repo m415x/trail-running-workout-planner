@@ -134,10 +134,10 @@ schema change
 → db:check
 → version generated artifacts
 → apply migration
-→ db:verify:supabase
+→ db:supabase:verify
 ```
 
-Generated migration snapshots/journal are never handwritten. `db:check:supabase` proves migration-chain consistency; it does not prove that the remote database has applied the delta. Only the post-migrate verifier provides that evidence.
+Generated migration snapshots/journal are never handwritten. `db:supabase:check` proves migration-chain consistency; it does not prove that the remote database has applied the delta. Only the post-migrate verifier provides that evidence.
 
 ## Product maintenance (KAN-280)
 

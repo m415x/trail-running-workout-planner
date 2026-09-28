@@ -150,9 +150,9 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Every athlete/readiness boundary is isolated by team + athlete. Do not rely only on UI filters.
 - `workout_logs` has athlete scope; team ownership must be validated through the athlete relationship/repository boundary.
 - Generate Drizzle migrations; never hand-edit generated snapshot/journal metadata.
-- Review generated SQL before applying it. `db:check:supabase` does not prove the remote migration was applied; use the remote verifier.
+- Review generated SQL before applying it. `db:supabase:check` does not prove the remote migration was applied; use the remote verifier.
 - Supabase Data API is currently disabled. The app's migration/verification flow uses direct PostgreSQL; do not enable PostgREST merely to silence `pg_pgrst_no_exposed_schemas` log noise.
-- Current environment boundary: SQLite is the development/runtime database; Supabase is reserved for production deployment. A versioned/locally checked Supabase migration is not evidence that production was migrated. Apply production migrations only as an explicit controlled deployment step, then require `pn db:verify:supabase` before claiming the remote schema is current.
+- Current environment boundary: SQLite is the development/runtime database; Supabase is reserved for production deployment. A versioned/locally checked Supabase migration is not evidence that production was migrated. Apply production migrations only as an explicit controlled deployment step, then require `pn db:supabase:verify` before claiming the remote schema is current.
 - `SUPABASE_DIRECT_URL` and `SUPABASE_DATABASE_URL` are server-only secrets. Never commit/print them or prefix with `NEXT_PUBLIC_`.
 - Do not spread fixed development identities (`team_1`, `profile_user_1`) or invent an authenticated coach actor before authentication/tenant resolution exists.
 
@@ -217,10 +217,10 @@ Use RED/GREEN TDD for new or changed behavior whenever a focused automated test 
 
 When asking the human to execute focused tests in the local terminal, use the repository TDD runner by default so routine runs remain portable and do not flood conversational context:
 
-~~~bash
+```bash
 pn tdd:red tests/field-performance-test-history.test.ts
 pn tdd tests/field-performance-test-history.test.ts
-~~~
+```
 
 `pn tdd:red` performs `git pull --ff-only -q` and the supplied focused tests. `pn tdd` performs the same sync/test run and then the canonical `pn tsc` typecheck. Both print only `GREEN` or `RED` by default. Add `--verbose` to either command when diagnostics are required. Keep `pn tsc` as the single typecheck script; do not add duplicate aliases for `tsc --noEmit`.
 

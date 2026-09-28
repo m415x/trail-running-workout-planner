@@ -11,7 +11,7 @@ The repository currently has three SQLite evolution paths:
    `0005`.
 2. Historical imperative migration scripts exposed as independent package
    commands.
-3. `db:push`, which mutates the physical schema without establishing the same
+3. `db:sqlite:push`, which mutates the physical schema without establishing the same
    versioned migration history as the canonical chain.
 
 The field-performance sequence demonstrates why physical schema and migration
@@ -31,7 +31,7 @@ existing local database matches HEAD.
   migrations and verify HEAD.
 - **legacy push-managed**: an existing database has no trustworthy canonical
   history but its physical shape matches a specifically recognized historical
-  state produced by `db:push` or a reviewed one-off migrator. Preserve data,
+  state produced by `db:sqlite:push` or a reviewed one-off migrator. Preserve data,
   reconcile that known shape, establish canonical state, then verify HEAD.
 - **unrecognized/inconsistent**: metadata and physical schema disagree, or the
   physical shape does not match a reviewed legacy state. Reject automatic

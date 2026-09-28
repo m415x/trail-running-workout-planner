@@ -15,7 +15,7 @@ The same command owns both cases:
 - on a fresh database, it creates the current schema and establishes canonical Drizzle migration metadata;
 - on a recognized legacy or versioned database, it preserves application data, reconciles the supported history, applies pending migrations and verifies the resulting schema.
 
-Do not use deletion of `sqlite.db` as the normal upgrade procedure. Do not use `db:push` as a substitute for the supported lifecycle.
+Do not use deletion of `sqlite.db` as the normal upgrade procedure. Do not use `db:sqlite:push` as a substitute for the supported lifecycle.
 
 To verify the current database directly, run:
 

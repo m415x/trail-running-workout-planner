@@ -13,14 +13,15 @@ interface CountRow {
  * Drizzle rebuilds the SQLite table with its final not-null constraints.
  *
  * The migration is idempotent so another local checkout can run it safely
- * before pnpm db:push without deleting its existing workout catalogue.
+ * before pnpm db:sqlite:push without deleting its existing workout catalogue.
  */
 function migrateWorkoutTemplates() {
   const sqlite = new Database('sqlite.db')
 
   try {
     const columns = new Set(
-      sqlite.prepare('PRAGMA table_info(workouts)')
+      sqlite
+        .prepare('PRAGMA table_info(workouts)')
         .all()
         .map((row) => (row as TableColumn).name),
     )
@@ -79,16 +80,18 @@ function migrateWorkoutTemplates() {
           prescription_notes = COALESCE(prescription_notes, notes)
       `)
 
-      const missingRequiredValues = sqlite.prepare(`
+      const missingRequiredValues = sqlite
+        .prepare(
+          `
         SELECT COUNT(*) AS count
         FROM workouts
         WHERE team_id IS NULL OR category IS NULL OR tags IS NULL
-      `).get() as CountRow
+      `,
+        )
+        .get() as CountRow
 
       if (missingRequiredValues.count > 0) {
-        throw new Error(
-          'No se pudieron asignar los campos requeridos a todas las plantillas.',
-        )
+        throw new Error('No se pudieron asignar los campos requeridos a todas las plantillas.')
       }
     })()
   } finally {

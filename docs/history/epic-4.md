@@ -141,8 +141,8 @@ KAN-380's final human-operated closure gate on 2026-09-21 reported:
 - `pn tsc` — GREEN.
 - `pn build` — GREEN.
 - `pn i18n:check` — 532 ES/EN message leaves aligned.
-- `pn db:check:supabase` — GREEN.
-- `pn db:verify:supabase` — GREEN: 38/38 application tables and 38/38 RLS.
+- `pn db:supabase:check` — GREEN.
+- `pn db:supabase:verify` — GREEN: 38/38 application tables and 38/38 RLS.
 
 Manual closure validation covered Coach desktop physiology, Athlete mobile Stats, Trail/Hills session-note behavior and final Athlete Home Trail presentation.
 
