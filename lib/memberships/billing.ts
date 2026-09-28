@@ -666,3 +666,114 @@ export function projectMonthlyChargeWithExceptions(input: {
     effectiveDueDate,
   }
 }
+
+
+export type PaymentMethod = 'cash' | 'bank_transfer'
+
+/**
+ * One immutable revision of a logical Payment.
+ * Corrections and voids append a new current revision rather than mutating history.
+ */
+export type PaymentRevision = {
+  revisionId: string
+  paymentId: string
+  monthlyChargeId: string
+  amountMinor: number
+  paymentMethod: PaymentMethod
+  paidAt: string
+  voided: boolean
+  isCurrent: boolean
+}
+
+/**
+ * Appends a revision for one logical Payment while preserving prior revisions.
+ */
+export function applyPaymentRevision(input: {
+  revisions: PaymentRevision[]
+  revisionId: string
+  paymentId: string
+  monthlyChargeId: string
+  amountMinor: number
+  paymentMethod: PaymentMethod
+  paidAt: string
+  voided: boolean
+}): PaymentRevision[] {
+  if (!Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) {
+    throw new Error('Payment amount must be a positive integer in minor units')
+  }
+
+  parseDate(input.paidAt)
+
+  if (input.revisions.some(revision => revision.paymentId !== input.paymentId)) {
+    throw new Error('Payment revision stream must keep one logical Payment identity')
+  }
+
+  if (input.revisions.some(revision => revision.monthlyChargeId !== input.monthlyChargeId)) {
+    throw new Error('Payment revision stream must keep one MonthlyCharge identity')
+  }
+
+  return [
+    ...input.revisions.map(revision =>
+      revision.isCurrent ? { ...revision, isCurrent: false } : revision,
+    ),
+    {
+      revisionId: input.revisionId,
+      paymentId: input.paymentId,
+      monthlyChargeId: input.monthlyChargeId,
+      amountMinor: input.amountMinor,
+      paymentMethod: input.paymentMethod,
+      paidAt: input.paidAt,
+      voided: input.voided,
+      isCurrent: true,
+    },
+  ]
+}
+
+/**
+ * Derives paid and remaining amounts for one MonthlyCharge from current effective
+ * Payment revisions. It deliberately does not derive H4 account-status states.
+ */
+export function deriveMonthlyChargePaymentBalance(input: {
+  charge: MonthlyChargeCandidate
+  monthlyChargeId: string
+  paymentRevisions: PaymentRevision[]
+}): {
+  amountDueMinor: number
+  paidMinor: number
+  remainingMinor: number
+} {
+  if (input.paymentRevisions.some(revision => revision.monthlyChargeId !== input.monthlyChargeId)) {
+    throw new Error('Payment revision belongs to a different MonthlyCharge identity')
+  }
+
+  const byPayment = new Map<string, PaymentRevision[]>()
+  for (const revision of input.paymentRevisions) {
+    const revisions = byPayment.get(revision.paymentId) ?? []
+    revisions.push(revision)
+    byPayment.set(revision.paymentId, revisions)
+  }
+
+  let paidMinor = 0
+
+  for (const revisions of byPayment.values()) {
+    const current = revisions.filter(revision => revision.isCurrent)
+    if (current.length > 1) {
+      throw new Error('Ambiguous Payment state: more than one current revision')
+    }
+
+    const effective = current[0]
+    if (effective && !effective.voided) {
+      paidMinor += effective.amountMinor
+    }
+  }
+
+  if (paidMinor > input.charge.amountDueMinor) {
+    throw new Error('Effective payments cannot exceed the MonthlyCharge amount due')
+  }
+
+  return {
+    amountDueMinor: input.charge.amountDueMinor,
+    paidMinor,
+    remainingMinor: input.charge.amountDueMinor - paidMinor,
+  }
+}
