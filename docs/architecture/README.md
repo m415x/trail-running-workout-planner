@@ -8,6 +8,8 @@ Architecture documents are the durable contracts for current domain and technica
 
 `competitions/` owns competitive identity and catalog-related consumer boundaries.
 
+- `competitions/race-catalog-planning.md` documents catalog selection snapshots plus the KAN-504 read-only RaceCourse → planning-impact projection.
+
 Key competition documents:
 
 - `competitions/race-registration.md` — implemented KAN-281 contract for effective registration, lifecycle, participation/result evidence, historical snapshots, persistence/isolation and Coach/Athlete disclosure.
@@ -27,6 +29,8 @@ Key competition documents:
 ### Planning
 
 `planning/` owns planning contracts. `CompetitionEntry` remains a planning fact and must not imply individual registration.
+
+- `planning/planning-cohorts.md` documents Sporting group vs Planning subgroup, dated membership, variant lineage and the KAN-504 transactional derivation workflow.
 
 ### Memberships
 
