@@ -287,6 +287,42 @@ export function createDrizzleBillingDatabase(
       }]))
     },
 
+    async replaceCurrentPaymentRevisionAtomically(previous, replacement) {
+      if (
+        previous.paymentId !== replacement.paymentId
+        || previous.monthlyChargeId !== replacement.monthlyChargeId
+      ) {
+        throw new Error('Payment revision replacement must preserve Payment and MonthlyCharge identity')
+      }
+      if (!previous.isCurrent || !replacement.isCurrent) {
+        throw new Error('Payment revision replacement requires current previous and replacement revisions')
+      }
+      if (!client.transaction) throw new Error('Drizzle client does not support transactions')
+
+      const now = new Date().toISOString()
+      await client.transaction((tx) => {
+        if (!tx.update) throw new Error('Drizzle transaction does not support updates')
+
+        executeMutation(tx.update(paymentRevisions)
+          .set({ isCurrent: false, updatedAt: now })
+          .where(eq(paymentRevisions.id, previous.revisionId)))
+
+        executeMutation(tx.insert(paymentRevisions).values([{
+          id: replacement.revisionId,
+          paymentId: replacement.paymentId,
+          monthlyChargeId: replacement.monthlyChargeId,
+          amountMinor: replacement.amountMinor,
+          paymentMethod: replacement.paymentMethod,
+          paidAt: replacement.paidAt,
+          voided: replacement.voided,
+          isCurrent: true,
+          isDeleted: false,
+          createdAt: now,
+          updatedAt: now,
+        }]))
+      })
+    },
+
     async listTeamEconomicPolicies(teamId) {
       const rows = await client
         .select()
