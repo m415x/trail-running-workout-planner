@@ -19,6 +19,7 @@ test('athlete membership page loader exposes H3 payment history and derived char
         baseAmountMinor: 2_500_000,
         amountDueMinor: 2_000_000,
         baseDueDate: '2026-09-05',
+        effectiveDueDate: '2026-09-05',
         dueDate: '2026-09-05',
       }],
       listTeamEconomicPolicies: async () => [],
