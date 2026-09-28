@@ -24,7 +24,9 @@
       "contact": "Contact",
       "status": "Status",
       "actions": "Actions",
-      "viewAthlete": "View {name} details"
+      "viewAthlete": "View {name} details",
+      "editTitle": "Edit sporting group {code}",
+      "editDescription": "Update the sporting group's description or operational status."
     },
     "planningSubgroups": {
       "title": "Planning subgroups",
@@ -87,7 +89,15 @@
       "cancel": "Cancel",
       "saving": "Saving…",
       "saveChanges": "Save changes",
-      "create": "Create planning subgroup"
+      "create": "Create planning subgroup",
+      "editTitle": "Edit planning subgroup",
+      "editDescription": "Update its operational identity without changing the sporting group or its members.",
+      "backToDetail": "Back to details",
+      "assignPageTitle": "Assign athlete",
+      "assignPageDescription": "Add a dated period to {name}. The athlete's sporting group does not change.",
+      "closePageTitle": "Remove athlete",
+      "closePageDescription": "Close the membership without deleting the period or changing the athlete's sporting group.",
+      "backToSubgroup": "Back to planning subgroup"
     }
   }
 }
