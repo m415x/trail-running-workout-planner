@@ -105,11 +105,14 @@ export function MembershipAccountState({
   accountState: AccountState
   economicHistory: EconomicHistory
 }) {
-  const formatMoney = (minor: number, currency: string) =>
-    new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+  const formatMoney = (minor: number, currency: string) => {
+    const formatted = new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
       style: 'currency',
       currency,
     }).format(minor / 100)
+
+    return `${formatted} ${currency}`
+  }
 
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale === 'es' ? 'es-AR' : 'en-US', {
