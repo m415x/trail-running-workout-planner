@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getGroupById } from '@/app/actions/group-actions'
 import { GroupForm } from '@/features/groups/components/GroupForm'
@@ -12,6 +13,7 @@ interface EditGroupPageProps {
 
 export default async function EditGroupPage({ params }: EditGroupPageProps) {
   const { locale, groupId } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanningAudience.sportingGroups' })
   const group = await getGroupById(groupId)
 
   if (!group) notFound()
@@ -22,11 +24,11 @@ export default async function EditGroupPage({ params }: EditGroupPageProps) {
     <div className='mx-auto w-full max-w-2xl space-y-6'>
       <div className='space-y-2'>
         <Link href={groupsPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-          <ArrowLeft /> Volver a grupos
+          <ArrowLeft /> {t('back')}
         </Link>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Editar grupo {group.categoryCode}{group.levelCode}</h2>
-          <p className='text-muted-foreground'>Modificá la descripción o el estado operativo del grupo.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('editTitle', { code: `${group.categoryCode}${group.levelCode}` })}</h2>
+          <p className='text-muted-foreground'>{t('editDescription')}</p>
         </div>
       </div>
       <GroupForm locale={locale} group={group} />
