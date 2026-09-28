@@ -114,7 +114,26 @@
       "assignPageDescription": "Add a dated period to {name}. The athlete's sporting group does not change.",
       "closePageTitle": "Remove athlete",
       "closePageDescription": "Close the membership without deleting the period or changing the athlete's sporting group.",
-      "backToSubgroup": "Back to planning subgroup"
+      "backToSubgroup": "Back to planning subgroup",
+      "planningSubgroupLabel": "Planning subgroup",
+      "basePlanLabel": "Base plan",
+      "noBasePlans": "No base plans available",
+      "noBasePlansDescription": "This sporting group does not have a direct base plan available to derive a variant.",
+      "basePlanHelp": "Only direct base plans from the same sporting group are shown.",
+      "variantName": "Variant title",
+      "variantDefaultSuffix": "Variant",
+      "competitionsToCopy": "Competitions to copy",
+      "competitionsToCopyHelp": "Select only the competitions that should be part of the new variant snapshot.",
+      "noCompetitionsToCopy": "The selected base plan has no competitions available to copy.",
+      "priorityLabel": "Priority",
+      "reviewBeforeCreate": "Review before creating",
+      "reviewBeforeCreateHelp": "The variant is created as a draft. It will not be activated and sessions will not be copied automatically.",
+      "creatingVariant": "Creating variant…",
+      "createVariant": "Create variant",
+      "deriveVariant": "Derive variant",
+      "deriveVariantTitle": "Derive variant",
+      "deriveVariantDescription": "Review the base plan, title, and competitions before creating an independent draft for this subgroup.",
+      "archivedCannotDerive": "Archived planning subgroups keep their history and cannot receive new variants."
     }
   }
 }
