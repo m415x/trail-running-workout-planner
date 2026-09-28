@@ -26,7 +26,8 @@ function createFixture() {
       user_name TEXT NOT NULL,
       email TEXT NOT NULL,
       first_name TEXT NOT NULL,
-      last_name TEXT NOT NULL
+      last_name TEXT NOT NULL,
+      avatar TEXT
     );
     CREATE TABLE athlete_groups (
       id TEXT PRIMARY KEY,
