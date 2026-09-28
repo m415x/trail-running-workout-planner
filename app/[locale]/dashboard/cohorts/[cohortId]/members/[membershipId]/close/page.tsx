@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import { getTranslations } from 'next-intl/server'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
 import { PlanningCohortClosureForm } from '@/features/planning-cohorts/components/PlanningCohortMembershipForms'
@@ -14,6 +15,7 @@ function todayInArgentina() {
 
 export default async function CloseCohortMembershipPage({ params }: CloseCohortMembershipPageProps) {
   const { locale, cohortId, membershipId } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanningAudience.planningSubgroups' })
   const cohort = await getPlanningCohortDetail(cohortId)
   const membership = cohort?.memberships.find((candidate) => candidate.id === membershipId && candidate.endDate === null)
   if (!cohort || !membership) notFound()
@@ -24,10 +26,10 @@ export default async function CloseCohortMembershipPage({ params }: CloseCohortM
   return (
     <div className='mx-auto w-full max-w-2xl space-y-6'>
       <div className='space-y-2'>
-        <Link href={detailPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}><ArrowLeft /> Volver a la cohorte</Link>
+        <Link href={detailPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}><ArrowLeft /> {t('backToSubgroup')}</Link>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Retirar atleta</h2>
-          <p className='text-muted-foreground'>Cerrá la membresía sin borrar el período ni modificar su grupo deportivo.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('closePageTitle')}</h2>
+          <p className='text-muted-foreground'>{t('closePageDescription')}</p>
         </div>
       </div>
       <PlanningCohortClosureForm
