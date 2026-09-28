@@ -10,10 +10,10 @@ import { db } from '@/db'
 import {
   athleteGroups,
   athleteProfiles,
-  groupHistoryRecords,
   planningCohortMemberships,
   users,
 } from '@/db/schema'
+import { assignAthleteToGroupSynchronously } from '@/lib/athletes/group-assignment'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 
@@ -350,58 +350,19 @@ export async function assignAthleteToGroup(
   const data = parsed.data
 
   try {
-    db.transaction((tx) => {
-      const athlete = tx.query.athleteProfiles.findFirst({
-        where: and(
-          eq(athleteProfiles.id, data.athleteId),
-          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
-          eq(athleteProfiles.isDeleted, false),
-        ),
-      }).sync()
-
-      if (!athlete) {
-        throw new Error('Atleta no encontrado')
-      }
-
-      const newGroup = tx.query.athleteGroups.findFirst({
-        where: and(
-          eq(athleteGroups.id, data.newGroupId),
-          eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-          eq(athleteGroups.isActive, true),
-          eq(athleteGroups.isDeleted, false),
-        ),
-      }).sync()
-
-      if (!newGroup) {
-        throw new Error('Grupo no encontrado o inactivo')
-      }
-
-      if (athlete.groupId === newGroup.id) {
-        throw new Error('El atleta ya pertenece al grupo seleccionado')
-      }
-
-      const now = new Date().toISOString()
-
-      tx
-        .update(athleteProfiles)
-        .set({
-          groupId: newGroup.id,
-          updatedAt: now,
-        })
-        .where(eq(athleteProfiles.id, athlete.id))
-        .run()
-
-      tx.insert(groupHistoryRecords).values({
-        id: randomUUID(),
-        athleteId: athlete.id,
-        previousGroupId: athlete.groupId,
-        newGroupId: newGroup.id,
-        changedByUserId: null,
-        date: data.effectiveDate,
+    assignAthleteToGroupSynchronously({
+      db,
+      createId: randomUUID,
+      now: () => new Date().toISOString(),
+      input: {
+        teamId: CURRENT_TEAM_ID,
+        athleteId: data.athleteId,
+        newGroupId: data.newGroupId,
+        effectiveDate: data.effectiveDate,
+        today: getCurrentDateInArgentina(),
         reason: data.reason || null,
-        createdAt: now,
-        updatedAt: now,
-      }).run()
+        changedByUserId: null,
+      },
     })
   } catch (error) {
     console.error('Error changing athlete group:', error)
