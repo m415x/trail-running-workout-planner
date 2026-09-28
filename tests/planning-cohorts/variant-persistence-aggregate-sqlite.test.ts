@@ -9,6 +9,7 @@ import * as loadSchema from '@/db/load-strategy-schema'
 import * as intensitySchema from '@/db/intensity-strategy-schema'
 import * as preferencesSchema from '@/db/session-generation-preferences-schema'
 import * as competitionSchema from '@/db/competition-entry-schema'
+import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import { persistPlanningCohortVariantSynchronously } from '@/lib/planning-cohorts/variant-persistence'
 
 function createAggregateFixture() {
@@ -170,6 +171,14 @@ function createAggregateFixture() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+    CREATE TABLE race_courses (
+      id TEXT PRIMARY KEY
+    );
+    CREATE TABLE competition_entry_race_courses (
+      competition_entry_id TEXT PRIMARY KEY REFERENCES competition_entries(id) ON DELETE CASCADE,
+      race_course_id TEXT NOT NULL REFERENCES race_courses(id) ON DELETE RESTRICT,
+      created_at TEXT NOT NULL
+    );
     CREATE TABLE sessions (
       id TEXT PRIMARY KEY,
       team_id TEXT NOT NULL,
@@ -260,6 +269,11 @@ function createAggregateFixture() {
     INSERT INTO competition_entries VALUES
     ('competition-1','base-1','Trail 42K','2026-12-20',42,1800,'A','confirmed','Principal',0,?,?)
   `).run(now,now)
+  sqlite.prepare(`INSERT INTO race_courses VALUES ('race-course-1')`).run()
+  sqlite.prepare(`
+    INSERT INTO competition_entry_race_courses
+    VALUES ('competition-1','race-course-1',?)
+  `).run(now)
 
   sqlite.prepare(`
     INSERT INTO sessions VALUES ('session-1','team-1','2026-09-09','Trail técnico','Trail')
@@ -277,6 +291,7 @@ function createAggregateFixture() {
         ...intensitySchema,
         ...preferencesSchema,
         ...competitionSchema,
+        ...raceCatalogSchema,
       },
     }),
   }
@@ -434,6 +449,14 @@ describe('KAN-517 complete planning variant persistence', () => {
       assert.equal(competition.groupTrainingPlanId,result.planId)
       assert.equal(competition.name,'Trail 42K')
       assert.equal(competition.priority,'A')
+
+      const catalogLink = fixture.sqlite.prepare(`
+        SELECT race_course_id AS raceCourseId
+        FROM competition_entry_race_courses
+        WHERE competition_entry_id = ?
+      `).get(competition.id)
+
+      assert.deepEqual(catalogLink, { raceCourseId:'race-course-1' })
 
       assert.equal(
         (fixture.sqlite.prepare('SELECT count(*) AS count FROM sessions').get() as { count:number }).count,
