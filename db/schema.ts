@@ -735,6 +735,29 @@ export const monthlyChargeExtensions = sqliteTable(
   ],
 )
 
+
+export const paymentRevisions = sqliteTable(
+  'payment_revisions',
+  {
+    ...baseColumns,
+    paymentId: text('payment_id').notNull(),
+    monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
+    amountMinor: integer('amount_minor').notNull(),
+    paymentMethod: text('payment_method', { enum: ['cash', 'bank_transfer'] }).notNull(),
+    paidAt: text('paid_at').notNull(),
+    voided: integer('voided', { mode: 'boolean' }).notNull().default(false),
+    isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
+  },
+  (table) => [
+    check('payment_revisions_amount_positive_check', sql`${table.amountMinor} > 0`),
+    check('payment_revisions_method_check', sql`${table.paymentMethod} in ('cash', 'bank_transfer')`),
+    index('payment_revisions_monthly_charge_idx').on(table.monthlyChargeId),
+    uniqueIndex('payment_revisions_payment_current_unique')
+      .on(table.paymentId)
+      .where(sql`${table.isCurrent} = 1`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 14. SHOES (Calzado del atleta)                                              */
 /* -------------------------------------------------------------------------- */
