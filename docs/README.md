@@ -12,7 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
-- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H4 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, per-charge balances and derived account/history projection.
+- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H5 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, derived account/history projection and Coach/Athlete prior-debt experience.
 
 ### Monitoring baseline
 
@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-493.md`](handoffs/kan-493.md), covering KAN-462 H4 closure and the KAN-463 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-499.md`](handoffs/kan-499.md), covering KAN-463 H5 closure and the KAN-464 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
