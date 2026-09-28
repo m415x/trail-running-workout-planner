@@ -5,6 +5,7 @@ import { Activity, ArrowLeft, CalendarRange, EllipsisVertical, Flag, Mail, Penci
 
 import { AthleteRaceRegistrationForm } from '@/features/race-registration/components/AthleteRaceRegistrationForm'
 import { AthleteBillingTermsForm } from '@/features/memberships/components/AthleteBillingTermsForm'
+import { MembershipAccountState } from '@/features/memberships/components/MembershipAccountState'
 import { CoachTrack1000mForm } from '@/features/field-performance-test/components/CoachTrack1000mForm'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
@@ -241,6 +242,32 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 </div>
               )}
             </section>
+            <MembershipAccountState
+              locale={es ? 'es' : 'en'}
+              labels={{
+                title: t('membershipAccountTitle'),
+                totalBalance: t('membershipTotalBalance'),
+                period: t('membershipPeriod'),
+                status: t('membershipStatus'),
+                amountDue: t('membershipAmountDue'),
+                paid: t('membershipPaid'),
+                remaining: t('membershipRemaining'),
+                dueDate: t('membershipDueDate'),
+                history: t('membershipEconomicHistory'),
+                condition: t('membershipCondition'),
+                globalException: t('membershipGlobalException'),
+                reduction: t('membershipReduction'),
+                extension: t('membershipExtension'),
+                payments: t('membershipPayments'),
+                result: t('membershipResult'),
+                settled: t('membershipSettled'),
+                pending: t('membershipPending'),
+                overdue: t('membershipOverdue'),
+                noHistory: t('membershipNoHistory'),
+              }}
+              accountState={membership.accountState}
+              economicHistory={membership.economicHistory}
+            />
             <AthleteBillingTermsForm
               athleteId={athleteId}
               locale={es ? 'es' : 'en'}
