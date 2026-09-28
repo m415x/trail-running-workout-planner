@@ -17,14 +17,13 @@ import {
   type RaceCoursePlanningImpactLinkedEntry,
 } from '@/lib/race-catalog/planning-impact-projection'
 
-const planningImpactSchema = {
-  ...coreSchema,
-  ...competitionSchema,
-  ...raceCatalogSchema,
-}
+type PlanningImpactSchema =
+  typeof coreSchema
+  & typeof competitionSchema
+  & typeof raceCatalogSchema
 
 export function loadRaceCoursePlanningImpactSynchronously(input: {
-  db: BetterSQLite3Database<typeof planningImpactSchema>
+  db: BetterSQLite3Database<PlanningImpactSchema>
   teamId: string
   raceCourseId: string
 }): RaceCoursePlanningImpactItem[] {
