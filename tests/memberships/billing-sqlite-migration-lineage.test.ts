@@ -21,6 +21,12 @@ test('SQLite H3 migration bridges missing H1/H2 snapshots without recreating exi
   assert.match(sql, /payment_revisions_monthly_charge_idx/)
   assert.match(sql, /payment_revisions_payment_current_unique/)
 
+  const statements = sql.split('--> statement-breakpoint')
+  assert.ok(
+    statements.every(statement => statement.trim().length > 0),
+    'H3 migration must not contain empty SQL statements',
+  )
+
   for (const existingTable of [
     'athlete_billing_terms',
     'team_economic_policies',
