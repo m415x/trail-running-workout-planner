@@ -13,15 +13,14 @@ import {
   planningCohortMemberships,
   users,
 } from '@/db/schema'
-import { assignAthleteToGroupSynchronously } from '@/lib/athletes/group-assignment'
+import {
+  createAthleteGroupAssignmentAction,
+  type AthleteGroupFormState,
+} from '@/lib/athletes/group-assignment-action'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 
 export interface AthleteFormState {
-  error?: string
-}
-
-export interface AthleteGroupFormState {
   error?: string
 }
 
@@ -44,13 +43,6 @@ const athleteFormSchema = z.object({
   locale: z.string().trim().default('es'),
 })
 
-const athleteGroupFormSchema = z.object({
-  athleteId: z.string().trim().min(1, 'No se pudo identificar al atleta'),
-  newGroupId: z.string().trim().min(1, 'Seleccioná un grupo'),
-  effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
-  reason: z.string().trim().max(500, 'El motivo no puede superar los 500 caracteres').optional(),
-  locale: z.enum(locales).default('es'),
-})
 
 function nullable(value?: string) {
   return value || null
@@ -337,40 +329,12 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
   }
 }
 
-export async function assignAthleteToGroup(
-  _previousState: AthleteGroupFormState,
-  formData: FormData,
-): Promise<AthleteGroupFormState> {
-  const parsed = athleteGroupFormSchema.safeParse(Object.fromEntries(formData))
-
-  if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
-  }
-
-  const data = parsed.data
-
-  try {
-    assignAthleteToGroupSynchronously({
-      db,
-      createId: randomUUID,
-      now: () => new Date().toISOString(),
-      input: {
-        teamId: CURRENT_TEAM_ID,
-        athleteId: data.athleteId,
-        newGroupId: data.newGroupId,
-        effectiveDate: data.effectiveDate,
-        today: getCurrentDateInArgentina(),
-        reason: data.reason || null,
-        changedByUserId: null,
-      },
-    })
-  } catch (error) {
-    console.error('Error changing athlete group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo cambiar el grupo' }
-  }
-
-  const athleteDetailPath = `${athletesPath(data.locale)}/${data.athleteId}`
-  revalidatePath(athletesPath(data.locale))
-  revalidatePath(athleteDetailPath)
-  redirect(athleteDetailPath)
-}
+export const assignAthleteToGroup = createAthleteGroupAssignmentAction({
+  db,
+  teamId: CURRENT_TEAM_ID,
+  createId: randomUUID,
+  now: () => new Date().toISOString(),
+  today: getCurrentDateInArgentina,
+  revalidatePath,
+  redirect,
+})
