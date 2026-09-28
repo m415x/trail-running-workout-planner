@@ -1,5 +1,7 @@
 import {
   applyGlobalDueDateException as applyGlobalDueDateExceptionRevision,
+  applyPaymentRevision,
+  deriveMonthlyChargePaymentBalance,
   applyMonthlyChargeReduction as applyMonthlyChargeReductionRevision,
   applyMonthlyChargeExtension as applyMonthlyChargeExtensionRevision,
   getAthleteBillingSnapshot,
@@ -10,6 +12,7 @@ import {
   type MonthlyChargeCandidate,
   type MonthlyChargeReductionRevision,
   type MonthlyChargeExtensionRevision,
+  type PaymentRevision,
   type TeamEconomicPolicy,
 } from './billing'
 
@@ -29,6 +32,13 @@ export type BillingPersistencePort = {
 
 export type PersistedMonthlyChargeReductionRevision = MonthlyChargeReductionRevision & {
   monthlyChargeId: string
+}
+
+export type PersistedPaymentRevision = PaymentRevision
+
+export type PaymentPersistencePort = {
+  listPaymentRevisions: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
+  insertPaymentRevision: (revision: PersistedPaymentRevision) => Promise<void>
 }
 
 export type MonthlyChargeReductionPersistencePort = {
@@ -105,9 +115,76 @@ export type GlobalDueDateExceptionPersistencePort = {
 }
 
 export function createBillingPersistenceAdapter(
-  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort) | (BillingPersistencePort & MonthlyChargeReductionPersistencePort) | (BillingPersistencePort & MonthlyChargeExtensionPersistencePort),
+  port: BillingPersistencePort | (BillingPersistencePort & GlobalDueDateExceptionPersistencePort) | (BillingPersistencePort & MonthlyChargeReductionPersistencePort) | (BillingPersistencePort & MonthlyChargeExtensionPersistencePort) | (BillingPersistencePort & PaymentPersistencePort),
 ) {
   return {
+    async registerManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      revisionId: string
+      paymentId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+    }): Promise<PersistedPaymentRevision> {
+      if (!(await port.athleteBelongsToTeam(input.teamId, input.athleteId))) {
+        throw new Error('Athlete does not belong to the requested team')
+      }
+
+      const h3Port = port as BillingPersistencePort & PaymentPersistencePort
+      if (!h3Port.listPaymentRevisions || !h3Port.insertPaymentRevision) {
+        throw new Error('Billing persistence does not support manual payments')
+      }
+
+      const persistedCharges = port.listPersistedMonthlyCharges
+        ? await port.listPersistedMonthlyCharges(input.teamId, input.athleteId)
+        : []
+      const charge = persistedCharges.find(candidate =>
+        candidate.id === input.monthlyChargeId && candidate.athleteId === input.athleteId
+      )
+      if (!charge) throw new Error('Monthly charge not found in requested athlete scope')
+
+      const existing = await h3Port.listPaymentRevisions(input.monthlyChargeId)
+      const currentSamePayment = existing.find(revision =>
+        revision.paymentId === input.paymentId && revision.isCurrent
+      )
+
+      if (
+        currentSamePayment
+        && !currentSamePayment.voided
+        && currentSamePayment.amountMinor === input.amountMinor
+        && currentSamePayment.paymentMethod === input.paymentMethod
+        && currentSamePayment.paidAt === input.paidAt
+      ) {
+        return currentSamePayment
+      }
+
+      if (existing.some(revision => revision.paymentId === input.paymentId)) {
+        throw new Error('Payment already exists; corrections belong to the Payment revision lifecycle')
+      }
+
+      const revision = applyPaymentRevision({
+        revisions: [],
+        revisionId: input.revisionId,
+        paymentId: input.paymentId,
+        monthlyChargeId: input.monthlyChargeId,
+        amountMinor: input.amountMinor,
+        paymentMethod: input.paymentMethod,
+        paidAt: input.paidAt,
+        voided: false,
+      })[0]!
+
+      deriveMonthlyChargePaymentBalance({
+        charge,
+        monthlyChargeId: input.monthlyChargeId,
+        paymentRevisions: [...existing, revision],
+      })
+
+      await h3Port.insertPaymentRevision(revision)
+      return revision
+    },
+
     async applyGlobalDueDateException(input: {
       teamId: string
       year: number
