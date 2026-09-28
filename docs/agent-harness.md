@@ -163,3 +163,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes; memberships architecture, documentation index and KAN-493 handoff were updated before final gate.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused tests exposed legacy caller/type and UI presentation mismatches before closure.
 - Notes for post-experiment v2 (do not change v1 yet): explicit evidence-state tracking continued to prevent false RED/GREEN claims; retry-budget discipline worked for the transient Jira outage. Structural tests remain regression evidence, not substitutes for the manual closure walkthrough.
+
+
+### KAN-463 — harness-eval-v1
+
+- Redundant/repeated tool calls: low. One Jira create batch failed because the localized issue-type name `Subtarea` was invalid; metadata was then queried and the correct `Subtask` type was used.
+- Unnecessary large/full-source reloads: limited; the Coach athlete page and Membership architecture were loaded at closure/reconciliation points where full context was materially useful.
+- Equivalent failed-operation loops: 0; retry budget respected: yes. The failed Jira create mechanism was not repeated after diagnosis.
+- Context/source-of-truth mistakes: 0 material. The prior-debt rule was explicitly changed by product decision before implementation and recorded in Jira/docs before closure.
+- Durable information unnecessarily requested from human: 0.
+- Premature task/branch creation or reopened settled decisions: 0; subtasks and branch were created only after explicit approval of the adjusted decomposition.
+- Unnecessary local/full-gate requests during implementation: 0; focused TDD remained task-scoped and the complete gate was reserved for KAN-499 closure.
+- Unsupported verification claims: 0. T5 regressions that were GREEN when introduced were explicitly recorded as GREEN-on-introduction, not as RED/GREEN cycles.
+- Missed acceptance criteria attributable to workflow/context handling: 0 known before closure gate/walkthrough.
+- Corrective human interventions attributable to harness behavior: 0; the human supplied expected RED/GREEN execution evidence and made the product decision that prior-month pending extensions must not block before implementation.
+- Durable documentation/handoff complete: yes before final gate; Membership architecture, documentation index and KAN-499 handoff record the H5 contract and KAN-464 entry boundary.
+- Evidence that reduced context/tool usage harmed correctness: none observed. Focused domain/read-model/UI tests plus cross-surface boundary regressions covered the intended seams; manual walkthrough remains required closure evidence.
+- Notes for post-experiment v2 (do not change v1 yet): querying project issue-type metadata immediately after the first Jira type mismatch avoided a retry loop. Continue distinguishing product-semantic changes from implementation defects and record GREEN-on-introduction regressions honestly.
