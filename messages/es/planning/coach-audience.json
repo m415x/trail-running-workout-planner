@@ -24,7 +24,9 @@
       "contact": "Contacto",
       "status": "Estado",
       "actions": "Acciones",
-      "viewAthlete": "Ver detalle de {name}"
+      "viewAthlete": "Ver detalle de {name}",
+      "editTitle": "Editar grupo deportivo {code}",
+      "editDescription": "Modificá la descripción o el estado operativo del grupo deportivo."
     },
     "planningSubgroups": {
       "title": "Subgrupos de planificación",
@@ -87,7 +89,15 @@
       "cancel": "Cancelar",
       "saving": "Guardando…",
       "saveChanges": "Guardar cambios",
-      "create": "Crear subgrupo de planificación"
+      "create": "Crear subgrupo de planificación",
+      "editTitle": "Editar subgrupo de planificación",
+      "editDescription": "Actualizá su identificación operativa sin cambiar el grupo deportivo ni sus integrantes.",
+      "backToDetail": "Volver al detalle",
+      "assignPageTitle": "Asignar atleta",
+      "assignPageDescription": "Agregá un período fechado a {name}. El grupo deportivo del atleta no cambia.",
+      "closePageTitle": "Retirar atleta",
+      "closePageDescription": "Cerrá la membresía sin borrar el período ni modificar su grupo deportivo.",
+      "backToSubgroup": "Volver al subgrupo de planificación"
     }
   }
 }
