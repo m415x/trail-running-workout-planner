@@ -157,3 +157,24 @@ H5 is non-monetary. Existing H4 balances remain grouped by persisted currency. H
 H5 adds no table, schema field, migration, mutable blocking state, session, role, permission or authorization rule. Blocking is functional Membership behavior inside the application and remains separate from the identity/authentication/authorization model reserved for KAN-298.
 
 H1–H5 introduce no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
+
+
+## Epic 5 closure boundary
+
+KAN-464 closes Epic 5 without introducing a new economic authority. H1–H5 above are the durable Membership billing contract.
+
+The final prior-debt rule is intentionally narrower than “any unpaid prior month”: `blocked_for_prior_debt` requires a charge from a civil month before the current civil month whose H4-derived status is already `overdue`. A prior-month charge under a still-effective extension remains `pending` through its inclusive `effectiveDueDate` and does not block. A current-month overdue charge is visually overdue but does not create prior-debt blocking. When effective payments settle the relevant prior charge, H4 derives `settled` and H5 clears the block.
+
+The pre-existing `memberships` table remains preserved legacy data and is not the authority for team policy, athlete terms, monthly charges, exceptions, payments, account state or debt experience.
+
+Local migration validation and deployed-state validation are separate evidence classes. `pn db:supabase:check` validates the local Drizzle migration set. `pn db:supabase:verify` queries the configured remote Supabase environment and is required before claiming the deployed contract or RLS state.
+
+Epic 5 deliberately leaves these concerns outside its authority:
+
+- authentication, session establishment, roles, permissions and authorization, reserved for KAN-298;
+- payment gateways, webhooks, checkout, reconciliation providers and speculative external IDs;
+- a generic settings framework;
+- automatic proration, credit balances or payment redistribution;
+- differential training fees and other additional charges.
+
+Differential training and additional charges remain an explicit future extension. They must be modeled from a real future contract and must not be represented as a second membership or by overloading the ordinary `MonthlyCharge`.
