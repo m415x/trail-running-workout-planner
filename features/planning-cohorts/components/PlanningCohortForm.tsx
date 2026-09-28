@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 import {
   createPlanningCohort,
@@ -37,6 +38,7 @@ interface PlanningCohortFormProps {
 const initialState: PlanningCohortFormState = {}
 
 export function PlanningCohortForm({ locale, groups, cohort }: PlanningCohortFormProps) {
+  const t = useTranslations('CoachPlanningAudience.planningSubgroups')
   const isEditing = cohort !== undefined
   const action = isEditing ? updatePlanningCohort : createPlanningCohort
   const [state, formAction, pending] = useActionState(action, initialState)
@@ -56,15 +58,15 @@ export function PlanningCohortForm({ locale, groups, cohort }: PlanningCohortFor
 
       {isEditing ? (
         <div className='rounded-xl border p-4'>
-          <p className='text-sm text-muted-foreground'>Grupo deportivo</p>
+          <p className='text-sm text-muted-foreground'>{t('sportingGroup')}</p>
           <p className='text-2xl font-semibold'>{cohort.group.categoryCode}{cohort.group.levelCode}</p>
-          <p className='mt-1 text-sm text-muted-foreground'>
-            El grupo padre define el alcance deportivo e histórico de la cohorte y no se modifica.
-          </p>
+          <p className='mt-1 text-sm text-muted-foreground'>{t('formSportingGroupHelp')}</p>
         </div>
       ) : (
         <div className='space-y-1.5'>
-          <label htmlFor='groupId' className='text-sm font-medium'>Grupo deportivo <span className='text-destructive'>*</span></label>
+          <label htmlFor='groupId' className='text-sm font-medium'>
+            {t('sportingGroup')} <span className='text-destructive'>*</span>
+          </label>
           <select
             id='groupId'
             name='groupId'
@@ -72,29 +74,49 @@ export function PlanningCohortForm({ locale, groups, cohort }: PlanningCohortFor
             defaultValue={state.values?.groupId ?? ''}
             className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'
           >
-            <option value=''>Seleccionar grupo</option>
+            <option value=''>{t('selectSportingGroup')}</option>
             {groups.map((group) => (
               <option key={group.id} value={group.id}>
                 {group.categoryCode}{group.levelCode}{group.description ? ` · ${group.description}` : ''}
               </option>
             ))}
           </select>
-          {groups.length === 0 && <p className='text-sm text-destructive'>No hay grupos activos disponibles.</p>}
+          {groups.length === 0 && <p className='text-sm text-destructive'>{t('noActiveSportingGroups')}</p>}
         </div>
       )}
 
       <div className='space-y-1.5'>
-        <label htmlFor='name' className='text-sm font-medium'>Nombre <span className='text-destructive'>*</span></label>
-        <Input id='name' name='name' required maxLength={80} disabled={isArchived} defaultValue={state.values?.name ?? cohort?.name ?? ''} placeholder='Ej.: S2 · Short trail de primavera' />
+        <label htmlFor='name' className='text-sm font-medium'>
+          {t('name')} <span className='text-destructive'>*</span>
+        </label>
+        <Input
+          id='name'
+          name='name'
+          required
+          maxLength={80}
+          disabled={isArchived}
+          defaultValue={state.values?.name ?? cohort?.name ?? ''}
+          placeholder={t('namePlaceholder')}
+        />
       </div>
 
       <div className='space-y-1.5'>
-        <label htmlFor='purpose' className='text-sm font-medium'>Objetivo compartido <span className='text-destructive'>*</span></label>
-        <Input id='purpose' name='purpose' required maxLength={160} disabled={isArchived} defaultValue={state.values?.purpose ?? cohort?.purpose ?? ''} placeholder='Ej.: Preparar una carrera de 12 km con desnivel moderado' />
+        <label htmlFor='purpose' className='text-sm font-medium'>
+          {t('sharedGoal')} <span className='text-destructive'>*</span>
+        </label>
+        <Input
+          id='purpose'
+          name='purpose'
+          required
+          maxLength={160}
+          disabled={isArchived}
+          defaultValue={state.values?.purpose ?? cohort?.purpose ?? ''}
+          placeholder={t('sharedGoalPlaceholder')}
+        />
       </div>
 
       <div className='space-y-1.5'>
-        <label htmlFor='description' className='text-sm font-medium'>Descripción</label>
+        <label htmlFor='description' className='text-sm font-medium'>{t('formDescription')}</label>
         <textarea
           id='description'
           name='description'
@@ -102,31 +124,37 @@ export function PlanningCohortForm({ locale, groups, cohort }: PlanningCohortFor
           maxLength={500}
           disabled={isArchived}
           defaultValue={state.values?.description ?? cohort?.description ?? ''}
-          placeholder='Contexto adicional para el profesor…'
+          placeholder={t('formDescriptionPlaceholder')}
           className='border-input bg-background w-full rounded-md border px-3 py-2 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50'
         />
       </div>
 
       {isEditing && !isArchived && (
         <div className='space-y-1.5'>
-          <label htmlFor='status' className='text-sm font-medium'>Estado</label>
+          <label htmlFor='status' className='text-sm font-medium'>{t('formStatus')}</label>
           <select id='status' name='status' defaultValue={cohort.status} className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]'>
-            <option value='active'>Activa</option>
-            <option value='archived'>Archivar definitivamente</option>
+            <option value='active'>{t('active')}</option>
+            <option value='archived'>{t('archivePermanently')}</option>
           </select>
-          <p className='text-xs text-muted-foreground'>Archivar conserva el historial y evita nuevas modificaciones o membresías. Esta acción no se puede revertir.</p>
+          <p className='text-xs text-muted-foreground'>{t('archiveHelp')}</p>
         </div>
       )}
 
       {isArchived && (
         <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
-          Esta cohorte está archivada. Sus datos permanecen disponibles como historial y no pueden editarse.
+          {t('archivedHelp')}
         </p>
       )}
 
       <div className='flex justify-end gap-2'>
-        <Link href={isEditing ? `${cohortsPath}/${cohort.id}` : cohortsPath} className={buttonVariants({ variant: 'outline' })}>{isArchived ? 'Volver' : 'Cancelar'}</Link>
-        {!isArchived && <Button type='submit' disabled={pending || (!isEditing && groups.length === 0)}>{pending ? 'Guardando…' : isEditing ? 'Guardar cambios' : 'Crear cohorte'}</Button>}
+        <Link href={isEditing ? `${cohortsPath}/${cohort.id}` : cohortsPath} className={buttonVariants({ variant: 'outline' })}>
+          {isArchived ? t('backButton') : t('cancel')}
+        </Link>
+        {!isArchived && (
+          <Button type='submit' disabled={pending || (!isEditing && groups.length === 0)}>
+            {pending ? t('saving') : isEditing ? t('saveChanges') : t('create')}
+          </Button>
+        )}
       </div>
     </form>
   )
