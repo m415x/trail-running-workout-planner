@@ -264,9 +264,13 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 pending: t('membershipPending'),
                 overdue: t('membershipOverdue'),
                 noHistory: t('membershipNoHistory'),
+                priorDebtBlocked: es
+                  ? 'Bloqueado por deuda vencida de un mes anterior'
+                  : 'Blocked by overdue debt from a previous month',
               }}
               accountState={membership.accountState}
               economicHistory={membership.economicHistory}
+              debtExperience={membership.debtExperience}
             />
             <AthleteBillingTermsForm
               athleteId={athleteId}
