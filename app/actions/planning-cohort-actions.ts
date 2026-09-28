@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { competitionEntries } from '@/db/competition-entry-schema'
 import {
   athleteGroups,
   athleteProfiles,
@@ -23,6 +24,10 @@ import {
   resolveAthleteGroupOnDate,
   resolveAthletePlanningOnDate,
 } from '@/lib/planning-cohorts/planning-resolution'
+import {
+  persistPlanningCohortVariantSynchronously,
+  PlanningVariantPersistenceError,
+} from '@/lib/planning-cohorts/variant-persistence'
 
 const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
@@ -58,6 +63,15 @@ export interface PlanningCohortMembershipFormState {
     startDate?: string
     endDate?: string
     reason?: string
+  }
+}
+
+export interface PlanningCohortVariantDerivationFormState {
+  error?: string
+  values?: {
+    sourcePlanId?: string
+    title?: string
+    selectedCompetitionEntryIds?: string[]
   }
 }
 
@@ -269,6 +283,93 @@ export async function getPlanningCohortDetail(cohortId: string) {
   })
 
   return cohort
+}
+
+/** Loads the valid base plans and their competition snapshots for one active planning subgroup. */
+export async function getPlanningCohortVariantDerivationContext(cohortId: string) {
+  const cohort = await db.query.planningCohorts.findFirst({
+    where: and(
+      eq(planningCohorts.id, cohortId),
+      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.isDeleted, false),
+    ),
+    with: {
+      group: true,
+      planningVariant: true,
+    },
+  })
+
+  if (!cohort || cohort.group.isDeleted) return null
+
+  const basePlans = await db.query.groupTrainingPlans.findMany({
+    where: and(
+      eq(groupTrainingPlans.groupId, cohort.groupId),
+      eq(groupTrainingPlans.planningCohortId, null),
+      eq(groupTrainingPlans.sourceGroupTrainingPlanId, null),
+      eq(groupTrainingPlans.isDeleted, false),
+    ),
+    with: { group: true },
+  })
+
+  const visibleBasePlans = basePlans.filter((plan) => (
+    plan.group.teamId === CURRENT_TEAM_ID && !plan.group.isDeleted
+  ))
+
+  const competitions = visibleBasePlans.length === 0
+    ? []
+    : db.select().from(competitionEntries).where(eq(competitionEntries.isDeleted, false)).all()
+      .filter((entry) => visibleBasePlans.some((plan) => plan.id === entry.groupTrainingPlanId))
+
+  return {
+    cohort,
+    basePlans: visibleBasePlans.map((plan) => ({
+      ...plan,
+      competitionEntries: competitions.filter((entry) => entry.groupTrainingPlanId === plan.id),
+    })),
+  }
+}
+
+/** Creates one draft planning variant from the reviewed base-plan snapshot. */
+export async function derivePlanningCohortVariantAction(
+  _previousState: PlanningCohortVariantDerivationFormState,
+  formData: FormData,
+): Promise<PlanningCohortVariantDerivationFormState> {
+  const cohortId = String(formData.get('cohortId') ?? '')
+  const sourcePlanId = String(formData.get('sourcePlanId') ?? '')
+  const title = String(formData.get('title') ?? '').trim()
+  const locale: SupportedLocale = formData.get('locale') === 'en' ? 'en' : 'es'
+  const selectedCompetitionEntryIds = formData.getAll('selectedCompetitionEntryIds').map(String)
+  const values = { sourcePlanId, title, selectedCompetitionEntryIds }
+
+  if (!cohortId || !sourcePlanId || title.length < 2) {
+    return { error: 'Revisá el plan base y el título de la variante', values }
+  }
+
+  try {
+    persistPlanningCohortVariantSynchronously({
+      db,
+      teamId: CURRENT_TEAM_ID,
+      cohortId,
+      sourcePlanId,
+      title,
+      selectedCompetitionEntryIds,
+      createId: randomUUID,
+      now: () => new Date().toISOString(),
+    })
+  } catch (error) {
+    console.error('Error deriving planning cohort variant:', error)
+    return {
+      error: error instanceof PlanningVariantPersistenceError
+        ? error.message
+        : 'No se pudo crear la variante',
+      values,
+    }
+  }
+
+  const path = `${cohortsPath(locale)}/${cohortId}`
+  revalidatePath(path)
+  revalidatePath(cohortsPath(locale))
+  redirect(path)
 }
 
 /** Creates an empty cohort; athlete assignments remain a separate operation. */
