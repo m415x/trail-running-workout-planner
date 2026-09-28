@@ -1,78 +1,9 @@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
 import { Badge } from '@ui/badge'
+import type { deriveMembershipAccountState, explainMonthlyChargeEconomics } from '@/lib/memberships/billing'
 
-type AccountState = {
-  cutoffDate: string
-  charges: Array<{
-    id: string
-    currency: string
-    amountDueMinor: number
-    paidMinor: number
-    remainingMinor: number
-    effectiveDueDate: string
-    status: 'settled' | 'pending' | 'overdue'
-  }>
-  balanceByCurrency: Array<{
-    currency: string
-    amountDueMinor: number
-    paidMinor: number
-    remainingMinor: number
-  }>
-}
-
-type EconomicHistory = Array<{
-  condition: {
-    billingTermsId: string
-    monthlyAmountMinor: number
-    currency: string
-    effectiveFrom: string
-    effectiveUntil: string | null
-  }
-  charge: {
-    monthlyChargeId: string
-    year: number
-    month: number
-    baseAmountMinor: number
-    amountDueMinor: number
-    currency: string
-    baseDueDate: string
-    effectiveDueDate: string
-  }
-  globalDueDateHistory: Array<{
-    id: string
-    dueDate: string
-    reason: string
-    state: 'historical' | 'current'
-  }>
-  reductionHistory: Array<{
-    id: string
-    reductionAmountMinor: number
-    reason: string
-    state: 'historical' | 'current'
-  }>
-  extensionHistory: Array<{
-    id: string
-    extendedDueDate: string | null
-    reason: string
-    state: 'historical' | 'current'
-  }>
-  paymentHistory: Array<{
-    revisionId: string
-    paymentId: string
-    amountMinor: number
-    paymentMethod: 'cash' | 'bank_transfer'
-    paidAt: string
-    state: 'historical' | 'current' | 'voided'
-  }>
-  result: {
-    status: 'settled' | 'pending' | 'overdue'
-    amountDueMinor: number
-    paidMinor: number
-    remainingMinor: number
-    effectiveDueDate: string
-    currency: string
-  }
-}>
+type AccountState = ReturnType<typeof deriveMembershipAccountState>
+type EconomicHistory = Array<ReturnType<typeof explainMonthlyChargeEconomics>>
 
 export function MembershipAccountState({
   locale,
