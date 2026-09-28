@@ -7,6 +7,7 @@ import {
   monthlyCharges,
   monthlyChargeReductions,
   monthlyChargeExtensions,
+  paymentRevisions,
   teamEconomicPolicies,
 } from '@/db/schema'
 import type {
@@ -16,7 +17,7 @@ import type {
   TeamEconomicPolicy,
 } from './billing'
 import type { SqliteBillingDatabase } from './billing-sqlite-persistence'
-import type { PersistedMonthlyChargeReductionRevision, PersistedMonthlyChargeExtensionRevision } from './billing-persistence'
+import type { PersistedMonthlyChargeReductionRevision, PersistedMonthlyChargeExtensionRevision, PersistedPaymentRevision } from './billing-persistence'
 
 type QueryResult = Record<string, unknown>
 
@@ -56,6 +57,19 @@ function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExte
     month: Number(row.month),
     extendedDueDate: row.extendedDueDate === null ? null : String(row.extendedDueDate),
     reason: String(row.reason),
+    isCurrent: Boolean(row.isCurrent),
+  }
+}
+
+function mapPaymentRevision(row: QueryResult): PersistedPaymentRevision {
+  return {
+    revisionId: String(row.id ?? row.revisionId),
+    paymentId: String(row.paymentId),
+    monthlyChargeId: String(row.monthlyChargeId),
+    amountMinor: Number(row.amountMinor),
+    paymentMethod: String(row.paymentMethod) as PersistedPaymentRevision['paymentMethod'],
+    paidAt: String(row.paidAt),
+    voided: Boolean(row.voided),
     isCurrent: Boolean(row.isCurrent),
   }
 }
@@ -241,6 +255,36 @@ export function createDrizzleBillingDatabase(
           ...mapCharge(persisted),
         }
       })
+    },
+
+    async listPaymentRevisions(monthlyChargeId) {
+      const rows = await client
+        .select()
+        .from(paymentRevisions)
+        .where(and(
+          eq(paymentRevisions.monthlyChargeId, monthlyChargeId),
+          eq(paymentRevisions.isDeleted, false),
+        ))
+
+      return rows.map(mapPaymentRevision)
+    },
+
+    async insertPaymentRevision(revision) {
+      if (!client.insert) throw new Error('Drizzle client does not support inserts')
+      const now = new Date().toISOString()
+      executeMutation(client.insert(paymentRevisions).values([{
+        id: revision.revisionId,
+        paymentId: revision.paymentId,
+        monthlyChargeId: revision.monthlyChargeId,
+        amountMinor: revision.amountMinor,
+        paymentMethod: revision.paymentMethod,
+        paidAt: revision.paidAt,
+        voided: revision.voided,
+        isCurrent: revision.isCurrent,
+        isDeleted: false,
+        createdAt: now,
+        updatedAt: now,
+      }]))
     },
 
     async listTeamEconomicPolicies(teamId) {
