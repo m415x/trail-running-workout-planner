@@ -206,6 +206,8 @@ export async function getGroupTrainingPlanById(planId: string) {
     ),
     with: {
       group: true,
+      planningCohort: true,
+      sourceGroupTrainingPlan: true,
       macrocycles: {
         with: {
           mesocycles: {
