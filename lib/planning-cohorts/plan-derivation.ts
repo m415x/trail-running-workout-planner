@@ -241,6 +241,7 @@ function cloneMacrocycle(
     endDate: source.endDate,
     taperingWeeksCount: source.taperingWeeksCount,
     targetRaceName: source.targetRaceName,
+    targetRaceDate: source.targetRaceDate,
     targetRaceDistanceKm: source.targetRaceDistanceKm,
     targetRaceElevationGain: source.targetRaceElevationGain,
     notes: source.notes,
