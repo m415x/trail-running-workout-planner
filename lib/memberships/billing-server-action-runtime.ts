@@ -255,6 +255,29 @@ export function createMembershipServerActionRuntime({
       return applyMonthlyChargeExtensionAction(input, h2Dependencies)
     },
 
+    async registerManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+    }): Promise<BillingActionResult> {
+      try {
+        await createBillingPersistenceAdapter(
+          createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
+        ).registerManualPayment({
+          ...input,
+          revisionId: createId(),
+          paymentId: createId(),
+        })
+        return { success: true }
+      } catch (error) {
+        reportError(error)
+        return { success: false, error: 'Could not register manual payment' }
+      }
+    },
+
     async applyInitialAthleteBillingTerms(input: {
       teamId: string
       athleteId: string
