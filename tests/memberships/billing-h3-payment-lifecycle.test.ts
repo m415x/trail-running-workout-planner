@@ -162,7 +162,7 @@ test('H2 reduction is rejected when it would lower amount due below effective H3
         athleteId: 'athlete-1',
         year: 2026,
         month: 10,
-        reductionAmountMinor: 1_750_000,
+        reductionAmountMinor: 1_800_000,
         reason: 'Beca parcial',
         isCurrent: true,
       },
