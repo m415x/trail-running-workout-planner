@@ -292,11 +292,30 @@ describe('KAN-517 complete planning variant persistence', () => {
     const fixture = createAggregateFixture()
 
     try {
+      const now = '2026-09-01T00:00:00.000Z'
+      fixture.sqlite.prepare(`
+        INSERT INTO group_training_plans
+        (id,is_deleted,created_at,updated_at,group_id,planning_cohort_id,source_group_training_plan_id,title,status,notes)
+        VALUES ('other-base',0,?,?,'group-1',NULL,NULL,'Other base','draft',NULL)
+      `).run(now,now)
+
+      fixture.sqlite.prepare(`
+        INSERT INTO load_strategies VALUES
+        ('persisted-collision','other-base','race',20,40,10,20,NULL,NULL,?,0,?,?)
+      `).run(JSON.stringify({
+        initialWeeklyVolumeKm:'suggested',
+        maximumWeeklyVolumeKm:'suggested',
+        maximumWeeklyIncreasePercentage:'suggested',
+        deloadPercentage:'suggested',
+        initialWeeklyElevationGain:'suggested',
+        maximumWeeklyElevationGain:'suggested',
+      }),now,now)
+
       const createDuplicateChildId = (() => {
         let index = 0
         return () => {
           index += 1
-          if (index === 2) return 'load-1'
+          if (index === 3) return 'persisted-collision'
           return `rollback-${index}`
         }
       })()
