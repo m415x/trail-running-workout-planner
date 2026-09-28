@@ -1,6 +1,7 @@
 import { and, eq } from 'drizzle-orm'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
+import type { AthleteGroupCode, Macrocycle } from '@/types'
 import * as coreSchema from '@/db/schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
@@ -41,7 +42,7 @@ export class PlanningVariantPersistenceError extends Error {
 }
 
 export function persistPlanningCohortVariantSynchronously(input: {
-  db: BetterSQLite3Database<typeof variantPersistenceSchema>
+  db: BetterSQLite3Database<typeof coreSchema>
   teamId: string
   cohortId: string
   sourcePlanId: string
@@ -123,26 +124,32 @@ export function persistPlanningCohortVariantSynchronously(input: {
         throw new PlanningVariantPersistenceError('Base plan aggregate not found')
       }
 
-      const sourceLoadStrategy = tx.query.loadStrategies.findFirst({
-        where: and(
+      const sourceLoadStrategy = tx
+        .select()
+        .from(loadStrategies)
+        .where(and(
           eq(loadStrategies.groupTrainingPlanId, sourcePlan.id),
           eq(loadStrategies.isDeleted, false),
-        ),
-      }).sync()
+        ))
+        .get()
 
-      const sourceIntensityStrategy = tx.query.intensityStrategies.findFirst({
-        where: and(
+      const sourceIntensityStrategy = tx
+        .select()
+        .from(intensityStrategies)
+        .where(and(
           eq(intensityStrategies.groupTrainingPlanId, sourcePlan.id),
           eq(intensityStrategies.isDeleted, false),
-        ),
-      }).sync()
+        ))
+        .get()
 
-      const sourcePreferences = tx.query.sessionGenerationPreferences.findFirst({
-        where: and(
+      const sourcePreferences = tx
+        .select()
+        .from(sessionGenerationPreferences)
+        .where(and(
           eq(sessionGenerationPreferences.groupTrainingPlanId, sourcePlan.id),
           eq(sessionGenerationPreferences.isDeleted, false),
-        ),
-      }).sync()
+        ))
+        .get()
 
       const sourceMicrocycleIds = sourcePlanAggregate.macrocycles.flatMap((macrocycle) =>
         macrocycle.mesocycles.flatMap((mesocycle) =>
@@ -152,24 +159,87 @@ export function persistPlanningCohortVariantSynchronously(input: {
 
       const sourceTargets = sourceMicrocycleIds.length === 0
         ? []
-        : tx.query.microcycleIntensityTargets.findMany({
-            where: eq(microcycleIntensityTargets.isDeleted, false),
-          }).sync().filter((target) => sourceMicrocycleIds.includes(target.microcycleId))
+        : tx
+            .select()
+            .from(microcycleIntensityTargets)
+            .where(eq(microcycleIntensityTargets.isDeleted, false))
+            .all()
+            .filter((target) => sourceMicrocycleIds.includes(target.microcycleId))
 
-      const sourceCompetitions = tx.query.competitionEntries.findMany({
-        where: and(
+      const sourceCompetitions = tx
+        .select()
+        .from(competitionEntries)
+        .where(and(
           eq(competitionEntries.groupTrainingPlanId, sourcePlan.id),
           eq(competitionEntries.isDeleted, false),
-        ),
-      }).sync()
+        ))
+        .all()
 
-      const groupCode = `${sourcePlan.group.categoryCode}${sourcePlan.group.levelCode}`
+      const groupCode = `${sourcePlan.group.categoryCode}${sourcePlan.group.levelCode}` as AthleteGroupCode
+      const sourceMacrocycles: Macrocycle[] = sourcePlanAggregate.macrocycles.map((macrocycle) => ({
+        id: macrocycle.id,
+        groupTrainingPlanId: macrocycle.groupTrainingPlanId,
+        title: macrocycle.title,
+        startDate: macrocycle.startDate,
+        endDate: macrocycle.endDate,
+        taperingWeeksCount:
+          macrocycle.taperingWeeksCount === 0
+          || macrocycle.taperingWeeksCount === 2
+          || macrocycle.taperingWeeksCount === 3
+            ? macrocycle.taperingWeeksCount
+            : null,
+        targetRaceName: macrocycle.targetRaceName,
+        targetRaceDate: macrocycle.targetRaceDate,
+        targetRaceDistanceKm: macrocycle.targetRaceDistanceKm,
+        targetRaceElevationGain: macrocycle.targetRaceElevationGain,
+        notes: macrocycle.notes,
+        createdAt: macrocycle.createdAt,
+        updatedAt: macrocycle.updatedAt,
+        isDeleted: macrocycle.isDeleted,
+        mesocycles: macrocycle.mesocycles.map((mesocycle) => ({
+          id: mesocycle.id,
+          macrocycleId: mesocycle.macrocycleId,
+          title: mesocycle.title,
+          number: mesocycle.number,
+          period: mesocycle.period,
+          objective: mesocycle.objective,
+          createdAt: mesocycle.createdAt,
+          updatedAt: mesocycle.updatedAt,
+          isDeleted: mesocycle.isDeleted,
+          microcycles: mesocycle.microcycles.map((microcycle) => ({
+            id: microcycle.id,
+            mesocycleId: microcycle.mesocycleId,
+            weekNumber: microcycle.weekNumber,
+            type: microcycle.type,
+            startDate: microcycle.startDate,
+            endDate: microcycle.endDate,
+            targetVolumeKm: microcycle.targetVolumeKm,
+            targetVolumeSource: microcycle.targetVolumeSource,
+            targetElevationGain: microcycle.targetElevationGain,
+            targetElevationSource: microcycle.targetElevationSource,
+            targetDurationMin: microcycle.targetDurationMin,
+            notes: microcycle.notes ?? undefined,
+            createdAt: microcycle.createdAt,
+            updatedAt: microcycle.updatedAt,
+            isDeleted: microcycle.isDeleted,
+          })),
+        })),
+      }))
 
       const derived = derivePlanningCohortVariant({
         source: {
           plan: {
-            ...sourcePlanAggregate,
-            macrocycles: sourcePlanAggregate.macrocycles,
+            id: sourcePlanAggregate.id,
+            groupId: sourcePlanAggregate.groupId,
+            planningCohortId: sourcePlanAggregate.planningCohortId,
+            sourceGroupTrainingPlanId: sourcePlanAggregate.sourceGroupTrainingPlanId,
+            title: sourcePlanAggregate.title,
+            status: sourcePlanAggregate.status,
+            notes: sourcePlanAggregate.notes,
+            createdAt: sourcePlanAggregate.createdAt,
+            updatedAt: sourcePlanAggregate.updatedAt,
+            isDeleted: sourcePlanAggregate.isDeleted,
+            macrocycles: sourceMacrocycles,
           },
           loadStrategy: sourceLoadStrategy
             ? {
