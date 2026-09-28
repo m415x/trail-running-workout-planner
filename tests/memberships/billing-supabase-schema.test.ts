@@ -153,9 +153,11 @@ test('Supabase verifier validates H2 foreign keys and reduction/month constraint
   const verify = fs.readFileSync(path.join(root, 'db', 'supabase', 'verify.ts'), 'utf8')
   assert.match(verify, /global_monthly_due_date_exceptions_month_check/)
   assert.match(verify, /monthly_charge_reductions_amount_check/)
-  assert.match(verify, /global_monthly_due_date_exceptions_team_id_teams_id_fk/)
-  assert.match(verify, /monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk/)
-  assert.match(verify, /monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk/)
+  assert.match(verify, /requiredH2ForeignKeys/)
+  assert.match(verify, /\['global_monthly_due_date_exceptions', 'team_id', 'teams', 'id'\]/)
+  assert.match(verify, /\['monthly_charge_reductions', 'monthly_charge_id', 'monthly_charges', 'id'\]/)
+  assert.match(verify, /\['monthly_charge_extensions', 'monthly_charge_id', 'monthly_charges', 'id'\]/)
+  assert.match(verify, /constraint_type = 'FOREIGN KEY'/)
 })
 
 
