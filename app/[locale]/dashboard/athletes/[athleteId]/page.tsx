@@ -114,6 +114,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
     teamId: athlete.teamId,
     athleteId,
     onDate: today,
+    cutoffDate: today,
   })
 
   const raceCompetition = projectAthleteRaceCompetition(listRaceRegistrationsForAthlete({ teamId: athlete.teamId, athleteProfileId: athleteId }))
