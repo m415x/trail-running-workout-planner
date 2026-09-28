@@ -278,6 +278,49 @@ export function createMembershipServerActionRuntime({
       }
     },
 
+    async correctManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+    }): Promise<BillingActionResult> {
+      try {
+        await createBillingPersistenceAdapter(
+          createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
+        ).correctManualPayment({
+          ...input,
+          revisionId: createId(),
+        })
+        return { success: true }
+      } catch (error) {
+        reportError(error)
+        return { success: false, error: 'Could not correct manual payment' }
+      }
+    },
+
+    async voidManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+    }): Promise<BillingActionResult> {
+      try {
+        await createBillingPersistenceAdapter(
+          createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
+        ).voidManualPayment({
+          ...input,
+          revisionId: createId(),
+        })
+        return { success: true }
+      } catch (error) {
+        reportError(error)
+        return { success: false, error: 'Could not void manual payment' }
+      }
+    },
+
     async applyInitialAthleteBillingTerms(input: {
       teamId: string
       athleteId: string
