@@ -172,12 +172,9 @@ async function main() {
       'monthly_charge_reductions_charge_current_unique',
       'monthly_charge_extensions_charge_current_unique',
     ]
-    const h2ConstraintNames = [
+    const h2CheckConstraintNames = [
       'global_monthly_due_date_exceptions_month_check',
       'monthly_charge_reductions_amount_check',
-      'global_monthly_due_date_exceptions_team_id_teams_id_fk',
-      'monthly_charge_reductions_monthly_charge_id_monthly_charges_id_fk',
-      'monthly_charge_extensions_monthly_charge_id_monthly_charges_id_fk',
     ]
     const h2BillingConstraints = await sql<{ constraint_name: string }[]>`
       select con.conname as constraint_name
@@ -190,11 +187,42 @@ async function main() {
           'monthly_charge_reductions',
           'monthly_charge_extensions'
         )
-        and con.conname in ${sql(h2ConstraintNames)}
+        and con.conname in ${sql(h2CheckConstraintNames)}
+    `
+    const h2ForeignKeys = await sql<{
+      table_name: string
+      column_name: string
+      foreign_table_name: string
+      foreign_column_name: string
+    }[]>`
+      select
+        tc.table_name,
+        kcu.column_name,
+        ccu.table_name as foreign_table_name,
+        ccu.column_name as foreign_column_name
+      from information_schema.table_constraints tc
+      join information_schema.key_column_usage kcu
+        on tc.constraint_name = kcu.constraint_name
+       and tc.constraint_schema = kcu.constraint_schema
+      join information_schema.constraint_column_usage ccu
+        on tc.constraint_name = ccu.constraint_name
+       and tc.constraint_schema = ccu.constraint_schema
+      where tc.table_schema = 'public'
+        and tc.table_name in (
+          'global_monthly_due_date_exceptions',
+          'monthly_charge_reductions',
+          'monthly_charge_extensions'
+        )
+        and tc.constraint_type = 'FOREIGN KEY'
     `
     const presentH2Constraints = new Set(
       h2BillingConstraints.map(constraint => constraint.constraint_name),
     )
+    const requiredH2ForeignKeys = [
+      ['global_monthly_due_date_exceptions', 'team_id', 'teams', 'id'],
+      ['monthly_charge_reductions', 'monthly_charge_id', 'monthly_charges', 'id'],
+      ['monthly_charge_extensions', 'monthly_charge_id', 'monthly_charges', 'id'],
+    ] as const
     const h2BillingContractValid = h2RequiredIndexes.every(indexName =>
       h2BillingIndexes.some(index =>
         index.indexname === indexName
@@ -202,7 +230,17 @@ async function main() {
         && index.indexdef.toLowerCase().includes('where')
         && index.indexdef.toLowerCase().includes('is_current')
       ),
-    ) && h2ConstraintNames.every(constraintName => presentH2Constraints.has(constraintName))
+    ) && h2CheckConstraintNames.every(
+      constraintName => presentH2Constraints.has(constraintName),
+    ) && requiredH2ForeignKeys.every(
+      ([tableName, columnName, foreignTableName, foreignColumnName]) =>
+        h2ForeignKeys.some(foreignKey =>
+          foreignKey.table_name === tableName
+          && foreignKey.column_name === columnName
+          && foreignKey.foreign_table_name === foreignTableName
+          && foreignKey.foreign_column_name === foreignColumnName
+        ),
+    )
     console.log(`H2 billing persistence contract: ${h2BillingContractValid ? 'OK' : 'FAIL'}`)
 
     const h3PaymentIndexes = await sql<{ indexname: string; indexdef: string }[]>`
