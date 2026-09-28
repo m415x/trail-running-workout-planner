@@ -55,12 +55,7 @@ test('Drizzle replaces the current Payment revision atomically inside one transa
 
   assert.equal(transactions, 1)
   assert.equal(operations.length, 2)
-  assert.deepEqual(operations[0], {
-    kind: 'update',
-    values: assert.partialDeepStrictEqual
-      ? operations[0]?.values
-      : operations[0]?.values,
-  })
+  assert.equal(operations[0]?.kind, 'update')
   assert.equal(operations[0]?.values?.isCurrent, false)
   assert.equal(operations[1]?.kind, 'insert')
   assert.equal(operations[1]?.values?.id, replacement.revisionId)
