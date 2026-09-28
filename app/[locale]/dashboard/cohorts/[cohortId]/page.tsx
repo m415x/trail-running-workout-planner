@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, CalendarRange, Eye, LogOut, Pencil, UserPlus, UsersRound } from 'lucide-react'
+import { ArrowLeft, CalendarRange, Eye, LogOut, Pencil, Plus, UserPlus, UsersRound } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
@@ -205,9 +205,19 @@ export default async function PlanningCohortDetailPage({ params }: PlanningCohor
               </Link>
             </div>
           ) : (
-            <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>
-              {t('noVariantDescription')}
-            </p>
+            <div className='flex flex-col gap-3 rounded-lg border border-dashed p-4 sm:flex-row sm:items-center sm:justify-between'>
+              <p className='text-sm text-muted-foreground'>
+                {t('noVariantDescription')}
+              </p>
+              {cohort.status === 'active' && (
+                <Link
+                  href={`${cohortPath}/derive`}
+                  className={buttonVariants({ size:'sm' })}
+                >
+                  <Plus /> {t('deriveVariant')}
+                </Link>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
