@@ -177,6 +177,8 @@ export async function getGroupTrainingPlans() {
     ),
     with: {
       group: true,
+      planningCohort: true,
+      sourceGroupTrainingPlan: true,
       macrocycles: {
         with: {
           mesocycles: {
