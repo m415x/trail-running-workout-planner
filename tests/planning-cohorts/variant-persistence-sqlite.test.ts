@@ -60,6 +60,132 @@ function createFixture() {
       notes TEXT,
       UNIQUE(planning_cohort_id)
     );
+
+    CREATE TABLE macrocycles (
+      id TEXT PRIMARY KEY,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      title TEXT NOT NULL,
+      group_training_plan_id TEXT NOT NULL REFERENCES group_training_plans(id),
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      tapering_weeks_count INTEGER,
+      target_race_name TEXT,
+      target_race_date TEXT,
+      target_race_distance_km REAL,
+      target_race_elevation_gain INTEGER,
+      notes TEXT
+    );
+
+    CREATE TABLE mesocycles (
+      id TEXT PRIMARY KEY,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      macrocycle_id TEXT NOT NULL REFERENCES macrocycles(id),
+      title TEXT NOT NULL,
+      number INTEGER NOT NULL,
+      period TEXT NOT NULL,
+      objective TEXT NOT NULL
+    );
+
+    CREATE TABLE microcycles (
+      id TEXT PRIMARY KEY,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      mesocycle_id TEXT NOT NULL REFERENCES mesocycles(id),
+      week_number INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      target_volume_km REAL,
+      target_volume_source TEXT NOT NULL DEFAULT 'generated',
+      target_elevation_gain INTEGER,
+      target_elevation_source TEXT NOT NULL DEFAULT 'generated',
+      target_duration_min INTEGER,
+      notes TEXT
+    );
+
+    CREATE TABLE load_strategies (
+      id TEXT PRIMARY KEY,
+      group_training_plan_id TEXT NOT NULL REFERENCES group_training_plans(id),
+      goal_type TEXT NOT NULL,
+      initial_weekly_volume_km REAL NOT NULL,
+      maximum_weekly_volume_km REAL NOT NULL,
+      maximum_weekly_increase_percentage REAL NOT NULL,
+      deload_percentage REAL NOT NULL,
+      initial_weekly_elevation_gain INTEGER,
+      maximum_weekly_elevation_gain INTEGER,
+      field_sources TEXT NOT NULL,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(group_training_plan_id)
+    );
+
+    CREATE TABLE intensity_strategies (
+      id TEXT PRIMARY KEY,
+      group_training_plan_id TEXT NOT NULL REFERENCES group_training_plans(id),
+      goal_type TEXT NOT NULL,
+      default_method TEXT NOT NULL,
+      maximum_intense_sessions_per_week INTEGER NOT NULL,
+      minimum_recovery_days_between_intense_sessions INTEGER NOT NULL,
+      field_sources TEXT NOT NULL,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(group_training_plan_id)
+    );
+
+    CREATE TABLE session_generation_preferences (
+      id TEXT PRIMARY KEY,
+      group_training_plan_id TEXT NOT NULL REFERENCES group_training_plans(id),
+      frequency_mode TEXT NOT NULL,
+      fixed_sessions_per_week INTEGER,
+      weekly_pattern TEXT NOT NULL,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(group_training_plan_id)
+    );
+
+    CREATE TABLE microcycle_intensity_targets (
+      id TEXT PRIMARY KEY,
+      microcycle_id TEXT NOT NULL REFERENCES microcycles(id),
+      emphasis TEXT NOT NULL,
+      intense_sessions_target INTEGER NOT NULL,
+      predominant_zone TEXT NOT NULL,
+      reference_percentage_target REAL,
+      minimum_recovery_days_between_intense_sessions INTEGER NOT NULL,
+      field_sources TEXT NOT NULL,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(microcycle_id)
+    );
+
+    CREATE TABLE competition_entries (
+      id TEXT PRIMARY KEY,
+      group_training_plan_id TEXT NOT NULL REFERENCES group_training_plans(id),
+      name TEXT NOT NULL,
+      date TEXT NOT NULL,
+      distance_km REAL NOT NULL,
+      elevation_gain_m REAL,
+      priority TEXT NOT NULL,
+      status TEXT NOT NULL,
+      description TEXT,
+      is_deleted INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE competition_entry_race_courses (
+      competition_entry_id TEXT PRIMARY KEY REFERENCES competition_entries(id) ON DELETE CASCADE,
+      race_course_id TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
   `)
 
   const now = '2026-09-28T00:00:00.000Z'
