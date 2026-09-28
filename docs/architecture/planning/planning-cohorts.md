@@ -191,6 +191,20 @@ copied; they remain governed by their own generation and ownership lifecycle.
 
 ### Persistence foundation
 
+KAN-504 adds a transactional persistence boundary for Coach-created cohort
+variants. `persistPlanningCohortVariantSynchronously` revalidates team, sporting
+group, active planning subgroup and direct base-plan lineage, delegates snapshot
+construction to `derivePlanningCohortVariant`, and persists the derived draft in
+one SQLite transaction.
+
+The persisted snapshot includes plan strategies, session-generation preferences,
+macro/meso/micro hierarchy, microcycle intensity targets and only the explicitly
+selected `CompetitionEntry` rows. Selected catalog sidecars are remapped to the
+new competition-entry identities while retaining the same `race_course_id`.
+Materialized `Session` and `GroupSessionPrescription` rows are deliberately not
+copied, and derivation never activates the variant automatically. Any child-write
+failure rolls back the whole variant snapshot.
+
 SQLite and PostgreSQL persist cohorts in `planning_cohorts` and dated athlete
 assignments in `planning_cohort_memberships`. The existing financial
 `memberships` table remains unrelated.
@@ -266,3 +280,44 @@ H7 intentionally does not introduce:
 These boundaries prevent the cohort model from prematurely absorbing the
 competitive-calendar and session-prescription responsibilities of later
 stories.
+
+
+## KAN-504 Coach workflow consolidation
+
+The Coach-facing vocabulary is now explicit without changing technical
+identifiers:
+
+- ES: **Grupo deportivo**, **Subgrupo de planificación**, **Plan base**,
+  **Variante**.
+- EN: **Sporting group**, **Planning subgroup**, **Base plan**, **Variant**.
+
+The supported operational flow is:
+
+```text
+Athlete
+  → Sporting group
+  → Planning subgroup
+  → Base plan
+  → Variant
+```
+
+A sporting-group change uses the canonical `assignAthleteToGroup` authority. If
+the change is effective on civil date `D`, open planning-subgroup memberships
+belonging to the previous group are closed on `D-1` in the same transaction.
+Already closed history is preserved; same-group reassignment is a no-op; future
+changes and history rewrites are rejected.
+
+The Coach can initiate membership management from the Sporting group detail.
+That surface is an entry point only: it reuses `assignAthleteToGroup` rather
+than introducing another mutation authority.
+
+From an active Planning subgroup without a variant, the Coach can review and
+derive a draft from an eligible direct Base plan of the same Sporting group. The
+review surface revalidates current subgroup state, source-plan eligibility and
+selected competition ownership before delegating persistence to the canonical
+transaction above. Existing variants expose their Base-plan lineage and a return
+path to the Planning subgroup.
+
+These workflows preserve the H7/H9 rules: a Planning subgroup never spans
+sporting groups, variant chains remain invalid, dated resolution remains
+membership-based, and Coach navigation does not create a second planning model.
