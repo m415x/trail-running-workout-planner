@@ -12,6 +12,7 @@ try {
     'global_monthly_due_date_exceptions',
     'monthly_charge_reductions',
     'monthly_charge_extensions',
+    'payment_revisions',
   ]
   const tables = new Set(
     (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
