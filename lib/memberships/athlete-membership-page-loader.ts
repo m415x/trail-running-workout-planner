@@ -1,6 +1,11 @@
-import { deriveMonthlyChargePaymentBalance } from './billing'
+import {
+  deriveMembershipAccountState,
+  deriveMonthlyChargePaymentBalance,
+  explainMonthlyChargeEconomics,
+} from './billing'
 import type {
   BillingPersistencePort,
+  GlobalDueDateExceptionPersistencePort,
   MonthlyChargeExtensionPersistencePort,
   MonthlyChargeReductionPersistencePort,
   PaymentPersistencePort,
@@ -13,6 +18,7 @@ export function createAthleteMembershipPageLoader<TDatabase>({
 }: {
   createPort: (db: TDatabase) =>
     BillingPersistencePort
+    & Partial<GlobalDueDateExceptionPersistencePort>
     & Partial<MonthlyChargeReductionPersistencePort>
     & Partial<MonthlyChargeExtensionPersistencePort>
     & Partial<PaymentPersistencePort>
@@ -25,17 +31,33 @@ export function createAthleteMembershipPageLoader<TDatabase>({
     teamId,
     athleteId,
     onDate,
+    cutoffDate,
   }: {
     db: TDatabase
     locale: 'es' | 'en'
     teamId: string
     athleteId: string
     onDate: string
+    cutoffDate: string
   }) {
     const port = createPort(db)
     const monthlyCharges = port.listPersistedMonthlyCharges
       ? await port.listPersistedMonthlyCharges(teamId, athleteId)
       : []
+    const billingTerms = await port.listBillingTerms(teamId, athleteId)
+    const globalDueDateHistoryByCharge = new Map<string, Awaited<ReturnType<NonNullable<typeof port.listGlobalDueDateExceptionRevisions>>>>()
+
+    if (port.listGlobalDueDateExceptionRevisions) {
+      await Promise.all(monthlyCharges.map(async (charge) => {
+        const history = await port.listGlobalDueDateExceptionRevisions!(
+          teamId,
+          charge.year,
+          charge.month,
+        )
+        globalDueDateHistoryByCharge.set(charge.id, history)
+      }))
+    }
+
     const reductionHistory = port.listMonthlyChargeReductionRevisions
       ? (await Promise.all(
           monthlyCharges.map((charge) => port.listMonthlyChargeReductionRevisions!(charge.id)),
@@ -65,6 +87,42 @@ export function createAthleteMembershipPageLoader<TDatabase>({
         }),
     })
 
+    const accountState = deriveMembershipAccountState({
+      cutoffDate,
+      charges: monthlyCharges.map((charge) => ({
+        id: charge.id,
+        charge,
+        paymentRevisions: paymentHistory.filter(
+          (revision) => revision.monthlyChargeId === charge.id,
+        ),
+      })),
+    })
+
+    const economicHistory = monthlyCharges.map((charge) => {
+      const terms = billingTerms.find((item) => item.id === charge.billingTermsId)
+      if (!terms) {
+        throw new Error(`Missing billing terms for MonthlyCharge ${charge.id}`)
+      }
+
+      return explainMonthlyChargeEconomics({
+        teamId,
+        cutoffDate,
+        monthlyChargeId: charge.id,
+        terms,
+        charge,
+        globalDueDateHistory: globalDueDateHistoryByCharge.get(charge.id) ?? [],
+        reductionHistory: reductionHistory.filter(
+          (revision) => revision.monthlyChargeId === charge.id,
+        ),
+        extensionHistory: extensionHistory.filter(
+          (revision) => revision.monthlyChargeId === charge.id,
+        ),
+        paymentHistory: paymentHistory.filter(
+          (revision) => revision.monthlyChargeId === charge.id,
+        ),
+      })
+    })
+
     return {
       ...membership,
       monthlyCharges: monthlyCharges.map((charge) => {
@@ -86,6 +144,8 @@ export function createAthleteMembershipPageLoader<TDatabase>({
           remainingAmountMinor: balance.remainingMinor,
         }
       }),
+      accountState,
+      economicHistory,
       reductionHistory,
       extensionHistory,
       paymentHistory,
