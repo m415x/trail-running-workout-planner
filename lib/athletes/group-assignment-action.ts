@@ -15,10 +15,15 @@ const athleteGroupFormSchema = z.object({
   effectiveDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Ingresá una fecha válida'),
   reason: z.string().trim().max(500, 'El motivo no puede superar los 500 caracteres').optional(),
   locale: z.enum(locales).default('es'),
+  returnContext: z.string().regex(/^group:[A-Za-z0-9_-]+$/).optional(),
 })
 
 function athletesPath(locale: string) {
   return locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
+}
+
+function groupsPath(locale: string) {
+  return locale === 'es' ? '/dashboard/groups' : `/${locale}/dashboard/groups`
 }
 
 export function createAthleteGroupAssignmentAction<
@@ -65,9 +70,22 @@ export function createAthleteGroupAssignmentAction<
 
     const listPath = athletesPath(data.locale)
     const detailPath = `${listPath}/${data.athleteId}`
+    const returnGroupId = data.returnContext?.startsWith('group:')
+      ? data.returnContext.slice('group:'.length)
+      : null
 
     dependencies.revalidatePath(listPath)
     dependencies.revalidatePath(detailPath)
+
+    if (returnGroupId === data.newGroupId) {
+      const groupListPath = groupsPath(data.locale)
+      const groupDetailPath = `${groupListPath}/${returnGroupId}`
+      dependencies.revalidatePath(groupListPath)
+      dependencies.revalidatePath(groupDetailPath)
+      dependencies.redirect(groupDetailPath)
+      return {}
+    }
+
     dependencies.redirect(detailPath)
 
     return {}
