@@ -3,10 +3,6 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import type { AthleteGroupCode, Macrocycle } from '@/types'
 import * as coreSchema from '@/db/schema'
-import * as loadStrategySchema from '@/db/load-strategy-schema'
-import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
-import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
-import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import { competitionEntryRaceCourses } from '@/db/race-catalog-schema'
 import {
   groupTrainingPlans,
@@ -23,13 +19,6 @@ import {
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import { competitionEntries } from '@/db/competition-entry-schema'
 
-const variantPersistenceSchema = {
-  ...coreSchema,
-  ...loadStrategySchema,
-  ...intensityStrategySchema,
-  ...sessionGenerationPreferencesSchema,
-  ...competitionEntrySchema,
-}
 import {
   derivePlanningCohortVariant,
   PlanningVariantDerivationError,
