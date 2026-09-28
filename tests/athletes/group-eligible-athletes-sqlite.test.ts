@@ -112,7 +112,7 @@ describe('KAN-516 eligible sporting group athletes', () => {
 
       assert.ok(result)
       assert.equal(result.group.id, 'target')
-      assert.deepEqual(result.athletes.map((athlete) => athlete.id), ['transfer','ungrouped'])
+      assert.deepEqual(result.athletes.map((athlete) => athlete.id), ['ungrouped','transfer'])
     } finally {
       fixture.sqlite.close()
     }
