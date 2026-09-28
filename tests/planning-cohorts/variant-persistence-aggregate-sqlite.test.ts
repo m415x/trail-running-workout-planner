@@ -288,6 +288,56 @@ function ids() {
 }
 
 describe('KAN-517 complete planning variant persistence', () => {
+  it('rolls back the entire derived aggregate when a child insert fails', () => {
+    const fixture = createAggregateFixture()
+
+    try {
+      const createDuplicateChildId = (() => {
+        let index = 0
+        return () => {
+          index += 1
+          if (index === 2) return 'load-1'
+          return `rollback-${index}`
+        }
+      })()
+
+      assert.throws(() => persistPlanningCohortVariantSynchronously({
+        db: fixture.db,
+        teamId: 'team-1',
+        cohortId: 'cohort-1',
+        sourcePlanId: 'base-1',
+        title: 'Variante rollback',
+        selectedCompetitionEntryIds: ['competition-1'],
+        createId: createDuplicateChildId,
+        now: () => '2026-09-28T15:00:00.000Z',
+      }))
+
+      const variantPlans = fixture.sqlite.prepare(`
+        SELECT count(*) AS count
+        FROM group_training_plans
+        WHERE planning_cohort_id = 'cohort-1'
+      `).get() as { count:number }
+
+      const derivedMacros = fixture.sqlite.prepare(`
+        SELECT count(*) AS count
+        FROM macrocycles
+        WHERE group_training_plan_id <> 'base-1'
+      `).get() as { count:number }
+
+      const derivedCompetitions = fixture.sqlite.prepare(`
+        SELECT count(*) AS count
+        FROM competition_entries
+        WHERE group_training_plan_id <> 'base-1'
+      `).get() as { count:number }
+
+      assert.equal(variantPlans.count,0)
+      assert.equal(derivedMacros.count,0)
+      assert.equal(derivedCompetitions.count,0)
+    } finally {
+      fixture.sqlite.close()
+    }
+  })
+
   it('persists an independent planning snapshot and only selected competitions', () => {
     const fixture = createAggregateFixture()
 
