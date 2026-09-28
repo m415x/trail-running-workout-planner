@@ -7,11 +7,13 @@ import { AthleteTabContent } from '@profile/components/AthleteTabContent'
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab() {
+export function ProfileTab({ membershipStatus }: { membershipStatus?: React.ReactNode }) {
   return (
     <div className='space-y-4'>
       {/* Hero Header */}
       <ProfileHeader user={currentUser} />
+
+      {membershipStatus}
 
       {/* Profile Tabs */}
       <Tabs defaultValue='athlete' className='w-full'>
