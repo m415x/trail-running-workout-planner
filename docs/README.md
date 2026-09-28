@@ -12,7 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
-- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1/H2/H3 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments and per-charge balance derivation.
+- [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H4 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, per-charge balances and derived account/history projection.
 
 ### Monitoring baseline
 
@@ -39,7 +39,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-486.md`](handoffs/kan-486.md), covering completed KAN-461 H3 closure and the KAN-462 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-493.md`](handoffs/kan-493.md), covering KAN-462 H4 closure and the KAN-463 entry contract. Completed Epic 4 evolution is consolidated in [`history/epic-4.md`](history/epic-4.md).
 
 ## Agent harness
 
@@ -49,11 +49,13 @@ Do not modify the published harness as incidental feature/epic bootstrap work. A
 
 ## Current baseline
 
-Epics 1–4 are complete. Epic 5 is active. KAN-459 H1, KAN-460 H2 and KAN-461 H3 are complete on their story progression through the current branch. KAN-461 delivers append-only `Payment` history, partial/full manual payments, correction/void lifecycle, per-charge paid/remaining derivation, SQLite and PostgreSQL/Supabase parity, and localized Coach ES/EN operation. Its durable contract is [`architecture/memberships.md`](architecture/memberships.md) and its closure/next-story baseline is [`handoffs/kan-486.md`](handoffs/kan-486.md).
+Epics 1–4 are complete. Epic 5 is active. KAN-459 H1, KAN-460 H2, KAN-461 H3 and KAN-462 H4 are complete through the current story progression once KAN-462 is integrated into `dev`.
 
-The verified Supabase environment is current through H3: H1/H2/H3 billing persistence contracts report OK, with 45/45 application tables and 45/45 tables protected by RLS. This evidence belongs to the controlled KAN-461 deployment/verification run; later stories must reverify rather than treating it as timeless deployment state.
+KAN-462 delivers deterministic `settled | pending | overdue` account projection from an explicit civil cutoff date, paid/remaining and per-currency account balances derived from H2/H3 facts, an explainable economic history, and localized Coach ES/EN presentation. H4 adds no mutable balance/status persistence or parallel ledger. Its durable contract is [`architecture/memberships.md`](architecture/memberships.md) and its closure/next-story baseline is [`handoffs/kan-493.md`](handoffs/kan-493.md).
 
-KAN-462 — H4 Account status and economic history — is the next Epic 5 story after KAN-461 is integrated into `dev`. H4 may derive aggregate state/history from H1/H2/H3 facts but must not rewrite the append-only Payment authority or introduce a parallel balance model.
+The verified Supabase deployment evidence remains the KAN-461 H3 controlled run: H1/H2/H3 billing persistence contracts reported OK, with 45/45 application tables and 45/45 tables protected by RLS. KAN-462 adds no schema or RLS changes; later stories must reverify current deployment state rather than treating old evidence as timeless.
+
+KAN-463 — H5 Experiencia Coach/Athlete y bloqueo por deuda anterior — is the next Epic 5 story after KAN-462 integration. H5 consumes the H4 projection for Coach/Athlete presentation and derived prior-debt blocking; it must not persist a second debt/account-state authority and must remain separate from the KAN-298 identity/session/authorization phase.
 
 Epic 4 is consolidated in [`history/epic-4.md`](history/epic-4.md). Its durable field-performance/execution contract is [`architecture/monitoring/field-performance-and-execution-guidance.md`](architecture/monitoring/field-performance-and-execution-guidance.md), with research rationale in [`research/epic-4-field-physiology-and-intensity-guidance.md`](research/epic-4-field-physiology-and-intensity-guidance.md).
 
