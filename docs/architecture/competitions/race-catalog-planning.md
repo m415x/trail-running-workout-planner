@@ -141,3 +141,39 @@ A selected catalog course describes competitive context; it does not prove that 
 5. Legacy/manual entries remain valid without a catalog reference.
 6. Planning remains reproducible without a live catalog join.
 7. Selecting a course never creates an athlete registration or readiness result.
+
+
+## KAN-504 planning-impact projection
+
+KAN-504 adds a read-only inverse projection from one `RaceCourse` to the
+planning snapshots that explicitly reference it:
+
+```text
+RaceCourse
+  ← competition_entry_race_courses
+  ← CompetitionEntry
+  → GroupTrainingPlan
+  → AthleteGroup
+  → optional PlanningCohort
+```
+
+The projection is based only on the persisted sidecar relation. It never groups
+or infers entries by matching race name, date, distance or D+. Manual and legacy
+`CompetitionEntry` rows without a sidecar remain valid and simply do not appear
+in this projection.
+
+The query is isolated by team and excludes deleted planning records. The UI
+shows each linked plan independently, including Base-plan/Variant kind, Sporting
+group, optional Planning subgroup, competition priority/status and operational
+links back to planning. It is strictly read-only: the competitive catalog does
+not create, derive, activate or mutate planning.
+
+A single `RaceCourse` may therefore appear in independent variants belonging
+to different Sporting groups. Sharing the race identity never creates a
+cross-group Planning subgroup. If a projected variant/subgroup relationship is
+cross-group, the projection rejects it rather than presenting a silently
+inconsistent audience.
+
+This inverse view does not change the authority model defined above:
+`CompetitionEntry` remains the plan-owned snapshot and the catalog sidecar
+remains optional traceability.
