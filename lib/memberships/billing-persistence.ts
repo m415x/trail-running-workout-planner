@@ -39,6 +39,10 @@ export type PersistedPaymentRevision = PaymentRevision
 export type PaymentPersistencePort = {
   listPaymentRevisions: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
   insertPaymentRevision: (revision: PersistedPaymentRevision) => Promise<void>
+  replaceCurrentPaymentRevisionAtomically?: (
+    previous: PersistedPaymentRevision,
+    replacement: PersistedPaymentRevision,
+  ) => Promise<void>
 }
 
 export type MonthlyChargeReductionPersistencePort = {
@@ -185,6 +189,101 @@ export function createBillingPersistenceAdapter(
       return revision
     },
 
+    async correctManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+      revisionId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+    }): Promise<PersistedPaymentRevision> {
+      if (!(await port.athleteBelongsToTeam(input.teamId, input.athleteId))) {
+        throw new Error('Athlete does not belong to the requested team')
+      }
+
+      const h3Port = port as BillingPersistencePort & PaymentPersistencePort
+      if (!h3Port.listPaymentRevisions || !h3Port.replaceCurrentPaymentRevisionAtomically) {
+        throw new Error('Billing persistence does not support Payment corrections')
+      }
+
+      const persistedCharges = port.listPersistedMonthlyCharges
+        ? await port.listPersistedMonthlyCharges(input.teamId, input.athleteId)
+        : []
+      const charge = persistedCharges.find(candidate =>
+        candidate.id === input.monthlyChargeId && candidate.athleteId === input.athleteId
+      )
+      if (!charge) throw new Error('Monthly charge not found in requested athlete scope')
+
+      const existing = await h3Port.listPaymentRevisions(input.monthlyChargeId)
+      const paymentStream = existing.filter(revision => revision.paymentId === input.paymentId)
+      const current = paymentStream.find(revision => revision.isCurrent)
+      if (!current) throw new Error('Current Payment revision not found')
+
+      const correctedStream = applyPaymentRevision({
+        revisions: paymentStream,
+        revisionId: input.revisionId,
+        paymentId: input.paymentId,
+        monthlyChargeId: input.monthlyChargeId,
+        amountMinor: input.amountMinor,
+        paymentMethod: input.paymentMethod,
+        paidAt: input.paidAt,
+        voided: false,
+      })
+      const replacement = correctedStream.find(revision => revision.isCurrent)!
+      const otherPayments = existing.filter(revision => revision.paymentId !== input.paymentId)
+
+      deriveMonthlyChargePaymentBalance({
+        charge,
+        monthlyChargeId: input.monthlyChargeId,
+        paymentRevisions: [...otherPayments, ...correctedStream],
+      })
+
+      await h3Port.replaceCurrentPaymentRevisionAtomically(current, replacement)
+      return replacement
+    },
+
+    async voidManualPayment(input: {
+      teamId: string
+      athleteId: string
+      monthlyChargeId: string
+      paymentId: string
+      revisionId: string
+    }): Promise<PersistedPaymentRevision> {
+      if (!(await port.athleteBelongsToTeam(input.teamId, input.athleteId))) {
+        throw new Error('Athlete does not belong to the requested team')
+      }
+
+      const h3Port = port as BillingPersistencePort & PaymentPersistencePort
+      if (!h3Port.listPaymentRevisions || !h3Port.replaceCurrentPaymentRevisionAtomically) {
+        throw new Error('Billing persistence does not support Payment voids')
+      }
+
+      const existing = await h3Port.listPaymentRevisions(input.monthlyChargeId)
+      const paymentStream = existing.filter(revision => revision.paymentId === input.paymentId)
+      const current = paymentStream.find(revision => revision.isCurrent)
+      if (!current) throw new Error('Current Payment revision not found')
+      if (current.monthlyChargeId !== input.monthlyChargeId) {
+        throw new Error('Payment does not belong to requested MonthlyCharge')
+      }
+
+      const voidedStream = applyPaymentRevision({
+        revisions: paymentStream,
+        revisionId: input.revisionId,
+        paymentId: input.paymentId,
+        monthlyChargeId: input.monthlyChargeId,
+        amountMinor: current.amountMinor,
+        paymentMethod: current.paymentMethod,
+        paidAt: current.paidAt,
+        voided: true,
+      })
+      const replacement = voidedStream.find(revision => revision.isCurrent)!
+
+      await h3Port.replaceCurrentPaymentRevisionAtomically(current, replacement)
+      return replacement
+    },
+
     async applyGlobalDueDateException(input: {
       teamId: string
       year: number
@@ -301,6 +400,16 @@ export function createBillingPersistenceAdapter(
         extensionRevisions: [],
         economicActivationDate: charge.baseDueDate,
       })
+
+      const h3Port = port as BillingPersistencePort & Partial<PaymentPersistencePort>
+      if (h3Port.listPaymentRevisions) {
+        const paymentRevisions = await h3Port.listPaymentRevisions(input.monthlyChargeId)
+        deriveMonthlyChargePaymentBalance({
+          charge: projected,
+          monthlyChargeId: input.monthlyChargeId,
+          paymentRevisions,
+        })
+      }
 
       await h2Port.applyMonthlyChargeReductionAtomically(
         input.teamId,
