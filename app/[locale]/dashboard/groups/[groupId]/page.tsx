@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { ArrowLeft, Eye, Pencil, UsersRound } from 'lucide-react'
+import { ArrowLeft, Eye, Pencil, UserPlus, UsersRound } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { getGroupWithMembers } from '@/app/actions/group-actions'
@@ -54,9 +54,14 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
           </div>
         </div>
 
-        <Link href={`${groupsPath}/${group.id}/edit`} className={buttonVariants({ variant: 'outline' })}>
-          <Pencil /> {t('editGroup')}
-        </Link>
+        <div className='flex flex-wrap gap-2'>
+          <Link href={`${groupsPath}/${group.id}/members/new`} className={buttonVariants()}>
+            <UserPlus /> {t('addMember')}
+          </Link>
+          <Link href={`${groupsPath}/${group.id}/edit`} className={buttonVariants({ variant: 'outline' })}>
+            <Pencil /> {t('editGroup')}
+          </Link>
+        </div>
       </div>
 
       <Card>
