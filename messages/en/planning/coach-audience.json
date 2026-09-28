@@ -1,0 +1,36 @@
+{
+  "CoachPlanningAudience": {
+    "sportingGroups": {
+      "title": "Sporting groups",
+      "description": "Stable sporting classifications used to organize athletes and their training.",
+      "new": "New sporting group",
+      "emptyTitle": "There are no sporting groups yet",
+      "emptyDescription": "Create the first sporting group to organize athletes and enable their planning workflows.",
+      "viewMembers": "View members",
+      "edit": "Edit",
+      "active": "Active",
+      "inactive": "Inactive",
+      "noDescription": "No description",
+      "back": "Back to sporting groups",
+      "newTitle": "New sporting group",
+      "newDescription": "Create a stable sporting classification by combining training category and level."
+    },
+    "planningSubgroups": {
+      "title": "Planning subgroups",
+      "description": "Temporary audiences of athletes from the same sporting group who share a planning objective.",
+      "new": "New planning subgroup",
+      "emptyTitle": "There are no planning subgroups yet",
+      "emptyDescription": "Planning subgroups will appear here when the Coach creates a temporary audience with shared planning.",
+      "sportingGroup": "Sporting group",
+      "currentMembers": "Current members",
+      "active": "Active",
+      "archived": "Archived",
+      "noVariant": "No associated variant",
+      "viewDetail": "View details",
+      "relationshipHelp": "A planning subgroup is temporary and does not change the athlete's stable sporting group.",
+      "back": "Back to planning subgroups",
+      "newTitle": "New planning subgroup",
+      "newDescription": "Create a temporary audience for athletes from the same sporting group who share an objective and planning."
+    }
+  }
+}
