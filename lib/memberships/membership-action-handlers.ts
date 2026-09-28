@@ -55,6 +55,14 @@ type MembershipActionRuntime = {
     extendedDueDate: string | null
     reason: string
   }) => Promise<BillingActionResult>
+  registerManualPayment: (input: {
+    teamId: string
+    athleteId: string
+    monthlyChargeId: string
+    amountMinor: number
+    paymentMethod: 'cash' | 'bank_transfer'
+    paidAt: string
+  }) => Promise<BillingActionResult>
 }
 
 type Locale = 'es' | 'en'
@@ -190,6 +198,25 @@ export function createMembershipActionHandlers({
     }) {
       const { locale, ...billingInput } = input
       const result = await runtime.applyMonthlyChargeExtension({
+        ...billingInput,
+        teamId,
+      })
+      if (result.success) {
+        revalidatePath(localizedPath(locale, `/dashboard/athletes/${input.athleteId}`))
+      }
+      return result
+    },
+
+    async registerManualPayment(input: {
+      athleteId: string
+      monthlyChargeId: string
+      amountMinor: number
+      paymentMethod: 'cash' | 'bank_transfer'
+      paidAt: string
+      locale: Locale
+    }) {
+      const { locale, ...billingInput } = input
+      const result = await runtime.registerManualPayment({
         ...billingInput,
         teamId,
       })
