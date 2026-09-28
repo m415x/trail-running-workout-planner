@@ -7,6 +7,7 @@ import * as loadStrategySchema from '@/db/load-strategy-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
 import * as competitionEntrySchema from '@/db/competition-entry-schema'
+import { competitionEntryRaceCourses } from '@/db/race-catalog-schema'
 import {
   groupTrainingPlans,
   planningCohorts,
@@ -174,6 +175,14 @@ export function persistPlanningCohortVariantSynchronously(input: {
           eq(competitionEntries.isDeleted, false),
         ))
         .all()
+
+      const sourceCompetitionCatalogLinks = tx
+        .select()
+        .from(competitionEntryRaceCourses)
+        .all()
+        .filter((link) => sourceCompetitions.some(
+          (competition) => competition.id === link.competitionEntryId,
+        ))
 
       const groupCode = `${sourcePlan.group.categoryCode}${sourcePlan.group.levelCode}` as AthleteGroupCode
       const sourceMacrocycles: Macrocycle[] = sourcePlanAggregate.macrocycles.map((macrocycle) => ({
@@ -427,6 +436,19 @@ export function persistPlanningCohortVariantSynchronously(input: {
           description: competition.description ?? null,
           createdAt: now,
           updatedAt: now,
+        }).run()
+      }
+
+      for (const sourceLink of sourceCompetitionCatalogLinks) {
+        const derivedCompetitionEntryId =
+          derived.identityMap.competitionEntryIds[sourceLink.competitionEntryId]
+
+        if (!derivedCompetitionEntryId) continue
+
+        tx.insert(competitionEntryRaceCourses).values({
+          competitionEntryId: derivedCompetitionEntryId,
+          raceCourseId: sourceLink.raceCourseId,
+          createdAt: now,
         }).run()
       }
 
