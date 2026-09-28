@@ -58,6 +58,7 @@ test('production athlete membership loader composes Drizzle snapshot reading wit
     teamId: 'team_1',
     athleteId: 'athlete-1',
     onDate: '2026-09-25',
+    cutoffDate: '2026-09-25',
   })
 
   assert.equal(model.title, 'Membresía')
@@ -139,6 +140,7 @@ test('KAN-479 athlete membership loader preserves auditable H2 revision values',
     teamId: 'team_1',
     athleteId: 'athlete-1',
     onDate: '2026-09-25',
+    cutoffDate: '2026-09-25',
   })
 
   assert.equal(model.reductionHistory[0]?.reductionAmountMinor, 300_000)
