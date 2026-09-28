@@ -91,3 +91,15 @@ export async function materializeTeamMonthlyChargesAction(input: {
 }) {
   return handlers.materializeTeamMonthlyCharges(input)
 }
+
+
+export async function registerManualPaymentAction(input: {
+  athleteId: string
+  monthlyChargeId: string
+  amountMinor: number
+  paymentMethod: 'cash' | 'bank_transfer'
+  paidAt: string
+  locale: 'es' | 'en'
+}) {
+  return handlers.registerManualPayment(input)
+}
