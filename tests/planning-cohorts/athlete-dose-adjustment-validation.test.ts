@@ -4,12 +4,13 @@ import { test } from 'node:test'
 import {
   applyAthleteDoseAdjustment,
 } from '@/lib/planning-cohorts/athlete-dose-adjustment'
+import type { EffectiveAudiencePrescription } from '@/lib/planning-cohorts/athlete-session-adjustment'
 import type {
   PersistedAthleteSessionAdjustment,
   PersistedAthleteSessionAdjustmentRevision,
 } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 
-const sourcePrescription = {
+const sourcePrescription: EffectiveAudiencePrescription = {
   id: 'prescription-1',
   distanceKm: 12,
   durationMin: 95,
