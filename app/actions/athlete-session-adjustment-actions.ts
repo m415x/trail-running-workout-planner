@@ -255,18 +255,13 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   })
   if (!sourcePrescription) return { error: 'sourcePrescriptionNotFound' }
 
-  const existingAdjustment = await db.query.athleteSessionAdjustments.findFirst({
-    where: and(
-      eq(athleteSessionAdjustments.athleteId, athleteId),
-      eq(athleteSessionAdjustments.sourcePrescriptionId, sourcePrescriptionId),
-      eq(athleteSessionAdjustments.isDeleted, false),
-    ),
-  })
-
-  const persistence = createAthleteSessionAdjustmentPersistenceAdapter(
-    createDrizzleAthleteSessionAdjustmentDatabase(db),
+  const adjustmentDatabase = createDrizzleAthleteSessionAdjustmentDatabase(db)
+  const existingAdjustment = await adjustmentDatabase.getAdjustmentByIdentity(
+    athleteId,
+    sourcePrescriptionId,
   )
-  const adjustmentId = existingAdjustment?.id ?? randomUUID()
+  const persistence = createAthleteSessionAdjustmentPersistenceAdapter(adjustmentDatabase)
+  const adjustmentId = existingAdjustment ? existingAdjustment.id : randomUUID()
   const revisionId = randomUUID()
   const effectiveSource: EffectiveAudiencePrescription = {
     id: sourcePrescription.id,
