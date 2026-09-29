@@ -9,6 +9,7 @@ const detail = read('app/[locale]/dashboard/sessions/[sessionId]/page.tsx')
 const mobileHome = read('app/[locale]/(mobile)/page.tsx')
 const homeTab = read('features/workouts/HomeTab.tsx')
 const dashboardActions = read('app/actions/dashboard-actions.ts')
+const adjustmentActions = read('app/actions/athlete-session-adjustment-actions.ts')
 
 test('KAN-521 Coach adjustment surface uses i18n for visible copy and server error codes', () => {
   assert.match(review, /useTranslations\(['"]Sessions['"]\)/)
@@ -38,7 +39,7 @@ test('successful Coach save remounts each uncontrolled adjustment form from the 
     review,
     /key=\{[^}]*item\.athleteId[^}]*item\.revisionId|key=\{[^}]*item\.revisionId[^}]*item\.athleteId/,
   )
-  assert.match(dashboardActions, /revisionId/)
+  assert.match(adjustmentActions, /revisionId/)
 })
 
 test('mobile Home consumes the same KAN-522 plus KAN-521 resolved planning path as Plan', () => {
