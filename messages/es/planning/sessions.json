@@ -130,6 +130,47 @@
       "group": "Grupo",
       "allGroups": "Todos los grupos",
       "inactive": "Inactivo"
+    },
+    "adjustments": {
+      "title": "Ajustes individuales",
+      "description": "Revisá y editá ajustes individuales sobre la prescripción efectiva de cada atleta.",
+      "reviewRequired": "Fuera de autoridad · revisión requerida",
+      "omitted": "Omitida",
+      "doseTitle": "Dosis individual",
+      "distance": "Distancia",
+      "duration": "Duración",
+      "elevationGain": "Desnivel",
+      "intensity": "Intensidad",
+      "inheritIntensity": "Heredar ({value})",
+      "noIntensity": "sin intensidad",
+      "clearIntensity": "Sin intensidad individual",
+      "hrZone": "Zona FC",
+      "referencePercentage": "Porcentaje de referencia",
+      "zone": "Zona",
+      "selectZone": "Seleccionar",
+      "assignmentTitle": "Asignación individual",
+      "reschedule": "Reprogramar",
+      "stimulus": "Estímulo",
+      "workoutId": "ID de entrenamiento",
+      "stimulusType": "Tipo de estímulo",
+      "inherit": "Heredar",
+      "omitForAthlete": "Omitir para este atleta",
+      "reason": "Motivo",
+      "reasonPlaceholder": "Motivo del ajuste individual",
+      "reviewRequiredAction": "Revisión requerida",
+      "saving": "Guardando…",
+      "save": "Guardar ajuste individual",
+      "inheritNoValue": "Heredar: sin valor",
+      "inheritValue": "Heredar: {value}",
+      "errors": {
+        "invalidForm": "Revisá los datos del ajuste individual.",
+        "reasonRequired": "Ingresá un motivo para registrar el ajuste.",
+        "sourcePrescriptionNotFound": "La prescripción de origen ya no está disponible.",
+        "staleSourcePrescription": "La prescripción efectiva cambió. Revisá el ajuste antes de continuar.",
+        "invalidReschedule": "Ingresá una fecha válida para la reprogramación.",
+        "invalidStimulusType": "Seleccioná un tipo de estímulo válido.",
+        "saveFailed": "No se pudo guardar el ajuste individual."
+      }
     }
   }
 }
