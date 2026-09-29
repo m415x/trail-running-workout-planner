@@ -3,7 +3,9 @@ import { ArrowLeft, CalendarDays, MapPin, Mountain, Pencil, Route } from 'lucide
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
+import { getSessionAthleteAdjustmentReview } from '@/app/actions/athlete-session-adjustment-actions'
 import { getSessionById } from '@/app/actions/session-actions'
+import { AthleteSessionAdjustmentReview } from '@/features/sessions/components/AthleteSessionAdjustmentReview'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -15,6 +17,7 @@ interface SessionDetailPageProps {
 export default async function SessionDetailPage({ params }: SessionDetailPageProps) {
   const { locale, sessionId } = await params
   const session = await getSessionById(sessionId)
+  const athleteAdjustmentReview = await getSessionAthleteAdjustmentReview(sessionId)
   const t = await getTranslations('Sessions')
   const workoutTypeT = await getTranslations('Workouts')
 
@@ -72,6 +75,16 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Ajustes individuales</CardTitle>
+          <CardDescription>Review/edit individual por atleta sobre la prescription efectiva.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AthleteSessionAdjustmentReview sessionId={session.id} items={athleteAdjustmentReview} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
