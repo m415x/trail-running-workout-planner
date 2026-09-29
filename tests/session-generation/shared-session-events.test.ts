@@ -98,7 +98,7 @@ describe('reutilización de eventos entre grupos', () => {
     )
   })
 
-  it('rechaza prescripciones repetidas del mismo grupo y claves de generación duplicadas', () => {
+  it('rechaza planning scopes repetidos y claves de generación duplicadas', () => {
     const first = proposal('S2', 'micro-s2', 12, 500, 'Z2')
     const sameGroup = { ...first, generationKey: 'plan-2::micro-2::S2::weekly-saturday' }
     const duplicatedKey = proposal('M1', 'micro-m1', 16, 800, 'Z3')
@@ -106,7 +106,7 @@ describe('reutilización de eventos entre grupos', () => {
 
     assert.throws(
       () => groupSharedSessionEvents([generation(first, sameGroup)]),
-      /duplicate group S2/,
+      /duplicate planning scope micro-s2/,
     )
     assert.throws(
       () => groupSharedSessionEvents([generation(first, duplicatedKey)]),
