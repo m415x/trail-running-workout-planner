@@ -74,7 +74,9 @@ function AthleteAdjustmentForm({
             step='0.1'
             min='0'
             defaultValue={item.distanceKm ?? ''}
-            placeholder={formatInherited(item.inheritedDistanceKm, t)}
+            placeholder={item.inheritedDistanceKm === null
+              ? t('adjustments.inheritNoValue')
+              : t('adjustments.inheritValue', { value: item.inheritedDistanceKm })}
           />
           <LabeledInput
             label={t('adjustments.duration')}
@@ -83,7 +85,9 @@ function AthleteAdjustmentForm({
             step='1'
             min='0'
             defaultValue={item.durationMin ?? ''}
-            placeholder={formatInherited(item.inheritedDurationMin, t)}
+            placeholder={item.inheritedDurationMin === null
+              ? t('adjustments.inheritNoValue')
+              : t('adjustments.inheritValue', { value: item.inheritedDurationMin })}
           />
           <LabeledInput
             label={t('adjustments.elevationGain')}
@@ -92,7 +96,9 @@ function AthleteAdjustmentForm({
             step='1'
             min='0'
             defaultValue={item.elevationGain ?? ''}
-            placeholder={formatInherited(item.inheritedElevationGain, t)}
+            placeholder={item.inheritedElevationGain === null
+              ? t('adjustments.inheritNoValue')
+              : t('adjustments.inheritValue', { value: item.inheritedElevationGain })}
           />
         </div>
       </div>
@@ -211,11 +217,3 @@ function LabeledInput({
   )
 }
 
-function formatInherited(
-  value: number | null,
-  t: ReturnType<typeof useTranslations<'Sessions'>>,
-) {
-  return value === null
-    ? t('adjustments.inheritNoValue')
-    : t('adjustments.inheritValue', { value })
-}
