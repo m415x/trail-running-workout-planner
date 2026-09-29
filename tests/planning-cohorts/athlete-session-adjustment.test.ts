@@ -50,7 +50,6 @@ test('applies only explicit dose overrides and inherits every absent field', () 
       durationMin: { kind: 'inherit' },
       elevationGain: { kind: 'override', value: 400 },
       intensity: { kind: 'inherit' },
-      notes: { kind: 'inherit' },
     },
     assignment: { kind: 'inherit' },
   }
@@ -178,7 +177,6 @@ test('supports explicit removal of optional dose fields without conflating it wi
         durationMin: { kind: 'inherit' },
         elevationGain: { kind: 'inherit' },
         intensity: { kind: 'override', value: null },
-        notes: { kind: 'override', value: null },
       },
       assignment: { kind: 'inherit' },
     },
@@ -206,8 +204,7 @@ test('omission is authoritative and does not leak dose or assignment mutations i
         durationMin: { kind: 'inherit' },
         elevationGain: { kind: 'inherit' },
         intensity: { kind: 'inherit' },
-        notes: { kind: 'inherit' },
-      },
+        },
       assignment: { kind: 'omitted' },
     },
   })
