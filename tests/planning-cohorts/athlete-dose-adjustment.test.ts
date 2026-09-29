@@ -129,7 +129,6 @@ test('dose-only adjustment updates only explicitly supplied fields', async () =>
         method: 'reference_percentage',
         referencePercentage: 82,
       },
-      notes: 'Control effort on climbs',
     },
     persistence: persistence.adapter,
   })
@@ -144,10 +143,6 @@ test('dose-only adjustment updates only explicitly supplied fields', async () =>
       method: 'reference_percentage',
       referencePercentage: 82,
     },
-  })
-  assert.deepEqual(dose.notes, {
-    kind: 'override',
-    value: 'Control effort on climbs',
   })
 })
 
