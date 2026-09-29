@@ -15,10 +15,12 @@ type DoseOverrideInput = {
     | { method: 'hr_zone'; zone: string }
     | { method: 'reference_percentage'; referencePercentage: number }
     | null
-  notes?: string | null
 }
 
 type AdjustmentPersistence = {
+  getCurrentRevision?: (
+    adjustmentId: string,
+  ) => Promise<PersistedAthleteSessionAdjustmentRevision | null>
   applyRevision(input: {
     adjustment: PersistedAthleteSessionAdjustment
     revision: PersistedAthleteSessionAdjustmentRevision
@@ -48,13 +50,17 @@ export async function applyAthleteDoseAdjustment(input: {
     sourcePrescriptionId: input.sourcePrescription.id,
   }
 
+  const currentRevision = input.persistence.getCurrentRevision
+    ? await input.persistence.getCurrentRevision(input.adjustmentId)
+    : null
+
   const revision: PersistedAthleteSessionAdjustmentRevision = {
     id: input.revisionId,
     adjustmentId: input.adjustmentId,
     state: 'active',
     payload: {
       dose: toDoseOverrides(input.overrides),
-      assignment: { kind: 'inherit' },
+      assignment: currentRevision?.payload.assignment ?? { kind: 'inherit' },
     },
     reason: input.reason,
     changedByUserId: input.changedByUserId,
@@ -73,7 +79,6 @@ function toDoseOverrides(overrides: DoseOverrideInput): AthleteDoseOverrides {
     durationMin: toOverride(overrides, 'durationMin'),
     elevationGain: toOverride(overrides, 'elevationGain'),
     intensity: toOverride(overrides, 'intensity'),
-    notes: toOverride(overrides, 'notes'),
   }
 }
 
