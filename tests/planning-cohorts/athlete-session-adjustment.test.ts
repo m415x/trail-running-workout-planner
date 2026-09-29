@@ -96,13 +96,13 @@ test('distinguishes reschedule, stimulus replacement and omission from inheritan
       athleteId: 'athlete-1',
       sourcePrescriptionId: 'prescription-1',
       dose: null,
-      assignment: { kind: 'stimulus_override', workoutId: 'workout-recovery', type: 'Recovery' },
+      assignment: { kind: 'stimulus_override', workoutId: 'workout-recovery', type: 'Rest' },
     },
   })
   assert.equal(replaced.status, 'resolved')
   assert.equal(replaced.session.date, '2026-10-06')
   assert.equal(replaced.session.workoutId, 'workout-recovery')
-  assert.equal(replaced.session.type, 'Recovery')
+  assert.equal(replaced.session.type, 'Rest')
 
   const omitted = resolveAthletePlannedSession({
     athleteId: 'athlete-1',
