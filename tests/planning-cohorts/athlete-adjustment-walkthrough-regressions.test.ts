@@ -37,7 +37,7 @@ test('KAN-521 Coach adjustment surface uses i18n for visible copy and server err
 test('successful Coach save remounts each uncontrolled adjustment form from the new persisted revision', () => {
   assert.match(
     review,
-    /key=\{[^}]*item\.athleteId[^}]*item\.revisionId|key=\{[^}]*item\.revisionId[^}]*item\.athleteId/,
+    /key=\{`\$\{item\.athleteId\}:\$\{item\.revisionId \?\? ['"]none['"]\}`\}/,
   )
   assert.match(adjustmentActions, /revisionId/)
 })
