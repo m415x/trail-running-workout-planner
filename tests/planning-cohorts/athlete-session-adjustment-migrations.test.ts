@@ -8,7 +8,7 @@ function source(file: string) {
 }
 
 test('SQLite migration versions AthleteSessionAdjustment identity and revisions', () => {
-  const sql = source('drizzle/sqlite/0014_athlete_session_adjustments.sql')
+  const sql = source('drizzle/sqlite/0014_daffy_siren.sql')
 
   assert.match(sql, /CREATE TABLE `athlete_session_adjustments`/)
   assert.match(sql, /CREATE TABLE `athlete_session_adjustment_revisions`/)
@@ -19,10 +19,12 @@ test('SQLite migration versions AthleteSessionAdjustment identity and revisions'
   assert.match(sql, /athlete_session_adjustment_revisions_current_unique/)
   assert.match(sql, /WHERE .*is_current.*= 1/i)
   assert.match(sql, /athlete_session_adjustment_revisions_state_check/)
+  assert.doesNotMatch(sql, /group_session_prescriptions_session_group_unique/)
+  assert.doesNotMatch(sql, /group_session_prescriptions_session_microcycle_unique/)
 })
 
 test('Supabase migration versions AthleteSessionAdjustment identity and revisions with RLS', () => {
-  const sql = source('drizzle/supabase/0027_athlete_session_adjustments.sql')
+  const sql = source('drizzle/supabase/0027_eager_stryfe.sql')
 
   assert.match(sql, /CREATE TABLE "athlete_session_adjustments"/)
   assert.match(sql, /CREATE TABLE "athlete_session_adjustment_revisions"/)
@@ -33,5 +35,6 @@ test('Supabase migration versions AthleteSessionAdjustment identity and revision
   assert.match(sql, /athlete_session_adjustment_revisions_current_unique/)
   assert.match(sql, /WHERE .*is_current.*= true/i)
   assert.match(sql, /athlete_session_adjustment_revisions_state_check/)
-  assert.match(sql, /ENABLE ROW LEVEL SECURITY/)
+  assert.match(sql, /ALTER TABLE "athlete_session_adjustments" ENABLE ROW LEVEL SECURITY/)
+  assert.match(sql, /ALTER TABLE "athlete_session_adjustment_revisions" ENABLE ROW LEVEL SECURITY/)
 })
