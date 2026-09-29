@@ -12,15 +12,18 @@ Full-stack application for trail-running group management, periodized planning, 
 - [`docs/history/epic-2.md`](docs/history/epic-2.md) — consolidated Epic 2 / Planning Automation evolution.
 - [`docs/history/epic-3.md`](docs/history/epic-3.md) — realized training, monitoring, Athlete Stats, competitive catalog and action safety.
 - [`docs/history/epic-4.md`](docs/history/epic-4.md) — field-performance evidence, RunningReference, execution guidance and safe physiology integration.
+- [`docs/history/epic-5.md`](docs/history/epic-5.md) — membership economics, auditable exceptions and payments, derived account state and Coach/Athlete debt experience.
 - [`docs/handoffs/`](docs/handoffs/) — temporary operational context for active/recent work; not a history archive.
 
 ## Product status
 
-Epics 1–4 are complete. The current `dev` baseline includes group-first periodized planning, durable realized-training evidence, evidence-qualified monitoring and Athlete Stats, competitive catalog/registration and action safety, plus canonical 1000 m field-performance evidence with temporal RunningReference, safe execution guidance, factual evolution and Coach/Athlete integration.
+Epics 1–5 are complete. The current `dev` baseline includes group-first periodized planning, durable realized-training evidence, evidence-qualified monitoring and Athlete Stats, competitive catalog/registration and action safety, canonical 1000 m field-performance evidence with temporal RunningReference and safe physiology integration, plus the complete Membership billing lifecycle with temporal economic terms, auditable exceptions, append-only payments, derived account state and Coach/Athlete prior-debt handling.
+
+KAN-473 — Functional and UX pre-beta consolidation — is the current epic before identity, authentication and authorization. Its first story consolidated the Coach audience and planning workflows around explicit Sporting group / Planning subgroup vocabulary, canonical group-transfer entry points, transactional Base-plan → Variant derivation and read-only race-course planning impact. The remaining KAN-473 work continues the pre-beta consolidation without changing the authority of completed domain contracts.
 
 The 1000 m field test is observed performance evidence, not a direct measurement of PAM/MAS, VO2max, threshold or heart-rate physiology. Missing evidence remains unknown; monitoring/readiness and physiology remain separate domains; automation does not silently replace coach-owned planning.
 
-Durable current contracts live in `docs/architecture/`; completed evolution is consolidated in `docs/history/`; Jira owns scope and execution traceability. Known legacy/debt work is evaluated from the current `dev` baseline rather than treated as retroactive acceptance failure for completed epics.
+Durable current contracts live in `docs/architecture/`; completed evolution is consolidated in `docs/history/`; Jira owns scope and execution traceability. Known legacy/debt work is evaluated from the current `dev` baseline rather than treated as retroactive acceptance failure for completed epics. For the current story boundary and execution state, use the current handoff indexed by `docs/README.md` rather than treating this root README as an operational handoff.
 
 ## Stack
 
