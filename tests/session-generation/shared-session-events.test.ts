@@ -75,6 +75,29 @@ describe('reutilización de eventos entre grupos', () => {
     )
   })
 
+  it('permite prescripciones del mismo grupo cuando pertenecen a planning scopes distintos', () => {
+    const base = proposal('S2', 'micro-base-s2', 12, 500, 'Z2')
+    const variant = proposal('S2', 'micro-variant-s2', 9, 350, 'Z3')
+    variant.generationKey = 'plan-variant-s2::micro-variant-s2::S2::weekly-saturday'
+
+    const result = groupSharedSessionEvents([generation(base), generation(variant)])
+
+    assert.equal(result.events.length, 1)
+    assert.deepEqual(
+      result.events[0].prescriptions.map(({ prescription }) => ({
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+        distanceKm: prescription.distanceKm,
+        elevationGain: prescription.elevationGain,
+        zone: prescription.zone,
+      })),
+      [
+        { groupId: 'S2', microcycleId: 'micro-base-s2', distanceKm: 12, elevationGain: 500, zone: 'Z2' },
+        { groupId: 'S2', microcycleId: 'micro-variant-s2', distanceKm: 9, elevationGain: 350, zone: 'Z3' },
+      ],
+    )
+  })
+
   it('rechaza prescripciones repetidas del mismo grupo y claves de generación duplicadas', () => {
     const first = proposal('S2', 'micro-s2', 12, 500, 'Z2')
     const sameGroup = { ...first, generationKey: 'plan-2::micro-2::S2::weekly-saturday' }
