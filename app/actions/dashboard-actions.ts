@@ -171,13 +171,20 @@ export async function getCurrentAthletePlanningWeek() {
       },
     })
 
-    const basePlans = await db.query.groupTrainingPlans.findMany({
-      where: and(
-        eq(groupTrainingPlans.groupId, athlete.groupId),
-        eq(groupTrainingPlans.isDeleted, false),
-      ),
-      with: { macrocycles: true },
-    })
+    const relevantGroupIds = [...new Set([
+      athlete.groupId,
+      ...groupChanges.flatMap((change) => [change.previousGroupId, change.newGroupId]),
+    ].filter((groupId): groupId is string => groupId !== null))]
+
+    const basePlans = relevantGroupIds.length === 0
+      ? []
+      : await db.query.groupTrainingPlans.findMany({
+          where: and(
+            inArray(groupTrainingPlans.groupId, relevantGroupIds),
+            eq(groupTrainingPlans.isDeleted, false),
+          ),
+          with: { macrocycles: true },
+        })
 
     const prescriptionMicrocycleIds = [...new Set(
       weekSessions.flatMap((session) => (
