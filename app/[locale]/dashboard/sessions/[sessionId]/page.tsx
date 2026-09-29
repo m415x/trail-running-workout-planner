@@ -78,8 +78,8 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
 
       <Card>
         <CardHeader>
-          <CardTitle>Ajustes individuales</CardTitle>
-          <CardDescription>Review/edit individual por atleta sobre la prescription efectiva.</CardDescription>
+          <CardTitle>{t('adjustments.title')}</CardTitle>
+          <CardDescription>{t('adjustments.description')}</CardDescription>
         </CardHeader>
         <CardContent>
           <AthleteSessionAdjustmentReview sessionId={session.id} items={athleteAdjustmentReview} />
