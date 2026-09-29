@@ -8,6 +8,9 @@ import type {
 } from './athlete-session-adjustment-persistence'
 
 type AssignmentPersistence = {
+  getCurrentRevision?: (
+    adjustmentId: string,
+  ) => Promise<PersistedAthleteSessionAdjustmentRevision | null>
   applyRevision(input: {
     adjustment: PersistedAthleteSessionAdjustment
     revision: PersistedAthleteSessionAdjustmentRevision
@@ -42,12 +45,16 @@ export async function applyAthleteAssignmentAdjustment(input: {
     sourcePrescriptionId: input.sourcePrescription.id,
   }
 
+  const currentRevision = input.persistence.getCurrentRevision
+    ? await input.persistence.getCurrentRevision(input.adjustmentId)
+    : null
+
   const revision: PersistedAthleteSessionAdjustmentRevision = {
     id: input.revisionId,
     adjustmentId: input.adjustmentId,
     state: 'active',
     payload: {
-      dose: null,
+      dose: currentRevision?.payload.dose ?? null,
       assignment: input.assignment,
     },
     reason: input.reason,
