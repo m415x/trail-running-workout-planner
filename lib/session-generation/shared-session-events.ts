@@ -34,10 +34,10 @@ export function groupSharedSessionEvents(
         )
       }
       if (existing.prescriptions.some(({ prescription }) => (
-        prescription.groupId === proposal.prescription.groupId
+        prescription.microcycleId === proposal.prescription.microcycleId
       ))) {
         throw new RangeError(
-          `Shared event key ${proposal.sharedEventKey} contains duplicate group ${proposal.prescription.groupId}`,
+          `Shared event key ${proposal.sharedEventKey} contains duplicate planning scope ${proposal.prescription.microcycleId}`,
         )
       }
 
