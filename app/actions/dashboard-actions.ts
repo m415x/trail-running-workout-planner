@@ -18,9 +18,8 @@ import {
   shoes,
   users,
 } from '@/db/schema'
-import { resolveEffectiveAthleteAdjustment } from '@/lib/planning-cohorts/athlete-adjustment-resolution'
+import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
 import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
-import { resolveAthletePlannedSession } from '@/lib/planning-cohorts/athlete-session-adjustment'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 
@@ -308,9 +307,24 @@ export async function getCurrentAthletePlanningWeek() {
       const currentRevision = adjustment
         ? currentRevisionByAdjustmentId.get(adjustment.id)
         : undefined
-      const adjustmentResolution = resolveEffectiveAthleteAdjustment({
+      const plannedSession = resolveAthletePlanningSession({
         athleteId: athlete.id,
-        effectivePrescriptionId: sourcePrescription.id,
+        session: {
+          id: session.id,
+          date: session.date,
+          workoutId: session.workoutId,
+          type: session.type,
+        },
+        prescription: {
+          id: sourcePrescription.id,
+          distanceKm: sourcePrescription.distanceKm,
+          durationMin: sourcePrescription.durationMin,
+          elevationGain: sourcePrescription.elevationGain,
+          intensityMethod: sourcePrescription.intensityMethod,
+          zone: sourcePrescription.zone,
+          referencePercentage: sourcePrescription.referencePercentage,
+          notes: sourcePrescription.notes,
+        },
         adjustment: adjustment
           ? {
               id: adjustment.id,
@@ -330,37 +344,6 @@ export async function getCurrentAthletePlanningWeek() {
               isCurrent: currentRevision.isCurrent,
             }]
           : [],
-      })
-
-      const effectiveAdjustment = adjustmentResolution.status === 'resolved'
-        ? {
-            id: adjustmentResolution.adjustment.id,
-            athleteId: adjustmentResolution.adjustment.athleteId,
-            sourcePrescriptionId: adjustmentResolution.adjustment.sourcePrescriptionId,
-            dose: adjustmentResolution.revision.payload.dose,
-            assignment: adjustmentResolution.revision.payload.assignment,
-          }
-        : null
-
-      const plannedSession = resolveAthletePlannedSession({
-        athleteId: athlete.id,
-        session: {
-          id: session.id,
-          date: session.date,
-          workoutId: session.workoutId,
-          type: session.type,
-        },
-        prescription: {
-          id: sourcePrescription.id,
-          distanceKm: sourcePrescription.distanceKm,
-          durationMin: sourcePrescription.durationMin,
-          elevationGain: sourcePrescription.elevationGain,
-          intensityMethod: sourcePrescription.intensityMethod,
-          zone: sourcePrescription.zone,
-          referencePercentage: sourcePrescription.referencePercentage,
-          notes: sourcePrescription.notes,
-        },
-        adjustment: effectiveAdjustment,
       })
 
       if (plannedSession.status === 'omitted') return []
