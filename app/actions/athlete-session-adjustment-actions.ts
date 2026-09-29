@@ -54,6 +54,7 @@ export interface SessionAthleteAdjustmentReviewItem {
   stimulus: string | null
   stimulusType: string | null
   omitted: boolean
+  revisionId: string | null
   authorityStatus: 'effective' | 'outside_authority'
   reviewRequired: boolean
 }
@@ -294,6 +295,9 @@ export async function getSessionAthleteAdjustmentReview(
       stimulus: assignment?.kind === 'stimulus_override' ? assignment.workoutId : null,
       stimulusType: assignment?.kind === 'stimulus_override' ? assignment.type : null,
       omitted: assignment?.kind === 'omitted',
+      revisionId: authorityResolution.status === 'resolved'
+        ? authorityResolution.revision.id
+        : reviewRevisions.find(revision => revision.isCurrent)?.id ?? null,
       authorityStatus: outsideAuthority ? 'outside_authority' : 'effective',
       reviewRequired: outsideAuthority,
     })
