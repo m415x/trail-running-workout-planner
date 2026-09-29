@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
 
 import {
+  assertUniquePrescriptionPlanningScopes,
   resolvePrescriptionPlanningScope,
 } from '@/lib/session-generation/prescription-planning-scope'
 
@@ -65,6 +66,23 @@ describe('prescription planning scope', () => {
 
     assert.notEqual(s2.groupId, m1.groupId)
     assert.notEqual(s2.microcycleId, m1.microcycleId)
+  })
+
+  it('rejects duplicate prescriptions for the same persisted planning scope inside one Session', () => {
+    assert.throws(
+      () => assertUniquePrescriptionPlanningScopes([
+        { groupId: 'S2', microcycleId: 'micro-base' },
+        { groupId: 'S2', microcycleId: 'micro-base' },
+      ]),
+      /duplicate planning scope/i,
+    )
+  })
+
+  it('allows Base and Variant scopes from the same sporting group when microcycles differ', () => {
+    assert.doesNotThrow(() => assertUniquePrescriptionPlanningScopes([
+      { groupId: 'S2', microcycleId: 'micro-base' },
+      { groupId: 'S2', microcycleId: 'micro-race' },
+    ]))
   })
 
   it('rejects a prescription whose microcycle does not match the supplied lineage', () => {
