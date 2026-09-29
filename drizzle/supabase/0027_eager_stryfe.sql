@@ -29,3 +29,7 @@ ALTER TABLE "athlete_session_adjustments" ADD CONSTRAINT "athlete_session_adjust
 ALTER TABLE "athlete_session_adjustments" ADD CONSTRAINT "athlete_session_adjustments_source_prescription_id_group_session_prescriptions_id_fk" FOREIGN KEY ("source_prescription_id") REFERENCES "public"."group_session_prescriptions"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "athlete_session_adjustment_revisions_current_unique" ON "athlete_session_adjustment_revisions" USING btree ("adjustment_id") WHERE "athlete_session_adjustment_revisions"."is_current" = true;--> statement-breakpoint
 CREATE UNIQUE INDEX "athlete_session_adjustments_athlete_prescription_unique" ON "athlete_session_adjustments" USING btree ("athlete_id","source_prescription_id");
+--> statement-breakpoint
+ALTER TABLE "athlete_session_adjustments" ENABLE ROW LEVEL SECURITY;
+--> statement-breakpoint
+ALTER TABLE "athlete_session_adjustment_revisions" ENABLE ROW LEVEL SECURITY;
