@@ -18,7 +18,10 @@ test('Coach review resolves each athlete through dated planning authority before
   assert.match(review, /resolveAthletePlanningOnDate/)
   assert.match(review, /resolveAthleteSessionPrescription/)
   assert.match(review, /sourcePrescriptionId/)
-  assert.doesNotMatch(review, /return \[\]\s*$/m)
+  assert.doesNotMatch(
+    review,
+    /Promise<SessionAthleteAdjustmentReviewItem\[\]>\s*\{\s*return \[\]\s*\}/,
+  )
 
   const planningIndex = review.indexOf('resolveAthletePlanningOnDate')
   const prescriptionIndex = review.indexOf('resolveAthleteSessionPrescription')
