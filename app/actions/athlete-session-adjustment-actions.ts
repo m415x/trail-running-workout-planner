@@ -306,11 +306,12 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   const sessionId = String(formData.get('sessionId') ?? '')
   const athleteId = String(formData.get('athleteId') ?? '')
   const sourcePrescriptionId = String(formData.get('sourcePrescriptionId') ?? '')
-  const reason = String(formData.get('reason') ?? 'Coach individual review')
+  const reason = String(formData.get('reason') ?? '').trim()
 
   if (!sessionId || !athleteId || !sourcePrescriptionId) {
     return { error: 'invalidForm' }
   }
+  if (!reason.trim()) return { error: 'reasonRequired' }
 
   const sourcePrescription = await db.query.groupSessionPrescriptions.findFirst({
     where: and(
@@ -320,6 +321,14 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
     ),
   })
   if (!sourcePrescription) return { error: 'sourcePrescriptionNotFound' }
+
+  const effectiveSourcePrescriptionId = await resolveEffectiveSourcePrescriptionId({
+    sessionId,
+    athleteId,
+  })
+  if (effectiveSourcePrescriptionId !== sourcePrescriptionId) {
+    return { error: 'staleSourcePrescription' }
+  }
 
   const adjustmentDatabase = createDrizzleAthleteSessionAdjustmentDatabase(
     db as unknown as Parameters<typeof createDrizzleAthleteSessionAdjustmentDatabase>[0],
@@ -364,6 +373,146 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
 
   revalidatePath(`/dashboard/sessions/${sessionId}`)
   return {}
+}
+
+async function resolveEffectiveSourcePrescriptionId(input: {
+  sessionId: string
+  athleteId: string
+}) {
+  const session = await db.query.sessions.findFirst({
+    where: and(
+      eq(sessions.id, input.sessionId),
+      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.isDeleted, false),
+    ),
+    with: {
+      sessionPrescriptions: {
+        where: eq(groupSessionPrescriptions.isDeleted, false),
+      },
+    },
+  })
+  if (!session) return null
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+  })
+  if (!athlete?.groupId) return null
+
+  const groupChanges = await db.select().from(groupHistoryRecords)
+    .where(and(
+      eq(groupHistoryRecords.athleteId, athlete.id),
+      eq(groupHistoryRecords.isDeleted, false),
+    ))
+
+  const memberships = await db.query.planningCohortMemberships.findMany({
+    where: and(
+      eq(planningCohortMemberships.athleteProfileId, athlete.id),
+      eq(planningCohortMemberships.isDeleted, false),
+    ),
+    with: {
+      planningCohort: {
+        with: {
+          planningVariant: {
+            with: { macrocycles: true },
+          },
+        },
+      },
+    },
+  })
+
+  const relevantGroupIds = [...new Set([
+    athlete.groupId,
+    ...groupChanges.flatMap(change => [change.previousGroupId, change.newGroupId]),
+  ].filter((groupId): groupId is string => groupId !== null))]
+
+  const basePlans = relevantGroupIds.length === 0
+    ? []
+    : await db.query.groupTrainingPlans.findMany({
+        where: and(
+          inArray(groupTrainingPlans.groupId, relevantGroupIds),
+          eq(groupTrainingPlans.isDeleted, false),
+        ),
+        with: { macrocycles: true },
+      })
+
+  const microcycleIds = [...new Set(
+    session.sessionPrescriptions.map(prescription => prescription.microcycleId),
+  )]
+  const lineages = microcycleIds.length === 0
+    ? []
+    : await db.select({
+        microcycleId: microcycles.id,
+        groupTrainingPlanId: groupTrainingPlans.id,
+      })
+        .from(microcycles)
+        .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+        .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+        .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+        .where(inArray(microcycles.id, microcycleIds))
+  const planIdByMicrocycle = new Map(
+    lineages.map(({ microcycleId, groupTrainingPlanId }) => [microcycleId, groupTrainingPlanId]),
+  )
+
+  const planning = resolveAthletePlanningOnDate({
+    athleteTeamId: athlete.teamId,
+    currentGroupId: athlete.groupId,
+    groupChanges,
+    memberships: memberships.map(membership => ({
+      id: membership.id,
+      startDate: membership.startDate,
+      endDate: membership.endDate,
+      isDeleted: membership.isDeleted,
+      cohort: {
+        id: membership.planningCohort.id,
+        teamId: membership.planningCohort.teamId,
+        groupId: membership.planningCohort.groupId,
+        status: membership.planningCohort.status,
+        isDeleted: membership.planningCohort.isDeleted,
+        planningVariant: membership.planningCohort.planningVariant
+          ? {
+              id: membership.planningCohort.planningVariant.id,
+              groupId: membership.planningCohort.planningVariant.groupId,
+              planningCohortId: membership.planningCohort.planningVariant.planningCohortId,
+              status: membership.planningCohort.planningVariant.status,
+              isDeleted: membership.planningCohort.planningVariant.isDeleted,
+              macrocycles: membership.planningCohort.planningVariant.macrocycles,
+            }
+          : null,
+      },
+    })),
+    basePlans: basePlans.map(plan => ({
+      id: plan.id,
+      groupId: plan.groupId,
+      planningCohortId: plan.planningCohortId,
+      status: plan.status,
+      isDeleted: plan.isDeleted,
+      macrocycles: plan.macrocycles,
+    })),
+    date: session.date,
+  })
+
+  const prescriptionResolution = resolveAthleteSessionPrescription({
+    planning,
+    prescriptions: session.sessionPrescriptions.flatMap(prescription => {
+      const groupTrainingPlanId = planIdByMicrocycle.get(prescription.microcycleId)
+      return groupTrainingPlanId
+        ? [{
+            id: prescription.id,
+            groupId: prescription.groupId,
+            microcycleId: prescription.microcycleId,
+            groupTrainingPlanId,
+          }]
+        : []
+    }),
+  })
+
+  return prescriptionResolution.status === 'resolved'
+    ? prescriptionResolution.prescriptionId
+    : null
 }
 
 function parseDoseOverrides(formData: FormData): AthleteDoseOverrides | null {
