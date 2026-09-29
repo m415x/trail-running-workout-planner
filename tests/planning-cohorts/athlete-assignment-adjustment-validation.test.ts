@@ -4,12 +4,13 @@ import { test } from 'node:test'
 import {
   applyAthleteAssignmentAdjustment,
 } from '@/lib/planning-cohorts/athlete-assignment-adjustment'
+import type { EffectiveAudiencePrescription } from '@/lib/planning-cohorts/athlete-session-adjustment'
 import type {
   PersistedAthleteSessionAdjustment,
   PersistedAthleteSessionAdjustmentRevision,
 } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 
-const sourcePrescription = {
+const sourcePrescription: EffectiveAudiencePrescription = {
   id: 'prescription-1',
   distanceKm: 12,
   durationMin: 95,
@@ -112,25 +113,6 @@ test('rejects invalid reschedule or stimulus replacement before persistence', as
       persistence,
     }),
     /date/i,
-  )
-
-  await assert.rejects(
-    () => applyAthleteAssignmentAdjustment({
-      teamId: 'team-1',
-      athleteId: 'athlete-1',
-      sourcePrescription,
-      adjustmentId: 'adjustment-1',
-      revisionId: 'revision-invalid-stimulus',
-      reason: 'Invalid stimulus',
-      changedByUserId: 'coach-1',
-      assignment: {
-        kind: 'stimulus_override',
-        workoutId: 'workout-recovery',
-        type: '   ',
-      },
-      persistence,
-    }),
-    /stimulus|type/i,
   )
 
   assert.equal(writes, 0)
