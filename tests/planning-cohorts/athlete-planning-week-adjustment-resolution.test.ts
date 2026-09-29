@@ -8,7 +8,7 @@ const source = fs.readFileSync(
   'utf8',
 )
 
-test('athlete planning week resolves individual adjustment only after the effective audience prescription', () => {
+test('athlete planning week composes individual planning only after the effective audience prescription', () => {
   const functionStart = source.indexOf('export async function getCurrentAthletePlanningWeek')
   assert.notEqual(functionStart, -1)
   const functionSource = source.slice(
@@ -17,12 +17,10 @@ test('athlete planning week resolves individual adjustment only after the effect
   )
 
   const prescriptionResolution = functionSource.indexOf('resolveAthleteSessionPrescription')
-  const adjustmentResolution = functionSource.indexOf('resolveEffectiveAthleteAdjustment')
-  const plannedSessionResolution = functionSource.indexOf('resolveAthletePlannedSession')
+  const plannedSessionResolution = functionSource.indexOf('resolveAthletePlanningSession')
 
   assert.ok(prescriptionResolution >= 0)
-  assert.ok(adjustmentResolution > prescriptionResolution)
-  assert.ok(plannedSessionResolution > adjustmentResolution)
+  assert.ok(plannedSessionResolution > prescriptionResolution)
 })
 
 test('athlete planning week loads adjustments by athlete and exact effective source prescription ids', () => {
