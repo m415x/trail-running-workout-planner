@@ -118,7 +118,9 @@ export async function getWeeklySchedule(
   }
 }
 
-export async function getCurrentAthletePlanningWeek() {
+export async function getCurrentAthletePlanningWeek(
+  startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
+) {
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -128,7 +130,7 @@ export async function getCurrentAthletePlanningWeek() {
     if (!athlete) throw new Error('Atleta no encontrado')
 
     const today = getCurrentDateInArgentina()
-    const startDate = getMondayFromISODate(today)
+    const startDate = startDateIso
     const endDate = shiftISODate(startDate, 6)
 
     if (!athlete.groupId) {
