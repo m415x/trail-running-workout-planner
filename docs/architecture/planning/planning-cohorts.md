@@ -243,13 +243,35 @@ must return a visible conflict instead of selecting one silently.
 
 ## Sessions and prescriptions
 
-`Session` remains a shared event. Cohorts do not require duplicate events when
-athletes train together. A later task will extend prescription targeting so that
-a cohort may receive values different from its parent group while retaining the
-group prescription as fallback.
+`Session` remains a shared event. Base and Variant planning scopes may converge
+on the same event through `sharedEventKey` while retaining independent
+`GroupSessionPrescription` rows.
 
-This task does not change `GroupSessionPrescription`, its uniqueness rules, or
-the generation keys established by automatic session generation.
+The persisted identity of a prescription audience is the planning lineage rooted
+at `microcycleId`. The effective audience is derived through:
+
+```text
+Microcycle
+  → Mesocycle
+  → Macrocycle
+  → GroupTrainingPlan
+  → Base or Variant
+```
+
+For one shared Session, uniqueness is therefore `Session + microcycleId`, not
+`Session + groupId`. `groupId` remains required domain/isolation data, but it
+is insufficient to identify the effective planning audience because Base and
+Variant of the same Sporting group may coexist on the same Session.
+
+For an athlete and Session date, planning is resolved first with
+`resolveAthletePlanningOnDate()`. The selected plan is authoritative for that
+date. Prescription resolution then selects only the row whose microcycle lineage
+belongs to that plan. If a Variant applies but has no prescription for a Session,
+the system does not fall back to the Base prescription for that Session. Base is
+used only when no applicable Variant exists for the date.
+
+This keeps `WorkoutLog` as realized execution only and preserves individual
+planned adjustments as a separate downstream concern.
 
 ## Implemented H7 boundary
 
