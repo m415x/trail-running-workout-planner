@@ -43,7 +43,14 @@ function AthleteAdjustmentForm({
 
       <div className='flex items-center justify-between gap-3'>
         <strong>{item.athleteName}</strong>
-        {item.omitted && <span className='text-xs text-muted-foreground'>omitted</span>}
+        <div className='flex items-center gap-2'>
+          {item.reviewRequired && (
+            <span className='text-xs font-medium text-destructive'>
+              outside_authority · review required
+            </span>
+          )}
+          {item.omitted && <span className='text-xs text-muted-foreground'>omitted</span>}
+        </div>
       </div>
 
       <div className='space-y-2'>
@@ -159,8 +166,12 @@ function AthleteAdjustmentForm({
       />
 
       {state.error && <p className='text-sm text-destructive'>{state.error}</p>}
-      <Button type='submit' disabled={pending}>
-        {pending ? 'Guardando…' : 'Guardar ajuste individual'}
+      <Button type='submit' disabled={pending || item.reviewRequired}>
+        {item.reviewRequired
+          ? 'Revisión requerida'
+          : pending
+            ? 'Guardando…'
+            : 'Guardar ajuste individual'}
       </Button>
     </form>
   )
