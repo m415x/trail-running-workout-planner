@@ -18,8 +18,6 @@ import {
   planningCohortMemberships,
   sessions,
 } from '@/db/schema'
-import { applyAthleteAssignmentAdjustment } from '@/lib/planning-cohorts/athlete-assignment-adjustment'
-import { applyAthleteDoseAdjustment } from '@/lib/planning-cohorts/athlete-dose-adjustment'
 import { createDrizzleAthleteSessionAdjustmentDatabase } from '@/lib/planning-cohorts/athlete-session-adjustment-drizzle-database'
 import {
   createAthleteSessionAdjustmentPersistenceAdapter,
@@ -27,8 +25,13 @@ import {
 } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
-import type { EffectiveAudiencePrescription } from '@/lib/planning-cohorts/athlete-session-adjustment'
-import type { WorkoutType } from '@/types/training/workout.types'
+import type {
+  AthleteAssignmentOverride,
+  AthleteDoseOverrides,
+  EffectiveAudiencePrescription,
+} from '@/lib/planning-cohorts/athlete-session-adjustment'
+import type { IntensityZone } from '@/types/training/intensity.types'
+import { isWorkoutType } from '@/types/training/workout.types'
 
 const CURRENT_TEAM_ID = 'team_1'
 
@@ -39,9 +42,16 @@ export interface SessionAthleteAdjustmentReviewItem {
   distanceKm: number | null
   durationMin: number | null
   elevationGain: number | null
-  intensity: string | null
+  inheritedDistanceKm: number | null
+  inheritedDurationMin: number | null
+  inheritedElevationGain: number | null
+  intensityMethod: 'hr_zone' | 'reference_percentage' | 'clear' | null
+  zone: IntensityZone | null
+  referencePercentage: number | null
+  inheritedIntensity: string | null
   rescheduled: string | null
   stimulus: string | null
+  stimulusType: string | null
   omitted: boolean
 }
 
@@ -216,20 +226,28 @@ export async function getSessionAthleteAdjustmentReview(
       athleteId: athlete.id,
       athleteName: `${athlete.user.lastName} ${athlete.user.firstName}`,
       sourcePrescriptionId: sourcePrescription.id,
-      distanceKm: dose?.distanceKm?.kind === 'override'
-        ? dose.distanceKm.value
-        : sourcePrescription.distanceKm,
-      durationMin: dose?.durationMin?.kind === 'override'
-        ? dose.durationMin.value
-        : sourcePrescription.durationMin,
-      elevationGain: dose?.elevationGain?.kind === 'override'
-        ? dose.elevationGain.value
-        : sourcePrescription.elevationGain,
-      intensity: formatReviewIntensity(sourcePrescription, dose),
-      rescheduled: assignment?.kind === 'rescheduled' ? assignment.date : null,
-      stimulus: assignment?.kind === 'stimulus_override'
-        ? assignment.workoutId
+      distanceKm: dose?.distanceKm?.kind === 'override' ? dose.distanceKm.value : null,
+      durationMin: dose?.durationMin?.kind === 'override' ? dose.durationMin.value : null,
+      elevationGain: dose?.elevationGain?.kind === 'override' ? dose.elevationGain.value : null,
+      inheritedDistanceKm: sourcePrescription.distanceKm,
+      inheritedDurationMin: sourcePrescription.durationMin,
+      inheritedElevationGain: sourcePrescription.elevationGain,
+      intensityMethod: dose?.intensity?.kind === 'override'
+        ? dose.intensity.value === null
+          ? 'clear'
+          : dose.intensity.value.method
         : null,
+      zone: dose?.intensity?.kind === 'override' && dose.intensity.value?.method === 'hr_zone'
+        ? dose.intensity.value.zone
+        : null,
+      referencePercentage: dose?.intensity?.kind === 'override'
+        && dose.intensity.value?.method === 'reference_percentage'
+        ? dose.intensity.value.referencePercentage
+        : null,
+      inheritedIntensity: formatReviewIntensity(sourcePrescription, null),
+      rescheduled: assignment?.kind === 'rescheduled' ? assignment.date : null,
+      stimulus: assignment?.kind === 'stimulus_override' ? assignment.workoutId : null,
+      stimulusType: assignment?.kind === 'stimulus_override' ? assignment.type : null,
       omitted: assignment?.kind === 'omitted',
     })
   }
@@ -241,7 +259,6 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   const sessionId = String(formData.get('sessionId') ?? '')
   const athleteId = String(formData.get('athleteId') ?? '')
   const sourcePrescriptionId = String(formData.get('sourcePrescriptionId') ?? '')
-  const mode = String(formData.get('mode') ?? 'dose')
   const reason = String(formData.get('reason') ?? 'Coach individual review')
 
   if (!sessionId || !athleteId || !sourcePrescriptionId) {
@@ -267,80 +284,32 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   const persistence = createAthleteSessionAdjustmentPersistenceAdapter(adjustmentDatabase)
   const adjustmentId = existingAdjustment ? existingAdjustment.id : randomUUID()
   const revisionId = randomUUID()
-  const effectiveSource: EffectiveAudiencePrescription = {
-    id: sourcePrescription.id,
-    distanceKm: sourcePrescription.distanceKm,
-    durationMin: sourcePrescription.durationMin,
-    elevationGain: sourcePrescription.elevationGain,
-    intensityMethod: sourcePrescription.intensityMethod,
-    zone: sourcePrescription.zone,
-    referencePercentage: sourcePrescription.referencePercentage,
-    notes: sourcePrescription.notes,
-  }
 
   try {
-    if (mode === 'assignment') {
-      const omitted = formData.get('omitted') === 'on'
-      const rescheduled = String(formData.get('rescheduled') ?? '').trim()
-      const stimulus = String(formData.get('stimulus') ?? '').trim()
-      const stimulusType = String(formData.get('stimulusType') ?? '').trim() as WorkoutType
+    const dose = parseDoseOverrides(formData)
+    const assignment = parseAssignmentOverride(formData)
+    if (!assignment.success) return { error: assignment.error }
 
-      if (omitted) {
-        await applyAthleteAssignmentAdjustment({
-          teamId: CURRENT_TEAM_ID,
-          athleteId,
-          sourcePrescription: effectiveSource,
-          adjustmentId,
-          revisionId,
-          reason,
-          changedByUserId: null,
-          assignment: { kind: 'omitted' },
-          persistence,
-        })
-      } else if (rescheduled) {
-        await applyAthleteAssignmentAdjustment({
-          teamId: CURRENT_TEAM_ID,
-          athleteId,
-          sourcePrescription: effectiveSource,
-          adjustmentId,
-          revisionId,
-          reason,
-          changedByUserId: null,
-          assignment: { kind: 'rescheduled', date: rescheduled },
-          persistence,
-        })
-      } else if (stimulus && stimulusType) {
-        await applyAthleteAssignmentAdjustment({
-          teamId: CURRENT_TEAM_ID,
-          athleteId,
-          sourcePrescription: effectiveSource,
-          adjustmentId,
-          revisionId,
-          reason,
-          changedByUserId: null,
-          assignment: { kind: 'stimulus_override', workoutId: stimulus, type: stimulusType },
-          persistence,
-        })
-      } else {
-        return { error: 'invalidAssignment' }
-      }
-    } else {
-      await applyAthleteDoseAdjustment({
+    await persistence.applyRevision({
+      adjustment: {
+        id: adjustmentId,
         teamId: CURRENT_TEAM_ID,
         athleteId,
-        sourcePrescription: effectiveSource,
+        sourcePrescriptionId,
+      },
+      revision: {
+        id: revisionId,
         adjustmentId,
-        revisionId,
+        state: 'active',
+        payload: {
+          dose,
+          assignment: assignment.value,
+        },
         reason,
         changedByUserId: null,
-        overrides: {
-          distanceKm: parseOptionalNumber(formData.get('distanceKm')),
-          durationMin: parseOptionalNumber(formData.get('durationMin')),
-          elevationGain: parseOptionalNumber(formData.get('elevationGain')),
-        },
-        persistence,
-      })
-    }
+        isCurrent: true,
+      },
+    })
   } catch (error) {
     console.error('Error saving athlete session adjustment:', error)
     return { error: 'saveFailed' }
@@ -348,6 +317,87 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
 
   revalidatePath(`/dashboard/sessions/${sessionId}`)
   return {}
+}
+
+function parseDoseOverrides(formData: FormData): AthleteDoseOverrides | null {
+  const distanceKm = parseOptionalNumber(formData.get('distanceKm'))
+  const durationMin = parseOptionalNumber(formData.get('durationMin'))
+  const elevationGain = parseOptionalNumber(formData.get('elevationGain'))
+  const intensityMethod = String(formData.get('intensityMethod') ?? '').trim()
+
+  const dose: AthleteDoseOverrides = {
+    distanceKm: distanceKm === undefined
+      ? { kind: 'inherit' }
+      : { kind: 'override', value: distanceKm },
+    durationMin: durationMin === undefined
+      ? { kind: 'inherit' }
+      : { kind: 'override', value: durationMin },
+    elevationGain: elevationGain === undefined
+      ? { kind: 'inherit' }
+      : { kind: 'override', value: elevationGain },
+    intensity: { kind: 'inherit' },
+  }
+
+  if (intensityMethod === 'clear') {
+    dose.intensity = { kind: 'override', value: null }
+  } else if (intensityMethod === 'hr_zone') {
+    const zone = String(formData.get('zone') ?? '')
+    if (!isIntensityZone(zone)) throw new Error('Invalid HR zone')
+    dose.intensity = { kind: 'override', value: { method: 'hr_zone', zone } }
+  } else if (intensityMethod === 'reference_percentage') {
+    const referencePercentage = parseOptionalNumber(formData.get('referencePercentage'))
+    if (referencePercentage === undefined || referencePercentage <= 0) {
+      throw new Error('Invalid reference percentage')
+    }
+    dose.intensity = {
+      kind: 'override',
+      value: { method: 'reference_percentage', referencePercentage },
+    }
+  } else if (intensityMethod !== '') {
+    throw new Error('Invalid intensity method')
+  }
+
+  const hasOverride = Object.values(dose).some(value => value.kind === 'override')
+  return hasOverride ? dose : null
+}
+
+function parseAssignmentOverride(formData: FormData):
+  | { success: true; value: AthleteAssignmentOverride }
+  | { success: false; error: string } {
+  if (formData.get('omitted') === 'on') {
+    return { success: true, value: { kind: 'omitted' } }
+  }
+
+  const rescheduled = String(formData.get('rescheduled') ?? '').trim()
+  const stimulus = String(formData.get('stimulus') ?? '').trim()
+  const stimulusType = String(formData.get('stimulusType') ?? '').trim()
+
+  if (rescheduled) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(rescheduled)) {
+      return { success: false, error: 'invalidReschedule' }
+    }
+    return { success: true, value: { kind: 'rescheduled', date: rescheduled } }
+  }
+
+  if (stimulus || stimulusType) {
+    if (!isWorkoutType(stimulusType)) {
+      return { success: false, error: 'invalidStimulusType' }
+    }
+    return {
+      success: true,
+      value: {
+        kind: 'stimulus_override',
+        workoutId: stimulus || null,
+        type: stimulusType,
+      },
+    }
+  }
+
+  return { success: true, value: { kind: 'inherit' } }
+}
+
+function isIntensityZone(value: string): value is IntensityZone {
+  return ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].includes(value)
 }
 
 function parseOptionalNumber(value: FormDataEntryValue | null) {
