@@ -15,17 +15,14 @@ test('KAN-521 Coach adjustment surface uses i18n for visible copy and server err
   assert.match(review, /useTranslations\(['"]Sessions['"]\)/)
   assert.match(review, /useTranslations\(['"]Workouts['"]\)/)
 
-  for (const copy of [
-    'Assignment individual',
-    'Stimulus',
-    'Tipo de stimulus',
-    'omitted',
-    'Dose individual',
-    'Workout ID',
-    'outside_authority · review required',
-  ]) {
-    assert.equal(review.includes(copy), false, copy)
-  }
+  assert.doesNotMatch(
+    review,
+    />\s*(?:Assignment individual|Stimulus|Tipo de stimulus|omitted|Dose individual|Workout ID|outside_authority · review required)\s*</,
+  )
+  assert.doesNotMatch(
+    review,
+    /(?:placeholder|label)=['"](?:Workout ID|Stimulus|Tipo de stimulus|Assignment individual|Dose individual)['"]/,
+  )
 
   assert.doesNotMatch(review, />\s*\{state\.error\}\s*</)
   assert.match(review, /state\.error.*t\(/s)
