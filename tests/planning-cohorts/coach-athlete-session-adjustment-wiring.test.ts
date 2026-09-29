@@ -47,9 +47,9 @@ test('Coach save writes through the append-only adjustment persistence adapter',
   assert.match(save, /createDrizzleAthleteSessionAdjustmentDatabase/)
   assert.match(save, /createAthleteSessionAdjustmentPersistenceAdapter/)
   assert.match(save, /getAdjustmentByIdentity/)
-  assert.match(save, /applyAthleteDoseAdjustment|applyAthleteAssignmentAdjustment/)
-  assert.doesNotMatch(save, /void applyAthleteDoseAdjustment/)
-  assert.doesNotMatch(save, /void applyAthleteAssignmentAdjustment/)
+  assert.match(save, /persistence\.applyRevision\(/)
+  assert.doesNotMatch(save, /applyAthleteDoseAdjustment\(/)
+  assert.doesNotMatch(save, /applyAthleteAssignmentAdjustment\(/)
 })
 
 test('Coach save preserves logical identity when editing an existing adjustment', () => {
