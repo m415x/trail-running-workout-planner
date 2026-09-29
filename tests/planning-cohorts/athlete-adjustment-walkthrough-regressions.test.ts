@@ -25,7 +25,7 @@ test('KAN-521 Coach adjustment surface uses i18n for visible copy and server err
   )
 
   assert.doesNotMatch(review, />\s*\{state\.error\}\s*</)
-  assert.match(review, /state\.error.*t\(/s)
+  assert.match(review, /state\.error[\s\S]*t\(/)
 
   assert.equal(detail.includes('Ajustes individuales'), false)
   assert.equal(detail.includes('Review/edit individual por atleta sobre la prescription efectiva.'), false)
