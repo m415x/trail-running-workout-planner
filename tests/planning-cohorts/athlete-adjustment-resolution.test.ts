@@ -26,7 +26,6 @@ const activeRevision: PersistedAthleteSessionAdjustmentRevision = {
       durationMin: { kind: 'inherit' },
       elevationGain: { kind: 'inherit' },
       intensity: { kind: 'inherit' },
-      notes: { kind: 'inherit' },
     },
     assignment: { kind: 'inherit' },
   },
