@@ -553,7 +553,7 @@ export const groupSessionPrescriptions = pgTable(
     generationKey: text('generation_key'),
   },
   (table) => [
-    uniqueIndex('group_session_prescriptions_session_group_unique').on(table.sessionId, table.groupId),
+    uniqueIndex('group_session_prescriptions_session_microcycle_unique').on(table.sessionId, table.microcycleId),
     uniqueIndex('group_session_prescriptions_generation_key_unique').on(table.generationKey),
   ],
 )
