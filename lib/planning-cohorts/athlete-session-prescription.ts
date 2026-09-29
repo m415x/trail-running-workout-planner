@@ -45,16 +45,17 @@ export function resolveAthleteSessionPrescription(input: {
     }
   }
 
+  const planning = input.planning
   const matching = input.prescriptions.filter((prescription) => (
-    prescription.groupId === input.planning.groupId
-    && prescription.groupTrainingPlanId === input.planning.planId
+    prescription.groupId === planning.groupId
+    && prescription.groupTrainingPlanId === planning.planId
   ))
 
   if (matching.length === 0) {
     return {
       status: 'none',
       reason: 'no-prescription-for-applicable-plan',
-      planId: input.planning.planId,
+      planId: planning.planId,
     }
   }
 
@@ -62,7 +63,7 @@ export function resolveAthleteSessionPrescription(input: {
     return {
       status: 'conflict',
       reason: 'multiple-prescriptions-for-applicable-plan',
-      planId: input.planning.planId,
+      planId: planning.planId,
       conflictingIds: matching.map(({ id }) => id),
     }
   }
@@ -70,7 +71,7 @@ export function resolveAthleteSessionPrescription(input: {
   return {
     status: 'resolved',
     prescriptionId: matching[0].id,
-    planId: input.planning.planId,
+    planId: planning.planId,
     microcycleId: matching[0].microcycleId,
   }
 }
