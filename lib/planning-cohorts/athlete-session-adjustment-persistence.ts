@@ -47,6 +47,18 @@ export function createAthleteSessionAdjustmentPersistenceAdapter(
   port: AthleteSessionAdjustmentPersistencePort,
 ) {
   return {
+    async getCurrentRevision(adjustmentId: string) {
+      const revisions = await port.listAdjustmentRevisions(adjustmentId)
+      const current = revisions.filter(candidate => candidate.isCurrent)
+
+      if (current.length === 0) return null
+      if (current.length > 1) {
+        throw new Error('Adjustment must have exactly one current revision')
+      }
+
+      return current[0]!
+    },
+
     async applyRevision(input: {
       adjustment: PersistedAthleteSessionAdjustment
       revision: PersistedAthleteSessionAdjustmentRevision
