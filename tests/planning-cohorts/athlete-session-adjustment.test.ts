@@ -163,7 +163,7 @@ test('does not apply an adjustment owned by another athlete or source prescripti
 })
 
 
-test('supports explicit removal of optional dose fields without conflating it with inherit', () => {
+test('supports explicit removal of individual intensity without changing shared notes', () => {
   const result = resolveAthletePlannedSession({
     athleteId: 'athlete-1',
     session,
@@ -187,7 +187,7 @@ test('supports explicit removal of optional dose fields without conflating it wi
   assert.equal(result.prescription.intensityMethod, null)
   assert.equal(result.prescription.zone, null)
   assert.equal(result.prescription.referencePercentage, null)
-  assert.equal(result.prescription.notes, null)
+  assert.equal(result.prescription.notes, 'Priorizá el esfuerzo sobre el ritmo')
 })
 
 test('omission is authoritative and does not leak dose or assignment mutations into a resolved session', () => {
