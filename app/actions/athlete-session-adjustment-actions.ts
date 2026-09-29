@@ -21,7 +21,10 @@ import {
 import { applyAthleteAssignmentAdjustment } from '@/lib/planning-cohorts/athlete-assignment-adjustment'
 import { applyAthleteDoseAdjustment } from '@/lib/planning-cohorts/athlete-dose-adjustment'
 import { createDrizzleAthleteSessionAdjustmentDatabase } from '@/lib/planning-cohorts/athlete-session-adjustment-drizzle-database'
-import { createAthleteSessionAdjustmentPersistenceAdapter } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
+import {
+  createAthleteSessionAdjustmentPersistenceAdapter,
+  type PersistedAthleteSessionAdjustmentRevision,
+} from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 import type { EffectiveAudiencePrescription } from '@/lib/planning-cohorts/athlete-session-adjustment'
@@ -203,12 +206,11 @@ export async function getSessionAthleteAdjustmentReview(
         })
       : null
 
-    const dose = currentRevision?.state === 'active'
-      ? currentRevision.payload?.dose
+    const currentPayload = currentRevision?.state === 'active'
+      ? currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload']
       : null
-    const assignment = currentRevision?.state === 'active'
-      ? currentRevision.payload?.assignment
-      : null
+    const dose = currentPayload?.dose ?? null
+    const assignment = currentPayload?.assignment ?? null
 
     rows.push({
       athleteId: athlete.id,
@@ -255,7 +257,9 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   })
   if (!sourcePrescription) return { error: 'sourcePrescriptionNotFound' }
 
-  const adjustmentDatabase = createDrizzleAthleteSessionAdjustmentDatabase(db)
+  const adjustmentDatabase = createDrizzleAthleteSessionAdjustmentDatabase(
+    db as unknown as Parameters<typeof createDrizzleAthleteSessionAdjustmentDatabase>[0],
+  )
   const existingAdjustment = await adjustmentDatabase.getAdjustmentByIdentity(
     athleteId,
     sourcePrescriptionId,
