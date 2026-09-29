@@ -6,7 +6,7 @@ import { WeeklyCalendarCard } from '@workouts/components/WeeklyCalendarCard'
 import { TodayWorkoutCard, RaceCard, RestCard } from '@workouts/components/WorkoutCard'
 import { ElevationProfileCard } from '@workouts/components/ElevationProfileCard'
 import { RouteMapCard } from '@workouts/components/RouteMapCard'
-import { getWeeklySchedule } from '@/app/actions/dashboard-actions'
+import { getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { Team } from '@/types'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
@@ -25,8 +25,8 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   const [runningReference, setRunningReference] = useState<RunningReference>(initialRunningReference)
 
   const handleWeekChange = async (startDateIso: string) => {
-    const result = await getWeeklySchedule(startDateIso)
-    return result.success && result.data ? result.data : []
+    const result = await getCurrentAthletePlanningWeek(startDateIso)
+    return result.success && result.data ? result.data.sessions : []
   }
 
   const handleRealizedTrainingWeekChange = async (startDateIso: string, endDateIso: string) => {
