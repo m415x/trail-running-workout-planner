@@ -33,3 +33,26 @@ test('regeneration scopes existing prescriptions to the active plan microcycles 
     /reconcileSessionGeneration\(\{[\s\S]*existingPrescriptions: persistedPrescriptions\.map/,
   )
 })
+
+test('protected prescriptions are not overwritten by create collision handling', () => {
+  assert.match(source, /samePlanningScopePrescription\.generationOwnership === 'generated'/)
+  assert.doesNotMatch(
+    source,
+    /samePlanningScopePrescription\.generationOwnership === 'generated_modified'[\s\S]{0,300}tx\.update\(groupSessionPrescriptions\)/,
+  )
+  assert.doesNotMatch(
+    source,
+    /samePlanningScopePrescription\.generationOwnership === 'manual'[\s\S]{0,300}tx\.update\(groupSessionPrescriptions\)/,
+  )
+})
+
+test('shared Session deletion checks every active prescription on the event, not only the active plan scope', () => {
+  assert.match(
+    source,
+    /eq\(groupSessionPrescriptions\.sessionId,\s*eventId\)[\s\S]*eq\(groupSessionPrescriptions\.isDeleted,\s*false\)/,
+  )
+  assert.match(
+    source,
+    /if \(!active\) \{[\s\S]*tx\.update\(sessions\)\.set\(\{ isDeleted: true/,
+  )
+})
