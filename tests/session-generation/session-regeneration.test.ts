@@ -37,6 +37,51 @@ describe('regeneración idempotente de sesiones', () => {
     assert.deepEqual(repeated.preservedRecords, [])
   })
 
+  it('no elimina prescriptions de otro planning scope sobre la misma Session al regenerar un plan', () => {
+    const proposal = generation(
+      event('shared-saturday', {
+        ...prescription('plan-base::micro-base::S2::weekly-saturday'),
+        prescription: {
+          ...prescription('plan-base::micro-base::S2::weekly-saturday').prescription,
+          groupId: 'S2',
+          microcycleId: 'micro-base',
+        },
+      }),
+    )
+
+    const result = reconcileSessionGeneration({
+      proposal,
+      existingEvents: [{
+        id: 'session-shared',
+        provenance: { ownership: 'generated', sharedEventKey: 'shared-saturday' },
+      }],
+      existingPrescriptions: [
+        {
+          id: 'prescription-base',
+          sessionId: 'session-shared',
+          provenance: {
+            ownership: 'generated',
+            generationKey: 'plan-base::micro-base::S2::weekly-saturday',
+          },
+        },
+        {
+          id: 'prescription-variant',
+          sessionId: 'session-shared',
+          provenance: {
+            ownership: 'generated',
+            generationKey: 'plan-variant::micro-variant::S2::weekly-saturday',
+          },
+        },
+      ],
+    })
+
+    assert.deepEqual(
+      result.prescriptions.map(({ action, existingId }) => [action, existingId]),
+      [['replace', 'prescription-base']],
+    )
+    assert.deepEqual(result.obsoletePrescriptionIds, [])
+  })
+
   it('retira generados obsoletos cuando cambia la propuesta', () => {
     const result = reconcileSessionGeneration({
       proposal: generation(event('shared-thursday', prescription('group-thursday'))),
