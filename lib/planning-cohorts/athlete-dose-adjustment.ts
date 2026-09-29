@@ -39,6 +39,8 @@ export async function applyAthleteDoseAdjustment(input: {
   overrides: DoseOverrideInput
   persistence: AdjustmentPersistence
 }) {
+  validateDoseOverrides(input.overrides)
+
   const adjustment: PersistedAthleteSessionAdjustment = {
     id: input.adjustmentId,
     teamId: input.teamId,
@@ -89,4 +91,26 @@ function toOverride<
   }
 
   return { kind: 'inherit' } as AthleteDoseOverrides[T]
+}
+
+
+function validateDoseOverrides(overrides: DoseOverrideInput) {
+  if (overrides.distanceKm !== undefined && overrides.distanceKm !== null && overrides.distanceKm < 0) {
+    throw new Error('Individual distance override cannot be negative')
+  }
+
+  if (overrides.durationMin !== undefined && overrides.durationMin !== null && overrides.durationMin < 0) {
+    throw new Error('Individual duration override cannot be negative')
+  }
+
+  if (overrides.elevationGain !== undefined && overrides.elevationGain !== null && overrides.elevationGain < 0) {
+    throw new Error('Individual elevation override cannot be negative')
+  }
+
+  if (
+    overrides.intensity?.method === 'reference_percentage'
+    && overrides.intensity.referencePercentage <= 0
+  ) {
+    throw new Error('Individual reference percentage override must be positive')
+  }
 }
