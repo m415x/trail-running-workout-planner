@@ -118,7 +118,7 @@ test('stimulus replacement changes only workout/type for the Athlete', async () 
     assignment: {
       kind: 'stimulus_override',
       workoutId: 'workout-recovery',
-      type: 'Recovery',
+      type: 'Rest',
     },
     persistence: store.adapter,
   })
@@ -139,7 +139,7 @@ test('stimulus replacement changes only workout/type for the Athlete', async () 
   assert.equal(effective.status, 'resolved')
   assert.equal(effective.session.date, '2026-10-06')
   assert.equal(effective.session.workoutId, 'workout-recovery')
-  assert.equal(effective.session.type, 'Recovery')
+  assert.equal(effective.session.type, 'Rest')
   assert.equal(session.workoutId, 'workout-trail')
   assert.equal(session.type, 'Trail')
 })
