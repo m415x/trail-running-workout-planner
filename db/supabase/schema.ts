@@ -574,6 +574,46 @@ export const sessionGenerationModificationRecords = pgTable('session_generation_
   changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
 })
 
+export const athleteSessionAdjustments = pgTable(
+  'athlete_session_adjustments',
+  {
+    ...baseColumns,
+    teamId: text('team_id').notNull().references(() => teams.id, { onDelete: 'cascade' }),
+    athleteId: text('athlete_id').notNull().references(() => athleteProfiles.id, { onDelete: 'cascade' }),
+    sourcePrescriptionId: text('source_prescription_id')
+      .notNull()
+      .references(() => groupSessionPrescriptions.id, { onDelete: 'restrict' }),
+  },
+  (table) => [
+    uniqueIndex('athlete_session_adjustments_athlete_prescription_unique')
+      .on(table.athleteId, table.sourcePrescriptionId),
+  ],
+)
+
+export const athleteSessionAdjustmentRevisions = pgTable(
+  'athlete_session_adjustment_revisions',
+  {
+    ...baseColumns,
+    adjustmentId: text('adjustment_id')
+      .notNull()
+      .references(() => athleteSessionAdjustments.id, { onDelete: 'cascade' }),
+    state: text('state', { enum: ['active', 'withdrawn'] }).notNull().default('active'),
+    payload: jsonb('payload').$type<unknown>().notNull(),
+    reason: text('reason').notNull(),
+    changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    isCurrent: boolean('is_current').notNull().default(true),
+  },
+  (table) => [
+    check(
+      'athlete_session_adjustment_revisions_state_check',
+      sql`${table.state} in ('active', 'withdrawn')`,
+    ),
+    uniqueIndex('athlete_session_adjustment_revisions_current_unique')
+      .on(table.adjustmentId)
+      .where(sql`${table.isCurrent} = true`),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 12. WORKOUT LOGS (Registro de ejecución + Estado del día)                  */
 /* -------------------------------------------------------------------------- */
