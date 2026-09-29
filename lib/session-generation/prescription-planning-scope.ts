@@ -43,3 +43,22 @@ export function resolvePrescriptionPlanningScope(input: {
     source: input.lineage.planningCohortId === null ? 'base' : 'variant',
   }
 }
+
+
+/**
+ * Ensures one prescription candidate per persisted planning scope inside a
+ * shared Session. The persisted identity is the microcycle id; Base/Variant
+ * semantics remain derived from planning lineage elsewhere.
+ */
+export function assertUniquePrescriptionPlanningScopes(
+  prescriptions: Array<{ groupId: string; microcycleId: string }>,
+): void {
+  const seen = new Set<string>()
+
+  for (const prescription of prescriptions) {
+    if (seen.has(prescription.microcycleId)) {
+      throw new Error(`Duplicate planning scope ${prescription.microcycleId} in shared Session.`)
+    }
+    seen.add(prescription.microcycleId)
+  }
+}
