@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   saveAthleteSessionAdjustment,
@@ -20,7 +21,11 @@ export function AthleteSessionAdjustmentReview({
   return (
     <div className='space-y-4'>
       {items.map((item) => (
-        <AthleteAdjustmentForm key={item.athleteId} sessionId={sessionId} item={item} />
+        <AthleteAdjustmentForm
+          key={`${item.athleteId}:${item.revisionId ?? 'none'}`}
+          sessionId={sessionId}
+          item={item}
+        />
       ))}
     </div>
   )
@@ -33,6 +38,8 @@ function AthleteAdjustmentForm({
   sessionId: string
   item: SessionAthleteAdjustmentReviewItem
 }) {
+  const t = useTranslations('Sessions')
+  const workoutTypeT = useTranslations('Workouts')
   const [state, action, pending] = useActionState(saveAthleteSessionAdjustment, {})
 
   return (
@@ -46,69 +53,77 @@ function AthleteAdjustmentForm({
         <div className='flex items-center gap-2'>
           {item.reviewRequired && (
             <span className='text-xs font-medium text-destructive'>
-              outside_authority · review required
+              {t('adjustments.reviewRequired')}
             </span>
           )}
-          {item.omitted && <span className='text-xs text-muted-foreground'>omitted</span>}
+          {item.omitted && (
+            <span className='text-xs text-muted-foreground'>
+              {t('adjustments.omitted')}
+            </span>
+          )}
         </div>
       </div>
 
       <div className='space-y-2'>
-        <p className='text-sm font-medium'>Dose individual</p>
+        <p className='text-sm font-medium'>{t('adjustments.doseTitle')}</p>
         <div className='grid gap-3 sm:grid-cols-3'>
           <LabeledInput
-            label='Distancia'
+            label={t('adjustments.distance')}
             name='distanceKm'
             type='number'
             step='0.1'
             min='0'
             defaultValue={item.distanceKm ?? ''}
-            placeholder={formatInherited(item.inheritedDistanceKm)}
+            placeholder={formatInherited(item.inheritedDistanceKm, t)}
           />
           <LabeledInput
-            label='Duración'
+            label={t('adjustments.duration')}
             name='durationMin'
             type='number'
             step='1'
             min='0'
             defaultValue={item.durationMin ?? ''}
-            placeholder={formatInherited(item.inheritedDurationMin)}
+            placeholder={formatInherited(item.inheritedDurationMin, t)}
           />
           <LabeledInput
-            label='Desnivel'
+            label={t('adjustments.elevationGain')}
             name='elevationGain'
             type='number'
             step='1'
             min='0'
             defaultValue={item.elevationGain ?? ''}
-            placeholder={formatInherited(item.inheritedElevationGain)}
+            placeholder={formatInherited(item.inheritedElevationGain, t)}
           />
         </div>
       </div>
 
       <div className='grid gap-3 sm:grid-cols-3'>
         <label className='space-y-1.5 text-sm'>
-          <span className='font-medium'>Intensidad</span>
+          <span className='font-medium'>{t('adjustments.intensity')}</span>
           <select
             name='intensityMethod'
             defaultValue={item.intensityMethod ?? ''}
             className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
           >
-            <option value=''>Heredar ({item.inheritedIntensity ?? 'sin intensidad'})</option>
-            <option value='clear'>Sin intensidad individual</option>
-            <option value='hr_zone'>Zona FC</option>
-            <option value='reference_percentage'>Porcentaje de referencia</option>
+            <option value=''>
+              {t('adjustments.inheritIntensity', {
+                value: item.inheritedIntensity ?? t('adjustments.noIntensity'),
+              })}
+            </option>
+            <option value='clear'>{t('adjustments.clearIntensity')}</option>
+            <option value='hr_zone'>{t('adjustments.hrZone')}</option>
+            <option value='reference_percentage'>{t('adjustments.referencePercentage')}</option>
           </select>
         </label>
 
         <label className='space-y-1.5 text-sm'>
-          <span className='font-medium'>Zona</span>
+          <span className='font-medium'>{t('adjustments.zone')}</span>
           <select
             name='zone'
             defaultValue={item.zone ?? ''}
             className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
           >
-            <option value=''>Seleccionar</option>
+            <option value=''>{t('adjustments.selectZone')}</option>
             {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map(zone => (
               <option key={zone} value={zone}>{zone}</option>
             ))}
@@ -116,7 +131,7 @@ function AthleteAdjustmentForm({
         </label>
 
         <LabeledInput
-          label='Porcentaje de referencia'
+          label={t('adjustments.referencePercentage')}
           name='referencePercentage'
           type='number'
           min='1'
@@ -126,52 +141,58 @@ function AthleteAdjustmentForm({
       </div>
 
       <div className='space-y-2'>
-        <p className='text-sm font-medium'>Assignment individual</p>
+        <p className='text-sm font-medium'>{t('adjustments.assignmentTitle')}</p>
         <div className='grid gap-3 sm:grid-cols-3'>
           <LabeledInput
-            label='Reprogramar'
+            label={t('adjustments.reschedule')}
             name='rescheduled'
             type='date'
             defaultValue={item.rescheduled ?? ''}
           />
           <LabeledInput
-            label='Stimulus'
+            label={t('adjustments.stimulus')}
             name='stimulus'
             defaultValue={item.stimulus ?? ''}
-            placeholder='Workout ID'
+            placeholder={t('adjustments.workoutId')}
           />
           <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>Tipo de stimulus</span>
+            <span className='font-medium'>{t('adjustments.stimulusType')}</span>
             <select
               name='stimulusType'
               defaultValue={item.stimulusType ?? ''}
               className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
             >
-              <option value=''>Heredar</option>
-              {WORKOUT_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+              <option value=''>{t('adjustments.inherit')}</option>
+              {WORKOUT_TYPES.map(type => (
+                <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>
+              ))}
             </select>
           </label>
         </div>
 
         <label className='flex items-center gap-2 text-sm'>
           <input name='omitted' type='checkbox' defaultChecked={item.omitted} />
-          Omitir para este atleta
+          {t('adjustments.omitForAthlete')}
         </label>
       </div>
 
       <LabeledInput
-        label='Motivo'
+        label={t('adjustments.reason')}
         name='reason'
-        placeholder='Motivo del ajuste individual'
+        placeholder={t('adjustments.reasonPlaceholder')}
       />
 
-      {state.error && <p className='text-sm text-destructive'>{state.error}</p>}
+      {state.error && (
+        <p className='text-sm text-destructive'>
+          {t(`adjustments.errors.${state.error}`)}
+        </p>
+      )}
       <Button type='submit' disabled={pending || item.reviewRequired}>
         {item.reviewRequired
-          ? 'Revisión requerida'
+          ? t('adjustments.reviewRequiredAction')
           : pending
-            ? 'Guardando…'
-            : 'Guardar ajuste individual'}
+            ? t('adjustments.saving')
+            : t('adjustments.save')}
       </Button>
     </form>
   )
@@ -190,6 +211,11 @@ function LabeledInput({
   )
 }
 
-function formatInherited(value: number | null) {
-  return value === null ? 'Heredar: sin valor' : `Heredar: ${value}`
+function formatInherited(
+  value: number | null,
+  t: ReturnType<typeof useTranslations<'Sessions'>>,
+) {
+  return value === null
+    ? t('adjustments.inheritNoValue')
+    : t('adjustments.inheritValue', { value })
 }
