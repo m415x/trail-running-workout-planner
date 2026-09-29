@@ -239,9 +239,12 @@ export async function getCurrentAthletePlanningWeek() {
     const adjustmentBySourcePrescriptionId = new Map(
       athleteAdjustments.map((adjustment) => [adjustment.sourcePrescriptionId, adjustment]),
     )
-    const currentRevisionByAdjustmentId = new Map(
-      currentAdjustmentRevisions.map((revision) => [revision.adjustmentId, revision]),
-    )
+    const revisionsByAdjustmentId = new Map<string, typeof currentAdjustmentRevisions>()
+    for (const revision of currentAdjustmentRevisions) {
+      const revisions = revisionsByAdjustmentId.get(revision.adjustmentId) ?? []
+      revisions.push(revision)
+      revisionsByAdjustmentId.set(revision.adjustmentId, revisions)
+    }
 
     const resolvedSessions = weekSessions.flatMap((session) => {
       const planning = resolveAthletePlanningOnDate({
@@ -304,9 +307,9 @@ export async function getCurrentAthletePlanningWeek() {
       if (!sourcePrescription) return []
 
       const adjustment = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? null
-      const currentRevision = adjustment
-        ? currentRevisionByAdjustmentId.get(adjustment.id)
-        : undefined
+      const currentRevisions = adjustment
+        ? revisionsByAdjustmentId.get(adjustment.id) ?? []
+        : []
       const plannedSession = resolveAthletePlanningSession({
         athleteId: athlete.id,
         session: {
@@ -333,17 +336,15 @@ export async function getCurrentAthletePlanningWeek() {
               sourcePrescriptionId: adjustment.sourcePrescriptionId,
             }
           : null,
-        revisions: currentRevision
-          ? [{
-              id: currentRevision.id,
-              adjustmentId: currentRevision.adjustmentId,
-              state: currentRevision.state,
-              payload: currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
-              reason: currentRevision.reason,
-              changedByUserId: currentRevision.changedByUserId,
-              isCurrent: currentRevision.isCurrent,
-            }]
-          : [],
+        revisions: currentRevisions.map(currentRevision => ({
+          id: currentRevision.id,
+          adjustmentId: currentRevision.adjustmentId,
+          state: currentRevision.state,
+          payload: currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
+          reason: currentRevision.reason,
+          changedByUserId: currentRevision.changedByUserId,
+          isCurrent: currentRevision.isCurrent,
+        })),
       })
 
       if (plannedSession.status === 'omitted') return []
