@@ -287,6 +287,53 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
           ('preservation-membership', '${now}', '${now}', 'preservation-athlete',
            '2026-09-01', '2026-09-30', 25000, 'active', 'transfer',
            'legacy membership preservation fixture');
+
+        INSERT INTO athlete_groups
+          (id, created_at, updated_at, category_code, level_code, team_id, description)
+        VALUES
+          ('preservation-group', '${now}', '${now}', 'S', '2', 'preservation-team',
+           'KAN-522 prescription preservation group');
+
+        INSERT INTO group_training_plans
+          (id, created_at, updated_at, group_id, title, status)
+        VALUES
+          ('preservation-plan', '${now}', '${now}', 'preservation-group',
+           'KAN-522 preservation plan', 'active');
+
+        INSERT INTO macrocycles
+          (id, created_at, updated_at, title, group_training_plan_id, start_date, end_date)
+        VALUES
+          ('preservation-macrocycle', '${now}', '${now}', 'Preservation macrocycle',
+           'preservation-plan', '2026-09-01', '2026-12-31');
+
+        INSERT INTO mesocycles
+          (id, created_at, updated_at, macrocycle_id, title, number, period, objective)
+        VALUES
+          ('preservation-mesocycle', '${now}', '${now}', 'preservation-macrocycle',
+           'Preservation mesocycle', 1, 'base', 'Preserve prescription lineage');
+
+        INSERT INTO microcycles
+          (id, created_at, updated_at, mesocycle_id, week_number, type, start_date, end_date)
+        VALUES
+          ('preservation-microcycle', '${now}', '${now}', 'preservation-mesocycle',
+           1, 'load', '2026-09-21', '2026-09-27');
+
+        INSERT INTO sessions
+          (id, created_at, updated_at, team_id, date, title, type, generation_ownership, shared_event_key)
+        VALUES
+          ('preservation-session', '${now}', '${now}', 'preservation-team',
+           '2026-09-22', 'Preservation session', 'Trail', 'generated',
+           'preservation-team::2026-09-22::mountain::template-preservation');
+
+        INSERT INTO group_session_prescriptions
+          (id, created_at, updated_at, session_id, group_id, microcycle_id,
+           distance_km, duration_min, elevation_gain, intensity_method, zone,
+           notes, generation_ownership, generation_key)
+        VALUES
+          ('preservation-prescription', '${now}', '${now}', 'preservation-session',
+           'preservation-group', 'preservation-microcycle', 12.5, 95, 650,
+           'hr_zone', 'Z2', 'preserve planning scope', 'generated',
+           'preservation-plan::preservation-microcycle::preservation-group::mountain');
       `)
     } finally {
       sqlite.close()
@@ -351,6 +398,55 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
         legacyMembership.notes !== 'legacy membership preservation fixture'
       ) {
         throw new Error('Supported SQLite upgrade did not preserve the representative legacy membership')
+      }
+
+      const preservedPrescription = upgraded.prepare(`
+        SELECT id, session_id, group_id, microcycle_id, distance_km, duration_min,
+               elevation_gain, intensity_method, zone, notes,
+               generation_ownership, generation_key
+        FROM group_session_prescriptions
+        WHERE id = ?
+      `).get('preservation-prescription') as {
+        id: string
+        session_id: string
+        group_id: string
+        microcycle_id: string
+        distance_km: number | null
+        duration_min: number | null
+        elevation_gain: number | null
+        intensity_method: string | null
+        zone: string | null
+        notes: string | null
+        generation_ownership: string
+        generation_key: string | null
+      } | undefined
+
+      if (
+        !preservedPrescription ||
+        preservedPrescription.session_id !== 'preservation-session' ||
+        preservedPrescription.group_id !== 'preservation-group' ||
+        preservedPrescription.microcycle_id !== 'preservation-microcycle' ||
+        preservedPrescription.distance_km !== 12.5 ||
+        preservedPrescription.duration_min !== 95 ||
+        preservedPrescription.elevation_gain !== 650 ||
+        preservedPrescription.intensity_method !== 'hr_zone' ||
+        preservedPrescription.zone !== 'Z2' ||
+        preservedPrescription.notes !== 'preserve planning scope' ||
+        preservedPrescription.generation_ownership !== 'generated' ||
+        preservedPrescription.generation_key !==
+          'preservation-plan::preservation-microcycle::preservation-group::mountain'
+      ) {
+        throw new Error('Supported SQLite upgrade did not preserve the representative group session prescription')
+      }
+
+      const planningScopeIndex = upgraded.prepare(`
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'index'
+          AND name = 'group_session_prescriptions_session_microcycle_unique'
+      `).get() as { name: string } | undefined
+      if (!planningScopeIndex) {
+        throw new Error('Supported SQLite upgrade did not install group_session_prescriptions_session_microcycle_unique')
       }
 
       for (const table of ['team_economic_policies', 'athlete_billing_terms', 'monthly_charges']) {

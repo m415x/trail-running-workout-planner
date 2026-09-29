@@ -48,6 +48,77 @@ describe('flujo integral de generación semanal', () => {
     assert.deepEqual(repeated.obsoletePrescriptionIds, [])
   })
 
+  it('converge Base, Variant y otro grupo sobre las mismas Sessions compartidas', () => {
+    const baseS2 = generateWeeklySessionProposals({
+      context: contextForPlan('plan-base-s2', 'S2', 'micro-base-s2', 40),
+      templates,
+    })
+    const variantS2 = generateWeeklySessionProposals({
+      context: contextForPlan('plan-variant-s2', 'S2', 'micro-variant-s2', 32),
+      templates,
+    })
+    const m1 = generateWeeklySessionProposals({
+      context: contextForPlan('plan-m1', 'M1', 'micro-m1', 55),
+      templates,
+    })
+
+    const shared = groupSharedSessionEvents([baseS2, variantS2, m1])
+
+    assert.equal(shared.events.length, 3)
+    assert.ok(shared.events.every(({ prescriptions }) => prescriptions.length === 3))
+    assert.ok(shared.events.every(({ prescriptions }) => (
+      prescriptions.filter(({ prescription }) => prescription.groupId === 'S2').length === 2
+    )))
+    assert.ok(shared.events.every(({ prescriptions }) => (
+      new Set(prescriptions.map(({ prescription }) => prescription.microcycleId)).size === 3
+    )))
+
+    const first = reconcileSessionGeneration({
+      proposal: shared,
+      existingEvents: [],
+      existingPrescriptions: [],
+    })
+
+    assert.equal(first.events.filter(({ action }) => action === 'create').length, 3)
+    assert.equal(first.prescriptions.filter(({ action }) => action === 'create').length, 9)
+  })
+
+  it('permite convergencia secuencial plan-first sobre una Session ya creada por otro plan', () => {
+    const base = generateWeeklySessionProposals({
+      context: contextForPlan('plan-base-s2', 'S2', 'micro-base-s2', 40),
+      templates,
+    })
+    const variant = generateWeeklySessionProposals({
+      context: contextForPlan('plan-variant-s2', 'S2', 'micro-variant-s2', 32),
+      templates,
+    })
+
+    const baseShared = groupSharedSessionEvents([base])
+    const variantShared = groupSharedSessionEvents([variant])
+    const existingEvents = baseShared.events.map((event, index) => ({
+      id: `session-${index}`,
+      provenance: {
+        ownership: 'generated' as const,
+        sharedEventKey: event.sharedEventKey,
+      },
+    }))
+
+    const variantPass = reconcileSessionGeneration({
+      proposal: variantShared,
+      existingEvents,
+      existingPrescriptions: [],
+    })
+
+    assert.equal(variantPass.events.length, 3)
+    assert.ok(variantPass.events.every(({ action, existingId }) => (
+      action === 'replace' && existingId !== null
+    )))
+    assert.equal(variantPass.prescriptions.length, 3)
+    assert.ok(variantPass.prescriptions.every(({ action }) => action === 'create'))
+    assert.deepEqual(variantPass.obsoleteEventIds, [])
+    assert.deepEqual(variantPass.obsoletePrescriptionIds, [])
+  })
+
   it('preserva una prescripción editada mientras regenera las demás', () => {
     const generated = generateWeeklySessionProposals({ context: context('S2', 'micro-s2', 40), templates })
     const shared = groupSharedSessionEvents([generated])
@@ -95,8 +166,17 @@ describe('flujo integral de generación semanal', () => {
 })
 
 function context(groupId: string, microcycleId: string, volume: number): SessionGenerationContext {
+  return contextForPlan(`plan-${groupId}`, groupId, microcycleId, volume)
+}
+
+function contextForPlan(
+  groupTrainingPlanId: string,
+  groupId: string,
+  microcycleId: string,
+  volume: number,
+): SessionGenerationContext {
   return {
-    teamId: 'team-1', groupTrainingPlanId: `plan-${groupId}`, groupId, microcycleId,
+    teamId: 'team-1', groupTrainingPlanId, groupId, microcycleId,
     period: 'specific_preparatory', microcycleType: 'development',
     startDate: '2026-09-07', endDate: '2026-09-13',
     load: { targetVolumeKm: volume, targetElevationGain: 1200, maximumWeeklyVolumeKm: 70 },

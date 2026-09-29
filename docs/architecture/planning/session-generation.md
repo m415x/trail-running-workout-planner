@@ -33,9 +33,13 @@ Session + GroupSessionPrescription
 - The weekly pattern is a preference, not a rigid calendar.
 - A session represents an event. Group-specific load, intensity, microcycle, and
   notes belong to `GroupSessionPrescription`.
-- Compatible groups may share one `Session` while retaining independent
-  prescriptions.
-- `generationKey` identifies a group prescription across regenerations.
+- Compatible planning scopes may share one `Session` while retaining
+  independent prescriptions. This includes Base and Variant scopes of the same
+  Sporting group as well as scopes from different groups.
+- Persisted prescription uniqueness is `Session + microcycleId`. `groupId`
+  remains descriptive/isolation data, not the audience identity.
+- `generationKey` identifies one planning-scope prescription across
+  regenerations.
 - `sharedEventKey` identifies a reusable shared event.
 - Regeneration updates stable generated records in place and removes generated
   records that are no longer proposed.
@@ -66,7 +70,36 @@ prescription does not automatically protect every prescription sharing the event
 
 - SQLite is the local runtime; PostgreSQL/Supabase has parallel schema migrations.
 - Saving the same proposal repeatedly is idempotent.
-- Shared events are removed only when no active group prescription remains.
+- Shared events are removed only when no active prescription from any planning
+  scope remains.
 - Generated creation, update, removal, and manual edits are recorded in
   `session_generation_modification_records` with before/after snapshots.
 - Re-saving an unchanged proposal does not create an audit entry.
+
+
+## Planning-scope convergence
+
+Session generation remains plan-first. Each `GroupTrainingPlan` is generated
+independently, but proposals converge through `sharedEventKey`:
+
+```text
+Base S2 ───────┐
+Variant S2 ────┼─→ same Session ─→ independent prescriptions by microcycleId
+M1 ────────────┘
+```
+
+`groupSharedSessionEvents()` rejects duplicate planning scopes, not duplicate
+groups. Therefore Base and Variant from S2 may coexist on one shared Session as
+long as their `microcycleId` values differ.
+
+Persistence scopes existing prescriptions to the active plan lineage before
+`reconcileSessionGeneration()`. Regenerating one plan cannot obsolete a sibling
+plan's prescription that shares the same Session. Manual and
+`generated_modified` prescriptions remain protected. Manual Session editing
+uses the same `Session + microcycleId` identity and conflict target as generated
+persistence.
+
+Athlete resolution is downstream of generation: the applicable dated Base or
+Variant plan is resolved first, then the prescription whose microcycle lineage
+belongs to that plan is selected. Variant selection is complete authority for the
+date; there is no sparse per-Session fallback to Base.

@@ -116,6 +116,28 @@ async function main() {
       console.log(`Legacy intensity values: ${remainingLegacyMethods.map(entry => `${entry.source} (${entry.count})`).join(', ')}`)
     }
 
+    const prescriptionIndexes = await sql<{ indexname: string; indexdef: string }[]>`
+      select indexname, indexdef
+      from pg_indexes
+      where schemaname = 'public'
+        and tablename = 'group_session_prescriptions'
+    `
+    const prescriptionPlanningScopeIndex = prescriptionIndexes.find(
+      index => index.indexname === 'group_session_prescriptions_session_microcycle_unique',
+    )
+    const legacyPrescriptionGroupIndex = prescriptionIndexes.some(
+      index => index.indexname === 'group_session_prescriptions_session_group_unique',
+    )
+    const normalizedPrescriptionIndex = prescriptionPlanningScopeIndex?.indexdef
+      .toLowerCase()
+      .replaceAll('"', '')
+      .replaceAll(' ', '') ?? ''
+    const prescriptionPlanningScopeContractValid =
+      normalizedPrescriptionIndex.includes('unique')
+      && normalizedPrescriptionIndex.includes('(session_id,microcycle_id)')
+      && !legacyPrescriptionGroupIndex
+    console.log(`Prescription planning scope contract: ${prescriptionPlanningScopeContractValid ? 'OK' : 'FAIL'}`)
+
     const billingConstraints = await sql<{ constraint_name: string; constraint_type: string }[]>`
       select tc.constraint_name, tc.constraint_type
       from information_schema.table_constraints tc
@@ -297,7 +319,7 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !billingContractValid || !h2BillingContractValid || !h3PaymentContractValid) {
+    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !prescriptionPlanningScopeContractValid || !billingContractValid || !h2BillingContractValid || !h3PaymentContractValid) {
       process.exitCode = 1
     }
   } finally {

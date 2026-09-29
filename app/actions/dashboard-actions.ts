@@ -1,9 +1,23 @@
 'use server'
 
-import { and, asc, eq, gte, lte } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm'
 
 import { db } from '@/db'
-import { athleteProfiles, groupSessionPrescriptions, sessions, shoes, users } from '@/db/schema'
+import {
+  athleteProfiles,
+  groupHistoryRecords,
+  groupSessionPrescriptions,
+  groupTrainingPlans,
+  macrocycles,
+  mesocycles,
+  microcycles,
+  planningCohortMemberships,
+  sessions,
+  shoes,
+  users,
+} from '@/db/schema'
+import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
+import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 
 const CURRENT_USER_ID = 'user_1'
 const CURRENT_ATHLETE_PROFILE_ID = 'profile_user_1'
@@ -128,12 +142,133 @@ export async function getCurrentAthletePlanningWeek() {
       with: {
         location: true,
         sessionPrescriptions: {
-          where: and(
-            eq(groupSessionPrescriptions.groupId, athlete.groupId),
-            eq(groupSessionPrescriptions.isDeleted, false),
-          ),
+          where: eq(groupSessionPrescriptions.isDeleted, false),
         },
       },
+    })
+
+    const groupChanges = await db.select().from(groupHistoryRecords)
+      .where(and(
+        eq(groupHistoryRecords.athleteId, athlete.id),
+        eq(groupHistoryRecords.isDeleted, false),
+      ))
+
+    const memberships = await db.query.planningCohortMemberships.findMany({
+      where: and(
+        eq(planningCohortMemberships.athleteProfileId, athlete.id),
+        eq(planningCohortMemberships.isDeleted, false),
+      ),
+      with: {
+        planningCohort: {
+          with: {
+            planningVariant: {
+              with: {
+                macrocycles: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    const relevantGroupIds = [...new Set([
+      athlete.groupId,
+      ...groupChanges.flatMap((change) => [change.previousGroupId, change.newGroupId]),
+    ].filter((groupId): groupId is string => groupId !== null))]
+
+    const basePlans = relevantGroupIds.length === 0
+      ? []
+      : await db.query.groupTrainingPlans.findMany({
+          where: and(
+            inArray(groupTrainingPlans.groupId, relevantGroupIds),
+            eq(groupTrainingPlans.isDeleted, false),
+          ),
+          with: { macrocycles: true },
+        })
+
+    const prescriptionMicrocycleIds = [...new Set(
+      weekSessions.flatMap((session) => (
+        session.sessionPrescriptions.map((prescription) => prescription.microcycleId)
+      )),
+    )]
+    const prescriptionLineages = prescriptionMicrocycleIds.length === 0
+      ? []
+      : await db.select({
+        microcycleId: microcycles.id,
+        groupTrainingPlanId: groupTrainingPlans.id,
+      })
+        .from(microcycles)
+        .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+        .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+        .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+        .where(inArray(microcycles.id, prescriptionMicrocycleIds))
+    const groupTrainingPlanIdByMicrocycle = new Map(
+      prescriptionLineages.map(({ microcycleId, groupTrainingPlanId }) => (
+        [microcycleId, groupTrainingPlanId]
+      )),
+    )
+
+    const resolvedSessions = weekSessions.flatMap((session) => {
+      const planning = resolveAthletePlanningOnDate({
+        athleteTeamId: athlete.teamId,
+        currentGroupId: athlete.groupId,
+        groupChanges,
+        memberships: memberships.map((membership) => ({
+          id: membership.id,
+          startDate: membership.startDate,
+          endDate: membership.endDate,
+          isDeleted: membership.isDeleted,
+          cohort: {
+            id: membership.planningCohort.id,
+            teamId: membership.planningCohort.teamId,
+            groupId: membership.planningCohort.groupId,
+            status: membership.planningCohort.status,
+            isDeleted: membership.planningCohort.isDeleted,
+            planningVariant: membership.planningCohort.planningVariant
+              ? {
+                  id: membership.planningCohort.planningVariant.id,
+                  groupId: membership.planningCohort.planningVariant.groupId,
+                  planningCohortId: membership.planningCohort.planningVariant.planningCohortId,
+                  status: membership.planningCohort.planningVariant.status,
+                  isDeleted: membership.planningCohort.planningVariant.isDeleted,
+                  macrocycles: membership.planningCohort.planningVariant.macrocycles,
+                }
+              : null,
+          },
+        })),
+        basePlans: basePlans.map((plan) => ({
+          id: plan.id,
+          groupId: plan.groupId,
+          planningCohortId: plan.planningCohortId,
+          status: plan.status,
+          isDeleted: plan.isDeleted,
+          macrocycles: plan.macrocycles,
+        })),
+        date: session.date,
+      })
+      const prescriptionResolution = resolveAthleteSessionPrescription({
+        planning,
+        prescriptions: session.sessionPrescriptions.flatMap((prescription) => {
+          const groupTrainingPlanId = groupTrainingPlanIdByMicrocycle.get(prescription.microcycleId)
+          return groupTrainingPlanId
+            ? [{
+                id: prescription.id,
+                groupId: prescription.groupId,
+                microcycleId: prescription.microcycleId,
+                groupTrainingPlanId,
+              }]
+            : []
+        }),
+      })
+
+      if (prescriptionResolution.status !== 'resolved') return []
+
+      return [{
+        ...session,
+        sessionPrescriptions: session.sessionPrescriptions.filter(
+          ({ id }) => id === prescriptionResolution.prescriptionId,
+        ),
+      }]
     })
 
     return {
@@ -143,7 +278,7 @@ export async function getCurrentAthletePlanningWeek() {
         today,
         startDate,
         endDate,
-        sessions: weekSessions.filter((session) => session.sessionPrescriptions.length > 0),
+        sessions: resolvedSessions,
       },
     }
   } catch (error) {

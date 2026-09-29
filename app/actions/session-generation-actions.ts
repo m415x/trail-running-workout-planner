@@ -163,12 +163,12 @@ export async function persistGeneratedSessions(
           isDeleted: false, updatedAt: now,
         }
         if (operation.action === 'create') {
-          const sameGroupPrescription = tx.select().from(groupSessionPrescriptions)
+          const samePlanningScopePrescription = tx.select().from(groupSessionPrescriptions)
             .where(and(
               eq(groupSessionPrescriptions.sessionId, sessionId),
-              eq(groupSessionPrescriptions.groupId, values.groupId),
+              eq(groupSessionPrescriptions.microcycleId, values.microcycleId),
             )).get()
-          if (!sameGroupPrescription) {
+          if (!samePlanningScopePrescription) {
             const prescriptionId = randomUUID()
             tx.insert(groupSessionPrescriptions).values({
               id: prescriptionId, ...record, createdAt: now,
@@ -177,13 +177,13 @@ export async function persistGeneratedSessions(
               id: prescriptionId, planId, sessionId, generationKey: operation.proposal.generationKey,
               action: 'generated_created', previousValue: null, newValue: values, now,
             })
-          } else if (sameGroupPrescription.generationOwnership === 'generated') {
+          } else if (samePlanningScopePrescription.generationOwnership === 'generated') {
             tx.update(groupSessionPrescriptions).set(record)
-              .where(eq(groupSessionPrescriptions.id, sameGroupPrescription.id)).run()
+              .where(eq(groupSessionPrescriptions.id, samePlanningScopePrescription.id)).run()
             insertPrescriptionAudit(tx, {
-              id: sameGroupPrescription.id, planId, sessionId,
+              id: samePlanningScopePrescription.id, planId, sessionId,
               generationKey: operation.proposal.generationKey, action: 'generated_updated',
-              previousValue: sameGroupPrescription, newValue: values, now,
+              previousValue: samePlanningScopePrescription, newValue: values, now,
             })
           }
         } else {

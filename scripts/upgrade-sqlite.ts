@@ -99,6 +99,28 @@ function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecogni
   }
 }
 
+function assertCompatiblePrescriptionPlanningScopes(sqlite: Database.Database): void {
+  const tables = new Set(
+    (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
+      .map(row => row.name),
+  )
+  if (!tables.has('group_session_prescriptions')) return
+
+  const duplicate = sqlite.prepare(`
+    SELECT session_id, microcycle_id, COUNT(*) AS count
+    FROM group_session_prescriptions
+    GROUP BY session_id, microcycle_id
+    HAVING COUNT(*) > 1
+    LIMIT 1
+  `).get() as { session_id: string; microcycle_id: string; count: number } | undefined
+
+  if (duplicate) {
+    throw new Error(
+      `SQLite prescription planning scope is incompatible: duplicate Session + microcycle rows exist for session ${duplicate.session_id}, microcycle ${duplicate.microcycle_id}; refusing automatic migration because reconciliation requires an explicit product/data decision`,
+    )
+  }
+}
+
 function establishCanonicalMigrationMetadata(
   sqlite: Database.Database,
   appliedThroughTag?: string,
@@ -208,6 +230,14 @@ function reconcileVersionedHeadMetadata(): boolean {
 }
 
 const state = classifyExistingSqlite()
+if (state !== 'fresh') {
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    assertCompatiblePrescriptionPlanningScopes(sqlite)
+  } finally {
+    sqlite.close()
+  }
+}
 if (state === 'versioned') repairFalselyReconciledBillingH2Metadata()
 if (state === 'unrecognized') {
   throw new Error(

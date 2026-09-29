@@ -30,6 +30,33 @@ describe('reutilización de eventos entre grupos', () => {
     )
   })
 
+  it('consolida Base y Variant del mismo grupo junto con otro grupo en una sola Session', () => {
+    const baseS2 = proposal('S2', 'micro-base-s2', 12, 500, 'Z2')
+    const variantS2 = proposal('S2', 'micro-variant-s2', 9, 350, 'Z3')
+    variantS2.generationKey = 'plan-variant-s2::micro-variant-s2::S2::weekly-saturday'
+    const m1 = proposal('M1', 'micro-m1', 16, 800, 'Z3')
+
+    const result = groupSharedSessionEvents([
+      generation(baseS2),
+      generation(variantS2),
+      generation(m1),
+    ])
+
+    assert.equal(result.events.length, 1)
+    assert.equal(result.events[0].prescriptions.length, 3)
+    assert.deepEqual(
+      result.events[0].prescriptions.map(({ prescription }) => ({
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+      })),
+      [
+        { groupId: 'M1', microcycleId: 'micro-m1' },
+        { groupId: 'S2', microcycleId: 'micro-base-s2' },
+        { groupId: 'S2', microcycleId: 'micro-variant-s2' },
+      ],
+    )
+  })
+
   it('mantiene eventos separados cuando cambia la identidad compartida', () => {
     const first = proposal('S2', 'micro-s2', 12, 500, 'Z2')
     const second = {
@@ -75,7 +102,30 @@ describe('reutilización de eventos entre grupos', () => {
     )
   })
 
-  it('rechaza prescripciones repetidas del mismo grupo y claves de generación duplicadas', () => {
+  it('permite prescripciones del mismo grupo cuando pertenecen a planning scopes distintos', () => {
+    const base = proposal('S2', 'micro-base-s2', 12, 500, 'Z2')
+    const variant = proposal('S2', 'micro-variant-s2', 9, 350, 'Z3')
+    variant.generationKey = 'plan-variant-s2::micro-variant-s2::S2::weekly-saturday'
+
+    const result = groupSharedSessionEvents([generation(base), generation(variant)])
+
+    assert.equal(result.events.length, 1)
+    assert.deepEqual(
+      result.events[0].prescriptions.map(({ prescription }) => ({
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+        distanceKm: prescription.distanceKm,
+        elevationGain: prescription.elevationGain,
+        zone: prescription.zone,
+      })),
+      [
+        { groupId: 'S2', microcycleId: 'micro-base-s2', distanceKm: 12, elevationGain: 500, zone: 'Z2' },
+        { groupId: 'S2', microcycleId: 'micro-variant-s2', distanceKm: 9, elevationGain: 350, zone: 'Z3' },
+      ],
+    )
+  })
+
+  it('rechaza planning scopes repetidos y claves de generación duplicadas', () => {
     const first = proposal('S2', 'micro-s2', 12, 500, 'Z2')
     const sameGroup = { ...first, generationKey: 'plan-2::micro-2::S2::weekly-saturday' }
     const duplicatedKey = proposal('M1', 'micro-m1', 16, 800, 'Z3')
@@ -83,7 +133,7 @@ describe('reutilización de eventos entre grupos', () => {
 
     assert.throws(
       () => groupSharedSessionEvents([generation(first, sameGroup)]),
-      /duplicate group S2/,
+      /duplicate planning scope micro-s2/,
     )
     assert.throws(
       () => groupSharedSessionEvents([generation(first, duplicatedKey)]),

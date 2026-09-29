@@ -315,7 +315,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     const existingPrescriptions = db.select().from(groupSessionPrescriptions)
       .where(eq(groupSessionPrescriptions.sessionId, sessionId)).all()
     const prescriptionOwnership = new Map(existingPrescriptions.map((prescription) => [
-      prescription.groupId,
+      prescription.microcycleId,
       prescription.generationOwnership === 'generated'
         ? 'generated_modified' as const
         : prescription.generationOwnership,
@@ -365,17 +365,17 @@ export async function updateSession(_previousState: SessionFormState, formData: 
 
       for (const prescription of prescriptions.data) {
         const previousPrescription = existingPrescriptions.find(
-          (existing) => existing.groupId === prescription.groupId,
+          (existing) => existing.microcycleId === prescription.microcycleId,
         )
         tx.insert(groupSessionPrescriptions).values({
           id: randomUUID(), sessionId, ...prescription,
-          generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+          generationOwnership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
           createdAt: now, updatedAt: now,
         }).onConflictDoUpdate({
-          target: [groupSessionPrescriptions.sessionId, groupSessionPrescriptions.groupId],
+          target: [groupSessionPrescriptions.sessionId, groupSessionPrescriptions.microcycleId],
           set: {
             ...prescription,
-            generationOwnership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+            generationOwnership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             isDeleted: false,
             updatedAt: now,
           },
@@ -385,7 +385,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
           tx.insert(sessionGenerationModificationRecords).values({
             id: randomUUID(), groupTrainingPlanId: planId, sessionId,
             prescriptionId: previousPrescription.id, action: 'manual_modified',
-            ownership: prescriptionOwnership.get(prescription.groupId) ?? 'manual',
+            ownership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             generationKey: previousPrescription.generationKey,
             previousValue: JSON.stringify(previousPrescription),
             newValue: JSON.stringify(prescription), changedByUserId: null,

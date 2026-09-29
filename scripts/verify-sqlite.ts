@@ -68,6 +68,50 @@ try {
     )
   }
 
+  if (!tables.has('group_session_prescriptions')) {
+    throw new Error('SQLite schema is not at HEAD: missing table group_session_prescriptions')
+  }
+
+  const prescriptionIndexes = sqlite.pragma('index_list(group_session_prescriptions)') as Array<{
+    name: string
+    unique: number
+  }>
+  const planningScopeIndex = prescriptionIndexes.find(
+    index => index.name === 'group_session_prescriptions_session_microcycle_unique',
+  )
+  if (planningScopeIndex?.unique !== 1) {
+    throw new Error(
+      'SQLite schema is inconsistent: group_session_prescriptions must enforce unique Session + microcycle planning scope',
+    )
+  }
+  if (
+    prescriptionIndexes.some(
+      index => index.name === 'group_session_prescriptions_session_group_unique',
+    )
+  ) {
+    throw new Error(
+      'SQLite schema is inconsistent: legacy group_session_prescriptions Session + group uniqueness remains',
+    )
+  }
+
+  const planningScopeColumns = sqlite
+    .pragma('index_info(group_session_prescriptions_session_microcycle_unique)') as Array<{
+      seqno: number
+      name: string
+    }>
+  const planningScopeColumnNames = planningScopeColumns
+    .sort((first, second) => first.seqno - second.seqno)
+    .map(column => column.name)
+  if (
+    planningScopeColumnNames.length !== 2
+    || planningScopeColumnNames[0] !== 'session_id'
+    || planningScopeColumnNames[1] !== 'microcycle_id'
+  ) {
+    throw new Error(
+      'SQLite schema is inconsistent: group_session_prescriptions_session_microcycle_unique must index session_id, microcycle_id',
+    )
+  }
+
   const monthlyChargeIndexes = sqlite.pragma('index_list(monthly_charges)') as Array<{
     name: string
     unique: number
