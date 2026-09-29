@@ -24,3 +24,19 @@ test('athlete planning week no longer treats groupId as sufficient prescription 
     /sessionPrescriptions:\s*\{[\s\S]*eq\(groupSessionPrescriptions\.groupId,\s*athlete\.groupId\)/,
   )
 })
+
+test('athlete planning week loads Base plans for every dated group that can resolve inside the week', () => {
+  const functionStart = source.indexOf('export async function getCurrentAthletePlanningWeek')
+  assert.notEqual(functionStart, -1)
+  const functionSource = source.slice(functionStart, source.indexOf('export async function getAthleteShoes', functionStart))
+
+  assert.match(functionSource, /relevantGroupIds/)
+  assert.match(
+    functionSource,
+    /inArray\(groupTrainingPlans\.groupId,\s*relevantGroupIds\)/,
+  )
+  assert.doesNotMatch(
+    functionSource,
+    /eq\(groupTrainingPlans\.groupId,\s*athlete\.groupId\)/,
+  )
+})
