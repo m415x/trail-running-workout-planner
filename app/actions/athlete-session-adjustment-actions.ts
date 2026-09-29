@@ -23,6 +23,7 @@ import {
   createAthleteSessionAdjustmentPersistenceAdapter,
   type PersistedAthleteSessionAdjustmentRevision,
 } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
+import { resolveEffectiveAthleteAdjustment } from '@/lib/planning-cohorts/athlete-adjustment-resolution'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 import type {
@@ -53,6 +54,8 @@ export interface SessionAthleteAdjustmentReviewItem {
   stimulus: string | null
   stimulusType: string | null
   omitted: boolean
+  authorityStatus: 'effective' | 'outside_authority'
+  reviewRequired: boolean
 }
 
 export async function getSessionAthleteAdjustmentReview(
@@ -97,6 +100,26 @@ export async function getSessionAthleteAdjustmentReview(
   const planIdByMicrocycle = new Map(
     lineages.map(({ microcycleId, groupTrainingPlanId }) => [microcycleId, groupTrainingPlanId]),
   )
+
+  const sessionPrescriptionIds = session.sessionPrescriptions.map(prescription => prescription.id)
+  const sessionAdjustments = sessionPrescriptionIds.length === 0
+    ? []
+    : await db.select()
+        .from(athleteSessionAdjustments)
+        .where(and(
+          inArray(athleteSessionAdjustments.sourcePrescriptionId, sessionPrescriptionIds),
+          eq(athleteSessionAdjustments.isDeleted, false),
+        ))
+  const sessionAdjustmentIds = sessionAdjustments.map(adjustment => adjustment.id)
+  const sessionCurrentRevisions = sessionAdjustmentIds.length === 0
+    ? []
+    : await db.select()
+        .from(athleteSessionAdjustmentRevisions)
+        .where(and(
+          inArray(athleteSessionAdjustmentRevisions.adjustmentId, sessionAdjustmentIds),
+          eq(athleteSessionAdjustmentRevisions.isCurrent, true),
+          eq(athleteSessionAdjustmentRevisions.isDeleted, false),
+        ))
 
   const rows: SessionAthleteAdjustmentReviewItem[] = []
 
@@ -199,33 +222,55 @@ export async function getSessionAthleteAdjustmentReview(
     )
     if (!sourcePrescription) continue
 
-    const adjustment = await db.query.athleteSessionAdjustments.findFirst({
-      where: and(
-        eq(athleteSessionAdjustments.athleteId, athlete.id),
-        eq(athleteSessionAdjustments.sourcePrescriptionId, sourcePrescription.id),
-        eq(athleteSessionAdjustments.isDeleted, false),
-      ),
-    })
-    const currentRevision = adjustment
-      ? await db.query.athleteSessionAdjustmentRevisions.findFirst({
-          where: and(
-            eq(athleteSessionAdjustmentRevisions.adjustmentId, adjustment.id),
-            eq(athleteSessionAdjustmentRevisions.isCurrent, true),
-            eq(athleteSessionAdjustmentRevisions.isDeleted, false),
-          ),
-        })
-      : null
+    const athleteAdjustments = sessionAdjustments.filter(
+      adjustment => adjustment.athleteId === athlete.id,
+    )
+    const effectiveAdjustment = athleteAdjustments.find(
+      adjustment => adjustment.sourcePrescriptionId === sourcePrescription.id,
+    ) ?? null
+    const staleAdjustment = athleteAdjustments.find(
+      adjustment => adjustment.sourcePrescriptionId !== sourcePrescription.id,
+    ) ?? null
+    const reviewAdjustment = effectiveAdjustment ?? staleAdjustment
+    const reviewRevisions = reviewAdjustment
+      ? sessionCurrentRevisions
+          .filter(revision => revision.adjustmentId === reviewAdjustment.id)
+          .map(revision => ({
+            id: revision.id,
+            adjustmentId: revision.adjustmentId,
+            state: revision.state,
+            payload: revision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
+            reason: revision.reason,
+            changedByUserId: revision.changedByUserId,
+            isCurrent: revision.isCurrent,
+          }))
+      : []
 
-    const currentPayload = currentRevision?.state === 'active'
-      ? currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload']
+    const authorityResolution = resolveEffectiveAthleteAdjustment({
+      athleteId: athlete.id,
+      effectivePrescriptionId: sourcePrescription.id,
+      adjustment: reviewAdjustment
+        ? {
+            id: reviewAdjustment.id,
+            teamId: reviewAdjustment.teamId,
+            athleteId: reviewAdjustment.athleteId,
+            sourcePrescriptionId: reviewAdjustment.sourcePrescriptionId,
+          }
+        : null,
+      revisions: reviewRevisions,
+    })
+    const currentPayload = authorityResolution.status === 'resolved'
+      ? authorityResolution.revision.payload
       : null
     const dose = currentPayload?.dose ?? null
     const assignment = currentPayload?.assignment ?? null
+    const outsideAuthority = authorityResolution.status === 'outside_authority'
+      && authorityResolution.reason === 'source-prescription-mismatch'
 
     rows.push({
       athleteId: athlete.id,
       athleteName: `${athlete.user.lastName} ${athlete.user.firstName}`,
-      sourcePrescriptionId: sourcePrescription.id,
+      sourcePrescriptionId: reviewAdjustment?.sourcePrescriptionId ?? sourcePrescription.id,
       distanceKm: dose?.distanceKm?.kind === 'override' ? dose.distanceKm.value : null,
       durationMin: dose?.durationMin?.kind === 'override' ? dose.durationMin.value : null,
       elevationGain: dose?.elevationGain?.kind === 'override' ? dose.elevationGain.value : null,
@@ -249,6 +294,8 @@ export async function getSessionAthleteAdjustmentReview(
       stimulus: assignment?.kind === 'stimulus_override' ? assignment.workoutId : null,
       stimulusType: assignment?.kind === 'stimulus_override' ? assignment.type : null,
       omitted: assignment?.kind === 'omitted',
+      authorityStatus: outsideAuthority ? 'outside_authority' : 'effective',
+      reviewRequired: outsideAuthority,
     })
   }
 
