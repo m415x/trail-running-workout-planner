@@ -1,8 +1,11 @@
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 import {
+  athleteProfiles,
   athleteSessionAdjustmentRevisions,
   athleteSessionAdjustments,
+  groupSessionPrescriptions,
+  sessions,
 } from '@/db/schema'
 
 import type {
@@ -18,6 +21,17 @@ type Mutation = {
 }
 
 type DrizzleClient = {
+  select?: () => {
+    from: (table: unknown) => {
+      where?: (condition: unknown) => Promise<Record<string, unknown>[]>
+      innerJoin?: (
+        table: unknown,
+        condition: unknown,
+      ) => {
+        where: (condition: unknown) => Promise<Record<string, unknown>[]>
+      }
+    }
+  }
   transaction?: (
     callback: (tx: DrizzleClient) => void | Promise<void>,
   ) => Promise<void> | void
@@ -39,11 +53,86 @@ function executeMutation(mutation: Mutation) {
 
 export function createDrizzleAthleteSessionAdjustmentDatabase(
   client: DrizzleClient,
-): Pick<
-  AthleteSessionAdjustmentPersistencePort,
-  'insertAdjustmentWithRevision' | 'replaceCurrentRevisionAtomically'
-> {
+): AthleteSessionAdjustmentPersistencePort {
   return {
+    async athleteBelongsToTeam(teamId, athleteId) {
+      if (!client.select) throw new Error('Drizzle client does not support selects')
+
+      const rows = await client.select()
+        .from(athleteProfiles)
+        .where?.(and(
+          eq(athleteProfiles.id, athleteId),
+          eq(athleteProfiles.teamId, teamId),
+          eq(athleteProfiles.isDeleted, false),
+        ))
+
+      return Boolean(rows?.[0])
+    },
+
+    async prescriptionBelongsToTeam(teamId, prescriptionId) {
+      if (!client.select) throw new Error('Drizzle client does not support selects')
+
+      const rows = await client.select()
+        .from(groupSessionPrescriptions)
+        .innerJoin?.(
+          sessions,
+          eq(sessions.id, groupSessionPrescriptions.sessionId),
+        )
+        .where(and(
+          eq(groupSessionPrescriptions.id, prescriptionId),
+          eq(groupSessionPrescriptions.isDeleted, false),
+          eq(sessions.teamId, teamId),
+          eq(sessions.isDeleted, false),
+        ))
+
+      return Boolean(rows?.[0])
+    },
+
+    async getAdjustmentByIdentity(athleteId, sourcePrescriptionId) {
+      if (!client.select) throw new Error('Drizzle client does not support selects')
+
+      const rows = await client.select()
+        .from(athleteSessionAdjustments)
+        .where?.(and(
+          eq(athleteSessionAdjustments.athleteId, athleteId),
+          eq(athleteSessionAdjustments.sourcePrescriptionId, sourcePrescriptionId),
+          eq(athleteSessionAdjustments.isDeleted, false),
+        ))
+
+      const row = rows?.[0]
+      if (!row) return null
+
+      return {
+        id: String(row.id),
+        teamId: String(row.teamId),
+        athleteId: String(row.athleteId),
+        sourcePrescriptionId: String(row.sourcePrescriptionId),
+      }
+    },
+
+    async listAdjustmentRevisions(adjustmentId) {
+      if (!client.select) throw new Error('Drizzle client does not support selects')
+
+      const rows = await client.select()
+        .from(athleteSessionAdjustmentRevisions)
+        .where?.(and(
+          eq(athleteSessionAdjustmentRevisions.adjustmentId, adjustmentId),
+          eq(athleteSessionAdjustmentRevisions.isDeleted, false),
+        )) ?? []
+
+      return rows.map(row => ({
+        id: String(row.id),
+        adjustmentId: String(row.adjustmentId),
+        state: row.state as 'active' | 'withdrawn',
+        payload: row.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
+        reason: String(row.reason),
+        changedByUserId: row.changedByUserId === null || row.changedByUserId === undefined
+          ? null
+          : String(row.changedByUserId),
+        isCurrent: Boolean(row.isCurrent),
+      }))
+    },
+
     async insertAdjustmentWithRevision(
       adjustment: PersistedAthleteSessionAdjustment,
       revision: PersistedAthleteSessionAdjustmentRevision,
