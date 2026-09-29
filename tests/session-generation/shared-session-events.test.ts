@@ -30,6 +30,33 @@ describe('reutilización de eventos entre grupos', () => {
     )
   })
 
+  it('consolida Base y Variant del mismo grupo junto con otro grupo en una sola Session', () => {
+    const baseS2 = proposal('S2', 'micro-base-s2', 12, 500, 'Z2')
+    const variantS2 = proposal('S2', 'micro-variant-s2', 9, 350, 'Z3')
+    variantS2.generationKey = 'plan-variant-s2::micro-variant-s2::S2::weekly-saturday'
+    const m1 = proposal('M1', 'micro-m1', 16, 800, 'Z3')
+
+    const result = groupSharedSessionEvents([
+      generation(baseS2),
+      generation(variantS2),
+      generation(m1),
+    ])
+
+    assert.equal(result.events.length, 1)
+    assert.equal(result.events[0].prescriptions.length, 3)
+    assert.deepEqual(
+      result.events[0].prescriptions.map(({ prescription }) => ({
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+      })),
+      [
+        { groupId: 'M1', microcycleId: 'micro-m1' },
+        { groupId: 'S2', microcycleId: 'micro-base-s2' },
+        { groupId: 'S2', microcycleId: 'micro-variant-s2' },
+      ],
+    )
+  })
+
   it('mantiene eventos separados cuando cambia la identidad compartida', () => {
     const first = proposal('S2', 'micro-s2', 12, 500, 'Z2')
     const second = {
