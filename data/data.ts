@@ -32,10 +32,10 @@ export const team: Team = {
 export const currentUser: User = {
   id: 'user_1',
   role: 'athlete',
-  userName: 'm415x',
-  email: 'cristianlahoz@elparque.com.ar',
-  firstName: 'Cristian Daniel',
-  lastName: 'Lahoz Piantanida',
+  userName: 'pepe',
+  email: 'pepe@elparque.com.ar',
+  firstName: 'Pepe',
+  lastName: 'Pepe',
   avatar: '/avatars/runner.png',
 }
 
@@ -45,11 +45,11 @@ export const currentAthlete: AthleteProfile = {
   teamId: 'team_1',
   groupId: 'team_1_S2',
   isActive: true,
-  nickName: 'Cristian',
+  nickName: 'Pepe',
   dni: '38.123.456',
   birthday: '1992-08-14',
   phone: '+54 9 264 123-4567',
-  emergencyContact: 'María Lahoz (Hermana)',
+  emergencyContact: 'Peppa',
   emergencyPhone: '+54 9 264 987-6543',
 }
 
