@@ -162,3 +162,59 @@ test('does not apply an adjustment owned by another athlete or source prescripti
     adjustmentId: 'adjustment-3',
   })
 })
+
+
+test('supports explicit removal of optional dose fields without conflating it with inherit', () => {
+  const result = resolveAthletePlannedSession({
+    athleteId: 'athlete-1',
+    session,
+    prescription,
+    adjustment: {
+      id: 'adjustment-clear',
+      athleteId: 'athlete-1',
+      sourcePrescriptionId: 'prescription-1',
+      dose: {
+        distanceKm: { kind: 'inherit' },
+        durationMin: { kind: 'inherit' },
+        elevationGain: { kind: 'inherit' },
+        intensity: { kind: 'override', value: null },
+        notes: { kind: 'override', value: null },
+      },
+      assignment: { kind: 'inherit' },
+    },
+  })
+
+  assert.equal(result.status, 'resolved')
+  assert.equal(result.prescription.distanceKm, 12)
+  assert.equal(result.prescription.intensityMethod, null)
+  assert.equal(result.prescription.zone, null)
+  assert.equal(result.prescription.referencePercentage, null)
+  assert.equal(result.prescription.notes, null)
+})
+
+test('omission is authoritative and does not leak dose or assignment mutations into a resolved session', () => {
+  const result = resolveAthletePlannedSession({
+    athleteId: 'athlete-1',
+    session,
+    prescription,
+    adjustment: {
+      id: 'adjustment-omit-with-dose',
+      athleteId: 'athlete-1',
+      sourcePrescriptionId: 'prescription-1',
+      dose: {
+        distanceKm: { kind: 'override', value: 3 },
+        durationMin: { kind: 'inherit' },
+        elevationGain: { kind: 'inherit' },
+        intensity: { kind: 'inherit' },
+        notes: { kind: 'inherit' },
+      },
+      assignment: { kind: 'omitted' },
+    },
+  })
+
+  assert.deepEqual(result, {
+    status: 'omitted',
+    adjustmentId: 'adjustment-omit-with-dose',
+    sourcePrescriptionId: 'prescription-1',
+  })
+})
