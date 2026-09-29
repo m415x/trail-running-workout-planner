@@ -197,3 +197,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes; planning-cohort and race-catalog planning contracts, architecture/documentation indexes and the KAN-473 handoff now encode the KAN-504 baseline and KAN-505 entry boundary.
 - Evidence that reduced context/tool usage harmed correctness: none observed. The one structural false-positive came from test scope, not reduced retrieval, and was corrected before implementation evidence was accepted.
 - Notes for post-experiment v2 (do not change v1 yet): continue treating structural tests as wiring hints rather than runtime proof. Preserve the distinction between naturally reproducible walkthrough evidence and deterministic automated evidence; do not manufacture demo data solely to satisfy a visual checklist.
+
+
+### KAN-522 — harness-eval-v1
+
+- Redundant/repeated tool calls: low; one Supabase verifier diagnosis reloaded large migration/schema context, but the final diagnosis stayed focused on the failing contract.
+- Unnecessary large/full-source reloads: limited; closure-time architecture/handoff reads were required to reconcile durable documentation.
+- Equivalent failed-operation loops: 1 connector pattern was blocked twice for long Jira closure comments; strategy changed to shorter materialization instead of repeating the same payload.
+- Context/source-of-truth mistakes: 1 test-design mistake. A regeneration test initially injected sibling-plan prescriptions into `reconcileSessionGeneration()`, violating its documented precondition that existing prescriptions are pre-scoped to the active plan. The test was removed and moved to the real persistence boundary.
+- Durable information unnecessarily requested from human: 0.
+- Premature task/branch creation or reopened settled decisions: 0; implementation followed the already-approved KAN-522 decomposition.
+- Unnecessary local/full-gate requests during implementation: 0; focused TDD was used until KAN-529 closure.
+- Unsupported verification claims: 0. The initial Supabase verifier FAIL was treated as a real closure blocker; no remote migration success was claimed until `pn db:supabase:migrate` and `pn db:supabase:verify` were actually run.
+- Missed acceptance criteria attributable to workflow/context handling: 0 known at closure. A legacy `updateSession()` identity mismatch was detected during T5/T6 reconciliation and fixed before the final gate.
+- Corrective human interventions attributable to harness behavior: 0 material; human RED/GREEN and full-gate evidence followed the approved workflow.
+- Durable documentation/handoff complete: yes; planning-cohort, session-generation and KAN-473 handoff contracts now encode planning-scope prescription identity and Athlete resolution.
+- Evidence that reduced context/tool usage harmed correctness: none observed. Focused RED/GREEN cycles exposed the relevant boundaries while closure reconciliation caught the remaining manual-edit mismatch.
+- Notes for post-experiment v2 (do not change v1 yet): continue distinguishing pure reconciler preconditions from persistence/orchestration boundaries. Shorter Jira evidence payloads are more reliable with the connector.
