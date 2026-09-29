@@ -28,6 +28,4 @@ CREATE TABLE `athlete_session_adjustments` (
 	FOREIGN KEY (`source_prescription_id`) REFERENCES `group_session_prescriptions`(`id`) ON UPDATE no action ON DELETE restrict
 );
 --> statement-breakpoint
-CREATE UNIQUE INDEX `athlete_session_adjustments_athlete_prescription_unique` ON `athlete_session_adjustments` (`athlete_id`,`source_prescription_id`);--> statement-breakpoint
-DROP INDEX `group_session_prescriptions_session_group_unique`;--> statement-breakpoint
-CREATE UNIQUE INDEX `group_session_prescriptions_session_microcycle_unique` ON `group_session_prescriptions` (`session_id`,`microcycle_id`);
+CREATE UNIQUE INDEX `athlete_session_adjustments_athlete_prescription_unique` ON `athlete_session_adjustments` (`athlete_id`,`source_prescription_id`);
