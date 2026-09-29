@@ -19,6 +19,7 @@ import {
   users,
 } from '@/db/schema'
 import { resolveEffectiveAthleteAdjustment } from '@/lib/planning-cohorts/athlete-adjustment-resolution'
+import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthletePlannedSession } from '@/lib/planning-cohorts/athlete-session-adjustment'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
@@ -323,7 +324,7 @@ export async function getCurrentAthletePlanningWeek() {
               id: currentRevision.id,
               adjustmentId: currentRevision.adjustmentId,
               state: currentRevision.state,
-              payload: currentRevision.payload,
+              payload: currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
               reason: currentRevision.reason,
               changedByUserId: currentRevision.changedByUserId,
               isCurrent: currentRevision.isCurrent,
