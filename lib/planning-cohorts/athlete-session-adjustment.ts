@@ -32,7 +32,6 @@ export type AthleteDoseOverrides = {
     | { method: 'reference_percentage'; referencePercentage: number }
     | null
   >
-  notes: InheritableOverride<string | null>
 }
 
 export type AthleteAssignmentOverride =
@@ -177,7 +176,6 @@ function applyDoseOverrides(
     intensityMethod,
     zone,
     referencePercentage,
-    notes: resolveOverride(prescription.notes, dose.notes),
   }
 }
 
