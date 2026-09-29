@@ -1,8 +1,11 @@
+import type { IntensityZone } from '@/types/training/intensity.types'
+import type { WorkoutType } from '@/types/training/workout.types'
+
 export interface SharedSessionEvent {
   id: string
   date: string
   workoutId: string | null
-  type: string
+  type: WorkoutType
 }
 
 export interface EffectiveAudiencePrescription {
@@ -11,7 +14,7 @@ export interface EffectiveAudiencePrescription {
   durationMin: number | null
   elevationGain: number | null
   intensityMethod: 'hr_zone' | 'reference_percentage' | null
-  zone: string | null
+  zone: IntensityZone | null
   referencePercentage: number | null
   notes: string | null
 }
@@ -25,7 +28,7 @@ export type AthleteDoseOverrides = {
   durationMin: InheritableOverride<number | null>
   elevationGain: InheritableOverride<number | null>
   intensity: InheritableOverride<
-    | { method: 'hr_zone'; zone: string }
+    | { method: 'hr_zone'; zone: IntensityZone }
     | { method: 'reference_percentage'; referencePercentage: number }
     | null
   >
@@ -35,7 +38,7 @@ export type AthleteDoseOverrides = {
 export type AthleteAssignmentOverride =
   | { kind: 'inherit' }
   | { kind: 'rescheduled'; date: string }
-  | { kind: 'stimulus_override'; workoutId: string | null; type: string }
+  | { kind: 'stimulus_override'; workoutId: string | null; type: WorkoutType }
   | { kind: 'omitted' }
 
 export interface AthleteSessionAdjustment {
