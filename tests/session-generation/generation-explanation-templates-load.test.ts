@@ -8,7 +8,11 @@ import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 const slots = [
   createWeeklyTrainingSlot('tuesday', 'mountain'),
   createWeeklyTrainingSlot('thursday', 'quality'),
-  createWeeklyTrainingSlot('saturday', 'long'),
+  {
+    ...createWeeklyTrainingSlot('saturday', 'long'),
+    preferredWorkoutTypes: ['Long'],
+    preferredTemplateCategories: ['endurance'],
+  },
 ]
 
 const templates: WorkoutTemplate[] = [
