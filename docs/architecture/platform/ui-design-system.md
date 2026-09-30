@@ -224,6 +224,52 @@ Definitions:
 
 Do not promote a one-off feature composition into the shared layer solely to reduce file duplication.
 
+## Responsive architecture
+
+KAN-559 freezes two role-specific responsive strategies without changing information architecture.
+
+### Coach desktop-first / progressive compression
+
+Coach remains desktop-first and keeps its existing Sidebar information architecture. Narrow viewports compress shell density rather than introducing a second navigation model:
+
+- the Sidebar remains collapsible to icon mode and keeps the same destinations;
+- the shell header compresses before returning to the wider desktop height;
+- content gutters and vertical density expand progressively from narrow → `sm` → `lg`;
+- no Coach navigation mode is inferred from pathname.
+
+This is **progressive compression**: the desktop composition is preserved while density is reduced deliberately as available width shrinks.
+
+### Athlete mobile-first / progressive expansion
+
+Athlete remains mobile-first and keeps a single information architecture of four destinations:
+
+- Inicio / Home;
+- Plan;
+- Stats;
+- Perfil / Profile.
+
+Mobile keeps the full-width `BottomNavigationBar`. From the existing `sm` breakpoint at 640px, the same component becomes a compact persistent bottom bar centered in the viewport. This is **progressive expansion** of the mobile architecture, not a second navigation taxonomy.
+
+A navigation rail was evaluated for KAN-358 and **not adopted** for KAN-507 because it would require maintaining a second spatial navigation representation and reserving a lateral content column without adding new information architecture value. The compact persistent bottom bar preserves discoverability and the exact same four destinations across mobile, mobile-landscape, tablet and desktop.
+
+The Athlete navigation component may use pathname only to determine the active selection. Pathname does not decide responsive layout or navigation strategy; responsive composition remains CSS/layout-driven.
+
+### Responsive composition vs accessibility scaling
+
+Responsive composition and accessibility scaling remain independent concerns.
+
+The historical Athlete readability baseline stays unchanged:
+
+- mobile root scale: 120%;
+- from 640px: 100%.
+
+KAN-559 does not reinterpret those values as responsive navigation or density rules. Coach compression and Athlete expansion are composition decisions; the root font scaling remains the separate accessibility constraint defined by KAN-359 until later real-device evidence supports replacing it with an equivalent or better legibility model.
+
+Reconciliation:
+
+- **KAN-358** is resolved for KAN-507 by retaining one Athlete four-destination IA and selecting the compact persistent bottom bar for wide viewports instead of a navigation rail/sidebar.
+- **KAN-359** is resolved for KAN-507 by explicitly separating semantic typography, responsive composition and accessibility scaling while preserving the existing 120% mobile / 100% from 640px root behavior.
+
 ## Responsive and accessibility boundaries
 
 KAN-507 will define:
