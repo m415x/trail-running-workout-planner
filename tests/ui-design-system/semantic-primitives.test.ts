@@ -12,6 +12,7 @@ const confirmDialogSource = readSource('components/ui/custom/confirm-dialog.tsx'
 const cardsSource = readSource('components/ui/custom/card-containers.tsx')
 const pillsSource = readSource('components/ui/custom/pills.tsx')
 const globalsCss = readSource('app/globals.css')
+const designSystemDoc = readSource('docs/architecture/platform/ui-design-system.md')
 
 test('KAN-558 official EPT controls consume semantic foreground and shape tokens', () => {
   assert.doesNotMatch(buttonsSource, /\btext-white\b/)
@@ -86,4 +87,42 @@ test('KAN-558 representative consumers provide localized accessible labels inste
   assert.match(confirmDialogSource, /description:\s*string/)
   assert.match(confirmDialogSource, /confirmLabel:\s*string/)
   assert.match(confirmDialogSource, /cancelLabel:\s*string/)
+})
+
+
+test('KAN-558 documents the official primitive / semantic primitive / product-pattern boundary', () => {
+  for (const phrase of [
+    'Base primitives',
+    'Official EPT semantic primitives',
+    'Product patterns',
+    'Feature compositions',
+    'KAN-508',
+  ]) {
+    assert.ok(
+      designSystemDoc.includes(phrase),
+      `missing durable primitive boundary documentation: ${phrase}`,
+    )
+  }
+
+  for (const componentName of [
+    'CustomButton',
+    'PrimaryInput',
+    'ThemeToggleButton',
+    'CustomCard',
+    'CustomCardInside',
+    'StatCard',
+    'PillButton',
+    'ConfirmActionDialog',
+  ]) {
+    assert.ok(
+      designSystemDoc.includes(componentName),
+      `missing officialized EPT primitive in documentation: ${componentName}`,
+    )
+  }
+
+  assert.match(
+    designSystemDoc,
+    /focus-visible[\s\S]*disabled[\s\S]*aria-invalid/,
+  )
+  assert.match(designSystemDoc, /44 px|2\.75rem/)
 })
