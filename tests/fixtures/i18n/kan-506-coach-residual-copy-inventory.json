@@ -146,7 +146,7 @@
     {
       "path": "app/[locale]/dashboard/sessions/[sessionId]/page.tsx",
       "area": "sessions",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Por qué se generó así",
         "Prescripción variante",
