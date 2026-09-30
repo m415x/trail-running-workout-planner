@@ -18,8 +18,8 @@ interface RealizedTrainingHistoryProps {
   locale: string
 }
 
-function formatDate(value: string, locale: string) {
-  return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : 'es-AR', {
+function formatDate(value: string, presentationLocale: string) {
+  return new Intl.DateTimeFormat(presentationLocale, {
     timeZone: 'UTC',
     weekday: 'short',
     day: 'numeric',
@@ -31,14 +31,14 @@ function formatDate(value: string, locale: string) {
 function metricValue(
   metric: RealizedMetric,
   unit: string,
-  locale: 'es' | 'en',
+  presentationLocale: string,
   translate: (key: string) => string,
 ) {
   if (metric.state === 'unknown') {
     return `${translate('unknown')} · ${translate(`unknownReasons.${metric.reason}`)}`
   }
 
-  return `${new Intl.NumberFormat(locale === 'en' ? 'en-US' : 'es-AR', {
+  return `${new Intl.NumberFormat(presentationLocale, {
     maximumFractionDigits: 2,
   }).format(metric.value)}${unit}`
 }
@@ -129,7 +129,7 @@ export function RealizedTrainingHistory({
             <div className='flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between'>
               <div>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <p className='font-medium capitalize'>{formatDate(record.date, language)}</p>
+                  <p className='font-medium capitalize'>{formatDate(record.date, regionalContext.presentationLocale)}</p>
                   <Badge variant={record.status === 'completed' ? 'secondary' : 'outline'}>
                     {statusLabel}
                   </Badge>
@@ -155,11 +155,11 @@ export function RealizedTrainingHistory({
             </div>
 
             <dl className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5'>
-              <Metric icon={<Route className='size-4' />} label={t('distance')} value={metricValue(record.metrics.distanceKm, ' km', language, t)} />
+              <Metric icon={<Route className='size-4' />} label={t('distance')} value={metricValue(record.metrics.distanceKm, ' km', regionalContext.presentationLocale, t)} />
               <Metric icon={<Clock3 className='size-4' />} label={t('duration')} value={durationValue(record.metrics.durationMin, t)} />
-              <Metric icon={<Mountain className='size-4' />} label={t('elevation')} value={metricValue(record.metrics.elevationGainM, ' m', language, t)} />
-              <Metric icon={<HeartPulse className='size-4' />} label={t('heartRate')} value={metricValue(record.metrics.avgHrBpm, language === 'en' ? ' bpm' : ' ppm', language, t)} />
-              <Metric icon={<Gauge className='size-4' />} label={t('rpe')} value={metricValue(record.metrics.rpe, '', language, t)} />
+              <Metric icon={<Mountain className='size-4' />} label={t('elevation')} value={metricValue(record.metrics.elevationGainM, ' m', regionalContext.presentationLocale, t)} />
+              <Metric icon={<HeartPulse className='size-4' />} label={t('heartRate')} value={metricValue(record.metrics.avgHrBpm, language === 'en' ? ' bpm' : ' ppm', regionalContext.presentationLocale, t)} />
+              <Metric icon={<Gauge className='size-4' />} label={t('rpe')} value={metricValue(record.metrics.rpe, '', regionalContext.presentationLocale, t)} />
             </dl>
 
             {(record.provenance.sourceActivityId || record.limitations.length > 0) && (
