@@ -1,12 +1,13 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import {
   saveAthleteSessionAdjustment,
   type SessionAthleteAdjustmentReviewItem,
 } from '@/app/actions/athlete-session-adjustment-actions'
+import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 import { WORKOUT_TYPES } from '@/types/training/workout.types'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
@@ -46,6 +47,16 @@ function AthleteAdjustmentForm({
   const t = useTranslations('Sessions')
   const workoutTypeT = useTranslations('Workouts')
   const [state, action, pending] = useActionState(saveAthleteSessionAdjustment, {})
+  const [intensityMethod, setIntensityMethod] = useState(item.intensityMethod ?? '')
+  const [assignmentMode, setAssignmentMode] = useState(
+    item.omitted
+      ? 'omitted'
+      : item.rescheduled
+        ? 'rescheduled'
+        : item.stimulus || item.stimulusType
+          ? 'stimulus_override'
+          : 'inherit',
+  )
 
   return (
     <form action={action} className='space-y-4 rounded-lg border p-4'>
@@ -108,12 +119,13 @@ function AthleteAdjustmentForm({
         </div>
       </div>
 
-      <div className='grid gap-3 sm:grid-cols-3'>
+      <div className='space-y-3'>
         <label className='space-y-1.5 text-sm'>
           <span className='font-medium'>{t('adjustments.intensity')}</span>
           <select
             name='intensityMethod'
-            defaultValue={item.intensityMethod ?? ''}
+            value={intensityMethod}
+            onChange={(event) => setIntensityMethod(event.target.value)}
             className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
           >
             <option value=''>
@@ -127,28 +139,37 @@ function AthleteAdjustmentForm({
           </select>
         </label>
 
-        <label className='space-y-1.5 text-sm'>
-          <span className='font-medium'>{t('adjustments.zone')}</span>
-          <select
-            name='zone'
-            defaultValue={item.zone ?? ''}
-            className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-          >
-            <option value=''>{t('adjustments.selectZone')}</option>
-            {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map(zone => (
-              <option key={zone} value={zone}>{zone}</option>
-            ))}
-          </select>
-        </label>
+        {intensityMethod === 'hr_zone' && (
+          <label className='space-y-1.5 text-sm'>
+            <span className='font-medium'>{t('adjustments.zone')}</span>
+            <select
+              name='zone'
+              defaultValue={item.zone ?? ''}
+              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+            >
+              <option value=''>{t('adjustments.selectZone')}</option>
+              {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map(zone => (
+                <option key={zone} value={zone}>{zone}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
-        <LabeledInput
-          label={t('adjustments.referencePercentage')}
-          name='referencePercentage'
-          type='number'
-          min='1'
-          step='1'
-          defaultValue={item.referencePercentage ?? ''}
-        />
+        {intensityMethod === 'reference_percentage' && (
+          <label className='space-y-1.5 text-sm'>
+            <span className='font-medium'>{t('adjustments.referencePercentage')}</span>
+            <select
+              name='referencePercentage'
+              defaultValue={item.referencePercentage ?? ''}
+              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+            >
+              <option value=''>{t('adjustments.referencePercentage')}</option>
+              {SESSION_REFERENCE_PERCENTAGES.map(percentage => (
+                <option key={percentage} value={percentage}>{percentage}%</option>
+              ))}
+            </select>
+          </label>
+        )}
       </div>
 
       <div className='space-y-2'>
@@ -158,15 +179,8 @@ function AthleteAdjustmentForm({
           <span className='font-medium'>{t('adjustments.assignmentMode')}</span>
           <select
             name='assignmentMode'
-            defaultValue={
-              item.omitted
-                ? 'omitted'
-                : item.rescheduled
-                  ? 'rescheduled'
-                  : item.stimulus || item.stimulusType
-                    ? 'stimulus_override'
-                    : 'inherit'
-            }
+            value={assignmentMode}
+            onChange={(event) => setAssignmentMode(event.target.value)}
             className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
           >
             <option value='inherit'>{t('adjustments.inherit')}</option>
@@ -176,42 +190,47 @@ function AthleteAdjustmentForm({
           </select>
         </label>
 
-        <div className='grid gap-3 sm:grid-cols-3'>
+        {assignmentMode === 'rescheduled' && (
           <LabeledInput
             label={t('adjustments.reschedule')}
             name='rescheduled'
             type='date'
             defaultValue={item.rescheduled ?? ''}
           />
-          <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>{t('adjustments.stimulus')}</span>
-            <select
-              name='stimulus'
-              defaultValue={item.stimulus ?? ''}
-              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-            >
-              <option value=''>{t('adjustments.noStimulusTemplate')}</option>
-              {workouts.map(workout => (
-                <option key={workout.id} value={workout.id}>
-                  {workout.title} · {workoutTypeT(`types.${workout.type}`)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>{t('adjustments.stimulusType')}</span>
-            <select
-              name='stimulusType'
-              defaultValue={item.stimulusType ?? ''}
-              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-            >
-              <option value=''>{t('adjustments.inherit')}</option>
-              {WORKOUT_TYPES.map(type => (
-                <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>
-              ))}
-            </select>
-          </label>
-        </div>
+        )}
+
+        {assignmentMode === 'stimulus_override' && (
+          <div className='grid gap-3 sm:grid-cols-2'>
+            <label className='space-y-1.5 text-sm'>
+              <span className='font-medium'>{t('adjustments.stimulus')}</span>
+              <select
+                name='stimulus'
+                defaultValue={item.stimulus ?? ''}
+                className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+              >
+                <option value=''>{t('adjustments.noStimulusTemplate')}</option>
+                {workouts.map(workout => (
+                  <option key={workout.id} value={workout.id}>
+                    {workout.title} · {workoutTypeT(`types.${workout.type}`)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className='space-y-1.5 text-sm'>
+              <span className='font-medium'>{t('adjustments.stimulusType')}</span>
+              <select
+                name='stimulusType'
+                defaultValue={item.stimulusType ?? ''}
+                className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+              >
+                <option value=''>{t('adjustments.inherit')}</option>
+                {WORKOUT_TYPES.map(type => (
+                  <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
       </div>
 
       {item.currentReason && (
