@@ -1,0 +1,31 @@
+{
+  "Membership": {
+    "page": {
+      "currentPolicy": "Política vigente",
+      "effectiveUntil": "Vigente hasta",
+      "scheduledChanges": "Cambios programados ({count})",
+      "policyHistory": "Historial de políticas ({count})",
+      "exceptionHistory": "Historial de excepciones"
+    },
+    "dueDateException": {
+      "error": "No se pudo aplicar la excepción.",
+      "success": "Excepción aplicada.",
+      "title": "Excepción mensual de vencimiento",
+      "month": "Mes",
+      "dueDay": "Día de vencimiento",
+      "selectDay": "Seleccionar día",
+      "reason": "Motivo",
+      "applying": "Aplicando…",
+      "apply": "Aplicar excepción"
+    },
+    "materialization": {
+      "error": "No se pudieron materializar las cuotas.",
+      "feedback": "Atletas procesados: {processed} · Cuotas creadas: {created}",
+      "title": "Materializar cuotas",
+      "description": "Genera las cuotas faltantes del equipo para el mes seleccionado.",
+      "month": "Mes",
+      "pending": "Materializando…",
+      "action": "Materializar cuotas"
+    }
+  }
+}
