@@ -178,7 +178,9 @@
       "assignmentMode": "Assignment mode",
       "changeStimulus": "Change stimulus",
       "referencePercentageValue": "Value",
-      "selectReferencePercentage": "Select percentage"
+      "selectReferencePercentage": "Select percentage",
+      "intensityMethod": "Method",
+      "rescheduleDate": "Date"
     }
   }
 }
