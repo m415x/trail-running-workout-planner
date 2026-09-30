@@ -19,6 +19,7 @@ export const messageFragmentPaths = [
   'athletes/detail',
   'athletes/group',
   'athletes/form',
+  'athletes/plan',
   'forms/dirty-form-guard',
   'athlete-stats/stats',
   'memberships/membership',
