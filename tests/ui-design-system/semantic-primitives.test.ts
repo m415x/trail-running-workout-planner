@@ -9,6 +9,8 @@ const readSource = (path: string) =>
 const buttonsSource = readSource('components/ui/custom/buttons.tsx')
 const inputsSource = readSource('components/ui/custom/inputs.tsx')
 const confirmDialogSource = readSource('components/ui/custom/confirm-dialog.tsx')
+const cardsSource = readSource('components/ui/custom/card-containers.tsx')
+const pillsSource = readSource('components/ui/custom/pills.tsx')
 const globalsCss = readSource('app/globals.css')
 
 test('KAN-558 official EPT controls consume semantic foreground and shape tokens', () => {
@@ -39,4 +41,21 @@ test('KAN-558 keeps focus and invalid-state behavior owned by the shadcn\/Base U
   assert.match(baseInputSource, /focus-visible:ring/)
   assert.match(baseInputSource, /disabled:pointer-events-none/)
   assert.match(baseInputSource, /aria-invalid:border-destructive/)
+})
+
+
+test('KAN-558 official EPT surfaces consume semantic spacing, shape, and elevation foundations', () => {
+  assert.match(cardsSource, /rounded-\[var\(--radius-ept-surface\)\]/)
+  assert.match(cardsSource, /p-\[var\(--space-ept-content\)\]/)
+  assert.match(cardsSource, /shadow-\[var\(--elevation-ept-raised\)\]/)
+
+  assert.match(cardsSource, /rounded-\[var\(--radius-ept-control\)\]/)
+  assert.match(cardsSource, /rounded-\[var\(--radius-ept-overlay\)\]/)
+})
+
+test('KAN-558 shared pills and overlays avoid literal foreground and surface geometry', () => {
+  assert.doesNotMatch(pillsSource, /\btext-white\b/)
+  assert.match(pillsSource, /text-primary-foreground/)
+  assert.match(pillsSource, /rounded-\[var\(--radius-ept-overlay\)\]/)
+  assert.match(pillsSource, /shadow-\[var\(--elevation-ept-overlay\)\]/)
 })
