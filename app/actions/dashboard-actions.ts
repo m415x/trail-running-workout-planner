@@ -5,6 +5,8 @@ import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   athleteProfiles,
+  athleteSessionAdjustmentRevisions,
+  athleteSessionAdjustments,
   groupHistoryRecords,
   groupSessionPrescriptions,
   groupTrainingPlans,
@@ -16,6 +18,8 @@ import {
   shoes,
   users,
 } from '@/db/schema'
+import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
+import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 
@@ -114,7 +118,9 @@ export async function getWeeklySchedule(
   }
 }
 
-export async function getCurrentAthletePlanningWeek() {
+export async function getCurrentAthletePlanningWeek(
+  startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
+) {
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -124,7 +130,7 @@ export async function getCurrentAthletePlanningWeek() {
     if (!athlete) throw new Error('Atleta no encontrado')
 
     const today = getCurrentDateInArgentina()
-    const startDate = getMondayFromISODate(today)
+    const startDate = startDateIso
     const endDate = shiftISODate(startDate, 6)
 
     if (!athlete.groupId) {
@@ -208,6 +214,40 @@ export async function getCurrentAthletePlanningWeek() {
       )),
     )
 
+    const weeklyPrescriptionIds = [...new Set(
+      weekSessions.flatMap((session) => (
+        session.sessionPrescriptions.map((prescription) => prescription.id)
+      )),
+    )]
+    const athleteAdjustments = weeklyPrescriptionIds.length === 0
+      ? []
+      : await db.select()
+        .from(athleteSessionAdjustments)
+        .where(and(
+          eq(athleteSessionAdjustments.athleteId, athlete.id),
+          inArray(athleteSessionAdjustments.sourcePrescriptionId, weeklyPrescriptionIds),
+          eq(athleteSessionAdjustments.isDeleted, false),
+        ))
+    const adjustmentIds = athleteAdjustments.map((adjustment) => adjustment.id)
+    const currentAdjustmentRevisions = adjustmentIds.length === 0
+      ? []
+      : await db.select()
+        .from(athleteSessionAdjustmentRevisions)
+        .where(and(
+          inArray(athleteSessionAdjustmentRevisions.adjustmentId, adjustmentIds),
+          eq(athleteSessionAdjustmentRevisions.isCurrent, true),
+          eq(athleteSessionAdjustmentRevisions.isDeleted, false),
+        ))
+    const adjustmentBySourcePrescriptionId = new Map(
+      athleteAdjustments.map((adjustment) => [adjustment.sourcePrescriptionId, adjustment]),
+    )
+    const revisionsByAdjustmentId = new Map<string, typeof currentAdjustmentRevisions>()
+    for (const revision of currentAdjustmentRevisions) {
+      const revisions = revisionsByAdjustmentId.get(revision.adjustmentId) ?? []
+      revisions.push(revision)
+      revisionsByAdjustmentId.set(revision.adjustmentId, revisions)
+    }
+
     const resolvedSessions = weekSessions.flatMap((session) => {
       const planning = resolveAthletePlanningOnDate({
         athleteTeamId: athlete.teamId,
@@ -263,11 +303,70 @@ export async function getCurrentAthletePlanningWeek() {
 
       if (prescriptionResolution.status !== 'resolved') return []
 
+      const sourcePrescription = session.sessionPrescriptions.find(
+        ({ id }) => id === prescriptionResolution.prescriptionId,
+      )
+      if (!sourcePrescription) return []
+
+      const adjustment = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? null
+      const currentRevisions = adjustment
+        ? revisionsByAdjustmentId.get(adjustment.id) ?? []
+        : []
+      const plannedSession = resolveAthletePlanningSession({
+        athleteId: athlete.id,
+        session: {
+          id: session.id,
+          date: session.date,
+          workoutId: session.workoutId,
+          type: session.type,
+        },
+        prescription: {
+          id: sourcePrescription.id,
+          distanceKm: sourcePrescription.distanceKm,
+          durationMin: sourcePrescription.durationMin,
+          elevationGain: sourcePrescription.elevationGain,
+          intensityMethod: sourcePrescription.intensityMethod,
+          zone: sourcePrescription.zone,
+          referencePercentage: sourcePrescription.referencePercentage,
+          notes: sourcePrescription.notes,
+        },
+        adjustment: adjustment
+          ? {
+              id: adjustment.id,
+              teamId: adjustment.teamId,
+              athleteId: adjustment.athleteId,
+              sourcePrescriptionId: adjustment.sourcePrescriptionId,
+            }
+          : null,
+        revisions: currentRevisions.map(currentRevision => ({
+          id: currentRevision.id,
+          adjustmentId: currentRevision.adjustmentId,
+          state: currentRevision.state,
+          payload: currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
+          reason: currentRevision.reason,
+          changedByUserId: currentRevision.changedByUserId,
+          isCurrent: currentRevision.isCurrent,
+        })),
+      })
+
+      if (plannedSession.status === 'omitted') return []
+      if (plannedSession.status !== 'resolved') return []
+
       return [{
         ...session,
-        sessionPrescriptions: session.sessionPrescriptions.filter(
-          ({ id }) => id === prescriptionResolution.prescriptionId,
-        ),
+        date: plannedSession.session.date,
+        workoutId: plannedSession.session.workoutId,
+        type: plannedSession.session.type,
+        sessionPrescriptions: [{
+          ...sourcePrescription,
+          distanceKm: plannedSession.prescription.distanceKm,
+          durationMin: plannedSession.prescription.durationMin,
+          elevationGain: plannedSession.prescription.elevationGain,
+          intensityMethod: plannedSession.prescription.intensityMethod,
+          zone: plannedSession.prescription.zone,
+          referencePercentage: plannedSession.prescription.referencePercentage,
+          notes: plannedSession.prescription.notes,
+        }],
       }]
     })
 

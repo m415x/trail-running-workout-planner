@@ -1,6 +1,6 @@
 import { getTranslations } from 'next-intl/server'
 
-import { getCurrentAthlete, getWeeklySchedule } from '@/app/actions/dashboard-actions'
+import { getCurrentAthlete, getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { HomeTabClient } from '@/app/[locale]/(mobile)/HomeTabClient'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
@@ -25,7 +25,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
 
   const [athleteRes, scheduleRes, realizedRes, performanceRes] = await Promise.all([
     getCurrentAthlete(),
-    getWeeklySchedule(range.startDate),
+    getCurrentAthletePlanningWeek(range.startDate),
     getCurrentAthleteRealizedTrainingRangeAction(range.startDate, range.endDate),
     getCurrentAthleteTrack1000mPerformanceAction(getCurrentISODateInTimeZone()),
   ])
@@ -41,7 +41,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
   return (
     <HomeTabClient
       initialAthlete={athleteRes.data}
-      initialSchedule={scheduleRes.data}
+      initialSchedule={scheduleRes.data.sessions}
       initialRealizedTraining={realizedRes.data}
       locale={locale}
       runningReference={performanceRes.success ? performanceRes.data.reference : { status: 'unknown' }}
