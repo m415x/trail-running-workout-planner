@@ -55,13 +55,14 @@ test('Coach preview exposes explanation per generated prescription, not as one g
   )
 })
 
-test('new explanation copy is available in ES and EN', () => {
-  assert.match(source, /Por qué se generó así/)
-  assert.match(source, /Why it was generated this way/)
-  assert.match(explanationViewSource, /Entradas|Inputs/)
-  assert.match(explanationViewSource, /Restricciones|Constraints/)
-  assert.match(explanationViewSource, /Decisión|Decision/)
-  assert.match(explanationViewSource, /Consecuencia|Consequence/)
+test('new explanation copy is consumed through CoachPlanning i18n', () => {
+  assert.match(source, /useTranslations\('CoachPlanning'\)/)
+  assert.match(source, /t\('whyGenerated'\)/)
+  assert.match(explanationViewSource, /useTranslations\('CoachPlanning'\)/)
+  assert.match(explanationViewSource, /t\('explanationSections\.inputs'\)/)
+  assert.match(explanationViewSource, /t\('explanationSections\.constraints'\)/)
+  assert.match(explanationViewSource, /t\('explanationSections\.decision'\)/)
+  assert.match(explanationViewSource, /t\('explanationSections\.consequence'\)/)
 })
 
 test('preview delegates approved causal stage rendering to the shared explanation view', () => {
