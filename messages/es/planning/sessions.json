@@ -170,7 +170,8 @@
         "invalidReschedule": "Ingresá una fecha válida para la reprogramación.",
         "invalidStimulusType": "Seleccioná un tipo de estímulo válido.",
         "saveFailed": "No se pudo guardar el ajuste individual."
-      }
+      },
+      "currentReason": "Motivo vigente:"
     }
   }
 }
