@@ -176,7 +176,9 @@
       "currentReason": "Motivo vigente:",
       "noStimulusTemplate": "Sin plantilla · cambiar sólo el tipo",
       "assignmentMode": "Modo de asignación",
-      "changeStimulus": "Cambiar estímulo"
+      "changeStimulus": "Cambiar estímulo",
+      "referencePercentageValue": "Valor",
+      "selectReferencePercentage": "Seleccionar porcentaje"
     }
   }
 }
