@@ -9,6 +9,7 @@ import {
   getSessionFormOptions,
   getSessionGenerationExplanationReview,
 } from '@/app/actions/session-actions'
+import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { AthleteSessionAdjustmentReview } from '@/features/sessions/components/AthleteSessionAdjustmentReview'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -129,18 +130,10 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
                     <p className='break-all text-xs text-muted-foreground'>
                       generationKey: {item.generationKey ?? '—'}
                     </p>
-                    {item.generationExplanation.stages.map((stage) => (
-                      <section key={stage.stage} className='space-y-1'>
-                        <p className='text-sm font-medium'>{stage.stage}</p>
-                        <p className='text-xs text-muted-foreground'>
-                          {locale === 'en' ? 'Decisions' : 'Decisiones'}: {stage.decision.length}
-                          {' · '}
-                          {locale === 'en' ? 'Consequences' : 'Consecuencias'}: {stage.consequence.length}
-                          {' · '}
-                          {locale === 'en' ? 'Warnings' : 'Avisos'}: {stage.warnings.length}
-                        </p>
-                      </section>
-                    ))}
+                    <GenerationExplanationView
+                      generationExplanation={item.generationExplanation}
+                      locale={locale}
+                    />
                   </div>
                 </details>
               ))}
