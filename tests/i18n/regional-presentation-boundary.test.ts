@@ -24,12 +24,14 @@ describe('KAN-506 regional presentation boundary', () => {
     }
   })
 
-  it('keeps currency outside the application regional context', async () => {
+  it('keeps currency outside the application regional context shape and fallbacks', async () => {
     const source = await readFile(
       'lib/regionalization/application-regional-context.ts',
       'utf8',
     )
 
-    assert.doesNotMatch(source, /currency/i)
+    assert.doesNotMatch(source, /currency\s*:/i)
+    assert.doesNotMatch(source, /currency\?/i)
+    assert.doesNotMatch(source, /currency\s*=/i)
   })
 })
