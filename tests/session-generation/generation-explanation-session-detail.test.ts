@@ -61,7 +61,7 @@ test('Session detail provenance resolves the latest persisted snapshot per activ
 test('Session detail presents generation provenance separately from athlete adjustments', () => {
   assert.match(pageSource, /getSessionGenerationExplanationReview/)
   assert.match(pageSource, /generationExplanationReview/)
-  assert.match(pageSource, /Por qué se generó así|Why it was generated this way/)
+  assert.match(pageSource, /t\('routes\.detail\.generationReview\.title'\)/)
   assert.match(pageSource, /generationOwnership/)
   assert.match(pageSource, /planningScope/)
   assert.match(pageSource, /AthleteSessionAdjustmentReview/)
@@ -80,6 +80,6 @@ test('Session detail does not present a generated explanation when no historical
   )
   assert.match(
     pageSource,
-    /No hay una explicación histórica disponible|No historical generation explanation is available/,
+    /t\('routes\.detail\.generationReview\.empty'\)/,
   )
 })
