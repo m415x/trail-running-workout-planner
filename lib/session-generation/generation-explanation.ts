@@ -18,7 +18,9 @@ import type {
   WeeklyTrainingSlot,
   WeeklyVolumeAllocation,
   SharedSessionGenerationResult,
+  SessionGenerationOwnership,
 } from '@/types/training/session-generation.types'
+import type { SessionRegenerationPlan } from '@/lib/session-generation/session-regeneration'
 import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 
 export const GENERATION_EXPLANATION_STAGE_ORDER = [
@@ -769,4 +771,98 @@ export function explainPlanningScopeAndCoordination(
           }],
     },
   }
+}
+
+
+export interface ExplainOwnershipAndRegenerationInput {
+  reconciliation: SessionRegenerationPlan
+  eventOwnership: SessionGenerationOwnership
+  prescriptionOwnership: SessionGenerationOwnership
+}
+
+export interface OwnershipAndRegenerationExplanation {
+  coordination: GenerationExplanationStageEvidence
+}
+
+export function explainOwnershipAndRegeneration(
+  input: ExplainOwnershipAndRegenerationInput,
+): OwnershipAndRegenerationExplanation {
+  const eventAction = resolveRegenerationAction(
+    input.reconciliation.events.map(({ action }) => action),
+    input.reconciliation.protectedCollisions.some(({ kind }) => kind === 'event'),
+  )
+  const prescriptionAction = resolveRegenerationAction(
+    input.reconciliation.prescriptions.map(({ action }) => action),
+    input.reconciliation.protectedCollisions.some(({ kind }) => kind === 'prescription'),
+  )
+
+  const anyModified = (
+    input.eventOwnership === 'generated_modified' ||
+    input.prescriptionOwnership === 'generated_modified'
+  )
+  const anyManual = (
+    input.eventOwnership === 'manual' ||
+    input.prescriptionOwnership === 'manual'
+  )
+  const allGenerated = (
+    input.eventOwnership === 'generated' &&
+    input.prescriptionOwnership === 'generated'
+  )
+
+  const warnings: GenerationExplanationWarning[] = input.reconciliation.protectedCollisions.map(
+    (collision) => ({
+      code: 'protected_generation_collision',
+      facts: [
+        { code: 'kind', value: collision.kind },
+        { code: 'existing_id', value: collision.existingId },
+        { code: 'generation_key', value: collision.generationKey },
+      ],
+    }),
+  )
+
+  return {
+    coordination: {
+      stage: 'coordination_reconciliation',
+      inputs: [
+        { code: 'event_ownership', value: input.eventOwnership },
+        { code: 'prescription_ownership', value: input.prescriptionOwnership },
+        {
+          code: 'generated_origin_retained',
+          value: anyModified,
+        },
+      ],
+      constraints: [],
+      decision: [
+        { code: 'event_regeneration_action', value: eventAction },
+        { code: 'prescription_regeneration_action', value: prescriptionAction },
+      ],
+      consequence: [
+        {
+          code: 'generated_origin_retained',
+          value: anyModified,
+        },
+        {
+          code: 'current_state_coach_protected',
+          value: anyModified || anyManual,
+        },
+        {
+          code: 'generator_may_replace_current_state',
+          value: allGenerated &&
+            eventAction !== 'protected' &&
+            prescriptionAction !== 'protected',
+        },
+      ],
+      warnings,
+    },
+  }
+}
+
+function resolveRegenerationAction(
+  actions: Array<'create' | 'replace'>,
+  protectedCollision: boolean,
+) {
+  if (protectedCollision) return 'protected'
+  if (actions.includes('replace')) return 'replace'
+  if (actions.includes('create')) return 'create'
+  return 'preserved'
 }
