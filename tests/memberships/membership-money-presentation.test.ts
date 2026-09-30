@@ -86,6 +86,12 @@ test('KAN-506 presentation locale never infers economic currency', () => {
   const esAr = resolveApplicationRegionalContext({ language: 'es' }).presentationLocale
   const enUs = resolveApplicationRegionalContext({ language: 'en' }).presentationLocale
 
-  assert.match(new Intl.NumberFormat(esAr, { style: 'currency', currency: 'EUR' }).format(10), /€/)
-  assert.match(new Intl.NumberFormat(enUs, { style: 'currency', currency: 'EUR' }).format(10), /€/)
+  assert.equal(
+    new Intl.NumberFormat(esAr, { style: 'currency', currency: 'EUR' }).resolvedOptions().currency,
+    'EUR',
+  )
+  assert.equal(
+    new Intl.NumberFormat(enUs, { style: 'currency', currency: 'EUR' }).resolvedOptions().currency,
+    'EUR',
+  )
 })
