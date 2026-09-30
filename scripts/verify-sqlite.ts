@@ -68,6 +68,22 @@ try {
     )
   }
 
+  if (!tables.has('session_generation_modification_records')) {
+    throw new Error(
+      'SQLite schema is not at HEAD: missing table session_generation_modification_records',
+    )
+  }
+
+  const generationAuditColumns = new Set(
+    (sqlite.prepare('PRAGMA table_info(session_generation_modification_records)').all() as { name: string }[])
+      .map(row => row.name),
+  )
+  if (!generationAuditColumns.has('generation_explanation')) {
+    throw new Error(
+      'SQLite schema is not at HEAD: session_generation_modification_records.generation_explanation is missing',
+    )
+  }
+
   if (!tables.has('group_session_prescriptions')) {
     throw new Error('SQLite schema is not at HEAD: missing table group_session_prescriptions')
   }
