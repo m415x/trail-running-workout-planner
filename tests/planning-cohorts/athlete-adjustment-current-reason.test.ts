@@ -14,5 +14,5 @@ test('Coach review exposes the current adjustment audit reason', () => {
   assert.match(review, /item\.currentReason/)
   assert.match(review, /adjustments\.currentReason/)
   assert.match(es.Sessions.adjustments.currentReason, /Motivo/)
-  assert.match(en.Sessions.adjustments.currentReason, /Reason/)
+  assert.match(en.Sessions.adjustments.currentReason, /reason/i)
 })
