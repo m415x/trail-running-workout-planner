@@ -34,7 +34,11 @@ test('historical snapshots are validated against the persisted planning scope', 
   )
   assert.match(
     source,
-    /resolveGenerationExplanationSnapshot\(\{[\s\S]*generationKey:[\s\S]*expectedScope:/,
+    /const expectedScope:[\s\S]*plan\.planningCohortId\s*===\s*null[\s\S]*kind:\s*'base'[\s\S]*kind:\s*'variant'/,
+  )
+  assert.match(
+    source,
+    /resolveGenerationExplanationSnapshot\(\{[\s\S]*generationKey:[\s\S]*expectedScope,?[\s\S]*\}\)/,
   )
   assert.match(
     source,
