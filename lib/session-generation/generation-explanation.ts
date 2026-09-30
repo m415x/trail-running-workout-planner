@@ -17,6 +17,7 @@ import type {
   WeeklyTrainingPattern,
   WeeklyTrainingSlot,
   WeeklyVolumeAllocation,
+  SharedSessionGenerationResult,
 } from '@/types/training/session-generation.types'
 import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 
@@ -679,6 +680,93 @@ export function explainIntensityAndRace(
         value: input.competition !== null,
       }],
       warnings: [],
+    },
+  }
+}
+
+
+export interface ExplainPlanningScopeAndCoordinationInput {
+  planningScope: GenerationExplanationPlanningScope
+  sharedGeneration: SharedSessionGenerationResult
+  generationKey: string
+}
+
+export interface PlanningScopeAndCoordinationExplanation {
+  planningScope: GenerationExplanationPlanningScope
+  coordination: GenerationExplanationStageEvidence
+}
+
+export function explainPlanningScopeAndCoordination(
+  input: ExplainPlanningScopeAndCoordinationInput,
+): PlanningScopeAndCoordinationExplanation {
+  const matches = input.sharedGeneration.events.flatMap((event) => (
+    event.prescriptions
+      .filter(({ generationKey }) => generationKey === input.generationKey)
+      .map((prescription) => ({ event, prescription }))
+  ))
+
+  if (matches.length > 1) {
+    throw new RangeError(
+      `Generation explanation found duplicated generation key ${input.generationKey}`,
+    )
+  }
+
+  const match = matches[0] ?? null
+  const coexistingMicrocycleIds = match
+    ? [...new Set(
+        match.event.prescriptions.map(({ prescription }) => prescription.microcycleId),
+      )].sort()
+    : []
+
+  const inputs: GenerationExplanationFact[] = [
+    { code: 'current_generation_key', value: input.generationKey },
+    { code: 'planning_scope_kind', value: input.planningScope.kind },
+    {
+      code: 'group_training_plan_id',
+      value: input.planningScope.groupTrainingPlanId,
+    },
+    { code: 'group_id', value: input.planningScope.groupId },
+    { code: 'microcycle_id', value: input.planningScope.microcycleId },
+    {
+      code: 'planning_cohort_id',
+      value: input.planningScope.planningCohortId,
+    },
+  ]
+
+  if (match) {
+    inputs.push({ code: 'shared_event_key', value: match.event.sharedEventKey })
+  }
+
+  return {
+    planningScope: input.planningScope,
+    coordination: {
+      stage: 'coordination_reconciliation',
+      inputs,
+      constraints: [],
+      decision: [{
+        code: 'current_scope_participates',
+        value: match !== null,
+      }],
+      consequence: [
+        {
+          code: 'shared_prescription_count',
+          value: match?.event.prescriptions.length ?? 0,
+        },
+        {
+          code: 'coexisting_microcycle_ids',
+          value: coexistingMicrocycleIds.join(','),
+        },
+        {
+          code: 'coordination_source',
+          value: 'shared_generation_result',
+        },
+      ],
+      warnings: match
+        ? []
+        : [{
+            code: 'current_generation_not_present_in_shared_result',
+            facts: [{ code: 'generation_key', value: input.generationKey }],
+          }],
     },
   }
 }
