@@ -34,6 +34,6 @@ export function paceToSpeed(secondsPerKm: number): string {
   return speed.toFixed(2)
 }
 
-export function formatNumber(num: number): string {
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+export function formatNumber(num: number, presentationLocale: string): string {
+  return new Intl.NumberFormat(presentationLocale).format(num)
 }
