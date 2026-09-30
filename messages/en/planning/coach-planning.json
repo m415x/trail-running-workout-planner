@@ -32,6 +32,51 @@
       "elevation": "Mountain focus",
       "recovery": "Recovery focus",
       "race_specific": "Race focus"
-    }
+    },
+    "explanationSections": {
+      "inputs": "Inputs",
+      "constraints": "Constraints",
+      "decision": "Decision",
+      "consequence": "Consequence",
+      "warnings": "Warnings"
+    },
+    "explanationStages": {
+      "weekly_budget": "Weekly budget",
+      "frequency": "Frequency",
+      "slots": "Days and roles",
+      "stimulus_template": "Stimulus and template",
+      "fixed_load": "Fixed load",
+      "remaining_budget": "Remaining budget",
+      "flexible_allocation": "Flexible allocation",
+      "intensity": "Intensity",
+      "coordination_reconciliation": "Coordination and reconciliation"
+    },
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "roles": {
+      "base": "Base",
+      "mountain": "Mountain",
+      "long": "Long",
+      "quality": "Quality",
+      "recovery": "Recovery",
+      "competition": "Competition"
+    },
+    "date": "Date",
+    "intensityEmphasis": {
+      "recovery": "Recovery",
+      "aerobic": "Aerobic",
+      "tempo": "Tempo",
+      "threshold": "Threshold",
+      "vo2max": "VO₂ max.",
+      "race_specific": "Race-specific"
+    },
+    "saveProgression": "Save progression"
   }
 }
