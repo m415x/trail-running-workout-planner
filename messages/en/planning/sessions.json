@@ -116,7 +116,17 @@
         "structureTitle": "Session structure",
         "structureDescription": "Blocks defined for the workout.",
         "noStructure": "This session has no detailed structure.",
-        "unspecified": "Not specified"
+        "unspecified": "Not specified",
+        "generationReview": {
+          "title": "Why it was generated this way",
+          "description": "Historical generation evidence by active prescription. Current ownership is shown separately from its generated origin.",
+          "variantPrescription": "Variant prescription",
+          "basePrescription": "Base prescription",
+          "microcycle": "Microcycle",
+          "currentOwnership": "Current ownership",
+          "planningSubgroup": "Planning subgroup",
+          "empty": "No historical generation explanation is available."
+        }
       },
       "edit": {
         "back": "Back to details",
