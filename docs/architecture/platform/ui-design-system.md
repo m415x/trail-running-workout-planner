@@ -149,23 +149,38 @@ KAN-557 now provides semantic shape aliases over the existing radius scale. T3 m
 
 This layer supplies low-level behavior and already contains useful accessibility behavior such as keyboard semantics and `focus-visible` treatment. KAN-507 must preserve that behavior when introducing EPT semantics.
 
-### Existing EPT wrappers
+### Official EPT semantic primitives
 
-`components/ui/custom/*` is currently a mixed layer rather than a fully-defined Design System boundary.
+KAN-558 officializes a bounded subset of `components/ui/custom/*` as EPT semantic primitives. They remain built on top of the Base primitive layer and must not duplicate low-level interaction behavior already owned there.
 
-Observed reusable wrappers include:
+Officialized semantic primitives:
 
-- `CustomButton` and primary/secondary/glass button variants;
-- `PillButton`;
-- `ThemeToggleButton`;
-- `CustomCard`, `CustomCardInside`, `StatCard`;
+- `CustomButton` and its approved semantic variants;
 - `PrimaryInput`;
-- `StatPill`, `ZonePill`;
-- `CardHeader`;
-- `ConfirmActionDialog`;
-- `ProgressGradient`.
+- `ThemeToggleButton`;
+- `CustomCard`;
+- `CustomCardInside`;
+- `StatCard`;
+- `PillButton`;
+- `ConfirmActionDialog`.
 
-These are candidates for T3 reconciliation, not automatically official product patterns.
+Ownership rules:
+
+- Base primitives keep keyboard semantics, `focus-visible`, disabled behavior and `aria-invalid` treatment;
+- EPT semantic primitives consume Brand/semantic tokens, shared shape/spacing/elevation and accessible naming contracts;
+- Athlete/mobile interactive wrappers use the shared minimum touch target `2.75rem` (44 px);
+- decorative icons inside officialized wrappers are hidden from assistive technology when visible text or an explicit accessible name already conveys purpose;
+- reusable wrappers do not own locale-specific presentation copy.
+
+### Product patterns
+
+Product patterns are reusable compositions with product-level meaning and interaction rules. They may compose Base primitives and EPT semantic primitives, but should not absorb feature-specific domain logic merely to reduce duplication.
+
+Existing wrappers such as `StatPill`, `ZonePill`, `CardHeader` and `ProgressGradient` remain product-pattern candidates or legacy shared compositions until a later slice provides enough evidence to officialize them. KAN-558 does not promote them automatically.
+
+### Feature compositions
+
+Feature compositions remain owned by their workflow/surface. KAN-507 may touch a representative consumer to prove a shared contract, as with the Athlete theme toggle accessible label, but feature-level normalization belongs to KAN-508.
 
 ## Current debt classification
 
@@ -173,13 +188,12 @@ T1 records debt so later work can place it in the correct boundary; it does not 
 
 ### KAN-507 foundation / primitive debt
 
-Examples that belong to later KAN-507 slices when the shared contract is touched:
+Examples that remain for later KAN-507 slices when the shared contract is touched:
 
-- direct presentation literals such as `text-white` and `text-orange-500` inside shared wrappers instead of semantic tokens;
-- shared wrappers that combine behavior, product semantics and styling without a documented ownership boundary;
-- shared defaults that expose Spanish presentation text from a reusable component;
-- inconsistent explicit text sizes that precede a semantic typography hierarchy;
-- shared touch targets whose dimensions must be reconciled against the approved Athlete mobile/outdoor accessibility baseline.
+- direct presentation literals outside the officialized semantic primitives;
+- legacy/shared wrappers that still combine behavior, product semantics and styling without enough evidence for promotion;
+- inconsistent explicit text sizes in non-officialized shared/product compositions;
+- application-level adoption gaps that belong to KAN-508 rather than this story.
 
 ### KAN-508 application debt
 
