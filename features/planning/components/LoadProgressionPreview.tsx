@@ -59,7 +59,7 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   race: 'Semana de carrera',
 }
 
-const loadFocusLabelKeys: Record<MicrocycleLoadFocus, keyof IntlMessages['CoachPlanning']['loadFocus']> = {
+const loadFocusLabelKeys: Record<MicrocycleLoadFocus, 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'> = {
   balanced: 'balanced',
   volume: 'volume',
   elevation: 'elevation',
