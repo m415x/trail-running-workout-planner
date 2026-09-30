@@ -4,6 +4,10 @@ import { resolve } from 'node:path'
 import test from 'node:test'
 
 const globalsCss = readFileSync(resolve(process.cwd(), 'app/globals.css'), 'utf8')
+const designSystemDoc = readFileSync(
+  resolve(process.cwd(), 'docs/architecture/platform/ui-design-system.md'),
+  'utf8',
+)
 
 test('KAN-557 exposes an explicit semantic typography scale while preserving the approved mobile root scaling', () => {
   for (const token of [
@@ -164,4 +168,37 @@ test('KAN-557 exposes semantic density, spacing, shape, and elevation foundation
   assert.match(globalsCss, /--radius-ept-control:\s*var\(--radius-md\)/)
   assert.match(globalsCss, /--radius-ept-surface:\s*var\(--radius-xl\)/)
   assert.match(globalsCss, /--radius-ept-overlay:\s*var\(--radius-2xl\)/)
+})
+
+
+test('KAN-557 documents semantic token ownership and naming as the durable design-system authority', () => {
+  for (const phrase of [
+    'Brand roles',
+    'usage semantics',
+    'semantic typography',
+    'responsive composition',
+    'accessibility scaling',
+    'semantic spacing',
+    'semantic shape',
+    'semantic elevation',
+    'WCAG 2.2 AA',
+  ]) {
+    assert.ok(
+      designSystemDoc.toLowerCase().includes(phrase.toLowerCase()),
+      `missing durable foundation contract in UI Design System docs: ${phrase}`,
+    )
+  }
+
+  assert.match(
+    designSystemDoc,
+    /--brand-action[\s\S]*--brand-identity[\s\S]*--brand-highlight/,
+  )
+  assert.match(
+    designSystemDoc,
+    /--text-ept-display[\s\S]*--text-ept-body[\s\S]*--text-ept-caption/,
+  )
+  assert.match(
+    designSystemDoc,
+    /--space-ept-tight[\s\S]*--radius-ept-surface[\s\S]*--elevation-ept-overlay/,
+  )
 })
