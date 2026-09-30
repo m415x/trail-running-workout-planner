@@ -16,6 +16,11 @@ import {
   sessionGenerationModificationRecords,
 } from '@/db/schema'
 import { reconcileSessionGeneration } from '@/lib/session-generation/session-regeneration'
+import {
+  parseGenerationExplanationSnapshots,
+  resolveGenerationExplanationSnapshot,
+} from '@/lib/session-generation/generation-explanation-persistence'
+import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
@@ -34,11 +39,19 @@ export async function persistGeneratedSessions(
   const planId = formData.get('planId')?.toString()
   const locale = formData.get('locale')?.toString() || 'es'
   const rawProposal = formData.get('proposal')?.toString()
+  const rawGenerationExplanations = formData.get('generationExplanations')?.toString()
   if (!planId || !rawProposal) return { error: 'No se pudo identificar la propuesta.' }
 
   try {
     const proposal = parseProposal(rawProposal)
-    const plan = db.select({ id: groupTrainingPlans.id, groupId: groupTrainingPlans.groupId })
+    const generationExplanations = rawGenerationExplanations
+      ? parseGenerationExplanationSnapshots(rawGenerationExplanations)
+      : new Map<string, GenerationExplanation>()
+    const plan = db.select({
+      id: groupTrainingPlans.id,
+      groupId: groupTrainingPlans.groupId,
+      planningCohortId: groupTrainingPlans.planningCohortId,
+    })
       .from(groupTrainingPlans)
       .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
       .where(and(
@@ -150,6 +163,27 @@ export async function persistGeneratedSessions(
 
       for (const operation of reconciliation.prescriptions) {
         const values = operation.proposal.prescription
+        const expectedScope: GenerationExplanation['planningScope'] =
+          plan.planningCohortId === null
+            ? {
+                kind: 'base',
+                groupTrainingPlanId: planId,
+                groupId: plan.groupId,
+                planningCohortId: null,
+                microcycleId: values.microcycleId,
+              }
+            : {
+                kind: 'variant',
+                groupTrainingPlanId: planId,
+                groupId: plan.groupId,
+                planningCohortId: plan.planningCohortId,
+                microcycleId: values.microcycleId,
+              }
+        const generationExplanation = resolveGenerationExplanationSnapshot({
+          snapshots: generationExplanations,
+          generationKey: operation.proposal.generationKey,
+          expectedScope,
+        })
         const eventKey = eventKeyByGenerationKey.get(operation.proposal.generationKey)
         const sessionId = eventKey ? eventIdByKey.get(eventKey) : undefined
         if (!sessionId) throw new Error('No se pudo resolver el evento de una prescripción.')
@@ -175,7 +209,8 @@ export async function persistGeneratedSessions(
             }).run()
             insertPrescriptionAudit(tx, {
               id: prescriptionId, planId, sessionId, generationKey: operation.proposal.generationKey,
-              action: 'generated_created', previousValue: null, newValue: values, now,
+              action: 'generated_created', previousValue: null, newValue: values,
+              generationExplanation, now,
             })
           } else if (samePlanningScopePrescription.generationOwnership === 'generated') {
             tx.update(groupSessionPrescriptions).set(record)
@@ -183,7 +218,8 @@ export async function persistGeneratedSessions(
             insertPrescriptionAudit(tx, {
               id: samePlanningScopePrescription.id, planId, sessionId,
               generationKey: operation.proposal.generationKey, action: 'generated_updated',
-              previousValue: samePlanningScopePrescription, newValue: values, now,
+              previousValue: samePlanningScopePrescription, newValue: values,
+              generationExplanation, now,
             })
           }
         } else {
@@ -195,7 +231,8 @@ export async function persistGeneratedSessions(
           insertPrescriptionAudit(tx, {
             id: operation.existingId!, planId, sessionId,
             generationKey: operation.proposal.generationKey, action: 'generated_updated',
-            previousValue: previousPrescription ?? null, newValue: values, now,
+            previousValue: previousPrescription ?? null, newValue: values,
+            generationExplanation, now,
           })
         }
       }
@@ -285,11 +322,18 @@ function insertPrescriptionAudit(
     planId: string
     sessionId: string
     generationKey: string
-    action: 'generated_created' | 'generated_updated' | 'generated_removed'
     previousValue: unknown
     newValue: unknown
     now: string
-  },
+  } & (
+    | {
+        action: 'generated_created' | 'generated_updated'
+        generationExplanation: GenerationExplanation | null
+      }
+    | {
+        action: 'generated_removed'
+      }
+  ),
 ) {
   const previousValue = values.previousValue === null
     ? null
@@ -301,6 +345,9 @@ function insertPrescriptionAudit(
     id: randomUUID(), groupTrainingPlanId: values.planId, sessionId: values.sessionId,
     prescriptionId: values.id, action: values.action, ownership: 'generated',
     generationKey: values.generationKey || null,
+    generationExplanation: values.action === 'generated_removed'
+      ? null
+      : values.generationExplanation,
     previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
     newValue: newValue === null ? null : serializeAuditValue(newValue),
     changedByUserId: null, createdAt: values.now, updatedAt: values.now,

@@ -29,6 +29,7 @@ import type {
   SessionGenerationModificationAction,
   SessionGenerationOwnership,
 } from '@/types/training/session-generation.types'
+import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -559,6 +560,8 @@ export const sessionGenerationModificationRecords = sqliteTable('session_generat
   action: text('action').$type<SessionGenerationModificationAction>().notNull(),
   ownership: text('ownership').$type<SessionGenerationOwnership>().notNull(),
   generationKey: text('generation_key'),
+  generationExplanation: text('generation_explanation', { mode: 'json' })
+    .$type<GenerationExplanation>(),
   previousValue: text('previous_value'),
   newValue: text('new_value'),
   changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),

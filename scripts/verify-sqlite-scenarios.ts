@@ -334,6 +334,16 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
            'preservation-group', 'preservation-microcycle', 12.5, 95, 650,
            'hr_zone', 'Z2', 'preserve planning scope', 'generated',
            'preservation-plan::preservation-microcycle::preservation-group::mountain');
+
+        INSERT INTO session_generation_modification_records
+          (id, created_at, updated_at, group_training_plan_id, session_id, prescription_id,
+           action, ownership, generation_key, previous_value, new_value, changed_by_user_id)
+        VALUES
+          ('preservation-generation-audit', '${now}', '${now}', 'preservation-plan',
+           'preservation-session', 'preservation-prescription', 'generated_created',
+           'generated',
+           'preservation-plan::preservation-microcycle::preservation-group::mountain',
+           NULL, '{"distanceKm":12.5,"elevationGain":650}', NULL);
       `)
     } finally {
       sqlite.close()
@@ -437,6 +447,45 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
           'preservation-plan::preservation-microcycle::preservation-group::mountain'
       ) {
         throw new Error('Supported SQLite upgrade did not preserve the representative group session prescription')
+      }
+
+      const preservedGenerationAudit = upgraded.prepare(`
+        SELECT id, group_training_plan_id, session_id, prescription_id, action, ownership,
+               generation_key, previous_value, new_value, changed_by_user_id,
+               generation_explanation
+        FROM session_generation_modification_records
+        WHERE id = ?
+      `).get('preservation-generation-audit') as {
+        id: string
+        group_training_plan_id: string
+        session_id: string | null
+        prescription_id: string | null
+        action: string
+        ownership: string
+        generation_key: string | null
+        previous_value: string | null
+        new_value: string | null
+        changed_by_user_id: string | null
+        generation_explanation: string | null
+      } | undefined
+
+      if (
+        !preservedGenerationAudit ||
+        preservedGenerationAudit.group_training_plan_id !== 'preservation-plan' ||
+        preservedGenerationAudit.session_id !== 'preservation-session' ||
+        preservedGenerationAudit.prescription_id !== 'preservation-prescription' ||
+        preservedGenerationAudit.action !== 'generated_created' ||
+        preservedGenerationAudit.ownership !== 'generated' ||
+        preservedGenerationAudit.generation_key !==
+          'preservation-plan::preservation-microcycle::preservation-group::mountain' ||
+        preservedGenerationAudit.previous_value !== null ||
+        preservedGenerationAudit.new_value !== '{"distanceKm":12.5,"elevationGain":650}' ||
+        preservedGenerationAudit.changed_by_user_id !== null ||
+        preservedGenerationAudit.generation_explanation !== null
+      ) {
+        throw new Error(
+          'Supported SQLite upgrade did not preserve the representative generation audit',
+        )
       }
 
       const planningScopeIndex = upgraded.prepare(`

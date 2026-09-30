@@ -32,10 +32,17 @@ import {
   determineTrainingProgressionEndDate,
 } from '@/lib/periodization/load-progression-preview'
 import { determineMicrocycleLoadFocus } from '@/lib/periodization/microcycle-load-focus'
+import {
+  buildGenerationExplanation,
+  type GenerationExplanation,
+} from '@/lib/session-generation/generation-explanation'
 import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
 import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
-import type { SessionGenerationResult } from '@/types/training/session-generation.types'
+import type {
+  SessionGenerationInput,
+  SessionGenerationResult,
+} from '@/types/training/session-generation.types'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -189,6 +196,10 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     plan.loadStrategy && plan.intensityStrategy && generationPreferences,
   )
   const generationResults: SessionGenerationResult[] = []
+  const generationRuns: Array<{
+    input: SessionGenerationInput
+    result: SessionGenerationResult
+  }> = []
   const sessionPreviewWarnings: string[] = []
 
   if (plan.loadStrategy && plan.intensityStrategy && generationPreferences) {
@@ -204,7 +215,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           }
 
           try {
-            generationResults.push(generateWeeklySessionProposals({
+            const generationInput: SessionGenerationInput = {
               context: {
                 teamId: plan.group.teamId,
                 groupTrainingPlanId: plan.id,
@@ -220,30 +231,36 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                   targetDurationMin: microcycle.targetDurationMin,
                   maximumWeeklyVolumeKm: plan.loadStrategy.maximumWeeklyVolumeKm,
                 },
-              intensity: {
+                intensity: {
                   defaultMethod: plan.intensityStrategy.defaultMethod,
                   emphasis: intensityTarget.emphasis,
                   intenseSessionsTarget: intensityTarget.intenseSessionsTarget,
                   predominantZone: intensityTarget.predominantZone,
                   referencePercentageTarget: intensityTarget.referencePercentageTarget,
-                minimumRecoveryDaysBetweenIntenseSessions:
-                  intensityTarget.minimumRecoveryDaysBetweenIntenseSessions,
-              },
-              competition: microcycle.type === 'race'
-                && macrocycle.targetRaceName
-                && macrocycle.targetRaceDistanceKm
-                ? {
-                    name: macrocycle.targetRaceName,
-                    date: macrocycle.endDate,
-                    distanceKm: macrocycle.targetRaceDistanceKm,
-                    elevationGain: macrocycle.targetRaceElevationGain,
-                  }
-                : null,
-              frequency: generationPreferences.frequency,
+                  minimumRecoveryDaysBetweenIntenseSessions:
+                    intensityTarget.minimumRecoveryDaysBetweenIntenseSessions,
+                },
+                competition: microcycle.type === 'race'
+                  && macrocycle.targetRaceName
+                  && macrocycle.targetRaceDistanceKm
+                  ? {
+                      name: macrocycle.targetRaceName,
+                      date: macrocycle.endDate,
+                      distanceKm: macrocycle.targetRaceDistanceKm,
+                      elevationGain: macrocycle.targetRaceElevationGain,
+                    }
+                  : null,
+                frequency: generationPreferences.frequency,
                 pattern: generationPreferences.pattern,
               },
               templates: templateCatalogue.templates,
-            }))
+            }
+            const generationResult = generateWeeklySessionProposals(generationInput)
+            generationResults.push(generationResult)
+            generationRuns.push({
+              input: generationInput,
+              result: generationResult,
+            })
           } catch (error) {
             sessionPreviewWarnings.push(
               `Semana ${microcycle.weekNumber}: ${error instanceof Error ? error.message : 'no se pudo generar la propuesta'}.`,
@@ -255,6 +272,19 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
   }
 
   const sharedPreview = groupSharedSessionEvents(generationResults)
+  const generationExplanations: Record<string, GenerationExplanation> = {}
+  for (const { input, result } of generationRuns) {
+    for (const proposal of result.proposals) {
+      generationExplanations[proposal.generationKey] = buildGenerationExplanation({
+        input,
+        result,
+        sharedGeneration: sharedPreview,
+        generationKey: proposal.generationKey,
+        planningCohortId: plan.planningCohortId,
+      })
+    }
+  }
+
   const sessionPreviewWeeks: SessionGenerationPreviewWeek[] = plan.macrocycles
     .flatMap((macrocycle) => macrocycle.mesocycles)
     .flatMap((mesocycle) => mesocycle.microcycles)
@@ -378,6 +408,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         planId={plan.id}
         locale={locale}
         proposal={sharedPreview}
+        generationExplanations={generationExplanations}
       />
 
       {plan.macrocycles.map((macrocycle) => (

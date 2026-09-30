@@ -1,0 +1,1 @@
+ALTER TABLE "session_generation_modification_records" ADD COLUMN "generation_explanation" jsonb;

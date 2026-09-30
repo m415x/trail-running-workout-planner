@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, inArray, isNull, or } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNotNull, isNull, or } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -148,6 +148,55 @@ export async function getSessionById(sessionId: string) {
         where: eq(groupSessionPrescriptions.isDeleted, false),
       },
     },
+  })
+}
+
+export async function getSessionGenerationExplanationReview(sessionId: string) {
+  const activePrescriptions = db.select({
+    id: groupSessionPrescriptions.id,
+    generationOwnership: groupSessionPrescriptions.generationOwnership,
+    generationKey: groupSessionPrescriptions.generationKey,
+  }).from(groupSessionPrescriptions)
+    .where(and(
+      eq(groupSessionPrescriptions.sessionId, sessionId),
+      eq(groupSessionPrescriptions.isDeleted, false),
+    ))
+    .all()
+
+  if (activePrescriptions.length === 0) return []
+
+  const prescriptionIds = activePrescriptions.map(({ id }) => id)
+  const auditRows = db.select({
+    prescriptionId: sessionGenerationModificationRecords.prescriptionId,
+    generationExplanation: sessionGenerationModificationRecords.generationExplanation,
+    createdAt: sessionGenerationModificationRecords.createdAt,
+  }).from(sessionGenerationModificationRecords)
+    .where(and(
+      inArray(sessionGenerationModificationRecords.prescriptionId, prescriptionIds),
+      isNotNull(sessionGenerationModificationRecords.generationExplanation),
+    ))
+    .orderBy(desc(sessionGenerationModificationRecords.createdAt))
+    .all()
+
+  const currentByPrescriptionId = new Map(
+    activePrescriptions.map((prescription) => [prescription.id, prescription]),
+  )
+  const seenPrescriptionIds = new Set<string>()
+  return auditRows.flatMap((audit) => {
+    const prescriptionId = audit.prescriptionId
+    if (!prescriptionId || seenPrescriptionIds.has(prescriptionId)) return []
+
+    const current = currentByPrescriptionId.get(prescriptionId)
+    if (!current || !audit.generationExplanation) return []
+
+    seenPrescriptionIds.add(prescriptionId)
+    return [{
+      prescriptionId,
+      generationOwnership: current.generationOwnership,
+      generationKey: current.generationKey,
+      generationExplanation: audit.generationExplanation,
+      planningScope: audit.generationExplanation.planningScope,
+    }]
   })
 }
 

@@ -4,6 +4,8 @@ import { useActionState } from 'react'
 import { AlertTriangle, CalendarClock, MapPin, Mountain, Route } from 'lucide-react'
 
 import { persistGeneratedSessions } from '@/app/actions/session-generation-actions'
+import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
+import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
@@ -30,6 +32,7 @@ interface SessionGenerationPreviewProps {
   planId: string
   locale: string
   proposal: SharedSessionGenerationResult
+  generationExplanations: Record<string, GenerationExplanation>
 }
 
 const microcycleLabels: Record<MicrocycleType, string> = {
@@ -49,6 +52,7 @@ export function SessionGenerationPreview({
   planId,
   locale,
   proposal,
+  generationExplanations,
 }: SessionGenerationPreviewProps) {
   const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
@@ -116,24 +120,44 @@ export function SessionGenerationPreview({
                           <Badge variant='outline'>{event.session.type}</Badge>
                         </div>
 
-                        {prescriptions.map(({ generationKey, prescription }) => (
-                          <div key={generationKey} className='space-y-2 text-sm'>
-                            <div className='flex flex-wrap gap-x-4 gap-y-2'>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <Route className='size-4 text-muted-foreground' />
-                                {formatNumber(prescription.distanceKm)} km
-                              </span>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <Mountain className='size-4 text-muted-foreground' />
-                                {formatNumber(prescription.elevationGain)} m D+
-                              </span>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <CalendarClock className='size-4 text-muted-foreground' />
-                                {formatIntensity(prescription)}
-                              </span>
+                        {prescriptions.map(({ generationKey, prescription }) => {
+                          const generationExplanation = generationExplanations[generationKey]
+
+                          return (
+                            <div key={generationKey} className='space-y-2 text-sm'>
+                              <div className='flex flex-wrap gap-x-4 gap-y-2'>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <Route className='size-4 text-muted-foreground' />
+                                  {formatNumber(prescription.distanceKm)} km
+                                </span>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <Mountain className='size-4 text-muted-foreground' />
+                                  {formatNumber(prescription.elevationGain)} m D+
+                                </span>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <CalendarClock className='size-4 text-muted-foreground' />
+                                  {formatIntensity(prescription)}
+                                </span>
+                              </div>
+
+                              {generationExplanation && (
+                                <details className='rounded-md border bg-muted/20'>
+                                  <summary className='cursor-pointer px-3 py-2 font-medium'>
+                                    {locale === 'en'
+                                      ? 'Why it was generated this way'
+                                      : 'Por qué se generó así'}
+                                  </summary>
+                                  <div className='border-t px-3 py-3'>
+                                    <GenerationExplanationView
+                                      generationExplanation={generationExplanation}
+                                      locale={locale}
+                                    />
+                                  </div>
+                                </details>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
 
                         {isCompetition && (
                           <p className='text-xs font-medium text-muted-foreground'>
@@ -177,6 +201,11 @@ export function SessionGenerationPreview({
             <input type='hidden' name='planId' value={planId} />
             <input type='hidden' name='locale' value={locale} />
             <input type='hidden' name='proposal' value={JSON.stringify(proposal)} />
+            <input
+              type='hidden'
+              name='generationExplanations'
+              value={JSON.stringify(generationExplanations)}
+            />
             <div className='text-sm'>
               {state.error && <p className='text-destructive'>{state.error}</p>}
               {state.success && <p className='text-emerald-600'>{state.success}</p>}
@@ -211,3 +240,4 @@ function formatIntensity(
     ? `${prescription.referencePercentage ?? 0}% de referencia`
     : prescription.zone ?? 'Sin zona'
 }
+

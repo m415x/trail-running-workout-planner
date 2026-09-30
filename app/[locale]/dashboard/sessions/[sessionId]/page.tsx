@@ -4,7 +4,12 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getSessionAthleteAdjustmentReview } from '@/app/actions/athlete-session-adjustment-actions'
-import { getSessionById, getSessionFormOptions } from '@/app/actions/session-actions'
+import {
+  getSessionById,
+  getSessionFormOptions,
+  getSessionGenerationExplanationReview,
+} from '@/app/actions/session-actions'
+import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { AthleteSessionAdjustmentReview } from '@/features/sessions/components/AthleteSessionAdjustmentReview'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -17,6 +22,7 @@ interface SessionDetailPageProps {
 export default async function SessionDetailPage({ params }: SessionDetailPageProps) {
   const { locale, sessionId } = await params
   const session = await getSessionById(sessionId)
+  const generationExplanationReview = await getSessionGenerationExplanationReview(sessionId)
   const athleteAdjustmentReview = await getSessionAthleteAdjustmentReview(sessionId)
   const { workouts } = await getSessionFormOptions(session?.workoutId ?? null)
   const t = await getTranslations('Sessions')
@@ -76,6 +82,71 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {locale === 'en' ? 'Why it was generated this way' : 'Por qué se generó así'}
+          </CardTitle>
+          <CardDescription>
+            {locale === 'en'
+              ? 'Historical generation evidence by active prescription. Current ownership is shown separately from its generated origin.'
+              : 'Evidencia histórica de generación por prescripción activa. El ownership actual se muestra separado de su origen generado.'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {generationExplanationReview.length > 0 ? (
+            <div className='space-y-3'>
+              {generationExplanationReview.map((item) => (
+                <details
+                  key={item.prescriptionId}
+                  className='rounded-lg border bg-muted/20'
+                >
+                  <summary className='cursor-pointer list-none p-4'>
+                    <div className='flex flex-wrap items-center justify-between gap-2'>
+                      <div>
+                        <p className='font-medium'>
+                          {item.planningScope.kind === 'variant'
+                            ? (locale === 'en' ? 'Variant prescription' : 'Prescripción variante')
+                            : (locale === 'en' ? 'Base prescription' : 'Prescripción base')}
+                        </p>
+                        <p className='text-xs text-muted-foreground'>
+                          {locale === 'en' ? 'Microcycle' : 'Microciclo'}: {item.planningScope.microcycleId}
+                        </p>
+                      </div>
+                      <div className='flex flex-wrap gap-2'>
+                        <Badge variant='outline'>
+                          {locale === 'en' ? 'Current ownership' : 'Ownership actual'}: {item.generationOwnership}
+                        </Badge>
+                        {item.planningScope.planningCohortId && (
+                          <Badge variant='secondary'>
+                            {locale === 'en' ? 'Planning subgroup' : 'Subgrupo'}: {item.planningScope.planningCohortId}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </summary>
+                  <div className='space-y-3 border-t p-4'>
+                    <p className='break-all text-xs text-muted-foreground'>
+                      generationKey: {item.generationKey ?? '—'}
+                    </p>
+                    <GenerationExplanationView
+                      generationExplanation={item.generationExplanation}
+                      locale={locale}
+                    />
+                  </div>
+                </details>
+              ))}
+            </div>
+          ) : (
+            <p className='text-sm text-muted-foreground'>
+              {locale === 'en'
+                ? 'No historical generation explanation is available.'
+                : 'No hay una explicación histórica disponible.'}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
