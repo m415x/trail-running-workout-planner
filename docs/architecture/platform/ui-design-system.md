@@ -310,7 +310,23 @@ Role-specific shortcuts remain deferred to KAN-298. KAN-560 therefore does not i
 
 ### Maps
 
-The cartographic decision is separate from the Design System authority. KAN-507 keeps the approved MapLibre-first monocolor benchmark and may compare historical Leaflet only after reasonable integration defects have been isolated and corrected.
+The cartographic decision is separate from the Design System authority.
+
+KAN-561 resolves the approved **MapLibre-first** benchmark with the following minimum deterministic contract:
+
+- one **single monocolor LineString**;
+- GeoJSON coordinates remain `[lon, lat]`;
+- `fitBounds` is calculated from the same benchmark coordinates;
+- user pan/zoom does not trigger track reconstruction or refit;
+- base-style replacement recreates the source/layer after `style.load` without refitting the route;
+- container-size changes are observed with `ResizeObserver` and forwarded to `map.resize()`;
+- normal component cleanup removes map listeners, disconnects the resize observer and removes the map instance.
+
+The altitude gradient is **outside the minimum gate**. KAN-561 deliberately removes altitude-segment/color-expression behavior from the benchmark so cartographic stability is evaluated independently from optional styling complexity.
+
+After correcting the reasonable MapLibre integration defects identified by the benchmark, the focused contract passes. MapLibre therefore remains the cartographic implementation for KAN-507.
+
+Historical Leaflet at commit `61cf855de565ce53932b8153e9865a8919730747` is compared **only if MapLibre still fails** this minimum benchmark after those integration defects are corrected. Any such comparison must use the **same benchmark and identical criteria**; Leaflet is not introduced merely as a parallel implementation or preference comparison.
 
 ## External tooling
 
