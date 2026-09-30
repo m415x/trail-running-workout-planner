@@ -14,9 +14,11 @@ import { Input } from '@ui/input'
 export function AthleteSessionAdjustmentReview({
   sessionId,
   items,
+  workouts,
 }: {
   sessionId: string
   items: SessionAthleteAdjustmentReviewItem[]
+  workouts: Array<{ id: string; title: string; type: typeof WORKOUT_TYPES[number] }>
 }) {
   return (
     <div className='space-y-4'>
@@ -25,6 +27,7 @@ export function AthleteSessionAdjustmentReview({
           key={`${item.athleteId}:${item.revisionId ?? 'none'}`}
           sessionId={sessionId}
           item={item}
+          workouts={workouts}
         />
       ))}
     </div>
@@ -34,9 +37,11 @@ export function AthleteSessionAdjustmentReview({
 function AthleteAdjustmentForm({
   sessionId,
   item,
+  workouts,
 }: {
   sessionId: string
   item: SessionAthleteAdjustmentReviewItem
+  workouts: Array<{ id: string; title: string; type: typeof WORKOUT_TYPES[number] }>
 }) {
   const t = useTranslations('Sessions')
   const workoutTypeT = useTranslations('Workouts')
@@ -155,12 +160,21 @@ function AthleteAdjustmentForm({
             type='date'
             defaultValue={item.rescheduled ?? ''}
           />
-          <LabeledInput
-            label={t('adjustments.stimulus')}
-            name='stimulus'
-            defaultValue={item.stimulus ?? ''}
-            placeholder={t('adjustments.workoutId')}
-          />
+          <label className='space-y-1.5 text-sm'>
+            <span className='font-medium'>{t('adjustments.stimulus')}</span>
+            <select
+              name='stimulus'
+              defaultValue={item.stimulus ?? ''}
+              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+            >
+              <option value=''>{t('adjustments.noStimulusTemplate')}</option>
+              {workouts.map(workout => (
+                <option key={workout.id} value={workout.id}>
+                  {workout.title} · {workoutTypeT(`types.${workout.type}`)}
+                </option>
+              ))}
+            </select>
+          </label>
           <label className='space-y-1.5 text-sm'>
             <span className='font-medium'>{t('adjustments.stimulusType')}</span>
             <select
