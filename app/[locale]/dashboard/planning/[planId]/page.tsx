@@ -378,6 +378,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         planId={plan.id}
         locale={locale}
         proposal={sharedPreview}
+        generationExplanations={{}}
       />
 
       {plan.macrocycles.map((macrocycle) => (
