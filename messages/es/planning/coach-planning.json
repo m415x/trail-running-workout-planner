@@ -32,6 +32,51 @@
       "elevation": "Foco montaña",
       "recovery": "Foco recuperación",
       "race_specific": "Foco carrera"
-    }
+    },
+    "explanationSections": {
+      "inputs": "Entradas",
+      "constraints": "Restricciones",
+      "decision": "Decisión",
+      "consequence": "Consecuencia",
+      "warnings": "Avisos"
+    },
+    "explanationStages": {
+      "weekly_budget": "Presupuesto semanal",
+      "frequency": "Frecuencia",
+      "slots": "Días y roles",
+      "stimulus_template": "Estímulo y plantilla",
+      "fixed_load": "Carga fija",
+      "remaining_budget": "Presupuesto restante",
+      "flexible_allocation": "Distribución flexible",
+      "intensity": "Intensidad",
+      "coordination_reconciliation": "Coordinación y reconciliación"
+    },
+    "weekdays": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "roles": {
+      "base": "Base",
+      "mountain": "Montaña",
+      "long": "Largo",
+      "quality": "Calidad",
+      "recovery": "Recuperación",
+      "competition": "Competencia"
+    },
+    "date": "Fecha",
+    "intensityEmphasis": {
+      "recovery": "Recuperación",
+      "aerobic": "Aeróbico",
+      "tempo": "Tempo",
+      "threshold": "Umbral",
+      "vo2max": "VO₂ máx.",
+      "race_specific": "Específico de carrera"
+    },
+    "saveProgression": "Guardar progresión"
   }
 }
