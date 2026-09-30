@@ -17,6 +17,7 @@ import {
   microcycles,
   planningCohortMemberships,
   sessions,
+  workouts,
 } from '@/db/schema'
 import { createDrizzleAthleteSessionAdjustmentDatabase } from '@/lib/planning-cohorts/athlete-session-adjustment-drizzle-database'
 import {
@@ -351,7 +352,21 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
 
   try {
     const dose = parseDoseOverrides(formData)
-    const assignment = parseAssignmentOverride(formData)
+    const stimulusWorkoutId = String(formData.get('stimulus') ?? '').trim()
+    const stimulusWorkout = stimulusWorkoutId
+      ? await db.query.workouts.findFirst({
+          where: and(
+            eq(workouts.id, stimulusWorkoutId),
+            eq(workouts.teamId, CURRENT_TEAM_ID),
+            eq(workouts.isDeleted, false),
+          ),
+        })
+      : null
+    if (stimulusWorkoutId && !stimulusWorkout) {
+      return { error: 'stimulusWorkoutNotFound' }
+    }
+
+    const assignment = parseAssignmentOverride(formData, stimulusWorkout)
     if (!assignment.success) return { error: assignment.error }
 
     await persistence.applyRevision({
@@ -565,7 +580,10 @@ function parseDoseOverrides(formData: FormData): AthleteDoseOverrides | null {
   return hasOverride ? dose : null
 }
 
-function parseAssignmentOverride(formData: FormData):
+function parseAssignmentOverride(
+  formData: FormData,
+  stimulusWorkout: { id: string; type: string } | null,
+):
   | { success: true; value: AthleteAssignmentOverride }
   | { success: false; error: string } {
   if (formData.get('omitted') === 'on') {
@@ -583,6 +601,20 @@ function parseAssignmentOverride(formData: FormData):
     return { success: true, value: { kind: 'rescheduled', date: rescheduled } }
   }
 
+  if (stimulusWorkout) {
+    if (!isWorkoutType(stimulusWorkout.type)) {
+      return { success: false, error: 'invalidStimulusType' }
+    }
+    return {
+      success: true,
+      value: {
+        kind: 'stimulus_override',
+        workoutId: stimulusWorkout.id,
+        type: stimulusWorkout.type,
+      },
+    }
+  }
+
   if (stimulus || stimulusType) {
     if (!isWorkoutType(stimulusType)) {
       return { success: false, error: 'invalidStimulusType' }
@@ -591,7 +623,7 @@ function parseAssignmentOverride(formData: FormData):
       success: true,
       value: {
         kind: 'stimulus_override',
-        workoutId: stimulus || null,
+        workoutId: null,
         type: stimulusType,
       },
     }
