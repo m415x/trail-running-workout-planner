@@ -68,8 +68,9 @@ test('new explanation copy is consumed through CoachPlanning i18n', () => {
 test('preview delegates approved causal stage rendering to the shared explanation view', () => {
   assert.match(source, /GenerationExplanationView/)
   assert.match(explanationViewSource, /GENERATION_EXPLANATION_STAGE_ORDER/)
+  assert.match(explanationViewSource, /GENERATION_EXPLANATION_STAGE_ORDER/)
   assert.match(
     explanationViewSource,
-    /weekly_budget[\s\S]*frequency[\s\S]*slots[\s\S]*stimulus_template[\s\S]*fixed_load[\s\S]*remaining_budget[\s\S]*flexible_allocation[\s\S]*intensity[\s\S]*coordination_reconciliation/,
+    /t\(\`explanationStages\.\$\{evidence\.stage\}\`\)/,
   )
 })
