@@ -13,6 +13,16 @@ const source = fs.readFileSync(
   ),
   'utf8',
 )
+const explanationViewSource = fs.readFileSync(
+  path.join(
+    process.cwd(),
+    'features',
+    'planning',
+    'components',
+    'GenerationExplanationView.tsx',
+  ),
+  'utf8',
+)
 
 test('Coach preview receives generation explanations separately from the proposal', () => {
   assert.match(source, /GenerationExplanation/)
@@ -48,16 +58,17 @@ test('Coach preview exposes explanation per generated prescription, not as one g
 test('new explanation copy is available in ES and EN', () => {
   assert.match(source, /Por qué se generó así/)
   assert.match(source, /Why it was generated this way/)
-  assert.match(source, /Entradas|Inputs/)
-  assert.match(source, /Restricciones|Constraints/)
-  assert.match(source, /Decisión|Decision/)
-  assert.match(source, /Consecuencia|Consequence/)
+  assert.match(explanationViewSource, /Entradas|Inputs/)
+  assert.match(explanationViewSource, /Restricciones|Constraints/)
+  assert.match(explanationViewSource, /Decisión|Decision/)
+  assert.match(explanationViewSource, /Consecuencia|Consequence/)
 })
 
-test('preview preserves approved causal stage order when rendering explanation', () => {
-  assert.match(source, /GENERATION_EXPLANATION_STAGE_ORDER/)
+test('preview delegates approved causal stage rendering to the shared explanation view', () => {
+  assert.match(source, /GenerationExplanationView/)
+  assert.match(explanationViewSource, /GENERATION_EXPLANATION_STAGE_ORDER/)
   assert.match(
-    source,
+    explanationViewSource,
     /weekly_budget[\s\S]*frequency[\s\S]*slots[\s\S]*stimulus_template[\s\S]*fixed_load[\s\S]*remaining_budget[\s\S]*flexible_allocation[\s\S]*intensity[\s\S]*coordination_reconciliation/,
   )
 })
