@@ -1,3 +1,4 @@
+import { assignSlotsToMicrocycle } from '@/lib/session-generation/microcycle-slot-assignment'
 import {
   resolveWeeklySessionCount,
   selectWeeklySlots,
@@ -19,6 +20,8 @@ import type {
   WeeklyVolumeAllocation,
   SharedSessionGenerationResult,
   SessionGenerationOwnership,
+  SessionGenerationInput,
+  SessionGenerationResult,
 } from '@/types/training/session-generation.types'
 import type { SessionRegenerationPlan } from '@/lib/session-generation/session-regeneration'
 import type { WorkoutTemplate } from '@/types/training/workout-template.types'
@@ -115,6 +118,235 @@ export function assertValidGenerationExplanation(
   if (scope.kind === 'variant' && !scope.planningCohortId.trim()) {
     throw new RangeError('Variant planning scope requires a planning subgroup')
   }
+}
+
+
+export interface BuildGenerationExplanationInput {
+  input: SessionGenerationInput
+  result: SessionGenerationResult
+  sharedGeneration: SharedSessionGenerationResult
+  generationKey: string
+  planningCohortId: string | null
+}
+
+export function buildGenerationExplanation(
+  source: BuildGenerationExplanationInput,
+): GenerationExplanation {
+  const { context } = source.input
+  const includesRace = context.competition !== null
+  const sessionCount = resolveWeeklySessionCount({
+    frequency: context.frequency,
+    microcycleType: context.microcycleType,
+    targetVolumeKm: context.load.targetVolumeKm,
+    maximumWeeklyVolumeKm: context.load.maximumWeeklyVolumeKm,
+    includesRace,
+  })
+  const selectedSlots = selectWeeklySlots(
+    context.pattern.slots,
+    sessionCount,
+    {
+      microcycleType: context.microcycleType,
+      includesRace,
+      raceWeekday: context.competition
+        ? explanationWeekdayFromIsoDate(context.competition.date)
+        : undefined,
+      weekStartDate: context.startDate,
+      intenseSessionsTarget: context.intensity.intenseSessionsTarget,
+      minimumRecoveryDays: context.intensity.minimumRecoveryDaysBetweenIntenseSessions,
+    },
+  )
+  const assignments = assignSlotsToMicrocycle(context, selectedSlots)
+  const trainingAssignments = assignments.assignments.filter(
+    ({ slot }) => slot.role !== 'competition',
+  )
+
+  const frequencyAndSlots = explainFrequencyAndSlots({
+    frequency: context.frequency,
+    microcycleType: context.microcycleType,
+    targetVolumeKm: context.load.targetVolumeKm,
+    maximumWeeklyVolumeKm: context.load.maximumWeeklyVolumeKm,
+    includesRace,
+    raceWeekday: context.competition
+      ? explanationWeekdayFromIsoDate(context.competition.date)
+      : undefined,
+    pattern: context.pattern,
+    startDate: context.startDate,
+    intenseSessionsTarget: context.intensity.intenseSessionsTarget,
+    minimumRecoveryDays: context.intensity.minimumRecoveryDaysBetweenIntenseSessions,
+  })
+  const templatesAndLoad = explainTemplatesAndLoad({
+    templates: source.input.templates,
+    teamId: context.teamId,
+    period: context.period,
+    microcycleType: context.microcycleType,
+    slots: trainingAssignments.map(({ slot }) => slot),
+    targetVolumeKm: context.load.targetVolumeKm,
+    targetElevationGain: context.load.targetElevationGain,
+  })
+  const intensityAndRace = explainIntensityAndRace({
+    trainingSlots: trainingAssignments,
+    intensity: context.intensity,
+    competition: context.competition,
+    trainingTargetVolumeKm: context.load.targetVolumeKm,
+    trainingTargetElevationGain: context.load.targetElevationGain,
+  })
+  const planningScope: GenerationExplanationPlanningScope =
+    source.planningCohortId === null
+      ? {
+          kind: 'base',
+          groupTrainingPlanId: context.groupTrainingPlanId,
+          groupId: context.groupId,
+          planningCohortId: null,
+          microcycleId: context.microcycleId,
+        }
+      : {
+          kind: 'variant',
+          groupTrainingPlanId: context.groupTrainingPlanId,
+          groupId: context.groupId,
+          planningCohortId: source.planningCohortId,
+          microcycleId: context.microcycleId,
+        }
+  const coordination = explainPlanningScopeAndCoordination({
+    planningScope,
+    sharedGeneration: source.sharedGeneration,
+    generationKey: source.generationKey,
+  })
+
+  const proposal = source.result.proposals.find(
+    ({ generationKey }) => generationKey === source.generationKey,
+  )
+  if (!proposal) {
+    throw new RangeError(
+      `Generation explanation cannot find generation key ${source.generationKey} in weekly result`,
+    )
+  }
+
+  const trainingProposals = source.result.proposals.filter(
+    ({ role }) => role !== 'competition',
+  )
+  const allocatedVolumeKm = roundExplanationNumber(
+    trainingProposals.reduce(
+      (sum, item) => sum + (item.prescription.distanceKm ?? 0),
+      0,
+    ),
+  )
+  const allocatedElevationGain = trainingProposals.reduce(
+    (sum, item) => sum + (item.prescription.elevationGain ?? 0),
+    0,
+  )
+  const weeklyBudget: GenerationExplanationStageEvidence = {
+    stage: 'weekly_budget',
+    inputs: [
+      { code: 'target_volume_km', value: context.load.targetVolumeKm },
+      {
+        code: 'target_elevation_gain',
+        value: context.load.targetElevationGain,
+      },
+      {
+        code: 'maximum_weekly_volume_km',
+        value: context.load.maximumWeeklyVolumeKm,
+      },
+    ],
+    constraints: [
+      {
+        code: 'competition_load_separate',
+        value: context.competition !== null,
+      },
+    ],
+    decision: [
+      { code: 'allocated_training_volume_km', value: allocatedVolumeKm },
+      {
+        code: 'allocated_training_elevation_gain',
+        value: allocatedElevationGain,
+      },
+    ],
+    consequence: [
+      {
+        code: 'remaining_training_volume_km',
+        value: roundExplanationNumber(
+          context.load.targetVolumeKm - allocatedVolumeKm,
+        ),
+      },
+      {
+        code: 'remaining_training_elevation_gain',
+        value: context.load.targetElevationGain === null
+          ? null
+          : context.load.targetElevationGain - allocatedElevationGain,
+      },
+    ],
+    warnings: [],
+  }
+
+  const intensity: GenerationExplanationStageEvidence = {
+    stage: 'intensity',
+    inputs: [
+      ...intensityAndRace.intensity.inputs,
+      ...intensityAndRace.race.inputs,
+    ],
+    constraints: [
+      ...intensityAndRace.intensity.constraints,
+      ...intensityAndRace.race.constraints,
+    ],
+    decision: [
+      ...intensityAndRace.intensity.decision,
+      ...intensityAndRace.race.decision,
+    ],
+    consequence: [
+      ...intensityAndRace.intensity.consequence,
+      ...intensityAndRace.race.consequence,
+    ],
+    warnings: [
+      ...intensityAndRace.intensity.warnings,
+      ...intensityAndRace.race.warnings,
+    ],
+  }
+
+  const explanation: GenerationExplanation = {
+    planningScope,
+    stages: [
+      weeklyBudget,
+      frequencyAndSlots.frequency,
+      frequencyAndSlots.slots,
+      templatesAndLoad.stimulusTemplate,
+      templatesAndLoad.fixedLoad,
+      templatesAndLoad.remainingBudget,
+      templatesAndLoad.flexibleAllocation,
+      intensity,
+      coordination.coordination,
+    ].map(sanitizeGenerationExplanationStage),
+  }
+
+  assertValidGenerationExplanation(explanation)
+  return explanation
+}
+
+function sanitizeGenerationExplanationStage(
+  stage: GenerationExplanationStageEvidence,
+): GenerationExplanationStageEvidence {
+  return {
+    ...stage,
+    warnings: stage.warnings.map((warning) => ({
+      ...warning,
+      facts: warning.facts.filter(({ code }) => code !== 'source_warning'),
+    })),
+  }
+}
+
+function explanationWeekdayFromIsoDate(value: string): TrainingWeekday {
+  const date = new Date(`${value}T00:00:00.000Z`)
+  const weekdays: TrainingWeekday[] = [
+    'sunday',
+    'monday',
+    'tuesday',
+    'wednesday',
+    'thursday',
+    'friday',
+    'saturday',
+  ]
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== value) {
+    throw new RangeError(`Invalid competition date for generation explanation: ${value}`)
+  }
+  return weekdays[date.getUTCDay()]
 }
 
 
