@@ -354,13 +354,13 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
     const dose = parseDoseOverrides(formData)
     const stimulusWorkoutId = String(formData.get('stimulus') ?? '').trim()
     const stimulusWorkout = stimulusWorkoutId
-      ? await db.query.workouts.findFirst({
+      ? (await db.query.workouts.findFirst({
           where: and(
             eq(workouts.id, stimulusWorkoutId),
             eq(workouts.teamId, CURRENT_TEAM_ID),
             eq(workouts.isDeleted, false),
           ),
-        })
+        })) ?? null
       : null
     if (stimulusWorkoutId && !stimulusWorkout) {
       return { error: 'stimulusWorkoutNotFound' }
