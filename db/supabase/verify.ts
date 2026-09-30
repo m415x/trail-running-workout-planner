@@ -116,6 +116,25 @@ async function main() {
       console.log(`Legacy intensity values: ${remainingLegacyMethods.map(entry => `${entry.source} (${entry.count})`).join(', ')}`)
     }
 
+    const generationExplanationColumns = await sql<{
+      column_name: string
+      data_type: string
+      is_nullable: string
+      column_default: string | null
+    }[]>`
+      select column_name, data_type, is_nullable, column_default
+      from information_schema.columns
+      where table_schema = 'public'
+        and table_name = 'session_generation_modification_records'
+        and column_name = 'generation_explanation'
+    `
+    const generationExplanationColumn = generationExplanationColumns[0]
+    const generationExplanationProvenanceValid =
+      generationExplanationColumn?.data_type === 'jsonb'
+      && generationExplanationColumn.is_nullable === 'YES'
+      && generationExplanationColumn.column_default === null
+    console.log(`Generation explanation provenance contract: ${generationExplanationProvenanceValid ? 'OK' : 'FAIL'}`)
+
     const prescriptionIndexes = await sql<{ indexname: string; indexdef: string }[]>`
       select indexname, indexdef
       from pg_indexes
@@ -319,7 +338,18 @@ async function main() {
       console.log(`Tables without RLS: ${unprotectedTables.join(', ')}`)
     }
 
-    if (missingTables.length > 0 || unprotectedTables.length > 0 || !timingValid || !fieldTestLifecycleValid || !intensityContractValid || !prescriptionPlanningScopeContractValid || !billingContractValid || !h2BillingContractValid || !h3PaymentContractValid) {
+    if (
+      missingTables.length > 0
+      || unprotectedTables.length > 0
+      || !timingValid
+      || !fieldTestLifecycleValid
+      || !intensityContractValid
+      || !generationExplanationProvenanceValid
+      || !prescriptionPlanningScopeContractValid
+      || !billingContractValid
+      || !h2BillingContractValid
+      || !h3PaymentContractValid
+    ) {
       process.exitCode = 1
     }
   } finally {
