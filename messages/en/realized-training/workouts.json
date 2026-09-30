@@ -58,6 +58,108 @@
       "notifications": "Notifications",
       "phaseObjective": "Phase {phase} · Target {target} km",
       "weeklyProgress": "Weekly progress"
+    },
+    "rpe": {
+      "title": "Rate of Perceived Exertion (RPE 1-10)",
+      "details": "Details",
+      "unrecorded": "RPE not recorded",
+      "zero": "RPE zero",
+      "maximum": "Maximum",
+      "feeling": "What does level {value} feel like?",
+      "levels": {
+        "0": {
+          "label": "None",
+          "description": "",
+          "details": []
+        },
+        "1": {
+          "label": "Very easy",
+          "description": "Minimal effort",
+          "details": [
+            "You could sing or talk without pausing",
+            "Heart rate barely elevated",
+            "Ideal for active recovery"
+          ]
+        },
+        "2": {
+          "label": "Easy",
+          "description": "Light effort",
+          "details": [
+            "Conversation flows easily",
+            "Warm-up or regenerative jogging pace"
+          ]
+        },
+        "3": {
+          "label": "Light",
+          "description": "Comfortable and sustainable",
+          "details": [
+            "You could maintain continuous conversation",
+            "Aerobic base pace (Z2)",
+            "Sustainable for hours"
+          ]
+        },
+        "4": {
+          "label": "Moderately easy",
+          "description": "Controlled",
+          "details": [
+            "Breathing is noticeable but rhythmic",
+            "You can speak in full sentences"
+          ]
+        },
+        "5": {
+          "label": "Moderate",
+          "description": "Moderate target",
+          "details": [
+            "You could speak in short phrases",
+            "Breathing was somewhat difficult",
+            "Inside your comfort zone but working"
+          ]
+        },
+        "6": {
+          "label": "Vigorous",
+          "description": "Steady / Tempo",
+          "details": [
+            "Talking takes more effort",
+            "Early lactate accumulation",
+            "Requires concentration on climbs"
+          ]
+        },
+        "7": {
+          "label": "Hard",
+          "description": "Anaerobic threshold",
+          "details": [
+            "You can only say a couple of words",
+            "Breathing is forceful and continuous",
+            "Sustainable for roughly 20 to 40 minutes"
+          ]
+        },
+        "8": {
+          "label": "Very hard",
+          "description": "High intensity / Intervals",
+          "details": [
+            "You cannot talk",
+            "Demanding effort on steep ramps",
+            "Burning sensation in the legs"
+          ]
+        },
+        "9": {
+          "label": "Near maximal",
+          "description": "Extreme effort",
+          "details": [
+            "You can only hold the pace for a few minutes",
+            "Heart rate is close to max HR"
+          ]
+        },
+        "10": {
+          "label": "Maximal effort",
+          "description": "At the limit / Final sprint",
+          "details": [
+            "Immediate total exhaustion",
+            "Impossible to sustain for more than 30-60 seconds",
+            "Finish-line effort"
+          ]
+        }
+      }
     }
   }
 }
