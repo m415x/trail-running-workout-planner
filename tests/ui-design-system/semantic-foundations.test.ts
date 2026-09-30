@@ -144,3 +144,24 @@ test('KAN-557 keeps officialized semantic color pairs at WCAG 2.2 AA normal-text
     }
   }
 })
+
+
+test('KAN-557 exposes semantic density, spacing, shape, and elevation foundations without creating parallel scales', () => {
+  for (const token of [
+    '--space-ept-tight:',
+    '--space-ept-control:',
+    '--space-ept-content:',
+    '--space-ept-section:',
+    '--radius-ept-control:',
+    '--radius-ept-surface:',
+    '--radius-ept-overlay:',
+    '--elevation-ept-raised:',
+    '--elevation-ept-overlay:',
+  ]) {
+    assert.ok(globalsCss.includes(token), `missing semantic foundation token: ${token}`)
+  }
+
+  assert.match(globalsCss, /--radius-ept-control:\s*var\(--radius-md\)/)
+  assert.match(globalsCss, /--radius-ept-surface:\s*var\(--radius-xl\)/)
+  assert.match(globalsCss, /--radius-ept-overlay:\s*var\(--radius-2xl\)/)
+})
