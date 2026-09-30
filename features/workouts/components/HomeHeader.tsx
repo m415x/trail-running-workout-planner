@@ -71,7 +71,7 @@ export function HomeHeader({
 
       {/* Controles del lado derecho */}
       <div className='flex items-center gap-2'>
-        <ThemeToggleButton className='text-muted-foreground' />
+        <ThemeToggleButton aria-label={t('toggleTheme')} className='text-muted-foreground' />
 
         <button
           type='button'
