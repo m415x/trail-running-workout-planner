@@ -12,7 +12,7 @@ import {
   Users,
   UsersRound,
 } from 'lucide-react'
-import { useLocale, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
@@ -31,47 +31,47 @@ import {
 
 const navigationItems = [
   {
-    label: 'Resumen',
+    labelKey: 'overview',
     href: '/dashboard',
     icon: LayoutDashboard,
   },
   {
-    label: 'Atletas',
+    labelKey: 'athletes',
     href: '/dashboard/athletes',
     icon: Users,
   },
   {
-    label: 'sportingGroups',
+    labelKey: 'sportingGroups',
     href: '/dashboard/groups',
     icon: UsersRound,
   },
   {
-    label: 'planningSubgroups',
+    labelKey: 'planningSubgroups',
     href: '/dashboard/cohorts',
     icon: GitBranch,
   },
   {
-    label: 'Planificación',
+    labelKey: 'planning',
     href: '/dashboard/planning',
     icon: CalendarRange,
   },
   {
-    label: 'membership',
+    labelKey: 'membership',
     href: '/dashboard/membership',
     icon: ReceiptText,
   },
   {
-    label: 'competitions',
+    labelKey: 'competitions',
     href: '/dashboard/competitions',
     icon: Trophy,
   },
   {
-    label: 'Sesiones',
+    labelKey: 'sessions',
     href: '/dashboard/sessions',
     icon: CalendarDays,
   },
   {
-    label: 'templates',
+    labelKey: 'templates',
     href: '/dashboard/templates',
     icon: Dumbbell,
   },
@@ -79,12 +79,9 @@ const navigationItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
-  const locale = useLocale()
   const router = useRouter()
   const { guardNavigation } = useDashboardDirtyFormGuard()
-  const t = useTranslations('WorkoutTemplates')
-  const catalog = useTranslations('RaceCatalog')
-  const audience = useTranslations('CoachPlanningAudience')
+  const t = useTranslations('CoachShell')
 
   return (
     <Sidebar collapsible='icon'>
@@ -95,30 +92,19 @@ export function AppSidebar() {
           </div>
           <div className='min-w-0 group-data-[collapsible=icon]:hidden'>
             <p className='truncate text-sm font-semibold'>El Parque Team</p>
-            <p className='truncate text-xs text-muted-foreground'>Panel del coach</p>
+            <p className='truncate text-xs text-muted-foreground'>{t('subtitle')}</p>
           </div>
         </div>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Gestión</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('management')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigationItems.map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
-                const label =
-                  item.label === 'templates'
-                    ? t('navigation')
-                    : item.label === 'competitions'
-                      ? catalog('navigation')
-                      : item.label === 'membership'
-                        ? locale === 'en' ? 'Membership' : 'Membresía'
-                        : item.label === 'sportingGroups'
-                          ? audience('sportingGroups.title')
-                          : item.label === 'planningSubgroups'
-                            ? audience('planningSubgroups.title')
-                            : item.label
+                const label = t(`navigation.${item.labelKey}`)
 
                 return (
                   <SidebarMenuItem key={item.href}>
@@ -148,7 +134,7 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <p className='px-2 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden'>
-          Fase 3 · Seguimiento individual, carga y catálogo competitivo
+          {t('footer')}
         </p>
       </SidebarFooter>
     </Sidebar>
