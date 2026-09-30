@@ -8,6 +8,28 @@
     "viewRegistrations": "View registrations",
     "noGroup": "You do not have an assigned group yet. Contact your coach to access your training plan.",
     "today": "Today",
-    "noTraining": "No training scheduled"
+    "noTraining": "No training scheduled",
+    "session": {
+      "volume": "Your volume",
+      "loadPending": "Load to be defined",
+      "location": "Location",
+      "locationPending": "Location to be confirmed",
+      "intensity": "Intensity: {value}",
+      "referenceIntensity": "Intensity: {value}% of reference",
+      "instructions": "Instructions",
+      "groupInstructions": "For your group",
+      "generalInstructions": "General guidance",
+      "noInstructions": "No additional instructions",
+      "structure": {
+        "preliminary": "Preliminary exercises",
+        "warmup": "Warm-up",
+        "main": "Main block",
+        "cooldown": "Cool-down"
+      }
+    },
+    "calendar": {
+      "today": "Today",
+      "selectedWeek": "Selected week"
+    }
   }
 }
