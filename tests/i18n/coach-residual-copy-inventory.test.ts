@@ -23,9 +23,7 @@ describe('KAN-506 Coach residual copy inventory', () => {
 
     assert.equal(inventory.story, 'KAN-506')
     assert.equal(inventory.task, 'KAN-552')
-    assert.ok(inventory.entries.some(entry => entry.area === 'planning' && entry.status === 'fix'))
-    assert.ok(inventory.entries.some(entry => entry.area === 'sessions' && entry.status === 'fix'))
-    assert.ok(inventory.entries.some(entry => entry.area === 'membership' && entry.status === 'fix'))
+    assert.equal(inventory.entries.some(entry => entry.status === 'fix'), false)
 
     for (const entry of inventory.entries) {
       const source = await readFile(entry.path, 'utf8')
