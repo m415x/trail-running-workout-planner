@@ -169,9 +169,11 @@
         "staleSourcePrescription": "The effective prescription changed. Review the adjustment before continuing.",
         "invalidReschedule": "Enter a valid reschedule date.",
         "invalidStimulusType": "Select a valid stimulus type.",
-        "saveFailed": "The individual adjustment could not be saved."
+        "saveFailed": "The individual adjustment could not be saved.",
+        "stimulusWorkoutNotFound": "The selected stimulus template is no longer available."
       },
-      "currentReason": "Current reason:"
+      "currentReason": "Current reason:",
+      "noStimulusTemplate": "No template · change type only"
     }
   }
 }
