@@ -288,7 +288,7 @@ export function LoadProgressionPreview({
             )}
           </div>
           <Button type='submit' disabled={isPending || conflicts.length > 0}>
-            {isPending ? 'Guardando…' : 'Guardar progresión'}
+            {isPending ? t('saving') : t('saveProgression')}
           </Button>
         </form>
       </CardContent>
