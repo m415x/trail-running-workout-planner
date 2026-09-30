@@ -3,10 +3,13 @@ import test from 'node:test'
 import { readFile } from 'node:fs/promises'
 
 import { buildAthleteMembershipViewModel } from '../../lib/memberships/athlete-membership-view-model'
+import { resolveApplicationRegionalContext } from '../../lib/regionalization/application-regional-context'
 import { getMembershipPolicyViewModel } from '../../lib/memberships/membership-policy-view-model'
 
 function formatCurrency(locale: 'es' | 'en', amountMinor: number, currency: string) {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+  const { presentationLocale } = resolveApplicationRegionalContext({ language: locale })
+
+  return new Intl.NumberFormat(presentationLocale, {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
@@ -76,4 +79,13 @@ test('KAN-479 monetary presentation derives the symbol from persisted currency i
     athleteForm,
     /monthlyCharges\.find\(\(charge\) => charge\.id === revision\.monthlyChargeId\)\?\.currency \?\? 'ARS'/,
   )
+})
+
+
+test('KAN-506 presentation locale never infers economic currency', () => {
+  const esAr = resolveApplicationRegionalContext({ language: 'es' }).presentationLocale
+  const enUs = resolveApplicationRegionalContext({ language: 'en' }).presentationLocale
+
+  assert.match(new Intl.NumberFormat(esAr, { style: 'currency', currency: 'EUR' }).format(10), /€/)
+  assert.match(new Intl.NumberFormat(enUs, { style: 'currency', currency: 'EUR' }).format(10), /€/)
 })
