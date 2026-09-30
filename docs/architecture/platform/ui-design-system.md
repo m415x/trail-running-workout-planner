@@ -20,6 +20,71 @@ Figma may support exploration and visual specification but does not override rep
 
 KAN-507 defines and implements foundations and reusable contracts. KAN-508 applies and normalizes those contracts across the MVP. Do not turn KAN-507 into a page-by-page redesign.
 
+## Foundation contract
+
+KAN-557 makes the following foundations executable and durable. Naming is semantic: feature code should consume purpose-oriented tokens rather than duplicate Brand values or invent parallel scales.
+
+### Brand roles and usage semantics
+
+Brand roles are the palette authority:
+
+- `--brand-action`;
+- `--brand-identity`;
+- `--brand-highlight`.
+
+Usage semantics consume those Brand roles:
+
+- `--primary` → `--brand-action`;
+- `--secondary` → `--brand-identity`;
+- `--accent` → `--brand-highlight`.
+
+Light and dark themes may assign different concrete Brand values while preserving the same semantic roles. PWA presentation must consume these same foundations instead of defining another palette.
+
+### Semantic typography
+
+Typography hierarchy is explicit through:
+
+- `--text-ept-display`;
+- `--text-ept-heading`;
+- `--text-ept-title`;
+- `--text-ept-body`;
+- `--text-ept-body-compact`;
+- `--text-ept-label`;
+- `--text-ept-caption`;
+- `--text-ept-data`.
+
+The contract is:
+
+`semantic typography != responsive composition != accessibility scaling`.
+
+The existing mobile root 120% scaling therefore remains an accessibility constraint, not a substitute for hierarchy or breakpoint composition. It resets to 100% from 640px and must not be removed until Athlete real-device evidence demonstrates equivalent or better legibility.
+
+### Semantic spacing, shape, and elevation
+
+Spacing/density uses a small purpose-oriented scale:
+
+- `--space-ept-tight`;
+- `--space-ept-control`;
+- `--space-ept-content`;
+- `--space-ept-section`.
+
+Semantic shape aliases the existing radius scale instead of creating a second geometry system:
+
+- `--radius-ept-control` → `--radius-md`;
+- `--radius-ept-surface` → `--radius-xl`;
+- `--radius-ept-overlay` → `--radius-2xl`.
+
+Semantic elevation is limited to:
+
+- `--elevation-ept-raised`;
+- `--elevation-ept-overlay`.
+
+These foundations define shared intent. KAN-508 remains responsible for transversal feature-level normalization.
+
+### Contrast baseline
+
+WCAG 2.2 AA is the technical contrast baseline for semantic color pairs officialized by KAN-507. Focused regression tests verify at least 4.5:1 normal-text contrast for representative light/dark pairs including action, identity, highlight, destructive, background, and card semantics.
+
 ## Current foundations inventory
 
 ### Typography
@@ -64,13 +129,13 @@ KAN-507 must preserve the rule `semantic typography != responsive composition !=
 
 Light and dark values already exist. These variables are the starting implementation evidence, not automatically the final KAN-507 contract.
 
-Current comments associate the existing palette with the El Parque Team visual identity: orange, dark violet and lilac/pink accents. T2 must validate and normalize semantic purpose before treating those comments or literal values as durable Brand authority.
+The El Parque Team palette is now expressed through the Brand role tokens above. Literal values remain implementation details of each theme rather than a second authority.
 
 ### Radius and surface shape
 
 The Tailwind theme currently derives `sm` through `4xl` radii from one `--radius` root. Shared wrappers frequently use larger explicit radius utilities such as `rounded-xl`, `rounded-2xl` and `rounded-3xl`.
 
-T2/T3 must distinguish semantic shape decisions from feature-local styling instead of creating additional parallel scales.
+KAN-557 now provides semantic shape aliases over the existing radius scale. T3 may reconcile shared primitives against those aliases without creating additional parallel scales.
 
 ### Light/dark
 
