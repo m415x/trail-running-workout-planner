@@ -46,13 +46,13 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   race: 'Carrera',
 }
 
-const emphasisLabels: Record<IntensityEmphasis, string> = {
-  recovery: 'Recuperación',
-  aerobic: 'Aeróbico',
-  tempo: 'Tempo',
-  threshold: 'Umbral',
-  vo2max: 'VO₂ máx.',
-  race_specific: 'Específico de carrera',
+const emphasisLabelKeys: Record<IntensityEmphasis, 'recovery' | 'aerobic' | 'tempo' | 'threshold' | 'vo2max' | 'race_specific'> = {
+  recovery: 'recovery',
+  aerobic: 'aerobic',
+  tempo: 'tempo',
+  threshold: 'threshold',
+  vo2max: 'vo2max',
+  race_specific: 'race_specific',
 }
 
 function hasManualValue(sources: MicrocycleIntensityTargetFieldSources) {
@@ -102,7 +102,7 @@ export function IntensityDistribution({
                   <div>
                     <p className='font-semibold'>Semana {point.weekNumber}</p>
                     <p className='text-xs text-muted-foreground'>
-                      {microcycleLabels[point.type]} · {emphasisLabels[point.emphasis]}
+                      {microcycleLabels[point.type]} · {t(`intensityEmphasis.${emphasisLabelKeys[point.emphasis]}`)}
                     </p>
                   </div>
                   {hasManualValue(point.fieldSources) && <Badge variant='secondary'>Manual</Badge>}
