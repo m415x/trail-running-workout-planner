@@ -27,4 +27,4 @@ export {
 } from './pills'
 
 export { CardHeader } from './section-header'
-export { ProgressGradient } from './progress-gradient'
+export { default as ProgressGradient } from './progress-gradient'
