@@ -1,0 +1,13 @@
+{
+  "AthletePlan": {
+    "loadError": "No se pudo cargar la planificación.",
+    "eyebrow": "Mi planificación",
+    "currentWeek": "Semana actual",
+    "group": "Grupo {group}",
+    "competitions": "Competencias",
+    "viewRegistrations": "Ver inscripciones",
+    "noGroup": "Todavía no tenés un grupo asignado. Consultá con tu entrenador para acceder a tu planificación.",
+    "today": "Hoy",
+    "noTraining": "Sin entrenamiento programado"
+  }
+}
