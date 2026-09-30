@@ -163,16 +163,26 @@ export async function persistGeneratedSessions(
 
       for (const operation of reconciliation.prescriptions) {
         const values = operation.proposal.prescription
+        const expectedScope: GenerationExplanation['planningScope'] =
+          plan.planningCohortId === null
+            ? {
+                kind: 'base',
+                groupTrainingPlanId: planId,
+                groupId: plan.groupId,
+                planningCohortId: null,
+                microcycleId: values.microcycleId,
+              }
+            : {
+                kind: 'variant',
+                groupTrainingPlanId: planId,
+                groupId: plan.groupId,
+                planningCohortId: plan.planningCohortId,
+                microcycleId: values.microcycleId,
+              }
         const generationExplanation = resolveGenerationExplanationSnapshot({
           snapshots: generationExplanations,
           generationKey: operation.proposal.generationKey,
-          expectedScope: {
-            kind: plan.planningCohortId === null ? 'base' : 'variant',
-            groupTrainingPlanId: planId,
-            groupId: plan.groupId,
-            planningCohortId: plan.planningCohortId,
-            microcycleId: values.microcycleId,
-          },
+          expectedScope,
         })
         const eventKey = eventKeyByGenerationKey.get(operation.proposal.generationKey)
         const sessionId = eventKey ? eventIdByKey.get(eventKey) : undefined
