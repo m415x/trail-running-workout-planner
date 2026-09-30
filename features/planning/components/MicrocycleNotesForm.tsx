@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   updateMicrocycleNotes,
@@ -23,6 +24,7 @@ export function MicrocycleNotesForm({
   locale,
   currentNotes,
 }: MicrocycleNotesFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [state, formAction, pending] = useActionState(updateMicrocycleNotes, initialState)
 
   return (
@@ -48,7 +50,7 @@ export function MicrocycleNotesForm({
           {!state.error && <p className='text-xs text-muted-foreground'>Dejá el campo vacío para eliminar la nota.</p>}
         </div>
         <Button type='submit' size='sm' variant='outline' disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar notas'}
+          {pending ? t('saving') : t('saveNotes')}
         </Button>
       </div>
     </form>
