@@ -26,3 +26,21 @@ test('KAN-561 keeps fitBounds based on the same longitude-latitude benchmark coo
   assert.match(mapSource, /map\.fitBounds\(bounds,/)
   assert.match(mapSource, /animate:\s*false/)
 })
+
+
+test('KAN-561 isolates MapLibre load and style.load lifecycle without refitting on style changes', () => {
+  assert.match(mapSource, /map\.on\(['"]load['"],\s*handleLoad\)/)
+  assert.match(mapSource, /map\.off\(['"]load['"],\s*handleLoad\)/)
+  assert.match(mapSource, /map\.once\(['"]style\.load['"],\s*handleStyleLoad\)/)
+  assert.match(mapSource, /renderTrackRef\.current\(map,\s*false\)/)
+
+  assert.doesNotMatch(mapSource, /map\.on\(['"]move/)
+  assert.doesNotMatch(mapSource, /map\.on\(['"]zoom/)
+})
+
+test('KAN-561 resizes MapLibre when its container changes size and cleans up the observer', () => {
+  assert.match(mapSource, /new ResizeObserver/)
+  assert.match(mapSource, /map\.resize\(\)/)
+  assert.match(mapSource, /resizeObserver\.observe\(mapContainerRef\.current\)/)
+  assert.match(mapSource, /resizeObserver\.disconnect\(\)/)
+})
