@@ -116,7 +116,17 @@
         "structureTitle": "Estructura de la sesión",
         "structureDescription": "Bloques definidos para desarrollar el entrenamiento.",
         "noStructure": "Esta sesión no tiene una estructura detallada.",
-        "unspecified": "Sin especificar"
+        "unspecified": "Sin especificar",
+        "generationReview": {
+          "title": "Por qué se generó así",
+          "description": "Evidencia histórica de generación por prescripción activa. El ownership actual se muestra separado de su origen generado.",
+          "variantPrescription": "Prescripción variante",
+          "basePrescription": "Prescripción base",
+          "microcycle": "Microciclo",
+          "currentOwnership": "Ownership actual",
+          "planningSubgroup": "Subgrupo",
+          "empty": "No hay una explicación histórica disponible."
+        }
       },
       "edit": {
         "back": "Volver al detalle",
