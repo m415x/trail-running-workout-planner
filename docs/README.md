@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the completed KAN-504/KAN-505 planning baseline and the KAN-506 H3 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the completed KAN-504/KAN-505/KAN-506 baseline and the KAN-507 H4 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Agent harness
 
@@ -60,9 +60,9 @@ The legacy `memberships` table is preserved but is not the authority for the new
 
 KAN-473 — Consolidación funcional y UX pre-beta del MVP — is the current epic and runs before KAN-298. KAN-504 H1 has completed its Coach-workflow consolidation: explicit Sporting group / Planning subgroup vocabulary, canonical group-transfer entry points, transactional Base-plan → Variant persistence/review, and a read-only RaceCourse → planning-impact projection based only on persisted catalog links. Its final story gate was GREEN across tests, lint, typecheck, i18n, production build, SQLite lifecycle and remote Supabase verification (45/45 application tables with RLS).
 
-KAN-505 — H2 · Hacer explicable la generación semanal — is complete on its story branch. It adds structured per-prescription generation provenance, Coach preview/detail explainability, historical persistence and Base/Variant-aware coordination without turning the weekly pattern into a rigid calendar or changing reconciliation/ownership semantics. KAN-506 — H3 · Completar i18n y definir el boundary regional del MVP — is the next KAN-473 story. KAN-298 remains the phase after KAN-473; KAN-472 remains post-auth.
+KAN-505 — H2 · Hacer explicable la generación semanal — is complete. It adds structured per-prescription generation provenance, Coach preview/detail explainability, historical persistence and Base/Variant-aware coordination without turning the weekly pattern into a rigid calendar or changing reconciliation/ownership semantics. KAN-506 — H3 · Completar i18n y definir el boundary regional del MVP — is complete on its story branch: Coach/Athlete MVP surfaces are localized ES/EN, language/presentation locale/operational timezone/currency are separated, temporal values distinguish civil dates/local planned date-times/absolute instants, and regional persistence remains deferred. KAN-507 — H4 · Definir Brand + UI Design System y arquitectura responsive — is the next KAN-473 story. KAN-298 remains the phase after KAN-473; KAN-472 remains post-auth.
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-473.md`](handoffs/kan-473.md), which points a fresh chat to KAN-506 while preserving KAN-298 as the next phase after KAN-473.
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-473.md`](handoffs/kan-473.md), which points a fresh chat to KAN-507 while preserving KAN-298 as the next phase after KAN-473.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
