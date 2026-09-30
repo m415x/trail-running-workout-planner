@@ -14,10 +14,8 @@ test('Coach H3 payment history exposes localized correction and void controls fo
 
   assert.match(form, /correctManualPaymentAction/)
   assert.match(form, /voidManualPaymentAction/)
-  assert.match(form, /Corregir pago/)
-  assert.match(form, /Correct payment/)
-  assert.match(form, /Anular pago/)
-  assert.match(form, /Void payment/)
+  assert.match(form, /t\('payments\.correct'\)/)
+  assert.match(form, /t\('payments\.void'\)/)
   assert.match(form, /revision\.isCurrent/)
   assert.match(form, /revision\.voided/)
   assert.match(form, /paymentId/)

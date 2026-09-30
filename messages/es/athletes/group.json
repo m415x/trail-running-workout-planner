@@ -15,6 +15,46 @@
     "reasonHelp": "Opcional. Quedará registrado en el historial del atleta.",
     "cancel": "Cancelar",
     "assigning": "Asignando…",
-    "assignGroup": "Asignar grupo deportivo"
+    "assignGroup": "Asignar grupo deportivo",
+    "categories": {
+      "E": {
+        "name": "Elite",
+        "description": "Atletas de alto rendimiento y competencia"
+      },
+      "U": {
+        "name": "Ultra",
+        "description": "Distancias superiores a 42k y ultras de montaña"
+      },
+      "M": {
+        "name": "Maratón",
+        "description": "Distancia 42k en calle o trail maratón"
+      },
+      "H": {
+        "name": "Media maratón",
+        "description": "Medio maratón (21k)"
+      },
+      "S": {
+        "name": "Corta",
+        "description": "Distancias cortas y explosivas (5k a 15k)"
+      },
+      "B": {
+        "name": "Base",
+        "description": "Iniciación, adaptación y acondicionamiento"
+      }
+    },
+    "levels": {
+      "1": {
+        "name": "Avanzado",
+        "description": "Alto volumen y experiencia"
+      },
+      "2": {
+        "name": "Intermedio",
+        "description": "Volumen y carga moderada"
+      },
+      "3": {
+        "name": "Principiante",
+        "description": "Volumen controlado y progresión técnica"
+      }
+    }
   }
 }

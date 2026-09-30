@@ -14,8 +14,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
+import { useTranslations } from 'next-intl'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('CoachShell')
+
   return (
     <DashboardDirtyFormGuardProvider>
       <SidebarProvider>
@@ -25,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <SidebarTrigger className='-ml-1' />
           <Separator orientation='vertical' className='mr-2 h-4' />
           <div className='flex flex-1 items-center justify-between'>
-            <h1 className='text-lg font-semibold'>Panel del Coach</h1>
+            <h1 className='text-lg font-semibold'>{t('title')}</h1>
 
             {/* ✅ SOLUCIÓN: La propiedad 'asChild' es clave aquí */}
             <DropdownMenu>
@@ -45,10 +48,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem>Perfil</DropdownMenuItem>
-                  <DropdownMenuItem>Configuración</DropdownMenuItem>
+                  <DropdownMenuItem>{t('profile')}</DropdownMenuItem>
+                  <DropdownMenuItem>{t('settings')}</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className='text-red-600 focus:text-red-600'>Cerrar sesión</DropdownMenuItem>
+                  <DropdownMenuItem className='text-red-600 focus:text-red-600'>{t('signOut')}</DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>

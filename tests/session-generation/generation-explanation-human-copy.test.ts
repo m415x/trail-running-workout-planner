@@ -15,7 +15,7 @@ const source = fs.readFileSync(
 )
 
 test('explanation facts render human labels instead of raw internal codes', () => {
-  assert.match(source, /formatGenerationExplanationLabel\(fact\.code, locale\)/)
+  assert.match(source, /formatGenerationExplanationLabel\(fact\.code, locale, planningSubgroupLabel\)/)
   assert.doesNotMatch(source, /\{fact\.code\}:\s*\{String\(fact\.value/)
 })
 

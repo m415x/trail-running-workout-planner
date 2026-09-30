@@ -7,13 +7,21 @@ test('WorkoutCard localizes execution guidance instead of exposing internal enum
   const pillSource = await readFile('components/ui/custom/pills.tsx', 'utf8')
   const es = await readFile('messages/es/realized-training/workouts.json', 'utf8')
   const en = await readFile('messages/en/realized-training/workouts.json', 'utf8')
+  const glossaryEs = await readFile('messages/es/glossary/planning.json', 'utf8')
+  const glossaryEn = await readFile('messages/en/glossary/planning.json', 'utf8')
 
   assert.match(cardSource, /executionGuidance/)
   assert.match(cardSource, /ZonePill/)
   assert.match(pillSource, /zoneInfo[.]rpe/)
-  assert.match(pillSource, /zoneInfo[.]effortAndPerception/)
+  assert.match(pillSource, /useTranslations\('DomainGlossary[.]heartRateZones'\)/)
+  assert.match(pillSource, /effortAndPerception/)
   assert.doesNotMatch(cardSource, />Talk Test:/)
   assert.doesNotMatch(cardSource, /['"]effort_over_pace['"]\s*:\s*['"]effort_over_pace['"]/)
+
+  for (const glossary of [glossaryEs, glossaryEn]) {
+    assert.match(glossary, /"heartRateZones"/)
+    assert.match(glossary, /"effortAndPerception"/)
+  }
 
   for (const messages of [es, en]) {
     assert.match(messages, /"guidance"/)

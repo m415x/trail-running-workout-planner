@@ -1,0 +1,194 @@
+{
+  "story": "KAN-506",
+  "task": "KAN-552",
+  "scope": "Coach visible-copy residual inventory",
+  "rules": {
+    "fix": "Visible copy/regional presentation can be localized without auth, persisted regional config, redesign, or new domain authority.",
+    "defer": "Requires auth, persisted config, redesign, or a new domain authority.",
+    "clean": "Audited surface already consumes an existing i18n boundary for its visible page/component copy."
+  },
+  "entries": [
+    {
+      "path": "app/[locale]/dashboard/groups/page.tsx",
+      "area": "groups",
+      "status": "clean"
+    },
+    {
+      "path": "app/[locale]/dashboard/cohorts/page.tsx",
+      "area": "cohorts",
+      "status": "clean"
+    },
+    {
+      "path": "app/[locale]/dashboard/templates/page.tsx",
+      "area": "templates",
+      "status": "clean"
+    },
+    {
+      "path": "app/[locale]/dashboard/competitions/[[...segments]]/page.tsx",
+      "area": "competitions",
+      "status": "clean"
+    },
+    {
+      "path": "app/[locale]/dashboard/sessions/page.tsx",
+      "area": "sessions",
+      "status": "clean"
+    },
+    {
+      "path": "features/sessions/components/SessionForm.tsx",
+      "area": "sessions",
+      "status": "clean"
+    },
+    {
+      "path": "app/[locale]/dashboard/planning/[planId]/page.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Volver a planificaciones",
+        "Subgrupo de planificación"
+      ]
+    },
+    {
+      "path": "features/planning/components/GenerationExplanationView.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Decisión",
+        "Días y roles",
+        "Estímulo y plantilla"
+      ]
+    },
+    {
+      "path": "features/planning/components/MicrocycleDatesForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Guardar fechas"
+      ]
+    },
+    {
+      "path": "features/planning/components/MicrocycleElevationForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Guardar"
+      ]
+    },
+    {
+      "path": "features/planning/components/MicrocycleNotesForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Guardar notas"
+      ]
+    },
+    {
+      "path": "features/planning/components/MicrocycleTypeForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Guardar tipo"
+      ]
+    },
+    {
+      "path": "features/planning/components/MicrocycleVolumeForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Volumen objetivo en kilómetros"
+      ]
+    },
+    {
+      "path": "features/planning/components/SessionGenerationPreferencesForm.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Miércoles",
+        "Guardar configuración semanal"
+      ]
+    },
+    {
+      "path": "features/planning/components/SessionGenerationPreview.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Por qué se generó así",
+        "Guardar sesiones"
+      ]
+    },
+    {
+      "path": "features/planning/components/CompetitionCalendarSummary.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Sin restricción",
+        "Política pendiente",
+        "Fecha"
+      ]
+    },
+    {
+      "path": "features/planning/components/IntensityDistribution.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Recuperación",
+        "Aeróbico"
+      ]
+    },
+    {
+      "path": "features/planning/components/LoadProgressionPreview.tsx",
+      "area": "planning",
+      "status": "clean",
+      "markers": [
+        "Foco montaña",
+        "Guardar progresión"
+      ]
+    },
+    {
+      "path": "app/[locale]/dashboard/sessions/[sessionId]/page.tsx",
+      "area": "sessions",
+      "status": "clean",
+      "markers": [
+        "Por qué se generó así",
+        "Prescripción variante",
+        "No hay una explicación histórica disponible."
+      ]
+    },
+    {
+      "path": "app/[locale]/dashboard/membership/page.tsx",
+      "area": "membership",
+      "status": "clean",
+      "markers": [
+        "Política vigente",
+        "Historial de políticas",
+        "Historial de excepciones"
+      ]
+    },
+    {
+      "path": "features/memberships/components/AthleteBillingTermsForm.tsx",
+      "area": "membership",
+      "status": "clean",
+      "markers": [
+        "Reducción o beca",
+        "Aplicar reducción",
+        "Retirar reducción"
+      ]
+    },
+    {
+      "path": "features/memberships/components/GlobalDueDateExceptionForm.tsx",
+      "area": "membership",
+      "status": "clean",
+      "markers": [
+        "Excepción mensual de vencimiento",
+        "Aplicar excepción"
+      ]
+    },
+    {
+      "path": "features/memberships/components/TeamMonthlyMaterializationForm.tsx",
+      "area": "membership",
+      "status": "clean",
+      "markers": [
+        "Atletas procesados:"
+      ]
+    }
+  ]
+}

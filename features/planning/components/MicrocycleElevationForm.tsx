@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   updateMicrocycleElevation,
@@ -29,6 +30,7 @@ export function MicrocycleElevationForm({
   currentElevationGain,
   currentSource,
 }: MicrocycleElevationFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [state, formAction, pending] = useActionState(updateMicrocycleElevation, initialState)
 
   return (
@@ -54,7 +56,7 @@ export function MicrocycleElevationForm({
           <span className='pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground'>m</span>
         </div>
         <Button type='submit' size='sm' disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar'}
+          {pending ? t('saving') : t('save')}
         </Button>
         <Badge variant='outline'>{currentSource === 'manual' ? 'Manual' : 'Generado'}</Badge>
       </div>

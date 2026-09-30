@@ -1,6 +1,8 @@
 'use client'
 
 import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
+import { useLocale, useTranslations } from 'next-intl'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Bell } from 'lucide-react'
 import { useHomeHeader } from '@workouts/hooks/useHomeHeader'
@@ -15,7 +17,11 @@ export function HomeHeader({
   team: NonNullable<CurrentAthleteData['athleteProfile']['team']>
   athlete: CurrentAthleteData['athleteProfile']
 }) {
-  const { today, fullName, initials } = useHomeHeader()
+  const locale = useLocale()
+  const t = useTranslations('Workouts.home')
+  const language = locale === 'en' ? 'en' : 'es'
+  const { presentationLocale } = resolveApplicationRegionalContext({ language })
+  const { today, fullName, initials } = useHomeHeader(presentationLocale)
   const groupCode = athlete.group ? buildAthleteGroupCode(athlete.group) : '--'
 
   return (
@@ -46,7 +52,7 @@ export function HomeHeader({
               'justify-center rounded-full bg-background text-foreground hover:bg-primary/90 transition-transform',
               'hover:text-background active:scale-95 shadow-md cursor-pointer border border-background',
             )}
-            title='Ver team'
+            title={t('viewTeam')}
           >
             {groupCode}
           </button>
@@ -55,7 +61,7 @@ export function HomeHeader({
         <div className='flex flex-col justify-center'>
           {/* Info del Atleta */}
           <h1 className='font-heading text-foreground text-xl font-bold leading-tight tracking-tight'>
-            Hola, {athlete.nickName ?? fullName}
+            {t('greeting', { name: athlete.nickName ?? fullName })}
           </h1>
 
           {/* Fecha de hoy en formato largo */}
@@ -69,7 +75,7 @@ export function HomeHeader({
 
         <button
           type='button'
-          aria-label='Notificaciones'
+          aria-label={t('notifications')}
           className='relative p-2.5 rounded-2xl border border-border/80 bg-card/60 hover:bg-card transition-colors cursor-pointer'
         >
           <Bell size={18} className='text-muted-foreground' />

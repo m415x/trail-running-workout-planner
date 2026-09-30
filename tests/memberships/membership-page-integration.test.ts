@@ -22,8 +22,7 @@ test('Coach membership page exposes the next scheduled policy in ES and EN', asy
   )
 
   assert.match(source, /model\.scheduledPolicies/)
-  assert.match(source, /Cambios programados/)
-  assert.match(source, /Scheduled changes/)
+  assert.match(source, /t\('page\.scheduledChanges'/)
   assert.match(source, /model\.currentPolicy\.effectiveUntil/)
 })
 
@@ -37,10 +36,8 @@ test('Coach membership page groups scheduled and past policies in localized acco
   assert.match(source, /model\.currentPolicy/)
   assert.match(source, /model\.scheduledPolicies/)
   assert.match(source, /model\.pastPolicies/)
-  assert.match(source, /Cambios programados/)
-  assert.match(source, /Scheduled changes/)
-  assert.match(source, /Historial de políticas/)
-  assert.match(source, /Policy history/)
+  assert.match(source, /t\('page\.scheduledChanges'/)
+  assert.match(source, /t\('page\.policyHistory'/)
   assert.match(source, /Accordion/)
   assert.doesNotMatch(source, /MembershipPolicyCard model=\{model\.nextPolicy\}/)
 })
@@ -53,10 +50,8 @@ test('membership timeline accordions expose visible triggers with item counts', 
   )
 
   assert.match(source, /AccordionTrigger className=/)
-  assert.match(source, /Cambios programados/)
-  assert.match(source, /Scheduled changes/)
-  assert.match(source, /Historial de políticas/)
-  assert.match(source, /Policy history/)
+  assert.match(source, /t\('page\.scheduledChanges'/)
+  assert.match(source, /t\('page\.policyHistory'/)
   assert.match(source, /model\.scheduledPolicies\.length/)
   assert.match(source, /model\.pastPolicies\.length/)
 })
@@ -98,8 +93,8 @@ test('Coach membership page exposes a localized global monthly due-date exceptio
   )
 
   assert.match(source, /GlobalDueDateExceptionForm/)
-  assert.match(form, /Excepción mensual de vencimiento/)
-  assert.match(form, /Monthly due-date exception/)
+  assert.match(form, /useTranslations\('Membership\.dueDateException'\)/)
+  assert.match(form, /t\('title'\)/)
   assert.match(source, /locale=\{supportedLocale\}/)
   assert.match(actions, /applyGlobalDueDateExceptionAction/)
   assert.match(actions, /handlers\.applyGlobalDueDateException/)
@@ -118,10 +113,9 @@ test('Coach athlete billing surface exposes localized reduction and extension co
 
   assert.match(form, /MonthlyChargeReductionForm/)
   assert.match(form, /MonthlyChargeExtensionForm/)
-  assert.match(form, /Reducción o beca/)
-  assert.match(form, /Reduction or scholarship/)
-  assert.match(form, /Prórroga individual/)
-  assert.match(form, /Individual extension/)
+  assert.match(form, /useTranslations\('Membership\.athleteBilling'\)/)
+  assert.match(form, /t\('reduction\.title'\)/)
+  assert.match(form, /t\('extension\.title'\)/)
   assert.match(actions, /applyMonthlyChargeReductionAction/)
   assert.match(actions, /handlers\.applyMonthlyChargeReduction/)
   assert.match(actions, /applyMonthlyChargeExtensionAction/)
@@ -180,10 +174,8 @@ test('KAN-479 Coach UI exposes explicit reduction and extension withdrawal contr
     'utf8',
   )
 
-  assert.match(athleteForm, /Retirar (?:reducción|beca)/)
-  assert.match(athleteForm, /Withdraw (?:reduction|scholarship)/)
-  assert.match(athleteForm, /Retirar prórroga/)
-  assert.match(athleteForm, /Withdraw extension/)
+  assert.match(athleteForm, /t\('reduction\.withdraw'\)/)
+  assert.match(athleteForm, /t\('extension\.withdraw'\)/)
   assert.match(actions, /reductionAmountMinor:\s*number/)
   assert.match(actions, /extendedDueDate:\s*string \| null/)
 })
@@ -217,10 +209,10 @@ test('KAN-479 withdrawal controls do not require an active reduction amount or e
   )
 
   assert.match(athleteForm, /name='reductionAmount'[\s\S]*?required/)
-  assert.match(athleteForm, /Retirar reducción[\s\S]*?Withdraw reduction/)
+  assert.match(athleteForm, /t\('reduction\.withdraw'\)/)
   assert.match(athleteForm, /formNoValidate/)
   assert.match(athleteForm, /name='extendedDueDate'[\s\S]*?required/)
-  assert.match(athleteForm, /Retirar prórroga[\s\S]*?Withdraw extension/)
+  assert.match(athleteForm, /t\('extension\.withdraw'\)/)
 })
 
 
@@ -234,16 +226,11 @@ test('KAN-479 H2 Coach forms expose localized success feedback in ES and EN', as
     'utf8',
   )
 
-  assert.match(globalForm, /Excepción aplicada/)
-  assert.match(globalForm, /Exception applied/)
-  assert.match(athleteForm, /Reducción aplicada/)
-  assert.match(athleteForm, /Reduction applied/)
-  assert.match(athleteForm, /Reducción retirada/)
-  assert.match(athleteForm, /Reduction withdrawn/)
-  assert.match(athleteForm, /Prórroga aplicada/)
-  assert.match(athleteForm, /Extension applied/)
-  assert.match(athleteForm, /Prórroga retirada/)
-  assert.match(athleteForm, /Extension withdrawn/)
+  assert.match(globalForm, /t\('success'\)/)
+  assert.match(athleteForm, /t\('reduction\.appliedSuccess'\)/)
+  assert.match(athleteForm, /t\('reduction\.withdrawnSuccess'\)/)
+  assert.match(athleteForm, /t\('extension\.appliedSuccess'\)/)
+  assert.match(athleteForm, /t\('extension\.withdrawnSuccess'\)/)
 })
 
 
@@ -254,8 +241,7 @@ test('KAN-479 global exception selects one month and a due day within that same 
   )
 
   assert.match(form, /name='period'[^>]*type='month'/)
-  assert.match(form, /Día de vencimiento/)
-  assert.match(form, /Due day/)
+  assert.match(form, /t\('dueDay'\)/)
   assert.match(form, /name='dueDay'/)
   assert.doesNotMatch(form, /name='dueDate'[^>]*type='date'/)
   assert.match(form, /daysInMonth/)
@@ -300,8 +286,8 @@ test('KAN-479 Coach membership page exposes localized team monthly materializati
   )
 
   assert.match(page, /TeamMonthlyMaterializationForm/)
-  assert.match(form, /Materializar cuotas/)
-  assert.match(form, /Materialize charges/)
+  assert.match(form, /useTranslations\('Membership\.materialization'\)/)
+  assert.match(form, /t\('title'\)/)
   assert.match(form, /type=['"]month['"]/)
   assert.match(form, /materializeTeamMonthlyChargesAction/)
   assert.match(actions, /materializeTeamMonthlyChargesAction/)
@@ -317,10 +303,7 @@ test('KAN-479 bulk monthly materialization reports localized processed and creat
 
   assert.match(form, /processedAthletes/)
   assert.match(form, /materializedCharges/)
-  assert.match(form, /Atletas procesados/)
-  assert.match(form, /Athletes processed/)
-  assert.match(form, /Cuotas creadas/)
-  assert.match(form, /Charges created/)
+  assert.match(form, /t\('feedback'/)
 })
 
 
@@ -331,8 +314,7 @@ test('KAN-479 athlete billing history localizes the current revision marker in E
   )
 
   assert.doesNotMatch(form, /['"] · vigente['"]/)
-  assert.match(form, /vigente/)
-  assert.match(form, /current/)
+  assert.match(form, /t\('common\.current'\)/)
 })
 
 
@@ -358,7 +340,7 @@ test('KAN-479 athlete H2 history renders the economic value of every revision', 
 
   assert.match(form, /reductionAmountMinor/)
   assert.match(form, /extendedDueDate/)
-  assert.match(form, /Retiro|Withdrawn/)
+  assert.match(form, /t\('common\.withdrawn'\)/)
 })
 
 

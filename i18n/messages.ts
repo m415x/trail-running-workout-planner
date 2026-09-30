@@ -34,10 +34,16 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
     switch (path) {
       case 'common/common':
         return (await import('@/messages/en/common/common.json')).default
+      case 'common/coach-shell':
+        return (await import('@/messages/en/common/coach-shell.json')).default
+      case 'common/athlete-shell':
+        return (await import('@/messages/en/common/athlete-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/en/common/weather.json')).default
       case 'planning/base-planning':
         return (await import('@/messages/en/planning/base-planning.json')).default
+      case 'planning/coach-planning':
+        return (await import('@/messages/en/planning/coach-planning.json')).default
       case 'planning/training-goals':
         return (await import('@/messages/en/planning/training-goals.json')).default
       case 'planning/workout-templates':
@@ -66,10 +72,16 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/athletes/group.json')).default
       case 'athletes/form':
         return (await import('@/messages/en/athletes/form.json')).default
+      case 'athletes/plan':
+        return (await import('@/messages/en/athletes/plan.json')).default
+      case 'athletes/profile':
+        return (await import('@/messages/en/athletes/profile.json')).default
       case 'forms/dirty-form-guard':
         return (await import('@/messages/en/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/en/athlete-stats/stats.json')).default
+      case 'memberships/membership':
+        return (await import('@/messages/en/memberships/membership.json')).default
       case 'glossary/planning':
         return (await import('@/messages/en/glossary/planning.json')).default
     }
@@ -77,10 +89,16 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
     switch (path) {
       case 'common/common':
         return (await import('@/messages/es/common/common.json')).default
+      case 'common/coach-shell':
+        return (await import('@/messages/es/common/coach-shell.json')).default
+      case 'common/athlete-shell':
+        return (await import('@/messages/es/common/athlete-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/es/common/weather.json')).default
       case 'planning/base-planning':
         return (await import('@/messages/es/planning/base-planning.json')).default
+      case 'planning/coach-planning':
+        return (await import('@/messages/es/planning/coach-planning.json')).default
       case 'planning/training-goals':
         return (await import('@/messages/es/planning/training-goals.json')).default
       case 'planning/workout-templates':
@@ -109,10 +127,16 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/athletes/group.json')).default
       case 'athletes/form':
         return (await import('@/messages/es/athletes/form.json')).default
+      case 'athletes/plan':
+        return (await import('@/messages/es/athletes/plan.json')).default
+      case 'athletes/profile':
+        return (await import('@/messages/es/athletes/profile.json')).default
       case 'forms/dirty-form-guard':
         return (await import('@/messages/es/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/es/athlete-stats/stats.json')).default
+      case 'memberships/membership':
+        return (await import('@/messages/es/memberships/membership.json')).default
       case 'glossary/planning':
         return (await import('@/messages/es/glossary/planning.json')).default
     }

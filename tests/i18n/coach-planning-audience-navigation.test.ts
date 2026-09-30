@@ -21,11 +21,18 @@ describe('KAN-515 remaining Coach audience navigation and return paths', () => {
     }
   })
 
-  it('uses the approved audience vocabulary in the Coach sidebar', async () => {
-    const source = await readFile('components/dashboard/app-sidebar.tsx', 'utf8')
+  it('keeps approved audience concepts behind the shared CoachShell navigation catalog', async () => {
+    const [source, esCatalog, enCatalog] = await Promise.all([
+      readFile('components/dashboard/app-sidebar.tsx', 'utf8'),
+      readFile('messages/es/common/coach-shell.json', 'utf8'),
+      readFile('messages/en/common/coach-shell.json', 'utf8'),
+    ])
 
-    assert.match(source, /CoachPlanningAudience/)
-    assert.doesNotMatch(source, /label:\s*['"]Grupos['"]/)
-    assert.doesNotMatch(source, /label:\s*['"]Cohortes['"]/)
+    assert.match(source, /useTranslations\(['"]CoachShell['"]\)/)
+    assert.doesNotMatch(source, /CoachPlanningAudience/)
+    assert.equal(JSON.parse(esCatalog).CoachShell.navigation.sportingGroups, 'Grupos deportivos')
+    assert.equal(JSON.parse(esCatalog).CoachShell.navigation.planningSubgroups, 'Subgrupos de planificación')
+    assert.equal(JSON.parse(enCatalog).CoachShell.navigation.sportingGroups, 'Sporting groups')
+    assert.equal(JSON.parse(enCatalog).CoachShell.navigation.planningSubgroups, 'Planning subgroups')
   })
 })

@@ -1,11 +1,13 @@
 'use client'
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { useLocale } from 'next-intl'
 import { Mountain } from 'lucide-react'
 import { WorkoutProps } from '@/types'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { formatNumber } from '@/lib/formatters'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 
 export interface ElevTooltipProps {
   active?: boolean
@@ -34,6 +36,10 @@ export interface ElevationChartProps {
 }
 
 export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
+  const locale = useLocale()
+  const regionalContext = resolveApplicationRegionalContext({
+    language: locale === 'en' ? 'en' : 'es',
+  })
   const primaryColor = 'var(--primary)'
 
   return (
@@ -42,10 +48,10 @@ export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: El
       <CardHeader title='Perfil de Elevación' icon={Mountain}>
         <div className='flex justify-center gap-3 text-[11px]'>
           <span className='text-muted-foreground'>
-            Máx <span className='text-foreground font-semibold'>{formatNumber(elevMax)} m</span>
+            Máx <span className='text-foreground font-semibold'>{formatNumber(elevMax, regionalContext.presentationLocale)} m</span>
           </span>
           <span className='text-muted-foreground'>
-            Mín <span className='text-foreground font-semibold'>{formatNumber(elevMin)} m</span>
+            Mín <span className='text-foreground font-semibold'>{formatNumber(elevMin, regionalContext.presentationLocale)} m</span>
           </span>
         </div>
       </CardHeader>

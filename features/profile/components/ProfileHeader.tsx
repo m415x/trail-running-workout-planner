@@ -1,11 +1,13 @@
 'use client'
 
 import { Pencil } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { User } from '@/types'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { CustomCard } from '@ui/custom/card-containers'
 
 export function ProfileHeader({ user }: { user: User }) {
+  const t = useTranslations('AthleteProfile.header')
   const fullName = `${user.firstName} ${user.lastName}`
   const initials = `${user.firstName[0] ?? ''}${user.lastName[0] ?? ''}`.toUpperCase()
 
@@ -24,7 +26,7 @@ export function ProfileHeader({ user }: { user: User }) {
           <button
             type='button'
             className='absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-white hover:bg-primary/90 transition-transform active:scale-95 shadow-md cursor-pointer border-2 border-background'
-            title='Editar foto'
+            title={t('editPhoto')}
           >
             <Pencil size={12} />
           </button>
@@ -34,7 +36,7 @@ export function ProfileHeader({ user }: { user: User }) {
         <div>
           <h1 className='font-heading font-bold text-foreground text-xl tracking-tight leading-tight'>{fullName}</h1>
           <p className='text-xs text-muted-foreground font-sans mt-0.5'>
-            Atleta desde 2024 · @{user.userName?.toLowerCase() ?? 'runner'}
+            {t('athleteSince', { year: 2024, username: user.userName?.toLowerCase() ?? 'runner' })}
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   updateMicrocycleType,
@@ -34,6 +35,7 @@ export function MicrocycleTypeForm({
   locale,
   currentType,
 }: MicrocycleTypeFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [state, formAction, pending] = useActionState(updateMicrocycleType, initialState)
 
   return (
@@ -56,7 +58,7 @@ export function MicrocycleTypeForm({
           ))}
         </select>
         <Button type='submit' size='sm' variant='outline' disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar tipo'}
+          {pending ? t('saving') : t('saveType')}
         </Button>
       </div>
 

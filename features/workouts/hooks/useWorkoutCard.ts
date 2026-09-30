@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Clock, Zap, Gauge } from 'lucide-react'
 import type {
   ManualRealizedTrainingClientInput,
@@ -20,6 +20,7 @@ import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
 import { formatShortDate } from '@/lib/date-helpers'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { APPLICATION_REGIONAL_FALLBACKS, resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
@@ -47,7 +48,10 @@ export function useWorkoutCard({
   isCompleted: initialIsCompleted = false,
   onRealizedTrainingSaved,
 }: UseWorkoutCardParams) {
+  const locale = useLocale()
   const t = useTranslations('Workouts')
+  const language = locale === 'en' ? 'en' : 'es'
+  const { presentationLocale } = resolveApplicationRegionalContext({ language })
 
   const [isLogOpen, setIsLogOpen] = useState(false)
   const [weather, setWeather] = useState<WeatherData | null>(null)
@@ -79,8 +83,8 @@ export function useWorkoutCard({
 
   const headerTitle = workout.type ? t(`types.${workout.type}`) : workout.title
   const WorkoutIcon = getWorkoutIcon(workout.type)
-  const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
-  const todayStr = useMemo(() => getCurrentISODateInTimeZone(), [])
+  const dateLabel = useMemo(() => (date ? formatShortDate(date, presentationLocale) : ''), [date, presentationLocale])
+  const todayStr = useMemo(() => getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone), [])
   const isPast = Boolean(date && date < todayStr)
   const isFuture = Boolean(date && date > todayStr)
 

@@ -248,3 +248,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes; session-generation architecture, documentation index and KAN-473 handoff now encode KAN-505 provenance, persistence, UI and downstream boundaries plus the KAN-506 entry point.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused retrieval and TDD exposed the relevant seams; the remaining presentation issue was found by explicit AC-by-AC closure review.
 - Notes for post-experiment v2 (do not change v1 yet): keep explicit AC-by-AC closure review and manual walkthroughs. Track command composition more carefully so focused TDD commands are not followed by redundant standalone typecheck requests unless a story-level gate specifically requires them.
+
+
+### KAN-506 — harness-eval-v1
+
+- Redundant/repeated tool calls: low during implementation; closure required additional focused passes because the ES/EN walkthrough exposed residual copy after the first aggregate gate.
+- Unnecessary large/full-source reloads: no material issue reported; residual work was driven by focused inventories, walkthrough findings, and targeted regressions.
+- Equivalent failed-operation loops: 0 material before the remote connector outage that interrupted formal closure.
+- Context/source-of-truth mistakes: 0 material reported. The SQLite Session-detail failure was correctly diagnosed as local schema drift against an already-versioned migration rather than hidden with an application-code workaround.
+- Durable information unnecessarily requested from human: 0 material beyond the agreed local gate and walkthrough evidence.
+- Premature task/branch creation or reopened settled decisions: 0; implementation followed the approved T1–T7 decomposition and D1–D6 regional contract.
+- Unnecessary local/full-gate requests during implementation: the complete gate was reserved for closure; walkthrough-driven changes correctly invalidated the earlier closure gate and triggered a final rerun.
+- Unsupported verification claims: 0 retained. The first aggregate gate was explicitly superseded after walkthrough fixes; final reported evidence is 1858/1858 tests, 270 suites, lint/typecheck/build GREEN, 1290 aligned i18n leaves, and SQLite verification GREEN.
+- Missed acceptance criteria attributable to workflow/context handling: residual Coach Planning, Athlete Home/Profile/Plan/calendar copy and legacy localized constants survived until manual walkthrough. They were corrected before closure and protected by focused regressions.
+- Corrective human interventions attributable to harness behavior: manual ES/EN walkthrough materially identified presentation debt that structural catalog parity could not detect; this validates the existing rule that `pn i18n:check` is not complete UI-localization proof.
+- Durable documentation/handoff complete: yes at formal closure; internationalization policy, documentation index, and KAN-473 handoff record the regional-consumption boundary and KAN-507 entry point.
+- Evidence that reduced context/tool usage harmed correctness: none observed. The remaining defects were runtime/presentation findings caught by the required walkthrough rather than missing broad source retrieval.
+- Notes for post-experiment v2 (do not change v1 yet): keep explicit ES/EN walkthroughs for cross-cutting localization stories, preserve focused residual-copy inventories, and treat schema-drift failures as environment evidence before modifying application code.

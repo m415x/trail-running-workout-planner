@@ -73,6 +73,26 @@
           "dns": "DNS"
         }
       }
+    },
+    "track1000m": {
+      "title": "1000 m test",
+      "intro": "Record a scheduled official test or a self-directed attempt.",
+      "reference": "Reference",
+      "referenceUnavailable": "Reference unavailable",
+      "evolution": "Evolution",
+      "latestTest": "Latest test",
+      "official": "Official",
+      "selfDirected": "Self-directed",
+      "loadError": "Test performance could not be loaded.",
+      "history": "Test history ({count})",
+      "emptyHistory": "There are no eligible tests yet.",
+      "register": "Record new test",
+      "trend": {
+        "faster": "Faster",
+        "slower": "Slower",
+        "same": "Same",
+        "insufficient": "Insufficient evidence"
+      }
     }
   }
 }

@@ -16,6 +16,54 @@
       },
       "sportingGroupHelp": "Clasificación deportiva estable del atleta dentro del equipo.",
       "planningSubgroupHelp": "Audiencia temporal de planificación formada por atletas de un mismo grupo deportivo con un objetivo compartido."
+    },
+    "heartRateZones": {
+      "Z1": {
+        "name": "Recuperación / Regenerativo",
+        "workType": "Regenerativo",
+        "description": "Recuperación activa y adaptación muscular de bajo impacto.",
+        "effortAndPerception": "Muy suave. Ritmo de trote cómodo y sin esfuerzo real.",
+        "breathingPathway": "Exclusivamente nasal.",
+        "rhythmicPattern": "4:4 o 3:3 (Inhalar en 3/4 pasos, exhalar en 3/4).",
+        "biomechanicalFocus": "Expansión diafragmática máxima. Relajar hombros y trapecios. Ideal para interiorizar una técnica de carrera limpia y sin tensión."
+      },
+      "Z2": {
+        "name": "Resistencia Aeróbica",
+        "workType": "Base Aeróbica",
+        "description": "Construcción del motor aeróbico y quema eficiente de grasas.",
+        "effortAndPerception": "Suave. Ritmo conversacional totalmente fluido.",
+        "breathingPathway": "Nasal o Mixta (Inhala nariz, exhala boca relajada).",
+        "rhythmicPattern": "3:3",
+        "biomechanicalFocus": "Mantener la caja torácica estable. El core se activa suavemente para absorber el bajo impacto. Es el trabajo de cimientos para el motor aeróbico."
+      },
+      "Z3": {
+        "name": "Tempo / Ritmo Maratón",
+        "workType": "Tempo / Ritmo",
+        "description": "Resistencia al ritmo sostenido y economía de carrera.",
+        "effortAndPerception": "Moderado. Conversación entrecortada (frases cortas).",
+        "breathingPathway": "Principalmente nasal.",
+        "rhythmicPattern": "2:2 (El patrón rey del corredor de fondo).",
+        "biomechanicalFocus": "Sincronización perfecta entre la pisada y el ciclo respiratorio para distribuir la carga del impacto uniformemente y evitar alteraciones posturales por fatiga."
+      },
+      "Z4": {
+        "name": "Umbral / Series Largas",
+        "workType": "Umbral Lactato",
+        "description": "Aclaramiento de lactato y tolerancia a la fatiga ácida.",
+        "effortAndPerception": "Duro. Apenas puedes decir una o dos palabras sueltas.",
+        "breathingPathway": "Mixta.",
+        "rhythmicPattern": "2:2 o 2:1 (Inhalar 2, exhalar 1).",
+        "biomechanicalFocus": "Usar un patrón asimétrico como el 2:1 alterna el lado del cuerpo que recibe el impacto durante la exhalación (momento de menor estabilidad del core), protegiendo rodillas y caderas."
+      },
+      "Z5": {
+        "name": "VO₂ Máx / Sprints",
+        "workType": "Potencia / VO₂ Máx",
+        "description": "Consumo máximo de oxígeno y velocidad terminal.",
+        "effortAndPerception": "Máximo. Imposible hablar. Sensación de ahogo.",
+        "breathingPathway": "Mixta.",
+        "rhythmicPattern": "1:1 o Libre (Centrado en la exhalación).",
+        "biomechanicalFocus": "La biomecánica aquí se somete a la supervivencia respiratoria. El objetivo mecánico es forzar la salida del dióxido de carbono mediante exhalaciones muy potentes; la inhalación será un reflejo automático."
+      },
+      "effortLabel": "Sensación de Esfuerzo"
     }
   }
 }

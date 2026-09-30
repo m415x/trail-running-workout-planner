@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   updateMicrocycleDates,
@@ -26,6 +27,7 @@ export function MicrocycleDatesForm({
   startDate,
   endDate,
 }: MicrocycleDatesFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [state, formAction, pending] = useActionState(updateMicrocycleDates, initialState)
 
   return (
@@ -55,7 +57,7 @@ export function MicrocycleDatesForm({
           className='w-36'
         />
         <Button type='submit' size='sm' variant='outline' disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar fechas'}
+          {pending ? t('saving') : t('saveDates')}
         </Button>
       </div>
 

@@ -1,0 +1,84 @@
+{
+  "Membership": {
+    "page": {
+      "currentPolicy": "Current policy",
+      "effectiveUntil": "Effective until",
+      "scheduledChanges": "Scheduled changes ({count})",
+      "policyHistory": "Policy history ({count})",
+      "exceptionHistory": "Exception history"
+    },
+    "dueDateException": {
+      "error": "Could not apply the exception.",
+      "success": "Exception applied.",
+      "title": "Monthly due-date exception",
+      "month": "Month",
+      "dueDay": "Due day",
+      "selectDay": "Select day",
+      "reason": "Reason",
+      "applying": "Applying…",
+      "apply": "Apply exception"
+    },
+    "materialization": {
+      "error": "Could not materialize charges.",
+      "feedback": "Athletes processed: {processed} · Charges created: {created}",
+      "title": "Materialize charges",
+      "description": "Creates missing team charges for the selected month.",
+      "month": "Month",
+      "pending": "Materializing…",
+      "action": "Materialize charges"
+    },
+    "athleteBilling": {
+      "effectiveFrom": "Effective from",
+      "monthlyAmount": "Monthly amount",
+      "currency": "Currency",
+      "saving": "Saving…",
+      "genericError": "The economic terms could not be saved.",
+      "common": {
+        "selectCharge": "Select charge",
+        "amount": "Amount",
+        "reason": "Reason",
+        "applying": "Applying…",
+        "current": "current",
+        "withdrawn": "Withdrawn"
+      },
+      "reduction": {
+        "invalidCharge": "Select a valid charge.",
+        "error": "Could not apply the reduction.",
+        "withdrawnSuccess": "Reduction withdrawn.",
+        "appliedSuccess": "Reduction applied.",
+        "title": "Reduction or scholarship",
+        "apply": "Apply reduction",
+        "withdraw": "Withdraw reduction"
+      },
+      "extension": {
+        "invalidCharge": "Select a valid charge.",
+        "error": "Could not apply the extension.",
+        "withdrawnSuccess": "Extension withdrawn.",
+        "appliedSuccess": "Extension applied.",
+        "title": "Individual extension",
+        "apply": "Apply extension",
+        "withdraw": "Withdraw extension"
+      },
+      "payments": {
+        "invalid": "Enter a valid payment.",
+        "registerError": "Could not register the payment.",
+        "registered": "Payment registered.",
+        "title": "Payments",
+        "paid": "Paid",
+        "remaining": "Remaining",
+        "cash": "Cash",
+        "bankTransfer": "Bank transfer",
+        "registering": "Registering…",
+        "register": "Register payment",
+        "history": "Payment history",
+        "voided": "Voided",
+        "correctError": "Could not correct the payment.",
+        "corrected": "Payment corrected.",
+        "correct": "Correct payment",
+        "voidError": "Could not void the payment.",
+        "voidedSuccess": "Payment voided.",
+        "void": "Void payment"
+      }
+    }
+  }
+}

@@ -1,6 +1,7 @@
 import { CatalogCompetitionForm } from '@/features/race-catalog/components/CatalogCompetitionForm'
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getCompetitionCalendarAction } from '@/app/actions/competition-calendar-actions'
@@ -37,6 +38,7 @@ import {
   type GenerationExplanation,
 } from '@/lib/session-generation/generation-explanation'
 import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 import type {
@@ -52,12 +54,17 @@ interface PlanningDetailPageProps {
   params: Promise<{ locale: string; planId: string }>
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
+function formatDate(value: string, presentationLocale: string) {
+  return new Intl.DateTimeFormat(presentationLocale, { timeZone: 'UTC' }).format(
+    new Date(`${value}T00:00:00Z`),
+  )
 }
 
 export default async function PlanningDetailPage({ params }: PlanningDetailPageProps) {
   const { locale, planId } = await params
+  const language = locale === 'en' ? 'en' : 'es'
+  const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
+  const regionalContext = resolveApplicationRegionalContext({ language })
   const plan = await getGroupTrainingPlanById(planId)
 
   if (!plan) {
@@ -74,11 +81,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
   const primaryCompetitionId = competitionContextResult.valid
     ? competitionContextResult.context.primaryCompetition?.id ?? null
     : null
-  const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const planningPath = '/dashboard/planning'
   const cohortPath = plan.planningCohortId
-    ? (locale === 'es'
-      ? `/dashboard/cohorts/${plan.planningCohortId}`
-      : `/${locale}/dashboard/cohorts/${plan.planningCohortId}`)
+    ? `/dashboard/cohorts/${plan.planningCohortId}`
     : null
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
@@ -209,7 +214,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           const intensityTarget = intensityTargetsByMicrocycle.get(microcycle.id)
           if (microcycle.targetVolumeKm === null || !intensityTarget) {
             sessionPreviewWarnings.push(
-              `Semana ${microcycle.weekNumber}: falta un objetivo de volumen o intensidad.`,
+              t('detail.generationMissing', { week: microcycle.weekNumber }),
             )
             continue
           }
@@ -263,7 +268,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             })
           } catch (error) {
             sessionPreviewWarnings.push(
-              `Semana ${microcycle.weekNumber}: ${error instanceof Error ? error.message : 'no se pudo generar la propuesta'}.`,
+              error instanceof Error ? `${t('detail.generationFailed', { week: microcycle.weekNumber })} ${error.message}` : t('detail.generationFailed', { week: microcycle.weekNumber }),
             )
           }
         }
@@ -297,7 +302,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       const warnings = uniqueStrings([
         ...events.flatMap((event) => event.warnings),
         ...sessionPreviewWarnings.filter((warning) => (
-          warning.startsWith(`Semana ${microcycle.weekNumber}:`)
+          warning.startsWith(t('detail.generationMissing', { week: microcycle.weekNumber }).split(':')[0]) || warning.startsWith(t('detail.generationFailed', { week: microcycle.weekNumber }).split(':')[0])
         )),
       ])
 
@@ -318,7 +323,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       <div className='flex items-start gap-3'>
         <Link
           href={planningPath}
-          aria-label='Volver a planificaciones'
+          aria-label={t('backToPlans')}
           className={buttonVariants({ variant: 'ghost', size: 'icon' })}
         >
           <ArrowLeft />
@@ -326,19 +331,19 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         <div>
           <div className='flex flex-wrap items-center gap-2'>
             <h2 className='text-3xl font-bold tracking-tight'>{plan.title}</h2>
-            <Badge variant='secondary'>Grupo {groupCode}</Badge>
+            <Badge variant='secondary'>{t('detail.group', { code: groupCode })}</Badge>
           </div>
-          <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
+          <p className='text-muted-foreground'>{t('detail.description')}</p>
           {plan.planningCohort && plan.sourceGroupTrainingPlan && cohortPath && (
             <div className='mt-3 flex flex-wrap items-center gap-2 text-sm'>
               <Badge variant='outline'>
-                {locale === 'en' ? 'Planning subgroup' : 'Subgrupo de planificación'}: {plan.planningCohort.name}
+                {t('planningSubgroup')}: {plan.planningCohort.name}
               </Badge>
               <Badge variant='outline'>
-                {locale === 'en' ? 'Base plan' : 'Plan base'}: {plan.sourceGroupTrainingPlan.title}
+                {t('detail.basePlan')}: {plan.sourceGroupTrainingPlan.title}
               </Badge>
               <Link href={cohortPath} className={buttonVariants({ variant:'ghost', size:'sm' })}>
-                {locale === 'en' ? 'Back to planning subgroup' : 'Volver al subgrupo de planificación'}
+                {t('backToPlanningSubgroup')}
               </Link>
             </div>
           )}
@@ -367,9 +372,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Vista previa no disponible</CardTitle>
+            <CardTitle>{t('detail.previewUnavailable')}</CardTitle>
             <CardDescription>
-              Esta planificación fue creada antes de incorporar estrategias de carga.
+              {t('detail.previewUnavailableDescription')}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -417,7 +422,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <CalendarDays className='size-5 text-muted-foreground' />
             <h3 className='text-xl font-semibold'>{macrocycle.title}</h3>
             <span className='text-sm text-muted-foreground'>
-              {formatDate(macrocycle.startDate)} – {formatDate(macrocycle.endDate)}
+              {formatDate(macrocycle.startDate, regionalContext.presentationLocale)} – {formatDate(macrocycle.endDate, regionalContext.presentationLocale)}
             </span>
           </div>
 
@@ -432,12 +437,12 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Semana</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Fechas</TableHead>
-                        <TableHead>Desnivel</TableHead>
-                        <TableHead>Notas</TableHead>
-                        <TableHead className='text-right'>Volumen objetivo</TableHead>
+                        <TableHead>{t('detail.table.week')}</TableHead>
+                        <TableHead>{t('detail.table.type')}</TableHead>
+                        <TableHead>{t('detail.table.dates')}</TableHead>
+                        <TableHead>{t('detail.table.elevation')}</TableHead>
+                        <TableHead>{t('detail.table.notes')}</TableHead>
+                        <TableHead className='text-right'>{t('detail.table.targetVolume')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -500,9 +505,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           {macrocycle.mesocycles.length === 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Horizonte configurado</CardTitle>
+                <CardTitle>{t('detail.configuredHorizon')}</CardTitle>
                 <CardDescription>
-                  La estrategia y las fechas están guardadas. La progresión semanal se generará en el siguiente paso.
+                  {t('detail.configuredHorizonDescription')}
                 </CardDescription>
               </CardHeader>
             </Card>

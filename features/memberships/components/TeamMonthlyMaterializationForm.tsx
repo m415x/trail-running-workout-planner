@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { materializeTeamMonthlyChargesAction } from '@/app/actions/membership-actions'
 import { Button } from '@ui/button'
@@ -11,7 +12,7 @@ import { Label } from '@ui/label'
 type Locale = 'es' | 'en'
 
 export function TeamMonthlyMaterializationForm({ locale }: { locale: Locale }) {
-  const es = locale === 'es'
+  const t = useTranslations('Membership.materialization')
   const [feedback, setFeedback] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -24,40 +25,35 @@ export function TeamMonthlyMaterializationForm({ locale }: { locale: Locale }) {
     startTransition(async () => {
       const result = await materializeTeamMonthlyChargesAction({ year, month, locale })
       if (!result.success) {
-        setError(es ? 'No se pudieron materializar las cuotas.' : 'Could not materialize charges.')
+        setError(t('error'))
         return
       }
 
-      setFeedback(
-        es
-          ? `Atletas procesados: ${result.processedAthletes} · Cuotas creadas: ${result.materializedCharges}`
-          : `Athletes processed: ${result.processedAthletes} · Charges created: ${result.materializedCharges}`,
-      )
+      setFeedback(t('feedback', {
+        processed: result.processedAthletes,
+        created: result.materializedCharges,
+      }))
     })
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{es ? 'Materializar cuotas' : 'Materialize charges'}</CardTitle>
+        <CardTitle>{t('title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className='space-y-4'>
           <p className='text-sm text-muted-foreground'>
-            {es
-              ? 'Genera las cuotas faltantes del equipo para el mes seleccionado.'
-              : 'Creates missing team charges for the selected month.'}
+            {t('description')}
           </p>
           <div className='space-y-2'>
-            <Label htmlFor='materializationPeriod'>{es ? 'Mes' : 'Month'}</Label>
+            <Label htmlFor='materializationPeriod'>{t('month')}</Label>
             <Input id='materializationPeriod' name='period' type='month' required />
           </div>
           {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
           {feedback && <p role='status' className='text-sm text-muted-foreground'>{feedback}</p>}
           <Button type='submit' disabled={isPending}>
-            {isPending
-              ? (es ? 'Materializando…' : 'Materializing…')
-              : (es ? 'Materializar cuotas' : 'Materialize charges')}
+            {isPending ? t('pending') : t('action')}
           </Button>
         </form>
       </CardContent>

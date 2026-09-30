@@ -1,7 +1,8 @@
 'use client'
 
 import { ChevronLeft, ChevronRight, CalendarCheck } from 'lucide-react'
-import { DAYS_OF_WEEK } from '@/lib/constants'
+import { useLocale, useTranslations } from 'next-intl'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { useWeekCalendarPicker } from '@workouts/hooks/useWeekCalendarPicker'
 import { Button } from '@ui/button'
 import { cn } from '@/lib/utils'
@@ -13,6 +14,10 @@ export interface WeekCalendarPickerProps {
 }
 
 export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps) {
+  const locale = useLocale()
+  const t = useTranslations('AthletePlan.calendar')
+  const language = locale === 'en' ? 'en' : 'es'
+  const { presentationLocale } = resolveApplicationRegionalContext({ language })
   const {
     currentYear,
     monthName,
@@ -23,7 +28,7 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
     isToday,
     isSelected,
     isInSelectedWeek,
-  } = useWeekCalendarPicker({ selectedDate, onSelectDate, onClose })
+  } = useWeekCalendarPicker({ selectedDate, onSelectDate, onClose }, presentationLocale)
 
   return (
     <div className='w-68 p-2 select-none font-sans'>
@@ -53,11 +58,18 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
 
       {/* ── Días de la Semana (2 Letras) ── */}
       <div className='grid grid-cols-7 text-center mb-1'>
-        {DAYS_OF_WEEK.map((d) => (
-          <span key={d.twoLetter} className='text-[11px] font-semibold text-muted-foreground uppercase'>
-            {d.twoLetter}
-          </span>
-        ))}
+        {Array.from({ length: 7 }, (_, index) => {
+          const date = new Date(2026, 0, 5 + index)
+          const label = new Intl.DateTimeFormat(presentationLocale, { weekday: 'short' })
+            .format(date)
+            .slice(0, 2)
+
+          return (
+            <span key={index} className='text-[11px] font-semibold text-muted-foreground uppercase'>
+              {label}
+            </span>
+          )
+        })}
       </div>
 
       {/* ── Grilla de Días del Mes ── */}
@@ -100,10 +112,10 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
           className='h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1 rounded-lg'
         >
           <CalendarCheck size={13} />
-          <span>Hoy</span>
+          <span>{t('today')}</span>
         </Button>
 
-        <span className='text-[10px] text-muted-foreground font-mono'>Semana seleccionada</span>
+        <span className='text-[10px] text-muted-foreground font-mono'>{t('selectedWeek')}</span>
       </div>
     </div>
   )

@@ -1,15 +1,17 @@
 import { useState, useMemo } from 'react'
 import { WeekDay, WeeklyCycle } from '@/types'
-import { formatDateRange } from '@/lib/date-helpers'
+import { parseISODate } from '@/lib/date-helpers'
 import { calculateAccumulatedKm, calculateProgressPercentage } from '@/lib/tracks/calculators'
 
-export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[]) {
+export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[], presentationLocale: string) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
 
-  // Rango de fechas legible ("Ago 10–16")
   const dateRange = useMemo(() => {
-    return formatDateRange(cycle.startDate, cycle.endDate)
-  }, [cycle.startDate, cycle.endDate])
+    const start = parseISODate(cycle.startDate)
+    const end = parseISODate(cycle.endDate)
+    const formatter = new Intl.DateTimeFormat(presentationLocale, { month: 'short', day: 'numeric' })
+    return `${formatter.format(start)}–${formatter.format(end)}`
+  }, [cycle.endDate, cycle.startDate, presentationLocale])
 
   // Kilómetros acumulados de la semana activa
   const currentKm = useMemo(() => {
@@ -21,10 +23,7 @@ export function useWeeklyCalendarCard(cycle: WeeklyCycle, weekDays: WeekDay[]) {
     return calculateProgressPercentage(currentKm, cycle.targetKm)
   }, [currentKm, cycle.targetKm])
 
-  const subtitleWeeklyCalendar = `Fase ${cycle.phase} · Objetivo ${cycle.targetKm} km`
-
   return {
-    subtitleWeeklyCalendar,
     isPopoverOpen,
     setIsPopoverOpen,
     dateRange,

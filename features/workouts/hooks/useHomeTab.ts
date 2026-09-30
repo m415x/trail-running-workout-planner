@@ -16,14 +16,13 @@ import type { ElevationChartProps } from '@workouts/components/ElevationProfileC
 
 import { parseISODate } from '@/lib/date-helpers'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { APPLICATION_REGIONAL_FALLBACKS, resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import {
   hasUnplannedTrainingOnDate,
   reconcileTrainingDayStatus,
   type PlannedSessionEvidenceOutcome,
 } from '@/lib/realized-training/day-status-reconciliation'
 import { parseTrackFromUrl } from '@/lib/tracks/track-parser'
-
-const DAY_LETTERS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'] as const
 
 interface SessionWorkout {
   id: string
@@ -162,6 +161,8 @@ export function useHomeTab({
   onRealizedTrainingWeekChange,
 }: UseHomeTabProps) {
   const tPlanning = useTranslations('BasePlanning')
+  const language = locale === 'en' ? 'en' : 'es'
+  const { presentationLocale } = resolveApplicationRegionalContext({ language })
   const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
   const [schedule, setSchedule] = useState<SessionWithWorkout[]>(initialSchedule)
   const [realizedTraining, setRealizedTraining] = useState<RealizedTrainingRecord[]>(initialRealizedTraining)
@@ -177,7 +178,7 @@ export function useHomeTab({
    * training remains unplanned evidence and is never attached to a session.
    */
   const weekDays = useMemo<WeekDay[]>(() => {
-    const todayISO = getCurrentISODateInTimeZone()
+    const todayISO = getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)
 
     return Array.from({ length: 7 }, (_, index) => {
       const currentDate = shiftDate(startOfWeek, index)
@@ -189,8 +190,8 @@ export function useHomeTab({
       const baseDay = {
         date: isoDate,
         fullDate: isoDate,
-        day: DAY_LETTERS[index],
-        dayName: currentDate.toLocaleDateString(locale, { weekday: 'short' }),
+        day: currentDate.toLocaleDateString(presentationLocale, { weekday: 'narrow' }).toUpperCase(),
+        dayName: currentDate.toLocaleDateString(presentationLocale, { weekday: 'short' }),
         dayNumber: currentDate.getDate(),
         isToday: isoDate === todayISO,
         hasUnplannedTraining,
@@ -234,7 +235,7 @@ export function useHomeTab({
         ),
       } as WeekDay
     })
-  }, [athleteGroup, locale, realizedTraining, schedule, startOfWeek])
+  }, [athleteGroup, presentationLocale, realizedTraining, schedule, startOfWeek])
 
   const selectedDay = useMemo(() => {
     const selectedISODate = formatLocalISODate(selectedDate)
@@ -251,7 +252,7 @@ export function useHomeTab({
       (total, session) => total + (session.sessionPrescriptions[0]?.distanceKm ?? 0),
       0,
     )
-    const rangeFormatter = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' })
+    const rangeFormatter = new Intl.DateTimeFormat(presentationLocale, { month: 'short', day: 'numeric' })
     const title = mondayISO && sundayISO
       ? `${rangeFormatter.format(parseISODate(mondayISO))}–${rangeFormatter.format(parseISODate(sundayISO))}`
       : ''
@@ -264,7 +265,7 @@ export function useHomeTab({
       endDate: sundayISO,
       targetKm,
     }
-  }, [locale, schedule, tPlanning, weekDays])
+  }, [presentationLocale, schedule, tPlanning, weekDays])
 
   const currentWorkouts = useMemo(() => {
     if (!selectedWeekDay || !athleteGroup) return []

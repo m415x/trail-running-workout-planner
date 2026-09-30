@@ -1,0 +1,22 @@
+{
+  "CoachShell": {
+    "title": "Coach Dashboard",
+    "subtitle": "Coach dashboard",
+    "management": "Management",
+    "navigation": {
+      "overview": "Overview",
+      "athletes": "Athletes",
+      "sportingGroups": "Sporting groups",
+      "planningSubgroups": "Planning subgroups",
+      "planning": "Planning",
+      "membership": "Membership",
+      "competitions": "Competitions",
+      "sessions": "Sessions",
+      "templates": "Templates"
+    },
+    "profile": "Profile",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "footer": "Phase 3 · Individual monitoring, training load and competition catalog"
+  }
+}

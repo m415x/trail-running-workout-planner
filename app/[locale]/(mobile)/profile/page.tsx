@@ -3,6 +3,7 @@ import { AthleteMembershipStatus } from '@/features/memberships/components/Athle
 import { ProfileTab } from '@/features/profile/ProfileTab'
 import { db } from '@/db'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 import { createAthleteMembershipPageLoader } from '@/lib/memberships/athlete-membership-page-loader'
 import { createDrizzleBillingDatabase } from '@/lib/memberships/billing-drizzle-database'
 import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sqlite-persistence'
@@ -16,7 +17,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   }
 
   const athleteProfile = athleteResult.data.athleteProfile
-  const today = getCurrentISODateInTimeZone()
+  const today = getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)
   const loadMembership = createAthleteMembershipPageLoader({
     createPort: (database: typeof db) =>
       createSqliteBillingPersistencePort(createDrizzleBillingDatabase(database)),

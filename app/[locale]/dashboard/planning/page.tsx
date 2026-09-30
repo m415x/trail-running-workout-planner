@@ -1,4 +1,5 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
+import { getTranslations } from 'next-intl/server'
 import { ArrowRight, CalendarRange, Plus } from 'lucide-react'
 
 import { getGroupTrainingPlans } from '@/app/actions/planning-actions'
@@ -10,35 +11,29 @@ interface PlanningPageProps {
   params: Promise<{ locale: string }>
 }
 
-const statusLabels = {
-  draft: 'Borrador',
-  active: 'Activo',
-  completed: 'Completado',
-  cancelled: 'Cancelado',
-} as const
-
 export default async function PlanningPage({ params }: PlanningPageProps) {
   const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
   const plans = await getGroupTrainingPlans()
-  const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const planningPath = '/dashboard/planning'
 
   return (
     <div className='space-y-6'>
       <div className='flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between'>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Planificación</h2>
-          <p className='text-muted-foreground'>Planes grupales, bloques y volúmenes semanales del equipo.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('list.title')}</h2>
+          <p className='text-muted-foreground'>{t('list.description')}</p>
         </div>
         <Link href={`${planningPath}/new`} className={buttonVariants()}>
-          <Plus /> Nueva estrategia
+          <Plus /> {t('list.newStrategy')}
         </Link>
       </div>
 
       {plans.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>Todavía no hay planificaciones</CardTitle>
-            <CardDescription>Las planificaciones generadas para los grupos aparecerán aquí.</CardDescription>
+            <CardTitle>{t('list.emptyTitle')}</CardTitle>
+            <CardDescription>{t('list.emptyDescription')}</CardDescription>
           </CardHeader>
         </Card>
       ) : (
@@ -60,21 +55,21 @@ export default async function PlanningPage({ params }: PlanningPageProps) {
                   <div className='flex items-start justify-between gap-3'>
                     <div>
                       <CardTitle>{plan.title}</CardTitle>
-                      <CardDescription>Grupo {groupCode}</CardDescription>
+                      <CardDescription>{t('list.group', { code: groupCode })}</CardDescription>
                     </div>
                     <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
-                      {statusLabels[plan.status]}
+                      {t(`list.status.${plan.status}`)}
                     </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className='space-y-4'>
                   <div className='flex items-center gap-2 text-sm text-muted-foreground'>
                     <CalendarRange className='size-4' />
-                    {macrocycleCount} {macrocycleCount === 1 ? 'macrociclo' : 'macrociclos'} · {microcycleCount} semanas
+                    {t('list.macrocycles', { count: macrocycleCount })} · {t('list.weeks', { count: microcycleCount })}
                   </div>
                   <div className='flex justify-end'>
                     <Link href={`${planningPath}/${plan.id}`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                      Ver planificación <ArrowRight />
+                      {t('list.view')} <ArrowRight />
                     </Link>
                   </div>
                 </CardContent>

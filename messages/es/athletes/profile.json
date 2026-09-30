@@ -1,0 +1,43 @@
+{
+  "AthleteProfile": {
+    "tabs": {
+      "physiology": "Fisiología",
+      "gear": "Material",
+      "settings": "Ajustes"
+    },
+    "header": {
+      "editPhoto": "Editar foto",
+      "athleteSince": "Atleta desde {year} · @{username}"
+    },
+    "physiology": {
+      "title": "Información Física & Rendimiento",
+      "weight": "Peso",
+      "maxHr": "FC Máx",
+      "vo2max": "VO2 Máx",
+      "height": "Altura",
+      "restingHr": "FC Reposo",
+      "lactateThreshold": "Umbral Lactato",
+      "zonesTitle": "Zonas Cardíacas (FC)",
+      "zones": {
+        "z1": "Recuperación Activa",
+        "z2": "Base Aeróbica",
+        "z3": "Tempo / Ritmo",
+        "z4": "Umbral Anaeróbico",
+        "z5": "Capacidad Máxima / VO2"
+      }
+    },
+    "gear": {
+      "shoes": "Zapatillas en Rotación",
+      "devices": "Dispositivos Vinculados",
+      "syncActive": "Sincronización automática activa",
+      "configure": "Configurar"
+    },
+    "settings": {
+      "emergencyTitle": "Contacto de Emergencia / Trail",
+      "sos": "Contacto SOS",
+      "bloodType": "Grupo Sanguíneo",
+      "insurance": "Seguro Médico / Federación",
+      "accountPreferences": "Preferencias de la Cuenta"
+    }
+  }
+}

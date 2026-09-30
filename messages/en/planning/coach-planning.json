@@ -1,0 +1,119 @@
+{
+  "CoachPlanning": {
+    "backToPlans": "Back to plans",
+    "planningSubgroup": "Planning subgroup",
+    "backToPlanningSubgroup": "Back to planning subgroup",
+    "whyGenerated": "Why it was generated this way",
+    "saveSessions": "Save sessions",
+    "saveWeeklyConfiguration": "Save weekly configuration",
+    "saveDates": "Save dates",
+    "saveNotes": "Save notes",
+    "saveType": "Save type",
+    "targetVolumeKm": "Target volume in kilometers",
+    "noRestriction": "No restriction",
+    "policyPending": "Policy pending",
+    "mountainFocus": "Mountain focus",
+    "saving": "Saving…",
+    "save": "Save",
+    "intensityTitle": "Intensity distribution",
+    "loadPreviewTitle": "Load preview",
+    "generationExplanation": "Generation explanation",
+    "compatibility": {
+      "compatible": "Compatible",
+      "incompatible": "Outside range",
+      "unrestricted": "Unrestricted",
+      "policy_not_defined": "Policy pending",
+      "not_applicable": "Not applicable",
+      "invalid": "Invalid data"
+    },
+    "loadFocus": {
+      "balanced": "Balanced focus",
+      "volume": "Volume focus",
+      "elevation": "Mountain focus",
+      "recovery": "Recovery focus",
+      "race_specific": "Race focus"
+    },
+    "explanationSections": {
+      "inputs": "Inputs",
+      "constraints": "Constraints",
+      "decision": "Decision",
+      "consequence": "Consequence",
+      "warnings": "Warnings"
+    },
+    "explanationStages": {
+      "weekly_budget": "Weekly budget",
+      "frequency": "Frequency",
+      "slots": "Days and roles",
+      "stimulus_template": "Stimulus and template",
+      "fixed_load": "Fixed load",
+      "remaining_budget": "Remaining budget",
+      "flexible_allocation": "Flexible allocation",
+      "intensity": "Intensity",
+      "coordination_reconciliation": "Coordination and reconciliation"
+    },
+    "weekdays": {
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday",
+      "sunday": "Sunday"
+    },
+    "roles": {
+      "base": "Base",
+      "mountain": "Mountain",
+      "long": "Long",
+      "quality": "Quality",
+      "recovery": "Recovery",
+      "competition": "Competition"
+    },
+    "date": "Date",
+    "intensityEmphasis": {
+      "recovery": "Recovery",
+      "aerobic": "Aerobic",
+      "tempo": "Tempo",
+      "threshold": "Threshold",
+      "vo2max": "VO₂ max.",
+      "race_specific": "Race-specific"
+    },
+    "saveProgression": "Save progression",
+    "recoveryLabel": "Recovery",
+    "list": {
+      "title": "Planning",
+      "description": "Team plans, blocks, and weekly volumes.",
+      "newStrategy": "New strategy",
+      "emptyTitle": "There are no plans yet",
+      "emptyDescription": "Generated group plans will appear here.",
+      "group": "Group {code}",
+      "macrocycles": "{count, plural, one {# macrocycle} other {# macrocycles}}",
+      "weeks": "{count, plural, one {# week} other {# weeks}}",
+      "view": "View planning",
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      }
+    },
+    "detail": {
+      "group": "Group {code}",
+      "description": "Edit each week's target volume and elevation gain without regenerating the plan.",
+      "basePlan": "Base plan",
+      "previewUnavailable": "Preview unavailable",
+      "previewUnavailableDescription": "This plan was created before load strategies were introduced.",
+      "configuredHorizon": "Configured horizon",
+      "configuredHorizonDescription": "The strategy and dates are saved. Weekly progression will be generated in the next step.",
+      "table": {
+        "week": "Week",
+        "type": "Type",
+        "dates": "Dates",
+        "elevation": "Elevation gain",
+        "notes": "Notes",
+        "targetVolume": "Target volume"
+      },
+      "generationMissing": "Week {week}: a volume or intensity target is missing.",
+      "generationFailed": "Week {week}: the proposal could not be generated."
+    }
+  }
+}

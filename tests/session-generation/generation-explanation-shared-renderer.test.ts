@@ -48,16 +48,12 @@ test('GenerationExplanationView renders the approved causal order and structured
 test('GenerationExplanationView provides ES and EN labels without exposing source_warning prose', () => {
   const source = fs.readFileSync(componentPath, 'utf8')
 
-  assert.match(source, /Entradas/)
-  assert.match(source, /Inputs/)
-  assert.match(source, /Restricciones/)
-  assert.match(source, /Constraints/)
-  assert.match(source, /Decisión/)
-  assert.match(source, /Decision/)
-  assert.match(source, /Consecuencia/)
-  assert.match(source, /Consequence/)
-  assert.match(source, /Avisos/)
-  assert.match(source, /Warnings/)
+  assert.match(source, /useTranslations\('CoachPlanning'\)/)
+  assert.match(source, /t\('explanationSections\.inputs'\)/)
+  assert.match(source, /t\('explanationSections\.constraints'\)/)
+  assert.match(source, /t\('explanationSections\.decision'\)/)
+  assert.match(source, /t\('explanationSections\.consequence'\)/)
+  assert.match(source, /t\('explanationSections\.warnings'\)/)
   assert.doesNotMatch(source, /source_warning/)
 })
 

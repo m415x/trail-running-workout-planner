@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   applyInitialAthleteBillingTermsAction,
@@ -12,6 +13,7 @@ import {
   voidManualPaymentAction,
 } from '@/app/actions/membership-actions'
 import { submitAthleteBillingTermsForm } from '@/lib/memberships/athlete-billing-terms-form-submit'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
@@ -69,15 +71,15 @@ type AthleteBillingTermsFormModel =
       currency: string
     }
 
-function formatAuditAmount(amountMinor: number, currency: string, locale: 'es' | 'en') {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+function formatAuditAmount(amountMinor: number, currency: string, presentationLocale: string) {
+  return new Intl.NumberFormat(presentationLocale, {
     style: 'currency',
     currency,
   }).format(amountMinor / 100)
 }
 
-function formatAuditDate(value: string, locale: 'es' | 'en') {
-  return new Intl.DateTimeFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+function formatAuditDate(value: string, presentationLocale: string) {
+  return new Intl.DateTimeFormat(presentationLocale, {
     timeZone: 'UTC',
   }).format(new Date(`${value}T00:00:00Z`))
 }
@@ -93,7 +95,8 @@ function MonthlyChargeReductionForm({
   monthlyCharges: MonthlyChargeOption[]
   reductionHistory: ReductionRevisionHistory[]
 }) {
-  const es = locale === 'es'
+  const t = useTranslations('Membership.athleteBilling')
+  const presentationLocale = resolveApplicationRegionalContext({ language: locale }).presentationLocale
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -106,7 +109,7 @@ function MonthlyChargeReductionForm({
     const amount = Number(formData.get('reductionAmount'))
 
     if (!selectedCharge) {
-      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      setError(t('reduction.invalidCharge'))
       return
     }
 
@@ -121,36 +124,34 @@ function MonthlyChargeReductionForm({
         locale,
       })
       if (!result.success) {
-        setError(es ? 'No se pudo aplicar la reducción.' : 'Could not apply the reduction.')
+        setError(t('reduction.error'))
         return
       }
-      setSuccess(withdraw
-        ? (es ? 'Reducción retirada.' : 'Reduction withdrawn.')
-        : (es ? 'Reducción aplicada.' : 'Reduction applied.'))
+      setSuccess(withdraw ? t('reduction.withdrawnSuccess') : t('reduction.appliedSuccess'))
     })
   }
 
   return (
     <section className='space-y-4'>
-      <h3 className='font-medium'>{es ? 'Reducción o beca' : 'Reduction or scholarship'}</h3>
+      <h3 className='font-medium'>{t('reduction.title')}</h3>
       <form action={submitReduction} className='grid gap-4 sm:grid-cols-2'>
         <select name='reductionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
-          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          <option value=''>{t('common.selectCharge')}</option>
           {monthlyCharges.map((charge) => (
             <option key={charge.id} value={charge.id}>
               {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
             </option>
           ))}
         </select>
-        <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
-        <Input name='reductionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        <Input name='reductionAmount' type='number' min='0.01' step='0.01' placeholder={t('common.amount')} required />
+        <Input name='reductionReason' placeholder={t('common.reason')} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
-          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar reducción' : 'Apply reduction')}
+          {isPending ? t('common.applying') : t('reduction.apply')}
         </Button>
         <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitReduction(formData, true)}>
-          {es ? 'Retirar reducción' : 'Withdraw reduction'}
+          {t('reduction.withdraw')}
         </Button>
       </form>
       {reductionHistory.length > 0 && (
@@ -162,11 +163,11 @@ function MonthlyChargeReductionForm({
                   (charge) => charge.id === revision.monthlyChargeId,
                 )?.currency
                 return currency
-                  ? formatAuditAmount(revision.reductionAmountMinor, currency, locale)
+                  ? formatAuditAmount(revision.reductionAmountMinor, currency, presentationLocale)
                   : String(revision.reductionAmountMinor / 100)
               })()}
-              {revision.reductionAmountMinor === 0 ? ` · ${es ? 'Retiro' : 'Withdrawn'}` : ''}
-              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+              {revision.reductionAmountMinor === 0 ? ` · ${t('common.withdrawn')}` : ''}
+              {revision.isCurrent ? ` · ${t('common.current')}` : ''}
             </li>
           ))}
         </ul>
@@ -186,7 +187,8 @@ function MonthlyChargeExtensionForm({
   monthlyCharges: MonthlyChargeOption[]
   extensionHistory: ExtensionRevisionHistory[]
 }) {
-  const es = locale === 'es'
+  const t = useTranslations('Membership.athleteBilling')
+  const presentationLocale = resolveApplicationRegionalContext({ language: locale }).presentationLocale
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -198,7 +200,7 @@ function MonthlyChargeExtensionForm({
     const selectedCharge = monthlyCharges.find((charge) => charge.id === monthlyChargeId)
 
     if (!selectedCharge) {
-      setError(es ? 'Seleccioná una cuota válida.' : 'Select a valid charge.')
+      setError(t('extension.invalidCharge'))
       return
     }
 
@@ -213,21 +215,19 @@ function MonthlyChargeExtensionForm({
         locale,
       })
       if (!result.success) {
-        setError(es ? 'No se pudo aplicar la prórroga.' : 'Could not apply the extension.')
+        setError(t('extension.error'))
         return
       }
-      setSuccess(withdraw
-        ? (es ? 'Prórroga retirada.' : 'Extension withdrawn.')
-        : (es ? 'Prórroga aplicada.' : 'Extension applied.'))
+      setSuccess(withdraw ? t('extension.withdrawnSuccess') : t('extension.appliedSuccess'))
     })
   }
 
   return (
     <section className='space-y-4'>
-      <h3 className='font-medium'>{es ? 'Prórroga individual' : 'Individual extension'}</h3>
+      <h3 className='font-medium'>{t('extension.title')}</h3>
       <form action={submitExtension} className='grid gap-4 sm:grid-cols-2'>
         <select name='extensionChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
-          <option value=''>{es ? 'Seleccionar cargo' : 'Select charge'}</option>
+          <option value=''>{t('common.selectCharge')}</option>
           {monthlyCharges.map((charge) => (
             <option key={charge.id} value={charge.id}>
               {`${charge.year}-${String(charge.month).padStart(2, '0')} · ${charge.currency} ${(charge.amountDueMinor / 100).toFixed(2)}`}
@@ -235,14 +235,14 @@ function MonthlyChargeExtensionForm({
           ))}
         </select>
         <Input name='extendedDueDate' type='date' required />
-        <Input name='extensionReason' placeholder={es ? 'Motivo' : 'Reason'} required />
+        <Input name='extensionReason' placeholder={t('common.reason')} required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
-          {isPending ? (es ? 'Aplicando…' : 'Applying…') : (es ? 'Aplicar prórroga' : 'Apply extension')}
+          {isPending ? t('common.applying') : t('extension.apply')}
         </Button>
         <Button type='submit' variant='outline' disabled={isPending} formNoValidate formAction={(formData) => submitExtension(formData, true)}>
-          {es ? 'Retirar prórroga' : 'Withdraw extension'}
+          {t('extension.withdraw')}
         </Button>
       </form>
       {extensionHistory.length > 0 && (
@@ -250,9 +250,9 @@ function MonthlyChargeExtensionForm({
           {extensionHistory.map((revision) => (
             <li key={revision.id}>
               {revision.reason} · {revision.extendedDueDate
-                ? formatAuditDate(revision.extendedDueDate, locale)
-                : (es ? 'Retiro' : 'Withdrawn')}
-              {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+                ? formatAuditDate(revision.extendedDueDate, presentationLocale)
+                : t('common.withdrawn')}
+              {revision.isCurrent ? ` · ${t('common.current')}` : ''}
             </li>
           ))}
         </ul>
@@ -273,7 +273,8 @@ function ManualPaymentSection({
   monthlyCharges: MonthlyChargeOption[]
   paymentHistory: PaymentRevisionHistory[]
 }) {
-  const es = locale === 'es'
+  const t = useTranslations('Membership.athleteBilling')
+  const presentationLocale = resolveApplicationRegionalContext({ language: locale }).presentationLocale
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -287,7 +288,7 @@ function ManualPaymentSection({
     const paymentMethod = String(formData.get('paymentMethod')) as 'cash' | 'bank_transfer'
 
     if (!selectedCharge || !Number.isFinite(amount) || amount <= 0) {
-      setError(es ? 'Completá un pago válido.' : 'Enter a valid payment.')
+      setError(t('payments.invalid'))
       return
     }
 
@@ -301,60 +302,60 @@ function ManualPaymentSection({
         locale,
       })
       if (!result.success) {
-        setError(es ? 'No se pudo registrar el pago.' : 'Could not register the payment.')
+        setError(t('payments.registerError'))
         return
       }
-      setSuccess(es ? 'Pago registrado.' : 'Payment registered.')
+      setSuccess(t('payments.registered'))
     })
   }
 
   return (
     <section className='space-y-4'>
-      <h3 className='font-medium'>{es ? 'Pagos' : 'Payments'}</h3>
+      <h3 className='font-medium'>{t('payments.title')}</h3>
       <div className='grid gap-3 sm:grid-cols-2'>
         {monthlyCharges.map((charge) => (
           <div key={charge.id} className='rounded-lg border p-4 text-sm'>
             <div className='font-medium'>{charge.year}-{String(charge.month).padStart(2, '0')}</div>
-            <div>{es ? 'Pagado' : 'Paid'}: {formatAuditAmount(charge.paidAmountMinor ?? 0, charge.currency, locale)}</div>
-            <div>{es ? 'Restante' : 'Remaining'}: {formatAuditAmount(charge.remainingAmountMinor ?? charge.amountDueMinor, charge.currency, locale)}</div>
+            <div>{t('payments.paid')}: {formatAuditAmount(charge.paidAmountMinor ?? 0, charge.currency, presentationLocale)}</div>
+            <div>{t('payments.remaining')}: {formatAuditAmount(charge.remainingAmountMinor ?? charge.amountDueMinor, charge.currency, presentationLocale)}</div>
           </div>
         ))}
       </div>
       <form action={submitPayment} className='grid gap-4 sm:grid-cols-2'>
         <select name='paymentChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
-          <option value=''>{es ? 'Seleccionar cuota' : 'Select charge'}</option>
+          <option value=''>{t('common.selectCharge')}</option>
           {monthlyCharges.map((charge) => (
             <option key={charge.id} value={charge.id}>
               {charge.year}-{String(charge.month).padStart(2, '0')}
             </option>
           ))}
         </select>
-        <Input name='paymentAmount' type='number' min='0.01' step='0.01' placeholder={es ? 'Importe' : 'Amount'} required />
+        <Input name='paymentAmount' type='number' min='0.01' step='0.01' placeholder={t('common.amount')} required />
         <select name='paymentMethod' required className='h-10 rounded-md border border-input bg-background px-3'>
-          <option value='cash'>{es ? 'Efectivo' : 'Cash'}</option>
-          <option value='bank_transfer'>{es ? 'Transferencia bancaria' : 'Bank transfer'}</option>
+          <option value='cash'>{t('payments.cash')}</option>
+          <option value='bank_transfer'>{t('payments.bankTransfer')}</option>
         </select>
         <Input name='paidAt' type='date' required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
-          {isPending ? (es ? 'Registrando…' : 'Registering…') : (es ? 'Registrar pago' : 'Register payment')}
+          {isPending ? t('payments.registering') : t('payments.register')}
         </Button>
       </form>
 
       {paymentHistory.length > 0 && (
         <div className='space-y-3'>
-          <h4 className='text-sm font-medium'>{es ? 'Historial de pagos' : 'Payment history'}</h4>
+          <h4 className='text-sm font-medium'>{t('payments.history')}</h4>
           <ul className='space-y-3 text-sm text-muted-foreground'>
             {paymentHistory.map((revision) => {
               const currency = monthlyCharges.find((charge) => charge.id === revision.monthlyChargeId)?.currency
               return (
                 <li key={revision.revisionId} className='rounded-lg border p-3'>
                   <div>
-                    {formatAuditDate(revision.paidAt, locale)} · {currency ? formatAuditAmount(revision.amountMinor, currency, locale) : revision.amountMinor / 100}
-                    {' · '}{revision.paymentMethod === 'cash' ? (es ? 'Efectivo' : 'Cash') : (es ? 'Transferencia bancaria' : 'Bank transfer')}
-                    {revision.voided ? ` · ${es ? 'Anulado' : 'Voided'}` : ''}
-                    {revision.isCurrent ? ` · ${es ? 'vigente' : 'current'}` : ''}
+                    {formatAuditDate(revision.paidAt, presentationLocale)} · {currency ? formatAuditAmount(revision.amountMinor, currency, presentationLocale) : revision.amountMinor / 100}
+                    {' · '}{revision.paymentMethod === 'cash' ? t('payments.cash') : t('payments.bankTransfer')}
+                    {revision.voided ? ` · ${t('payments.voided')}` : ''}
+                    {revision.isCurrent ? ` · ${t('common.current')}` : ''}
                   </div>
                   {revision.isCurrent && !revision.voided && (
                     <div className='mt-3 grid gap-3 sm:grid-cols-2'>
@@ -375,10 +376,10 @@ function ManualPaymentSection({
                               locale,
                             })
                             if (!result.success) {
-                              setError(es ? 'No se pudo corregir el pago.' : 'Could not correct the payment.')
+                              setError(t('payments.correctError'))
                               return
                             }
-                            setSuccess(es ? 'Pago corregido.' : 'Payment corrected.')
+                            setSuccess(t('payments.corrected'))
                           })
                         }}
                         className='grid gap-2'
@@ -396,12 +397,12 @@ function ManualPaymentSection({
                           defaultValue={revision.paymentMethod}
                           className='h-10 rounded-md border border-input bg-background px-3'
                         >
-                          <option value='cash'>{es ? 'Efectivo' : 'Cash'}</option>
-                          <option value='bank_transfer'>{es ? 'Transferencia bancaria' : 'Bank transfer'}</option>
+                          <option value='cash'>{t('payments.cash')}</option>
+                          <option value='bank_transfer'>{t('payments.bankTransfer')}</option>
                         </select>
                         <Input name='correctedPaidAt' type='date' defaultValue={revision.paidAt} required />
                         <Button type='submit' variant='outline' disabled={isPending}>
-                          {es ? 'Corregir pago' : 'Correct payment'}
+                          {t('payments.correct')}
                         </Button>
                       </form>
                       <form
@@ -416,15 +417,15 @@ function ManualPaymentSection({
                               locale,
                             })
                             if (!result.success) {
-                              setError(es ? 'No se pudo anular el pago.' : 'Could not void the payment.')
+                              setError(t('payments.voidError'))
                               return
                             }
-                            setSuccess(es ? 'Pago anulado.' : 'Payment voided.')
+                            setSuccess(t('payments.voidedSuccess'))
                           })
                         }}
                       >
                         <Button type='submit' variant='outline' disabled={isPending}>
-                          {es ? 'Anular pago' : 'Void payment'}
+                          {t('payments.void')}
                         </Button>
                       </form>
                     </div>
@@ -456,23 +457,9 @@ export function AthleteBillingTermsForm({
   extensionHistory?: ExtensionRevisionHistory[]
   paymentHistory?: PaymentRevisionHistory[]
 }) {
+  const t = useTranslations('Membership.athleteBilling')
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const copy = locale === 'en'
-    ? {
-        effectiveFrom: 'Effective from',
-        monthlyAmount: 'Monthly amount',
-        currency: 'Currency',
-        pending: 'Saving…',
-        genericError: 'The economic terms could not be saved.',
-      }
-    : {
-        effectiveFrom: 'Vigente desde',
-        monthlyAmount: 'Importe mensual',
-        currency: 'Moneda',
-        pending: 'Guardando…',
-        genericError: 'No se pudieron guardar las condiciones económicas.',
-      }
 
   function handleSubmit(formData: FormData) {
     setError(null)
@@ -499,7 +486,7 @@ export function AthleteBillingTermsForm({
           })
 
       if (!result.success) {
-        setError(copy.genericError)
+        setError(t('genericError'))
       }
     })
   }
@@ -512,7 +499,7 @@ export function AthleteBillingTermsForm({
           {model.mode === 'replacement' && (
             <>
               <div className='space-y-2'>
-                <Label htmlFor='monthlyAmount'>{copy.monthlyAmount}</Label>
+                <Label htmlFor='monthlyAmount'>{t('monthlyAmount')}</Label>
                 <Input
                   id='monthlyAmount'
                   name='monthlyAmount'
@@ -524,7 +511,7 @@ export function AthleteBillingTermsForm({
                 />
               </div>
               <div className='space-y-2'>
-                <Label htmlFor='currency'>{copy.currency}</Label>
+                <Label htmlFor='currency'>{t('currency')}</Label>
                 <Input
                   id='currency'
                   name='currency'
@@ -536,7 +523,7 @@ export function AthleteBillingTermsForm({
           )}
 
           <div className='space-y-2'>
-            <Label htmlFor='effectiveFrom'>{copy.effectiveFrom}</Label>
+            <Label htmlFor='effectiveFrom'>{t('effectiveFrom')}</Label>
             <Input
               id='effectiveFrom'
               name='effectiveFrom'
@@ -550,7 +537,7 @@ export function AthleteBillingTermsForm({
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
 
         <Button type='submit' disabled={isPending}>
-          {isPending ? copy.pending : model.submitLabel}
+          {isPending ? t('saving') : model.submitLabel}
         </Button>
       </form>
       {monthlyCharges.length > 0 && (

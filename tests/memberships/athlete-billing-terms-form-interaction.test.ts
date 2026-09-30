@@ -49,5 +49,5 @@ test('athlete billing terms form localizes action errors instead of exposing bac
   )
 
   assert.doesNotMatch(source, /setError\(result\.error/)
-  assert.match(source, /setError\(copy\.genericError\)/)
+  assert.match(source, /setError\(t\('genericError'\)\)/)
 })

@@ -1,3 +1,4 @@
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import type {
   AthleteBillingTerms,
   MonthlyChargeCandidate,
@@ -6,7 +7,9 @@ import type {
 type Locale = 'es' | 'en'
 
 function formatAmount(amountMinor: number, currency: string, locale: Locale) {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+  const { presentationLocale } = resolveApplicationRegionalContext({ language: locale })
+
+  return new Intl.NumberFormat(presentationLocale, {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,

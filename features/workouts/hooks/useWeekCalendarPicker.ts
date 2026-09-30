@@ -1,14 +1,13 @@
 import { useState, useMemo } from 'react'
-import { MONTHS_OF_YEAR } from '@/lib/constants'
 import { WeekCalendarPickerProps } from '@workouts/components/WeekCalendarPicker'
 
-export function useWeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps) {
+export function useWeekCalendarPicker({ selectedDate, onSelectDate, onClose }: WeekCalendarPickerProps, presentationLocale: string) {
   // Mes visible en el calendario (por defecto el de la fecha seleccionada)
   const [viewDate, setViewDate] = useState<Date>(() => new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1))
 
   const currentYear = viewDate.getFullYear()
   const currentMonthIdx = viewDate.getMonth()
-  const monthName = MONTHS_OF_YEAR[currentMonthIdx]?.full ?? ''
+  const monthName = new Intl.DateTimeFormat(presentationLocale, { month: 'long' }).format(viewDate)
 
   // Calcular el rango (Lunes a Domingo) de la semana seleccionada
   const selectedWeekRange = useMemo(() => {

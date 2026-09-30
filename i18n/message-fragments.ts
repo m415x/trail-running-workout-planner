@@ -1,7 +1,10 @@
 export const messageFragmentPaths = [
   'common/common',
+  'common/coach-shell',
+  'common/athlete-shell',
   'common/weather',
   'planning/base-planning',
+  'planning/coach-planning',
   'planning/training-goals',
   'planning/workout-templates',
   'planning/sessions',
@@ -16,7 +19,10 @@ export const messageFragmentPaths = [
   'athletes/detail',
   'athletes/group',
   'athletes/form',
+  'athletes/plan',
+  'athletes/profile',
   'forms/dirty-form-guard',
   'athlete-stats/stats',
+  'memberships/membership',
   'glossary/planning',
 ] as const

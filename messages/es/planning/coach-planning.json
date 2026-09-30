@@ -1,0 +1,119 @@
+{
+  "CoachPlanning": {
+    "backToPlans": "Volver a planificaciones",
+    "planningSubgroup": "Subgrupo de planificación",
+    "backToPlanningSubgroup": "Volver al subgrupo de planificación",
+    "whyGenerated": "Por qué se generó así",
+    "saveSessions": "Guardar sesiones",
+    "saveWeeklyConfiguration": "Guardar configuración semanal",
+    "saveDates": "Guardar fechas",
+    "saveNotes": "Guardar notas",
+    "saveType": "Guardar tipo",
+    "targetVolumeKm": "Volumen objetivo en kilómetros",
+    "noRestriction": "Sin restricción",
+    "policyPending": "Política pendiente",
+    "mountainFocus": "Foco montaña",
+    "saving": "Guardando…",
+    "save": "Guardar",
+    "intensityTitle": "Distribución de intensidad",
+    "loadPreviewTitle": "Vista previa de carga",
+    "generationExplanation": "Explicación de generación",
+    "compatibility": {
+      "compatible": "Compatible",
+      "incompatible": "Fuera de rango",
+      "unrestricted": "Sin restricción",
+      "policy_not_defined": "Política pendiente",
+      "not_applicable": "No aplica",
+      "invalid": "Datos inválidos"
+    },
+    "loadFocus": {
+      "balanced": "Foco equilibrado",
+      "volume": "Foco volumen",
+      "elevation": "Foco montaña",
+      "recovery": "Foco recuperación",
+      "race_specific": "Foco carrera"
+    },
+    "explanationSections": {
+      "inputs": "Entradas",
+      "constraints": "Restricciones",
+      "decision": "Decisión",
+      "consequence": "Consecuencia",
+      "warnings": "Avisos"
+    },
+    "explanationStages": {
+      "weekly_budget": "Presupuesto semanal",
+      "frequency": "Frecuencia",
+      "slots": "Días y roles",
+      "stimulus_template": "Estímulo y plantilla",
+      "fixed_load": "Carga fija",
+      "remaining_budget": "Presupuesto restante",
+      "flexible_allocation": "Distribución flexible",
+      "intensity": "Intensidad",
+      "coordination_reconciliation": "Coordinación y reconciliación"
+    },
+    "weekdays": {
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado",
+      "sunday": "Domingo"
+    },
+    "roles": {
+      "base": "Base",
+      "mountain": "Montaña",
+      "long": "Largo",
+      "quality": "Calidad",
+      "recovery": "Recuperación",
+      "competition": "Competencia"
+    },
+    "date": "Fecha",
+    "intensityEmphasis": {
+      "recovery": "Recuperación",
+      "aerobic": "Aeróbico",
+      "tempo": "Tempo",
+      "threshold": "Umbral",
+      "vo2max": "VO₂ máx.",
+      "race_specific": "Específico de carrera"
+    },
+    "saveProgression": "Guardar progresión",
+    "recoveryLabel": "Recuperación",
+    "list": {
+      "title": "Planificación",
+      "description": "Planes grupales, bloques y volúmenes semanales del equipo.",
+      "newStrategy": "Nueva estrategia",
+      "emptyTitle": "Todavía no hay planificaciones",
+      "emptyDescription": "Las planificaciones generadas para los grupos aparecerán aquí.",
+      "group": "Grupo {code}",
+      "macrocycles": "{count, plural, one {# macrociclo} other {# macrociclos}}",
+      "weeks": "{count, plural, one {# semana} other {# semanas}}",
+      "view": "Ver planificación",
+      "status": {
+        "draft": "Borrador",
+        "active": "Activo",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      }
+    },
+    "detail": {
+      "group": "Grupo {code}",
+      "description": "Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.",
+      "basePlan": "Plan base",
+      "previewUnavailable": "Vista previa no disponible",
+      "previewUnavailableDescription": "Esta planificación fue creada antes de incorporar estrategias de carga.",
+      "configuredHorizon": "Horizonte configurado",
+      "configuredHorizonDescription": "La estrategia y las fechas están guardadas. La progresión semanal se generará en el siguiente paso.",
+      "table": {
+        "week": "Semana",
+        "type": "Tipo",
+        "dates": "Fechas",
+        "elevation": "Desnivel",
+        "notes": "Notas",
+        "targetVolume": "Volumen objetivo"
+      },
+      "generationMissing": "Semana {week}: falta un objetivo de volumen o intensidad.",
+      "generationFailed": "Semana {week}: no se pudo generar la propuesta."
+    }
+  }
+}

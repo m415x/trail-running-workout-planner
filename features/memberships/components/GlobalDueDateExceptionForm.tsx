@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 
 import { applyGlobalDueDateExceptionAction } from '@/app/actions/membership-actions'
 import { Button } from '@ui/button'
@@ -11,7 +12,7 @@ import { Label } from '@ui/label'
 type Locale = 'es' | 'en'
 
 export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
-  const es = locale === 'es'
+  const t = useTranslations('Membership.dueDateException')
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -40,10 +41,10 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
         locale,
       })
       if (!result.success) {
-        setError(es ? 'No se pudo aplicar la excepción.' : 'Could not apply the exception.')
+        setError(t('error'))
         return
       }
-      setSuccess(es ? 'Excepción aplicada.' : 'Exception applied.')
+      setSuccess(t('success'))
     })
   }
 
@@ -51,14 +52,14 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
     <Card>
       <CardHeader>
         <CardTitle>
-          {es ? 'Excepción mensual de vencimiento' : 'Monthly due-date exception'}
+          {t('title')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className='space-y-4'>
           <div className='grid gap-4 sm:grid-cols-2'>
             <div className='space-y-2'>
-              <Label htmlFor='exceptionPeriod'>{es ? 'Mes' : 'Month'}</Label>
+              <Label htmlFor='exceptionPeriod'>{t('month')}</Label>
               <Input
                 id='exceptionPeriod'
                 name='period'
@@ -70,7 +71,7 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
             </div>
             <div className='space-y-2'>
               <Label htmlFor='exceptionDueDay'>
-                {es ? 'Día de vencimiento' : 'Due day'}
+                {t('dueDay')}
               </Label>
               <select
                 id='exceptionDueDay'
@@ -78,7 +79,7 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
                 className='h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs'
                 required
               >
-                <option value=''>{es ? 'Seleccionar día' : 'Select day'}</option>
+                <option value=''>{t('selectDay')}</option>
                 {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
                   <option key={day} value={day}>{day}</option>
                 ))}
@@ -86,15 +87,13 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
             </div>
           </div>
           <div className='space-y-2'>
-            <Label htmlFor='exceptionReason'>{es ? 'Motivo' : 'Reason'}</Label>
+            <Label htmlFor='exceptionReason'>{t('reason')}</Label>
             <Input id='exceptionReason' name='reason' required />
           </div>
           {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
           {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
           <Button type='submit' disabled={isPending}>
-            {isPending
-              ? (es ? 'Aplicando…' : 'Applying…')
-              : (es ? 'Aplicar excepción' : 'Apply exception')}
+            {isPending ? t('applying') : t('apply')}
           </Button>
         </form>
       </CardContent>

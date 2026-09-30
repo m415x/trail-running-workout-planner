@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Activity, HeartPulse, TimerReset } from 'lucide-react'
 
 import type {
@@ -45,13 +46,13 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   race: 'Carrera',
 }
 
-const emphasisLabels: Record<IntensityEmphasis, string> = {
-  recovery: 'Recuperación',
-  aerobic: 'Aeróbico',
-  tempo: 'Tempo',
-  threshold: 'Umbral',
-  vo2max: 'VO₂ máx.',
-  race_specific: 'Específico de carrera',
+const emphasisLabelKeys: Record<IntensityEmphasis, 'recovery' | 'aerobic' | 'tempo' | 'threshold' | 'vo2max' | 'race_specific'> = {
+  recovery: 'recovery',
+  aerobic: 'aerobic',
+  tempo: 'tempo',
+  threshold: 'threshold',
+  vo2max: 'vo2max',
+  race_specific: 'race_specific',
 }
 
 function hasManualValue(sources: MicrocycleIntensityTargetFieldSources) {
@@ -65,6 +66,7 @@ export function IntensityDistribution({
   minimumRecoveryDaysBetweenIntenseSessions,
   strategySources,
 }: IntensityDistributionProps) {
+  const t = useTranslations('CoachPlanning')
   const manualStrategy = Object.values(strategySources).some((source) => source === 'manual')
 
   return (
@@ -72,7 +74,7 @@ export function IntensityDistribution({
       <CardHeader>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <CardTitle>Distribución de intensidad</CardTitle>
+            <CardTitle>{t('intensityTitle')}</CardTitle>
             <CardDescription>
               Objetivo semanal generado según el período, el microciclo y el objetivo del grupo.
             </CardDescription>
@@ -82,7 +84,7 @@ export function IntensityDistribution({
               Método: {defaultMethod === 'reference_percentage' ? '% de referencia' : 'Zonas FC'}
             </Badge>
             <Badge variant='outline'>Máximo: {maximumIntenseSessionsPerWeek} intensas</Badge>
-            <Badge variant='outline'>Recuperación: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
+            <Badge variant='outline'>{t('recoveryLabel')}: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
             {manualStrategy && <Badge variant='secondary'>Estrategia manual</Badge>}
           </div>
         </div>
@@ -100,7 +102,7 @@ export function IntensityDistribution({
                   <div>
                     <p className='font-semibold'>Semana {point.weekNumber}</p>
                     <p className='text-xs text-muted-foreground'>
-                      {microcycleLabels[point.type]} · {emphasisLabels[point.emphasis]}
+                      {microcycleLabels[point.type]} · {t(`intensityEmphasis.${emphasisLabelKeys[point.emphasis]}`)}
                     </p>
                   </div>
                   {hasManualValue(point.fieldSources) && <Badge variant='secondary'>Manual</Badge>}

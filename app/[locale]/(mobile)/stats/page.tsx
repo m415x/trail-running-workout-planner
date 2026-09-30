@@ -20,36 +20,45 @@ function DomainLink({ href, children }: { href: '/stats/training' | '/stats/load
   return <Link href={href} className='inline-flex items-center gap-1 text-sm font-semibold text-primary'>{children}<ArrowRight className='size-4' /></Link>
 }
 
-function AthleteTrack1000mPanel({ locale, events, performanceResult }: { locale: string; events: Array<{ id: string; scheduledAt: string }>; performanceResult: Awaited<ReturnType<typeof getCurrentAthleteTrack1000mPerformanceAction>> }) {
-  const es = locale === 'es'
+function AthleteTrack1000mPanel({
+  locale,
+  events,
+  performanceResult,
+  t,
+}: {
+  locale: string
+  events: Array<{ id: string; scheduledAt: string }>
+  performanceResult: Awaited<ReturnType<typeof getCurrentAthleteTrack1000mPerformanceAction>>
+  t: Awaited<ReturnType<typeof getTranslations<'stats'>>>
+}) {
   const evolution = performanceResult.success ? performanceResult.data.evolution : null
   const reference = performanceResult.success ? performanceResult.data.reference : null
   const latest = evolution?.series.at(-1)
   const trend = evolution?.comparison.direction === 'decreasing'
-    ? (es ? 'Más rápido' : 'Faster')
+    ? t('track1000m.trend.faster')
     : evolution?.comparison.direction === 'increasing'
-      ? (es ? 'Más lento' : 'Slower')
+      ? t('track1000m.trend.slower')
       : evolution?.comparison.direction === 'stable'
-        ? (es ? 'Igual' : 'Same')
-        : (es ? 'Evidencia insuficiente' : 'Insufficient evidence')
+        ? t('track1000m.trend.same')
+        : t('track1000m.trend.insufficient')
 
   return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'>
-    <h2 className='font-heading text-lg font-bold'>Test 1000 m</h2>
-    {!(performanceResult.success && reference?.status === 'available') && <p className='mt-1 text-sm text-muted-foreground'>{es ? 'Registrá un test oficial programado o un intento autogestionado.' : 'Record a scheduled official test or a self-directed attempt.'}</p>}
+    <h2 className='font-heading text-lg font-bold'>{t('track1000m.title')}</h2>
+    {!(performanceResult.success && reference?.status === 'available') && <p className='mt-1 text-sm text-muted-foreground'>{t('track1000m.intro')}</p>}
     {performanceResult.success ? <div className='mt-4 grid gap-2 rounded-xl border p-3 text-sm'>
-      {reference?.status === 'available' ? <p><span className='font-medium'>{es ? 'Referencia' : 'Reference'}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{es ? 'Referencia no disponible' : 'Reference unavailable'}</p>}
-      <p><span className='font-medium'>{es ? 'Evolución' : 'Evolution'}:</span> {trend}</p>
-      {latest && <p className='text-xs text-muted-foreground'>{es ? 'Último test' : 'Latest test'}: {latest.performedAt} · {latest.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p>}
-    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{es ? 'No se pudo cargar el rendimiento del test.' : 'Test performance could not be loaded.'}</p>}
+      {reference?.status === 'available' ? <p><span className='font-medium'>{t('track1000m.reference')}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{t('track1000m.referenceUnavailable')}</p>}
+      <p><span className='font-medium'>{t('track1000m.evolution')}:</span> {trend}</p>
+      {latest && <p className='text-xs text-muted-foreground'>{t('track1000m.latestTest')}: {latest.performedAt} · {latest.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p>}
+    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{t('track1000m.loadError')}</p>}
     <Accordion className='mt-3'>
       <AccordionItem value='history'>
-        <AccordionTrigger>{es ? `Historial de tests (${evolution?.series.length ?? 0})` : `Test history (${evolution?.series.length ?? 0})`}</AccordionTrigger>
+        <AccordionTrigger>{t('track1000m.history', { count: evolution?.series.length ?? 0 })}</AccordionTrigger>
         <AccordionContent>
-          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? (es ? 'Oficial' : 'Official') : (es ? 'Autogestionado' : 'Self-directed')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{es ? 'Todavía no hay tests elegibles.' : 'There are no eligible tests yet.'}</p>}
+          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{t('track1000m.emptyHistory')}</p>}
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value='register'>
-        <AccordionTrigger>{es ? 'Registrar nuevo test' : 'Record new test'}</AccordionTrigger>
+        <AccordionTrigger>{t('track1000m.register')}</AccordionTrigger>
         <AccordionContent><AthleteTrack1000mForm locale={locale} events={events} /></AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -75,7 +84,7 @@ export default async function StatsPage({ params }: { params: Promise<{ locale: 
   return <section className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:py-8'>
     <header className='mb-6'><p className='text-xs font-semibold uppercase tracking-wide text-muted-foreground'>{t('summary.period')}</p><h1 className='mt-1 font-heading text-2xl font-bold sm:text-3xl'>{t('title')}</h1><p className='mt-1 text-sm text-muted-foreground'>{view.period.startDate} — {view.period.endDate}</p></header>
     <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-      <AthleteTrack1000mPanel locale={locale} events={testEventsResult.success ? testEventsResult.data : []} performanceResult={performanceResult} />
+      <AthleteTrack1000mPanel locale={locale} events={testEventsResult.success ? testEventsResult.data : []} performanceResult={performanceResult} t={t} />
       <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'><div className='mb-4 flex items-start justify-between gap-3'><div><Route className='mb-2 size-5' /><h2 className='font-heading text-lg font-bold'>{t('training')}</h2></div><DomainLink href={view.training.href}>{t('summary.viewDetail')}</DomainLink></div><div className='grid grid-cols-2 gap-3 sm:grid-cols-4'>{view.training.metrics.map(item => <div key={item.key} className='rounded-xl bg-muted/50 p-3'><p className='text-xs text-muted-foreground'>{t(`trainingDetail.${item.key}`)}</p><p className='mt-1 text-lg font-bold'>{item.value === null ? t('unknownData') : item.key === 'sessions' ? `${item.value} ${t(item.value === 1 ? 'trainingDetail.session' : 'trainingDetail.sessionsUnit')}` : `${item.value} ${item.unit}`}</p></div>)}</div></article>
       <article className='rounded-2xl border bg-card p-5 shadow-sm'><Gauge className='mb-2 size-5' /><h2 className='font-heading text-lg font-bold'>{t('load')}</h2>{view.load.value !== null ? <p className='my-3 text-2xl font-bold'>{view.load.value} {view.load.unit}</p> : <p className='my-3 text-base font-semibold text-muted-foreground'>{t('insufficientData')}</p>}<DomainLink href={view.load.href}>{t('summary.explore')}</DomainLink></article>
       <article className='rounded-2xl border bg-card p-5 shadow-sm'><ChartNoAxesColumnIncreasing className='mb-2 size-5' /><h2 className='font-heading text-lg font-bold'>{t('adherence')}</h2>{view.adherence.value !== null ? <p className='my-3 text-2xl font-bold'>{view.adherence.value}{view.adherence.unit}</p> : <p className='my-3 text-base font-semibold text-muted-foreground'>{t('insufficientData')}</p>}<DomainLink href={view.adherence.href}>{t('summary.explore')}</DomainLink></article>

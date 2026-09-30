@@ -1,0 +1,84 @@
+{
+  "Membership": {
+    "page": {
+      "currentPolicy": "Política vigente",
+      "effectiveUntil": "Vigente hasta",
+      "scheduledChanges": "Cambios programados ({count})",
+      "policyHistory": "Historial de políticas ({count})",
+      "exceptionHistory": "Historial de excepciones"
+    },
+    "dueDateException": {
+      "error": "No se pudo aplicar la excepción.",
+      "success": "Excepción aplicada.",
+      "title": "Excepción mensual de vencimiento",
+      "month": "Mes",
+      "dueDay": "Día de vencimiento",
+      "selectDay": "Seleccionar día",
+      "reason": "Motivo",
+      "applying": "Aplicando…",
+      "apply": "Aplicar excepción"
+    },
+    "materialization": {
+      "error": "No se pudieron materializar las cuotas.",
+      "feedback": "Atletas procesados: {processed} · Cuotas creadas: {created}",
+      "title": "Materializar cuotas",
+      "description": "Genera las cuotas faltantes del equipo para el mes seleccionado.",
+      "month": "Mes",
+      "pending": "Materializando…",
+      "action": "Materializar cuotas"
+    },
+    "athleteBilling": {
+      "effectiveFrom": "Vigente desde",
+      "monthlyAmount": "Importe mensual",
+      "currency": "Moneda",
+      "saving": "Guardando…",
+      "genericError": "No se pudieron guardar las condiciones económicas.",
+      "common": {
+        "selectCharge": "Seleccionar cuota",
+        "amount": "Importe",
+        "reason": "Motivo",
+        "applying": "Aplicando…",
+        "current": "vigente",
+        "withdrawn": "Retiro"
+      },
+      "reduction": {
+        "invalidCharge": "Seleccioná una cuota válida.",
+        "error": "No se pudo aplicar la reducción.",
+        "withdrawnSuccess": "Reducción retirada.",
+        "appliedSuccess": "Reducción aplicada.",
+        "title": "Reducción o beca",
+        "apply": "Aplicar reducción",
+        "withdraw": "Retirar reducción"
+      },
+      "extension": {
+        "invalidCharge": "Seleccioná una cuota válida.",
+        "error": "No se pudo aplicar la prórroga.",
+        "withdrawnSuccess": "Prórroga retirada.",
+        "appliedSuccess": "Prórroga aplicada.",
+        "title": "Prórroga individual",
+        "apply": "Aplicar prórroga",
+        "withdraw": "Retirar prórroga"
+      },
+      "payments": {
+        "invalid": "Completá un pago válido.",
+        "registerError": "No se pudo registrar el pago.",
+        "registered": "Pago registrado.",
+        "title": "Pagos",
+        "paid": "Pagado",
+        "remaining": "Restante",
+        "cash": "Efectivo",
+        "bankTransfer": "Transferencia bancaria",
+        "registering": "Registrando…",
+        "register": "Registrar pago",
+        "history": "Historial de pagos",
+        "voided": "Anulado",
+        "correctError": "No se pudo corregir el pago.",
+        "corrected": "Pago corregido.",
+        "correct": "Corregir pago",
+        "voidError": "No se pudo anular el pago.",
+        "voidedSuccess": "Pago anulado.",
+        "void": "Anular pago"
+      }
+    }
+  }
+}
