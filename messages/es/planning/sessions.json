@@ -170,10 +170,13 @@
         "invalidReschedule": "Ingresá una fecha válida para la reprogramación.",
         "invalidStimulusType": "Seleccioná un tipo de estímulo válido.",
         "saveFailed": "No se pudo guardar el ajuste individual.",
-        "stimulusWorkoutNotFound": "La plantilla de estímulo seleccionada ya no está disponible."
+        "stimulusWorkoutNotFound": "La plantilla de estímulo seleccionada ya no está disponible.",
+        "invalidAssignmentMode": "Seleccioná un modo de asignación válido."
       },
       "currentReason": "Motivo vigente:",
-      "noStimulusTemplate": "Sin plantilla · cambiar sólo el tipo"
+      "noStimulusTemplate": "Sin plantilla · cambiar sólo el tipo",
+      "assignmentMode": "Modo de asignación",
+      "changeStimulus": "Cambiar estímulo"
     }
   }
 }
