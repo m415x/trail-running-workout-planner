@@ -73,6 +73,26 @@
           "dns": "DNS"
         }
       }
+    },
+    "track1000m": {
+      "title": "Test 1000 m",
+      "intro": "Registrá un test oficial programado o un intento autogestionado.",
+      "reference": "Referencia",
+      "referenceUnavailable": "Referencia no disponible",
+      "evolution": "Evolución",
+      "latestTest": "Último test",
+      "official": "Oficial",
+      "selfDirected": "Autogestionado",
+      "loadError": "No se pudo cargar el rendimiento del test.",
+      "history": "Historial de tests ({count})",
+      "emptyHistory": "Todavía no hay tests elegibles.",
+      "register": "Registrar nuevo test",
+      "trend": {
+        "faster": "Más rápido",
+        "slower": "Más lento",
+        "same": "Igual",
+        "insufficient": "Evidencia insuficiente"
+      }
     }
   }
 }
