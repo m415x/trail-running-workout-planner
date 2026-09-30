@@ -25,6 +25,13 @@
       "policy_not_defined": "Policy pending",
       "not_applicable": "Not applicable",
       "invalid": "Invalid data"
+    },
+    "loadFocus": {
+      "balanced": "Balanced focus",
+      "volume": "Volume focus",
+      "elevation": "Mountain focus",
+      "recovery": "Recovery focus",
+      "race_specific": "Race focus"
     }
   }
 }
