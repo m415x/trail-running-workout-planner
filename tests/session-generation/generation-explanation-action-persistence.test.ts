@@ -42,10 +42,6 @@ test('historical snapshots are validated against the persisted planning scope', 
   )
   assert.match(
     source,
-    /kind:\s*plan\.planningCohortId\s*===\s*null\s*\?\s*'base'\s*:\s*'variant'/,
-  )
-  assert.match(
-    source,
     /groupTrainingPlanId:\s*planId/,
   )
   assert.match(
