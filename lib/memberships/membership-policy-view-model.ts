@@ -1,3 +1,4 @@
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import type { TeamEconomicPolicy } from './billing'
 
 type Locale = 'es' | 'en'
@@ -24,7 +25,9 @@ const copy = {
 } as const
 
 function formatAmount(locale: Locale, amountMinor: number, currency: string) {
-  return new Intl.NumberFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+  const { presentationLocale } = resolveApplicationRegionalContext({ language: locale })
+
+  return new Intl.NumberFormat(presentationLocale, {
     style: 'currency',
     currency,
     maximumFractionDigits: 0,
