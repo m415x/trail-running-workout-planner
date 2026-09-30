@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import { Activity, HeartPulse, TimerReset } from 'lucide-react'
 
 import type {
@@ -65,6 +66,7 @@ export function IntensityDistribution({
   minimumRecoveryDaysBetweenIntenseSessions,
   strategySources,
 }: IntensityDistributionProps) {
+  const t = useTranslations('CoachPlanning')
   const manualStrategy = Object.values(strategySources).some((source) => source === 'manual')
 
   return (
@@ -72,7 +74,7 @@ export function IntensityDistribution({
       <CardHeader>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <CardTitle>Distribución de intensidad</CardTitle>
+            <CardTitle>{t('intensityTitle')}</CardTitle>
             <CardDescription>
               Objetivo semanal generado según el período, el microciclo y el objetivo del grupo.
             </CardDescription>
