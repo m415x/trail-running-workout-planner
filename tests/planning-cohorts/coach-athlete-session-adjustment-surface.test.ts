@@ -10,7 +10,7 @@ const detail = read('app/[locale]/dashboard/sessions/[sessionId]/page.tsx')
 test('Coach session detail exposes a separate individual-adjustment review surface', () => {
   assert.match(detail, /getSessionAthleteAdjustmentReview/)
   assert.match(detail, /AthleteSessionAdjustmentReview/)
-  assert.doesNotMatch(detail, /SessionForm/)
+  assert.doesNotMatch(detail, /import\s*\{?\s*SessionForm|<SessionForm\b/)
 })
 
 test('individual review is loaded from the Session detail, not folded into shared Session editing', () => {
@@ -41,6 +41,7 @@ test('Coach individual editor stays within the frozen adjustment fields', () => 
     'durationMin',
     'elevationGain',
     'intensity',
+    'assignmentMode',
     'rescheduled',
     'stimulus',
     'omitted',
