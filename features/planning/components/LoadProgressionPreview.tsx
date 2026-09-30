@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import {
   CartesianGrid,
   Line,
@@ -58,12 +59,12 @@ const microcycleLabels: Record<MicrocycleType, string> = {
   race: 'Semana de carrera',
 }
 
-const loadFocusLabels: Record<MicrocycleLoadFocus, string> = {
-  balanced: 'Foco equilibrado',
-  volume: 'Foco volumen',
-  elevation: 'Foco montaña',
-  recovery: 'Foco recuperación',
-  race_specific: 'Foco carrera',
+const loadFocusLabelKeys: Record<MicrocycleLoadFocus, keyof IntlMessages['CoachPlanning']['loadFocus']> = {
+  balanced: 'balanced',
+  volume: 'volume',
+  elevation: 'elevation',
+  recovery: 'recovery',
+  race_specific: 'race_specific',
 }
 
 function getVolumePointAppearance(point: LoadProgressionPoint) {
@@ -92,6 +93,7 @@ export function LoadProgressionPreview({
   macrocycleId,
   locale,
 }: LoadProgressionPreviewProps) {
+  const t = useTranslations('CoachPlanning')
   const manualVolumePoints = points.filter((point) => point.volumeSource === 'manual')
   const manualElevationPoints = points.filter((point) => point.elevationSource === 'manual')
   const elevationValues = points.flatMap((point) => (
@@ -108,7 +110,7 @@ export function LoadProgressionPreview({
       <CardHeader>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <CardTitle>Vista previa de carga</CardTitle>
+            <CardTitle>{t('loadPreviewTitle')}</CardTitle>
             <CardDescription>
               Propuesta semanal calculada desde la estrategia y el horizonte guardados.
             </CardDescription>
@@ -185,7 +187,7 @@ export function LoadProgressionPreview({
                     <p className='text-muted-foreground'>
                       {microcycleLabels[point.type]}
                     </p>
-                    <p className='text-muted-foreground'>{loadFocusLabels[point.loadFocus]}</p>
+                    <p className='text-muted-foreground'>{t(`loadFocus.${loadFocusLabelKeys[point.loadFocus]}`)}</p>
                     <p className='font-semibold'>
                       {point.volumeKm.toLocaleString('es-AR')} km · {point.volumeSource === 'manual' ? 'Manual' : 'Generado'}
                     </p>
