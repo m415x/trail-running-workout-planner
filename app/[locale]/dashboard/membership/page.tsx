@@ -9,7 +9,8 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion'
 import { createMembershipPageLoader } from '@/lib/memberships/membership-page-loader'
-import { todayInArgentina } from '@/lib/memberships/membership-page-date'
+import { membershipPageCalendarDate } from '@/lib/memberships/membership-page-date'
+import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 import { createTeamEconomicPolicyQueryRepository } from '@/lib/memberships/membership-policy-drizzle-query'
 import { TeamMonthlyMaterializationForm } from '@/features/memberships/components/TeamMonthlyMaterializationForm'
 
@@ -28,7 +29,7 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
     db,
     locale: supportedLocale,
     teamId: 'team_1',
-    onDate: todayInArgentina(),
+    onDate: membershipPageCalendarDate(APPLICATION_REGIONAL_FALLBACKS.timeZone),
   })
 
   const es = supportedLocale === 'es'
