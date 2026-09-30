@@ -119,118 +119,122 @@ function AthleteAdjustmentForm({
         </div>
       </div>
 
-      <div className='space-y-3'>
-        <label className='space-y-1.5 text-sm'>
-          <span className='font-medium'>{t('adjustments.intensity')}</span>
-          <select
-            name='intensityMethod'
-            value={intensityMethod}
-            onChange={(event) => setIntensityMethod(event.target.value)}
-            className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-          >
-            <option value=''>
-              {t('adjustments.inheritIntensity', {
-                value: item.inheritedIntensity ?? t('adjustments.noIntensity'),
-              })}
-            </option>
-            <option value='clear'>{t('adjustments.clearIntensity')}</option>
-            <option value='hr_zone'>{t('adjustments.hrZone')}</option>
-            <option value='reference_percentage'>{t('adjustments.referencePercentage')}</option>
-          </select>
-        </label>
+      <div className='grid gap-4 lg:grid-cols-2'>
+        <div className='space-y-3 rounded-lg border p-4'>
+          <p className='text-sm font-medium'>{t('adjustments.intensity')}</p>
 
-        {intensityMethod === 'hr_zone' && (
           <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>{t('adjustments.zone')}</span>
+            <span className='font-medium'>{t('adjustments.intensity')}</span>
             <select
-              name='zone'
-              defaultValue={item.zone ?? ''}
+              name='intensityMethod'
+              value={intensityMethod}
+              onChange={(event) => setIntensityMethod(event.target.value)}
               className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
             >
-              <option value=''>{t('adjustments.selectZone')}</option>
-              {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map(zone => (
-                <option key={zone} value={zone}>{zone}</option>
-              ))}
+              <option value=''>
+                {t('adjustments.inheritIntensity', {
+                  value: item.inheritedIntensity ?? t('adjustments.noIntensity'),
+                })}
+              </option>
+              <option value='clear'>{t('adjustments.clearIntensity')}</option>
+              <option value='hr_zone'>{t('adjustments.hrZone')}</option>
+              <option value='reference_percentage'>{t('adjustments.referencePercentage')}</option>
             </select>
           </label>
-        )}
 
-        {intensityMethod === 'reference_percentage' && (
-          <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>{t('adjustments.referencePercentage')}</span>
-            <select
-              name='referencePercentage'
-              defaultValue={item.referencePercentage ?? ''}
-              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-            >
-              <option value=''>{t('adjustments.referencePercentage')}</option>
-              {SESSION_REFERENCE_PERCENTAGES.map(percentage => (
-                <option key={percentage} value={percentage}>{percentage}%</option>
-              ))}
-            </select>
-          </label>
-        )}
-      </div>
-
-      <div className='space-y-2'>
-        <p className='text-sm font-medium'>{t('adjustments.assignmentTitle')}</p>
-
-        <label className='space-y-1.5 text-sm'>
-          <span className='font-medium'>{t('adjustments.assignmentMode')}</span>
-          <select
-            name='assignmentMode'
-            value={assignmentMode}
-            onChange={(event) => setAssignmentMode(event.target.value)}
-            className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
-          >
-            <option value='inherit'>{t('adjustments.inherit')}</option>
-            <option value='rescheduled'>{t('adjustments.reschedule')}</option>
-            <option value='stimulus_override'>{t('adjustments.changeStimulus')}</option>
-            <option value='omitted'>{t('adjustments.omitForAthlete')}</option>
-          </select>
-        </label>
-
-        {assignmentMode === 'rescheduled' && (
-          <LabeledInput
-            label={t('adjustments.reschedule')}
-            name='rescheduled'
-            type='date'
-            defaultValue={item.rescheduled ?? ''}
-          />
-        )}
-
-        {assignmentMode === 'stimulus_override' && (
-          <div className='grid gap-3 sm:grid-cols-2'>
+          {intensityMethod === 'hr_zone' && (
             <label className='space-y-1.5 text-sm'>
-              <span className='font-medium'>{t('adjustments.stimulus')}</span>
+              <span className='font-medium'>{t('adjustments.zone')}</span>
               <select
-                name='stimulus'
-                defaultValue={item.stimulus ?? ''}
+                name='zone'
+                defaultValue={item.zone ?? ''}
                 className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
               >
-                <option value=''>{t('adjustments.noStimulusTemplate')}</option>
-                {workouts.map(workout => (
-                  <option key={workout.id} value={workout.id}>
-                    {workout.title} · {workoutTypeT(`types.${workout.type}`)}
-                  </option>
+                <option value=''>{t('adjustments.selectZone')}</option>
+                {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map(zone => (
+                  <option key={zone} value={zone}>{zone}</option>
                 ))}
               </select>
             </label>
+          )}
+
+          {intensityMethod === 'reference_percentage' && (
             <label className='space-y-1.5 text-sm'>
-              <span className='font-medium'>{t('adjustments.stimulusType')}</span>
+              <span className='font-medium'>{t('adjustments.referencePercentageValue')}</span>
               <select
-                name='stimulusType'
-                defaultValue={item.stimulusType ?? ''}
+                name='referencePercentage'
+                defaultValue={item.referencePercentage ?? ''}
                 className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
               >
-                <option value=''>{t('adjustments.inherit')}</option>
-                {WORKOUT_TYPES.map(type => (
-                  <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>
+                <option value=''>{t('adjustments.selectReferencePercentage')}</option>
+                {SESSION_REFERENCE_PERCENTAGES.map(percentage => (
+                  <option key={percentage} value={percentage}>{percentage}%</option>
                 ))}
               </select>
             </label>
-          </div>
-        )}
+          )}
+        </div>
+
+        <div className='space-y-3 rounded-lg border p-4'>
+          <p className='text-sm font-medium'>{t('adjustments.assignmentTitle')}</p>
+
+          <label className='space-y-1.5 text-sm'>
+            <span className='font-medium'>{t('adjustments.assignmentMode')}</span>
+            <select
+              name='assignmentMode'
+              value={assignmentMode}
+              onChange={(event) => setAssignmentMode(event.target.value)}
+              className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+            >
+              <option value='inherit'>{t('adjustments.inherit')}</option>
+              <option value='rescheduled'>{t('adjustments.reschedule')}</option>
+              <option value='stimulus_override'>{t('adjustments.changeStimulus')}</option>
+              <option value='omitted'>{t('adjustments.omitForAthlete')}</option>
+            </select>
+          </label>
+
+          {assignmentMode === 'rescheduled' && (
+            <LabeledInput
+              label={t('adjustments.reschedule')}
+              name='rescheduled'
+              type='date'
+              defaultValue={item.rescheduled ?? ''}
+            />
+          )}
+
+          {assignmentMode === 'stimulus_override' && (
+            <div className='grid gap-3 sm:grid-cols-2'>
+              <label className='space-y-1.5 text-sm'>
+                <span className='font-medium'>{t('adjustments.stimulus')}</span>
+                <select
+                  name='stimulus'
+                  defaultValue={item.stimulus ?? ''}
+                  className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+                >
+                  <option value=''>{t('adjustments.noStimulusTemplate')}</option>
+                  {workouts.map(workout => (
+                    <option key={workout.id} value={workout.id}>
+                      {workout.title} · {workoutTypeT(`types.${workout.type}`)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className='space-y-1.5 text-sm'>
+                <span className='font-medium'>{t('adjustments.stimulusType')}</span>
+                <select
+                  name='stimulusType'
+                  defaultValue={item.stimulusType ?? ''}
+                  className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+                >
+                  <option value=''>{t('adjustments.inherit')}</option>
+                  {WORKOUT_TYPES.map(type => (
+                    <option key={type} value={type}>{workoutTypeT(`types.${type}`)}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
       </div>
 
       {item.currentReason && (
