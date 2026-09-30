@@ -103,3 +103,86 @@ Athlete resolution is downstream of generation: the applicable dated Base or
 Variant plan is resolved first, then the prescription whose microcycle lineage
 belongs to that plan is selected. Variant selection is complete authority for the
 date; there is no sparse per-Session fallback to Base.
+
+
+## Explainability and historical provenance
+
+KAN-505 adds explainability around the existing generator without creating a
+second planning engine or changing weekly-generation authority.
+
+`GenerationExplanation` is structured evidence attached to one generated
+planning-scope prescription. Its causal stage order is fixed:
+
+```text
+weekly_budget
+  → frequency
+  → slots
+  → stimulus_template
+  → fixed_load
+  → remaining_budget
+  → flexible_allocation
+  → intensity
+  → coordination_reconciliation
+```
+
+The explanation is built from the same `SessionGenerationInput`, weekly result,
+shared-event result and existing generator rules that produced the proposal.
+It must not infer reasons that the generator did not actually use.
+
+The weekly pattern remains a flexible preference. Explainability may show that
+habitual days were kept, omitted or replaced and may expose material influences
+such as recovery spacing, race placement, microcycle context, frequency,
+template compatibility, fixed circuit load and intensity constraints. This
+does not promote the pattern to a hard scheduling constraint.
+
+### Planning scope and shared Sessions
+
+Explainability belongs to the prescription planning scope, not to the shared
+`Session`.
+
+- Base snapshots carry Base plan + Sporting group + microcycle scope.
+- Variant snapshots additionally carry the Planning subgroup.
+- One shared `Session` may therefore expose multiple independent explanations,
+  one per active prescription/generation key.
+- `sharedEventKey` and `generationKey` remain reconciliation identities, not
+  causal provenance by themselves.
+
+### Persistence
+
+Historical explainability is stored only in
+`session_generation_modification_records.generation_explanation`.
+
+- SQLite stores the JSON payload in text; Supabase stores `jsonb`.
+- The column is nullable and has no default so legacy audit rows remain valid.
+- Generated create/update audit rows may store a snapshot.
+- Removal audit rows do not invent a new explanation.
+- `Session` and `GroupSessionPrescription` do not store one mutable current
+  explanation.
+- Localized prose is presentation-only. Historical snapshots persist structured
+  codes/facts and strip generator `source_warning` strings before persistence.
+
+Session detail reads the latest persisted non-null explanation for each active
+prescription. It does not rerun the generator to reconstruct history.
+Current `generationOwnership` and `generationKey` are displayed separately
+from historical generated origin.
+
+### Downstream boundary
+
+Explainability ends at the audience prescription.
+
+`AthleteSessionAdjustment` remains Coach-owned downstream planning state keyed
+by `athleteId + sourcePrescriptionId`. It may change the effective athlete
+prescription but never becomes generator provenance and is never folded into
+`GenerationExplanation`.
+
+`WorkoutLog` remains realized-only evidence and is excluded from generation
+provenance. Historical generation reasons must never be reconstructed from
+performed-training state.
+
+### Presentation
+
+Coach preview and Session detail reuse the same structured explanation renderer.
+The UI localizes stable fact/warning codes into human ES/EN labels and
+operational messages while preserving the underlying structured snapshot.
+Unknown presentation codes fall back to a readable label rather than exposing
+raw implementation syntax as the primary Coach explanation.
