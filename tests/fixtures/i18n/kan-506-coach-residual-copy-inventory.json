@@ -41,7 +41,7 @@
     {
       "path": "app/[locale]/dashboard/planning/[planId]/page.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Volver a planificaciones",
         "Subgrupo de planificación"
@@ -50,7 +50,7 @@
     {
       "path": "features/planning/components/GenerationExplanationView.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Decisión",
         "Días y roles",
@@ -60,7 +60,7 @@
     {
       "path": "features/planning/components/MicrocycleDatesForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Guardar fechas"
       ]
@@ -68,7 +68,7 @@
     {
       "path": "features/planning/components/MicrocycleElevationForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Guardar"
       ]
@@ -76,7 +76,7 @@
     {
       "path": "features/planning/components/MicrocycleNotesForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Guardar notas"
       ]
@@ -84,7 +84,7 @@
     {
       "path": "features/planning/components/MicrocycleTypeForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Guardar tipo"
       ]
@@ -92,7 +92,7 @@
     {
       "path": "features/planning/components/MicrocycleVolumeForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Volumen objetivo en kilómetros"
       ]
@@ -100,7 +100,7 @@
     {
       "path": "features/planning/components/SessionGenerationPreferencesForm.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Miércoles",
         "Guardar configuración semanal"
@@ -109,7 +109,7 @@
     {
       "path": "features/planning/components/SessionGenerationPreview.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Por qué se generó así",
         "Guardar sesiones"
@@ -118,7 +118,7 @@
     {
       "path": "features/planning/components/CompetitionCalendarSummary.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Sin restricción",
         "Política pendiente",
@@ -128,7 +128,7 @@
     {
       "path": "features/planning/components/IntensityDistribution.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Recuperación",
         "Aeróbico"
@@ -137,7 +137,7 @@
     {
       "path": "features/planning/components/LoadProgressionPreview.tsx",
       "area": "planning",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Foco montaña",
         "Guardar progresión"
