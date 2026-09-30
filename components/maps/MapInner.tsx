@@ -434,6 +434,12 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     mapRef.current = map
     activeStyleRef.current = selectedLayer
 
+    const resizeObserver = new ResizeObserver(() => {
+      map.resize()
+    })
+
+    resizeObserver.observe(mapContainerRef.current)
+
     /* -------------------------------------------------------------------- */
     /* CONTROLS                                                             */
     /* -------------------------------------------------------------------- */
@@ -467,6 +473,8 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
 
     return () => {
       clearMarkers()
+
+      resizeObserver.disconnect()
 
       map.off('load', handleLoad)
 
