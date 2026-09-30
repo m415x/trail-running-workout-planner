@@ -24,11 +24,13 @@ test('Coach intensity editor uses the frozen typed contract', () => {
   assert.doesNotMatch(component, /<Input name=['"]intensity['"]/)
 })
 
-test('Coach assignment editor submits explicit reschedule stimulus and omission fields', () => {
+test('Coach assignment editor submits one explicit assignment mode plus its relevant fields', () => {
+  assert.match(component, /name=['"]assignmentMode['"]/)
+  assert.match(component, /value=['"]omitted['"]/)
   assert.match(component, /name=['"]rescheduled['"]/)
   assert.match(component, /name=['"]stimulus['"]/)
   assert.match(component, /name=['"]stimulusType['"]/)
-  assert.match(component, /name=['"]omitted['"]/)
+  assert.doesNotMatch(component, /name=['"]omitted['"]/)
 })
 
 test('one Coach submit produces one append-only revision write', () => {
