@@ -99,7 +99,7 @@
 
     /* Energía: El Naranja del logo */
     --primary: var(--brand-action);
-    --primary-foreground: oklch(0.99 0.003 240);
+    --primary-foreground: oklch(0.23 0.035 242);
 
     /* Identidad: El Violeta Oscuro de la montaña */
     --secondary: var(--brand-identity);
