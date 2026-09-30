@@ -851,6 +851,26 @@ export function explainOwnershipAndRegeneration(
             eventAction !== 'protected' &&
             prescriptionAction !== 'protected',
         },
+        {
+          code: 'obsolete_event_ids',
+          value: input.reconciliation.obsoleteEventIds.join(','),
+        },
+        {
+          code: 'obsolete_prescription_ids',
+          value: input.reconciliation.obsoletePrescriptionIds.join(','),
+        },
+        {
+          code: 'preserved_record_count',
+          value: input.reconciliation.preservedRecords.length,
+        },
+        {
+          code: 'preserved_records',
+          value: input.reconciliation.preservedRecords
+            .map((record) => (
+              `${record.kind}:${record.existingId}:${record.reason}`
+            ))
+            .join(','),
+        },
       ],
       warnings,
     },
