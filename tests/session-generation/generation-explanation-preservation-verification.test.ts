@@ -46,7 +46,7 @@ test('Supabase verifier checks deployed historical generation provenance column 
   assert.match(supabaseVerifier, /column_default/)
   assert.match(
     supabaseVerifier,
-    /Generation explanation provenance contract:.*OK.*FAIL/s,
+    /Generation explanation provenance contract:[\s\S]*OK[\s\S]*FAIL/,
   )
   assert.match(
     supabaseVerifier,
