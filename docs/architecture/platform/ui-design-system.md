@@ -328,6 +328,56 @@ After correcting the reasonable MapLibre integration defects identified by the b
 
 Historical Leaflet at commit `61cf855de565ce53932b8153e9865a8919730747` is compared **only if MapLibre still fails** this minimum benchmark after those integration defects are corrected. Any such comparison must use the **same benchmark and identical criteria**; Leaflet is not introduced merely as a parallel implementation or preference comparison.
 
+## Consumption contract
+
+The executable Design System remains Git-first and consumable without Figma or Storybook.
+
+Use the existing import boundary deliberately:
+
+- `app/globals.css` is the authority for foundations, semantic tokens, typography, spacing, shape, elevation, Brand roles and theme values.
+- `@ui/*` resolves to `components/ui/*` and is the import surface for **Base primitives**.
+- `@ui/custom/*` resolves inside `components/ui/custom/*` and is the current import surface for **Official EPT semantic primitives** and legacy/shared **Product patterns**.
+- **Feature compositions** remain inside their owning feature/surface and may compose the layers above.
+
+Physical co-location under `components/ui/custom/*` does not erase the conceptual ownership boundary. KAN-507 does not require a disruptive folder migration merely to mirror the conceptual stack. Promotion into an Official EPT semantic primitive is a contract decision, not a filename convention.
+
+Consumers should prefer the highest stable layer that already owns the needed behavior:
+
+```text
+app/globals.css foundations/tokens
+        ↓
+@ui/* Base primitives
+        ↓
+@ui/custom/* Official EPT semantic primitives / shared product patterns
+        ↓
+feature-owned compositions
+```
+
+Do not bypass an officialized EPT semantic primitive only to restyle its Base primitive locally. Conversely, do not promote a feature-specific composition into `@ui/custom/*` solely to reduce duplication.
+
+### KAN-508 migration boundary
+
+KAN-508 owns transversal application of the contracts defined by KAN-507. Its migration boundary includes existing surfaces that still require normalization of:
+
+- typography hierarchy;
+- forms and controls;
+- cards and surfaces;
+- loading, empty and error states;
+- responsive composition;
+- direct presentation literals that should consume semantic tokens or officialized shared primitives.
+
+KAN-508 may migrate consumers toward the existing semantic authority, but it must not reinterpret the foundations established here or create parallel token systems. Page-by-page cleanup remains outside KAN-507.
+
+### Documentation and auxiliary tooling
+
+Git documentation plus the executable code above are sufficient to identify the implementable Design System authority.
+
+Figma remains auxiliary and does not override repository behavior.
+
+Storybook is **not introduced** by KAN-562 because the current primitive set does not demonstrate a material need that outweighs the additional tooling and maintenance surface. This absence is not Design System debt; Storybook may be reconsidered later if isolated component development, regression evidence or collaboration needs become concrete.
+
+Experimental external tooling remains outside this authority. Archify is outside the KAN-507 DoD and outside T1–T8, and it must not become a durable source of truth or leave required production/tooling dependencies.
+
 ## External tooling
 
 Experimental external tooling is outside the KAN-507 Definition of Done.
