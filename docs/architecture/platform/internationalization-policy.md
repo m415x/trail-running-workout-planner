@@ -173,3 +173,44 @@ untouched legacy flow
 A dedicated cleanup task may still be created when remaining localization debt
 is concentrated enough to justify it, but routine feature work should steadily
 reduce that debt by following this policy.
+
+
+## Regional consumption boundary
+
+Regional concerns are independent application inputs:
+
+- `language` selects product copy/messages;
+- presentation `locale` selects date/number presentation conventions;
+- operational `timeZone` defines timezone-dependent calendar operations and presentation;
+- `currency` is not regional configuration and remains owned by the economic domain.
+
+Until KAN-298 / Initial Setup provides persisted authority, the application uses
+explicit provisional fallbacks at the composition boundary:
+
+- Spanish presentation-locale default: `es-AR`;
+- English presentation-locale default: `en-US`;
+- operational timezone fallback: `America/Argentina/Buenos_Aires`.
+
+These values are application fallbacks, not Team properties and not inference
+rules. A more specific presentation locale or timezone may be supplied
+independently. Currency must never be inferred from language, presentation
+locale, or timezone.
+
+Low-level helpers whose result depends on timezone should receive that timezone
+explicitly. The application composition boundary is responsible for supplying
+the provisional timezone fallback while no persisted authority exists.
+
+### Temporal semantics
+
+The platform distinguishes three temporal concepts:
+
+- **calendar date** — a civil `YYYY-MM-DD` value with no implicit timezone or
+  UTC conversion;
+- **local planned date/time** — a local civil date and clock time interpreted
+  with an explicit IANA timezone;
+- **absolute instant** — an absolute timestamp such as an ISO-8601 value with
+  `Z` or an explicit offset.
+
+Calendar dates must not be converted indiscriminately to UTC. Operations such as
+"today" depend on an operational timezone and therefore require an explicit
+timezone input (supplied by composition when necessary).
