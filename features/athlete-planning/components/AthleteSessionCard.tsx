@@ -1,4 +1,7 @@
+'use client'
+
 import { Activity, MapPin, Mountain, Timer } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 
 import type { IntensityMethod, IntensityZone } from '@/types/training/intensity.types'
 import type { ExecutionGuidance } from '@/lib/physiology/execution-guidance'
@@ -33,15 +36,16 @@ interface AthleteSessionCardProps {
 }
 
 export function AthleteSessionCard({ session, prescription, executionGuidance }: AthleteSessionCardProps) {
-  const intensity = formatIntensity(prescription)
+  const t = useTranslations('AthletePlan')
+  const intensity = formatIntensity(prescription, t)
   const hasVolume = prescription.distanceKm != null
     || prescription.durationMin != null
     || prescription.elevationGain != null
   const structureBlocks = [
-    { label: 'Ejercicios preliminares', value: session.structure?.preliminaryExercises },
-    { label: 'Entrada en calor', value: session.structure?.warmup },
-    { label: 'Bloque principal', value: session.structure?.mainBlock },
-    { label: 'Vuelta a la calma', value: session.structure?.cooldown },
+    { label: t('session.structure.preliminary'), value: session.structure?.preliminaryExercises },
+    { label: t('session.structure.warmup'), value: session.structure?.warmup },
+    { label: t('session.structure.main'), value: session.structure?.mainBlock },
+    { label: t('session.structure.cooldown'), value: session.structure?.cooldown },
   ].filter((block): block is { label: string; value: string } => Boolean(block.value))
   const generalNotes = session.notes !== prescription.notes ? session.notes : null
   const hasInstructions = Boolean(prescription.notes || generalNotes || structureBlocks.length > 0)
@@ -56,7 +60,7 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
       </CardHeader>
       <CardContent className='space-y-2 px-4 text-xs text-muted-foreground'>
         <div className='rounded-lg bg-muted/40 p-2.5'>
-          <p className='mb-1.5 font-medium text-foreground'>Tu volumen</p>
+          <p className='mb-1.5 font-medium text-foreground'>{t('session.volume')}</p>
           {hasVolume ? (
             <div className='flex flex-wrap gap-x-4 gap-y-2'>
               {prescription.distanceKm != null && <Metric icon={Activity} value={`${prescription.distanceKm} km`} />}
@@ -64,15 +68,15 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
               {prescription.elevationGain != null && <Metric icon={Mountain} value={`${prescription.elevationGain} m+`} />}
             </div>
           ) : (
-            <p>Carga por definir</p>
+            <p>{t('session.loadPending')}</p>
           )}
         </div>
 
         <div className='rounded-lg border px-2.5 py-2'>
-          <p className='mb-1 font-medium text-foreground'>Lugar</p>
+          <p className='mb-1 font-medium text-foreground'>{t('session.location')}</p>
           <p className='flex items-start gap-1.5'>
             <MapPin className='mt-0.5 size-3.5 shrink-0' />
-            <span>{session.location?.name || 'Ubicación por confirmar'}</span>
+            <span>{session.location?.name || t('session.locationPending')}</span>
           </p>
         </div>
         {intensity && <p className='font-medium text-foreground'>{intensity}</p>}
@@ -91,15 +95,15 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
         )}
 
         <div className='border-t pt-3'>
-          <p className='mb-2 font-medium text-foreground'>Instrucciones</p>
+          <p className='mb-2 font-medium text-foreground'>{t('session.instructions')}</p>
           {hasInstructions ? (
             <div className='space-y-2.5'>
-              {prescription.notes && <Instruction label='Para tu grupo' value={prescription.notes} />}
+              {prescription.notes && <Instruction label={t('session.groupInstructions')} value={prescription.notes} />}
               {structureBlocks.map((block) => <Instruction key={block.label} label={block.label} value={block.value} />)}
-              {generalNotes && <Instruction label='Indicaciones generales' value={generalNotes} />}
+              {generalNotes && <Instruction label={t('session.generalInstructions')} value={generalNotes} />}
             </div>
           ) : (
-            <p>Sin instrucciones adicionales</p>
+            <p>{t('session.noInstructions')}</p>
           )}
         </div>
       </CardContent>
@@ -120,10 +124,10 @@ function Instruction({ label, value }: { label: string; value: string }) {
   )
 }
 
-function formatIntensity(prescription: AthleteSessionCardProps['prescription']) {
+function formatIntensity(prescription: AthleteSessionCardProps['prescription'], t: (key: string, values?: Record<string, string | number>) => string) {
   if (prescription.intensityMethod === 'reference_percentage' && prescription.referencePercentage != null) {
-    return `Intensidad: ${prescription.referencePercentage}% de referencia`
+    return t('session.referenceIntensity', { value: prescription.referencePercentage })
   }
-  if (prescription.zone) return `Intensidad: ${prescription.zone}`
+  if (prescription.zone) return t('session.intensity', { value: prescription.zone })
   return null
 }
