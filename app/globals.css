@@ -74,6 +74,7 @@
   --space-ept-control: 0.5rem;
   --space-ept-content: 1rem;
   --space-ept-section: 1.5rem;
+  --size-ept-touch-target: 2.75rem;
 
   /* --- BORDER RADIUS --- */
   --radius-sm: calc(var(--radius) * 0.6);
