@@ -170,10 +170,13 @@
         "invalidReschedule": "Enter a valid reschedule date.",
         "invalidStimulusType": "Select a valid stimulus type.",
         "saveFailed": "The individual adjustment could not be saved.",
-        "stimulusWorkoutNotFound": "The selected stimulus template is no longer available."
+        "stimulusWorkoutNotFound": "The selected stimulus template is no longer available.",
+        "invalidAssignmentMode": "Select a valid assignment mode."
       },
       "currentReason": "Current reason:",
-      "noStimulusTemplate": "No template · change type only"
+      "noStimulusTemplate": "No template · change type only",
+      "assignmentMode": "Assignment mode",
+      "changeStimulus": "Change stimulus"
     }
   }
 }
