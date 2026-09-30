@@ -78,6 +78,42 @@
       "race_specific": "Race-specific"
     },
     "saveProgression": "Save progression",
-    "recoveryLabel": "Recovery"
+    "recoveryLabel": "Recovery",
+    "list": {
+      "title": "Planning",
+      "description": "Team plans, blocks, and weekly volumes.",
+      "newStrategy": "New strategy",
+      "emptyTitle": "There are no plans yet",
+      "emptyDescription": "Generated group plans will appear here.",
+      "group": "Group {code}",
+      "macrocycles": "{count, plural, one {# macrocycle} other {# macrocycles}}",
+      "weeks": "{count, plural, one {# week} other {# weeks}}",
+      "view": "View planning",
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      }
+    },
+    "detail": {
+      "group": "Group {code}",
+      "description": "Edit each week's target volume and elevation gain without regenerating the plan.",
+      "basePlan": "Base plan",
+      "previewUnavailable": "Preview unavailable",
+      "previewUnavailableDescription": "This plan was created before load strategies were introduced.",
+      "configuredHorizon": "Configured horizon",
+      "configuredHorizonDescription": "The strategy and dates are saved. Weekly progression will be generated in the next step.",
+      "table": {
+        "week": "Week",
+        "type": "Type",
+        "dates": "Dates",
+        "elevation": "Elevation gain",
+        "notes": "Notes",
+        "targetVolume": "Target volume"
+      },
+      "generationMissing": "Week {week}: a volume or intensity target is missing.",
+      "generationFailed": "Week {week}: the proposal could not be generated."
+    }
   }
 }
