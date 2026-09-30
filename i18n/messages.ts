@@ -34,6 +34,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
     switch (path) {
       case 'common/common':
         return (await import('@/messages/en/common/common.json')).default
+      case 'common/coach-shell':
+        return (await import('@/messages/en/common/coach-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/en/common/weather.json')).default
       case 'planning/base-planning':
@@ -77,6 +79,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
     switch (path) {
       case 'common/common':
         return (await import('@/messages/es/common/common.json')).default
+      case 'common/coach-shell':
+        return (await import('@/messages/es/common/coach-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/es/common/weather.json')).default
       case 'planning/base-planning':
