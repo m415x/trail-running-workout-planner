@@ -88,7 +88,11 @@ export async function getSessionAthleteAdjustmentReview(
       user: true,
     },
   })
-  if (athletes.length === 0 || session.sessionPrescriptions.length === 0) return []
+  if (athletes.length === 0) return []
+
+  const sessionPrescriptionHistory = await db.select()
+    .from(groupSessionPrescriptions)
+    .where(eq(groupSessionPrescriptions.sessionId, sessionId))
 
   const microcycleIds = [...new Set(session.sessionPrescriptions.map(item => item.microcycleId))]
   const lineages = await db.select({
@@ -104,13 +108,13 @@ export async function getSessionAthleteAdjustmentReview(
     lineages.map(({ microcycleId, groupTrainingPlanId }) => [microcycleId, groupTrainingPlanId]),
   )
 
-  const sessionPrescriptionIds = session.sessionPrescriptions.map(prescription => prescription.id)
-  const sessionAdjustments = sessionPrescriptionIds.length === 0
+  const historicalPrescriptionIds = sessionPrescriptionHistory.map(prescription => prescription.id)
+  const sessionAdjustments = historicalPrescriptionIds.length === 0
     ? []
     : await db.select()
         .from(athleteSessionAdjustments)
         .where(and(
-          inArray(athleteSessionAdjustments.sourcePrescriptionId, sessionPrescriptionIds),
+          inArray(athleteSessionAdjustments.sourcePrescriptionId, historicalPrescriptionIds),
           eq(athleteSessionAdjustments.isDeleted, false),
         ))
   const sessionAdjustmentIds = sessionAdjustments.map(adjustment => adjustment.id)
@@ -218,23 +222,34 @@ export async function getSessionAthleteAdjustmentReview(
           : []
       }),
     })
-    if (prescriptionResolution.status !== 'resolved') continue
 
-    const sourcePrescription = session.sessionPrescriptions.find(
-      item => item.id === prescriptionResolution.prescriptionId,
-    )
-    if (!sourcePrescription) continue
+    const effectiveSourcePrescription = prescriptionResolution.status === 'resolved'
+      ? session.sessionPrescriptions.find(item => item.id === prescriptionResolution.prescriptionId) ?? null
+      : null
 
     const athleteAdjustments = sessionAdjustments.filter(
       adjustment => adjustment.athleteId === athlete.id,
     )
-    const effectiveAdjustment = athleteAdjustments.find(
-      adjustment => adjustment.sourcePrescriptionId === sourcePrescription.id,
-    ) ?? null
+    const effectiveAdjustment = effectiveSourcePrescription
+      ? athleteAdjustments.find(
+          adjustment => adjustment.sourcePrescriptionId === effectiveSourcePrescription.id,
+        ) ?? null
+      : null
     const staleAdjustment = athleteAdjustments.find(
-      adjustment => adjustment.sourcePrescriptionId !== sourcePrescription.id,
+      adjustment => adjustment.sourcePrescriptionId !== effectiveSourcePrescription?.id,
     ) ?? null
     const reviewAdjustment = effectiveAdjustment ?? staleAdjustment
+
+    if (!effectiveSourcePrescription && !reviewAdjustment) continue
+
+    const reviewSourcePrescription = reviewAdjustment
+      ? sessionPrescriptionHistory.find(
+          prescription => prescription.id === reviewAdjustment.sourcePrescriptionId,
+        ) ?? null
+      : null
+    const displayPrescription = effectiveSourcePrescription ?? reviewSourcePrescription
+    if (!displayPrescription) continue
+
     const reviewRevisions = reviewAdjustment
       ? sessionCurrentRevisions
           .filter(revision => revision.adjustmentId === reviewAdjustment.id)
@@ -248,38 +263,53 @@ export async function getSessionAthleteAdjustmentReview(
             isCurrent: revision.isCurrent,
           }))
       : []
+    const currentReviewRevision = reviewRevisions.find(revision => revision.isCurrent) ?? null
 
-    const authorityResolution = resolveEffectiveAthleteAdjustment({
-      athleteId: athlete.id,
-      effectivePrescriptionId: sourcePrescription.id,
-      adjustment: reviewAdjustment
+    const authorityResolution = effectiveSourcePrescription
+      ? resolveEffectiveAthleteAdjustment({
+          athleteId: athlete.id,
+          effectivePrescriptionId: effectiveSourcePrescription.id,
+          adjustment: reviewAdjustment
+            ? {
+                id: reviewAdjustment.id,
+                teamId: reviewAdjustment.teamId,
+                athleteId: reviewAdjustment.athleteId,
+                sourcePrescriptionId: reviewAdjustment.sourcePrescriptionId,
+              }
+            : null,
+          revisions: reviewRevisions,
+        })
+      : reviewAdjustment
         ? {
-            id: reviewAdjustment.id,
-            teamId: reviewAdjustment.teamId,
-            athleteId: reviewAdjustment.athleteId,
-            sourcePrescriptionId: reviewAdjustment.sourcePrescriptionId,
+            status: 'outside_authority' as const,
+            reason: 'source-prescription-mismatch' as const,
+            adjustmentId: reviewAdjustment.id,
           }
-        : null,
-      revisions: reviewRevisions,
-    })
-    const currentPayload = authorityResolution.status === 'resolved'
-      ? authorityResolution.revision.payload
-      : null
-    const dose = currentPayload?.dose ?? null
-    const assignment = currentPayload?.assignment ?? null
+        : {
+            status: 'none' as const,
+            reason: 'no-current-revision' as const,
+          }
+
     const outsideAuthority = authorityResolution.status === 'outside_authority'
       && authorityResolution.reason === 'source-prescription-mismatch'
+    const currentPayload = authorityResolution.status === 'resolved'
+      ? authorityResolution.revision.payload
+      : outsideAuthority && currentReviewRevision?.state === 'active'
+        ? currentReviewRevision.payload
+        : null
+    const dose = currentPayload?.dose ?? null
+    const assignment = currentPayload?.assignment ?? null
 
     rows.push({
       athleteId: athlete.id,
       athleteName: `${athlete.user.lastName} ${athlete.user.firstName}`,
-      sourcePrescriptionId: reviewAdjustment?.sourcePrescriptionId ?? sourcePrescription.id,
+      sourcePrescriptionId: reviewAdjustment?.sourcePrescriptionId ?? effectiveSourcePrescription!.id,
       distanceKm: dose?.distanceKm?.kind === 'override' ? dose.distanceKm.value : null,
       durationMin: dose?.durationMin?.kind === 'override' ? dose.durationMin.value : null,
       elevationGain: dose?.elevationGain?.kind === 'override' ? dose.elevationGain.value : null,
-      inheritedDistanceKm: sourcePrescription.distanceKm,
-      inheritedDurationMin: sourcePrescription.durationMin,
-      inheritedElevationGain: sourcePrescription.elevationGain,
+      inheritedDistanceKm: displayPrescription.distanceKm,
+      inheritedDurationMin: displayPrescription.durationMin,
+      inheritedElevationGain: displayPrescription.elevationGain,
       intensityMethod: dose?.intensity?.kind === 'override'
         ? dose.intensity.value === null
           ? 'clear'
@@ -292,17 +322,17 @@ export async function getSessionAthleteAdjustmentReview(
         && dose.intensity.value?.method === 'reference_percentage'
         ? dose.intensity.value.referencePercentage
         : null,
-      inheritedIntensity: formatReviewIntensity(sourcePrescription, null),
+      inheritedIntensity: formatReviewIntensity(displayPrescription, null),
       rescheduled: assignment?.kind === 'rescheduled' ? assignment.date : null,
       stimulus: assignment?.kind === 'stimulus_override' ? assignment.workoutId : null,
       stimulusType: assignment?.kind === 'stimulus_override' ? assignment.type : null,
       omitted: assignment?.kind === 'omitted',
       revisionId: authorityResolution.status === 'resolved'
         ? authorityResolution.revision.id
-        : reviewRevisions.find(revision => revision.isCurrent)?.id ?? null,
+        : currentReviewRevision?.id ?? null,
       currentReason: authorityResolution.status === 'resolved'
         ? authorityResolution.revision.reason
-        : reviewRevisions.find(revision => revision.isCurrent)?.reason ?? null,
+        : currentReviewRevision?.reason ?? null,
       authorityStatus: outsideAuthority ? 'outside_authority' : 'effective',
       reviewRequired: outsideAuthority,
     })
