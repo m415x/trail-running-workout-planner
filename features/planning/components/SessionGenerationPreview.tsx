@@ -4,6 +4,11 @@ import { useActionState } from 'react'
 import { AlertTriangle, CalendarClock, MapPin, Mountain, Route } from 'lucide-react'
 
 import { persistGeneratedSessions } from '@/app/actions/session-generation-actions'
+import {
+  GENERATION_EXPLANATION_STAGE_ORDER,
+  type GenerationExplanation,
+  type GenerationExplanationStageEvidence,
+} from '@/lib/session-generation/generation-explanation'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
@@ -30,6 +35,7 @@ interface SessionGenerationPreviewProps {
   planId: string
   locale: string
   proposal: SharedSessionGenerationResult
+  generationExplanations: Record<string, GenerationExplanation>
 }
 
 const microcycleLabels: Record<MicrocycleType, string> = {
@@ -49,6 +55,7 @@ export function SessionGenerationPreview({
   planId,
   locale,
   proposal,
+  generationExplanations,
 }: SessionGenerationPreviewProps) {
   const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
@@ -116,24 +123,52 @@ export function SessionGenerationPreview({
                           <Badge variant='outline'>{event.session.type}</Badge>
                         </div>
 
-                        {prescriptions.map(({ generationKey, prescription }) => (
-                          <div key={generationKey} className='space-y-2 text-sm'>
-                            <div className='flex flex-wrap gap-x-4 gap-y-2'>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <Route className='size-4 text-muted-foreground' />
-                                {formatNumber(prescription.distanceKm)} km
-                              </span>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <Mountain className='size-4 text-muted-foreground' />
-                                {formatNumber(prescription.elevationGain)} m D+
-                              </span>
-                              <span className='inline-flex items-center gap-1.5'>
-                                <CalendarClock className='size-4 text-muted-foreground' />
-                                {formatIntensity(prescription)}
-                              </span>
+                        {prescriptions.map(({ generationKey, prescription }) => {
+                          const generationExplanation = generationExplanations[generationKey]
+
+                          return (
+                            <div key={generationKey} className='space-y-2 text-sm'>
+                              <div className='flex flex-wrap gap-x-4 gap-y-2'>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <Route className='size-4 text-muted-foreground' />
+                                  {formatNumber(prescription.distanceKm)} km
+                                </span>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <Mountain className='size-4 text-muted-foreground' />
+                                  {formatNumber(prescription.elevationGain)} m D+
+                                </span>
+                                <span className='inline-flex items-center gap-1.5'>
+                                  <CalendarClock className='size-4 text-muted-foreground' />
+                                  {formatIntensity(prescription)}
+                                </span>
+                              </div>
+
+                              {generationExplanation && (
+                                <details className='rounded-md border bg-muted/20'>
+                                  <summary className='cursor-pointer px-3 py-2 font-medium'>
+                                    {locale === 'en'
+                                      ? 'Why it was generated this way'
+                                      : 'Por qué se generó así'}
+                                  </summary>
+                                  <div className='space-y-3 border-t px-3 py-3'>
+                                    {GENERATION_EXPLANATION_STAGE_ORDER.map((stage) => {
+                                      const evidence = generationExplanation.stages.find(
+                                        (candidate) => candidate.stage === stage,
+                                      )
+                                      return evidence ? (
+                                        <GenerationExplanationStageView
+                                          key={stage}
+                                          evidence={evidence}
+                                          locale={locale}
+                                        />
+                                      ) : null
+                                    })}
+                                  </div>
+                                </details>
+                              )}
                             </div>
-                          </div>
-                        ))}
+                          )
+                        })}
 
                         {isCompetition && (
                           <p className='text-xs font-medium text-muted-foreground'>
@@ -177,6 +212,11 @@ export function SessionGenerationPreview({
             <input type='hidden' name='planId' value={planId} />
             <input type='hidden' name='locale' value={locale} />
             <input type='hidden' name='proposal' value={JSON.stringify(proposal)} />
+            <input
+              type='hidden'
+              name='generationExplanations'
+              value={JSON.stringify(generationExplanations)}
+            />
             <div className='text-sm'>
               {state.error && <p className='text-destructive'>{state.error}</p>}
               {state.success && <p className='text-emerald-600'>{state.success}</p>}
@@ -210,4 +250,86 @@ function formatIntensity(
   return prescription.intensityMethod === 'reference_percentage'
     ? `${prescription.referencePercentage ?? 0}% de referencia`
     : prescription.zone ?? 'Sin zona'
+}
+
+
+function GenerationExplanationStageView({
+  evidence,
+  locale,
+}: {
+  evidence: GenerationExplanationStageEvidence
+  locale: string
+}) {
+  const labels = locale === 'en'
+    ? {
+        inputs: 'Inputs',
+        constraints: 'Constraints',
+        decision: 'Decision',
+        consequence: 'Consequence',
+      }
+    : {
+        inputs: 'Entradas',
+        constraints: 'Restricciones',
+        decision: 'Decisión',
+        consequence: 'Consecuencia',
+      }
+
+  const sections = [
+    { label: labels.inputs, facts: evidence.inputs },
+    { label: labels.constraints, facts: evidence.constraints },
+    { label: labels.decision, facts: evidence.decision },
+    { label: labels.consequence, facts: evidence.consequence },
+  ]
+
+  return (
+    <section className='space-y-2'>
+      <p className='font-medium'>{formatStageLabel(evidence.stage, locale)}</p>
+      <div className='grid gap-2 md:grid-cols-2'>
+        {sections.map(({ label, facts }) => (
+          <div key={label}>
+            <p className='text-xs font-medium text-muted-foreground'>{label}</p>
+            {facts.length === 0 ? (
+              <p className='text-xs text-muted-foreground'>—</p>
+            ) : (
+              <ul className='space-y-1 text-xs text-muted-foreground'>
+                {facts.map((fact, index) => (
+                  <li key={`${fact.code}-${index}`}>
+                    {fact.code}: {String(fact.value ?? '—')}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ))}
+      </div>
+      {evidence.warnings.length > 0 && (
+        <ul className='space-y-1 text-xs text-destructive'>
+          {evidence.warnings.map((warning, index) => (
+            <li key={`${warning.code}-${index}`}>{warning.code}</li>
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function formatStageLabel(
+  stage: GenerationExplanationStageEvidence['stage'],
+  locale: string,
+) {
+  const labels = {
+    weekly_budget: locale === 'en' ? 'Weekly budget' : 'Presupuesto semanal',
+    frequency: locale === 'en' ? 'Frequency' : 'Frecuencia',
+    slots: locale === 'en' ? 'Slots' : 'Días y roles',
+    stimulus_template: locale === 'en' ? 'Stimulus and template' : 'Estímulo y plantilla',
+    fixed_load: locale === 'en' ? 'Fixed load' : 'Carga fija',
+    remaining_budget: locale === 'en' ? 'Remaining budget' : 'Presupuesto restante',
+    flexible_allocation: locale === 'en' ? 'Flexible allocation' : 'Distribución flexible',
+    intensity: locale === 'en' ? 'Intensity' : 'Intensidad',
+    coordination_reconciliation: locale === 'en'
+      ? 'Coordination and reconciliation'
+      : 'Coordinación y reconciliación',
+  }
+
+  return labels[stage]
 }
