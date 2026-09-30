@@ -273,6 +273,42 @@ used only when no applicable Variant exists for the date.
 This keeps `WorkoutLog` as realized execution only and preserves individual
 planned adjustments as a separate downstream concern.
 
+## KAN-521 individual planned adjustments
+
+`AthleteSessionAdjustment` is the individual planning layer downstream of the
+effective audience prescription. Its logical identity is exactly
+`athleteId + sourcePrescriptionId`.
+
+The adjustment is represented as append-only revisions. At most one current
+revision is valid for one logical adjustment. Editing preserves prior revisions,
+including audit reason and changer identity.
+
+One revision carries both individual dose and assignment/event overrides:
+
+- dose may override distance, duration, elevation gain and intensity;
+- assignment may inherit, reschedule the individual occurrence, replace its
+  stimulus, or omit the session for that athlete;
+- absence of an override means inherit;
+- shared Session data and GroupSessionPrescription notes remain outside this
+  individual layer.
+
+A stimulus override may point to a workout template, but the template identifier
+is opaque to the Coach UI. The Coach selects a human-labelled template and the
+server validates team ownership and derives the workout type from that template.
+The contract still permits a null template when only the individual workout type
+changes.
+
+Authority is exact-source. If dated Base/Variant resolution later selects a
+different prescription, the old adjustment becomes outside authority and requires
+review. It is never migrated automatically to the new prescription. Stable
+regeneration that preserves the prescription id preserves the adjustment;
+regeneration that creates a new prescription identity makes the previous
+adjustment stale.
+
+Athlete-facing planning, including Home and Plan surfaces, must consume the same
+dated planning + effective prescription + individual adjustment resolution.
+Omitted sessions therefore disappear consistently from both views.
+
 ## Implemented H7 boundary
 
 H7 implements the cohort foundation end to end:
