@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl'
 import {
   GENERATION_EXPLANATION_STAGE_ORDER,
   type GenerationExplanation,
@@ -14,8 +15,10 @@ export function GenerationExplanationView({
   generationExplanation,
   locale,
 }: GenerationExplanationViewProps) {
+  const t = useTranslations('CoachPlanning')
+
   return (
-    <div className='space-y-3'>
+    <div className='space-y-3' aria-label={t('generationExplanation')}>
       {GENERATION_EXPLANATION_STAGE_ORDER.map((stage) => {
         const evidence = generationExplanation.stages.find(
           (candidate) => candidate.stage === stage,
