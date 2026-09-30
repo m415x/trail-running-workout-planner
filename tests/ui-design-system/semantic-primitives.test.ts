@@ -59,3 +59,34 @@ test('KAN-558 shared pills and overlays avoid literal foreground and surface geo
   assert.match(pillsSource, /rounded-\[var\(--radius-ept-overlay\)\]/)
   assert.match(pillsSource, /shadow-\[var\(--elevation-ept-overlay\)\]/)
 })
+
+
+test('KAN-558 shared interactive wrappers expose accessible names and hide decorative icons', () => {
+  assert.match(
+    buttonsSource,
+    /export type ThemeToggleButtonProps = [\s\S]*'aria-label': string/,
+  )
+  assert.match(buttonsSource, /<AnimatedThemeToggler[\s\S]*aria-label=/)
+  assert.match(buttonsSource, /<Icon[^>]*aria-hidden=['"]true['"]/)
+
+  assert.doesNotMatch(confirmDialogSource, /title\s*=\s*['"]¿Confirmar acción\?['"]/)
+  assert.doesNotMatch(
+    confirmDialogSource,
+    /description\s*=\s*['"]Esta operación no se puede deshacer\.[\s\S]*['"]/,
+  )
+  assert.doesNotMatch(confirmDialogSource, /confirmLabel\s*=\s*['"]Confirmar['"]/)
+  assert.doesNotMatch(confirmDialogSource, /cancelLabel\s*=\s*['"]Cancelar['"]/)
+})
+
+test('KAN-558 representative consumers provide localized accessible labels instead of wrapper-owned copy', () => {
+  const homeHeaderSource = readSource('features/workouts/components/HomeHeader.tsx')
+  const logWorkoutDialogSource = readSource(
+    'features/workouts/components/LogWorkoutDialog.tsx',
+  )
+
+  assert.match(homeHeaderSource, /<ThemeToggleButton[^>]*aria-label=/)
+  assert.match(
+    logWorkoutDialogSource,
+    /<ConfirmActionDialog[\s\S]*title=[\s\S]*description=[\s\S]*confirmLabel=[\s\S]*cancelLabel=/,
+  )
+})
