@@ -1,31 +1,36 @@
-const ARGENTINA_TIME_ZONE = 'America/Argentina/Buenos_Aires'
+import type { SupportedLocale } from '@/i18n/messages'
+
+interface DateTimePresentationContext {
+  language: SupportedLocale
+  presentationLocale: string
+  timeZone: string
+}
 
 /**
- * Formats an instant using the product's 24-hour date-time convention.
+ * Formats an absolute instant using the product's 24-hour date-time convention.
  *
- * Argentina remains the presentation time zone until user/team time-zone
- * preferences become part of the product contract.
+ * Presentation locale and operational timezone are explicit inputs. The
+ * formatter does not infer regional policy from the product language.
  */
 export function formatDateTime24Hour(
   value: string | Date | null | undefined,
-  locale: string,
+  context: DateTimePresentationContext,
 ): string {
   if (!value) return '—'
 
   const date = value instanceof Date ? value : new Date(value)
-  const intlLocale = locale === 'en' ? 'en-US' : 'es-AR'
-  const formattedDate = new Intl.DateTimeFormat(intlLocale, {
-    timeZone: ARGENTINA_TIME_ZONE,
+  const formattedDate = new Intl.DateTimeFormat(context.presentationLocale, {
+    timeZone: context.timeZone,
     day: 'numeric',
     month: 'numeric',
     year: '2-digit',
   }).format(date)
-  const formattedTime = new Intl.DateTimeFormat(intlLocale, {
-    timeZone: ARGENTINA_TIME_ZONE,
+  const formattedTime = new Intl.DateTimeFormat(context.presentationLocale, {
+    timeZone: context.timeZone,
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23',
   }).format(date)
 
-  return `${formattedDate} · ${formattedTime} ${locale === 'en' ? 'h' : 'hs'}`
+  return `${formattedDate} · ${formattedTime} ${context.language === 'en' ? 'h' : 'hs'}`
 }
