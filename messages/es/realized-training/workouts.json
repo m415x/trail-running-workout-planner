@@ -51,6 +51,13 @@
       "clear": "Limpiar formulario",
       "cancel": "Cancelar",
       "save": "Guardar"
+    },
+    "home": {
+      "greeting": "Hola, {name}",
+      "viewTeam": "Ver equipo",
+      "notifications": "Notificaciones",
+      "phaseObjective": "Fase {phase} · Objetivo {target} km",
+      "weeklyProgress": "Progreso semanal"
     }
   }
 }
