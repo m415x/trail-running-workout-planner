@@ -7,7 +7,7 @@ const read = (file: string) => fs.readFileSync(path.join(process.cwd(), file), '
 const actions = read('app/actions/athlete-session-adjustment-actions.ts')
 
 test('returning all individual controls to inherit retires the current adjustment', () => {
-  assert.match(actions, /state:\s*['"]withdrawn['"]/)
+  assert.match(actions, /state:\s*allInherit\s*\?\s*['"]withdrawn['"]\s*:\s*['"]active['"]/)
   assert.match(actions, /dose\s*===\s*null/)
   assert.match(actions, /assignment\.value\.kind\s*===\s*['"]inherit['"]/)
 })
