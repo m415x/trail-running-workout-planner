@@ -214,3 +214,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes; planning-cohort, session-generation and KAN-473 handoff contracts now encode planning-scope prescription identity and Athlete resolution.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused RED/GREEN cycles exposed the relevant boundaries while closure reconciliation caught the remaining manual-edit mismatch.
 - Notes for post-experiment v2 (do not change v1 yet): continue distinguishing pure reconciler preconditions from persistence/orchestration boundaries. Shorter Jira evidence payloads are more reliable with the connector.
+
+
+### KAN-521 — harness-eval-v1
+
+- Redundant/repeated tool calls: low to moderate; most retrieval remained task-scoped, though closure reconciliation required several focused rereads of the Coach adjustment action/component after walkthrough defects were found.
+- Unnecessary large/full-source reloads: limited; one large action-file reload was used during stale-authority diagnosis, otherwise reads were path-scoped.
+- Equivalent failed-operation loops: 0 material; retry budget respected: yes. False REDs caused by outdated structural assertions were diagnosed and corrected rather than retried unchanged.
+- Context/source-of-truth mistakes: 2 test-design mistakes. One regex used the unsupported dotAll flag for the project target; another assertion expected a literal withdrawn state instead of the implemented conditional expression. Both were corrected before accepting GREEN evidence.
+- Durable information unnecessarily requested from human: 0 material. Human execution was requested only for local TDD/full-gate/manual walkthrough evidence.
+- Premature task/branch creation or reopened settled decisions: 0; implementation stayed within the approved KAN-521 decomposition and existing story branch.
+- Unnecessary local/full-gate requests during implementation: 0; focused TDD was used during implementation and the full gate was repeated only after walkthrough-driven code changes invalidated the earlier closure gate.
+- Unsupported verification claims: 0 retained. Manual/runtime findings were distinguished from structural tests, and the prior full gate was explicitly treated as stale after subsequent changes.
+- Missed acceptance criteria attributable to workflow/context handling: 0 at closure. Manual walkthrough exposed defects that structural tests did not catch: Home using the legacy group-only loader, persisted values not remounting immediately, raw/partial i18n, UUID stimulus entry, competing assignment controls, excessive input density, return-to-inherit semantics, and stale soft-deleted source visibility.
+- Corrective human interventions attributable to harness behavior: several product/UX findings came from the human walkthrough, but they were not caused by missing durable context; they materially improved runtime correctness and usability before closure.
+- Durable documentation/handoff complete: yes; planning architecture and KAN-473 handoff now record KAN-521 authority, audit, regeneration, Athlete resolution and deferred i18n debt.
+- Evidence that reduced context/tool usage harmed correctness: none observed. The main missed issues were runtime/interaction defects that required manual walkthrough rather than broader source loading.
+- Notes for post-experiment v2 (do not change v1 yet): preserve final manual walkthroughs and the rule that any post-gate code change invalidates closure evidence. Structural tests remain useful regression hints, but runtime state transitions and UI affordances need behavioral/manual verification.
