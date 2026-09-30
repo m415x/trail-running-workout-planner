@@ -132,7 +132,20 @@ export function explainFrequencyAndSlots(
     maximumWeeklyVolumeKm: input.maximumWeeklyVolumeKm,
     includesRace: input.includesRace,
   })
+  const slotSelectionContext = {
+    microcycleType: input.microcycleType,
+    includesRace: input.includesRace,
+    raceWeekday: input.raceWeekday,
+    weekStartDate: input.startDate,
+    intenseSessionsTarget: input.intenseSessionsTarget,
+    minimumRecoveryDays: input.minimumRecoveryDays,
+  }
   const selectedSlots = selectWeeklySlots(
+    input.pattern.slots,
+    sessionCount,
+    slotSelectionContext,
+  )
+  const unconstrainedSlots = selectWeeklySlots(
     input.pattern.slots,
     sessionCount,
     {
@@ -140,15 +153,35 @@ export function explainFrequencyAndSlots(
       includesRace: input.includesRace,
       raceWeekday: input.raceWeekday,
       weekStartDate: input.startDate,
-      intenseSessionsTarget: input.intenseSessionsTarget,
-      minimumRecoveryDays: input.minimumRecoveryDays,
+      intenseSessionsTarget: 0,
+      minimumRecoveryDays: 0,
     },
   )
 
   const habitualKeys = new Set(input.pattern.slots.map(({ key }) => key))
-  const usedFallbackWeekdays = selectedSlots.some((slot) => (
-    slot.role !== 'competition' && !habitualKeys.has(slot.key)
-  ))
+  const selectedKeys = new Set(selectedSlots.map(({ key }) => key))
+  const selectedHabitualSlotKeys = selectedSlots
+    .filter(({ key }) => habitualKeys.has(key))
+    .map(({ key }) => key)
+  const selectedFallbackSlotKeys = selectedSlots
+    .filter((slot) => slot.role !== 'competition' && !habitualKeys.has(slot.key))
+    .map(({ key }) => key)
+  const omittedHabitualSlotKeys = input.pattern.slots
+    .filter(({ key }) => !selectedKeys.has(key))
+    .map(({ key }) => key)
+  const usedFallbackWeekdays = selectedFallbackSlotKeys.length > 0
+  const recoveryConstraintChangedSelection = (
+    selectedSlots.map(({ key }) => key).join(',') !==
+    unconstrainedSlots.map(({ key }) => key).join(',')
+  )
+  const raceReplacedHabitualSlot = Boolean(
+    input.includesRace &&
+    input.raceWeekday &&
+    input.pattern.slots.some(({ weekday }) => weekday === input.raceWeekday) &&
+    selectedSlots.some(({ weekday, role }) => (
+      weekday === input.raceWeekday && role === 'competition'
+    )),
+  )
 
   const frequencyInputs: GenerationExplanationFact[] = input.frequency.mode === 'fixed'
     ? [
@@ -205,10 +238,36 @@ export function explainFrequencyAndSlots(
           value: selectedSlots.map(({ role }) => role).join(','),
         },
       ],
-      consequence: [{
-        code: 'used_fallback_weekdays',
-        value: usedFallbackWeekdays,
-      }],
+      consequence: [
+        {
+          code: 'used_fallback_weekdays',
+          value: usedFallbackWeekdays,
+        },
+        {
+          code: 'selected_habitual_slot_keys',
+          value: selectedHabitualSlotKeys.join(','),
+        },
+        {
+          code: 'selected_fallback_slot_keys',
+          value: selectedFallbackSlotKeys.join(','),
+        },
+        {
+          code: 'omitted_habitual_slot_keys',
+          value: omittedHabitualSlotKeys.join(','),
+        },
+        {
+          code: 'recovery_constraint_changed_selection',
+          value: recoveryConstraintChangedSelection,
+        },
+        {
+          code: 'unconstrained_slot_keys',
+          value: unconstrainedSlots.map(({ key }) => key).join(','),
+        },
+        {
+          code: 'race_replaced_habitual_slot',
+          value: raceReplacedHabitualSlot,
+        },
+      ],
       warnings: [],
     },
   }
