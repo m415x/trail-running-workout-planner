@@ -63,7 +63,7 @@ function GenerationExplanationStageView({
 
   return (
     <section className='space-y-2'>
-      <p className='font-medium'>{formatStageLabel(evidence.stage, locale)}</p>
+      <p className='font-medium'>{t(`explanationStages.${evidence.stage}`)}</p>
       <div className='grid gap-2 md:grid-cols-2'>
         {sections.map(({ label, facts }) => (
           <div key={label}>
@@ -127,15 +127,6 @@ function formatFact(
 ) {
   return `${formatGenerationExplanationLabel(fact.code, locale, planningSubgroupLabel)}: ${String(fact.value ?? '—')}`
 }
-
-function formatStageLabel(
-  stage: GenerationExplanationStageEvidence['stage'],
-  locale: string,
-) {
-  const t = useTranslations('CoachPlanning')
-  return t(`explanationStages.${stage}`)
-}
-
 
 function formatGenerationExplanationLabel(
   code: string,
