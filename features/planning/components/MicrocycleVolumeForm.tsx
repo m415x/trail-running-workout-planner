@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   updateMicrocycleVolume,
@@ -24,6 +25,7 @@ export function MicrocycleVolumeForm({
   locale,
   currentVolumeKm,
 }: MicrocycleVolumeFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [state, formAction, pending] = useActionState(updateMicrocycleVolume, initialState)
 
   return (
@@ -42,14 +44,14 @@ export function MicrocycleVolumeForm({
             step='0.1'
             defaultValue={currentVolumeKm ?? ''}
             required
-            aria-label='Volumen objetivo en kilómetros'
+            aria-label={t('targetVolumeKm')}
             aria-invalid={Boolean(state.error)}
             className='w-24 pr-8'
           />
           <span className='pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground'>km</span>
         </div>
         <Button type='submit' size='sm' disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar'}
+          {pending ? t('saving') : t('save')}
         </Button>
       </div>
 
