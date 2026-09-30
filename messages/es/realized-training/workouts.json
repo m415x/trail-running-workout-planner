@@ -57,7 +57,8 @@
       "viewTeam": "Ver equipo",
       "notifications": "Notificaciones",
       "phaseObjective": "Fase {phase} · Objetivo {target} km",
-      "weeklyProgress": "Progreso semanal"
+      "weeklyProgress": "Progreso semanal",
+      "toggleTheme": "Cambiar tema de color"
     },
     "rpe": {
       "title": "Esfuerzo Percibido (RPE 1-10)",
