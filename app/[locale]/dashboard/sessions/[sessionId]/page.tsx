@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
 import { getSessionAthleteAdjustmentReview } from '@/app/actions/athlete-session-adjustment-actions'
-import { getSessionById } from '@/app/actions/session-actions'
+import { getSessionById, getSessionFormOptions } from '@/app/actions/session-actions'
 import { AthleteSessionAdjustmentReview } from '@/features/sessions/components/AthleteSessionAdjustmentReview'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -18,6 +18,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
   const { locale, sessionId } = await params
   const session = await getSessionById(sessionId)
   const athleteAdjustmentReview = await getSessionAthleteAdjustmentReview(sessionId)
+  const { workouts } = await getSessionFormOptions(session?.workoutId ?? null)
   const t = await getTranslations('Sessions')
   const workoutTypeT = await getTranslations('Workouts')
 
@@ -82,7 +83,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
           <CardDescription>{t('adjustments.description')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <AthleteSessionAdjustmentReview sessionId={session.id} items={athleteAdjustmentReview} />
+          <AthleteSessionAdjustmentReview sessionId={session.id} items={athleteAdjustmentReview} workouts={workouts} />
         </CardContent>
       </Card>
 
