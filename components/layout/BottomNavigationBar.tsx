@@ -1,30 +1,31 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Link, usePathname } from '@/i18n/routing'
 import { HouseSimpleIcon, CalendarDotsIcon, ChartLineIcon, UserIcon, Icon } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 
 export interface NavItemsProps {
   href: string
-  label: string
+  labelKey: 'home' | 'plan' | 'stats' | 'profile'
   icon: Icon
 }
 
 const NAV_ITEMS: NavItemsProps[] = [
-  { href: '/', label: 'Inicio', icon: HouseSimpleIcon },
-  { href: '/plan', label: 'Plan', icon: CalendarDotsIcon },
-  { href: '/stats', label: 'Stats', icon: ChartLineIcon },
-  { href: '/profile', label: 'Perfil', icon: UserIcon },
+  { href: '/', labelKey: 'home', icon: HouseSimpleIcon },
+  { href: '/plan', labelKey: 'plan', icon: CalendarDotsIcon },
+  { href: '/stats', labelKey: 'stats', icon: ChartLineIcon },
+  { href: '/profile', labelKey: 'profile', icon: UserIcon },
 ]
 
 export function BottomNavigationBar() {
+  const t = useTranslations('AthleteShell')
   const pathname = usePathname()
 
   return (
     <nav className='absolute bottom-0 z-50 w-full border-t border-border/80 bg-background p-2 transition-all'>
       <div className='max-w-md mx-auto flex items-center justify-around'>
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        {NAV_ITEMS.map(({ href, labelKey, icon: Icon }) => {
           const isActive = pathname === href
 
           return (
@@ -40,7 +41,7 @@ export function BottomNavigationBar() {
             >
               <Icon size={20} className='transition-transform duration-200' />
 
-              <span className='font-medium text-[9px] font-mono leading-none tracking-tight'>{label}</span>
+              <span className='font-medium text-[9px] font-mono leading-none tracking-tight'>{t(labelKey)}</span>
             </Link>
           )
         })}
