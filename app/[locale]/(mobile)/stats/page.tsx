@@ -49,12 +49,12 @@ function AthleteTrack1000mPanel({
       {reference?.status === 'available' ? <p><span className='font-medium'>{t('track1000m.reference')}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{t('track1000m.referenceUnavailable')}</p>}
       <p><span className='font-medium'>{t('track1000m.evolution')}:</span> {trend}</p>
       {latest && <p className='text-xs text-muted-foreground'>{t('track1000m.latestTest')}: {latest.performedAt} · {latest.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p>}
-    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{es ? 'No se pudo cargar el rendimiento del test.' : 'Test performance could not be loaded.'}</p>}
+    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{t('track1000m.loadError')}</p>}
     <Accordion className='mt-3'>
       <AccordionItem value='history'>
         <AccordionTrigger>{t('track1000m.history', { count: evolution?.series.length ?? 0 })}</AccordionTrigger>
         <AccordionContent>
-          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{es ? 'Todavía no hay tests elegibles.' : 'There are no eligible tests yet.'}</p>}
+          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{t('track1000m.emptyHistory')}</p>}
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value='register'>
