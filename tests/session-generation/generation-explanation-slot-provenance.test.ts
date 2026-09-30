@@ -30,7 +30,7 @@ describe('GenerationExplanation slot provenance and constraint influence', () =>
     )))
     assert.ok(result.slots.consequence.some((fact) => (
       fact.code === 'selected_fallback_slot_keys' &&
-      fact.value === 'weekly-thursday,weekly-friday'
+      fact.value === 'weekly-thursday,weekly-saturday'
     )))
     assert.ok(result.slots.consequence.some((fact) => (
       fact.code === 'omitted_habitual_slot_keys' &&
@@ -42,9 +42,9 @@ describe('GenerationExplanation slot provenance and constraint influence', () =>
     const pattern = {
       slots: [
         createWeeklyTrainingSlot('monday', 'quality'),
-        createWeeklyTrainingSlot('tuesday', 'mountain'),
-        createWeeklyTrainingSlot('wednesday', 'long'),
-        createWeeklyTrainingSlot('saturday', 'long'),
+        createWeeklyTrainingSlot('tuesday', 'quality'),
+        createWeeklyTrainingSlot('wednesday', 'quality'),
+        createWeeklyTrainingSlot('thursday', 'quality'),
       ],
     }
 
@@ -69,7 +69,7 @@ describe('GenerationExplanation slot provenance and constraint influence', () =>
     )))
     assert.ok(result.slots.decision.some((fact) => (
       fact.code === 'selected_slot_keys' &&
-      fact.value === 'weekly-monday,weekly-tuesday,weekly-saturday'
+      fact.value === 'weekly-monday,weekly-tuesday,weekly-thursday'
     )))
     assert.ok(result.slots.consequence.some((fact) => (
       fact.code === 'omitted_habitual_slot_keys' &&
