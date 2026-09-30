@@ -78,6 +78,42 @@
       "race_specific": "Específico de carrera"
     },
     "saveProgression": "Guardar progresión",
-    "recoveryLabel": "Recuperación"
+    "recoveryLabel": "Recuperación",
+    "list": {
+      "title": "Planificación",
+      "description": "Planes grupales, bloques y volúmenes semanales del equipo.",
+      "newStrategy": "Nueva estrategia",
+      "emptyTitle": "Todavía no hay planificaciones",
+      "emptyDescription": "Las planificaciones generadas para los grupos aparecerán aquí.",
+      "group": "Grupo {code}",
+      "macrocycles": "{count, plural, one {# macrociclo} other {# macrociclos}}",
+      "weeks": "{count, plural, one {# semana} other {# semanas}}",
+      "view": "Ver planificación",
+      "status": {
+        "draft": "Borrador",
+        "active": "Activo",
+        "completed": "Completado",
+        "cancelled": "Cancelado"
+      }
+    },
+    "detail": {
+      "group": "Grupo {code}",
+      "description": "Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.",
+      "basePlan": "Plan base",
+      "previewUnavailable": "Vista previa no disponible",
+      "previewUnavailableDescription": "Esta planificación fue creada antes de incorporar estrategias de carga.",
+      "configuredHorizon": "Horizonte configurado",
+      "configuredHorizonDescription": "La estrategia y las fechas están guardadas. La progresión semanal se generará en el siguiente paso.",
+      "table": {
+        "week": "Semana",
+        "type": "Tipo",
+        "dates": "Fechas",
+        "elevation": "Desnivel",
+        "notes": "Notas",
+        "targetVolume": "Volumen objetivo"
+      },
+      "generationMissing": "Semana {week}: falta un objetivo de volumen o intensidad.",
+      "generationFailed": "Semana {week}: no se pudo generar la propuesta."
+    }
   }
 }
