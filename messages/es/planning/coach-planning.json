@@ -25,6 +25,13 @@
       "policy_not_defined": "Política pendiente",
       "not_applicable": "No aplica",
       "invalid": "Datos inválidos"
+    },
+    "loadFocus": {
+      "balanced": "Foco equilibrado",
+      "volume": "Foco volumen",
+      "elevation": "Foco montaña",
+      "recovery": "Foco recuperación",
+      "race_specific": "Foco carrera"
     }
   }
 }
