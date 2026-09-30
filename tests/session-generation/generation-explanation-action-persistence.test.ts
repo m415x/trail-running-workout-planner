@@ -70,7 +70,7 @@ test('only generated prescription create/update audit records receive the struct
 
   assert.match(
     source,
-    /generationExplanation:\s*values\.generationExplanation/,
+    /generationExplanation:\s*values\.action\s*===\s*'generated_removed'[\s\S]*\?\s*null[\s\S]*:\s*values\.generationExplanation/,
   )
 
   const eventAuditInsert = source.indexOf(
@@ -95,7 +95,7 @@ test('prescription audit writes the snapshot to the append-only audit row only',
   )
   assert.match(
     source,
-    /tx\.insert\(sessionGenerationModificationRecords\)\.values\(\{[\s\S]*generationExplanation:\s*values\.generationExplanation/,
+    /tx\.insert\(sessionGenerationModificationRecords\)\.values\(\{[\s\S]*generationExplanation:\s*values\.action\s*===\s*'generated_removed'[\s\S]*\?\s*null[\s\S]*:\s*values\.generationExplanation/,
   )
 
   const prescriptionRecordStart = source.indexOf('const record = {')
