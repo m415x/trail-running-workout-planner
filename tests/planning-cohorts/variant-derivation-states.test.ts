@@ -25,7 +25,7 @@ describe('KAN-518 variant derivation states and lineage', () => {
 
     assert.match(planning, /planningCohort/)
     assert.match(planning, /sourceGroupTrainingPlan/)
-    assert.match(planning, /Base plan|Plan base/)
+    assert.match(planning, /t\('detail\.basePlan'\)/)
     assert.match(planning, /t\('planningSubgroup'\)/)
   })
 
