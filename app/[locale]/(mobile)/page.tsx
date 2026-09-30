@@ -4,10 +4,11 @@ import { getCurrentAthlete, getCurrentAthletePlanningWeek } from '@/app/actions/
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { HomeTabClient } from '@/app/[locale]/(mobile)/HomeTabClient'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
 
-function currentWeekRangeInArgentina() {
-  const today = new Date(`${getCurrentISODateInTimeZone()}T00:00:00Z`)
+function currentWeekRangeInTimeZone(timeZone: string) {
+  const today = new Date(`${getCurrentISODateInTimeZone(timeZone)}T00:00:00Z`)
   const offset = (today.getUTCDay() + 6) % 7
   const monday = new Date(today)
   monday.setUTCDate(today.getUTCDate() - offset)
@@ -21,13 +22,18 @@ function currentWeekRangeInArgentina() {
 export default async function MobileHomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'RaceCatalog' })
-  const range = currentWeekRangeInArgentina()
+  const regionalContext = resolveApplicationRegionalContext({
+    language: locale === 'en' ? 'en' : 'es',
+  })
+  const range = currentWeekRangeInTimeZone(regionalContext.timeZone)
 
   const [athleteRes, scheduleRes, realizedRes, performanceRes] = await Promise.all([
     getCurrentAthlete(),
     getCurrentAthletePlanningWeek(range.startDate),
     getCurrentAthleteRealizedTrainingRangeAction(range.startDate, range.endDate),
-    getCurrentAthleteTrack1000mPerformanceAction(getCurrentISODateInTimeZone()),
+    getCurrentAthleteTrack1000mPerformanceAction(
+      getCurrentISODateInTimeZone(regionalContext.timeZone),
+    ),
   ])
 
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
