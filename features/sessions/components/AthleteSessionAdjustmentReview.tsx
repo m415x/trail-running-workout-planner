@@ -124,7 +124,7 @@ function AthleteAdjustmentForm({
           <p className='text-sm font-medium'>{t('adjustments.intensity')}</p>
 
           <label className='space-y-1.5 text-sm'>
-            <span className='font-medium'>{t('adjustments.intensity')}</span>
+            <span className='font-medium'>{t('adjustments.intensityMethod')}</span>
             <select
               name='intensityMethod'
               value={intensityMethod}
@@ -195,7 +195,7 @@ function AthleteAdjustmentForm({
 
           {assignmentMode === 'rescheduled' && (
             <LabeledInput
-              label={t('adjustments.reschedule')}
+              label={t('adjustments.rescheduleDate')}
               name='rescheduled'
               type='date'
               defaultValue={item.rescheduled ?? ''}
