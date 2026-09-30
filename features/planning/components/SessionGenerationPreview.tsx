@@ -1,11 +1,13 @@
 'use client'
 
 import { useActionState } from 'react'
+import { useTranslations } from 'next-intl'
 import { AlertTriangle, CalendarClock, MapPin, Mountain, Route } from 'lucide-react'
 
 import { persistGeneratedSessions } from '@/app/actions/session-generation-actions'
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
@@ -54,6 +56,9 @@ export function SessionGenerationPreview({
   proposal,
   generationExplanations,
 }: SessionGenerationPreviewProps) {
+  const language = locale === 'en' ? 'en' : 'es'
+  const t = useTranslations('CoachPlanning')
+  const regionalContext = resolveApplicationRegionalContext({ language })
   const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
 
@@ -92,7 +97,7 @@ export function SessionGenerationPreview({
                   <div>
                     <p className='font-medium'>Semana {week.weekNumber} · {microcycleLabels[week.type]}</p>
                     <p className='text-sm text-muted-foreground'>
-                      {formatDate(week.startDate)} – {formatDate(week.endDate)}
+                      {formatDate(week.startDate, regionalContext.presentationLocale)} – {formatDate(week.endDate, regionalContext.presentationLocale)}
                     </p>
                   </div>
                   <div className='flex items-center gap-2'>
@@ -115,7 +120,7 @@ export function SessionGenerationPreview({
                         <div className='flex items-start justify-between gap-2'>
                           <div>
                             <p className='font-semibold'>{event.session.title}</p>
-                            <p className='text-sm text-muted-foreground'>{formatDate(event.session.date)}</p>
+                            <p className='text-sm text-muted-foreground'>{formatDate(event.session.date, regionalContext.presentationLocale)}</p>
                           </div>
                           <Badge variant='outline'>{event.session.type}</Badge>
                         </div>
@@ -128,11 +133,11 @@ export function SessionGenerationPreview({
                               <div className='flex flex-wrap gap-x-4 gap-y-2'>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <Route className='size-4 text-muted-foreground' />
-                                  {formatNumber(prescription.distanceKm)} km
+                                  {formatNumber(prescription.distanceKm, regionalContext.presentationLocale)} km
                                 </span>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <Mountain className='size-4 text-muted-foreground' />
-                                  {formatNumber(prescription.elevationGain)} m D+
+                                  {formatNumber(prescription.elevationGain, regionalContext.presentationLocale)} m D+
                                 </span>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <CalendarClock className='size-4 text-muted-foreground' />
@@ -143,9 +148,7 @@ export function SessionGenerationPreview({
                               {generationExplanation && (
                                 <details className='rounded-md border bg-muted/20'>
                                   <summary className='cursor-pointer px-3 py-2 font-medium'>
-                                    {locale === 'en'
-                                      ? 'Why it was generated this way'
-                                      : 'Por qué se generó así'}
+                                    {t('whyGenerated')}
                                   </summary>
                                   <div className='border-t px-3 py-3'>
                                     <GenerationExplanationView
@@ -214,7 +217,7 @@ export function SessionGenerationPreview({
               )}
             </div>
             <Button type='submit' disabled={isPending}>
-              {isPending ? 'Guardando…' : 'Guardar sesiones'}
+              {isPending ? t('saving') : t('saveSessions')}
             </Button>
           </form>
         )}
@@ -223,14 +226,14 @@ export function SessionGenerationPreview({
   )
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('es-AR', {
+function formatDate(value: string, presentationLocale: string) {
+  return new Intl.DateTimeFormat(presentationLocale, {
     day: '2-digit', month: 'short', timeZone: 'UTC',
   }).format(new Date(`${value}T00:00:00Z`))
 }
 
-function formatNumber(value: number | null | undefined) {
-  return (value ?? 0).toLocaleString('es-AR')
+function formatNumber(value: number | null | undefined, presentationLocale: string) {
+  return new Intl.NumberFormat(presentationLocale).format(value ?? 0)
 }
 
 function formatIntensity(
