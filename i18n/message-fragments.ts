@@ -1,5 +1,6 @@
 export const messageFragmentPaths = [
   'common/common',
+  'common/coach-shell',
   'common/weather',
   'planning/base-planning',
   'planning/training-goals',
