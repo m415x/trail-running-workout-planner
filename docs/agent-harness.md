@@ -231,3 +231,20 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Durable documentation/handoff complete: yes; planning architecture and KAN-473 handoff now record KAN-521 authority, audit, regeneration, Athlete resolution and deferred i18n debt.
 - Evidence that reduced context/tool usage harmed correctness: none observed. The main missed issues were runtime/interaction defects that required manual walkthrough rather than broader source loading.
 - Notes for post-experiment v2 (do not change v1 yet): preserve final manual walkthroughs and the rule that any post-gate code change invalidates closure evidence. Structural tests remain useful regression hints, but runtime state transitions and UI affordances need behavioral/manual verification.
+
+
+### KAN-505 — harness-eval-v1
+
+- Redundant/repeated tool calls: low to moderate; most retrieval stayed task-scoped, with closure-time rereads of the planning page, Session detail and durable docs used to reconcile ACs and walkthrough scope.
+- Unnecessary large/full-source reloads: limited; large reads were primarily the generator/explanation contract during composition and closure documentation reconciliation.
+- Equivalent failed-operation loops: 0 material; retry budget respected: yes. Unexpected RED/type failures were diagnosed before changing implementation or assertions.
+- Context/source-of-truth mistakes: 2 minor test-design mistakes. One preservation test used the unsupported RegExp dotAll flag for the project target, and one composition fixture used invalid current enum/type values plus omitted required slot fields. Both were corrected before accepting GREEN evidence.
+- Durable information unnecessarily requested from human: 0 material. Human execution was used for the agreed local TDD, database lifecycle, full gate and manual walkthrough evidence.
+- Premature task/branch creation or reopened settled decisions: 0; work stayed within the approved KAN-505 decomposition and existing story branch.
+- Unnecessary local/full-gate requests during implementation: 1 minor redundant typecheck request pattern was identified; the human correctly noted that `pn tdd` already runs `pn tsc`. Closure still ran standalone `pn tsc` because the durable full gate requires it explicitly.
+- Unsupported verification claims: 0. GREEN-on-introduction boundary tests were recorded as such, remote Supabase status was not claimed until migrate/verify actually ran, and manual walkthrough evidence remained distinct from automated evidence.
+- Missed acceptance criteria attributable to workflow/context handling: 1 closure-time presentation gap was caught before final gate completion: raw internal explanation/warning codes were still visible in the Coach renderer. T10 added human ES/EN labels/messages before closure.
+- Corrective human interventions attributable to harness behavior: 1 minor workflow correction; the human pointed out the redundant standalone `tsc` request during focused TDD. Other human RED/GREEN outputs and walkthrough findings were normal execution evidence rather than harness corrections.
+- Durable documentation/handoff complete: yes; session-generation architecture, documentation index and KAN-473 handoff now encode KAN-505 provenance, persistence, UI and downstream boundaries plus the KAN-506 entry point.
+- Evidence that reduced context/tool usage harmed correctness: none observed. Focused retrieval and TDD exposed the relevant seams; the remaining presentation issue was found by explicit AC-by-AC closure review.
+- Notes for post-experiment v2 (do not change v1 yet): keep explicit AC-by-AC closure review and manual walkthroughs. Track command composition more carefully so focused TDD commands are not followed by redundant standalone typecheck requests unless a story-level gate specifically requires them.
