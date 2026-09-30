@@ -1,8 +1,5 @@
-export function todayInArgentina(now = new Date()) {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/Argentina/Buenos_Aires',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now)
+import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+
+export function membershipPageCalendarDate(timeZone: string, now = new Date()) {
+  return getCurrentISODateInTimeZone(timeZone, now)
 }
