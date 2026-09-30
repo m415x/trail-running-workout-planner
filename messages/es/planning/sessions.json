@@ -169,9 +169,11 @@
         "staleSourcePrescription": "La prescripción efectiva cambió. Revisá el ajuste antes de continuar.",
         "invalidReschedule": "Ingresá una fecha válida para la reprogramación.",
         "invalidStimulusType": "Seleccioná un tipo de estímulo válido.",
-        "saveFailed": "No se pudo guardar el ajuste individual."
+        "saveFailed": "No se pudo guardar el ajuste individual.",
+        "stimulusWorkoutNotFound": "La plantilla de estímulo seleccionada ya no está disponible."
       },
-      "currentReason": "Motivo vigente:"
+      "currentReason": "Motivo vigente:",
+      "noStimulusTemplate": "Sin plantilla · cambiar sólo el tipo"
     }
   }
 }
