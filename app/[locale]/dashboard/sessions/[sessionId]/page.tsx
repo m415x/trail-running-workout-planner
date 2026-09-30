@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { ArrowLeft, CalendarDays, MapPin, Mountain, Pencil, Route } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -86,12 +86,10 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
       <Card>
         <CardHeader>
           <CardTitle>
-            {locale === 'en' ? 'Why it was generated this way' : 'Por qué se generó así'}
+            {t('routes.detail.generationReview.title')}
           </CardTitle>
           <CardDescription>
-            {locale === 'en'
-              ? 'Historical generation evidence by active prescription. Current ownership is shown separately from its generated origin.'
-              : 'Evidencia histórica de generación por prescripción activa. El ownership actual se muestra separado de su origen generado.'}
+            {t('routes.detail.generationReview.description')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -107,20 +105,20 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
                       <div>
                         <p className='font-medium'>
                           {item.planningScope.kind === 'variant'
-                            ? (locale === 'en' ? 'Variant prescription' : 'Prescripción variante')
-                            : (locale === 'en' ? 'Base prescription' : 'Prescripción base')}
+                            ? t('routes.detail.generationReview.variantPrescription')
+                            : t('routes.detail.generationReview.basePrescription')}
                         </p>
                         <p className='text-xs text-muted-foreground'>
-                          {locale === 'en' ? 'Microcycle' : 'Microciclo'}: {item.planningScope.microcycleId}
+                          {t('routes.detail.generationReview.microcycle')}: {item.planningScope.microcycleId}
                         </p>
                       </div>
                       <div className='flex flex-wrap gap-2'>
                         <Badge variant='outline'>
-                          {locale === 'en' ? 'Current ownership' : 'Ownership actual'}: {item.generationOwnership}
+                          {t('routes.detail.generationReview.currentOwnership')}: {item.generationOwnership}
                         </Badge>
                         {item.planningScope.planningCohortId && (
                           <Badge variant='secondary'>
-                            {locale === 'en' ? 'Planning subgroup' : 'Subgrupo'}: {item.planningScope.planningCohortId}
+                            {t('routes.detail.generationReview.planningSubgroup')}: {item.planningScope.planningCohortId}
                           </Badge>
                         )}
                       </div>
@@ -140,9 +138,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
             </div>
           ) : (
             <p className='text-sm text-muted-foreground'>
-              {locale === 'en'
-                ? 'No historical generation explanation is available.'
-                : 'No hay una explicación histórica disponible.'}
+              {t('routes.detail.generationReview.empty')}
             </p>
           )}
         </CardContent>
