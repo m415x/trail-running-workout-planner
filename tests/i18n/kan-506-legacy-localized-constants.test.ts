@@ -24,6 +24,25 @@ describe('KAN-506 legacy localized constants cleanup', () => {
     )
   })
 
+  it('preserves descriptive HR-zone guidance in the ES/EN domain glossary', async () => {
+    for (const locale of ['es', 'en'] as const) {
+      const messages = JSON.parse(
+        await readFile(`messages/${locale}/glossary/planning.json`, 'utf8'),
+      )
+      const zones = messages.DomainGlossary.heartRateZones
+
+      for (const zone of ['Z1', 'Z2', 'Z3', 'Z4', 'Z5'] as const) {
+        assert.equal(typeof zones[zone].name, 'string')
+        assert.equal(typeof zones[zone].workType, 'string')
+        assert.equal(typeof zones[zone].description, 'string')
+        assert.equal(typeof zones[zone].effortAndPerception, 'string')
+        assert.equal(typeof zones[zone].breathingPathway, 'string')
+        assert.equal(typeof zones[zone].rhythmicPattern, 'string')
+        assert.equal(typeof zones[zone].biomechanicalFocus, 'string')
+      }
+    }
+  })
+
   it('keeps RPE constants structural instead of carrying localized prose', async () => {
     const source = await readFile('lib/constants.ts', 'utf8')
 
