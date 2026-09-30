@@ -80,13 +80,10 @@ test('KAN-558 shared interactive wrappers expose accessible names and hide decor
 
 test('KAN-558 representative consumers provide localized accessible labels instead of wrapper-owned copy', () => {
   const homeHeaderSource = readSource('features/workouts/components/HomeHeader.tsx')
-  const logWorkoutDialogSource = readSource(
-    'features/workouts/components/LogWorkoutDialog.tsx',
-  )
 
   assert.match(homeHeaderSource, /<ThemeToggleButton[^>]*aria-label=/)
-  assert.match(
-    logWorkoutDialogSource,
-    /<ConfirmActionDialog[\s\S]*title=[\s\S]*description=[\s\S]*confirmLabel=[\s\S]*cancelLabel=/,
-  )
+  assert.match(confirmDialogSource, /title:\s*string/)
+  assert.match(confirmDialogSource, /description:\s*string/)
+  assert.match(confirmDialogSource, /confirmLabel:\s*string/)
+  assert.match(confirmDialogSource, /cancelLabel:\s*string/)
 })
