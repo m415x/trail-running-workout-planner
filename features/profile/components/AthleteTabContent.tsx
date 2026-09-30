@@ -19,7 +19,6 @@ export function AthleteTabContent() {
   const t = useTranslations('AthleteProfile.physiology')
   return (
     <div className='space-y-3 mt-2'>
-      {/* ── Tarjeta de Información Física y Fisiológica ── */}
       <CustomCard>
         <CardHeader title={t('title')} icon={Activity} />
         <div className='grid grid-cols-2 gap-2'>
@@ -32,7 +31,6 @@ export function AthleteTabContent() {
         </div>
       </CustomCard>
 
-      {/* ── Zonas Cardíacas ── */}
       <CustomCard>
         <CardHeader title={t('zonesTitle')} icon={Heart} />
         <div className='space-y-2'>
