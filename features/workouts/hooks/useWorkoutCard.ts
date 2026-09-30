@@ -20,6 +20,7 @@ import { HR_ZONES } from '@/lib/constants'
 import { HrZoneConfig } from '@/lib/constants'
 import { formatShortDate } from '@/lib/date-helpers'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
@@ -80,7 +81,7 @@ export function useWorkoutCard({
   const headerTitle = workout.type ? t(`types.${workout.type}`) : workout.title
   const WorkoutIcon = getWorkoutIcon(workout.type)
   const dateLabel = useMemo(() => (date ? formatShortDate(date) : ''), [date])
-  const todayStr = useMemo(() => getCurrentISODateInTimeZone(), [])
+  const todayStr = useMemo(() => getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone), [])
   const isPast = Boolean(date && date < todayStr)
   const isFuture = Boolean(date && date > todayStr)
 
