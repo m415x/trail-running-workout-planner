@@ -312,12 +312,18 @@ function insertPrescriptionAudit(
     planId: string
     sessionId: string
     generationKey: string
-    action: 'generated_created' | 'generated_updated' | 'generated_removed'
     previousValue: unknown
     newValue: unknown
-    generationExplanation: GenerationExplanation | null
     now: string
-  },
+  } & (
+    | {
+        action: 'generated_created' | 'generated_updated'
+        generationExplanation: GenerationExplanation | null
+      }
+    | {
+        action: 'generated_removed'
+      }
+  ),
 ) {
   const previousValue = values.previousValue === null
     ? null
@@ -329,7 +335,9 @@ function insertPrescriptionAudit(
     id: randomUUID(), groupTrainingPlanId: values.planId, sessionId: values.sessionId,
     prescriptionId: values.id, action: values.action, ownership: 'generated',
     generationKey: values.generationKey || null,
-    generationExplanation: values.generationExplanation,
+    generationExplanation: values.action === 'generated_removed'
+      ? null
+      : values.generationExplanation,
     previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
     newValue: newValue === null ? null : serializeAuditValue(newValue),
     changedByUserId: null, createdAt: values.now, updatedAt: values.now,
