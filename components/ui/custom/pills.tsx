@@ -50,7 +50,7 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
       />
 
       <PopoverContent
-        className='w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-2xl shadow-xl'
+        className='w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]'
         align='end'
       >
         <div className='space-y-2 p-1'>
@@ -59,7 +59,7 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
               className={cn(
                 'size-7 rounded-lg font-heading font-bold text-xs flex items-center justify-center',
                 zoneInfo.styles.badgeBg,
-                'text-white',
+                'text-primary-foreground',
               )}
             >
               {zoneInfo.code}
