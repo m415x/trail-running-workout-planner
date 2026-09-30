@@ -1,0 +1,13 @@
+{
+  "AthletePlan": {
+    "loadError": "The training plan could not be loaded.",
+    "eyebrow": "My plan",
+    "currentWeek": "Current week",
+    "group": "Group {group}",
+    "competitions": "Competitions",
+    "viewRegistrations": "View registrations",
+    "noGroup": "You do not have an assigned group yet. Contact your coach to access your training plan.",
+    "today": "Today",
+    "noTraining": "No training scheduled"
+  }
+}
