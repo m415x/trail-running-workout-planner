@@ -26,6 +26,59 @@
       "month": "Mes",
       "pending": "Materializando…",
       "action": "Materializar cuotas"
+    },
+    "athleteBilling": {
+      "effectiveFrom": "Vigente desde",
+      "monthlyAmount": "Importe mensual",
+      "currency": "Moneda",
+      "saving": "Guardando…",
+      "genericError": "No se pudieron guardar las condiciones económicas.",
+      "common": {
+        "selectCharge": "Seleccionar cuota",
+        "amount": "Importe",
+        "reason": "Motivo",
+        "applying": "Aplicando…",
+        "current": "vigente",
+        "withdrawn": "Retiro"
+      },
+      "reduction": {
+        "invalidCharge": "Seleccioná una cuota válida.",
+        "error": "No se pudo aplicar la reducción.",
+        "withdrawnSuccess": "Reducción retirada.",
+        "appliedSuccess": "Reducción aplicada.",
+        "title": "Reducción o beca",
+        "apply": "Aplicar reducción",
+        "withdraw": "Retirar reducción"
+      },
+      "extension": {
+        "invalidCharge": "Seleccioná una cuota válida.",
+        "error": "No se pudo aplicar la prórroga.",
+        "withdrawnSuccess": "Prórroga retirada.",
+        "appliedSuccess": "Prórroga aplicada.",
+        "title": "Prórroga individual",
+        "apply": "Aplicar prórroga",
+        "withdraw": "Retirar prórroga"
+      },
+      "payments": {
+        "invalid": "Completá un pago válido.",
+        "registerError": "No se pudo registrar el pago.",
+        "registered": "Pago registrado.",
+        "title": "Pagos",
+        "paid": "Pagado",
+        "remaining": "Restante",
+        "cash": "Efectivo",
+        "bankTransfer": "Transferencia bancaria",
+        "registering": "Registrando…",
+        "register": "Registrar pago",
+        "history": "Historial de pagos",
+        "voided": "Anulado",
+        "correctError": "No se pudo corregir el pago.",
+        "corrected": "Pago corregido.",
+        "correct": "Corregir pago",
+        "voidError": "No se pudo anular el pago.",
+        "voidedSuccess": "Pago anulado.",
+        "void": "Anular pago"
+      }
     }
   }
 }
