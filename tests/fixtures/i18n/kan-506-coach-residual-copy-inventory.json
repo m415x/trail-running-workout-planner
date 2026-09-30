@@ -156,7 +156,7 @@
     {
       "path": "app/[locale]/dashboard/membership/page.tsx",
       "area": "membership",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Política vigente",
         "Historial de políticas",
@@ -166,7 +166,7 @@
     {
       "path": "features/memberships/components/AthleteBillingTermsForm.tsx",
       "area": "membership",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Reducción o beca",
         "Aplicar reducción",
@@ -176,7 +176,7 @@
     {
       "path": "features/memberships/components/GlobalDueDateExceptionForm.tsx",
       "area": "membership",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Excepción mensual de vencimiento",
         "Aplicar excepción"
@@ -185,7 +185,7 @@
     {
       "path": "features/memberships/components/TeamMonthlyMaterializationForm.tsx",
       "area": "membership",
-      "status": "fix",
+      "status": "clean",
       "markers": [
         "Atletas procesados:"
       ]
