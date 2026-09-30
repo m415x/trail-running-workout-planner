@@ -51,6 +51,13 @@
       "clear": "Clear form",
       "cancel": "Cancel",
       "save": "Save"
+    },
+    "home": {
+      "greeting": "Hi, {name}",
+      "viewTeam": "View team",
+      "notifications": "Notifications",
+      "phaseObjective": "Phase {phase} · Target {target} km",
+      "weeklyProgress": "Weekly progress"
     }
   }
 }
