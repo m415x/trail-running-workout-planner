@@ -4,6 +4,40 @@
       "physiology": "Physiology",
       "gear": "Gear",
       "settings": "Settings"
+    },
+    "header": {
+      "editPhoto": "Edit photo",
+      "athleteSince": "Athlete since {year} · @{username}"
+    },
+    "physiology": {
+      "title": "Physical & Performance Information",
+      "weight": "Weight",
+      "maxHr": "Max HR",
+      "vo2max": "VO2 Max",
+      "height": "Height",
+      "restingHr": "Resting HR",
+      "lactateThreshold": "Lactate Threshold",
+      "zonesTitle": "Heart Rate Zones (HR)",
+      "zones": {
+        "z1": "Active Recovery",
+        "z2": "Aerobic Base",
+        "z3": "Tempo / Pace",
+        "z4": "Anaerobic Threshold",
+        "z5": "Max Capacity / VO2"
+      }
+    },
+    "gear": {
+      "shoes": "Shoes in Rotation",
+      "devices": "Connected Devices",
+      "syncActive": "Automatic sync active",
+      "configure": "Configure"
+    },
+    "settings": {
+      "emergencyTitle": "Emergency / Trail Contact",
+      "sos": "SOS Contact",
+      "bloodType": "Blood Type",
+      "insurance": "Medical Insurance / Federation",
+      "accountPreferences": "Account Preferences"
     }
   }
 }
