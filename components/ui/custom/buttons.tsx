@@ -12,7 +12,7 @@ export function CustomButton({ className, ...props }: CustomButtonProps) {
   return (
     <Button
       className={cn(
-        'flex items-center gap-2 px-2.5 rounded-xl text-xs font-semibold h-10',
+        'flex min-h-[var(--size-ept-touch-target)] items-center gap-2 rounded-[var(--radius-ept-control)] px-2.5 text-xs font-semibold',
         'border transition-all cursor-pointer shadow-md hover:scale-102 active:scale-98',
         className,
       )}
@@ -23,7 +23,7 @@ export function CustomButton({ className, ...props }: CustomButtonProps) {
 
 export function PrimaryFilledButton({ className, ...props }: CustomButtonProps) {
   return (
-    <CustomButton className={cn('bg-primary text-white border-primary/30 hover:bg-primary/80', className)} {...props} />
+    <CustomButton className={cn('bg-primary text-primary-foreground border-primary/30 hover:bg-primary/80', className)} {...props} />
   )
 }
 
@@ -49,7 +49,7 @@ export function PrimaryLinkButton({ className, ...props }: CustomButtonProps) {
 export function SecondaryFilledButton({ className, ...props }: CustomButtonProps) {
   return (
     <CustomButton
-      className={cn('bg-secondary text-white border-secondary/30 hover:bg-secondary/80', className)}
+      className={cn('bg-secondary text-secondary-foreground border-secondary/30 hover:bg-secondary/80', className)}
       {...props}
     />
   )
