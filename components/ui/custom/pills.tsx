@@ -1,6 +1,7 @@
 'use client'
 
 import { Heart, Info } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { StatPillProps } from '@/types'
 import { HrZoneConfig } from '@/lib/constants'
 import { cn } from '@/lib/utils'
@@ -29,6 +30,9 @@ interface ZonePillProps {
 }
 
 export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
+  const t = useTranslations('DomainGlossary.heartRateZones')
+  const zoneKey = zoneInfo.code
+
   return (
     <Popover>
       <PopoverTrigger
@@ -61,16 +65,16 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
               {zoneInfo.code}
             </span>
             <div>
-              <p className='font-heading font-bold text-xs text-foreground leading-tight'>{zoneInfo.name}</p>
+              <p className='font-heading font-bold text-xs text-foreground leading-tight'>{t(`${zoneKey}.name`)}</p>
               <p className={cn('text-xs font-bold', zoneInfo.styles.text)}>{bpmRange}</p>
             </div>
           </div>
           <div className='p-2.5 rounded-lg bg-background/70 border border-border/40 text-xs space-y-1.5'>
             <p className='font-semibold text-foreground/90 text-[11px] flex items-center gap-1.5'>
               <Info size={12} className={cn('text-primary', zoneInfo.styles.text)} />
-              Sensación de Esfuerzo (RPE {zoneInfo.rpe})
+              {t('effortLabel')} (RPE {zoneInfo.rpe})
             </p>
-            <p className='text-muted-foreground text-[11px]'>{zoneInfo.effortAndPerception}</p>
+            <p className='text-muted-foreground text-[11px]'>{t(`${zoneKey}.effortAndPerception`)}</p>
           </div>
         </div>
       </PopoverContent>
