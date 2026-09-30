@@ -1,0 +1,22 @@
+{
+  "CoachShell": {
+    "title": "Panel del Coach",
+    "subtitle": "Panel del coach",
+    "management": "Gestión",
+    "navigation": {
+      "overview": "Resumen",
+      "athletes": "Atletas",
+      "sportingGroups": "Grupos deportivos",
+      "planningSubgroups": "Subgrupos de planificación",
+      "planning": "Planificación",
+      "membership": "Membresía",
+      "competitions": "Competencias",
+      "sessions": "Sesiones",
+      "templates": "Plantillas"
+    },
+    "profile": "Perfil",
+    "settings": "Configuración",
+    "signOut": "Cerrar sesión",
+    "footer": "Fase 3 · Seguimiento individual, carga y catálogo competitivo"
+  }
+}
