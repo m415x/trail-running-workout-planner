@@ -1,0 +1,9 @@
+{
+  "AthleteProfile": {
+    "tabs": {
+      "physiology": "Fisiología",
+      "gear": "Material",
+      "settings": "Ajustes"
+    }
+  }
+}
