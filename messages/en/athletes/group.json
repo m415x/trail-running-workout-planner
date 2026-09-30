@@ -15,6 +15,46 @@
     "reasonHelp": "Optional. It will be recorded in the athlete’s history.",
     "cancel": "Cancel",
     "assigning": "Assigning…",
-    "assignGroup": "Assign sporting group"
+    "assignGroup": "Assign sporting group",
+    "categories": {
+      "E": {
+        "name": "Elite",
+        "description": "High-performance and competitive athletes"
+      },
+      "U": {
+        "name": "Ultra",
+        "description": "Distances beyond 42k and mountain ultras"
+      },
+      "M": {
+        "name": "Marathon",
+        "description": "42k road or trail marathon distance"
+      },
+      "H": {
+        "name": "Half-Marathon",
+        "description": "Half-marathon distance (21k)"
+      },
+      "S": {
+        "name": "Short",
+        "description": "Short, explosive distances (5k to 15k)"
+      },
+      "B": {
+        "name": "Base",
+        "description": "Entry-level development, adaptation, and conditioning"
+      }
+    },
+    "levels": {
+      "1": {
+        "name": "Advanced",
+        "description": "High volume and experience"
+      },
+      "2": {
+        "name": "Intermediate",
+        "description": "Moderate volume and load"
+      },
+      "3": {
+        "name": "Beginner",
+        "description": "Controlled volume and technical progression"
+      }
+    }
   }
 }
