@@ -71,14 +71,14 @@ export function ConfirmActionDialog({
           <AlertDialogFooter className='flex flex-row gap-2 mt-4 sm:space-x-0'>
             <AlertDialogCancel
               onClick={handleCancel}
-              className='flex-1 rounded-xl text-xs h-9 border-border bg-secondary/50 hover:bg-secondary text-foreground'
+              className='flex-1 min-h-[var(--size-ept-touch-target)] rounded-[var(--radius-ept-control)] border-border bg-secondary/50 text-xs text-foreground hover:bg-secondary'
             >
               {cancelLabel}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
               className={cn(
-                'flex-1 rounded-xl text-xs h-9 font-medium shadow-sm transition-all',
+                'flex-1 min-h-[var(--size-ept-touch-target)] rounded-[var(--radius-ept-control)] text-xs font-medium shadow-sm transition-all',
                 isDestructive
                   ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90',
