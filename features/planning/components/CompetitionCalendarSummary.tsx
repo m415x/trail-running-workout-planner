@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useTranslations } from 'next-intl'
 import { Pencil, XCircle } from 'lucide-react'
 
 import {
@@ -9,6 +10,7 @@ import {
 } from '@/app/actions/competition-calendar-actions'
 import type { CompetitionEntryWithDistanceCompatibility } from '@/lib/periodization/competition-distance-context'
 import type { CompetitionPriority } from '@/types/training/competition-entry.types'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -36,31 +38,13 @@ const STATUS_LABELS = {
   },
 } as const
 
-const COMPATIBILITY_LABELS = {
-  es: {
-    compatible: 'Compatible',
-    incompatible: 'Fuera de rango',
-    unrestricted: 'Sin restricción',
-    policy_not_defined: 'Política pendiente',
-    not_applicable: 'No aplica',
-    invalid: 'Datos inválidos',
-  },
-  en: {
-    compatible: 'Compatible',
-    incompatible: 'Outside range',
-    unrestricted: 'Unrestricted',
-    policy_not_defined: 'Policy pending',
-    not_applicable: 'Not applicable',
-    invalid: 'Invalid data',
-  },
-} as const
-
 export function CompetitionCalendarSummary({
   competitions,
   primaryCompetitionId,
   locale,
   hasPrimaryConflict = false,
 }: CompetitionCalendarSummaryProps) {
+  const t = useTranslations('CoachPlanning')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [priority, setPriority] = useState<CompetitionPriority>('C')
   const [actionError, setActionError] = useState<string | null>(null)
@@ -70,8 +54,15 @@ export function CompetitionCalendarSummary({
 
   const language = locale === 'en' ? 'en' : 'es'
   const statusLabels = STATUS_LABELS[language]
-  const compatibilityLabels = COMPATIBILITY_LABELS[language]
-  const dateLocale = language === 'en' ? 'en-US' : 'es-AR'
+  const regionalContext = resolveApplicationRegionalContext({ language })
+  const compatibilityLabels = {
+    compatible: t('compatibility.compatible'),
+    incompatible: t('compatibility.incompatible'),
+    unrestricted: t('compatibility.unrestricted'),
+    policy_not_defined: t('compatibility.policy_not_defined'),
+    not_applicable: t('compatibility.not_applicable'),
+    invalid: t('compatibility.invalid'),
+  }
   const sortedCompetitions = [...competitions].sort((first, second) => (
     first.date.localeCompare(second.date)
   ))
@@ -220,15 +211,15 @@ export function CompetitionCalendarSummary({
                     </TableCell>
                     <TableCell className='font-medium'>{competition.name}</TableCell>
                     <TableCell>
-                      {new Intl.DateTimeFormat(dateLocale, { timeZone: 'UTC' }).format(
+                      {new Intl.DateTimeFormat(regionalContext.presentationLocale, { timeZone: 'UTC' }).format(
                         new Date(`${competition.date}T00:00:00Z`),
                       )}
                     </TableCell>
-                    <TableCell>{competition.distanceKm.toLocaleString(dateLocale)} km</TableCell>
+                    <TableCell>{competition.distanceKm.toLocaleString(regionalContext.presentationLocale)} km</TableCell>
                     <TableCell>
                       {competition.elevationGainM === null || competition.elevationGainM === undefined
                         ? '—'
-                        : `+${competition.elevationGainM.toLocaleString(dateLocale)} m`}
+                        : `+${competition.elevationGainM.toLocaleString(regionalContext.presentationLocale)} m`}
                     </TableCell>
                     <TableCell>{statusLabels[competition.status]}</TableCell>
                     <TableCell>
