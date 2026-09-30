@@ -3,9 +3,10 @@ import { describe, it } from 'node:test'
 
 import { explainTemplatesAndLoad } from '@/lib/session-generation/generation-explanation'
 import { createWeeklyTrainingSlot } from '@/lib/session-generation/default-weekly-pattern'
+import type { WeeklyTrainingSlot } from '@/types/training/session-generation.types'
 import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 
-const slots = [
+const slots: WeeklyTrainingSlot[] = [
   createWeeklyTrainingSlot('tuesday', 'mountain'),
   createWeeklyTrainingSlot('thursday', 'quality'),
   {
@@ -111,10 +112,12 @@ describe('GenerationExplanation templates and load evidence', () => {
 
     assert.ok(result.flexibleAllocation.decision.some((fact) => (
       fact.code === 'flexible_volume_allocation' &&
+      typeof fact.value === 'string' &&
       fact.value.startsWith('weekly-thursday::')
     )))
     assert.ok(result.flexibleAllocation.decision.some((fact) => (
       fact.code === 'flexible_elevation_allocation' &&
+      typeof fact.value === 'string' &&
       fact.value.startsWith('weekly-thursday::')
     )))
     assert.ok(result.flexibleAllocation.consequence.some((fact) => (
