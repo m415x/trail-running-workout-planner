@@ -72,8 +72,8 @@ function fixtureInput(): SessionGenerationInput {
       groupTrainingPlanId: 'plan-1',
       groupId: 'group-1',
       microcycleId: 'micro-1',
-      period: 'base',
-      microcycleType: 'load',
+      period: 'general_preparatory',
+      microcycleType: 'development',
       startDate: '2026-09-21',
       endDate: '2026-09-27',
       load: {
@@ -93,9 +93,9 @@ function fixtureInput(): SessionGenerationInput {
       frequency: { mode: 'fixed', sessionsPerWeek: 3 },
       pattern: {
         slots: [
-          { key: 'monday-base', weekday: 'monday', role: 'base', volumeWeight: 1, elevationWeight: 1 },
-          { key: 'wednesday-quality', weekday: 'wednesday', role: 'quality', volumeWeight: 1, elevationWeight: 1 },
-          { key: 'saturday-long', weekday: 'saturday', role: 'long', volumeWeight: 2, elevationWeight: 2 },
+          { key: 'monday-base', weekday: 'monday', role: 'base', preferredWorkoutTypes: ['Base'], volumeWeight: 1, elevationWeight: 1 },
+          { key: 'wednesday-quality', weekday: 'wednesday', role: 'quality', preferredWorkoutTypes: ['Intervals'], volumeWeight: 1, elevationWeight: 1 },
+          { key: 'saturday-long', weekday: 'saturday', role: 'long', preferredWorkoutTypes: ['Long'], volumeWeight: 2, elevationWeight: 2 },
         ],
       },
     },
@@ -113,7 +113,7 @@ function fixtureResult(): SessionGenerationResult {
       session: {
         date: '2026-09-21',
         title: 'Base',
-        type: 'Running',
+        type: 'Base',
         sourceTemplateId: null,
         locationKey: null,
         trackPath: null,
