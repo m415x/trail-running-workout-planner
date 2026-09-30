@@ -45,21 +45,14 @@ function GenerationExplanationStageView({
   locale: string
   planningSubgroupLabel: string
 }) {
-  const labels = locale === 'en'
-    ? {
-        inputs: 'Inputs',
-        constraints: 'Constraints',
-        decision: 'Decision',
-        consequence: 'Consequence',
-        warnings: 'Warnings',
-      }
-    : {
-        inputs: 'Entradas',
-        constraints: 'Restricciones',
-        decision: 'Decisión',
-        consequence: 'Consecuencia',
-        warnings: 'Avisos',
-      }
+  const t = useTranslations('CoachPlanning')
+  const labels = {
+    inputs: t('explanationSections.inputs'),
+    constraints: t('explanationSections.constraints'),
+    decision: t('explanationSections.decision'),
+    consequence: t('explanationSections.consequence'),
+    warnings: t('explanationSections.warnings'),
+  }
 
   const sections = [
     { label: labels.inputs, facts: evidence.inputs },
@@ -139,21 +132,8 @@ function formatStageLabel(
   stage: GenerationExplanationStageEvidence['stage'],
   locale: string,
 ) {
-  const labels = {
-    weekly_budget: locale === 'en' ? 'Weekly budget' : 'Presupuesto semanal',
-    frequency: locale === 'en' ? 'Frequency' : 'Frecuencia',
-    slots: locale === 'en' ? 'Slots' : 'Días y roles',
-    stimulus_template: locale === 'en' ? 'Stimulus and template' : 'Estímulo y plantilla',
-    fixed_load: locale === 'en' ? 'Fixed load' : 'Carga fija',
-    remaining_budget: locale === 'en' ? 'Remaining budget' : 'Presupuesto restante',
-    flexible_allocation: locale === 'en' ? 'Flexible allocation' : 'Distribución flexible',
-    intensity: locale === 'en' ? 'Intensity' : 'Intensidad',
-    coordination_reconciliation: locale === 'en'
-      ? 'Coordination and reconciliation'
-      : 'Coordinación y reconciliación',
-  }
-
-  return labels[stage]
+  const t = useTranslations('CoachPlanning')
+  return t(`explanationStages.${stage}`)
 }
 
 
