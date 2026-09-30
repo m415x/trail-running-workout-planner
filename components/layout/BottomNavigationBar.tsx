@@ -23,8 +23,8 @@ export function BottomNavigationBar() {
   const pathname = usePathname()
 
   return (
-    <nav className='absolute bottom-0 z-50 w-full border-t border-border/80 bg-background p-2 transition-all'>
-      <div className='max-w-md mx-auto flex items-center justify-around'>
+    <nav className='absolute bottom-0 z-50 w-full border-t border-border/80 bg-background p-2 transition-all sm:left-1/2 sm:w-auto sm:-translate-x-1/2 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
+      <div className='max-w-md mx-auto flex items-center justify-around sm:max-w-none sm:gap-1'>
         {NAV_ITEMS.map(({ href, labelKey, icon: Icon }) => {
           const isActive = pathname === href
 
