@@ -15,6 +15,18 @@ const stage = (name: GenerationExplanation['stages'][number]['stage']) => ({
   warnings: [],
 })
 
+const completeStages = () => [
+  stage('weekly_budget'),
+  stage('frequency'),
+  stage('slots'),
+  stage('stimulus_template'),
+  stage('fixed_load'),
+  stage('remaining_budget'),
+  stage('flexible_allocation'),
+  stage('intensity'),
+  stage('coordination_reconciliation'),
+]
+
 describe('GenerationExplanation runtime contract', () => {
   it('accepts the complete approved causal sequence', () => {
     assert.doesNotThrow(() => assertValidGenerationExplanation({
@@ -25,17 +37,7 @@ describe('GenerationExplanation runtime contract', () => {
         planningCohortId: null,
         microcycleId: 'micro-base-s2-8',
       },
-      stages: [
-        stage('weekly_budget'),
-        stage('frequency'),
-        stage('slots'),
-        stage('stimulus_template'),
-        stage('fixed_load'),
-        stage('remaining_budget'),
-        stage('flexible_allocation'),
-        stage('intensity'),
-        stage('coordination_reconciliation'),
-      ],
+      stages: completeStages(),
     }))
   })
 
@@ -77,7 +79,7 @@ describe('GenerationExplanation runtime contract', () => {
         planningCohortId: 'cohort-should-not-exist',
         microcycleId: 'micro-base-s2-8',
       } as unknown as GenerationExplanation['planningScope'],
-      stages: [],
+      stages: completeStages(),
     }), /base.*planning subgroup/i)
 
     assert.throws(() => assertValidGenerationExplanation({
@@ -88,7 +90,7 @@ describe('GenerationExplanation runtime contract', () => {
         planningCohortId: '',
         microcycleId: 'micro-variant-s2-8',
       },
-      stages: [],
+      stages: completeStages(),
     }), /variant.*planning subgroup/i)
   })
 })
