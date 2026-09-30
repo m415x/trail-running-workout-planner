@@ -69,6 +69,12 @@
   --color-glass-bg-hover: var(--glass-bg-hover);
   --color-glass-bg: var(--glass-bg);
 
+  /* --- SEMANTIC SPACING / DENSITY --- */
+  --space-ept-tight: 0.25rem;
+  --space-ept-control: 0.5rem;
+  --space-ept-content: 1rem;
+  --space-ept-section: 1.5rem;
+
   /* --- BORDER RADIUS --- */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
@@ -77,6 +83,16 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* --- SEMANTIC SHAPE / ELEVATION ---
+     Semantic aliases reuse the existing radius scale instead of creating a
+     parallel geometry system. */
+  --radius-ept-control: var(--radius-md);
+  --radius-ept-surface: var(--radius-xl);
+  --radius-ept-overlay: var(--radius-2xl);
+
+  --elevation-ept-raised: 0 1px 2px oklch(0 0 0 / 0.08), 0 1px 3px oklch(0 0 0 / 0.12);
+  --elevation-ept-overlay: 0 12px 32px oklch(0 0 0 / 0.18);
 }
 
 @layer base {
