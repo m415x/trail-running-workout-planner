@@ -74,6 +74,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/en/athlete-stats/stats.json')).default
+      case 'memberships/membership':
+        return (await import('@/messages/en/memberships/membership.json')).default
       case 'glossary/planning':
         return (await import('@/messages/en/glossary/planning.json')).default
     }
@@ -121,6 +123,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/forms/dirty-form-guard.json')).default
       case 'athlete-stats/stats':
         return (await import('@/messages/es/athlete-stats/stats.json')).default
+      case 'memberships/membership':
+        return (await import('@/messages/es/memberships/membership.json')).default
       case 'glossary/planning':
         return (await import('@/messages/es/glossary/planning.json')).default
     }
