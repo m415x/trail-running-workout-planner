@@ -2,12 +2,19 @@ import {
   resolveWeeklySessionCount,
   selectWeeklySlots,
 } from '@/lib/session-generation/weekly-generation-rules'
-import type { MicrocycleType } from '@/types/training/periodization.types'
+import { distributeWeeklyElevation } from '@/lib/session-generation/weekly-elevation-distribution'
+import { distributeWeeklyVolume } from '@/lib/session-generation/weekly-volume-distribution'
+import { selectWorkoutTemplate } from '@/lib/session-generation/workout-template-selection'
+import type { MicrocycleType, PeriodType } from '@/types/training/periodization.types'
 import type {
   TrainingWeekday,
+  WeeklyElevationAllocation,
   WeeklySessionFrequency,
   WeeklyTrainingPattern,
+  WeeklyTrainingSlot,
+  WeeklyVolumeAllocation,
 } from '@/types/training/session-generation.types'
+import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 
 export const GENERATION_EXPLANATION_STAGE_ORDER = [
   'weekly_budget',
@@ -275,4 +282,238 @@ export function explainFrequencyAndSlots(
 
 function roundExplanationNumber(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+
+export interface ExplainTemplatesAndLoadInput {
+  templates: WorkoutTemplate[]
+  teamId: string
+  period: PeriodType
+  microcycleType: MicrocycleType
+  slots: WeeklyTrainingSlot[]
+  targetVolumeKm: number
+  targetElevationGain: number | null
+}
+
+export interface TemplatesAndLoadExplanation {
+  stimulusTemplate: GenerationExplanationStageEvidence
+  fixedLoad: GenerationExplanationStageEvidence
+  remainingBudget: GenerationExplanationStageEvidence
+  flexibleAllocation: GenerationExplanationStageEvidence
+}
+
+export function explainTemplatesAndLoad(
+  input: ExplainTemplatesAndLoadInput,
+): TemplatesAndLoadExplanation {
+  const selectedTemplates = new Map<string, WorkoutTemplate | null>()
+  const templateFacts: GenerationExplanationFact[] = []
+  const templateConsequences: GenerationExplanationFact[] = []
+  const templateWarnings: GenerationExplanationWarning[] = []
+
+  for (const slot of input.slots) {
+    const selection = selectWorkoutTemplate({
+      templates: input.templates,
+      teamId: input.teamId,
+      period: input.period,
+      microcycleType: input.microcycleType,
+      slot,
+    })
+    selectedTemplates.set(slot.key, selection.selected)
+
+    if (selection.selected) {
+      templateFacts.push({
+        code: 'selected_template',
+        value: `${slot.key}::${selection.selected.id}`,
+      })
+      templateConsequences.push({
+        code: 'template_material_factors',
+        value: `${slot.key}::role,period,microcycle`,
+      })
+    }
+
+    for (const warning of selection.warnings) {
+      templateWarnings.push({
+        code: 'no_compatible_template',
+        facts: [
+          { code: 'slot_key', value: slot.key },
+          { code: 'role', value: slot.role },
+          { code: 'period', value: input.period },
+          { code: 'microcycle_type', value: input.microcycleType },
+          { code: 'source_warning', value: warning },
+        ],
+      })
+    }
+  }
+
+  const fixedVolume = resolveExplanationFixedVolume(input.slots, selectedTemplates)
+  const fixedElevation = resolveExplanationFixedElevation(input.slots, selectedTemplates)
+
+  const volume = distributeWeeklyVolume(
+    input.slots,
+    input.targetVolumeKm,
+    fixedVolume,
+  )
+  const elevation = distributeWeeklyElevation(
+    input.slots,
+    input.targetElevationGain,
+    fixedElevation,
+  )
+
+  const fixedBySlot = new Map(
+    input.slots.map((slot) => [
+      slot.key,
+      {
+        volume: fixedVolume.find((allocation) => allocation.slotKey === slot.key),
+        elevation: fixedElevation.find((allocation) => allocation.slotKey === slot.key),
+      },
+    ]),
+  )
+
+  const fixedLoadFacts: GenerationExplanationFact[] = []
+  for (const slot of input.slots) {
+    const fixed = fixedBySlot.get(slot.key)
+    if (fixed?.volume && fixed.elevation) {
+      fixedLoadFacts.push({
+        code: 'fixed_slot_load',
+        value: `${slot.key}::${fixed.volume.distanceKm}::${fixed.elevation.elevationGain}`,
+      })
+    }
+  }
+
+  const fixedVolumeKm = fixedVolume.reduce((sum, allocation) => sum + allocation.distanceKm, 0)
+  const fixedElevationGain = fixedElevation.reduce((sum, allocation) => (
+    sum + allocation.elevationGain
+  ), 0)
+  const remainingVolumeKm = roundExplanationNumber(
+    Math.max(0, input.targetVolumeKm - fixedVolumeKm),
+  )
+  const remainingElevationGain = input.targetElevationGain === null
+    ? null
+    : Math.max(0, input.targetElevationGain - fixedElevationGain)
+
+  const flexibleVolumeFacts = volume.allocations
+    .filter(({ flexibility }) => flexibility === 'flexible')
+    .map((allocation): GenerationExplanationFact => ({
+      code: 'flexible_volume_allocation',
+      value: `${allocation.slotKey}::${allocation.distanceKm}`,
+    }))
+  const flexibleElevationFacts = elevation.allocations
+    .filter(({ flexibility }) => flexibility === 'flexible')
+    .map((allocation): GenerationExplanationFact => ({
+      code: 'flexible_elevation_allocation',
+      value: `${allocation.slotKey}::${allocation.elevationGain}`,
+    }))
+
+  return {
+    stimulusTemplate: {
+      stage: 'stimulus_template',
+      inputs: input.slots.map((slot) => ({
+        code: 'slot_role',
+        value: `${slot.key}::${slot.role}`,
+      })),
+      constraints: [
+        { code: 'team_id', value: input.teamId },
+        { code: 'period', value: input.period },
+        { code: 'microcycle_type', value: input.microcycleType },
+      ],
+      decision: templateFacts,
+      consequence: templateConsequences,
+      warnings: templateWarnings,
+    },
+    fixedLoad: {
+      stage: 'fixed_load',
+      inputs: [],
+      constraints: [],
+      decision: fixedLoadFacts,
+      consequence: [
+        { code: 'fixed_volume_km', value: roundExplanationNumber(fixedVolumeKm) },
+        { code: 'fixed_elevation_gain', value: fixedElevationGain },
+      ],
+      warnings: [],
+    },
+    remainingBudget: {
+      stage: 'remaining_budget',
+      inputs: [
+        { code: 'target_volume_km', value: input.targetVolumeKm },
+        { code: 'target_elevation_gain', value: input.targetElevationGain },
+        { code: 'fixed_volume_km', value: roundExplanationNumber(fixedVolumeKm) },
+        { code: 'fixed_elevation_gain', value: fixedElevationGain },
+      ],
+      constraints: [],
+      decision: [
+        { code: 'remaining_volume_km', value: remainingVolumeKm },
+        { code: 'remaining_elevation_gain', value: remainingElevationGain },
+      ],
+      consequence: [],
+      warnings: [
+        ...volume.warnings.map((warning) => ({
+          code: volume.isExceeded ? 'fixed_volume_exceeds_target' : 'volume_unassigned',
+          facts: [{ code: 'source_warning', value: warning }],
+        })),
+        ...elevation.warnings.map((warning) => ({
+          code: elevation.isExceeded ? 'fixed_elevation_exceeds_target' : 'elevation_unassigned',
+          facts: [{ code: 'source_warning', value: warning }],
+        })),
+      ],
+    },
+    flexibleAllocation: {
+      stage: 'flexible_allocation',
+      inputs: [
+        { code: 'remaining_volume_km', value: remainingVolumeKm },
+        { code: 'remaining_elevation_gain', value: remainingElevationGain },
+      ],
+      constraints: [],
+      decision: [
+        ...flexibleVolumeFacts,
+        ...flexibleElevationFacts,
+      ],
+      consequence: [
+        { code: 'allocated_volume_km', value: volume.allocatedVolumeKm },
+        { code: 'allocated_elevation_gain', value: elevation.allocatedElevationGain },
+      ],
+      warnings: [],
+    },
+  }
+}
+
+function resolveExplanationFixedVolume(
+  slots: WeeklyTrainingSlot[],
+  templates: Map<string, WorkoutTemplate | null>,
+): WeeklyVolumeAllocation[] {
+  return slots.flatMap((slot) => {
+    const template = templates.get(slot.key)
+    const distanceKm = template?.prescriptionDefaults.distanceKm
+    return isExplanationFixedGeographicalTemplate(template) &&
+      distanceKm !== null &&
+      distanceKm !== undefined
+      ? [{ slotKey: slot.key, flexibility: 'fixed' as const, distanceKm }]
+      : []
+  })
+}
+
+function resolveExplanationFixedElevation(
+  slots: WeeklyTrainingSlot[],
+  templates: Map<string, WorkoutTemplate | null>,
+): WeeklyElevationAllocation[] {
+  return slots.flatMap((slot) => {
+    const template = templates.get(slot.key)
+    const elevationGain = template?.prescriptionDefaults.elevationGain
+    return isExplanationFixedGeographicalTemplate(template) &&
+      elevationGain !== null &&
+      elevationGain !== undefined
+      ? [{ slotKey: slot.key, flexibility: 'fixed' as const, elevationGain }]
+      : []
+  })
+}
+
+function isExplanationFixedGeographicalTemplate(
+  template: WorkoutTemplate | null | undefined,
+) {
+  return Boolean(
+    template?.sessionDefaults.trackPath &&
+    template.prescriptionDefaults.distanceKm !== null &&
+    template.prescriptionDefaults.distanceKm !== undefined &&
+    template.prescriptionDefaults.elevationGain !== null &&
+    template.prescriptionDefaults.elevationGain !== undefined,
+  )
 }
