@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server'
 import { db } from '@/db'
 import { MembershipPolicyCard } from '@/features/memberships/components/MembershipPolicyCard'
 import { TeamEconomicPolicyForm } from '@/features/memberships/components/TeamEconomicPolicyForm'
@@ -32,7 +33,7 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
     onDate: membershipPageCalendarDate(APPLICATION_REGIONAL_FALLBACKS.timeZone),
   })
 
-  const es = supportedLocale === 'es'
+  const t = await getTranslations({ locale, namespace: 'Membership' })
 
   return (
     <div className='space-y-6'>
@@ -42,12 +43,12 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
 
       <section className='space-y-3'>
         <h3 className='text-lg font-semibold'>
-          {es ? 'Política vigente' : 'Current policy'}
+          {t('page.currentPolicy')}
         </h3>
         <MembershipPolicyCard model={model.currentPolicy} />
         {model.currentPolicy.effectiveUntil ? (
           <p className='text-sm text-muted-foreground'>
-            {es ? 'Vigente hasta' : 'Effective until'}{' '}
+            {t('page.effectiveUntil')}{' '}
             {model.currentPolicy.effectiveUntil}
           </p>
         ) : null}
@@ -60,9 +61,7 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
             className='overflow-hidden rounded-lg border border-border bg-card'
           >
             <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
-              {es
-                ? `Cambios programados (${model.scheduledPolicies.length})`
-                : `Scheduled changes (${model.scheduledPolicies.length})`}
+              {t('page.scheduledChanges', { count: model.scheduledPolicies.length })}
             </AccordionTrigger>
             <AccordionContent className='px-4 pb-4'>
               <div className='divide-y divide-border'>
@@ -102,9 +101,7 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
             className='overflow-hidden rounded-lg border border-border bg-card'
           >
             <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
-              {es
-                ? `Historial de políticas (${model.pastPolicies.length})`
-                : `Policy history (${model.pastPolicies.length})`}
+              {t('page.policyHistory', { count: model.pastPolicies.length })}
             </AccordionTrigger>
             <AccordionContent className='px-4 pb-4'>
               <div className='divide-y divide-border'>
@@ -142,7 +139,7 @@ export default async function MembershipPage({ params }: MembershipPageProps) {
       <GlobalDueDateExceptionForm locale={supportedLocale} />
       {model.globalDueDateExceptionHistory.length > 0 ? (
         <section className='space-y-2'>
-          <h3 className='font-medium'>{es ? 'Historial de excepciones' : 'Exception history'}</h3>
+          <h3 className='font-medium'>{t('page.exceptionHistory')}</h3>
           <ul className='text-sm text-muted-foreground'>
             {model.globalDueDateExceptionHistory.map((revision) => (
               <li key={revision.id}>
