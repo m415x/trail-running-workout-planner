@@ -214,7 +214,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           const intensityTarget = intensityTargetsByMicrocycle.get(microcycle.id)
           if (microcycle.targetVolumeKm === null || !intensityTarget) {
             sessionPreviewWarnings.push(
-              `Semana ${microcycle.weekNumber}: falta un objetivo de volumen o intensidad.`,
+              t('detail.generationMissing', { week: microcycle.weekNumber }),
             )
             continue
           }
@@ -268,7 +268,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             })
           } catch (error) {
             sessionPreviewWarnings.push(
-              `Semana ${microcycle.weekNumber}: ${error instanceof Error ? error.message : 'no se pudo generar la propuesta'}.`,
+              error instanceof Error ? `${t('detail.generationFailed', { week: microcycle.weekNumber })} ${error.message}` : t('detail.generationFailed', { week: microcycle.weekNumber }),
             )
           }
         }
@@ -302,7 +302,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       const warnings = uniqueStrings([
         ...events.flatMap((event) => event.warnings),
         ...sessionPreviewWarnings.filter((warning) => (
-          warning.startsWith(`Semana ${microcycle.weekNumber}:`)
+          warning.startsWith(t('detail.generationMissing', { week: microcycle.weekNumber }).split(':')[0]) || warning.startsWith(t('detail.generationFailed', { week: microcycle.weekNumber }).split(':')[0])
         )),
       ])
 
@@ -331,16 +331,16 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         <div>
           <div className='flex flex-wrap items-center gap-2'>
             <h2 className='text-3xl font-bold tracking-tight'>{plan.title}</h2>
-            <Badge variant='secondary'>Grupo {groupCode}</Badge>
+            <Badge variant='secondary'>{t('detail.group', { code: groupCode })}</Badge>
           </div>
-          <p className='text-muted-foreground'>Editá el volumen y el desnivel objetivo de cada semana sin regenerar la planificación.</p>
+          <p className='text-muted-foreground'>{t('detail.description')}</p>
           {plan.planningCohort && plan.sourceGroupTrainingPlan && cohortPath && (
             <div className='mt-3 flex flex-wrap items-center gap-2 text-sm'>
               <Badge variant='outline'>
                 {t('planningSubgroup')}: {plan.planningCohort.name}
               </Badge>
               <Badge variant='outline'>
-                {locale === 'en' ? 'Base plan' : 'Plan base'}: {plan.sourceGroupTrainingPlan.title}
+                {t('detail.basePlan')}: {plan.sourceGroupTrainingPlan.title}
               </Badge>
               <Link href={cohortPath} className={buttonVariants({ variant:'ghost', size:'sm' })}>
                 {t('backToPlanningSubgroup')}
@@ -372,9 +372,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle>Vista previa no disponible</CardTitle>
+            <CardTitle>{t('detail.previewUnavailable')}</CardTitle>
             <CardDescription>
-              Esta planificación fue creada antes de incorporar estrategias de carga.
+              {t('detail.previewUnavailableDescription')}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -437,12 +437,12 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Semana</TableHead>
-                        <TableHead>Tipo</TableHead>
-                        <TableHead>Fechas</TableHead>
-                        <TableHead>Desnivel</TableHead>
-                        <TableHead>Notas</TableHead>
-                        <TableHead className='text-right'>Volumen objetivo</TableHead>
+                        <TableHead>{t('detail.table.week')}</TableHead>
+                        <TableHead>{t('detail.table.type')}</TableHead>
+                        <TableHead>{t('detail.table.dates')}</TableHead>
+                        <TableHead>{t('detail.table.elevation')}</TableHead>
+                        <TableHead>{t('detail.table.notes')}</TableHead>
+                        <TableHead className='text-right'>{t('detail.table.targetVolume')}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -505,9 +505,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           {macrocycle.mesocycles.length === 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Horizonte configurado</CardTitle>
+                <CardTitle>{t('detail.configuredHorizon')}</CardTitle>
                 <CardDescription>
-                  La estrategia y las fechas están guardadas. La progresión semanal se generará en el siguiente paso.
+                  {t('detail.configuredHorizonDescription')}
                 </CardDescription>
               </CardHeader>
             </Card>
