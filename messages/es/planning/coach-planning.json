@@ -1,0 +1,17 @@
+{
+  "CoachPlanning": {
+    "backToPlans": "Volver a planificaciones",
+    "planningSubgroup": "Subgrupo de planificación",
+    "backToPlanningSubgroup": "Volver al subgrupo de planificación",
+    "whyGenerated": "Por qué se generó así",
+    "saveSessions": "Guardar sesiones",
+    "saveWeeklyConfiguration": "Guardar configuración semanal",
+    "saveDates": "Guardar fechas",
+    "saveNotes": "Guardar notas",
+    "saveType": "Guardar tipo",
+    "targetVolumeKm": "Volumen objetivo en kilómetros",
+    "noRestriction": "Sin restricción",
+    "policyPending": "Política pendiente",
+    "mountainFocus": "Foco montaña"
+  }
+}
