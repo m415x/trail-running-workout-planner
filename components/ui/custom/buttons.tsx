@@ -102,7 +102,7 @@ export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
         )}
         {...props}
       >
-        {Icon && <Icon size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
+        {Icon && <Icon aria-hidden='true' size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
         <span className={cn('font-heading text-2xl font-black leading-none tracking-tight', valueClassName)}>
           {value}
         </span>
@@ -118,9 +118,15 @@ PillButton.displayName = 'PillButton'
 export type ThemeToggleButtonProps = Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   'children' | 'variant'
->
+> & {
+  'aria-label': string
+}
 
-export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProps) {
+export function ThemeToggleButton({
+  className,
+  'aria-label': ariaLabel,
+  ...props
+}: ThemeToggleButtonProps) {
   const { theme, setTheme } = useTheme()
 
   return (
@@ -129,6 +135,7 @@ export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProp
       fromCenter
       theme={theme === 'dark' ? 'dark' : 'light'}
       onThemeChange={(newTheme) => setTheme(newTheme)}
+      aria-label={ariaLabel}
       className={cn(className)}
       {...props}
     />
