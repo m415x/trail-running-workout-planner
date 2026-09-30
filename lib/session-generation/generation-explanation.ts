@@ -568,7 +568,21 @@ export function explainIntensityAndRace(
 
     intensityWarnings.push({
       code: 'intense_sessions_not_fully_assigned',
-      facts: [{ code: 'source_warning', value: warning }],
+      facts: [
+        {
+          code: 'intense_sessions_target',
+          value: input.intensity.intenseSessionsTarget,
+        },
+        {
+          code: 'assigned_intense_sessions',
+          value: distribution.assignedIntenseSessions,
+        },
+        {
+          code: 'minimum_recovery_days',
+          value: input.intensity.minimumRecoveryDaysBetweenIntenseSessions,
+        },
+        { code: 'source_warning', value: warning },
+      ],
     })
   }
 
