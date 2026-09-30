@@ -28,6 +28,7 @@ export function GenerationExplanationView({
             key={stage}
             evidence={evidence}
             locale={locale}
+            planningSubgroupLabel={t('planningSubgroup')}
           />
         ) : null
       })}
@@ -38,9 +39,11 @@ export function GenerationExplanationView({
 function GenerationExplanationStageView({
   evidence,
   locale,
+  planningSubgroupLabel,
 }: {
   evidence: GenerationExplanationStageEvidence
   locale: string
+  planningSubgroupLabel: string
 }) {
   const labels = locale === 'en'
     ? {
@@ -72,7 +75,7 @@ function GenerationExplanationStageView({
         {sections.map(({ label, facts }) => (
           <div key={label}>
             <p className='text-xs font-medium text-muted-foreground'>{label}</p>
-            <FactList facts={facts} locale={locale} />
+            <FactList facts={facts} locale={locale} planningSubgroupLabel={planningSubgroupLabel} />
           </div>
         ))}
       </div>
@@ -90,7 +93,7 @@ function GenerationExplanationStageView({
                   <ul className='ml-4 mt-1 space-y-1 text-muted-foreground'>
                     {warning.facts.map((fact, factIndex) => (
                       <li key={`${fact.code}-${factIndex}`}>
-                        {formatFact(fact, locale)}
+                        {formatFact(fact, locale, planningSubgroupLabel)}
                       </li>
                     ))}
                   </ul>
@@ -107,23 +110,29 @@ function GenerationExplanationStageView({
 function FactList({
   facts,
   locale,
+  planningSubgroupLabel,
 }: {
   facts: GenerationExplanationFact[]
   locale: string
+  planningSubgroupLabel: string
 }) {
   return facts.length === 0 ? (
     <p className='text-xs text-muted-foreground'>—</p>
   ) : (
     <ul className='space-y-1 text-xs text-muted-foreground'>
       {facts.map((fact, index) => (
-        <li key={`${fact.code}-${index}`}>{formatFact(fact, locale)}</li>
+        <li key={`${fact.code}-${index}`}>{formatFact(fact, locale, planningSubgroupLabel)}</li>
       ))}
     </ul>
   )
 }
 
-function formatFact(fact: GenerationExplanationFact, locale: string) {
-  return `${formatGenerationExplanationLabel(fact.code, locale)}: ${String(fact.value ?? '—')}`
+function formatFact(
+  fact: GenerationExplanationFact,
+  locale: string,
+  planningSubgroupLabel: string,
+) {
+  return `${formatGenerationExplanationLabel(fact.code, locale, planningSubgroupLabel)}: ${String(fact.value ?? '—')}`
 }
 
 function formatStageLabel(
@@ -148,7 +157,11 @@ function formatStageLabel(
 }
 
 
-function formatGenerationExplanationLabel(code: string, locale: string) {
+function formatGenerationExplanationLabel(
+  code: string,
+  locale: string,
+  planningSubgroupLabel: string,
+) {
   const labels: Record<string, { es: string; en: string }> = {
     target_volume_km: { es: 'Volumen objetivo', en: 'Target volume' },
     target_elevation_gain: { es: 'Desnivel objetivo', en: 'Target elevation gain' },
@@ -200,7 +213,7 @@ function formatGenerationExplanationLabel(code: string, locale: string) {
       en: 'Race load kept separate from training budget',
     },
     planning_scope_kind: { es: 'Alcance de planificación', en: 'Planning scope' },
-    planning_cohort_id: { es: 'Subgrupo de planificación', en: 'Planning subgroup' },
+    planning_cohort_id: { es: planningSubgroupLabel, en: planningSubgroupLabel },
     microcycle_id: { es: 'Microciclo', en: 'Microcycle' },
     shared_event_key: { es: 'Evento compartido', en: 'Shared event' },
     shared_prescription_count: { es: 'Prescripciones compartiendo la sesión', en: 'Prescriptions sharing the session' },
