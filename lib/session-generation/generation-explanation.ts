@@ -385,11 +385,11 @@ export function explainTemplatesAndLoad(
     sum + allocation.elevationGain
   ), 0)
   const remainingVolumeKm = roundExplanationNumber(
-    Math.max(0, input.targetVolumeKm - fixedVolumeKm),
+    input.targetVolumeKm - fixedVolumeKm,
   )
   const remainingElevationGain = input.targetElevationGain === null
     ? null
-    : Math.max(0, input.targetElevationGain - fixedElevationGain)
+    : input.targetElevationGain - fixedElevationGain
 
   const flexibleVolumeFacts = volume.allocations
     .filter(({ flexibility }) => flexibility === 'flexible')
