@@ -12,6 +12,19 @@
     "targetVolumeKm": "Target volume in kilometers",
     "noRestriction": "No restriction",
     "policyPending": "Policy pending",
-    "mountainFocus": "Mountain focus"
+    "mountainFocus": "Mountain focus",
+    "saving": "Saving…",
+    "save": "Save",
+    "intensityTitle": "Intensity distribution",
+    "loadPreviewTitle": "Load preview",
+    "generationExplanation": "Generation explanation",
+    "compatibility": {
+      "compatible": "Compatible",
+      "incompatible": "Outside range",
+      "unrestricted": "Unrestricted",
+      "policy_not_defined": "Policy pending",
+      "not_applicable": "Not applicable",
+      "invalid": "Invalid data"
+    }
   }
 }
