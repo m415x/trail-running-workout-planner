@@ -34,23 +34,23 @@ type DayConfig = {
 
 const initialActionState: SessionGenerationPreferencesFormState = {}
 
-const weekdayOptions: Array<{ value: TrainingWeekday; label: string }> = [
-  { value: 'monday', label: 'Lunes' },
-  { value: 'tuesday', label: 'Martes' },
-  { value: 'wednesday', label: 'Miércoles' },
-  { value: 'thursday', label: 'Jueves' },
-  { value: 'friday', label: 'Viernes' },
-  { value: 'saturday', label: 'Sábado' },
-  { value: 'sunday', label: 'Domingo' },
+const weekdayOptions: TrainingWeekday[] = [
+  'monday',
+  'tuesday',
+  'wednesday',
+  'thursday',
+  'friday',
+  'saturday',
+  'sunday',
 ]
 
-const roleOptions: Array<{ value: WeeklySessionRole; label: string }> = [
-  { value: 'base', label: 'Base' },
-  { value: 'mountain', label: 'Montaña' },
-  { value: 'long', label: 'Largo' },
-  { value: 'quality', label: 'Calidad' },
-  { value: 'recovery', label: 'Recuperación' },
-  { value: 'competition', label: 'Competencia' },
+const roleOptions: WeeklySessionRole[] = [
+  'base',
+  'mountain',
+  'long',
+  'quality',
+  'recovery',
+  'competition',
 ]
 
 export function SessionGenerationPreferencesForm({
@@ -66,10 +66,10 @@ export function SessionGenerationPreferencesForm({
   const [days, setDays] = useState<DayConfig[]>(() => {
     const slotByDay = new Map(pattern.slots.map((slot) => [slot.weekday, slot]))
 
-    return weekdayOptions.map(({ value }) => ({
-      weekday: value,
-      enabled: slotByDay.has(value),
-      role: slotByDay.get(value)?.role ?? defaultRoleForDay(value),
+    return weekdayOptions.map((weekday) => ({
+      weekday,
+      enabled: slotByDay.has(weekday),
+      role: slotByDay.get(weekday)?.role ?? defaultRoleForDay(weekday),
     }))
   })
   const [actionState, formAction, isPending] = useActionState(
@@ -134,7 +134,7 @@ export function SessionGenerationPreferencesForm({
 
             <div className='grid gap-3 md:grid-cols-2 xl:grid-cols-3'>
               {days.map((day) => {
-                const label = weekdayOptions.find((option) => option.value === day.weekday)?.label
+                const label = t(`weekdays.${day.weekday}`)
 
                 return (
                   <div key={day.weekday} className='rounded-lg border p-3'>
@@ -159,9 +159,9 @@ export function SessionGenerationPreferencesForm({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {roleOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
+                          {roleOptions.map((role) => (
+                            <SelectItem key={role} value={role}>
+                              {t(`roles.${role}`)}
                             </SelectItem>
                           ))}
                         </SelectContent>
