@@ -3,10 +3,14 @@ import {
   selectWeeklySlots,
 } from '@/lib/session-generation/weekly-generation-rules'
 import { distributeWeeklyElevation } from '@/lib/session-generation/weekly-elevation-distribution'
+import { distributeWeeklyIntensity } from '@/lib/session-generation/weekly-intensity-distribution'
 import { distributeWeeklyVolume } from '@/lib/session-generation/weekly-volume-distribution'
 import { selectWorkoutTemplate } from '@/lib/session-generation/workout-template-selection'
 import type { MicrocycleType, PeriodType } from '@/types/training/periodization.types'
 import type {
+  DatedTrainingSlot,
+  SessionGenerationCompetitionTarget,
+  SessionGenerationIntensityTarget,
   TrainingWeekday,
   WeeklyElevationAllocation,
   WeeklySessionFrequency,
@@ -516,4 +520,151 @@ function isExplanationFixedGeographicalTemplate(
     template.prescriptionDefaults.elevationGain !== null &&
     template.prescriptionDefaults.elevationGain !== undefined,
   )
+}
+
+
+export interface ExplainIntensityAndRaceInput {
+  trainingSlots: DatedTrainingSlot[]
+  intensity: SessionGenerationIntensityTarget
+  competition: SessionGenerationCompetitionTarget | null
+  trainingTargetVolumeKm: number
+  trainingTargetElevationGain: number | null
+}
+
+export interface IntensityAndRaceExplanation {
+  intensity: GenerationExplanationStageEvidence
+  race: GenerationExplanationStageEvidence
+}
+
+export function explainIntensityAndRace(
+  input: ExplainIntensityAndRaceInput,
+): IntensityAndRaceExplanation {
+  const distribution = distributeWeeklyIntensity(
+    input.trainingSlots,
+    input.intensity,
+  )
+
+  const methods = new Set(
+    distribution.allocations.map(({ intensityMethod }) => intensityMethod),
+  )
+  const effectiveMethod = methods.size === 1
+    ? [...methods][0]
+    : methods.has('reference_percentage')
+      ? 'reference_percentage'
+      : 'hr_zone'
+
+  const intensityWarnings: GenerationExplanationWarning[] = []
+  for (const warning of distribution.warnings) {
+    if (
+      input.intensity.defaultMethod === 'reference_percentage' &&
+      input.intensity.referencePercentageTarget === null
+    ) {
+      intensityWarnings.push({
+        code: 'reference_percentage_target_missing',
+        facts: [{ code: 'source_warning', value: warning }],
+      })
+      continue
+    }
+
+    intensityWarnings.push({
+      code: 'intense_sessions_not_fully_assigned',
+      facts: [{ code: 'source_warning', value: warning }],
+    })
+  }
+
+  const slotFacts = distribution.allocations.map(
+    (allocation): GenerationExplanationFact => ({
+      code: 'slot_intensity',
+      value: allocation.intensityMethod === 'reference_percentage'
+        ? `${allocation.slotKey}::reference_percentage::${allocation.referencePercentage}`
+        : `${allocation.slotKey}::hr_zone::${allocation.zone}`,
+    }),
+  )
+
+  const raceInputs: GenerationExplanationFact[] = [
+    {
+      code: 'training_target_volume_km',
+      value: input.trainingTargetVolumeKm,
+    },
+    {
+      code: 'training_target_elevation_gain',
+      value: input.trainingTargetElevationGain,
+    },
+  ]
+
+  if (input.competition) {
+    raceInputs.push(
+      { code: 'race_name', value: input.competition.name },
+      { code: 'race_date', value: input.competition.date },
+      { code: 'race_distance_km', value: input.competition.distanceKm },
+      { code: 'race_elevation_gain', value: input.competition.elevationGain },
+    )
+  }
+
+  return {
+    intensity: {
+      stage: 'intensity',
+      inputs: [
+        {
+          code: 'training_slot_keys',
+          value: input.trainingSlots.map(({ slot }) => slot.key).join(','),
+        },
+        {
+          code: 'default_method',
+          value: input.intensity.defaultMethod,
+        },
+        {
+          code: 'emphasis',
+          value: input.intensity.emphasis,
+        },
+        {
+          code: 'predominant_zone',
+          value: input.intensity.predominantZone,
+        },
+        {
+          code: 'reference_percentage_target',
+          value: input.intensity.referencePercentageTarget,
+        },
+      ],
+      constraints: [
+        {
+          code: 'intense_sessions_target',
+          value: input.intensity.intenseSessionsTarget,
+        },
+        {
+          code: 'minimum_recovery_days',
+          value: input.intensity.minimumRecoveryDaysBetweenIntenseSessions,
+        },
+      ],
+      decision: [
+        {
+          code: 'assigned_intense_sessions',
+          value: distribution.assignedIntenseSessions,
+        },
+        {
+          code: 'effective_method',
+          value: effectiveMethod,
+        },
+        ...slotFacts,
+      ],
+      consequence: [],
+      warnings: intensityWarnings,
+    },
+    race: {
+      stage: 'intensity',
+      inputs: raceInputs,
+      constraints: [],
+      decision: input.competition
+        ? [
+            { code: 'competition_present', value: true },
+            { code: 'competition_date', value: input.competition.date },
+          ]
+        : [{ code: 'competition_present', value: false }],
+      consequence: [{
+        code: 'race_load_separate_from_training_budget',
+        value: input.competition !== null,
+      }],
+      warnings: [],
+    },
+  }
 }
