@@ -84,7 +84,7 @@ export function IntensityDistribution({
               Método: {defaultMethod === 'reference_percentage' ? '% de referencia' : 'Zonas FC'}
             </Badge>
             <Badge variant='outline'>Máximo: {maximumIntenseSessionsPerWeek} intensas</Badge>
-            <Badge variant='outline'>Recuperación: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
+            <Badge variant='outline'>{t('recoveryLabel')}: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
             {manualStrategy && <Badge variant='secondary'>Estrategia manual</Badge>}
           </div>
         </div>
