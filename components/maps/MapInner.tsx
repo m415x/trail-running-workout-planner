@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as maplibregl from 'maplibre-gl'
-import type { Feature, FeatureCollection, LineString } from 'geojson'
+import type { Feature, LineString } from 'geojson'
 import type { StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import { getMapLibreAltitudeColorExpression } from '@/lib/tracks/track-colors'
 import { TrackPoint } from '@/types'
 
 /* -------------------------------------------------------------------------- */
@@ -108,14 +107,7 @@ const TRAIL_LAYER_ID = 'trail-track-layer'
 /* GEOJSON TYPES                                                              */
 /* -------------------------------------------------------------------------- */
 
-type AltitudeSegmentProperties = {
-  altitudePercent: number
-  elevation: number
-}
-
-type AltitudeSegment = Feature<LineString, AltitudeSegmentProperties>
-
-type AltitudeFeatureCollection = FeatureCollection<LineString, AltitudeSegmentProperties>
+type TrackFeature = Feature<LineString>
 
 /* -------------------------------------------------------------------------- */
 /* HELPERS                                                                    */
@@ -128,89 +120,6 @@ function getValidTrackPoints(points: TrackPoint[]): TrackPoint[] {
   return points.filter(
     (point) => Number.isFinite(point.lat) && Number.isFinite(point.lon) && Number.isFinite(point.ele),
   )
-}
-
-/**
- * Convierte el track en pequeños segmentos GeoJSON.
- *
- * Cada segmento recibe un altitudePercent entre 0 y 1.
- *
- * 0 = punto más bajo del track
- * 1 = punto más alto del track
- *
- * Importante:
- * no utilizamos line-progress.
- */
-function buildAltitudeSegments(points: TrackPoint[]): {
-  geojson: AltitudeFeatureCollection
-  minElevation: number
-  maxElevation: number
-} {
-  const validPoints = getValidTrackPoints(points)
-
-  if (validPoints.length < 2) {
-    return {
-      geojson: {
-        type: 'FeatureCollection',
-        features: [],
-      },
-      minElevation: validPoints.length === 1 ? validPoints[0].ele : 0,
-      maxElevation: validPoints.length === 1 ? validPoints[0].ele : 0,
-    }
-  }
-
-  const elevations = validPoints.map((point) => point.ele)
-
-  const minElevation = Math.min(...elevations)
-  const maxElevation = Math.max(...elevations)
-
-  const elevationRange = maxElevation - minElevation || 1
-
-  const features: AltitudeSegment[] = []
-
-  for (let index = 1; index < validPoints.length; index++) {
-    const previous = validPoints[index - 1]
-    const current = validPoints[index]
-
-    /*
-     * Usamos la elevación media del segmento.
-     *
-     * Esto evita que un segmento largo tenga un color
-     * completamente determinado por uno solo de sus extremos.
-     */
-    const averageElevation = (previous.ele + current.ele) / 2
-
-    const altitudePercent = (averageElevation - minElevation) / elevationRange
-
-    features.push({
-      type: 'Feature',
-
-      properties: {
-        elevation: averageElevation,
-
-        altitudePercent: Math.max(0, Math.min(1, altitudePercent)),
-      },
-
-      geometry: {
-        type: 'LineString',
-
-        coordinates: [
-          [previous.lon, previous.lat],
-          [current.lon, current.lat],
-        ],
-      },
-    })
-  }
-
-  return {
-    geojson: {
-      type: 'FeatureCollection',
-      features,
-    },
-
-    minElevation,
-    maxElevation,
-  }
 }
 
 /**
@@ -366,13 +275,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
 
   const ensureTrackLayer = useCallback(
     (map: maplibregl.Map) => {
-      // if (!map.isStyleLoaded()) {
-      //   return
-      // }
-
-      /*
-       * Si no hay track, eliminamos cualquier source/layer existente.
-       */
       if (coordinates.length < 2) {
         if (map.getLayer(TRAIL_LAYER_ID)) {
           map.removeLayer(TRAIL_LAYER_ID)
@@ -385,71 +287,44 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         return
       }
 
-      const { geojson } = buildAltitudeSegments(validPoints)
-
-      if (geojson.features.length === 0) {
-        return
+      const trackFeature: TrackFeature = {
+        type: 'Feature',
+        properties: {},
+        geometry: {
+          type: 'LineString',
+          coordinates: validPoints.map((point) => [point.lon, point.lat]),
+        },
       }
-      /*
-       * --------------------------------------------------------------------
-       * SOURCE
-       * --------------------------------------------------------------------
-       *
-       * Si el source ya existe, NO lo eliminamos.
-       *
-       * Esto es importante para evitar parpadeos y problemas durante
-       * actualizaciones del mapa.
-       */
+
       const existingSource = map.getSource(TRAIL_SOURCE_ID)
 
       if (existingSource) {
         const geojsonSource = existingSource as maplibregl.GeoJSONSource
-
-        geojsonSource.setData(geojson)
+        geojsonSource.setData(trackFeature)
       } else {
         map.addSource(TRAIL_SOURCE_ID, {
           type: 'geojson',
-          data: geojson,
+          data: trackFeature,
         })
       }
-
-      /*
-       * --------------------------------------------------------------------
-       * LAYER
-       * --------------------------------------------------------------------
-       */
 
       if (!map.getLayer(TRAIL_LAYER_ID)) {
         map.addLayer({
           id: TRAIL_LAYER_ID,
-
           type: 'line',
-
           source: TRAIL_SOURCE_ID,
-
           layout: {
             'line-cap': 'round',
             'line-join': 'round',
-            // visibility: 'visible',
           },
-
           paint: {
-            // 'line-color': 'getMapLibreAltitudeColorExpression()',
             'line-color': '#ff0000',
-
             'line-width': 8,
-
             'line-opacity': 1,
           },
         })
-      } else {
-        map.setPaintProperty(TRAIL_LAYER_ID, 'line-color', getMapLibreAltitudeColorExpression())
       }
 
-      /*
-       * Nos aseguramos de que el track quede por encima
-       * de las capas raster.
-       */
       if (map.getLayer(TRAIL_LAYER_ID)) {
         map.moveLayer(TRAIL_LAYER_ID)
       }
