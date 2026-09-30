@@ -4,9 +4,13 @@
  * localized display helpers.
  */
 export function getCurrentISODateInTimeZone(
-  timeZone = 'America/Argentina/Buenos_Aires',
+  timeZone: string,
   now = new Date(),
 ): string {
+  if (!timeZone) {
+    throw new Error('timeZone is required')
+  }
+
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,
     year: 'numeric',
