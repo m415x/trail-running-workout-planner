@@ -369,6 +369,12 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
     const assignment = parseAssignmentOverride(formData, stimulusWorkout)
     if (!assignment.success) return { error: assignment.error }
 
+    const allInherit = dose === null && assignment.value.kind === 'inherit'
+    if (allInherit && !existingAdjustment) {
+      revalidatePath(`/dashboard/sessions/${sessionId}`)
+      return {}
+    }
+
     await persistence.applyRevision({
       adjustment: {
         id: adjustmentId,
@@ -379,7 +385,7 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
       revision: {
         id: revisionId,
         adjustmentId,
-        state: 'active',
+        state: allInherit ? 'withdrawn' : 'active',
         payload: {
           dose,
           assignment: assignment.value,
