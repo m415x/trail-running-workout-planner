@@ -57,7 +57,8 @@
       "viewTeam": "View team",
       "notifications": "Notifications",
       "phaseObjective": "Phase {phase} · Target {target} km",
-      "weeklyProgress": "Weekly progress"
+      "weeklyProgress": "Weekly progress",
+      "toggleTheme": "Toggle color theme"
     },
     "rpe": {
       "title": "Rate of Perceived Exertion (RPE 1-10)",
