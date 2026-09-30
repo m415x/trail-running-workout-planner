@@ -153,6 +153,29 @@ function AthleteAdjustmentForm({
 
       <div className='space-y-2'>
         <p className='text-sm font-medium'>{t('adjustments.assignmentTitle')}</p>
+
+        <label className='space-y-1.5 text-sm'>
+          <span className='font-medium'>{t('adjustments.assignmentMode')}</span>
+          <select
+            name='assignmentMode'
+            defaultValue={
+              item.omitted
+                ? 'omitted'
+                : item.rescheduled
+                  ? 'rescheduled'
+                  : item.stimulus || item.stimulusType
+                    ? 'stimulus_override'
+                    : 'inherit'
+            }
+            className='border-input bg-background h-9 w-full rounded-md border px-3 text-sm'
+          >
+            <option value='inherit'>{t('adjustments.inherit')}</option>
+            <option value='rescheduled'>{t('adjustments.reschedule')}</option>
+            <option value='stimulus_override'>{t('adjustments.changeStimulus')}</option>
+            <option value='omitted'>{t('adjustments.omitForAthlete')}</option>
+          </select>
+        </label>
+
         <div className='grid gap-3 sm:grid-cols-3'>
           <LabeledInput
             label={t('adjustments.reschedule')}
@@ -189,11 +212,6 @@ function AthleteAdjustmentForm({
             </select>
           </label>
         </div>
-
-        <label className='flex items-center gap-2 text-sm'>
-          <input name='omitted' type='checkbox' defaultChecked={item.omitted} />
-          {t('adjustments.omitForAthlete')}
-        </label>
       </div>
 
       {item.currentReason && (
