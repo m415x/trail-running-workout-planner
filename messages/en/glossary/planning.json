@@ -16,6 +16,54 @@
       },
       "sportingGroupHelp": "The athlete's stable sporting classification within the team.",
       "planningSubgroupHelp": "A temporary planning audience made up of athletes from the same sporting group who share an objective."
+    },
+    "heartRateZones": {
+      "Z1": {
+        "name": "Recovery / Regenerative",
+        "workType": "Regenerative",
+        "description": "Active recovery and low-impact muscular adaptation.",
+        "effortAndPerception": "Very easy. Comfortable jogging pace with virtually no effort.",
+        "breathingPathway": "Nasal only.",
+        "rhythmicPattern": "4:4 or 3:3 (inhale for 3/4 steps, exhale for 3/4).",
+        "biomechanicalFocus": "Maximize diaphragmatic expansion. Relax shoulders and trapezius. Ideal for reinforcing clean, tension-free running mechanics."
+      },
+      "Z2": {
+        "name": "Aerobic Endurance",
+        "workType": "Aerobic Base",
+        "description": "Build the aerobic engine and improve efficient fat utilization.",
+        "effortAndPerception": "Easy. Fully comfortable conversational pace.",
+        "breathingPathway": "Nasal or mixed (inhale through the nose, relaxed exhale through the mouth).",
+        "rhythmicPattern": "3:3",
+        "biomechanicalFocus": "Keep the rib cage stable. The core engages gently to absorb low impact. This is foundational work for the aerobic engine."
+      },
+      "Z3": {
+        "name": "Tempo / Marathon Pace",
+        "workType": "Tempo / Pace",
+        "description": "Sustained-pace endurance and running economy.",
+        "effortAndPerception": "Moderate. Conversation becomes broken into short phrases.",
+        "breathingPathway": "Mostly nasal.",
+        "rhythmicPattern": "2:2 (a common endurance-running rhythm).",
+        "biomechanicalFocus": "Coordinate foot strike and breathing rhythm to distribute impact load evenly and reduce postural changes caused by fatigue."
+      },
+      "Z4": {
+        "name": "Threshold / Long Intervals",
+        "workType": "Lactate Threshold",
+        "description": "Lactate clearance and tolerance to high-intensity fatigue.",
+        "effortAndPerception": "Hard. Only one or two words at a time.",
+        "breathingPathway": "Mixed.",
+        "rhythmicPattern": "2:2 or 2:1 (inhale for 2, exhale for 1).",
+        "biomechanicalFocus": "An asymmetric pattern such as 2:1 alternates the side receiving impact during exhalation, when core stability is lower, helping distribute stress across knees and hips."
+      },
+      "Z5": {
+        "name": "VO₂ Max / Sprints",
+        "workType": "Power / VO₂ Max",
+        "description": "Maximal oxygen uptake and terminal speed.",
+        "effortAndPerception": "Maximal. Talking is impossible; breathing feels severely strained.",
+        "breathingPathway": "Mixed.",
+        "rhythmicPattern": "1:1 or free breathing with emphasis on exhalation.",
+        "biomechanicalFocus": "At this intensity mechanics are constrained by respiratory demand. The mechanical goal is forceful carbon-dioxide clearance through strong exhalations; inhalation follows reflexively."
+      },
+      "effortLabel": "Perceived Effort"
     }
   }
 }
