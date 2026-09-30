@@ -1,6 +1,8 @@
 'use client'
 
 import { RefreshCcwDot, Calendar as CalendarIcon } from 'lucide-react'
+import { useLocale, useTranslations } from 'next-intl'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { WeeklyCycle, WeekDay } from '@/types'
 import { PrimaryOutlineButton } from '@ui/custom/buttons'
 import { CustomCard } from '@ui/custom/card-containers'
@@ -32,8 +34,13 @@ export function WeeklyCalendarCard({
   onNextWeek,
   onSelectDate,
 }: WeeklyCalendarCardProps) {
-  const { subtitleWeeklyCalendar, isPopoverOpen, setIsPopoverOpen, dateRange, currentKm, progressPercentage } =
-    useWeeklyCalendarCard(cycle, weekDays)
+  const locale = useLocale()
+  const t = useTranslations('Workouts.home')
+  const language = locale === 'en' ? 'en' : 'es'
+  const { presentationLocale } = resolveApplicationRegionalContext({ language })
+  const { isPopoverOpen, setIsPopoverOpen, dateRange, currentKm, progressPercentage } =
+    useWeeklyCalendarCard(cycle, weekDays, presentationLocale)
+  const subtitleWeeklyCalendar = t('phaseObjective', { phase: cycle.phase, target: cycle.targetKm })
 
   return (
     <CustomCard>
@@ -73,7 +80,7 @@ export function WeeklyCalendarCard({
       {/* Barra de progreso de la semana */}
       <div className='mt-2 space-y-1.5'>
         <div className='flex justify-between text-[11px]'>
-          <span className='text-muted-foreground'>Progreso semanal</span>
+          <span className='text-muted-foreground'>{t('weeklyProgress')}</span>
           <span className='text-foreground font-semibold'>
             {currentKm} km <span className='text-muted-foreground font-normal'>/ {cycle.targetKm} km</span>
           </span>
