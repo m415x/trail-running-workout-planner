@@ -15,6 +15,18 @@
   --font-body: var(--font-dm-sans);
   --font-mono: var(--font-geist-mono);
 
+  /* --- SEMANTIC TYPOGRAPHY ---
+     This scale describes content hierarchy only. Responsive composition and
+     accessibility/root scaling remain separate concerns. */
+  --text-ept-display: 2.25rem;
+  --text-ept-heading: 1.5rem;
+  --text-ept-title: 1.125rem;
+  --text-ept-body: 1rem;
+  --text-ept-body-compact: 0.875rem;
+  --text-ept-label: 0.875rem;
+  --text-ept-caption: 0.75rem;
+  --text-ept-data: 0.875rem;
+
   /* --- COLORS --- */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -80,12 +92,17 @@
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.23 0.035 242);
 
+    /* Brand roles: one palette authority, consumed by usage semantics below. */
+    --brand-action: oklch(0.68 0.198 42);
+    --brand-identity: oklch(0.31 0.155 315);
+    --brand-highlight: oklch(0.68 0.12 315);
+
     /* Energía: El Naranja del logo */
-    --primary: oklch(0.68 0.198 42);
+    --primary: var(--brand-action);
     --primary-foreground: oklch(0.99 0.003 240);
 
     /* Identidad: El Violeta Oscuro de la montaña */
-    --secondary: oklch(0.31 0.155 315);
+    --secondary: var(--brand-identity);
     --secondary-foreground: oklch(0.99 0.003 240);
 
     /* Interacciones y mutados suaves */
@@ -93,7 +110,7 @@
     /* Fondo lila muy pálido */
     --muted-foreground: oklch(0.45 0.03 242);
 
-    --accent: oklch(0.68 0.12 315);
+    --accent: var(--brand-highlight);
     /* El Rosa/Lila del logo para hovers */
     --accent-foreground: oklch(0.23 0.035 242);
 
@@ -160,12 +177,16 @@
     --popover: oklch(0.18 0.028 242);
     --popover-foreground: oklch(0.97 0.01 240);
 
-    --primary: oklch(0.68 0.198 42);
+    --brand-action: oklch(0.68 0.198 42);
+    --brand-identity: oklch(0.38 0.145 315);
+    --brand-highlight: oklch(0.38 0.13 315);
+
+    --primary: var(--brand-action);
     /* Mantenemos el Naranja corporativo */
     --primary-foreground: oklch(0.12 0.02 242);
     /* Contraste oscuro para legibilidad */
 
-    --secondary: oklch(0.38 0.145 315);
+    --secondary: var(--brand-identity);
     /* El Violeta Oscuro como contenedor secundario */
     --secondary-foreground: oklch(0.97 0.01 240);
 
@@ -173,7 +194,7 @@
     --muted-foreground: oklch(0.72 0.04 315);
     /* Texto secundario ligeramente tintado de lila */
 
-    --accent: oklch(0.38 0.13 315);
+    --accent: var(--brand-highlight);
     /* Variación del violeta para hovers en paneles oscuros */
     --accent-foreground: oklch(0.97 0.01 240);
 
