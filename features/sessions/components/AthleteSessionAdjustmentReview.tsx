@@ -182,6 +182,13 @@ function AthleteAdjustmentForm({
         </label>
       </div>
 
+      {item.currentReason && (
+        <div className='rounded-md border bg-muted/30 px-3 py-2 text-sm'>
+          <span className='font-medium'>{t('adjustments.currentReason')}</span>{' '}
+          <span className='text-muted-foreground'>{item.currentReason}</span>
+        </div>
+      )}
+
       <LabeledInput
         label={t('adjustments.reason')}
         name='reason'
