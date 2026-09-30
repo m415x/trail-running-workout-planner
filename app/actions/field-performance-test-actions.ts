@@ -27,6 +27,7 @@ import { projectTrack1000mEvolution } from '@/lib/analytics/training/track-1000m
 import { resolveRunningReference } from '@/lib/physiology/running-reference'
 import { createSqliteFieldPerformanceTestRepository } from '@/lib/physiology/field-performance-test-sqlite'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
+import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 
 const repository = createSqliteFieldPerformanceTestRepository(db)
 
@@ -127,7 +128,7 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
       return { success: false as const, error: 'test_event_not_found' as const }
     }
     performedAt = testEventPerformedAt(testEvent.scheduledAt)
-    if (performedAt > getCurrentISODateInTimeZone()) {
+    if (performedAt > getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)) {
       return { success: false as const, error: 'test_event_not_yet_occurred' as const }
     }
   }
@@ -167,7 +168,7 @@ export async function createCoachTrack1000mEvidenceAction(
   }
 
   const performedAt = testEventPerformedAt(testEvent.scheduledAt)
-  if (performedAt > getCurrentISODateInTimeZone()) {
+  if (performedAt > getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)) {
     return { success: false as const, error: 'test_event_not_yet_occurred' as const }
   }
 
