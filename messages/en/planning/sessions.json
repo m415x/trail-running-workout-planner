@@ -176,7 +176,9 @@
       "currentReason": "Current reason:",
       "noStimulusTemplate": "No template · change type only",
       "assignmentMode": "Assignment mode",
-      "changeStimulus": "Change stimulus"
+      "changeStimulus": "Change stimulus",
+      "referencePercentageValue": "Value",
+      "selectReferencePercentage": "Select percentage"
     }
   }
 }
