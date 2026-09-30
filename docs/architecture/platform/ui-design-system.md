@@ -284,7 +284,31 @@ KAN-507 is not a complete WCAG audit of every existing page. KAN-508 applies and
 
 ## PWA and maps
 
-PWA presentation must consume Brand foundations rather than define an independent palette.
+### PWA contract
+
+KAN-560 defines a **single PWA** for Coach and Athlete. Role resolution remains an application/auth concern after launch; the manifest does not split product identity by role.
+
+The stable manifest identity is:
+
+- `name`: El Parque Team;
+- `short_name`: EPT;
+- `id`, `start_url` and `scope`: `/`;
+- `display`: `standalone`;
+- `orientation`: `any`;
+- categories: `sports`, `fitness`.
+
+PWA presentation consumes the existing Brand foundations rather than creating an independent palette. Because a web app manifest cannot consume CSS custom properties directly, its color fields are serialized equivalents of the light application foundations:
+
+- `theme_color` serializes `--brand-action`;
+- `background_color` serializes the light `--background`.
+
+These literals are transport/manifest serializations of the same Design System authority, not a second color source.
+
+The existing 192×192 and 512×512 PNG install icons remain the current asset contract. KAN-560 does **not** mark them as `maskable` because no safe-zone evidence has been established for those files. Screenshots are also not fabricated merely to populate optional manifest fields.
+
+Role-specific shortcuts remain deferred to KAN-298. KAN-560 therefore does not introduce Coach/Athlete shortcuts or parallel install identities.
+
+### Maps
 
 The cartographic decision is separate from the Design System authority. KAN-507 keeps the approved MapLibre-first monocolor benchmark and may compare historical Leaflet only after reasonable integration defects have been isolated and corrected.
 
