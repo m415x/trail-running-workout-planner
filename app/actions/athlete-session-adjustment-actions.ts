@@ -586,39 +586,44 @@ function parseAssignmentOverride(
 ):
   | { success: true; value: AthleteAssignmentOverride }
   | { success: false; error: string } {
-  if (formData.get('omitted') === 'on') {
+  const assignmentMode = String(formData.get('assignmentMode') ?? 'inherit').trim()
+  const rescheduled = String(formData.get('rescheduled') ?? '').trim()
+  const stimulusType = String(formData.get('stimulusType') ?? '').trim()
+
+  if (assignmentMode === 'inherit') {
+    return { success: true, value: { kind: 'inherit' } }
+  }
+
+  if (assignmentMode === 'omitted') {
     return { success: true, value: { kind: 'omitted' } }
   }
 
-  const rescheduled = String(formData.get('rescheduled') ?? '').trim()
-  const stimulus = String(formData.get('stimulus') ?? '').trim()
-  const stimulusType = String(formData.get('stimulusType') ?? '').trim()
-
-  if (rescheduled) {
+  if (assignmentMode === 'rescheduled') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(rescheduled)) {
       return { success: false, error: 'invalidReschedule' }
     }
     return { success: true, value: { kind: 'rescheduled', date: rescheduled } }
   }
 
-  if (stimulusWorkout) {
-    if (!isWorkoutType(stimulusWorkout.type)) {
-      return { success: false, error: 'invalidStimulusType' }
+  if (assignmentMode === 'stimulus_override') {
+    if (stimulusWorkout) {
+      if (!isWorkoutType(stimulusWorkout.type)) {
+        return { success: false, error: 'invalidStimulusType' }
+      }
+      return {
+        success: true,
+        value: {
+          kind: 'stimulus_override',
+          workoutId: stimulusWorkout.id,
+          type: stimulusWorkout.type,
+        },
+      }
     }
-    return {
-      success: true,
-      value: {
-        kind: 'stimulus_override',
-        workoutId: stimulusWorkout.id,
-        type: stimulusWorkout.type,
-      },
-    }
-  }
 
-  if (stimulus || stimulusType) {
     if (!isWorkoutType(stimulusType)) {
       return { success: false, error: 'invalidStimulusType' }
     }
+
     return {
       success: true,
       value: {
@@ -629,7 +634,7 @@ function parseAssignmentOverride(
     }
   }
 
-  return { success: true, value: { kind: 'inherit' } }
+  return { success: false, error: 'invalidAssignmentMode' }
 }
 
 function isIntensityZone(value: string): value is IntensityZone {
