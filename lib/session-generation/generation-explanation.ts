@@ -58,3 +58,36 @@ export interface GenerationExplanation {
   planningScope: GenerationExplanationPlanningScope
   stages: GenerationExplanationStageEvidence[]
 }
+
+
+export function assertValidGenerationExplanation(
+  explanation: GenerationExplanation,
+): void {
+  const actualStages = explanation.stages.map(({ stage }) => stage)
+
+  if (
+    actualStages.length !== GENERATION_EXPLANATION_STAGE_ORDER.length ||
+    actualStages.some((stage, index) => (
+      stage !== GENERATION_EXPLANATION_STAGE_ORDER[index]
+    ))
+  ) {
+    throw new RangeError('Generation explanation must preserve the approved causal stage order')
+  }
+
+  const scope = explanation.planningScope
+  if (
+    !scope.groupTrainingPlanId.trim() ||
+    !scope.groupId.trim() ||
+    !scope.microcycleId.trim()
+  ) {
+    throw new RangeError('Generation explanation planning scope identifiers cannot be empty')
+  }
+
+  if (scope.kind === 'base' && scope.planningCohortId !== null) {
+    throw new RangeError('Base planning scope cannot reference a planning subgroup')
+  }
+
+  if (scope.kind === 'variant' && !scope.planningCohortId.trim()) {
+    throw new RangeError('Variant planning scope requires a planning subgroup')
+  }
+}
