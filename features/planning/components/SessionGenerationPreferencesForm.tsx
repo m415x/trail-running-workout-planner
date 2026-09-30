@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useMemo, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 import {
   type SessionGenerationPreferencesFormState,
@@ -58,6 +59,7 @@ export function SessionGenerationPreferencesForm({
   frequency,
   pattern,
 }: SessionGenerationPreferencesFormProps) {
+  const t = useTranslations('CoachPlanning')
   const [fixedSessions, setFixedSessions] = useState(
     frequency.mode === 'fixed' ? String(frequency.sessionsPerWeek) : '',
   )
@@ -187,7 +189,7 @@ export function SessionGenerationPreferencesForm({
               )}
             </div>
             <Button type='submit' disabled={!hasValidDayCount || isPending}>
-              {isPending ? 'Guardando…' : 'Guardar configuración semanal'}
+              {isPending ? t('saving') : t('saveWeeklyConfiguration')}
             </Button>
           </div>
         </form>
