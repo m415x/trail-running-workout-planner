@@ -1,6 +1,7 @@
 import { CatalogCompetitionForm } from '@/features/race-catalog/components/CatalogCompetitionForm'
-import Link from 'next/link'
+import { Link } from '@/i18n/routing'
 import { notFound } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
 import { getCompetitionCalendarAction } from '@/app/actions/competition-calendar-actions'
@@ -37,6 +38,7 @@ import {
   type GenerationExplanation,
 } from '@/lib/session-generation/generation-explanation'
 import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
+import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
 import type { AthleteGroupCode, LoadStrategyDraft } from '@/types'
 import type {
@@ -52,12 +54,17 @@ interface PlanningDetailPageProps {
   params: Promise<{ locale: string; planId: string }>
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat('es-AR', { timeZone: 'UTC' }).format(new Date(`${value}T00:00:00Z`))
+function formatDate(value: string, presentationLocale: string) {
+  return new Intl.DateTimeFormat(presentationLocale, { timeZone: 'UTC' }).format(
+    new Date(`${value}T00:00:00Z`),
+  )
 }
 
 export default async function PlanningDetailPage({ params }: PlanningDetailPageProps) {
   const { locale, planId } = await params
+  const language = locale === 'en' ? 'en' : 'es'
+  const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
+  const regionalContext = resolveApplicationRegionalContext({ language })
   const plan = await getGroupTrainingPlanById(planId)
 
   if (!plan) {
@@ -74,11 +81,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
   const primaryCompetitionId = competitionContextResult.valid
     ? competitionContextResult.context.primaryCompetition?.id ?? null
     : null
-  const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
+  const planningPath = '/dashboard/planning'
   const cohortPath = plan.planningCohortId
-    ? (locale === 'es'
-      ? `/dashboard/cohorts/${plan.planningCohortId}`
-      : `/${locale}/dashboard/cohorts/${plan.planningCohortId}`)
+    ? `/dashboard/cohorts/${plan.planningCohortId}`
     : null
   const groupCode = `${plan.group.categoryCode}${plan.group.levelCode}`
   const previewMacrocycle = plan.macrocycles[0]
@@ -318,7 +323,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
       <div className='flex items-start gap-3'>
         <Link
           href={planningPath}
-          aria-label='Volver a planificaciones'
+          aria-label={t('backToPlans')}
           className={buttonVariants({ variant: 'ghost', size: 'icon' })}
         >
           <ArrowLeft />
@@ -332,13 +337,13 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
           {plan.planningCohort && plan.sourceGroupTrainingPlan && cohortPath && (
             <div className='mt-3 flex flex-wrap items-center gap-2 text-sm'>
               <Badge variant='outline'>
-                {locale === 'en' ? 'Planning subgroup' : 'Subgrupo de planificación'}: {plan.planningCohort.name}
+                {t('planningSubgroup')}: {plan.planningCohort.name}
               </Badge>
               <Badge variant='outline'>
                 {locale === 'en' ? 'Base plan' : 'Plan base'}: {plan.sourceGroupTrainingPlan.title}
               </Badge>
               <Link href={cohortPath} className={buttonVariants({ variant:'ghost', size:'sm' })}>
-                {locale === 'en' ? 'Back to planning subgroup' : 'Volver al subgrupo de planificación'}
+                {t('backToPlanningSubgroup')}
               </Link>
             </div>
           )}
@@ -417,7 +422,7 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
             <CalendarDays className='size-5 text-muted-foreground' />
             <h3 className='text-xl font-semibold'>{macrocycle.title}</h3>
             <span className='text-sm text-muted-foreground'>
-              {formatDate(macrocycle.startDate)} – {formatDate(macrocycle.endDate)}
+              {formatDate(macrocycle.startDate, regionalContext.presentationLocale)} – {formatDate(macrocycle.endDate, regionalContext.presentationLocale)}
             </span>
           </div>
 
