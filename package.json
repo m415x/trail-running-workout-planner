@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "predev": "node ./scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -27,7 +28,8 @@
     "db:seed:plan-real": "tsx db/seeds/plan-real-comparison-fixtures.ts",
     "db:seed": "pn db:seed:base && pn db:seed:race-catalog && pn db:seed:realized-training && pn db:seed:plan-real",
     "tdd:red": "tsx scripts/tdd.ts --red",
-    "tdd": "tsx scripts/tdd.ts"
+    "tdd": "tsx scripts/tdd.ts",
+    "prebuild": "node ./scripts/copy-maplibre-worker.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
