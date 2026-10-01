@@ -59,7 +59,7 @@ export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
 
           <div className='px-1 py-1.5'>
             <Slider
-              value={unassessed ? [] : [sliderValue]}
+              value={[sliderValue]}
               onValueChange={(val) => {
                 const nextVal = Array.isArray(val) ? val[0] : val
                 if (typeof nextVal === 'number') onChange(nextVal)
