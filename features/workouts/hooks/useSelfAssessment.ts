@@ -29,7 +29,7 @@ export function useSelfAssessment({ value, onChange }: UseSelfAssessmentProps = 
 
   const feeling = value?.feeling !== undefined ? value.feeling : internalFeeling
   const rpe = value?.rpe !== undefined ? value.rpe : internalRpe
-  const hasData = Boolean(feeling || rpe !== null)
+  const hasData = Boolean(feeling || (rpe !== null && rpe > 0))
 
   const selectedFeelingOption = FEELING_OPTIONS.find((opt) => opt.value === feeling)
   const FeelingIcon = selectedFeelingOption?.icon
