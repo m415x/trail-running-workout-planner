@@ -77,8 +77,23 @@ export function executeVerifyStage(
 ): StageExecution {
   const started = performance.now()
   const pnpmPath = runtime.npmExecPath
-  const command = pnpmPath ? runtime.nodeExecPath : runtime.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
-  const args = pnpmPath ? [pnpmPath, 'run', stage.command] : ['run', stage.command]
+  const javaScriptLauncher = pnpmPath != null && /\\.(?:cjs|mjs|js)$/i.test(pnpmPath)
+  const nativeLauncher = pnpmPath != null && /\\.exe$/i.test(pnpmPath)
+
+  if (pnpmPath && !javaScriptLauncher && !nativeLauncher) {
+    return {
+      exitCode: 1,
+      output: `Unsupported package manager launcher extension: ${pnpmPath}`,
+      durationMs: Math.round(performance.now() - started),
+    }
+  }
+
+  const command = javaScriptLauncher
+    ? runtime.nodeExecPath
+    : pnpmPath ?? (runtime.platform === 'win32' ? 'pnpm.cmd' : 'pnpm')
+  const args = javaScriptLauncher
+    ? [pnpmPath!, 'run', stage.command]
+    : ['run', stage.command]
   const result = runtime.spawn(command, args, {
     shell: !pnpmPath && runtime.platform === 'win32',
     encoding: 'utf8',
