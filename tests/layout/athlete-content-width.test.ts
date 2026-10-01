@@ -5,6 +5,8 @@ import test from 'node:test'
 const home = readFileSync('features/workouts/HomeTab.tsx', 'utf8')
 const plan = readFileSync('app/[locale]/(mobile)/plan/page.tsx', 'utf8')
 const profile = readFileSync('features/profile/ProfileTab.tsx', 'utf8')
+const homeHeader = readFileSync('features/workouts/components/HomeHeader.tsx', 'utf8')
+const profileHeader = readFileSync('features/profile/components/ProfileHeader.tsx', 'utf8')
 
 test('KAN-563 aligns Athlete Home Plan and Profile with the Stats content width', () => {
   for (const source of [home, plan, profile]) {
@@ -28,9 +30,9 @@ test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats',
   assert.match(plan, /px-4[^'"]*py-6[^'"]*sm:px-6/)
   assert.match(profile, /px-4[^'"]*py-6[^'"]*sm:px-6/)
 
-  assert.match(home, /text-2xl[^'"]*sm:text-3xl/)
+  assert.match(homeHeader, /text-2xl[^'"]*sm:text-3xl/)
   assert.match(plan, /text-2xl[^'"]*sm:text-3xl/)
-  assert.match(profile, /text-2xl[^'"]*sm:text-3xl/)
+  assert.match(profileHeader, /text-2xl[^'"]*sm:text-3xl/)
 })
 
 test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detail scrolls', () => {
