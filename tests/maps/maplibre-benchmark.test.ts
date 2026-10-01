@@ -47,10 +47,10 @@ test('KAN-561 resizes MapLibre when its container changes size and cleans up the
 })
 
 
-test('KAN-561 renders the benchmark only against a loaded style and retries deterministically', () => {
+test('KAN-561 renders after loaded or idle style without deferring to the next basemap change', () => {
   assert.match(
     mapSource,
-    /if\s*\(!map\.isStyleLoaded\(\)\)\s*\{\s*map\.once\(['"]style\.load['"],\s*renderLoadedStyle\)\s*return\s*\}\s*renderLoadedStyle\(\)/,
+    /if\s*\(!map\.isStyleLoaded\(\)\)\s*\{\s*map\.once\(['"]idle['"],\s*renderLoadedStyle\)\s*return\s*\}\s*renderLoadedStyle\(\)/,
   )
 
   assert.match(
@@ -62,7 +62,7 @@ test('KAN-561 renders the benchmark only against a loaded style and retries dete
     mapSource,
     /const renderLoadedStyle = \(\) => \{[\s\S]*?ensureTrackLayer\(map\)[\s\S]*?renderMarkers\(map\)[\s\S]*?if \(fit\) \{[\s\S]*?fitTrack\(map\)/,
   )
-  assert.match(mapSource, /map\.once\(['"]style\.load['"],\s*renderLoadedStyle\)/)
+  assert.match(mapSource, /map\.once\(['"]idle['"],\s*renderLoadedStyle\)/)
 
   assert.doesNotMatch(
     mapSource,
