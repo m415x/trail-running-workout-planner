@@ -86,13 +86,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const templateText = useTranslations('WorkoutTemplates')
   const [state, formAction, pending] = useActionState(session ? updateSession : createSession, initialState)
   const [selectedMicrocycleIds, setSelectedMicrocycleIds] = useState<string[]>(() =>
-    session
-      ? session.sessionPrescriptions.map((item) => item.microcycleId)
-      : groups.flatMap((group) => {
-        const matching = group.microcycles.filter((microcycle) =>
-          microcycle.startDate <= (session?.date ?? '') && (session?.date ?? '') <= microcycle.endDate)
-        return matching.length === 1 ? [matching[0].id] : []
-      }),
+    session ? session.sessionPrescriptions.map((item) => item.microcycleId) : [],
   )
   const [sessionDate, setSessionDate] = useState(session?.date ?? '')
   const [clientError, setClientError] = useState<string>()
