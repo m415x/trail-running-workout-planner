@@ -95,57 +95,61 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   }
 
   return (
-    <div className='space-y-2'>
+    <div className='mx-auto w-full max-w-5xl space-y-2'>
       <HomeHeader team={team || fallbackTeam} athlete={athlete} />
 
-      <WeeklyCalendarCard
-        cycle={weeklyCycle}
-        weekDays={weekDays}
-        selectedDay={selectedDay}
-        selectedDate={selectedDate}
-        onSelectDay={onSelectDay}
-        onPrevWeek={onPrevWeek}
-        onNextWeek={onNextWeek}
-        onSelectDate={onSelectDate}
-      />
+      <div className='grid gap-2 lg:grid-cols-2 lg:items-start'>
+        <WeeklyCalendarCard
+          cycle={weeklyCycle}
+          weekDays={weekDays}
+          selectedDay={selectedDay}
+          selectedDate={selectedDate}
+          onSelectDay={onSelectDay}
+          onPrevWeek={onPrevWeek}
+          onNextWeek={onNextWeek}
+          onSelectDate={onSelectDate}
+        />
 
-      {currentWorkouts.length > 0 ? (
         <div className='space-y-2'>
-          {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
-            <RaceCard
-              key={workout.id}
-              date={selectedWeekDay?.fullDate}
-              workout={workout}
-              onRealizedTrainingSaved={onRealizedTrainingSaved}
-            />
+          {currentWorkouts.length > 0 ? (
+            <div className='space-y-2'>
+              {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
+                <RaceCard
+                  key={workout.id}
+                  date={selectedWeekDay?.fullDate}
+                  workout={workout}
+                  onRealizedTrainingSaved={onRealizedTrainingSaved}
+                />
+              ) : (
+                <TodayWorkoutCard
+                  key={workout.id}
+                  workout={{ ...workout, runningReference }}
+                  date={selectedWeekDay?.fullDate}
+                  TrackData={index === 0 ? TrackData : null}
+                  onRealizedTrainingSaved={onRealizedTrainingSaved}
+                />
+              ))}
+            </div>
           ) : (
-            <TodayWorkoutCard
-              key={workout.id}
-              workout={{ ...workout, runningReference }}
+            <RestCard
               date={selectedWeekDay?.fullDate}
-              TrackData={index === 0 ? TrackData : null}
               onRealizedTrainingSaved={onRealizedTrainingSaved}
             />
-          ))}
+          )}
+
+          {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
+
+          {currentWorkout && elevationChartData && (
+            <RouteMapCard
+              title={currentWorkout.title}
+              distanceKm={TrackData?.distanceKm ?? currentWorkout.distance}
+              gainMeters={TrackData?.gainMeters ?? currentWorkout.gain}
+              maxGradePct={TrackData?.maxGradePct ?? 0}
+              trackPoints={TrackData?.trackPoints ?? []}
+            />
+          )}
         </div>
-      ) : (
-        <RestCard
-          date={selectedWeekDay?.fullDate}
-          onRealizedTrainingSaved={onRealizedTrainingSaved}
-        />
-      )}
-
-      {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
-
-      {currentWorkout && elevationChartData && (
-        <RouteMapCard
-          title={currentWorkout.title}
-          distanceKm={TrackData?.distanceKm ?? currentWorkout.distance}
-          gainMeters={TrackData?.gainMeters ?? currentWorkout.gain}
-          maxGradePct={TrackData?.maxGradePct ?? 0}
-          trackPoints={TrackData?.trackPoints ?? []}
-        />
-      )}
+      </div>
     </div>
   )
 }
