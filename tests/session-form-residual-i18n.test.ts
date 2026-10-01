@@ -32,7 +32,7 @@ test('SessionForm localizes residual notes, prescription fields and actions', ()
     'form.notes',
     'form.notesPlaceholder',
     'form.prescriptions.group',
-    'form.prescriptions.microcycle',
+    'form.prescriptions.microcycleOption',
     'form.prescriptions.distance',
     'form.prescriptions.duration',
     'form.prescriptions.elevationGain',
