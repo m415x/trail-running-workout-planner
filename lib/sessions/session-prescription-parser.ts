@@ -50,6 +50,36 @@ function prescriptionErrorCode(issue: z.core.$ZodIssue): SessionPrescriptionErro
 export function parseSessionPrescriptions(formData: FormData):
   | { success: true; data: SessionPrescriptionInput[] }
   | { success: false; errorCode: SessionPrescriptionErrorCode } {
+  const explicitMicrocycleIds = formData.getAll('prescriptionMicrocycleId').map((value) => value.toString())
+  if (explicitMicrocycleIds.length > 0) {
+    const rows: SessionPrescriptionInput[] = []
+    const seen = new Set<string>()
+    for (const microcycleId of explicitMicrocycleIds) {
+      if (!microcycleId || seen.has(microcycleId)) {
+        return { success: false, errorCode: 'prescriptionsInvalid' }
+      }
+      seen.add(microcycleId)
+      const field = (name: string) => formData.get(`${name}:${microcycleId}`)?.toString() || ''
+      const intensityMethod = field('intensityMethod') || null
+      const parsed = sessionPrescriptionSchema.safeParse({
+        groupId: field('prescriptionGroupId'),
+        microcycleId,
+        distanceKm: field('distanceKm'),
+        durationMin: field('durationMin'),
+        elevationGain: field('elevationGain'),
+        intensityMethod,
+        zone: intensityMethod === 'hr_zone' ? field('zone') || null : null,
+        referencePercentage: intensityMethod === 'reference_percentage' ? field('referencePercentage') : '',
+        notes: field('prescriptionNotes'),
+      })
+      if (!parsed.success) {
+        return { success: false, errorCode: prescriptionErrorCode(parsed.error.issues[0]) }
+      }
+      rows.push(parsed.data)
+    }
+    return { success: true, data: rows }
+  }
+
   const groupIds = [...new Set(formData.getAll('prescriptionGroupId').map((value) => value.toString()))]
   if (groupIds.length === 0) return { success: false, errorCode: 'groupRequired' }
 
