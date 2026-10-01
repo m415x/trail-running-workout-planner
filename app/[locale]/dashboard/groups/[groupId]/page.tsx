@@ -79,7 +79,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
 
         {group.athletes.length > 0 && (
           <CardContent>
-            <div className='overflow-hidden rounded-lg border'>
+            <div className='max-w-full overflow-x-auto rounded-lg border' role='region' aria-label={t('members')} tabIndex={0}>
               <Table>
                 <TableHeader>
                   <TableRow>
