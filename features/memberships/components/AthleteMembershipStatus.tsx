@@ -78,14 +78,14 @@ export function AthleteMembershipStatus({
             data-status={charge.status}
             className={`rounded-lg border p-3 ${statusClass(charge.status)}`}
           >
-            <div className='flex items-start justify-between gap-3'>
-              <div>
+            <div className='flex flex-wrap items-start justify-between gap-3'>
+              <div className='min-w-0'>
                 <p className='text-sm font-semibold'>{statusLabel(charge.status)}</p>
                 <p className='text-xs opacity-80'>
                   {labels.period}: {charge.year}-{String(charge.month).padStart(2, '0')}
                 </p>
               </div>
-              <p className='text-sm font-medium'>
+              <p className='min-w-0 break-words text-sm font-medium'>
                 {labels.remaining}: {formatMoney(charge.remainingMinor, charge.currency)}
               </p>
             </div>
