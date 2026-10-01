@@ -17,7 +17,7 @@ test('KAN-563 aligns Athlete Home Plan and Profile with the Stats content width'
 })
 
 test('KAN-563 gives Athlete Home a wide two-column calendar and workout-detail composition', () => {
-  assert.match(home, /grid[^'"]*gap-2[^'"]*lg:grid-cols-2/)
+  assert.match(home, /grid[^'"]*gap-4[^'"]*lg:grid-cols-2/)
   assert.match(
     home,
     /<WeeklyCalendarCard[\s\S]*<div className=['"]space-y-2['"]>[\s\S]*currentWorkouts/,
