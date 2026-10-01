@@ -7,6 +7,8 @@ import type { StyleSpecification } from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { TrackPoint } from '@/types'
 
+maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
+
 /* -------------------------------------------------------------------------- */
 /* BASE MAP STYLES                                                            */
 /* -------------------------------------------------------------------------- */
