@@ -139,7 +139,9 @@
       "empty": "No sessions",
       "group": "Group",
       "allGroups": "All groups",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "scrollRegion": "Monthly training calendar; horizontal scrolling",
+      "scrollHint": "Swipe sideways to view all seven days of the week."
     },
     "adjustments": {
       "title": "Individual adjustments",
