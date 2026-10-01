@@ -57,8 +57,6 @@ test('KAN-563 keeps only the Home header sticky on narrow viewports', () => {
 })
 
 test('KAN-563 preserves the desktop Home sticky offset and aligns workout detail with the calendar', () => {
-  assert.match(home, /lg:sticky[^'"]*lg:top-6/)
-  assert.match(home, /lg:grid-rows-\[auto_1fr\]/)
-  assert.match(home, /lg:row-start-2/)
-  assert.match(home, /<section[^>]*lg:row-start-2/)
+  assert.match(home, /lg:sticky[^'"]*lg:top-6[^'"]*lg:self-start/)
+  assert.match(home, /<section[^>]*lg:pt-18/)
 })
