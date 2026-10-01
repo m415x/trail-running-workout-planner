@@ -49,3 +49,16 @@ test('KAN-563 compacts the Profile tab selector like the wide Athlete bottom nav
   assert.match(profile, /sm:gap-1/)
   assert.match(profile, /sm:rounded-\[var\(--radius-ept-overlay\)\]/)
 })
+
+
+test('KAN-563 keeps only the Home header sticky on narrow viewports', () => {
+  assert.match(home, /<header[^>]*className=['"][^'"]*sticky[^'"]*top-0[^'"]*lg:static/)
+  assert.doesNotMatch(home, /<div className=['"][^'"]*sticky top-0[^'"]*space-y-4/)
+})
+
+test('KAN-563 preserves the desktop Home sticky offset and aligns workout detail with the calendar', () => {
+  assert.match(home, /lg:sticky[^'"]*lg:top-6/)
+  assert.match(home, /lg:grid-rows-\[auto_1fr\]/)
+  assert.match(home, /lg:row-start-2/)
+  assert.match(home, /<section[^>]*lg:row-start-2/)
+})
