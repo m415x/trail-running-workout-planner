@@ -3,24 +3,19 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
 const source = readFileSync('components/maps/MapInner.tsx', 'utf8')
+const styles = readFileSync('app/globals.css', 'utf8')
 
-test('KAN-576 places compact attribution beneath zoom, centered to the zoom control', () => {
-  // MapLibre prepends controls in its bottom-right corner. Adding attribution
-  // before navigation makes navigation render above the attribution.
+test('KAN-576 places native attribution below zoom without forcing its size or centering', () => {
   const attribution = source.indexOf('new maplibregl.AttributionControl({')
   const navigation = source.indexOf('new maplibregl.NavigationControl({')
-  assert.ok(attribution >= 0 && navigation >= 0)
-  assert.ok(attribution < navigation, 'register attribution before navigation in bottom-right')
+  assert.ok(attribution >= 0 && attribution < navigation, 'attribution registers before zoom in bottom-right')
   assert.match(source, /new maplibregl.AttributionControl\(\{\s*compact:\s*true,?\s*\}\),\s*'bottom-right'/)
   assert.match(source, /new maplibregl.NavigationControl\(\{\s*showCompass:\s*false,?\s*\}\),\s*'bottom-right'/)
-
-  // Align the compact control through scoped CSS, not inline overrides.
-  assert.match(source, /attribution\.classList\.add\('ept-map-attribution'\)/)
+  assert.doesNotMatch(styles, /\.ept-map-attribution/)
   assert.doesNotMatch(source, /attribution\.style\.minWidth\s*=/)
-  assert.doesNotMatch(source, /attributionToggle\.style\.(?:marginInline|float|display)\s*=/)
 })
 
-test('KAN-576 keeps attribution initially hidden, native toggle usable and map lifecycle intact', () => {
+test('KAN-576 preserves initial native disclosure and map lifecycle', () => {
   assert.match(source, /const collapseInitialAttribution = \(\) => \{/)
   assert.match(source, /classList\.remove\('maplibregl-compact-show'\)/)
   assert.match(source, /map\.on\('load', handleLoad\)/)
