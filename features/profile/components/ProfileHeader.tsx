@@ -34,7 +34,7 @@ export function ProfileHeader({ user }: { user: User }) {
 
         {/* Nombre y datos del atleta */}
         <div>
-          <h1 className='font-heading font-bold text-foreground text-xl tracking-tight leading-tight'>{fullName}</h1>
+          <h1 className='font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl'>{fullName}</h1>
           <p className='text-xs text-muted-foreground font-sans mt-0.5'>
             {t('athleteSince', { year: 2024, username: user.userName?.toLowerCase() ?? 'runner' })}
           </p>

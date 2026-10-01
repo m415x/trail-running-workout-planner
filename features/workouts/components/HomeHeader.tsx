@@ -60,7 +60,7 @@ export function HomeHeader({
 
         <div className='flex flex-col justify-center'>
           {/* Info del Atleta */}
-          <h1 className='font-heading text-foreground text-xl font-bold leading-tight tracking-tight'>
+          <h1 className='font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl'>
             {t('greeting', { name: athlete.nickName ?? fullName })}
           </h1>
 
@@ -71,7 +71,7 @@ export function HomeHeader({
 
       {/* Controles del lado derecho */}
       <div className='flex items-center gap-2'>
-        <ThemeToggleButton className='text-muted-foreground' />
+        <ThemeToggleButton aria-label={t('toggleTheme')} className='text-muted-foreground' />
 
         <button
           type='button'

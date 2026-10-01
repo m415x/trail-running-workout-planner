@@ -12,7 +12,7 @@ export function ProfileTab({ membershipStatus }: { membershipStatus?: React.Reac
   const t = useTranslations('AthleteProfile')
 
   return (
-    <div className='space-y-4'>
+    <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       {/* Hero Header */}
       <ProfileHeader user={currentUser} />
 
@@ -20,7 +20,7 @@ export function ProfileTab({ membershipStatus }: { membershipStatus?: React.Reac
 
       {/* Profile Tabs */}
       <Tabs defaultValue='athlete' className='w-full'>
-        <TabsList className='w-full grid grid-cols-3 bg-secondary/60 p-1 rounded-2xl h-10'>
+        <TabsList className='grid h-10 w-full grid-cols-3 rounded-2xl bg-secondary/60 p-1 sm:mx-auto sm:w-auto sm:gap-1 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
           <TabsTrigger value='athlete' className='rounded-xl text-xs font-semibold'>
             {t('tabs.physiology')}
           </TabsTrigger>

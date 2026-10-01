@@ -12,7 +12,7 @@ export function CustomButton({ className, ...props }: CustomButtonProps) {
   return (
     <Button
       className={cn(
-        'flex items-center gap-2 px-2.5 rounded-xl text-xs font-semibold h-10',
+        'flex min-h-[var(--size-ept-touch-target)] items-center gap-2 rounded-[var(--radius-ept-control)] px-2.5 text-xs font-semibold',
         'border transition-all cursor-pointer shadow-md hover:scale-102 active:scale-98',
         className,
       )}
@@ -23,7 +23,7 @@ export function CustomButton({ className, ...props }: CustomButtonProps) {
 
 export function PrimaryFilledButton({ className, ...props }: CustomButtonProps) {
   return (
-    <CustomButton className={cn('bg-primary text-white border-primary/30 hover:bg-primary/80', className)} {...props} />
+    <CustomButton className={cn('bg-primary text-primary-foreground border-primary/30 hover:bg-primary/80', className)} {...props} />
   )
 }
 
@@ -49,7 +49,7 @@ export function PrimaryLinkButton({ className, ...props }: CustomButtonProps) {
 export function SecondaryFilledButton({ className, ...props }: CustomButtonProps) {
   return (
     <CustomButton
-      className={cn('bg-secondary text-white border-secondary/30 hover:bg-secondary/80', className)}
+      className={cn('bg-secondary text-secondary-foreground border-secondary/30 hover:bg-secondary/80', className)}
       {...props}
     />
   )
@@ -102,7 +102,7 @@ export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
         )}
         {...props}
       >
-        {Icon && <Icon size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
+        {Icon && <Icon aria-hidden='true' size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
         <span className={cn('font-heading text-2xl font-black leading-none tracking-tight', valueClassName)}>
           {value}
         </span>
@@ -118,9 +118,15 @@ PillButton.displayName = 'PillButton'
 export type ThemeToggleButtonProps = Omit<
   React.ButtonHTMLAttributes<HTMLButtonElement>,
   'children' | 'variant'
->
+> & {
+  'aria-label': string
+}
 
-export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProps) {
+export function ThemeToggleButton({
+  className,
+  'aria-label': ariaLabel,
+  ...props
+}: ThemeToggleButtonProps) {
   const { theme, setTheme } = useTheme()
 
   return (
@@ -129,6 +135,7 @@ export function ThemeToggleButton({ className, ...props }: ThemeToggleButtonProp
       fromCenter
       theme={theme === 'dark' ? 'dark' : 'light'}
       onThemeChange={(newTheme) => setTheme(newTheme)}
+      aria-label={ariaLabel}
       className={cn(className)}
       {...props}
     />

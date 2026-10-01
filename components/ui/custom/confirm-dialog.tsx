@@ -17,11 +17,11 @@ import { cn } from '@/lib/utils'
 export interface ConfirmActionDialogProps {
   /** Función que recibe el handler para abrir el diálogo */
   trigger: (openDialog: () => void) => React.ReactNode
-  title?: string
-  description?: string
+  title: string
+  description: string
   icon?: LucideIcon
-  confirmLabel?: string
-  cancelLabel?: string
+  confirmLabel: string
+  cancelLabel: string
   variant?: 'destructive' | 'primary'
   onConfirm: () => void
   onCancel?: () => void
@@ -29,11 +29,11 @@ export interface ConfirmActionDialogProps {
 
 export function ConfirmActionDialog({
   trigger,
-  title = '¿Confirmar acción?',
-  description = 'Esta operación no se puede deshacer.',
+  title,
+  description,
   icon: Icon = AlertTriangle,
-  confirmLabel = 'Confirmar',
-  cancelLabel = 'Cancelar',
+  confirmLabel,
+  cancelLabel,
   variant = 'destructive',
   onConfirm,
   onCancel,
@@ -60,7 +60,12 @@ export function ConfirmActionDialog({
         <AlertDialogContent className='max-w-sm rounded-3xl p-5 border-border bg-card shadow-2xl'>
           <AlertDialogHeader className='flex flex-col items-start text-left sm:text-left space-y-2 w-full'>
             <AlertDialogTitle className='flex items-center justify-start gap-2 text-base font-heading font-bold text-foreground text-left w-full'>
-              {Icon && <Icon className={cn('size-5 shrink-0', isDestructive ? 'text-destructive' : 'text-primary')} />}
+              {Icon && (
+                <Icon
+                  aria-hidden='true'
+                  className={cn('size-5 shrink-0', isDestructive ? 'text-destructive' : 'text-primary')}
+                />
+              )}
               <span>{title}</span>
             </AlertDialogTitle>
             <AlertDialogDescription className='text-xs text-muted-foreground leading-relaxed text-left'>
@@ -71,14 +76,14 @@ export function ConfirmActionDialog({
           <AlertDialogFooter className='flex flex-row gap-2 mt-4 sm:space-x-0'>
             <AlertDialogCancel
               onClick={handleCancel}
-              className='flex-1 rounded-xl text-xs h-9 border-border bg-secondary/50 hover:bg-secondary text-foreground'
+              className='flex-1 min-h-[var(--size-ept-touch-target)] rounded-[var(--radius-ept-control)] border-border bg-secondary/50 text-xs text-foreground hover:bg-secondary'
             >
               {cancelLabel}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirm}
               className={cn(
-                'flex-1 rounded-xl text-xs h-9 font-medium shadow-sm transition-all',
+                'flex-1 min-h-[var(--size-ept-touch-target)] rounded-[var(--radius-ept-control)] text-xs font-medium shadow-sm transition-all',
                 isDestructive
                   ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                   : 'bg-primary text-primary-foreground hover:bg-primary/90',

@@ -55,3 +55,6 @@ public/sweetalert2.js
 
 # sqlite
 sqlite.db
+
+# MapLibre generated worker assets
+public/maplibre/

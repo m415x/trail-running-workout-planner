@@ -95,57 +95,65 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   }
 
   return (
-    <div className='space-y-2'>
-      <HomeHeader team={team || fallbackTeam} athlete={athlete} />
+    <div className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6'>
+      <div className='grid gap-4 lg:grid-cols-2 lg:items-start'>
+        <div className='lg:sticky lg:top-6 lg:self-start'>
+          <header className='sticky top-0 z-20 bg-background pb-4 lg:static lg:z-auto'>
+            <HomeHeader team={team || fallbackTeam} athlete={athlete} />
+          </header>
 
-      <WeeklyCalendarCard
-        cycle={weeklyCycle}
-        weekDays={weekDays}
-        selectedDay={selectedDay}
-        selectedDate={selectedDate}
-        onSelectDay={onSelectDay}
-        onPrevWeek={onPrevWeek}
-        onNextWeek={onNextWeek}
-        onSelectDate={onSelectDate}
-      />
-
-      {currentWorkouts.length > 0 ? (
-        <div className='space-y-2'>
-          {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
-            <RaceCard
-              key={workout.id}
-              date={selectedWeekDay?.fullDate}
-              workout={workout}
-              onRealizedTrainingSaved={onRealizedTrainingSaved}
-            />
-          ) : (
-            <TodayWorkoutCard
-              key={workout.id}
-              workout={{ ...workout, runningReference }}
-              date={selectedWeekDay?.fullDate}
-              TrackData={index === 0 ? TrackData : null}
-              onRealizedTrainingSaved={onRealizedTrainingSaved}
-            />
-          ))}
+          <WeeklyCalendarCard
+            cycle={weeklyCycle}
+            weekDays={weekDays}
+            selectedDay={selectedDay}
+            selectedDate={selectedDate}
+            onSelectDay={onSelectDay}
+            onPrevWeek={onPrevWeek}
+            onNextWeek={onNextWeek}
+            onSelectDate={onSelectDate}
+          />
         </div>
-      ) : (
-        <RestCard
-          date={selectedWeekDay?.fullDate}
-          onRealizedTrainingSaved={onRealizedTrainingSaved}
-        />
-      )}
 
-      {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
+        <section className='space-y-4 lg:pt-18'>
+          {currentWorkouts.length > 0 ? (
+            <div className='space-y-4'>
+              {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
+                <RaceCard
+                  key={workout.id}
+                  date={selectedWeekDay?.fullDate}
+                  workout={workout}
+                  onRealizedTrainingSaved={onRealizedTrainingSaved}
+                />
+              ) : (
+                <TodayWorkoutCard
+                  key={workout.id}
+                  workout={{ ...workout, runningReference }}
+                  date={selectedWeekDay?.fullDate}
+                  TrackData={index === 0 ? TrackData : null}
+                  onRealizedTrainingSaved={onRealizedTrainingSaved}
+                />
+              ))}
+            </div>
+          ) : (
+            <RestCard
+              date={selectedWeekDay?.fullDate}
+              onRealizedTrainingSaved={onRealizedTrainingSaved}
+            />
+          )}
 
-      {currentWorkout && elevationChartData && (
-        <RouteMapCard
-          title={currentWorkout.title}
-          distanceKm={TrackData?.distanceKm ?? currentWorkout.distance}
-          gainMeters={TrackData?.gainMeters ?? currentWorkout.gain}
-          maxGradePct={TrackData?.maxGradePct ?? 0}
-          trackPoints={TrackData?.trackPoints ?? []}
-        />
-      )}
+          {elevationChartData && <ElevationProfileCard {...elevationChartData} />}
+
+          {currentWorkout && elevationChartData && (
+            <RouteMapCard
+              title={currentWorkout.title}
+              distanceKm={TrackData?.distanceKm ?? currentWorkout.distance}
+              gainMeters={TrackData?.gainMeters ?? currentWorkout.gain}
+              maxGradePct={TrackData?.maxGradePct ?? 0}
+              trackPoints={TrackData?.trackPoints ?? []}
+            />
+          )}
+        </section>
+      </div>
     </div>
   )
 }

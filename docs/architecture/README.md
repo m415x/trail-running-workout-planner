@@ -40,6 +40,10 @@ Key competition documents:
 
 `platform/` owns cross-cutting platform/infrastructure contracts.
 
+- `platform/ui-design-system.md` — KAN-507 Brand/UI foundations, authority hierarchy, primitive/pattern ownership and KAN-507 ↔ KAN-508 boundary.
+- `platform/internationalization-policy.md` — KAN-506 language, presentation locale, operational timezone, temporal-value and economic-currency consumption boundary.
+- `platform/sqlite-local-operations.md` — supported local SQLite bootstrap, upgrade, preservation, drift and rerun lifecycle.
+
 ## Cross-domain invariants
 
 - `unknown != 0`.

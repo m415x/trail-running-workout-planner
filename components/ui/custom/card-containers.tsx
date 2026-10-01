@@ -8,14 +8,14 @@ export type CustomCardProps = React.ComponentProps<typeof CardContent>
 export function CustomCard({ className, ...props }: CustomCardProps) {
   return (
     <CardContent
-      className={cn('bg-card rounded-3xl p-4 border border-border flex flex-col gap-2', className)}
+      className={cn('bg-card rounded-[var(--radius-ept-surface)] p-[var(--space-ept-content)] border border-border flex flex-col gap-2 shadow-[var(--elevation-ept-raised)]', className)}
       {...props}
     />
   )
 }
 
 export function CustomCardInside({ className, ...props }: CustomCardProps) {
-  return <CardContent className={cn('bg-background rounded-xl p-4 border border-border', className)} {...props} />
+  return <CardContent className={cn('bg-background rounded-[var(--radius-ept-control)] p-[var(--space-ept-content)] border border-border', className)} {...props} />
 }
 
 // Contenedor secundario para métricas (Sub-tarjetas de métricas o cajas internas)
@@ -23,7 +23,7 @@ export type StatCardProps = React.ComponentProps<typeof Card>
 
 export function StatCard({ className, children, ...props }: StatCardProps) {
   return (
-    <div className={cn('rounded-2xl p-3 bg-secondary/50 border border-border/40', className)} {...props}>
+    <div className={cn('rounded-[var(--radius-ept-overlay)] p-3 bg-secondary/50 border border-border/40', className)} {...props}>
       {children}
     </div>
   )
