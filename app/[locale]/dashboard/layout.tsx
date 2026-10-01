@@ -21,9 +21,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DashboardDirtyFormGuardProvider>
-      <SidebarProvider>
+      <SidebarProvider defaultOpen={false}>
       <AppSidebar />
-      <SidebarInset>
+      <SidebarInset className='min-w-0'>
         <header className='flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:px-4 md:h-16'>
           <SidebarTrigger className='-ml-1' />
           <Separator orientation='vertical' className='mr-2 h-4' />
@@ -58,7 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className='flex flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-8 lg:p-8'>{children}</main>
+        <main className='flex min-w-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-8 lg:p-8'>{children}</main>
       </SidebarInset>
       </SidebarProvider>
     </DashboardDirtyFormGuardProvider>
