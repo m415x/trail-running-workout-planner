@@ -318,18 +318,3 @@ html {
   user-select: none !important;
   -webkit-touch-callout: none !important;
 }
-
-/* KAN-576: MapLibre's compact attribution reserves 24px of right padding.
-   Reset that geometry only while closed, retaining natural width when opened. */
-.ept-map-attribution:not(.maplibregl-compact-show) {
-  width: 29px;
-  max-width: 29px;
-  height: 29px;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.ept-map-attribution:not(.maplibregl-compact-show) .maplibregl-ctrl-attrib-button {
-  top: 2.5px;
-  right: 2.5px;
-}
