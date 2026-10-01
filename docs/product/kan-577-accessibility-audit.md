@@ -65,3 +65,11 @@ Use the **current feature branch** and actual Coach/Athlete accounts with non-se
 T8 may move to **En revisión** only after performed browser evidence for representative corrected and unaffected flows is written here (or each remaining omission explicitly deferred with owner/rationale), and every reproduced T8 defect has bounded TDD and screenshot recheck. At T9 execute `pn verify --db`, full representative ES/EN light/dark browser walkthrough and map benchmark, reconcile project docs and Jira, create PR, merge to `dev`, and run required post-merge verification.
 
 Updated 2026-10-01. This document is an **audit plan and evidence ledger**, not a completion certificate.
+
+## Approved product change discovered during T8: KAN-579
+
+User screenshots from Athlete Home's realized-training dialog established that **Limpiar formulario** was intended to *delete the saved realized workout*, not clear unsaved edit fields. The earlier draft-clear fix (commit `e81525b3`) is **not accepted as the requested behavior** and must be superseded/reconciled by KAN-579; do not report it as completion of deletion. Initial date/time autofill is a separate T8 GREEN fix (commit `6271925d`).
+
+The user approved a new, standalone story **KAN-579 — Eliminar con auditoría un entrenamiento realizado desde Home**: a compact icon-only trash button in edit mode, localized accessible name ES/EN, confirmation, authenticated manual-evidence-only soft deletion with durable audit (no physical purge), unchanged prescription and recalculated Home/history/stats/readiness. Creation mode has no delete action. KAN-579 relates to KAN-577 and **blocks KAN-578 T9** until implementation/verification or an explicit rescope decision. The issue owns domain/persistence/security decisions and TDD; T8 is not authorized to improvise them.
+
+2026-10-01: story and links recorded in Jira; **no server deletion implementation or migration performed**. The remaining independent self-assessment i18n/RPE display audit may proceed within T8. Historical known-zero RPE must not be recast as unknown without a product/domain decision.
