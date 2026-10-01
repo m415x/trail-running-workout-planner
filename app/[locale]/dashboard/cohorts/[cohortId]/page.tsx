@@ -57,7 +57,7 @@ function MembershipTable({
   labels: MembershipLabels
 }) {
   return (
-    <div className='overflow-hidden rounded-lg border'>
+    <div className='max-w-full overflow-x-auto rounded-lg border' role='region' aria-label={labels.athlete} tabIndex={0}>
       <Table>
         <TableHeader>
           <TableRow>
