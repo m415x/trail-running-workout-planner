@@ -322,7 +322,7 @@ function ManualPaymentSection({
         ))}
       </div>
       <form action={submitPayment} className='grid gap-4 sm:grid-cols-2'>
-        <select name='paymentChargeId' required className='h-10 rounded-md border border-input bg-background px-3'>
+        <select name='paymentChargeId' aria-label={t('common.selectCharge')} required className='h-10 rounded-md border border-input bg-background px-3'>
           <option value=''>{t('common.selectCharge')}</option>
           {monthlyCharges.map((charge) => (
             <option key={charge.id} value={charge.id}>
@@ -330,12 +330,12 @@ function ManualPaymentSection({
             </option>
           ))}
         </select>
-        <Input name='paymentAmount' type='number' min='0.01' step='0.01' placeholder={t('common.amount')} required />
-        <select name='paymentMethod' required className='h-10 rounded-md border border-input bg-background px-3'>
+        <Input name='paymentAmount' aria-label={t('common.amount')} type='number' min='0.01' step='0.01' placeholder={t('common.amount')} required />
+        <select name='paymentMethod' aria-label={t('payments.method')} required className='h-10 rounded-md border border-input bg-background px-3'>
           <option value='cash'>{t('payments.cash')}</option>
           <option value='bank_transfer'>{t('payments.bankTransfer')}</option>
         </select>
-        <Input name='paidAt' type='date' required />
+        <Input name='paidAt' aria-label={t('payments.date')} type='date' required />
         {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
         {success && <p role='status' className='text-sm text-muted-foreground'>{success}</p>}
         <Button type='submit' disabled={isPending}>
