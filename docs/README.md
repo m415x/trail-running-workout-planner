@@ -42,6 +42,10 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 `docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the completed KAN-504/KAN-505/KAN-506/KAN-507 baseline and the KAN-508 H5 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
+## Verification runner
+
+- [`architecture/platform/verification-runner.md`](architecture/platform/verification-runner.md) — KAN-568 `pn verify` contract, compact and verbose output, optional SQLite scenario gate, nonzero exit status and excluded remote Supabase operations.
+
 ## Agent harness
 
 - [`agent-harness.md`](agent-harness.md) — `harness-eval-v1` context/tool discipline, behavioral evaluation and completed KAN-281/KAN-282 experiment record. `AGENTS.md` remains the operational authority.

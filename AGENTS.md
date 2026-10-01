@@ -49,6 +49,7 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 
 - `pn dev` — local development
 - `pn test` — automated suite
+- `pn verify` — complete local closure gates (`test`, `tsc`, `lint`, `build`, `i18n:check`) with compact PASS/FAIL summary and diagnostics; `pn verify -v` streams full output; `pn verify --db` adds the local SQLite scenario gate (no remote Supabase).
 - `pn lint` — ESLint
 - `pn tsc` — typecheck
 - `pn tdd:red <test-file> [...]` — sync + focused RED-phase test run with compact output
