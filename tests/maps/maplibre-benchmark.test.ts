@@ -62,3 +62,25 @@ test('KAN-561 renders the benchmark only against a loaded style and retries dete
     /\/\/\s*if\s*\(!map\.isStyleLoaded\(\)\)/,
   )
 })
+
+
+test('KAN-561 rebuilds the benchmark GeoJSON source and line layer deterministically', () => {
+  assert.match(
+    mapSource,
+    /if\s*\(map\.getLayer\(TRAIL_LAYER_ID\)\)\s*\{[\s\S]*map\.removeLayer\(TRAIL_LAYER_ID\)/,
+  )
+  assert.match(
+    mapSource,
+    /if\s*\(map\.getSource\(TRAIL_SOURCE_ID\)\)\s*\{[\s\S]*map\.removeSource\(TRAIL_SOURCE_ID\)/,
+  )
+  assert.match(
+    mapSource,
+    /map\.addSource\(TRAIL_SOURCE_ID,[\s\S]*type:\s*['"]geojson['"][\s\S]*data:\s*trackFeature[\s\S]*lineMetrics:\s*true/,
+  )
+  assert.match(
+    mapSource,
+    /map\.addLayer\(\{[\s\S]*id:\s*TRAIL_LAYER_ID[\s\S]*type:\s*['"]line['"][\s\S]*source:\s*TRAIL_SOURCE_ID/,
+  )
+  assert.doesNotMatch(mapSource, /existingSource/)
+  assert.doesNotMatch(mapSource, /geojsonSource\.setData/)
+})
