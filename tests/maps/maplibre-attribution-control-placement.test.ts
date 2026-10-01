@@ -14,9 +14,10 @@ test('KAN-576 places compact attribution beneath zoom, centered to the zoom cont
   assert.match(source, /new maplibregl.AttributionControl\(\{\s*compact:\s*true,?\s*\}\),\s*'bottom-right'/)
   assert.match(source, /new maplibregl.NavigationControl\(\{\s*showCompass:\s*false,?\s*\}\),\s*'bottom-right'/)
 
-  // Match MapLibre zoom button width without limiting expanded credits.
-  assert.match(source, /attribution\.style\.minWidth\s*=\s*['"]29px['"]/)
-  assert.match(source, /attributionToggle\.style\.marginInline\s*=\s*['"]auto['"]/)
+  // Align the compact control through scoped CSS, not inline overrides.
+  assert.match(source, /attribution\.classList\.add\('ept-map-attribution'\)/)
+  assert.doesNotMatch(source, /attribution\.style\.minWidth\s*=/)
+  assert.doesNotMatch(source, /attributionToggle\.style\.(?:marginInline|float|display)\s*=/)
 })
 
 test('KAN-576 keeps attribution initially hidden, native toggle usable and map lifecycle intact', () => {
