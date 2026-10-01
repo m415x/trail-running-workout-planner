@@ -32,7 +32,6 @@ test('SessionForm localizes residual notes, prescription fields and actions', ()
     'form.notes',
     'form.notesPlaceholder',
     'form.prescriptions.group',
-    'form.prescriptions.microcycle',
     'form.prescriptions.distance',
     'form.prescriptions.duration',
     'form.prescriptions.elevationGain',
@@ -44,4 +43,7 @@ test('SessionForm localizes residual notes, prescription fields and actions', ()
   ]) {
     assert.equal(source.includes(`t('${key}')`), true, key)
   }
+
+  // The microcycle option is interpolated with plan, week, start and end.
+  assert.match(source, /t\('form\.prescriptions\.microcycleOption',\s*\{/)
 })

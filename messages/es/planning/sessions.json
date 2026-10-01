@@ -51,7 +51,7 @@
       },
       "prescriptions": {
         "title": "Prescripciones por grupo",
-        "help": "Seleccioná al menos un grupo y definí la carga que verá en su planificación.",
+        "help": "Seleccioná al menos un microciclo para asignar la sesión y definí su carga. Si un grupo tiene varios microciclos en la fecha elegida, seleccioná explícitamente los que correspondan.",
         "noGroups": "No hay grupos activos disponibles.",
         "noMicrocycles": "Este grupo no tiene microciclos disponibles.",
         "selectMicrocycle": "Seleccionar microciclo",

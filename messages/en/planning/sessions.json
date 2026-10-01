@@ -51,7 +51,7 @@
       },
       "prescriptions": {
         "title": "Group prescriptions",
-        "help": "Select at least one group and define the load shown in its planning.",
+        "help": "Select at least one microcycle to assign the session and define its load. If a group has multiple microcycles on the chosen date, explicitly select those that apply.",
         "noGroups": "No active groups are available.",
         "noMicrocycles": "This group has no available microcycles.",
         "selectMicrocycle": "Select microcycle",

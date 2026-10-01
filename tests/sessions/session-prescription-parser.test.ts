@@ -101,6 +101,60 @@ describe('prescripciones grupales de una sesión', () => {
     assert.equal(getErrorCode(form), 'invalidVolume')
   })
 
+  it('conserva dos prescripciones explícitas Base y Variant del mismo grupo con volumen e intensidad independientes', () => {
+    const form = new FormData()
+    form.append('prescriptionGroupId', 'group_a')
+    form.append('prescriptionGroupId', 'group_a')
+    form.append('microcycleId:group_a', 'base_week')
+    form.append('microcycleId:group_a', 'variant_week')
+    form.append('distanceKm:group_a', '12')
+    form.append('distanceKm:group_a', '8')
+    form.append('intensityMethod:group_a', 'hr_zone')
+    form.append('intensityMethod:group_a', 'reference_percentage')
+    form.append('zone:group_a', 'Z2')
+    form.append('zone:group_a', '')
+    form.append('referencePercentage:group_a', '')
+    form.append('referencePercentage:group_a', '90')
+
+    const result = parseSessionPrescriptions(form)
+    assert.equal(result.success, true)
+    if (!result.success) return
+    assert.deepEqual(result.data.map((row) => ({
+      groupId: row.groupId,
+      microcycleId: row.microcycleId,
+      distanceKm: row.distanceKm,
+      intensityMethod: row.intensityMethod,
+      zone: row.zone,
+      referencePercentage: row.referencePercentage,
+    })), [
+      { groupId: 'group_a', microcycleId: 'base_week', distanceKm: 12, intensityMethod: 'hr_zone', zone: 'Z2', referencePercentage: null },
+      { groupId: 'group_a', microcycleId: 'variant_week', distanceKm: 8, intensityMethod: 'reference_percentage', zone: null, referencePercentage: 90 },
+    ])
+  })
+
+  it('acepta submit por identidad de scope aun cuando las filas Base y Variant comparten grupo', () => {
+    const form = new FormData()
+    form.append('prescriptionMicrocycleId', 'base_week')
+    form.append('prescriptionMicrocycleId', 'variant_week')
+    form.set('prescriptionGroupId:base_week', 'group_a')
+    form.set('prescriptionGroupId:variant_week', 'group_a')
+    form.set('distanceKm:base_week', '14')
+    form.set('distanceKm:variant_week', '7')
+    form.set('intensityMethod:base_week', 'hr_zone')
+    form.set('zone:base_week', 'Z2')
+    form.set('intensityMethod:variant_week', 'reference_percentage')
+    form.set('referencePercentage:variant_week', '90')
+
+    const parsed = parseSessionPrescriptions(form)
+    assert.equal(parsed.success, true)
+    if (!parsed.success) return
+    assert.deepEqual(parsed.data.map(({ groupId, microcycleId, distanceKm, intensityMethod }) =>
+      ({ groupId, microcycleId, distanceKm, intensityMethod })), [
+      { groupId: 'group_a', microcycleId: 'base_week', distanceKm: 14, intensityMethod: 'hr_zone' },
+      { groupId: 'group_a', microcycleId: 'variant_week', distanceKm: 7, intensityMethod: 'reference_percentage' },
+    ])
+  })
+
   it('admite varios grupos y elimina selecciones duplicadas', () => {
     const form = prescriptionForm('group_s2', 'micro_s2')
     form.append('prescriptionGroupId', 'group_s2')
@@ -126,7 +180,7 @@ it('identifica durationMin como duración grupal planificada en el copy Coach ES
 
     assert.match(
       form,
-      /name={`durationMin:\${group\.id}`} type='number' min='1' step='1'/,
+      /name={`durationMin:\${microcycleId}`} type='number' min='1' step='1'/,
     )
     assert.equal(
       es.Sessions.form.errors.server.invalidVolume,

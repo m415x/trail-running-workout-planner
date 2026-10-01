@@ -26,11 +26,12 @@ describe('create/edit session microcycle integration', () => {
     }), { errorCode: 'microcycleDateMismatch', errorParams: { group: 'a' } })
   })
 
-  it('rejects overlapping weeks independently of submitted selection', () => {
-    assert.deepEqual(validateSessionMicrocyclePrescriptions('2026-09-26', [
-      { groupId: 'a', microcycleId: 'a_2' },
+  it('validates explicit Base and Variant scopes independently for the same group', () => {
+    assert.equal(validateSessionMicrocyclePrescriptions('2026-09-26', [
+      { groupId: 'a', microcycleId: 'a_base' },
+      { groupId: 'a', microcycleId: 'a_variant' },
     ], {
-      a: [week('a_1', '2026-09-21', '2026-09-27'), week('a_2', '2026-09-25', '2026-10-01')],
-    }), { errorCode: 'microcycleDateAmbiguous', errorParams: { group: 'a' } })
+      a: [week('a_base', '2026-09-21', '2026-09-27'), week('a_variant', '2026-09-25', '2026-10-01')],
+    }), null)
   })
 })
