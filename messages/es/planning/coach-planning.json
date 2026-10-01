@@ -114,6 +114,44 @@
       },
       "generationMissing": "Semana {week}: falta un objetivo de volumen o intensidad.",
       "generationFailed": "Semana {week}: no se pudo generar la propuesta."
+    },
+    "sessionGeneration": {
+      "title": "Generación semanal de sesiones",
+      "description": "Definí una frecuencia fija si querés repetir la misma cantidad todas las semanas. Si queda vacío, el motor resolverá automáticamente 3, 4 o 5 sesiones según el microciclo y su carga. El patrón habitual guía la propuesta, pero no obliga al generador cuando la planificación o la recuperación requieren otra distribución.",
+      "frequencyLabel": "Cantidad fija de sesiones semanales",
+      "automatic": "Automático",
+      "frequencyHelp": "Vacío = automático · 3, 4 o 5 = frecuencia fija.",
+      "patternTitle": "Patrón habitual del grupo",
+      "patternHelp": "Marcá los días en que el grupo suele entrenar y asignales un rol habitual.",
+      "roleAriaLabel": "Rol habitual para {day}",
+      "minDays": "Seleccioná al menos 3 días habituales."
+    },
+    "sessionPreview": {
+      "title": "Vista previa de sesiones",
+      "description": "Propuesta calculada desde cada microciclo. Revisala antes de guardarla.",
+      "saved": "Guardado",
+      "notSaved": "No guardado",
+      "sessions": "{count, plural, one {# sesión} other {# sesiones}}",
+      "ready": "Completá la estrategia de carga, intensidad y configuración semanal para generar la vista previa.",
+      "empty": "No hay microciclos disponibles para generar sesiones.",
+      "week": "Semana {count}",
+      "warnings": "{count, plural, one {# aviso} other {# avisos}}",
+      "referencePercentage": "de referencia",
+      "noZone": "Sin zona",
+      "competitionNote": "Competencia · no incluida en el volumen de entrenamiento del taper.",
+      "review": "Revisá la propuesta",
+      "saveHelp": "Guardá esta propuesta para publicarla en el calendario."
+    },
+    "microcycleType": {
+      "ariaLabel": "Tipo de microciclo",
+      "types": {
+        "base": "Base",
+        "development": "Desarrollo",
+        "shock": "Carga",
+        "deload": "Descarga",
+        "tapering": "Taper",
+        "race": "Carrera"
+      }
     }
   }
 }
