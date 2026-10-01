@@ -12,6 +12,13 @@
       "Race": "Race Day",
       "Rest": "Rest Day"
     },
+    "map": {
+      "loading": "Loading GPS map…",
+      "meetingPoint": "Meeting point",
+      "distance": "Distance",
+      "elevationGain": "Elevation gain",
+      "maxGrade": "Maximum grade"
+    },
     "card": {
       "coachNote": "Coach's Note",
       "logWorkoutButton": "Log completed workout",
