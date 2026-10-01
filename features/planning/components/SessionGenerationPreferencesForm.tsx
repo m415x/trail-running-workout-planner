@@ -93,9 +93,9 @@ export function SessionGenerationPreferencesForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Generación semanal de sesiones</CardTitle>
+        <CardTitle>{t('sessionGeneration.title')}</CardTitle>
         <CardDescription>
-          Definí una frecuencia fija si querés repetir la misma cantidad todas las semanas. Si queda vacío, el motor resolverá automáticamente 3, 4 o 5 sesiones según el microciclo y su carga. El patrón habitual guía la propuesta, pero no obliga al generador cuando la planificación o la recuperación requieren otra distribución.
+          {t('sessionGeneration.description')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -105,7 +105,7 @@ export function SessionGenerationPreferencesForm({
           <input type='hidden' name='weeklyPattern' value={patternPayload} />
 
           <div className='space-y-2'>
-            <Label htmlFor='fixedSessionsPerWeek'>Cantidad fija de sesiones semanales</Label>
+            <Label htmlFor='fixedSessionsPerWeek'>{t('sessionGeneration.frequencyLabel')}</Label>
             <div className='max-w-xs'>
               <Input
                 id='fixedSessionsPerWeek'
@@ -115,20 +115,20 @@ export function SessionGenerationPreferencesForm({
                 max='5'
                 step='1'
                 value={fixedSessions}
-                placeholder='Automático'
+                placeholder={t('sessionGeneration.automatic')}
                 onChange={(event) => setFixedSessions(event.target.value)}
               />
             </div>
             <p className='text-sm text-muted-foreground'>
-              Vacío = automático · 3, 4 o 5 = frecuencia fija.
+              {t('sessionGeneration.frequencyHelp')}
             </p>
           </div>
 
           <div className='space-y-3'>
             <div>
-              <p className='font-medium'>Patrón habitual del grupo</p>
+              <p className='font-medium'>{t('sessionGeneration.patternTitle')}</p>
               <p className='text-sm text-muted-foreground'>
-                Marcá los días en que el grupo suele entrenar y asignales un rol habitual.
+                {t('sessionGeneration.patternHelp')}
               </p>
             </div>
 
@@ -155,8 +155,8 @@ export function SessionGenerationPreferencesForm({
                         disabled={!day.enabled}
                         onValueChange={(value) => updateDay(day.weekday, { role: value as WeeklySessionRole })}
                       >
-                        <SelectTrigger aria-label={`Rol habitual para ${label}`}>
-                          <SelectValue />
+                        <SelectTrigger aria-label={t('sessionGeneration.roleAriaLabel', { day: label })}>
+                          <SelectValue>{t(`roles.${day.role}`)}</SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {roleOptions.map((role) => (
@@ -174,7 +174,7 @@ export function SessionGenerationPreferencesForm({
 
             {!hasValidDayCount && (
               <p className='text-sm text-destructive' role='alert'>
-                Seleccioná al menos 3 días habituales.
+                {t('sessionGeneration.minDays')}
               </p>
             )}
           </div>
