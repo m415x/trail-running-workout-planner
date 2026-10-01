@@ -30,7 +30,7 @@ test('SessionForm localizes group prescription, intensity and empty-state copy',
     'form.prescriptions.help',
     'form.prescriptions.noGroups',
     'form.prescriptions.noMicrocycles',
-    'form.prescriptions.microcycle',
+    'form.prescriptions.group',
     'form.prescriptions.intensityMethod',
     'form.prescriptions.noIntensity',
     'form.prescriptions.hrZone',
@@ -43,9 +43,16 @@ test('SessionForm localizes group prescription, intensity and empty-state copy',
 
   for (const key of [
     'form.prescriptions.microcycleOption',
-    'microcycleAmbiguous',
     'microcycleUnavailable',
   ]) {
     assert.equal(source.includes(key), true, key)
   }
+})
+
+test('ES/EN prescription guidance identifies explicitly selected microcycles rather than promising one prescription per group', () => {
+  const es = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/es/planning/sessions.json'), 'utf8'))
+  const en = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/en/planning/sessions.json'), 'utf8'))
+  assert.match(es.Sessions.form.prescriptions.help, /microciclos/)
+  assert.match(en.Sessions.form.prescriptions.help, /microcycles/i)
+  assert.match(source, /t\\('form\\.prescriptions\\.help'\\)/)
 })
