@@ -527,9 +527,36 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         console.error('[KAN-561 MapLibre error]', event.error)
       }
     }
+    const handleStyleData = () => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[KAN-561 styledata]', {
+          loaded: map.loaded(),
+          styleLoaded: map.isStyleLoaded(),
+        })
+      }
+    }
+    const handleSourceData = (event: maplibregl.MapSourceDataEvent) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[KAN-561 sourcedata]', {
+          sourceId: event.sourceId,
+          sourceDataType: event.sourceDataType,
+          isSourceLoaded: event.isSourceLoaded,
+          mapLoaded: map.loaded(),
+          styleLoaded: map.isStyleLoaded(),
+        })
+      }
+    }
+    const handleDataAbort = (event: maplibregl.MapDataEvent) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('[KAN-561 dataabort]', event)
+      }
+    }
 
     map.on('load', handleLoad)
     map.on('error', handleError)
+    map.on('styledata', handleStyleData)
+    map.on('sourcedata', handleSourceData)
+    map.on('dataabort', handleDataAbort)
 
     /* -------------------------------------------------------------------- */
     /* CLEANUP                                                              */
@@ -542,6 +569,9 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
 
       map.off('load', handleLoad)
       map.off('error', handleError)
+      map.off('styledata', handleStyleData)
+      map.off('sourcedata', handleSourceData)
+      map.off('dataabort', handleDataAbort)
 
       map.remove()
 
