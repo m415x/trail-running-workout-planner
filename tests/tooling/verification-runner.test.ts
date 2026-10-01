@@ -30,7 +30,7 @@ describe('KAN-568 integral verification runner', () => {
       async (stage) => {
         observed.push(stage.command)
         return stage.command === 'test'
-          ? { exitCode: 1, output: 'not ok 42 - broken contract\\nerror: expected true', durationMs: 125 }
+          ? { exitCode: 1, output: 'not ok 42 - broken contract\nerror: expected true', durationMs: 125 }
           : { exitCode: 0, output: '', durationMs: 25 }
       },
     )
@@ -38,10 +38,10 @@ describe('KAN-568 integral verification runner', () => {
     assert.equal(report.success, false)
     assert.equal(report.totalDurationMs, 225)
     const summary = formatVerificationSummary(report)
-    assert.match(summary, /FAIL[\\s\\S]*125/)
+    assert.match(summary, /FAIL[\s\S]*125/)
     assert.match(summary, /broken contract/)
     assert.match(summary, /Result: FAIL/)
-    assert.doesNotMatch(summary, /\\bResult: PASS\\b/)
+    assert.doesNotMatch(summary, /\bResult: PASS\b/)
   })
 
   it('produces a successful summary when all selected gates pass', async () => {
@@ -51,7 +51,7 @@ describe('KAN-568 integral verification runner', () => {
     )
     assert.equal(report.success, true)
     assert.equal(report.results.length, 6)
-    assert.match(formatVerificationSummary(report), /SQLite[\\s\\S]*PASS/)
+    assert.match(formatVerificationSummary(report), /SQLite[\s\S]*PASS/)
     assert.match(formatVerificationSummary(report), /Result: PASS/)
   })
 })
