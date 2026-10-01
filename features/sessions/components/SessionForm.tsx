@@ -94,7 +94,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [sessionNotes, setSessionNotes] = useState(session?.notes ?? '')
   const [appliedPrescriptionDefaults, setAppliedPrescriptionDefaults] = useState<AppliedPrescriptionDefaults | null>(null)
   const [prescriptionValues, setPrescriptionValues] = useState<Record<string, PrescriptionFormValues>>(() => Object.fromEntries(
-    session?.sessionPrescriptions.map((item) => [item.groupId, {
+    session?.sessionPrescriptions.map((item) => [item.microcycleId, {
       distanceKm: formValue(item.distanceKm),
       durationMin: formValue(item.durationMin),
       elevationGain: formValue(item.elevationGain),
@@ -104,7 +104,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     }]) ?? [],
   ))
   const [intensityMethods, setIntensityMethods] = useState<Record<string, string>>(() => Object.fromEntries(
-    session?.sessionPrescriptions.map((item) => [item.groupId, item.intensityMethod ?? '']) ?? [],
+    session?.sessionPrescriptions.map((item) => [item.microcycleId, item.intensityMethod ?? '']) ?? [],
   ))
   const candidatesByGroup = Object.fromEntries(groups.map((group) => [group.id, group.microcycles]))
   const microcycleResolutions = reconcileSessionFormMicrocycles(sessionDate, selectedGroupIds, candidatesByGroup)
@@ -155,11 +155,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     setAppliedPrescriptionDefaults(defaults)
     setIntensityMethods((current) => ({
       ...current,
-      ...Object.fromEntries(selectedGroupIds.map((groupId) => [groupId, defaults.intensityMethod ?? ''])),
+      ...Object.fromEntries(Object.keys(intensityMethods).map((microcycleId) => [microcycleId, defaults.intensityMethod ?? ''])),
     }))
     setPrescriptionValues((current) => ({
       ...current,
-      ...Object.fromEntries(selectedGroupIds.map((groupId) => [groupId, valuesFromDefaults(defaults)])),
+      ...Object.fromEntries(Object.keys(prescriptionValues).map((microcycleId) => [microcycleId, valuesFromDefaults(defaults)])),
     }))
   }
 
@@ -272,11 +272,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           <p className='rounded-md bg-muted/40 p-3 text-sm text-muted-foreground'>{t('form.prescriptions.noGroups')}</p>
         ) : groups.map((group) => {
           const selected = selectedGroupIds.includes(group.id)
-          const current = session?.sessionPrescriptions.find((item) => item.groupId === group.id)
-          const method = intensityMethods[group.id] ?? current?.intensityMethod ?? ''
+          const current = session?.sessionPrescriptions.find((item) => item.microcycleId === microcycleResolutions[group.id]?.microcycleId)
+          const method = intensityMethods[resolution?.microcycleId ?? ''] ?? current?.intensityMethod ?? ''
           const hasMicrocycles = group.microcycles.length > 0
           const resolution = microcycleResolutions[group.id]
-          const values = prescriptionValues[group.id] ?? {
+          const values = prescriptionValues[resolution?.microcycleId ?? ''] ?? {
             distanceKm: '',
             durationMin: '',
             elevationGain: '',
@@ -312,16 +312,16 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   )}
 
                   <div className='grid gap-4 sm:grid-cols-3'>
-                    <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(group.id, 'distanceKm', event.target.value)} />
-                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(group.id, 'durationMin', event.target.value)} />
-                    <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(group.id, 'elevationGain', event.target.value)} />
+                    <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'distanceKm', event.target.value)} />
+                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'durationMin', event.target.value)} />
+                    <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'elevationGain', event.target.value)} />
                   </div>
 
                   <SelectField
                     label={t('form.prescriptions.intensityMethod')}
                     name={`intensityMethod:${group.id}`}
                     value={method}
-                    onChange={(value) => setIntensityMethods((currentMethods) => ({ ...currentMethods, [group.id]: value }))}
+                    onChange={(value) => setIntensityMethods((currentMethods) => ({ ...currentMethods, [resolution?.microcycleId ?? '']: value }))}
                   >
                     <option value=''>{t('form.prescriptions.noIntensity')}</option>
                     <option value='hr_zone'>{t('form.prescriptions.hrZone')}</option>
@@ -329,19 +329,19 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                   </SelectField>
 
                   {method === 'hr_zone' && (
-                    <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(group.id, 'zone', value)} required>
+                    <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'zone', value)} required>
                       <option value=''>{t('form.prescriptions.selectZone')}</option>
                       {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                     </SelectField>
                   )}
                   {method === 'reference_percentage' && (
-                    <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(group.id, 'referencePercentage', value)} required>
+                    <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'referencePercentage', value)} required>
                       <option value=''>{t('form.prescriptions.selectPercentage')}</option>
                       {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
                     </SelectField>
                   )}
 
-                  <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(group.id, 'notes', value)} />
+                  <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'notes', value)} />
                 </div>
               )}
             </div>
