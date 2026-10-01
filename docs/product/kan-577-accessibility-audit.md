@@ -73,3 +73,17 @@ User screenshots from Athlete Home's realized-training dialog established that *
 The user approved a new, standalone story **KAN-579 — Eliminar con auditoría un entrenamiento realizado desde Home**: a compact icon-only trash button in edit mode, localized accessible name ES/EN, confirmation, authenticated manual-evidence-only soft deletion with durable audit (no physical purge), unchanged prescription and recalculated Home/history/stats/readiness. Creation mode has no delete action. KAN-579 relates to KAN-577 and **blocks KAN-578 T9** until implementation/verification or an explicit rescope decision. The issue owns domain/persistence/security decisions and TDD; T8 is not authorized to improvise them.
 
 2026-10-01: story and links recorded in Jira; **no server deletion implementation or migration performed**. The remaining independent self-assessment i18n/RPE display audit may proceed within T8. Historical known-zero RPE must not be recast as unknown without a product/domain decision.
+
+## T8 Athlete Home dialog — verified focused gates (2026-10-01)
+
+- **Automatic occurrence datetime**: operator reported GREEN for focused test and lint after commit `6271925d`. New registration initializes from the device-local clock at dialog opening; existing edits retain historic `performedAt`. Independent browser date/time recheck is not asserted here.
+- **Draft clearing is NOT record deletion**: user explicitly rejected the interpretation of `Limpiar formulario`; the provisional draft-clearing commit `e81525b3` is **not** accepted as completing the requested function. Supersession belongs to **KAN-579** with confirmed soft delete and audit. The provisional control may still be visible until that story lands.
+- **Self-assessment localization**: ES/EN translation of title, question and five feeling labels applied (commits `1adfd1d8`, `4c4f2e37`, `c103ef9e`, `68e6408b`). RPE 1–10, one UI action to clear to unrecorded, and no historical RPE 0 summary badge (commits `aab9ab02`, `5cc11a52`). Original capture conversion semantics of persisted `known: 0` are unchanged.
+- **Actual visual regression and repair**: user screenshot proved the unrecorded RPE slider unusable. The shared Slider renders thumbs per `value.length`; `value={[]}` yielded no thumb. Focused RED was confirmed; repair commit `008aca45` uses `value={[sliderValue]}` while retaining visual unrecorded state until explicit selection.
+- **GREEN**: operator subsequently reported `green` for `pn tdd tests/workouts/rpe-unrecorded-slider-thumb.test.ts tests/workouts/self-assessment-i18n-unassessed-rpe.test.ts`, `pn lint` and `pn i18n:check`. Counts were not supplied; do not invent them. **Browser recheck of slider interaction after repair remains unconfirmed** by this result.
+
+### Next browser evidence gates
+
+1. Athlete Home in ES and EN: unrecorded -> select RPE with mouse/touch/keyboard -> badge shows positive RPE -> press `—` -> badge absent, still operable; use a controlled manual test record, and avoid changing existing known-zero evidence inadvertently.
+2. Repeat at mobile width 360/390, dark/light and 200% zoom; check five feeling buttons for focus and clipping. Log actual viewport, language, theme and repro evidence.
+3. Continue other representative Coach/Athlete T8 screens in the preceding matrix. Do not move T8 into review on focused technical GREEN alone. KAN-579 remains a real blocking dependency of T9.
