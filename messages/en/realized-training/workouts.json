@@ -13,6 +13,7 @@
       "Rest": "Rest Day"
     },
     "map": {
+      "layers": "Layers",
       "elevationProfile": "Elevation profile",
       "maximum": "Max.",
       "minimum": "Min.",
