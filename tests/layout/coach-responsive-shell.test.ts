@@ -23,3 +23,10 @@ test('KAN-559 keeps Coach compression independent from Athlete accessibility roo
   assert.doesNotMatch(coachLayout, /font-size|text-size-adjust/)
   assert.doesNotMatch(coachSidebar, /font-size|text-size-adjust/)
 })
+
+
+test('KAN-563 keeps Coach content inside the viewport and starts the desktop sidebar collapsed', () => {
+  assert.match(coachLayout, /<SidebarProvider\s+defaultOpen=\{false\}>/)
+  assert.match(coachLayout, /<SidebarInset[^>]*className=['"][^'"]*min-w-0/)
+  assert.match(coachLayout, /<main[^>]*className=['"][^'"]*min-w-0/)
+})
