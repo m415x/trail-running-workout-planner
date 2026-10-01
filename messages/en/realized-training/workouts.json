@@ -13,6 +13,14 @@
       "Rest": "Rest Day"
     },
     "map": {
+      "elevationProfile": "Elevation profile",
+      "maximum": "Max.",
+      "minimum": "Min.",
+      "standard": "Standard",
+      "topographic": "Topographic",
+      "satellite": "Satellite",
+      "startPoint": "Starting point",
+      "endPoint": "Finish point",
       "loading": "Loading GPS map…",
       "meetingPoint": "Meeting point",
       "distance": "Distance",
