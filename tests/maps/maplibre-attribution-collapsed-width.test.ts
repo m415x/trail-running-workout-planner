@@ -13,7 +13,8 @@ test('KAN-576 constrains ONLY collapsed attribution to 29px beneath zoom', () =>
 
   // Expanded provider credits must not be clipped to the icon width.
   assert.doesNotMatch(styles, /\.ept-map-attribution\s*\{[^}]*max-width:\s*29px;/)
-  assert.match(map, /attributionToggle\.style\.marginInline\s*=\s*'auto'/)
+  // Native summary uses absolute positioning: no inline centering is needed.
+  assert.doesNotMatch(map, /attributionToggle\.style\.(?:marginInline|float|display)\s*=/)
   assert.ok(map.indexOf('new maplibregl.AttributionControl({') < map.indexOf('new maplibregl.NavigationControl({'))
 })
 
