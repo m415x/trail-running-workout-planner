@@ -54,5 +54,5 @@ test('ES/EN prescription guidance identifies explicitly selected microcycles rat
   const en = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages/en/planning/sessions.json'), 'utf8'))
   assert.match(es.Sessions.form.prescriptions.help, /microciclos/)
   assert.match(en.Sessions.form.prescriptions.help, /microcycles/i)
-  assert.match(source, /t\\('form\\.prescriptions\\.help'\\)/)
+  assert.match(source, /t\('form\.prescriptions\.help'\)/)
 })
