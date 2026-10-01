@@ -487,9 +487,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       const attribution = map.getContainer().querySelector<HTMLElement>('.maplibregl-ctrl-attrib')
       if (!attribution) return
 
-      // Scope the closed-only layout correction without changing the native
-      // summary positioning or the expanded credits layout.
-      attribution.classList.add('ept-map-attribution')
+      // Keep MapLibre's native control dimensions and disclosure styling.
       attribution.classList.remove('maplibregl-compact-show')
       attribution.removeAttribute('open')
     }
