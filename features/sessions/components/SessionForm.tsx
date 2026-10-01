@@ -272,10 +272,10 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
           <p className='rounded-md bg-muted/40 p-3 text-sm text-muted-foreground'>{t('form.prescriptions.noGroups')}</p>
         ) : groups.map((group) => {
           const selected = selectedGroupIds.includes(group.id)
-          const current = session?.sessionPrescriptions.find((item) => item.microcycleId === microcycleResolutions[group.id]?.microcycleId)
+          const resolution = microcycleResolutions[group.id]
+          const current = session?.sessionPrescriptions.find((item) => item.microcycleId === resolution?.microcycleId)
           const method = intensityMethods[resolution?.microcycleId ?? ''] ?? current?.intensityMethod ?? ''
           const hasMicrocycles = group.microcycles.length > 0
-          const resolution = microcycleResolutions[group.id]
           const values = prescriptionValues[resolution?.microcycleId ?? ''] ?? {
             distanceKm: '',
             durationMin: '',
