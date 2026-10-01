@@ -177,6 +177,17 @@
           ]
         }
       }
+    },
+    "assessment": {
+      "title": "Autoevaluación"
+    },
+    "feeling": {
+      "question": "¿Cómo te sentiste?",
+      "very_weak": "Muy débil",
+      "weak": "Débil",
+      "normal": "Normal",
+      "strong": "Fuerte",
+      "very_strong": "Muy fuerte"
     }
   }
 }
