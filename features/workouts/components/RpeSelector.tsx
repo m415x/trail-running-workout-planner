@@ -15,8 +15,10 @@ export interface RpeSelectorProps {
 
 export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
   const t = useTranslations('Workouts.rpe')
-  const sliderValue = value ?? 0
-  const currentRpe = RPE_LEVELS.find((level) => level.value === sliderValue) ?? RPE_LEVELS[0]
+  // Historical known RPE 0 remains persisted but is visually unassessed.
+  const unassessed = value === null || value === 0
+  const sliderValue = unassessed ? 1 : value
+  const currentRpe = RPE_LEVELS.find((level) => level.value === sliderValue) ?? RPE_LEVELS[1]
   const levelKey = String(currentRpe.value)
   const details = t.raw(`levels.${levelKey}.details`) as string[]
 
@@ -33,22 +35,22 @@ export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
               <span
                 className={cn(
                   'size-7 rounded-xl font-heading font-bold text-xs flex items-center justify-center shadow-xs transition-colors shrink-0',
-                  value === null ? 'bg-muted text-muted-foreground' : currentRpe.colorClass,
+                  unassessed ? 'bg-muted text-muted-foreground' : currentRpe.colorClass,
                 )}
               >
-                {value === null ? '—' : currentRpe.value}
+                {unassessed ? '—' : currentRpe.value}
               </span>
               <div className='flex flex-col'>
                 <span className='font-heading font-bold text-xs text-foreground leading-tight'>
-                  {value === null ? '—' : t(`levels.${levelKey}.label`)}
+                  {unassessed ? t('unrecorded') : t(`levels.${levelKey}.label`)}
                 </span>
-                {value !== null && (
+                {!unassessed && (
                   <span className='text-[10px] text-muted-foreground leading-tight'>{t(`levels.${levelKey}.description`)}</span>
                 )}
               </div>
             </div>
 
-            {value !== null && value !== 0 && (
+            {!unassessed && (
               <AccordionTrigger className='py-0 px-1 text-xs font-medium text-primary hover:text-primary/80 hover:no-underline gap-1'>
                 <span>{t('details')}</span>
               </AccordionTrigger>
@@ -57,12 +59,12 @@ export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
 
           <div className='px-1 py-1.5'>
             <Slider
-              value={[sliderValue]}
+              value={unassessed ? [] : [sliderValue]}
               onValueChange={(val) => {
                 const nextVal = Array.isArray(val) ? val[0] : val
                 if (typeof nextVal === 'number') onChange(nextVal)
               }}
-              min={0}
+              min={1}
               max={10}
               step={1}
               className='cursor-pointer py-1'
@@ -73,16 +75,13 @@ export function RpeSelector({ value = null, onChange }: RpeSelectorProps) {
                 <button type='button' className='rounded px-1 hover:text-foreground' onClick={() => onChange(null)} aria-label={t('unrecorded')}>
                   —
                 </button>
-                <button type='button' className='rounded px-1 hover:text-foreground' onClick={() => onChange(0)} aria-label={t('zero')}>
-                  0
-                </button>
               </div>
               <span>{t('maximum')}</span>
             </div>
           </div>
 
           <AccordionContent className='pt-1 pb-0'>
-            {value !== null && value !== 0 && details.length > 0 && (
+            {!unassessed && details.length > 0 && (
               <CustomCardInside className='p-2 rounded-lg bg-background/80 border border-border/40 text-xs space-y-1.5'>
                 <p className='font-semibold text-foreground text-[11px] flex items-center gap-1.5'>
                   <Info size={12} className='text-primary' />
