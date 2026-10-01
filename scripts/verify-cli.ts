@@ -43,20 +43,51 @@ export async function runVerifyCli(
   return report.success ? 0 : 1
 }
 
-export function executeVerifyStage(stage: VerificationStage, verbose: boolean): StageExecution {
+type VerifySpawnResult = {
+  status: number | null
+  stdout?: string | Buffer | null
+  stderr?: string | Buffer | null
+  signal?: NodeJS.Signals | null
+  error?: Error
+}
+
+type VerifySpawnOptions = {
+  shell: boolean
+  encoding: 'utf8'
+  stdio: 'inherit' | ['ignore', 'pipe', 'pipe']
+  maxBuffer: number
+}
+
+export interface VerifyProcessRuntime {
+  npmExecPath: string | undefined
+  nodeExecPath: string
+  platform: NodeJS.Platform
+  spawn: (command: string, args: string[], options: VerifySpawnOptions) => VerifySpawnResult
+}
+
+export function executeVerifyStage(
+  stage: VerificationStage,
+  verbose: boolean,
+  runtime: VerifyProcessRuntime = {
+    npmExecPath: process.env.npm_execpath,
+    nodeExecPath: process.execPath,
+    platform: process.platform,
+    spawn: (command, args, options) => spawnSync(command, args, options),
+  },
+): StageExecution {
   const started = performance.now()
-  const pnpmPath = process.env.npm_execpath
-  const command = pnpmPath ? process.execPath : process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+  const pnpmPath = runtime.npmExecPath
+  const command = pnpmPath ? runtime.nodeExecPath : runtime.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
   const args = pnpmPath ? [pnpmPath, 'run', stage.command] : ['run', stage.command]
-  const result = spawnSync(command, args, {
-    shell: !pnpmPath && process.platform === 'win32',
+  const result = runtime.spawn(command, args, {
+    shell: !pnpmPath && runtime.platform === 'win32',
     encoding: 'utf8',
     stdio: verbose ? 'inherit' : ['ignore', 'pipe', 'pipe'],
     maxBuffer: 64 * 1024 * 1024,
   })
-  const output = verbose
-    ? ''
-    : [result.stdout, result.stderr].filter(Boolean).join('\n')
+  const stdout = typeof result.stdout === 'string' ? result.stdout : result.stdout?.toString() ?? ''
+  const stderr = typeof result.stderr === 'string' ? result.stderr : result.stderr?.toString() ?? ''
+  const output = verbose ? '' : [stdout, stderr].filter(Boolean).join('\n')
   const diagnostic = result.error
     ? `\n${result.error.message}`
     : result.signal
