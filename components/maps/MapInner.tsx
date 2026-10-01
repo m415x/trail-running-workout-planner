@@ -296,38 +296,34 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         },
       }
 
-      const existingSource = map.getSource(TRAIL_SOURCE_ID)
-
-      if (existingSource) {
-        const geojsonSource = existingSource as maplibregl.GeoJSONSource
-        geojsonSource.setData(trackFeature)
-      } else {
-        map.addSource(TRAIL_SOURCE_ID, {
-          type: 'geojson',
-          data: trackFeature,
-        })
-      }
-
-      if (!map.getLayer(TRAIL_LAYER_ID)) {
-        map.addLayer({
-          id: TRAIL_LAYER_ID,
-          type: 'line',
-          source: TRAIL_SOURCE_ID,
-          layout: {
-            'line-cap': 'round',
-            'line-join': 'round',
-          },
-          paint: {
-            'line-color': '#ff0000',
-            'line-width': 8,
-            'line-opacity': 1,
-          },
-        })
-      }
-
       if (map.getLayer(TRAIL_LAYER_ID)) {
-        map.moveLayer(TRAIL_LAYER_ID)
+        map.removeLayer(TRAIL_LAYER_ID)
       }
+
+      if (map.getSource(TRAIL_SOURCE_ID)) {
+        map.removeSource(TRAIL_SOURCE_ID)
+      }
+
+      map.addSource(TRAIL_SOURCE_ID, {
+        type: 'geojson',
+        data: trackFeature,
+        lineMetrics: true,
+      })
+
+      map.addLayer({
+        id: TRAIL_LAYER_ID,
+        type: 'line',
+        source: TRAIL_SOURCE_ID,
+        layout: {
+          'line-cap': 'round',
+          'line-join': 'round',
+        },
+        paint: {
+          'line-color': '#ff0000',
+          'line-width': 8,
+          'line-opacity': 1,
+        },
+      })
     },
     [coordinates.length, validPoints],
   )
