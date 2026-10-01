@@ -30,7 +30,7 @@ export default async function PlanPage({ params }: PlanPageProps) {
   const groupCode = athlete.group ? `${athlete.group.categoryCode}${athlete.group.levelCode}` : null
 
   return (
-    <div className='space-y-4 pb-2'>
+    <div className='mx-auto w-full max-w-5xl space-y-4 pb-2'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
           <div><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold'>{t('currentWeek')}</h1></div>
