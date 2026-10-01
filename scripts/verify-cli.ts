@@ -77,8 +77,8 @@ export function executeVerifyStage(
 ): StageExecution {
   const started = performance.now()
   const pnpmPath = runtime.npmExecPath
-  const javaScriptLauncher = pnpmPath != null && /\\.(?:cjs|mjs|js)$/i.test(pnpmPath)
-  const nativeLauncher = pnpmPath != null && /\\.exe$/i.test(pnpmPath)
+  const javaScriptLauncher = pnpmPath != null && /\.(?:cjs|mjs|js)$/i.test(pnpmPath)
+  const nativeLauncher = pnpmPath != null && /\.exe$/i.test(pnpmPath)
 
   if (pnpmPath && !javaScriptLauncher && !nativeLauncher) {
     return {
