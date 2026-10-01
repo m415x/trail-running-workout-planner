@@ -39,7 +39,7 @@ export function SessionCalendarCard({ session, href, compact = false }: SessionC
         {session.location && (
           <p className={cn('flex min-w-0 items-center gap-1 text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>
             <MapPin className='size-3 shrink-0' />
-            <span className={cn('min-w-0 break-words [overflow-wrap:anywhere]', compact ? 'line-clamp-2' : 'line-clamp-2')}>{session.location.name}</span>
+            <span className='line-clamp-2 min-w-0 break-words [overflow-wrap:anywhere]'>{session.location.name}</span>
           </p>
         )}
 
