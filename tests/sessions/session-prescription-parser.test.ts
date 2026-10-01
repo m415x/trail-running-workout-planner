@@ -132,6 +132,29 @@ describe('prescripciones grupales de una sesión', () => {
     ])
   })
 
+  it('acepta submit por identidad de scope aun cuando las filas Base y Variant comparten grupo', () => {
+    const form = new FormData()
+    form.append('prescriptionMicrocycleId', 'base_week')
+    form.append('prescriptionMicrocycleId', 'variant_week')
+    form.set('prescriptionGroupId:base_week', 'group_a')
+    form.set('prescriptionGroupId:variant_week', 'group_a')
+    form.set('distanceKm:base_week', '14')
+    form.set('distanceKm:variant_week', '7')
+    form.set('intensityMethod:base_week', 'hr_zone')
+    form.set('zone:base_week', 'Z2')
+    form.set('intensityMethod:variant_week', 'reference_percentage')
+    form.set('referencePercentage:variant_week', '90')
+
+    const parsed = parseSessionPrescriptions(form)
+    assert.equal(parsed.success, true)
+    if (!parsed.success) return
+    assert.deepEqual(parsed.data.map(({ groupId, microcycleId, distanceKm, intensityMethod }) =>
+      ({ groupId, microcycleId, distanceKm, intensityMethod })), [
+      { groupId: 'group_a', microcycleId: 'base_week', distanceKm: 14, intensityMethod: 'hr_zone' },
+      { groupId: 'group_a', microcycleId: 'variant_week', distanceKm: 7, intensityMethod: 'reference_percentage' },
+    ])
+  })
+
   it('admite varios grupos y elimina selecciones duplicadas', () => {
     const form = prescriptionForm('group_s2', 'micro_s2')
     form.append('prescriptionGroupId', 'group_s2')
