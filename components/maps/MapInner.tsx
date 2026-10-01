@@ -575,11 +575,12 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
           type='button'
           aria-expanded={layerMenuOpen}
           aria-controls='basemap-layer-options'
+          aria-label={t('map.layers')}
+          title={t('map.layers')}
           onClick={() => setLayerMenuOpen((open) => !open)}
-          className='flex min-h-[var(--size-ept-touch-target)] items-center gap-2 rounded-xl border border-border bg-background/95 px-3 font-semibold text-foreground shadow-lg backdrop-blur-sm transition-colors hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          className='relative flex size-[29px] items-center justify-center rounded-md border border-border bg-background/95 p-0 text-foreground shadow-lg backdrop-blur-sm transition-colors before:absolute before:-inset-[7.5px] before:content-[""] hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
         >
           <Layers3 className='size-4 shrink-0' aria-hidden='true' />
-          {t('map.layers')}
         </button>
         {layerMenuOpen && (
           <div id='basemap-layer-options' className='flex w-max max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-xl border border-border bg-background/95 p-1.5 text-foreground shadow-lg backdrop-blur-sm'>
