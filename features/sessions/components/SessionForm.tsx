@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
-import { reconcileSessionFormMicrocycles } from '@/lib/sessions/session-microcycle-form-reconciliation'
 import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
@@ -86,7 +85,15 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const workoutTypeT = useTranslations('Workouts')
   const templateText = useTranslations('WorkoutTemplates')
   const [state, formAction, pending] = useActionState(session ? updateSession : createSession, initialState)
-  const [selectedGroupIds, setSelectedGroupIds] = useState(() => session?.sessionPrescriptions.map((item) => item.groupId) ?? [])
+  const [selectedMicrocycleIds, setSelectedMicrocycleIds] = useState<string[]>(() =>
+    session
+      ? session.sessionPrescriptions.map((item) => item.microcycleId)
+      : groups.flatMap((group) => {
+        const matching = group.microcycles.filter((microcycle) =>
+          microcycle.startDate <= (session?.date ?? '') && (session?.date ?? '') <= microcycle.endDate)
+        return matching.length === 1 ? [matching[0].id] : []
+      }),
+  )
   const [sessionDate, setSessionDate] = useState(session?.date ?? '')
   const [clientError, setClientError] = useState<string>()
   const [selectedWorkoutId, setSelectedWorkoutId] = useState(session?.workoutId ?? '')
@@ -106,8 +113,10 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [intensityMethods, setIntensityMethods] = useState<Record<string, string>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.microcycleId, item.intensityMethod ?? '']) ?? [],
   ))
-  const candidatesByGroup = Object.fromEntries(groups.map((group) => [group.id, group.microcycles]))
-  const microcycleResolutions = reconcileSessionFormMicrocycles(sessionDate, selectedGroupIds, candidatesByGroup)
+  const selectedScopes = groups.flatMap((group) =>
+    group.microcycles.filter((microcycle) => selectedMicrocycleIds.includes(microcycle.id))
+      .map((microcycle) => ({ groupId: group.id, microcycle })),
+  )
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
   const serverError = state.errorCode ? t(`form.errors.server.${state.errorCode}`, state.errorParams) : undefined
 
@@ -155,11 +164,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     setAppliedPrescriptionDefaults(defaults)
     setIntensityMethods((current) => ({
       ...current,
-      ...Object.fromEntries(Object.keys(intensityMethods).map((microcycleId) => [microcycleId, defaults.intensityMethod ?? ''])),
+      ...Object.fromEntries(selectedMicrocycleIds.map((microcycleId) => [microcycleId, defaults.intensityMethod ?? ''])),
     }))
     setPrescriptionValues((current) => ({
       ...current,
-      ...Object.fromEntries(Object.keys(prescriptionValues).map((microcycleId) => [microcycleId, valuesFromDefaults(defaults)])),
+      ...Object.fromEntries(selectedMicrocycleIds.map((microcycleId) => [microcycleId, valuesFromDefaults(defaults)])),
     }))
   }
 
@@ -192,31 +201,30 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     }))
   }
 
-  function toggleGroup(groupId: string, checked: boolean) {
-    setSelectedGroupIds((current) => checked ? [...current, groupId] : current.filter((id) => id !== groupId))
-    if (checked) {
-      setClientError(undefined)
-      if (appliedPrescriptionDefaults) {
-        setIntensityMethods((current) => ({
-          ...current,
-          [groupId]: appliedPrescriptionDefaults.intensityMethod ?? '',
-        }))
-        setPrescriptionValues((current) => ({
-          ...current,
-          [groupId]: current[groupId] ?? valuesFromDefaults(appliedPrescriptionDefaults),
-        }))
-      }
+  function toggleScope(microcycleId: string, checked: boolean) {
+    setSelectedMicrocycleIds((current) => checked
+      ? [...current.filter((id) => id !== microcycleId), microcycleId]
+      : current.filter((id) => id !== microcycleId))
+    setClientError(undefined)
+    if (checked && appliedPrescriptionDefaults) {
+      setIntensityMethods((current) => ({
+        ...current, [microcycleId]: current[microcycleId] ?? appliedPrescriptionDefaults.intensityMethod ?? '',
+      }))
+      setPrescriptionValues((current) => ({
+        ...current, [microcycleId]: current[microcycleId] ?? valuesFromDefaults(appliedPrescriptionDefaults),
+      }))
     }
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (selectedGroupIds.length > 0 && selectedGroupIds.every((groupId) => microcycleResolutions[groupId]?.status === 'resolved')) return
+    const invalid = selectedScopes.find(({ microcycle }) =>
+      sessionDate < microcycle.startDate || sessionDate > microcycle.endDate)
+    if (selectedScopes.length > 0 && !invalid && selectedScopes.length === selectedMicrocycleIds.length) return
 
     event.preventDefault()
-    const invalidGroupId = selectedGroupIds.find((groupId) => microcycleResolutions[groupId]?.status !== 'resolved')
-    const invalidGroup = groups.find((group) => group.id === invalidGroupId)
-    setClientError(invalidGroupId
-      ? t(`form.prescriptions.${microcycleResolutions[invalidGroupId]?.status === 'ambiguous' ? 'microcycleAmbiguous' : 'microcycleUnavailable'}`, { group: invalidGroup?.code ?? invalidGroupId })
+    const group = groups.find((item) => item.id === invalid?.groupId)
+    setClientError(invalid
+      ? t('form.prescriptions.microcycleUnavailable', { group: group?.code ?? invalid.groupId })
       : t('form.errors.groupRequired'))
     document.getElementById('session-form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
@@ -228,7 +236,17 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       {(clientError || serverError) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || serverError}</div>}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label={t('form.date')} name='date' type='date' value={sessionDate} onChange={(event) => { setSessionDate(event.target.value); setClientError(undefined) }} required />
+        <Field label={t('form.date')} name='date' type='date' value={sessionDate} onChange={(event) => {
+          const date = event.target.value
+          setSessionDate(date)
+          setClientError(undefined)
+          if (!session) {
+            setSelectedMicrocycleIds(groups.flatMap((group) => {
+              const matching = group.microcycles.filter((microcycle) => microcycle.startDate <= date && date <= microcycle.endDate)
+              return matching.length === 1 ? [matching[0].id] : []
+            }))
+          }
+        }} required />
         <Field label={t('form.title')} name='title' placeholder={t('form.titlePlaceholder')} defaultValue={session?.title} minLength={2} required />
       </div>
 
@@ -271,82 +289,80 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
         {groups.length === 0 ? (
           <p className='rounded-md bg-muted/40 p-3 text-sm text-muted-foreground'>{t('form.prescriptions.noGroups')}</p>
         ) : groups.map((group) => {
-          const selected = selectedGroupIds.includes(group.id)
-          const resolution = microcycleResolutions[group.id]
-          const current = session?.sessionPrescriptions.find((item) => item.microcycleId === resolution?.microcycleId)
-          const method = intensityMethods[resolution?.microcycleId ?? ''] ?? current?.intensityMethod ?? ''
-          const hasMicrocycles = group.microcycles.length > 0
-          const values = prescriptionValues[resolution?.microcycleId ?? ''] ?? {
-            distanceKm: '',
-            durationMin: '',
-            elevationGain: '',
-            zone: '',
-            referencePercentage: '',
-            notes: '',
-          }
-
+          const candidates = group.microcycles.filter((microcycle) =>
+            (microcycle.startDate <= sessionDate && sessionDate <= microcycle.endDate)
+            || selectedMicrocycleIds.includes(microcycle.id))
           return (
-            <div key={group.id} className='rounded-lg border p-4'>
-              <label className='flex items-center gap-2 font-medium'>
-                <input
-                  type='checkbox'
-                  name='prescriptionGroupId'
-                  value={group.id}
-                  checked={selected}
-                  disabled={!hasMicrocycles}
-                  onChange={(event) => toggleGroup(group.id, event.target.checked)}
-                  className='size-4 accent-primary'
-                />
-                {t('form.prescriptions.group')} {group.code}
-              </label>
-
-              {!hasMicrocycles ? (
-                <p className='mt-2 text-sm text-muted-foreground'>{t('form.prescriptions.noMicrocycles')}</p>
-              ) : selected && (
-                <div className='mt-4 space-y-4'>
-                  <input type='hidden' name={`microcycleId:${group.id}`} value={resolution?.microcycleId ?? ''} />
-                  {resolution?.status === 'resolved' ? (
-                    <p className='text-sm text-muted-foreground'>{t('form.prescriptions.microcycle')}: {group.microcycles.filter((microcycle) => microcycle.id === resolution.microcycleId).map((microcycle) => t('form.prescriptions.microcycleOption', { plan: microcycle.planTitle, week: microcycle.weekNumber, start: microcycle.startDate, end: microcycle.endDate })).join('')}</p>
-                  ) : (
-                    <p role='alert' className='text-sm text-destructive'>{t(`form.prescriptions.${resolution?.status === 'ambiguous' ? 'microcycleAmbiguous' : 'microcycleUnavailable'}`, { group: group.code })}</p>
-                  )}
-
-                  <div className='grid gap-4 sm:grid-cols-3'>
-                    <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'distanceKm', event.target.value)} />
-                    <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'durationMin', event.target.value)} />
-                    <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'elevationGain', event.target.value)} />
+            <div key={group.id} className='space-y-3 rounded-lg border p-4'>
+              <p className='font-medium'>{t('form.prescriptions.group')} {group.code}</p>
+              {candidates.length === 0 ? (
+                <p className='text-sm text-muted-foreground'>{t('form.prescriptions.noMicrocycles')}</p>
+              ) : candidates.map((microcycle) => {
+                const microcycleId = microcycle.id
+                const selected = selectedMicrocycleIds.includes(microcycleId)
+                const method = intensityMethods[microcycleId] ?? ''
+                const values = prescriptionValues[microcycleId] ?? {
+                  distanceKm: '', durationMin: '', elevationGain: '',
+                  zone: '', referencePercentage: '', notes: '',
+                }
+                const inDate = microcycle.startDate <= sessionDate && sessionDate <= microcycle.endDate
+                return (
+                  <div key={microcycleId} className='space-y-4 rounded-md border p-3'>
+                    <label className='flex items-start gap-2'>
+                      <input
+                        type='checkbox'
+                        checked={selected}
+                        disabled={!inDate}
+                        onChange={(event) => toggleScope(microcycleId, event.target.checked)}
+                        className='mt-1 size-4 accent-primary'
+                      />
+                      <span className='text-sm'>{t('form.prescriptions.microcycleOption', {
+                        plan: microcycle.planTitle, week: microcycle.weekNumber,
+                        start: microcycle.startDate, end: microcycle.endDate,
+                      })}</span>
+                    </label>
+                    {selected && (
+                      <>
+                        <input type='hidden' name='prescriptionGroupId' value={group.id} />
+                        <input type='hidden' name={`microcycleId:${group.id}`} value={microcycleId} />
+                        <input type='hidden' name={`microcycleId:${microcycleId}`} value={microcycleId} />
+                        <div className='grid gap-4 sm:grid-cols-3'>
+                          <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
+                          <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
+                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
+                        </div>
+                        <SelectField
+                          label={t('form.prescriptions.intensityMethod')}
+                          name={`intensityMethod:${group.id}`}
+                          value={method}
+                          onChange={(value) => setIntensityMethods((current) => ({ ...current, [microcycleId]: value }))}
+                        >
+                          <option value=''>{t('form.prescriptions.noIntensity')}</option>
+                          <option value='hr_zone'>{t('form.prescriptions.hrZone')}</option>
+                          <option value='reference_percentage'>{t('form.prescriptions.referencePercentage')}</option>
+                        </SelectField>
+                        {method === 'hr_zone' ? (
+                          <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(microcycleId, 'zone', value)} required>
+                            <option value=''>{t('form.prescriptions.selectZone')}</option>
+                            {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
+                          </SelectField>
+                        ) : <input type='hidden' name={`zone:${group.id}`} value='' />}
+                        {method === 'reference_percentage' ? (
+                          <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(microcycleId, 'referencePercentage', value)} required>
+                            <option value=''>{t('form.prescriptions.selectPercentage')}</option>
+                            {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
+                          </SelectField>
+                        ) : <input type='hidden' name={`referencePercentage:${group.id}`} value='' />}
+                        <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(microcycleId, 'notes', value)} />
+                      </>
+                    )}
                   </div>
-
-                  <SelectField
-                    label={t('form.prescriptions.intensityMethod')}
-                    name={`intensityMethod:${group.id}`}
-                    value={method}
-                    onChange={(value) => setIntensityMethods((currentMethods) => ({ ...currentMethods, [resolution?.microcycleId ?? '']: value }))}
-                  >
-                    <option value=''>{t('form.prescriptions.noIntensity')}</option>
-                    <option value='hr_zone'>{t('form.prescriptions.hrZone')}</option>
-                    <option value='reference_percentage'>{t('form.prescriptions.referencePercentage')}</option>
-                  </SelectField>
-
-                  {method === 'hr_zone' && (
-                    <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'zone', value)} required>
-                      <option value=''>{t('form.prescriptions.selectZone')}</option>
-                      {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
-                    </SelectField>
-                  )}
-                  {method === 'reference_percentage' && (
-                    <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'referencePercentage', value)} required>
-                      <option value=''>{t('form.prescriptions.selectPercentage')}</option>
-                      {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
-                    </SelectField>
-                  )}
-
-                  <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(resolution?.microcycleId ?? '', 'notes', value)} />
-                </div>
-              )}
+                )
+              })}
             </div>
           )
         })}
+
       </fieldset>
 
       <div className='flex justify-end gap-2'>
