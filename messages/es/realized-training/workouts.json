@@ -13,6 +13,14 @@
       "Rest": "Día de Descanso"
     },
     "map": {
+      "elevationProfile": "Perfil de elevación",
+      "maximum": "Máx.",
+      "minimum": "Mín.",
+      "standard": "Estándar",
+      "topographic": "Topográfico",
+      "satellite": "Satelital",
+      "startPoint": "Punto de largada",
+      "endPoint": "Punto de llegada",
       "loading": "Cargando mapa GPS…",
       "meetingPoint": "Punto de encuentro",
       "distance": "Distancia",
