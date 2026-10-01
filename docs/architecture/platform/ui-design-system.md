@@ -320,13 +320,15 @@ KAN-561 resolves the approved **MapLibre-first** benchmark with the following mi
 - user pan/zoom does not trigger track reconstruction or refit;
 - base-style replacement recreates the source/layer after `style.load` without refitting the route;
 - container-size changes are observed with `ResizeObserver` and forwarded to `map.resize()`;
+- MapLibre GL JS v6 uses an explicit worker URL under Next.js/Turbopack: `/maplibre/maplibre-gl-worker.mjs`;
+- `predev` and `prebuild` copy both `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` from the installed package into `public/maplibre/`;
 - normal component cleanup removes map listeners, disconnects the resize observer and removes the map instance.
 
 The altitude gradient is **outside the minimum gate**. KAN-561 deliberately removes altitude-segment/color-expression behavior from the benchmark so cartographic stability is evaluated independently from optional styling complexity.
 
-After correcting the reasonable MapLibre integration defects identified by the benchmark, the focused contract passes. MapLibre therefore remains the cartographic implementation for KAN-507.
+Runtime diagnosis with the Matagusanos GPX proved that the track input and bounds were valid while MapLibre stayed at `styleLoaded=false` and never reached `idle`. The source and line layer existed but the GeoJSON was not rendered until the worker was configured explicitly. After adding that worker integration, the same benchmark rendered the full LineString correctly in the manual walkthrough. MapLibre therefore remains the cartographic implementation for KAN-507.
 
-Historical Leaflet at commit `61cf855de565ce53932b8153e9865a8919730747` is compared **only if MapLibre still fails** this minimum benchmark after those integration defects are corrected. Any such comparison must use the **same benchmark and identical criteria**; Leaflet is not introduced merely as a parallel implementation or preference comparison.
+The repository commit `61cf855de565ce53932b8153e9865a8919730747`, previously referenced as a historical Leaflet implementation during refinement, was re-inspected during closure and also contains MapLibre. It is therefore **not Leaflet evidence** and must not be used as such. If a future regression again makes MapLibre fail the minimum benchmark after reasonable integration defects are corrected, any Leaflet comparison must first locate a real Leaflet implementation and then apply the **same benchmark and identical criteria**.
 
 ## Consumption contract
 
@@ -363,7 +365,7 @@ KAN-508 owns transversal application of the contracts defined by KAN-507. Its mi
 - forms and controls;
 - cards and surfaces;
 - loading, empty and error states;
-- responsive composition;
+- responsive composition, including the remaining Athlete Home/Plan/Profile width normalization against the wider Stats reference and the approved future Home two-column calendar/detail composition;
 - direct presentation literals that should consume semantic tokens or officialized shared primitives.
 
 KAN-508 may migrate consumers toward the existing semantic authority, but it must not reinterpret the foundations established here or create parallel token systems. Page-by-page cleanup remains outside KAN-507.
