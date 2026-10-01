@@ -27,7 +27,7 @@ Likewise a compact PASS means only that invoked commands exited successfully; it
 
 ## Diagnostics and Windows/Bash
 
-The CLI runs the package manager in sequence. When `npm_execpath` identifies pnpm's JS launcher, it invokes that launcher with the running Node executable to avoid Windows shell ambiguity. Otherwise it uses the local `pnpm` executable with the necessary Windows command handling. Normal output is captured and summarized; only bounded matching error lines, fallback tail text, or a no-output diagnostic are printed for failed stages. Use `-v` to observe all command output for diagnosis. The local operator uses Bash, but the runner must also support the underlying Windows process environment.
+The CLI runs the package manager in sequence. When `npm_execpath` identifies a `.js`, `.cjs`, or `.mjs` launcher, it invokes it with the running Node executable. For native `.exe` (notably Windows pnpm 12), it executes that path directly without a shell; unsupported launcher extensions are rejected. If `npm_execpath` is absent, it falls back to the platform `pnpm` invocation (Windows command shim with shell handling). Normal output is captured and summarized; only bounded matching error lines, fallback tail text, or a no-output diagnostic are printed for failed stages. Use `-v` to observe all command output for diagnosis. The local operator uses Bash, but the runner must also support the underlying Windows process environment.
 
 ## Regression / operational follow-ups
 
@@ -37,3 +37,7 @@ The CLI runs the package manager in sequence. When `npm_execpath` identifies pnp
 - `tests/tooling/verification-diagnostics.test.ts`: bounded excerpts and empty/no-pattern fallback.
 
 **KAN-473 close blocker:** KAN-569 must resolve the two pre-existing MapLibre KAN-561 benchmark failures. Until then, a red `pn verify` test phase truthfully reports the failing full test suite; it is not a KAN-568 CLI defect. KAN-508 follows KAN-568 and retains its independent KAN-359 typography contract issue.
+
+## 2026-10-01 integration evidence
+
+A real `pn verify --db` on Windows executed all six gates. TypeScript, ESLint, production Build, i18n and SQLite passed; `pn test` failed on precisely the two previously known KAN-561 MapLibre benchmark lifecycle tests. The runner correctly continued, printed bounded diagnostic names, reported overall FAIL and exited nonzero. Total reported duration was 444001 ms. This confirms the runner's failure aggregation and local scenario orchestration, **not** an overall GREEN suite. KAN-569 remains mandatory before epic KAN-473 closure. Full live verbose execution was not reported; verbose streaming was verified through injected-process tests.
