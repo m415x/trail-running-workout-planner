@@ -97,8 +97,8 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   return (
     <div className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6'>
       <div className='grid gap-4 lg:grid-cols-2 lg:items-start'>
-        <div className='sticky top-0 z-20 space-y-4 bg-background pb-2'>
-          <header>
+        <div className='lg:sticky lg:top-6 lg:self-start'>
+          <header className='sticky top-0 z-20 bg-background pb-4 lg:static lg:z-auto'>
             <HomeHeader team={team || fallbackTeam} athlete={athlete} />
           </header>
 
@@ -114,7 +114,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
           />
         </div>
 
-        <section className='space-y-4'>
+        <section className='space-y-4 lg:pt-18'>
           {currentWorkouts.length > 0 ? (
             <div className='space-y-4'>
               {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
