@@ -12,7 +12,7 @@ export function ProfileTab({ membershipStatus }: { membershipStatus?: React.Reac
   const t = useTranslations('AthleteProfile')
 
   return (
-    <div className='space-y-4'>
+    <div className='mx-auto w-full max-w-5xl space-y-4'>
       {/* Hero Header */}
       <ProfileHeader user={currentUser} />
 
