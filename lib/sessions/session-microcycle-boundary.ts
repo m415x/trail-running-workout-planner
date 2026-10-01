@@ -1,20 +1,18 @@
-import { resolveSessionMicrocycle, type SessionMicrocycleCandidate } from './session-microcycle-resolution'
+import type { SessionMicrocycleCandidate } from './session-microcycle-resolution'
 
 /**
- * Validates a selected microcycle against authoritative, group-scoped candidates.
+ * Validates the explicitly selected microcycle against group-scoped candidates.
  * Callers must load and scope candidates from persisted team/group/plan records.
+ * Another valid microcycle on the same date does not invalidate this selection.
  */
 export function validateSessionMicrocycleDate(
   groupId: string,
   sessionDate: string,
   selectedMicrocycleId: string,
   candidates: readonly SessionMicrocycleCandidate[],
-): { errorCode: 'microcycleDateMismatch' | 'microcycleDateAmbiguous'; errorParams: { group: string } } | null {
-  const resolution = resolveSessionMicrocycle(groupId, sessionDate, candidates)
-  if (resolution.status === 'ambiguous') {
-    return { errorCode: 'microcycleDateAmbiguous', errorParams: { group: groupId } }
-  }
-  if (resolution.status === 'unavailable' || resolution.microcycleId !== selectedMicrocycleId) {
+): { errorCode: 'microcycleDateMismatch'; errorParams: { group: string } } | null {
+  const selected = candidates.find((candidate) => candidate.id === selectedMicrocycleId)
+  if (!selected || sessionDate < selected.startDate || sessionDate > selected.endDate) {
     return { errorCode: 'microcycleDateMismatch', errorParams: { group: groupId } }
   }
   return null
