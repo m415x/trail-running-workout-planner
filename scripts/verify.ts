@@ -48,8 +48,14 @@ export function formatVerificationSummary(report: VerificationReport): string {
     rows.push(`${item.stage.label}  ${item.success ? 'PASS' : 'FAIL'}  ${item.durationMs}ms`)
     if (!item.success) {
       rows.push(`Command: pn ${item.stage.command} (exit ${item.exitCode})`)
-      const lines = item.output.split(/\r?\n/).filter(Boolean)
-      rows.push(...lines.filter((line) => /not ok|error|fail|✖/i.test(line)).slice(0, 12))
+      const lines = item.output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+      const matched = lines.filter((line) => /not ok|error|fail|✖/i.test(line))
+      const excerpt = matched.length > 0
+        ? matched.slice(0, 12)
+        : lines.length > 0
+          ? lines.slice(-8)
+          : ['Command failed without captured diagnostics']
+      rows.push(...excerpt)
     }
   }
   rows.push(`Result: ${report.success ? 'PASS' : 'FAIL'}`)
