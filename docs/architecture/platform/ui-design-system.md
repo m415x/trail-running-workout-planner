@@ -330,6 +330,12 @@ Runtime diagnosis with the Matagusanos GPX proved that the track input and bound
 
 The repository commit `61cf855de565ce53932b8153e9865a8919730747`, previously referenced as a historical Leaflet implementation during refinement, was re-inspected during closure and also contains MapLibre. It is therefore **not Leaflet evidence** and must not be used as such. If a future regression again makes MapLibre fail the minimum benchmark after reasonable integration defects are corrected, any Leaflet comparison must first locate a real Leaflet implementation and then apply the **same benchmark and identical criteria**.
 
+### KAN-569 — subsequent benchmark assertion reconciliation (2026-10-01)
+
+The two KAN-561 tests that later failed a complete gate were **structural regressions**: they referred to the former `renderTrackRef.current` callback although `MapInner` had already moved to `renderTrack` and a scoped `renderLoadedStyle` callback. KAN-569 updates the assertions, not production, to verify the same agreed invariants: loading guards on `isStyleLoaded()`, re-render on `style.load`, restoration of the GeoJSON layer/markers, and **no `fitBounds` on base-style replacement**. No skip or assertion removal changes the minimum benchmark.
+
+On the story branch, the operator confirmed `pn tdd tests/maps/maplibre-benchmark.test.ts` GREEN, then `pn verify --db` **all six gates PASS** (Tests, TypeScript, ESLint, Build, i18n, SQLite; 488988ms total). Browser walkthrough with an actual route also passed five checks: initial markers/LineString, independent pan and zoom, switching all three base styles without route/view loss, resizing, and repeated operations without console exceptions. Browser verification is manual; this work does **not** claim automated event-driven MapLibre E2E coverage or changes to MapLibre production lifecycle.
+
 ## Consumption contract
 
 The executable Design System remains Git-first and consumable without Figma or Storybook.
