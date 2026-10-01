@@ -59,7 +59,7 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
           <Badge variant='outline'>{tWorkouts(`types.${session.type}`)}</Badge>
         </div>
       </CardHeader>
-      <CardContent className='space-y-2 px-4 text-xs text-muted-foreground'>
+      <CardContent className='space-y-2 px-4 text-[length:var(--text-ept-body-compact)] text-muted-foreground'>
         <div className='rounded-lg bg-muted/40 p-2.5'>
           <p className='mb-1.5 font-medium text-foreground'>{t('session.volume')}</p>
           {hasVolume ? (
