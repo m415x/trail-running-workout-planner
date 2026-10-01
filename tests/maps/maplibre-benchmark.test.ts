@@ -44,3 +44,21 @@ test('KAN-561 resizes MapLibre when its container changes size and cleans up the
   assert.match(mapSource, /resizeObserver\.observe\(mapContainerRef\.current\)/)
   assert.match(mapSource, /resizeObserver\.disconnect\(\)/)
 })
+
+
+test('KAN-561 renders the benchmark only against a loaded style and retries deterministically', () => {
+  assert.match(
+    mapSource,
+    /if\s*\(!map\.isStyleLoaded\(\)\)\s*\{[\s\S]*map\.once\(['"]style\.load['"][\s\S]*renderTrackRef\.current\(map,\s*fit\)[\s\S]*return/,
+  )
+
+  assert.match(
+    mapSource,
+    /ensureTrackLayer\(map\)[\s\S]*renderMarkers\(map\)/,
+  )
+
+  assert.doesNotMatch(
+    mapSource,
+    /\/\/\s*if\s*\(!map\.isStyleLoaded\(\)\)/,
+  )
+})
