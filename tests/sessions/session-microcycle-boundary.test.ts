@@ -18,11 +18,20 @@ describe('session create/edit microcycle date boundary', () => {
     ]), { errorCode: 'microcycleDateMismatch', errorParams: { group: 'group_a' } })
   })
 
-  it('rejects an arbitrary selection when two microcycles overlap', () => {
-    assert.deepEqual(validateSessionMicrocycleDate('group_a', '2026-09-26', 'week_1', [
-      candidate('week_1', '2026-09-21', '2026-09-27'),
-      candidate('week_2', '2026-09-25', '2026-10-01'),
-    ]), { errorCode: 'microcycleDateAmbiguous', errorParams: { group: 'group_a' } })
+  it('accepts the explicitly selected planning scope when two same-group microcycles overlap', () => {
+    const candidates = [
+      candidate('base_week', '2026-09-21', '2026-09-27'),
+      candidate('variant_week', '2026-09-21', '2026-09-27'),
+    ]
+
+    assert.equal(
+      validateSessionMicrocycleDate('group_a', '2026-09-26', 'base_week', candidates),
+      null,
+    )
+    assert.equal(
+      validateSessionMicrocycleDate('group_a', '2026-09-26', 'variant_week', candidates),
+      null,
+    )
   })
 
   it('validates each group against its own candidates', () => {
