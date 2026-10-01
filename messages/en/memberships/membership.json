@@ -64,6 +64,8 @@
         "registerError": "Could not register the payment.",
         "registered": "Payment registered.",
         "title": "Payments",
+        "method": "Payment method",
+        "date": "Payment date",
         "paid": "Paid",
         "remaining": "Remaining",
         "cash": "Cash",
