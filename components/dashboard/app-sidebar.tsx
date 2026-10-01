@@ -27,6 +27,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from '@ui/sidebar'
 
 const navigationItems = [
@@ -81,6 +82,7 @@ export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { guardNavigation } = useDashboardDirtyFormGuard()
+  const { setOpenMobile } = useSidebar()
   const t = useTranslations('CoachShell')
 
   return (
@@ -114,7 +116,10 @@ export function AppSidebar() {
                           href={item.href}
                           onNavigate={(event) => {
                             event.preventDefault()
-                            guardNavigation(() => router.push(item.href))
+                            guardNavigation(() => {
+                              router.push(item.href)
+                              setOpenMobile(false)
+                            })
                           }}
                         />
                       }
