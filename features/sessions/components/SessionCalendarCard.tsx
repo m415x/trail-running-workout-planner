@@ -25,26 +25,26 @@ export function SessionCalendarCard({ session, href, compact = false }: SessionC
   const workoutTypeT = useTranslations('Workouts')
 
   return (
-    <Link href={href} className='block rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
-      <article className={cn('space-y-2 rounded-md border bg-background p-2.5 shadow-xs transition-colors hover:border-primary/50 hover:bg-accent/40', compact && 'space-y-1 p-2')}>
-        <div className='flex items-start justify-between gap-2'>
-          <p className={cn('font-semibold leading-snug', compact ? 'line-clamp-2 text-xs' : 'text-sm')}>
+    <Link href={href} className='block min-w-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+      <article className={cn('min-w-0 space-y-2 rounded-md border bg-background p-2.5 shadow-xs transition-colors hover:border-primary/50 hover:bg-accent/40', compact && 'space-y-1 p-2')}>
+        <div className={cn('flex min-w-0 flex-col items-start gap-1.5')}>
+          <p className={cn('font-semibold leading-snug min-w-0 break-words [overflow-wrap:anywhere]', compact ? 'line-clamp-2 text-xs' : 'text-sm')}>
             {session.title}
           </p>
-          <Badge variant='secondary' className={cn('shrink-0', compact ? 'px-1.5 py-0 text-[10px]' : 'text-[10px]')}>
+          <Badge variant='secondary' className={cn('max-w-full self-start whitespace-normal break-words text-left [overflow-wrap:anywhere]', compact ? 'px-1.5 py-0 text-[10px]' : 'text-[10px]')}>
             {workoutTypeT(`types.${session.type}`)}
           </Badge>
         </div>
 
         {session.location && (
-          <p className={cn('flex items-center gap-1 text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>
+          <p className={cn('flex min-w-0 items-center gap-1 text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>
             <MapPin className='size-3 shrink-0' />
-            <span className={compact ? 'truncate' : 'line-clamp-2'}>{session.location.name}</span>
+            <span className={cn('min-w-0 break-words [overflow-wrap:anywhere]', compact ? 'line-clamp-2' : 'line-clamp-2')}>{session.location.name}</span>
           </p>
         )}
 
         {session.notes && (
-          <p className={cn('line-clamp-2 text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>
+          <p className={cn('line-clamp-2 min-w-0 break-words [overflow-wrap:anywhere] text-muted-foreground', compact ? 'text-[11px]' : 'text-xs')}>
             {session.notes}
           </p>
         )}
