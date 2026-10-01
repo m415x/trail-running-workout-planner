@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import * as maplibregl from 'maplibre-gl'
 import type { Feature, LineString } from 'geojson'
 import type { StyleSpecification } from 'maplibre-gl'
@@ -15,7 +16,7 @@ maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
 
 const BASE_STYLES = {
   standard: {
-    name: '🗺️ Estándar',
+    icon: '🗺️',
 
     style: {
       version: 8,
@@ -42,7 +43,7 @@ const BASE_STYLES = {
   },
 
   topo: {
-    name: '⛰️ Topográfico',
+    icon: '⛰️',
 
     style: {
       version: 8,
@@ -69,7 +70,7 @@ const BASE_STYLES = {
   },
 
   satellite: {
-    name: '🛰️ Satelital',
+    icon: '🛰️',
 
     style: {
       version: 8,
@@ -159,6 +160,7 @@ interface MapInnerProps {
 /* -------------------------------------------------------------------------- */
 
 export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 13, trackPoints = [] }: MapInnerProps) {
+  const t = useTranslations('Workouts')
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -170,6 +172,12 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
   const [selectedLayer, setSelectedLayer] = useState<BaseStyleKey>('standard')
 
   const [mapReady, setMapReady] = useState(false)
+
+  const layerLabels: Record<BaseStyleKey, string> = {
+    standard: t('map.standard'),
+    topo: t('map.topographic'),
+    satellite: t('map.satellite'),
+  }
 
   /*
    * Coordenadas válidas para MapLibre.
@@ -216,7 +224,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         offset: 10,
       }).setHTML(`
           <div class="p-1 text-center font-sans text-xs">
-            <b>Punto de Largada</b>
+            <b>${t('map.startPoint')}</b>
             <br/>
             <span class="text-[10px] text-gray-500">
               ${startCoord[1].toFixed(5)},
@@ -249,7 +257,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
           offset: 10,
         }).setHTML(`
             <div class="p-1 text-center font-sans text-xs">
-              <b>Punto de Llegada</b>
+              <b>${t('map.endPoint')}</b>
               <br/>
               <span class="text-[10px] text-gray-500">
                 ${endCoord[1].toFixed(5)},
@@ -268,7 +276,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         markersRef.current.push(endMarker)
       }
     },
-    [clearMarkers, coordinates],
+    [clearMarkers, coordinates, t],
   )
 
   /* ---------------------------------------------------------------------- */
@@ -567,7 +575,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
                 : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
             }`}
           >
-            {BASE_STYLES[key].name}
+            {BASE_STYLES[key].icon} {layerLabels[key]}
           </button>
         ))}
       </div>
