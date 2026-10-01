@@ -12,6 +12,13 @@
       "Race": "Día de Carrera",
       "Rest": "Día de Descanso"
     },
+    "map": {
+      "loading": "Cargando mapa GPS…",
+      "meetingPoint": "Punto de encuentro",
+      "distance": "Distancia",
+      "elevationGain": "Desnivel positivo",
+      "maxGrade": "Pendiente máxima"
+    },
     "card": {
       "coachNote": "Nota del Entrenador",
       "logWorkoutButton": "Registrar entrenamiento realizado",
