@@ -479,7 +479,20 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     /* LOAD                                                                 */
     /* -------------------------------------------------------------------- */
 
-    const handleLoad = () => setMapReady(true)
+    // MapLibre's compact option keeps credits expanded until the first map interaction.
+    // Collapse only on initial load; the native info button can still reopen them.
+    const collapseInitialAttribution = () => {
+      const attribution = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+      if (!attribution) return
+
+      attribution.classList.remove('maplibregl-compact-show')
+      attribution.removeAttribute('open')
+    }
+
+    const handleLoad = () => {
+      collapseInitialAttribution()
+      setMapReady(true)
+    }
 
     map.on('load', handleLoad)
 
