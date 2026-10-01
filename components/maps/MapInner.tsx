@@ -453,6 +453,15 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     /* CONTROLS                                                             */
     /* -------------------------------------------------------------------- */
 
+    // Bottom-right controls are prepended by MapLibre: register attribution
+    // first so the navigation group appears above the compact info toggle.
+    map.addControl(
+      new maplibregl.AttributionControl({
+        compact: true,
+      }),
+      'bottom-right',
+    )
+
     map.addControl(
       new maplibregl.NavigationControl({
         showCompass: false,
@@ -468,13 +477,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       'bottom-left',
     )
 
-    map.addControl(
-      new maplibregl.AttributionControl({
-        compact: true,
-      }),
-      'bottom-right',
-    )
-
     /* -------------------------------------------------------------------- */
     /* LOAD                                                                 */
     /* -------------------------------------------------------------------- */
@@ -482,8 +484,18 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     // MapLibre's compact option keeps credits expanded until the first map interaction.
     // Collapse only on initial load; the native info button can still reopen them.
     const collapseInitialAttribution = () => {
-      const attribution = map.getContainer().querySelector('.maplibregl-ctrl-attrib')
+      const attribution = map.getContainer().querySelector<HTMLElement>('.maplibregl-ctrl-attrib')
       if (!attribution) return
+
+      // Center the native toggle under the 29px-wide zoom group. Do not cap
+      // the width of expanded attribution text or replace MapLibre's control.
+      attribution.style.minWidth = '29px'
+      const attributionToggle = attribution.querySelector<HTMLButtonElement>('.maplibregl-ctrl-attrib-button')
+      if (attributionToggle) {
+        attributionToggle.style.marginInline = 'auto'
+        attributionToggle.style.float = 'none'
+        attributionToggle.style.display = 'block'
+      }
 
       attribution.classList.remove('maplibregl-compact-show')
       attribution.removeAttribute('open')
