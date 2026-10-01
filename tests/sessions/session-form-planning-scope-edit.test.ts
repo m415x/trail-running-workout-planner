@@ -13,6 +13,6 @@ it('reconstructs editing state for every persisted microcycle rather than overwr
 it('renders an editable prescription row per selected microcycle, not a single card per group', () => {
   assert.match(source, /selectedMicrocycleIds/)
   assert.match(source, /group\.microcycles\.filter\(/)
-  assert.match(source, /microcycleId:\$\{microcycleId\}/)
+  assert.match(source, /prescriptionMicrocycleId' value=\{microcycleId\}/)
   assert.doesNotMatch(source, /groups\.map\(\(group\) => \{[\s\S]*?const current = session\?\.sessionPrescriptions\.find/)
 })
