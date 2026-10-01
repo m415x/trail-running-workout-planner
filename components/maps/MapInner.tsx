@@ -374,9 +374,12 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
 
   const renderTrack = useCallback(
     (map: maplibregl.Map, fit = false) => {
-      // if (!map.isStyleLoaded()) {
-      //   return
-      // }
+      if (!map.isStyleLoaded()) {
+        map.once('style.load', () => {
+          renderTrackRef.current(map, fit)
+        })
+        return
+      }
 
       ensureTrackLayer(map)
       renderMarkers(map)
@@ -501,10 +504,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     if (!mapReady || !map) {
       return
     }
-
-    // if (!map.isStyleLoaded()) {
-    //   return
-    // }
 
     /*
      * Actualizamos source/layer y markers.
