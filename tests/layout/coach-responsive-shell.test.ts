@@ -30,3 +30,13 @@ test('KAN-563 keeps Coach content inside the viewport and starts the desktop sid
   assert.match(coachLayout, /<SidebarInset[^>]*className=['"][^'"]*min-w-0/)
   assert.match(coachLayout, /<main[^>]*className=['"][^'"]*min-w-0/)
 })
+
+
+test('KAN-563 closes the Coach mobile sidebar only after guarded navigation proceeds', () => {
+  assert.match(coachSidebar, /useSidebar\(\)/)
+  assert.match(coachSidebar, /setOpenMobile\(false\)/)
+  assert.match(
+    coachSidebar,
+    /guardNavigation\(\(\)\s*=>\s*\{[\s\S]*router\.push\(item\.href\)[\s\S]*setOpenMobile\(false\)[\s\S]*\}\)/,
+  )
+})
