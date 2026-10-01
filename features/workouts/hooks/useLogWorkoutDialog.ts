@@ -112,8 +112,17 @@ export function useLogWorkoutDialog({
   }, [applyValues, initialInput, isOpen])
 
   const resetForm = useCallback(() => {
-    applyValues(initialInput)
-  }, [applyValues, initialInput])
+    setPerformedLocal('')
+    setSaveError(null)
+    setDistance('')
+    setGain('')
+    setTimeHr('')
+    setTimeMin('')
+    setTimeSec('')
+    setAvgHr('')
+    setAssessment({ feeling: null, rpe: null })
+    setAthleteNotes('')
+  }, [])
 
   const handleTimeSecChange = (value: string) => {
     if (value === '') {
