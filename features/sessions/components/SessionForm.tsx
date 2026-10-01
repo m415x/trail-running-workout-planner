@@ -306,7 +306,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                       <input
                         type='checkbox'
                         checked={selected}
-                        disabled={!inDate}
+                        disabled={!inDate && !selected}
                         onChange={(event) => toggleScope(microcycleId, event.target.checked)}
                         className='mt-1 size-4 accent-primary'
                       />
