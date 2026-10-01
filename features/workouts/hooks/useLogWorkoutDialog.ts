@@ -64,7 +64,7 @@ export function useLogWorkoutDialog({
   }), [])
 
   const valuesFromInput = useCallback((input: ManualRealizedTrainingClientInput | null | undefined) => {
-    if (!input) return emptyValues
+    if (!input) return { ...emptyValues, performedLocal: localDateTimeInput(new Date().toISOString()) }
     const duration = durationInputs(input.metrics.durationMin)
     return {
       distance: inputFromMetric(input.metrics.distanceKm),
