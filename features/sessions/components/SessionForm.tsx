@@ -317,17 +317,16 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                     </label>
                     {selected && (
                       <>
-                        <input type='hidden' name='prescriptionGroupId' value={group.id} />
-                        <input type='hidden' name={`microcycleId:${group.id}`} value={microcycleId} />
-                        <input type='hidden' name={`microcycleId:${microcycleId}`} value={microcycleId} />
+                        <input type='hidden' name='prescriptionMicrocycleId' value={microcycleId} />
+                        <input type='hidden' name={`prescriptionGroupId:${microcycleId}`} value={group.id} />
                         <div className='grid gap-4 sm:grid-cols-3'>
-                          <Field label={t('form.prescriptions.distance')} name={`distanceKm:${group.id}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
-                          <Field label={t('form.prescriptions.duration')} name={`durationMin:${group.id}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
-                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${group.id}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
+                          <Field label={t('form.prescriptions.distance')} name={`distanceKm:${microcycleId}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
+                          <Field label={t('form.prescriptions.duration')} name={`durationMin:${microcycleId}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
+                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${microcycleId}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
                         </div>
                         <SelectField
                           label={t('form.prescriptions.intensityMethod')}
-                          name={`intensityMethod:${group.id}`}
+                          name={`intensityMethod:${microcycleId}`}
                           value={method}
                           onChange={(value) => setIntensityMethods((current) => ({ ...current, [microcycleId]: value }))}
                         >
@@ -336,18 +335,18 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                           <option value='reference_percentage'>{t('form.prescriptions.referencePercentage')}</option>
                         </SelectField>
                         {method === 'hr_zone' ? (
-                          <SelectField label={t('form.prescriptions.zone')} name={`zone:${group.id}`} value={values.zone} onChange={(value) => updatePrescriptionValue(microcycleId, 'zone', value)} required>
+                          <SelectField label={t('form.prescriptions.zone')} name={`zone:${microcycleId}`} value={values.zone} onChange={(value) => updatePrescriptionValue(microcycleId, 'zone', value)} required>
                             <option value=''>{t('form.prescriptions.selectZone')}</option>
                             {['Z1', 'Z2', 'Z3', 'Z4', 'Z5'].map((zone) => <option key={zone}>{zone}</option>)}
                           </SelectField>
-                        ) : <input type='hidden' name={`zone:${group.id}`} value='' />}
+                        ) : <input type='hidden' name={`zone:${microcycleId}`} value='' />}
                         {method === 'reference_percentage' ? (
-                          <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${group.id}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(microcycleId, 'referencePercentage', value)} required>
+                          <SelectField label={t('form.prescriptions.percentage')} name={`referencePercentage:${microcycleId}`} value={values.referencePercentage} onChange={(value) => updatePrescriptionValue(microcycleId, 'referencePercentage', value)} required>
                             <option value=''>{t('form.prescriptions.selectPercentage')}</option>
                             {SESSION_REFERENCE_PERCENTAGES.map((percentage) => <option key={percentage} value={percentage}>{percentage}%</option>)}
                           </SelectField>
-                        ) : <input type='hidden' name={`referencePercentage:${group.id}`} value='' />}
-                        <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${group.id}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(microcycleId, 'notes', value)} />
+                        ) : <input type='hidden' name={`referencePercentage:${microcycleId}`} value='' />}
+                        <TextAreaField label={t('form.prescriptions.notes')} name={`prescriptionNotes:${microcycleId}`} rows={3} value={values.notes} onChange={(value) => updatePrescriptionValue(microcycleId, 'notes', value)} />
                       </>
                     )}
                   </div>
