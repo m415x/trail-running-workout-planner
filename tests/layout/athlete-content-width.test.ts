@@ -21,3 +21,29 @@ test('KAN-563 gives Athlete Home a wide two-column calendar and workout-detail c
     /<WeeklyCalendarCard[\s\S]*<div className=['"]space-y-2['"]>[\s\S]*currentWorkouts/,
   )
 })
+
+
+test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats', () => {
+  assert.match(home, /px-4[^'"]*py-6[^'"]*sm:px-6/)
+  assert.match(plan, /px-4[^'"]*py-6[^'"]*sm:px-6/)
+  assert.match(profile, /px-4[^'"]*py-6[^'"]*sm:px-6/)
+
+  assert.match(home, /text-2xl[^'"]*sm:text-3xl/)
+  assert.match(plan, /text-2xl[^'"]*sm:text-3xl/)
+  assert.match(profile, /text-2xl[^'"]*sm:text-3xl/)
+})
+
+test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detail scrolls', () => {
+  assert.match(home, /<header[^>]*>/)
+  assert.match(home, /sticky[^'"]*top-0/)
+  assert.match(home, /<WeeklyCalendarCard/)
+  assert.match(home, /<section[^>]*>/)
+  assert.match(home, /lg:grid-cols-2/)
+})
+
+test('KAN-563 compacts the Profile tab selector like the wide Athlete bottom navigation', () => {
+  assert.match(profile, /<TabsList[^>]*className=['"][^'"]*w-full[^'"]*sm:w-auto/)
+  assert.match(profile, /sm:mx-auto/)
+  assert.match(profile, /sm:gap-1/)
+  assert.match(profile, /sm:rounded-\[var\(--radius-ept-overlay\)\]/)
+})
