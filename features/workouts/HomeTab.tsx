@@ -95,24 +95,28 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   }
 
   return (
-    <div className='mx-auto w-full max-w-5xl space-y-2'>
-      <HomeHeader team={team || fallbackTeam} athlete={athlete} />
+    <div className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6'>
+      <div className='grid gap-4 lg:grid-cols-2 lg:items-start'>
+        <div className='sticky top-0 z-20 space-y-4 bg-background pb-2'>
+          <header>
+            <HomeHeader team={team || fallbackTeam} athlete={athlete} />
+          </header>
 
-      <div className='grid gap-2 lg:grid-cols-2 lg:items-start'>
-        <WeeklyCalendarCard
-          cycle={weeklyCycle}
-          weekDays={weekDays}
-          selectedDay={selectedDay}
-          selectedDate={selectedDate}
-          onSelectDay={onSelectDay}
-          onPrevWeek={onPrevWeek}
-          onNextWeek={onNextWeek}
-          onSelectDate={onSelectDate}
-        />
+          <WeeklyCalendarCard
+            cycle={weeklyCycle}
+            weekDays={weekDays}
+            selectedDay={selectedDay}
+            selectedDate={selectedDate}
+            onSelectDay={onSelectDay}
+            onPrevWeek={onPrevWeek}
+            onNextWeek={onNextWeek}
+            onSelectDate={onSelectDate}
+          />
+        </div>
 
-        <div className='space-y-2'>
+        <section className='space-y-4'>
           {currentWorkouts.length > 0 ? (
-            <div className='space-y-2'>
+            <div className='space-y-4'>
               {currentWorkouts.map((workout, index) => workout.type === 'Race' ? (
                 <RaceCard
                   key={workout.id}
@@ -148,7 +152,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
               trackPoints={TrackData?.trackPoints ?? []}
             />
           )}
-        </div>
+        </section>
       </div>
     </div>
   )
