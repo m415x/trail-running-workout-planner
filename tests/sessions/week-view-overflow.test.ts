@@ -20,5 +20,5 @@ test('KAN-577 session location and notes stay readable and links remain keyboard
   assert.match(card, /<MapPin/)
   assert.match(card, /min-w-0 break-words/)
   assert.match(card, /session.notes/)
-  assert.match(card, /workoutTypeT\(`types.${session.type}`\)/)
+  assert.ok(card.includes('workoutTypeT(`types.${session.type}`)'))
 })
