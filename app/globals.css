@@ -318,3 +318,11 @@ html {
   user-select: none !important;
   -webkit-touch-callout: none !important;
 }
+
+/* KAN-576: the native attribution disclosure must align beneath the 29px zoom
+   control while collapsed, without constraining expanded provider credits. */
+.ept-map-attribution:not(.maplibregl-compact-show) {
+  width: 29px;
+  max-width: 29px;
+  box-sizing: border-box;
+}
