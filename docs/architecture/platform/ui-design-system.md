@@ -365,7 +365,7 @@ KAN-508 owns transversal application of the contracts defined by KAN-507. Its mi
 - forms and controls;
 - cards and surfaces;
 - loading, empty and error states;
-- responsive composition, including the remaining Athlete Home/Plan/Profile width normalization against the wider Stats reference and the approved future Home two-column calendar/detail composition;
+- responsive composition on remaining feature surfaces that have not yet been normalized against the KAN-507 role-specific shell and spacing contracts;
 - direct presentation literals that should consume semantic tokens or officialized shared primitives.
 
 KAN-508 may migrate consumers toward the existing semantic authority, but it must not reinterpret the foundations established here or create parallel token systems. Page-by-page cleanup remains outside KAN-507.
