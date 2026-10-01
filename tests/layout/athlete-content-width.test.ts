@@ -20,7 +20,7 @@ test('KAN-563 gives Athlete Home a wide two-column calendar and workout-detail c
   assert.match(home, /grid[^'"]*gap-4[^'"]*lg:grid-cols-2/)
   assert.match(
     home,
-    /<WeeklyCalendarCard[\s\S]*<section className=['"]space-y-4['"]>[\s\S]*currentWorkouts/,
+    /<WeeklyCalendarCard[\s\S]*<section className=['"][^'"]*space-y-4[^'"]*['"]>[\s\S]*currentWorkouts/,
   )
 })
 
