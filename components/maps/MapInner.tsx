@@ -327,64 +327,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         },
       })
 
-      if (process.env.NODE_ENV === 'development') {
-        requestAnimationFrame(() => {
-          const style = map.getStyle()
-          const source = map.getSource(TRAIL_SOURCE_ID)
-          const layer = map.getLayer(TRAIL_LAYER_ID)
-          const rendered = map.queryRenderedFeatures(undefined, {
-            layers: [TRAIL_LAYER_ID],
-          })
-
-          console.group('[KAN-561 MapLibre benchmark]')
-          console.log('styleLoaded', map.isStyleLoaded())
-          console.log('coordinateCount', trackFeature.geometry.coordinates.length)
-          console.log('firstCoordinate', trackFeature.geometry.coordinates[0])
-          console.log(
-            'lastCoordinate',
-            trackFeature.geometry.coordinates[trackFeature.geometry.coordinates.length - 1],
-          )
-          console.log('sourcePresent', Boolean(source))
-          console.log('layerPresent', Boolean(layer))
-          console.log('layer', layer)
-          console.log(
-            'layerOrder',
-            style.layers?.map((candidate) => candidate.id),
-          )
-          console.log('renderedFeatureCount', rendered.length)
-          console.log('renderedFeatures', rendered)
-          console.groupEnd()
-        })
-
-        map.once('idle', () => {
-          const idleRendered = map.queryRenderedFeatures(undefined, {
-            layers: [TRAIL_LAYER_ID],
-          })
-          const sourceLoaded = map.isSourceLoaded(TRAIL_SOURCE_ID)
-          const sourceFeatures = map.querySourceFeatures(TRAIL_SOURCE_ID)
-
-          console.group('[KAN-561 MapLibre idle diagnostics]')
-          console.log('mapLoaded', map.loaded())
-          console.log('styleLoaded', map.isStyleLoaded())
-          console.log('sourceLoaded', sourceLoaded)
-          console.log('sourceFeatureCount', sourceFeatures.length)
-          console.log('renderedFeatureCount', idleRendered.length)
-          console.log('firstCoordinate', JSON.stringify(trackFeature.geometry.coordinates[0]))
-          console.log(
-            'lastCoordinate',
-            JSON.stringify(
-              trackFeature.geometry.coordinates[
-                trackFeature.geometry.coordinates.length - 1
-              ],
-            ),
-          )
-          console.log(
-            'layerOrder',
-            JSON.stringify(map.getStyle().layers?.map((candidate) => candidate.id)),
-          )
-          console.groupEnd()
-        })
-      }
     },
     [coordinates.length, validPoints],
   )
@@ -524,41 +466,8 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     /* -------------------------------------------------------------------- */
 
     const handleLoad = () => setMapReady(true)
-    const handleError = (event: maplibregl.ErrorEvent) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.error('[KAN-561 MapLibre error]', event.error)
-      }
-    }
-    const handleStyleData = () => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[KAN-561 styledata]', {
-          loaded: map.loaded(),
-          styleLoaded: map.isStyleLoaded(),
-        })
-      }
-    }
-    const handleSourceData = (event: maplibregl.MapSourceDataEvent) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[KAN-561 sourcedata]', {
-          sourceId: event.sourceId,
-          sourceDataType: event.sourceDataType,
-          isSourceLoaded: event.isSourceLoaded,
-          mapLoaded: map.loaded(),
-          styleLoaded: map.isStyleLoaded(),
-        })
-      }
-    }
-    const handleDataAbort = (event: unknown) => {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('[KAN-561 dataabort]', event)
-      }
-    }
 
     map.on('load', handleLoad)
-    map.on('error', handleError)
-    map.on('styledata', handleStyleData)
-    map.on('sourcedata', handleSourceData)
-    map.on('dataabort', handleDataAbort)
 
     /* -------------------------------------------------------------------- */
     /* CLEANUP                                                              */
@@ -570,10 +479,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       resizeObserver.disconnect()
 
       map.off('load', handleLoad)
-      map.off('error', handleError)
-      map.off('styledata', handleStyleData)
-      map.off('sourcedata', handleSourceData)
-      map.off('dataabort', handleDataAbort)
 
       map.remove()
 
