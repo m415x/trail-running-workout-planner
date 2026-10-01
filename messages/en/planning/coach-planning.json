@@ -114,6 +114,44 @@
       },
       "generationMissing": "Week {week}: a volume or intensity target is missing.",
       "generationFailed": "Week {week}: the proposal could not be generated."
+    },
+    "sessionGeneration": {
+      "title": "Weekly session generation",
+      "description": "Set a fixed weekly frequency to repeat the same number of sessions each week. Leave it blank to let the generator choose 3, 4 or 5 sessions based on the microcycle and its load. The usual pattern guides the proposal but does not constrain changes needed for planning or recovery.",
+      "frequencyLabel": "Fixed sessions per week",
+      "automatic": "Automatic",
+      "frequencyHelp": "Blank = automatic · 3, 4 or 5 = fixed weekly frequency.",
+      "patternTitle": "Usual group training pattern",
+      "patternHelp": "Select the days the group usually trains and assign each a typical session role.",
+      "roleAriaLabel": "Usual role for {day}",
+      "minDays": "Select at least 3 usual training days."
+    },
+    "sessionPreview": {
+      "title": "Session preview",
+      "description": "A proposal generated from each microcycle. Review it before saving.",
+      "saved": "Saved",
+      "notSaved": "Not saved",
+      "sessions": "{count, plural, one {# session} other {# sessions}}",
+      "ready": "Complete load strategy, intensity and weekly configuration to generate a preview.",
+      "empty": "No microcycles are available for session generation.",
+      "week": "Week {count}",
+      "warnings": "{count, plural, one {# warning} other {# warnings}}",
+      "referencePercentage": "of reference",
+      "noZone": "No zone",
+      "competitionNote": "Competition · excluded from taper training volume.",
+      "review": "Review the proposal",
+      "saveHelp": "Save this proposal to publish it to the calendar."
+    },
+    "microcycleType": {
+      "ariaLabel": "Microcycle type",
+      "types": {
+        "base": "Base",
+        "development": "Development",
+        "shock": "Shock",
+        "deload": "Deload",
+        "tapering": "Taper",
+        "race": "Race"
+      }
     }
   }
 }
