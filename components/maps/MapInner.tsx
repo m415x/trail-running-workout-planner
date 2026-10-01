@@ -353,6 +353,35 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
           console.log('renderedFeatures', rendered)
           console.groupEnd()
         })
+
+        map.once('idle', () => {
+          const idleRendered = map.queryRenderedFeatures(undefined, {
+            layers: [TRAIL_LAYER_ID],
+          })
+          const sourceLoaded = map.isSourceLoaded(TRAIL_SOURCE_ID)
+          const sourceFeatures = map.querySourceFeatures(TRAIL_SOURCE_ID)
+
+          console.group('[KAN-561 MapLibre idle diagnostics]')
+          console.log('mapLoaded', map.loaded())
+          console.log('styleLoaded', map.isStyleLoaded())
+          console.log('sourceLoaded', sourceLoaded)
+          console.log('sourceFeatureCount', sourceFeatures.length)
+          console.log('renderedFeatureCount', idleRendered.length)
+          console.log('firstCoordinate', JSON.stringify(trackFeature.geometry.coordinates[0]))
+          console.log(
+            'lastCoordinate',
+            JSON.stringify(
+              trackFeature.geometry.coordinates[
+                trackFeature.geometry.coordinates.length - 1
+              ],
+            ),
+          )
+          console.log(
+            'layerOrder',
+            JSON.stringify(map.getStyle().layers?.map((candidate) => candidate.id)),
+          )
+          console.groupEnd()
+        })
       }
     },
     [coordinates.length, validPoints],
