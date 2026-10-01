@@ -320,7 +320,7 @@ KAN-561 resolves the approved **MapLibre-first** benchmark with the following mi
 - user pan/zoom does not trigger track reconstruction or refit;
 - base-style replacement recreates the source/layer after `style.load` without refitting the route;
 - container-size changes are observed with `ResizeObserver` and forwarded to `map.resize()`;
-- MapLibre GL JS v6 uses an explicit worker URL under Next.js/Turbopack: `/maplibre/maplibre-gl-worker.mjs`;
+- MapLibre GL JS v6 uses `maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')` under Next.js/Turbopack so GeoJSON worker processing is explicit and deterministic;
 - `predev` and `prebuild` copy both `maplibre-gl-worker.mjs` and `maplibre-gl-shared.mjs` from the installed package into `public/maplibre/`;
 - normal component cleanup removes map listeners, disconnects the resize observer and removes the map instance.
 
