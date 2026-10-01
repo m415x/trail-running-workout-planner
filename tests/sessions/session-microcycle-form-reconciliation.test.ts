@@ -28,6 +28,22 @@ describe('session form microcycle reconciliation', () => {
     }), { a: { status: 'ambiguous', microcycleId: '' } })
   })
 
+  it('retains both explicitly selected Base and Variant scopes for the same group', () => {
+    const candidates = [
+      week('base_week', '2026-09-21', '2026-09-27'),
+      week('variant_week', '2026-09-21', '2026-09-27'),
+    ]
+    assert.deepEqual(
+      reconcileSessionFormMicrocycles('2026-09-23', ['a', 'a'], { a: candidates }, {
+        a: ['base_week', 'variant_week'],
+      }),
+      {
+        base_week: { status: 'resolved', microcycleId: 'base_week' },
+        variant_week: { status: 'resolved', microcycleId: 'variant_week' },
+      },
+    )
+  })
+
   it('reconciles only selected groups when group selection changes', () => {
     assert.deepEqual(reconcileSessionFormMicrocycles('2026-09-23', ['b'], {
       a: [week('a_1', '2026-09-21', '2026-09-27')],
