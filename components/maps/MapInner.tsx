@@ -487,17 +487,9 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       const attribution = map.getContainer().querySelector<HTMLElement>('.maplibregl-ctrl-attrib')
       if (!attribution) return
 
-      // Center the native toggle under the 29px-wide zoom group. Do not cap
-      // the width of expanded attribution text or replace MapLibre's control.
+      // Scope the closed-only layout correction without changing the native
+      // summary positioning or the expanded credits layout.
       attribution.classList.add('ept-map-attribution')
-      attribution.style.minWidth = '29px'
-      const attributionToggle = attribution.querySelector<HTMLButtonElement>('.maplibregl-ctrl-attrib-button')
-      if (attributionToggle) {
-        attributionToggle.style.marginInline = 'auto'
-        attributionToggle.style.float = 'none'
-        attributionToggle.style.display = 'block'
-      }
-
       attribution.classList.remove('maplibregl-compact-show')
       attribution.removeAttribute('open')
     }
