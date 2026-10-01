@@ -16,7 +16,9 @@ test('KAN-561 records the deterministic MapLibre benchmark and decision gate dur
     'map.resize()',
     'style.load',
     'MapLibre',
-    'Leaflet',
+    'setWorkerUrl',
+    'maplibre-gl-worker.mjs',
+    'maplibre-gl-shared.mjs',
     '61cf855de565ce53932b8153e9865a8919730747',
   ]) {
     assert.ok(
@@ -26,14 +28,18 @@ test('KAN-561 records the deterministic MapLibre benchmark and decision gate dur
   }
 })
 
-test('KAN-561 keeps altitude styling outside the minimum gate and Leaflet comparison conditional', () => {
+test('KAN-561 keeps altitude styling outside the minimum gate and corrects the stale Leaflet reference', () => {
   assert.match(
     designSystemDoc,
     /altitude gradient[\s\S]*(outside|not part of)[\s\S]*(minimum|gate)/i,
   )
   assert.match(
     designSystemDoc,
-    /Leaflet[\s\S]*(only|solely)[\s\S]*(if|when)[\s\S]*MapLibre[\s\S]*(still|continues)[\s\S]*(fail|failing)/i,
+    /previously referenced as a historical Leaflet implementation[\s\S]*also contains MapLibre/i,
+  )
+  assert.match(
+    designSystemDoc,
+    /not Leaflet evidence/i,
   )
   assert.match(
     designSystemDoc,
