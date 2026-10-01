@@ -18,13 +18,13 @@ interface MicrocycleTypeFormProps {
   currentType: MicrocycleType
 }
 
-const typeOptions: Array<{ value: MicrocycleType; label: string }> = [
-  { value: 'base', label: 'Base' },
-  { value: 'development', label: 'Desarrollo' },
-  { value: 'shock', label: 'Choque' },
-  { value: 'deload', label: 'Descarga' },
-  { value: 'tapering', label: 'Tapering' },
-  { value: 'race', label: 'Competencia' },
+const typeOptions: MicrocycleType[] = [
+  'base',
+  'development',
+  'shock',
+  'deload',
+  'tapering',
+  'race',
 ]
 
 const initialState: MicrocycleTypeFormState = {}
@@ -49,12 +49,12 @@ export function MicrocycleTypeForm({
           name='type'
           defaultValue={currentType}
           required
-          aria-label='Tipo de microciclo'
+          aria-label={t('microcycleType.ariaLabel')}
           aria-invalid={Boolean(state.error)}
           className='h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50'
         >
           {typeOptions.map((option) => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option} value={option}>{t(`microcycleType.types.${option}`)}</option>
           ))}
         </select>
         <Button type='submit' size='sm' variant='outline' disabled={pending}>
