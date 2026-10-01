@@ -16,3 +16,8 @@ it('renders an editable prescription row per selected microcycle, not a single c
   assert.match(source, /prescriptionMicrocycleId' value=\{microcycleId\}/)
   assert.doesNotMatch(source, /groups\.map\(\(group\) => \{[\s\S]*?const current = session\?\.sessionPrescriptions\.find/)
 })
+
+it('keeps an out-of-date selected scope removable after the session date changes', () => {
+  assert.match(source, /disabled=\{!inDate && !selected\}/)
+  assert.match(source, /selectedMicrocycleIds\.includes\(microcycle\.id\)/)
+})
