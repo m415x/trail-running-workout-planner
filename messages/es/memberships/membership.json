@@ -64,6 +64,8 @@
         "registerError": "No se pudo registrar el pago.",
         "registered": "Pago registrado.",
         "title": "Pagos",
+        "method": "Medio de pago",
+        "date": "Fecha del pago",
         "paid": "Pagado",
         "remaining": "Restante",
         "cash": "Efectivo",
