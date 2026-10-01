@@ -225,10 +225,10 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       const startPopup = new maplibregl.Popup({
         offset: 10,
       }).setHTML(`
-          <div class="p-1 text-center font-sans text-xs">
+          <div class="p-1 text-center font-sans text-xs text-slate-900">
             <b>${t('map.startPoint')}</b>
             <br/>
-            <span class="text-[10px] text-gray-500">
+            <span class="text-[10px] text-slate-600">
               ${startCoord[1].toFixed(5)},
               ${startCoord[0].toFixed(5)}
             </span>
@@ -258,10 +258,10 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         const endPopup = new maplibregl.Popup({
           offset: 10,
         }).setHTML(`
-            <div class="p-1 text-center font-sans text-xs">
+            <div class="p-1 text-center font-sans text-xs text-slate-900">
               <b>${t('map.endPoint')}</b>
               <br/>
-              <span class="text-[10px] text-gray-500">
+              <span class="text-[10px] text-slate-600">
                 ${endCoord[1].toFixed(5)},
                 ${endCoord[0].toFixed(5)}
               </span>
@@ -437,6 +437,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
        * el scroll del mouse no hace zoom.
        */
       scrollZoom: false,
+      attributionControl: false,
     })
 
     mapRef.current = map
@@ -465,6 +466,13 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         unit: 'metric',
       }),
       'bottom-left',
+    )
+
+    map.addControl(
+      new maplibregl.AttributionControl({
+        compact: true,
+      }),
+      'bottom-right',
     )
 
     /* -------------------------------------------------------------------- */
