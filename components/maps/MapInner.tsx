@@ -375,7 +375,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     (map: maplibregl.Map, fit = false) => {
       if (!map.isStyleLoaded()) {
         map.once('style.load', () => {
-          renderTrackRef.current(map, fit)
+          renderTrack(map, fit)
         })
         return
       }
@@ -394,12 +394,6 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     },
     [ensureTrackLayer, renderMarkers, fitTrack],
   )
-
-  const renderTrackRef = useRef(renderTrack)
-
-  useEffect(() => {
-    renderTrackRef.current = renderTrack
-  }, [renderTrack])
 
   /* ---------------------------------------------------------------------- */
   /* INITIALIZE MAP                                                          */
@@ -538,7 +532,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
        * después de que MapLibre haya terminado
        * de cargar el nuevo estilo.
        */
-      renderTrackRef.current(map, false)
+      renderTrack(map, false)
     }
 
     map.once('style.load', handleStyleLoad)
@@ -548,7 +542,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     return () => {
       map.off('style.load', handleStyleLoad)
     }
-  }, [mapReady, selectedLayer])
+  }, [mapReady, selectedLayer, renderTrack])
 
   /* ---------------------------------------------------------------------- */
   /* UI                                                                      */
