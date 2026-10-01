@@ -50,3 +50,48 @@ test('KAN-568 verbose streams process output and process errors remain failed', 
   assert.equal(calls[0].stdio, 'inherit')
   assert.equal(calls[0].shell, false)
 })
+
+test('KAN-568 invokes Windows pnpm.exe directly instead of passing the executable to Node', () => {
+  const calls: Array<{ command: string; args: string[]; options: Record<string, unknown> }> = []
+  const result = executeVerifyStage(
+    { label: 'Tests', command: 'test' },
+    false,
+    {
+      npmExecPath: 'C:/Users/usuario/AppData/Local/pnpm/pnpm.exe',
+      nodeExecPath: 'C:/Program Files/nodejs/node.exe',
+      platform: 'win32',
+      spawn: (command, args, options) => {
+        calls.push({ command, args, options })
+        return { status: 0, stdout: 'All tests passed', stderr: '', signal: null }
+      },
+    },
+  )
+
+  assert.equal(result.exitCode, 0)
+  assert.deepEqual(calls.map(({ command, args }) => ({ command, args })), [{
+    command: 'C:/Users/usuario/AppData/Local/pnpm/pnpm.exe',
+    args: ['run', 'test'],
+  }])
+  assert.equal(calls[0].options.shell, false)
+})
+
+test('KAN-568 rejects an unsupported npm_execpath extension instead of assuming it is JavaScript', () => {
+  const calls: string[] = []
+  const result = executeVerifyStage(
+    { label: 'Tests', command: 'test' },
+    false,
+    {
+      npmExecPath: 'C:/tools/pnpm/unknown.bin',
+      nodeExecPath: 'C:/Program Files/nodejs/node.exe',
+      platform: 'win32',
+      spawn: (command) => {
+        calls.push(command)
+        return { status: 0, stdout: '', stderr: '', signal: null }
+      },
+    },
+  )
+
+  assert.equal(result.exitCode, 1)
+  assert.match(result.output, /unsupported.*launcher|unsupported.*extension/i)
+  assert.deepEqual(calls, [])
+})
