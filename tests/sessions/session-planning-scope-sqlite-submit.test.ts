@@ -29,7 +29,6 @@ function submitted(scopes: Array<{ id: string; km: string; method: string; zone?
   }
   const result = parseSessionPrescriptions(form)
   assert.equal(result.success, true)
-  if (!result.success) throw new Error(result.errorCode)
   assert.equal(validateSessionMicrocyclePrescriptions(sessionDate, result.data, candidates), null)
   return result.data
 }
