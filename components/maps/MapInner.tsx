@@ -548,7 +548,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         })
       }
     }
-    const handleDataAbort = (event: maplibregl.MapDataEvent) => {
+    const handleDataAbort = (event: unknown) => {
       if (process.env.NODE_ENV === 'development') {
         console.warn('[KAN-561 dataabort]', event)
       }
