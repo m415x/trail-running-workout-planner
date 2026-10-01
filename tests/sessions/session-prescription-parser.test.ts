@@ -180,7 +180,7 @@ it('identifica durationMin como duración grupal planificada en el copy Coach ES
 
     assert.match(
       form,
-      /name={`durationMin:\${group\.id}`} type='number' min='1' step='1'/,
+      /name={`durationMin:\${microcycleId}`} type='number' min='1' step='1'/,
     )
     assert.equal(
       es.Sessions.form.errors.server.invalidVolume,
