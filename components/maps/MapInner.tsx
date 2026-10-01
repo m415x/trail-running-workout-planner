@@ -373,24 +373,26 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
 
   const renderTrack = useCallback(
     (map: maplibregl.Map, fit = false) => {
+      const renderLoadedStyle = () => {
+        ensureTrackLayer(map)
+        renderMarkers(map)
+
+        /*
+         * Solamente hacemos fitBounds cuando realmente corresponde.
+         *
+         * Pan y zoom NO llaman esta función.
+         */
+        if (fit) {
+          fitTrack(map)
+        }
+      }
+
       if (!map.isStyleLoaded()) {
-        map.once('style.load', () => {
-          renderTrack(map, fit)
-        })
+        map.once('style.load', renderLoadedStyle)
         return
       }
 
-      ensureTrackLayer(map)
-      renderMarkers(map)
-
-      /*
-       * Solamente hacemos fitBounds cuando realmente corresponde.
-       *
-       * Pan y zoom NO llaman esta función.
-       */
-      if (fit) {
-        fitTrack(map)
-      }
+      renderLoadedStyle()
     },
     [ensureTrackLayer, renderMarkers, fitTrack],
   )
