@@ -398,7 +398,9 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       }
 
       if (!map.isStyleLoaded()) {
-        map.once('style.load', renderLoadedStyle)
+        // style.load can precede raster source readiness; idle belongs to the
+        // current style and avoids waiting until another basemap selection.
+        map.once('idle', renderLoadedStyle)
         return
       }
 
