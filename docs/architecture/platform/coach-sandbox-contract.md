@@ -68,3 +68,7 @@ diagnostics. Negative tests explicitly check non-execution on mismatches.
 ## T2 command boundary (KAN-584)
 
 `scripts/coach-sandbox-db.ts` exports `runCoachSandboxOperation` as a **library boundary**, not as an executable CLI. It rejects missing URLs, resets and unknown operations before forwarding to the connection-bound identity guard. There is no production or cloud fallback and no database operation is run by importing this file. The pre-existing `pn db:supabase:migrate` script is unchanged and **not secured by this boundary**. Creating a working migration or seed command requires a separately reviewed physical identity mechanism and integration; do not execute the legacy direct migration command as a Coach sandbox operation.
+
+## T2 pinned PostgreSQL identity validator
+
+`verifyLocalSandboxPhysicalIdentity` now compares a query-provided database name, local sandbox marker and PostgreSQL cluster system identifier against a separately trusted pin. An absent pin is rejected **before** the query; mismatches and database driver errors fail closed without echoing connection details. The cluster identifier must be independently obtained and approved, not copied from the target query response. Tests use an injected identity reader: **no actual SQL query, running local Supabase, or secured Drizzle CLI entrypoint is implied**. Those integration boundaries remain pending under T2/T3. Existing production deployment commands are unchanged.
