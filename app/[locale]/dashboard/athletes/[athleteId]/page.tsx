@@ -262,15 +262,15 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                   {t('membershipManagementTitle')}
                 </AccordionTrigger>
                 <AccordionContent className='px-4 pb-4 pt-2'>
-                <AthleteBillingTermsForm
-                  athleteId={athleteId}
-                  locale={es ? 'es' : 'en'}
-                  model={membershipTermsForm}
-                  monthlyCharges={membership.monthlyCharges}
-                  reductionHistory={membership.reductionHistory}
-                  extensionHistory={membership.extensionHistory}
-                  paymentHistory={membership.paymentHistory}
-                />
+                  <AthleteBillingTermsForm
+                    athleteId={athleteId}
+                    locale={es ? 'es' : 'en'}
+                    model={membershipTermsForm}
+                    monthlyCharges={membership.monthlyCharges}
+                    reductionHistory={membership.reductionHistory}
+                    extensionHistory={membership.extensionHistory}
+                    paymentHistory={membership.paymentHistory}
+                  />
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
