@@ -1,3 +1,4 @@
+import { PgDialect } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { SQL } from 'drizzle-orm/sql'
 
@@ -55,7 +56,7 @@ export function createVerifiedDrizzleMigrationHost<Session>(
         execute: statement => tx.execute(statement),
       })
       await callback({
-        session: tx.session,
+        session: tx._.session,
         execute: statement => query(statement) as Promise<readonly IdentityRow[]>,
       })
     }),
@@ -71,14 +72,15 @@ export function createVerifiedDrizzleMigrationHost<Session>(
 export function createInstalledPostgresJsDrizzleMigrationHost(
   database: PostgresJsDatabase,
 ) {
-  type Session = Parameters<typeof database.dialect.migrate>[1]
+  const dialect = new PgDialect()
+  type Session = Parameters<typeof dialect.migrate>[1]
   return {
     dialect: {
       migrate: async (
         migrations: CanonicalMigration[],
         session: Session,
         config: { migrationsFolder: string },
-      ) => database.dialect.migrate(migrations, session, config),
+      ) => dialect.migrate(migrations, session, config),
     },
     transaction: (callback: (transaction: {
       session: Session
