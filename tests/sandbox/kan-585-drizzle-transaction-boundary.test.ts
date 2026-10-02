@@ -11,6 +11,15 @@ const migrationFolder = '/workspace/project/drizzle/supabase'
 function fixture(physical = pin) {
   const events: string[] = []
   const session = { unique: 'outer-drizzle-transaction-session' }
+  type IdentityRow = {
+    database?: string | null
+    clusterSystemIdentifier?: string | null
+    environmentMarker?: string | null
+  }
+  type FakeTransaction = {
+    session: typeof session
+    execute: (sql: string) => Promise<IdentityRow[]>
+  }
   const migrations = [{ sql: ['CREATE TABLE "synthetic_only" ("id" text)'], hash: 'synthetic-hash', folderMillis: 1, bps: true }]
   return {
     events,
@@ -24,7 +33,7 @@ function fixture(physical = pin) {
           assert.deepEqual(config, { migrationsFolder: migrationFolder })
         },
       },
-      transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
+      transaction: async (callback: (tx: FakeTransaction) => Promise<unknown>) => {
         events.push('begin')
         try {
           const result = await callback({
