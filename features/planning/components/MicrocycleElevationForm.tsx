@@ -48,8 +48,8 @@ export function MicrocycleElevationForm({
             max='100000'
             step='1'
             defaultValue={currentElevationGain ?? ''}
-            placeholder='Sin D+'
-            aria-label='Desnivel positivo objetivo en metros'
+            placeholder={t('microcycleEditor.elevationPlaceholder')}
+            aria-label={t('microcycleEditor.elevationAria')}
             aria-invalid={Boolean(state.error)}
             className='w-28 pr-7'
           />
@@ -58,7 +58,7 @@ export function MicrocycleElevationForm({
         <Button type='submit' size='sm' disabled={pending}>
           {pending ? t('saving') : t('save')}
         </Button>
-        <Badge variant='outline'>{currentSource === 'manual' ? 'Manual' : 'Generado'}</Badge>
+        <Badge variant='outline'>{currentSource === 'manual' ? t('microcycleEditor.sourceManual') : t('microcycleEditor.sourceGenerated')}</Badge>
       </div>
 
       {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
