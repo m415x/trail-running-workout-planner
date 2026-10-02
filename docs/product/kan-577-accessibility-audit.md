@@ -155,4 +155,9 @@ The same user also showed **“Preparación general”, “Preparación específ
 
 ### T8 proposal warning summary — focused implementation (2026-10-01)
 
-Operator confirmed **RED** for `pn tdd:red tests/planning/session-generation-summary-warning-locale.test.ts`, added in `66916c68`. Applied one-line markup correction in `features/planning/components/SessionGenerationPreview.tsx` commit `eca1fddc`: the summary item now uses raw `warning` as React key and `formatWarning(warning)` as *visible text*. Event-level warning localization, non-matching fallback, serialized `proposal`, generator output and persistence are unchanged. Remote source readback confirmed all five targeted assertions. **Focused GREEN/lint and ES/EN browser recheck remain pending**. Spanish mesocycle titles/objectives are a distinct persisted content provenance question.
+Operator confirmed **RED** for `pn tdd:red tests/planning/session-generation-summary-warning-locale.test.ts`, added in `66916c68`. Applied one-line markup correction in `features/planning/components/SessionGenerationPreview.tsx` commit `eca1fddc`: the summary item now uses raw `warning` as React key and `formatWarning(warning)` as *visible text*. Event-level warning localization, non-matching fallback, serialized `proposal`, generator output and persistence are unchanged. Remote source readback confirmed all five targeted assertions. **Operator confirmed focused tests GREEN and ESLint PASS.** Browser confirmation specifically for the corrected Review the proposal summary is still pending. Spanish mesocycle titles/objectives are a distinct persisted content provenance question.
+
+
+### Mesocycle text investigation
+
+The plan detail reads persisted mesocycle.title and mesocycle.objective without translation. The macrocycle generator produces Spanish default text in some paths. The precise phrases reported may originate in saved or historic records; the current source does not establish their provenance. Preserve those values until the policy for localizing generated text versus coach-authored text is defined.
