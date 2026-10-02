@@ -6,7 +6,7 @@ import { readApprovedLocalSandboxPin } from '../../lib/sandbox/local-cluster-pin
 const trustedDocument = JSON.stringify({
   kind: 'coach-supabase-local',
   projectId: 'trail-running-workout-planner',
-  approvedClusterSystemIdentifier: '7692192345457819685',
+  approvedClusterSystemIdentifier: '1234567890123456789',
   approvedByOperator: true,
 })
 
@@ -15,16 +15,16 @@ test('KAN-585 loads an explicitly approved local pin from a caller-supplied prot
   const pin = await readApprovedLocalSandboxPin({
     readTrustedDocument: async () => { reads++; return trustedDocument },
   })
-  assert.equal(pin, '7692192345457819685')
+  assert.equal(pin, '1234567890123456789')
   assert.equal(reads, 1)
 })
 
 test('KAN-585 denies a missing explicit operator approval or a copied SQL row', async () => {
   for (const document of [
-    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'trail-running-workout-planner', approvedClusterSystemIdentifier: '7692192345457819685' }),
-    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'trail-running-workout-planner', approvedClusterSystemIdentifier: '7692192345457819685', approvedByOperator: false }),
-    JSON.stringify({ database: 'postgres', clusterSystemIdentifier: '7692192345457819685', environmentMarker: 'trail-running-coach-local-sandbox' }),
-    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'different-project', approvedClusterSystemIdentifier: '7692192345457819685', approvedByOperator: true }),
+    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'trail-running-workout-planner', approvedClusterSystemIdentifier: '1234567890123456789' }),
+    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'trail-running-workout-planner', approvedClusterSystemIdentifier: '1234567890123456789', approvedByOperator: false }),
+    JSON.stringify({ database: 'postgres', clusterSystemIdentifier: '1234567890123456789', environmentMarker: 'trail-running-coach-local-sandbox' }),
+    JSON.stringify({ kind: 'coach-supabase-local', projectId: 'different-project', approvedClusterSystemIdentifier: '1234567890123456789', approvedByOperator: true }),
   ]) {
     await assert.rejects(
       () => readApprovedLocalSandboxPin({ readTrustedDocument: async () => document }),
