@@ -38,8 +38,8 @@ export function MicrocycleNotesForm({
         rows={3}
         maxLength={2000}
         defaultValue={currentNotes ?? ''}
-        placeholder='Agregá indicaciones u observaciones para esta semana.'
-        aria-label='Notas del microciclo'
+        placeholder={t('microcycleEditor.notesPlaceholder')}
+        aria-label={t('microcycleEditor.notesAria')}
         aria-invalid={Boolean(state.error)}
         className='w-full resize-y rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30'
       />
@@ -47,7 +47,7 @@ export function MicrocycleNotesForm({
       <div className='flex items-start justify-between gap-2'>
         <div>
           {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
-          {!state.error && <p className='text-xs text-muted-foreground'>Dejá el campo vacío para eliminar la nota.</p>}
+          {!state.error && <p className='text-xs text-muted-foreground'>{t('microcycleEditor.notesHelp')}</p>}
         </div>
         <Button type='submit' size='sm' variant='outline' disabled={pending}>
           {pending ? t('saving') : t('saveNotes')}
