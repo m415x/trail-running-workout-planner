@@ -183,6 +183,17 @@
       "noIntense": "No intense sessions",
       "intenseSessions": "{count, plural, one {# intense session} other {# intense sessions}}",
       "recoveryDays": "{count, plural, one {# recovery day} other {# recovery days}}"
+    },
+    "microcycleEditor": {
+      "startDateAria": "Microcycle start date",
+      "endDateAria": "Microcycle end date",
+      "notesPlaceholder": "Add guidance or notes for this week.",
+      "notesAria": "Microcycle notes",
+      "notesHelp": "Leave the field empty to remove the note.",
+      "elevationPlaceholder": "No elevation gain",
+      "elevationAria": "Target elevation gain in meters",
+      "sourceManual": "Manual",
+      "sourceGenerated": "Generated"
     }
   }
 }
