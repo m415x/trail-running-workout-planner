@@ -64,3 +64,7 @@ diagnostics. Negative tests explicitly check non-execution on mismatches.
 - Reset remains denied regardless of any confirmation text until T7 defines
   and tests a bounded object allowlist, actual destination identity and
   operation-specific confirmation. No cloud deletion or managed-schema reset.
+
+## T2 command boundary (KAN-584)
+
+`scripts/coach-sandbox-db.ts` exports `runCoachSandboxOperation` as a **library boundary**, not as an executable CLI. It rejects missing URLs, resets and unknown operations before forwarding to the connection-bound identity guard. There is no production or cloud fallback and no database operation is run by importing this file. The pre-existing `pn db:supabase:migrate` script is unchanged and **not secured by this boundary**. Creating a working migration or seed command requires a separately reviewed physical identity mechanism and integration; do not execute the legacy direct migration command as a Coach sandbox operation.
