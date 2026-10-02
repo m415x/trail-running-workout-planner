@@ -226,22 +226,6 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
                 </AccordionItem>
               </Accordion>
             )}
-            <section className='space-y-3'>
-              <h3 className='font-medium'>{locale === 'en' ? 'Materialized charges' : 'Cuotas materializadas'}</h3>
-              {membership.charges.length === 0 ? (
-                <p className='rounded-lg border border-dashed p-4 text-sm text-muted-foreground'>{membership.emptyCharges}</p>
-              ) : (
-                <div className='space-y-3'>
-                  {membership.charges.map((charge) => (
-                    <dl key={charge.period} className='grid gap-3 rounded-lg border p-4 text-sm sm:grid-cols-3'>
-                      <DetailItem label={locale === 'en' ? 'Period' : 'Período'} value={charge.period} fallback='—' />
-                      <DetailItem label={locale === 'en' ? 'Amount' : 'Importe'} value={charge.amountDue} fallback='—' />
-                      <DetailItem label={locale === 'en' ? 'Due date' : 'Vencimiento'} value={formatDate(charge.effectiveDueDate, locale, '—')} fallback='—' />
-                    </dl>
-                  ))}
-                </div>
-              )}
-            </section>
             <MembershipAccountState
               locale={es ? 'es' : 'en'}
               labels={{
@@ -272,15 +256,24 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
               economicHistory={membership.economicHistory}
               debtExperience={membership.debtExperience}
             />
-            <AthleteBillingTermsForm
-              athleteId={athleteId}
-              locale={es ? 'es' : 'en'}
-              model={membershipTermsForm}
-              monthlyCharges={membership.monthlyCharges}
-              reductionHistory={membership.reductionHistory}
-              extensionHistory={membership.extensionHistory}
-              paymentHistory={membership.paymentHistory}
-            />
+            <Accordion>
+              <AccordionItem value='membership-management' className='rounded-lg border border-border'>
+                <AccordionTrigger className='px-4 py-3 text-base font-semibold hover:no-underline'>
+                  {t('membershipManagementTitle')}
+                </AccordionTrigger>
+                <AccordionContent className='px-4 pb-4 pt-2'>
+                <AthleteBillingTermsForm
+                  athleteId={athleteId}
+                  locale={es ? 'es' : 'en'}
+                  model={membershipTermsForm}
+                  monthlyCharges={membership.monthlyCharges}
+                  reductionHistory={membership.reductionHistory}
+                  extensionHistory={membership.extensionHistory}
+                  paymentHistory={membership.paymentHistory}
+                />
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
                 </CardContent>
               </AccordionContent>
             </AccordionItem>
