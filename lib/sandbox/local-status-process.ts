@@ -2,6 +2,7 @@ import { execFile as nodeExecFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
 import { checkLocalCoachSandboxStatus } from './local-status'
+import { resolveProjectSupabaseBinary } from './supabase-executable'
 
 const execFileAsync = promisify(nodeExecFile)
 
@@ -34,19 +35,30 @@ const defaultExecFile: StatusProcessExecutor = async (command, args, options) =>
 export async function checkLocalCoachSandboxStatusWithProcess(request: {
   repositoryRoot: string
   execFile?: StatusProcessExecutor
+  resolveBinary?: (repositoryRoot: string) => string
 }): Promise<{ available: true }> {
   return checkLocalCoachSandboxStatus({
     repositoryRoot: request.repositoryRoot,
-    run: (command, args, { cwd }) => (request.execFile ?? defaultExecFile)(
-      command,
-      args,
-      {
+    run: (command, args, { cwd }) => {
+      // Tests can inject their own executor; production must resolve the
+      // native project binary rather than spawning a Windows .cmd shim.
+      const executable = request.resolveBinary
+        ? request.resolveBinary(cwd)
+        : request.execFile
+          ? command
+          : resolveProjectSupabaseBinary({ repositoryRoot: cwd, platform: process.platform })
+
+      return (request.execFile ?? defaultExecFile)(
+        executable,
+        args,
+        {
         cwd,
         shell: false,
         timeout: 15000,
         maxBuffer: 65536,
         windowsHide: true,
-      },
-    ),
+        },
+      )
+    },
   })
 }
