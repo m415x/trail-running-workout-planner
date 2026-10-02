@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { drizzle } from 'drizzle-orm/postgres-js'
+import type { Sql } from 'postgres'
 
-import { createVerifiedDrizzleMigrationHost } from '../../lib/sandbox/drizzle-migration-host'
+import { createInstalledPostgresJsDrizzleMigrationHost } from '../../lib/sandbox/drizzle-migration-host'
 import { createLocalSandboxDrizzleMigrationHost } from '../../lib/sandbox/local-drizzle-host'
 
 const directUrl = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
@@ -36,9 +37,9 @@ test('KAN-585 constructs real Drizzle postgres.js transaction host without begin
 })
 
 test('KAN-585 actual installed postgres.js Drizzle API satisfies guarded migration host types without DB I/O', () => {
-  const compileTimeIntegration = (client: Parameters<typeof drizzle>[0]) => {
+  const compileTimeIntegration = (client: Sql) => {
     const database = drizzle(client)
-    return createVerifiedDrizzleMigrationHost(database)
+    return createInstalledPostgresJsDrizzleMigrationHost(database)
   }
   assert.equal(typeof compileTimeIntegration, 'function')
 })
