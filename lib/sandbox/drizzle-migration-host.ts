@@ -56,7 +56,7 @@ export function createVerifiedDrizzleMigrationHost<Session>(
         execute: statement => tx.execute(statement),
       })
       await callback({
-        session: tx._.session,
+        session: tx.session,
         execute: statement => query(statement) as Promise<readonly IdentityRow[]>,
       })
     }),
@@ -90,7 +90,7 @@ export function createInstalledPostgresJsDrizzleMigrationHost(
         execute: statement => tx.execute(statement),
       })
       await callback({
-        session: tx.session,
+        session: tx._.session,
         execute: statement => query(statement) as Promise<readonly IdentityRow[]>,
       })
     }),
