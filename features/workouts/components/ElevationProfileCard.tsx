@@ -1,7 +1,7 @@
 'use client'
 
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import { useLocale } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { Mountain } from 'lucide-react'
 import { WorkoutProps } from '@/types'
 import { CustomCard } from '@ui/custom/card-containers'
@@ -37,6 +37,7 @@ export interface ElevationChartProps {
 
 export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
   const locale = useLocale()
+  const t = useTranslations('Workouts')
   const regionalContext = resolveApplicationRegionalContext({
     language: locale === 'en' ? 'en' : 'es',
   })
@@ -45,13 +46,13 @@ export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: El
   return (
     <CustomCard>
       {/* Header row */}
-      <CardHeader title='Perfil de Elevación' icon={Mountain}>
+      <CardHeader title={t('map.elevationProfile')} icon={Mountain}>
         <div className='flex justify-center gap-3 text-[11px]'>
           <span className='text-muted-foreground'>
-            Máx <span className='text-foreground font-semibold'>{formatNumber(elevMax, regionalContext.presentationLocale)} m</span>
+            {t('map.maximum')} <span className='text-foreground font-semibold'>{formatNumber(elevMax, regionalContext.presentationLocale)} m</span>
           </span>
           <span className='text-muted-foreground'>
-            Mín <span className='text-foreground font-semibold'>{formatNumber(elevMin, regionalContext.presentationLocale)} m</span>
+            {t('map.minimum')} <span className='text-foreground font-semibold'>{formatNumber(elevMin, regionalContext.presentationLocale)} m</span>
           </span>
         </div>
       </CardHeader>

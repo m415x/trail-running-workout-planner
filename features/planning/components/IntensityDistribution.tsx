@@ -37,15 +37,6 @@ interface IntensityDistributionProps {
   >
 }
 
-const microcycleLabels: Record<MicrocycleType, string> = {
-  base: 'Base',
-  development: 'Desarrollo',
-  shock: 'Carga',
-  deload: 'Descarga',
-  tapering: 'Taper',
-  race: 'Carrera',
-}
-
 const emphasisLabelKeys: Record<IntensityEmphasis, 'recovery' | 'aerobic' | 'tempo' | 'threshold' | 'vo2max' | 'race_specific'> = {
   recovery: 'recovery',
   aerobic: 'aerobic',
@@ -76,23 +67,23 @@ export function IntensityDistribution({
           <div>
             <CardTitle>{t('intensityTitle')}</CardTitle>
             <CardDescription>
-              Objetivo semanal generado según el período, el microciclo y el objetivo del grupo.
+              {t('intensityDistribution.description')}
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
             <Badge variant='outline'>
-              Método: {defaultMethod === 'reference_percentage' ? '% de referencia' : 'Zonas FC'}
+              {t('intensityDistribution.method')}: {defaultMethod === 'reference_percentage' ? t('intensityDistribution.referencePercentage') : t('intensityDistribution.heartRateZones')}
             </Badge>
-            <Badge variant='outline'>Máximo: {maximumIntenseSessionsPerWeek} intensas</Badge>
+            <Badge variant='outline'>{t('intensityDistribution.maxIntense', { count: maximumIntenseSessionsPerWeek })}</Badge>
             <Badge variant='outline'>{t('recoveryLabel')}: {minimumRecoveryDaysBetweenIntenseSessions} d</Badge>
-            {manualStrategy && <Badge variant='secondary'>Estrategia manual</Badge>}
+            {manualStrategy && <Badge variant='secondary'>{t('intensityDistribution.manualStrategy')}</Badge>}
           </div>
         </div>
       </CardHeader>
       <CardContent>
         {points.length === 0 ? (
           <p className='text-sm text-muted-foreground'>
-            Guardá la progresión para generar los objetivos semanales de intensidad.
+            {t('intensityDistribution.empty')}
           </p>
         ) : (
           <div className='flex gap-3 overflow-x-auto pb-2'>
@@ -100,32 +91,32 @@ export function IntensityDistribution({
               <div key={point.microcycleId} className='min-w-48 space-y-3 rounded-lg border p-4'>
                 <div className='flex items-start justify-between gap-2'>
                   <div>
-                    <p className='font-semibold'>Semana {point.weekNumber}</p>
+                    <p className='font-semibold'>{t('intensityDistribution.week', { count: point.weekNumber })}</p>
                     <p className='text-xs text-muted-foreground'>
-                      {microcycleLabels[point.type]} · {t(`intensityEmphasis.${emphasisLabelKeys[point.emphasis]}`)}
+                      {t(`microcycleType.types.${point.type}`)} · {t(`intensityEmphasis.${emphasisLabelKeys[point.emphasis]}`)}
                     </p>
                   </div>
-                  {hasManualValue(point.fieldSources) && <Badge variant='secondary'>Manual</Badge>}
+                  {hasManualValue(point.fieldSources) && <Badge variant='secondary'>{t('intensityDistribution.manual')}</Badge>}
                 </div>
                 <div className='space-y-2 text-sm'>
                   <p className='flex items-center gap-2'>
                     <HeartPulse className='size-4 text-muted-foreground' />
-                    <span><strong>{point.predominantZone}</strong> predominante</span>
+                    <span>{t('intensityDistribution.predominant', { zone: point.predominantZone })}</span>
                   </p>
                   <p className='flex items-center gap-2'>
                     <Activity className='size-4 text-muted-foreground' />
                     <span>
                       {point.intenseSessionsTarget === 0
-                        ? 'Sin sesiones intensas'
-                        : `${point.intenseSessionsTarget} ${point.intenseSessionsTarget === 1 ? 'sesión intensa' : 'sesiones intensas'}`}
+                        ? t('intensityDistribution.noIntense')
+                        : t('intensityDistribution.intenseSessions', { count: point.intenseSessionsTarget })}
                     </span>
                   </p>
                   {defaultMethod === 'reference_percentage' && point.referencePercentageTarget !== null && (
-                    <p className='font-medium'>{point.referencePercentageTarget}% de referencia</p>
+                    <p className='font-medium'>{point.referencePercentageTarget}% {t('intensityDistribution.referencePercentage')}</p>
                   )}
                   <p className='flex items-center gap-2 text-muted-foreground'>
                     <TimerReset className='size-4' />
-                    <span>{point.minimumRecoveryDaysBetweenIntenseSessions} d de recuperación</span>
+                    <span>{t('intensityDistribution.recoveryDays', { count: point.minimumRecoveryDaysBetweenIntenseSessions })}</span>
                   </p>
                 </div>
               </div>

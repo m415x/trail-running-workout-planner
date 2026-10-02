@@ -46,7 +46,7 @@ export function MembershipAccountState({
       currency,
     }).format(minor / 100)
 
-    return `${formatted} ${currency}`
+    return formatted
   }
 
   const formatDate = (value: string) =>
@@ -119,7 +119,7 @@ export function MembershipAccountState({
               </dl>
 
               {detail && (
-                <Accordion className='mt-3' defaultValue={[`history-${charge.id}`]}>
+                <Accordion className='mt-3' >
                   <AccordionItem value={`history-${charge.id}`} className='border-0'>
                     <AccordionTrigger className='py-2 text-sm hover:no-underline'>
                       {labels.history}

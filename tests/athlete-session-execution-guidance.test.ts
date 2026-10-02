@@ -11,7 +11,8 @@ test('AthleteSessionCard consumes first-class ExecutionGuidance instead of forma
   assert.match(source, /executionGuidance/)
   assert.match(source, /rpe/)
   assert.match(source, /talkTest/)
-  assert.match(source, /effort_over_pace/)
+  assert.match(source, /card\.guidance\.terrainPriority/)
+  assert.match(source, /executionGuidance\.zone\.terrainPriority/)
 })
 
 test('AthleteSessionCard presents referenced percentage pace only when quality guidance is available', async () => {

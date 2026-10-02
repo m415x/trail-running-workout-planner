@@ -42,7 +42,7 @@ export function MicrocycleDatesForm({
           type='date'
           defaultValue={startDate}
           required
-          aria-label='Fecha inicial del microciclo'
+          aria-label={t('microcycleEditor.startDateAria')}
           aria-invalid={Boolean(state.error)}
           className='w-36'
         />
@@ -52,7 +52,7 @@ export function MicrocycleDatesForm({
           type='date'
           defaultValue={endDate}
           required
-          aria-label='Fecha final del microciclo'
+          aria-label={t('microcycleEditor.endDateAria')}
           aria-invalid={Boolean(state.error)}
           className='w-36'
         />

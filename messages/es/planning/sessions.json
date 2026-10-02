@@ -139,7 +139,9 @@
       "empty": "Sin sesiones",
       "group": "Grupo",
       "allGroups": "Todos los grupos",
-      "inactive": "Inactivo"
+      "inactive": "Inactivo",
+      "scrollRegion": "Calendario mensual de entrenamientos; desplazamiento horizontal",
+      "scrollHint": "Deslizá hacia los costados para ver los siete días de la semana."
     },
     "adjustments": {
       "title": "Ajustes individuales",

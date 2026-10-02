@@ -30,7 +30,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
 
   if (!session) notFound()
 
-  const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
+  const sessionsPath = '/dashboard/sessions'
   const structureBlocks = [
     { label: t('form.structure.preliminaryExercises'), value: session.structure?.preliminaryExercises },
     { label: t('form.structure.warmup'), value: session.structure?.warmup },

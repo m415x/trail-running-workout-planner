@@ -12,6 +12,22 @@
       "Race": "Race Day",
       "Rest": "Rest Day"
     },
+    "map": {
+      "layers": "Layers",
+      "elevationProfile": "Elevation profile",
+      "maximum": "Max.",
+      "minimum": "Min.",
+      "standard": "Standard",
+      "topographic": "Topographic",
+      "satellite": "Satellite",
+      "startPoint": "Starting point",
+      "endPoint": "Finish point",
+      "loading": "Loading GPS map…",
+      "meetingPoint": "Meeting point",
+      "distance": "Distance",
+      "elevationGain": "Elevation gain",
+      "maxGrade": "Maximum grade"
+    },
     "card": {
       "coachNote": "Coach's Note",
       "logWorkoutButton": "Log completed workout",
@@ -161,6 +177,17 @@
           ]
         }
       }
+    },
+    "assessment": {
+      "title": "Self-assessment"
+    },
+    "feeling": {
+      "question": "How did you feel?",
+      "very_weak": "Very weak",
+      "weak": "Weak",
+      "normal": "Normal",
+      "strong": "Strong",
+      "very_strong": "Very strong"
     }
   }
 }

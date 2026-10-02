@@ -33,7 +33,7 @@ export function BottomNavigationBar() {
               key={href}
               href={href}
               className={cn(
-                'flex flex-col items-center gap-1 transition-all duration-200 py-1 px-3 rounded-xl cursor-pointer',
+                'flex min-h-[var(--size-ept-touch-target)] flex-col items-center justify-center gap-1 rounded-xl px-3 py-1 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 isActive
                   ? 'text-primary hover:text-primary/80 font-semibold scale-105'
                   : 'text-muted-foreground hover:text-foreground',
@@ -41,7 +41,7 @@ export function BottomNavigationBar() {
             >
               <Icon size={20} className='transition-transform duration-200' />
 
-              <span className='font-medium text-[9px] font-mono leading-none tracking-tight'>{t(labelKey)}</span>
+              <span className='font-medium text-[length:var(--text-ept-caption)] leading-tight text-center'>{t(labelKey)}</span>
             </Link>
           )
         })}

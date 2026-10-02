@@ -8,6 +8,7 @@ import { persistGeneratedSessions } from '@/app/actions/session-generation-actio
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
+import { parseMissingTemplateWarning } from '@/lib/session-generation/missing-template-warning'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
@@ -37,15 +38,6 @@ interface SessionGenerationPreviewProps {
   generationExplanations: Record<string, GenerationExplanation>
 }
 
-const microcycleLabels: Record<MicrocycleType, string> = {
-  base: 'Base',
-  development: 'Desarrollo',
-  shock: 'Carga',
-  deload: 'Descarga',
-  tapering: 'Taper',
-  race: 'Carrera',
-}
-
 /** Displays generated, non-persisted sessions grouped by source microcycle. */
 export function SessionGenerationPreview({
   weeks,
@@ -58,33 +50,44 @@ export function SessionGenerationPreview({
 }: SessionGenerationPreviewProps) {
   const language = locale === 'en' ? 'en' : 'es'
   const t = useTranslations('CoachPlanning')
+  const workoutTypeT = useTranslations('Workouts')
   const regionalContext = resolveApplicationRegionalContext({ language })
   const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
+  const formatWarning = (warning: string) => {
+    const parsed = parseMissingTemplateWarning(warning)
+    if (!parsed) return warning
+
+    return t('sessionPreview.missingTemplate', {
+      role: t(`roles.${parsed.role}`),
+      period: t(`sessionPreview.periods.${parsed.period}`),
+      microcycleType: t(`microcycleType.types.${parsed.microcycleType}`),
+    })
+  }
 
   return (
     <Card>
       <CardHeader>
         <div className='flex flex-wrap items-start justify-between gap-3'>
           <div>
-            <CardTitle>Vista previa de sesiones</CardTitle>
+            <CardTitle>{t('sessionPreview.title')}</CardTitle>
             <CardDescription>
-              Propuesta calculada desde cada microciclo. Revisala antes de guardarla.
+              {t('sessionPreview.description')}
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
-            <Badge variant='secondary'>{state.success ? 'Guardado' : 'No guardado'}</Badge>
-            {isAvailable && <Badge variant='outline'>{sessionCount} sesiones</Badge>}
+            <Badge variant='secondary'>{state.success ? t('sessionPreview.saved') : t('sessionPreview.notSaved')}</Badge>
+            {isAvailable && <Badge variant='outline'>{t('sessionPreview.sessions', { count: sessionCount })}</Badge>}
           </div>
         </div>
       </CardHeader>
       <CardContent className='space-y-4'>
         {!isAvailable ? (
           <p className='text-sm text-muted-foreground'>
-            Completá la estrategia de carga, intensidad y configuración semanal para generar la vista previa.
+            {t('sessionPreview.ready')}
           </p>
         ) : weeks.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>No hay microciclos disponibles para generar sesiones.</p>
+          <p className='text-sm text-muted-foreground'>{t('sessionPreview.empty')}</p>
         ) : (
           <div className='space-y-3'>
             {weeks.map((week, index) => (
@@ -95,16 +98,16 @@ export function SessionGenerationPreview({
               >
                 <summary className='flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 p-4'>
                   <div>
-                    <p className='font-medium'>Semana {week.weekNumber} · {microcycleLabels[week.type]}</p>
+                    <p className='font-medium'>{t('sessionPreview.week', { count: week.weekNumber })} · {t(`microcycleType.types.${week.type}`)}</p>
                     <p className='text-sm text-muted-foreground'>
                       {formatDate(week.startDate, regionalContext.presentationLocale)} – {formatDate(week.endDate, regionalContext.presentationLocale)}
                     </p>
                   </div>
                   <div className='flex items-center gap-2'>
                     {week.warnings.length > 0 && (
-                      <Badge variant='destructive'>{week.warnings.length} avisos</Badge>
+                      <Badge variant='destructive'>{t('sessionPreview.warnings', { count: week.warnings.length })}</Badge>
                     )}
-                    <Badge variant='outline'>{week.events.length} sesiones</Badge>
+                    <Badge variant='outline'>{t('sessionPreview.sessions', { count: week.events.length })}</Badge>
                   </div>
                 </summary>
 
@@ -122,7 +125,7 @@ export function SessionGenerationPreview({
                             <p className='font-semibold'>{event.session.title}</p>
                             <p className='text-sm text-muted-foreground'>{formatDate(event.session.date, regionalContext.presentationLocale)}</p>
                           </div>
-                          <Badge variant='outline'>{event.session.type}</Badge>
+                          <Badge variant='outline'>{workoutTypeT(`types.${event.session.type}`)}</Badge>
                         </div>
 
                         {prescriptions.map(({ generationKey, prescription }) => {
@@ -141,7 +144,7 @@ export function SessionGenerationPreview({
                                 </span>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <CalendarClock className='size-4 text-muted-foreground' />
-                                  {formatIntensity(prescription)}
+                                  {formatIntensity(prescription, t('sessionPreview.referencePercentage'), t('sessionPreview.noZone'))}
                                 </span>
                               </div>
 
@@ -164,7 +167,7 @@ export function SessionGenerationPreview({
 
                         {isCompetition && (
                           <p className='text-xs font-medium text-muted-foreground'>
-                            Competencia · no incluida en el volumen de entrenamiento del taper.
+                            {t('sessionPreview.competitionNote')}
                           </p>
                         )}
 
@@ -177,7 +180,7 @@ export function SessionGenerationPreview({
                           <div className='space-y-1 text-sm text-destructive'>
                             {event.warnings.map((warning) => (
                               <p key={warning} className='flex gap-1.5'>
-                                <AlertTriangle className='mt-0.5 size-4 shrink-0' /> {warning}
+                                <AlertTriangle className='mt-0.5 size-4 shrink-0' /> {formatWarning(warning)}
                               </p>
                             ))}
                           </div>
@@ -193,9 +196,9 @@ export function SessionGenerationPreview({
 
         {warnings.length > 0 && (
           <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
-            <p className='mb-2 font-medium text-destructive'>Revisá la propuesta</p>
+            <p className='mb-2 font-medium text-destructive'>{t('sessionPreview.review')}</p>
             <ul className='space-y-1 text-muted-foreground'>
-              {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
+              {warnings.map((warning) => <li key={warning}>• {formatWarning(warning)}</li>)}
             </ul>
           </div>
         )}
@@ -213,7 +216,7 @@ export function SessionGenerationPreview({
               {state.error && <p className='text-destructive'>{state.error}</p>}
               {state.success && <p className='text-emerald-600'>{state.success}</p>}
               {!state.error && !state.success && (
-                <p className='text-muted-foreground'>Guardá esta propuesta para publicarla en el calendario.</p>
+                <p className='text-muted-foreground'>{t('sessionPreview.saveHelp')}</p>
               )}
             </div>
             <Button type='submit' disabled={isPending}>
@@ -238,9 +241,11 @@ function formatNumber(value: number | null | undefined, presentationLocale: stri
 
 function formatIntensity(
   prescription: SharedSessionEventProposal['prescriptions'][number]['prescription'],
+  referenceLabel: string,
+  noZoneLabel: string,
 ) {
   return prescription.intensityMethod === 'reference_percentage'
-    ? `${prescription.referencePercentage ?? 0}% de referencia`
-    : prescription.zone ?? 'Sin zona'
+    ? `${prescription.referencePercentage ?? 0}% ${referenceLabel}`
+    : prescription.zone ?? noZoneLabel
 }
 

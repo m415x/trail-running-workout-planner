@@ -1,6 +1,7 @@
 'use client'
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@ui/accordion'
+import { useTranslations } from 'next-intl'
 import { FeelingSelector } from '@workouts/components/FeelingSelector'
 import { RpeSelector } from '@workouts/components/RpeSelector'
 import { useSelfAssessment, SelfAssessmentValues } from '@workouts/hooks/useSelfAssessment'
@@ -13,6 +14,7 @@ export interface SelfAssessmentProps {
 }
 
 export function SelfAssessment({ value, onChange }: SelfAssessmentProps) {
+  const t = useTranslations('Workouts.assessment')
   const { feeling, rpe, hasData, selectedFeelingOption, FeelingIcon, handleFeelingChange, handleRpeChange } =
     useSelfAssessment({
       value,
@@ -24,12 +26,12 @@ export function SelfAssessment({ value, onChange }: SelfAssessmentProps) {
       <AccordionItem value='self-assessment' className='border-none px-4'>
         <AccordionTrigger className='hover:no-underline'>
           <div className='flex items-center gap-2.5'>
-            <span>Autoevaluación</span>
+            <span>{t('title')}</span>
 
             {/* Badge indicador cuando hay datos seleccionados */}
             {hasData && (
               <span className='ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary'>
-                {rpe !== null && rpe !== undefined && `RPE ${rpe}`}
+                {rpe !== null && rpe !== undefined && rpe > 0 && `RPE ${rpe}`}
                 {FeelingIcon && <FeelingIcon className={`size-3 ${selectedFeelingOption?.iconClassName ?? ''}`} />}
               </span>
             )}

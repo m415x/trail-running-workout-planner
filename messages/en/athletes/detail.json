@@ -65,6 +65,7 @@
     "membershipSettled": "Settled",
     "membershipPending": "Pending",
     "membershipOverdue": "Overdue",
-    "membershipNoHistory": "No additional facts"
+    "membershipNoHistory": "No additional facts",
+    "membershipManagementTitle": "Membership management"
   }
 }

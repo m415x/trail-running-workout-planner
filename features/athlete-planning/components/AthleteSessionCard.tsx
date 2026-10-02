@@ -37,6 +37,7 @@ interface AthleteSessionCardProps {
 
 export function AthleteSessionCard({ session, prescription, executionGuidance }: AthleteSessionCardProps) {
   const t = useTranslations('AthletePlan')
+  const tWorkouts = useTranslations('Workouts')
   const intensity = formatIntensity(prescription, t)
   const hasVolume = prescription.distanceKm != null
     || prescription.durationMin != null
@@ -55,10 +56,10 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
       <CardHeader className='px-4'>
         <div className='flex items-start justify-between gap-2'>
           <CardTitle className='text-base'>{session.title}</CardTitle>
-          <Badge variant='outline'>{session.type}</Badge>
+          <Badge variant='outline'>{tWorkouts(`types.${session.type}`)}</Badge>
         </div>
       </CardHeader>
-      <CardContent className='space-y-2 px-4 text-xs text-muted-foreground'>
+      <CardContent className='space-y-2 px-4 text-[length:var(--text-ept-body-compact)] text-muted-foreground'>
         <div className='rounded-lg bg-muted/40 p-2.5'>
           <p className='mb-1.5 font-medium text-foreground'>{t('session.volume')}</p>
           {hasVolume ? (
@@ -83,8 +84,8 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
         {executionGuidance?.zone && (
           <div className='rounded-lg border px-2.5 py-2'>
             <p className='font-medium text-foreground'>RPE {executionGuidance.zone.rpe.min}–{executionGuidance.zone.rpe.max}</p>
-            <p>Talk Test: {executionGuidance.zone.talkTest}</p>
-            <p>{executionGuidance.zone.terrainPriority === 'effort_over_pace' ? 'effort_over_pace' : executionGuidance.zone.terrainPriority}</p>
+            <p>Talk Test: {tWorkouts(`card.guidance.talkTest.${executionGuidance.zone.talkTest}`)}</p>
+            <p>{tWorkouts(`card.guidance.terrainPriority.${executionGuidance.zone.terrainPriority}`)}</p>
           </div>
         )}
         {executionGuidance?.quality?.status === 'available' && (

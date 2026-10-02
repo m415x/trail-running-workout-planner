@@ -33,7 +33,15 @@ export function MonthlySessionCalendar({ year, month, sessions, today, sessionsP
 
   return (
     <Card className='overflow-hidden py-0'>
-      <CardContent className='overflow-x-auto p-0'>
+      <p className='border-b px-3 py-2 text-xs text-muted-foreground sm:hidden'>
+        {t('calendar.scrollHint')}
+      </p>
+      <CardContent
+        className='overflow-x-auto p-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'
+        role='region'
+        tabIndex={0}
+        aria-label={t('calendar.scrollRegion')}
+      >
         <div className='min-w-4xl'>
           <div className='grid grid-cols-7 border-b bg-muted/40'>
             {weekDays.map((day) => (

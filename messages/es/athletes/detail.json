@@ -65,6 +65,7 @@
     "membershipSettled": "Al día",
     "membershipPending": "Pendiente",
     "membershipOverdue": "Vencida",
-    "membershipNoHistory": "Sin hechos adicionales"
+    "membershipNoHistory": "Sin hechos adicionales",
+    "membershipManagementTitle": "Gestión de membresía"
   }
 }

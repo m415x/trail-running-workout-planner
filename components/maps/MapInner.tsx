@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { Layers3 } from 'lucide-react'
 import * as maplibregl from 'maplibre-gl'
 import type { Feature, LineString } from 'geojson'
 import type { StyleSpecification } from 'maplibre-gl'
@@ -15,7 +17,7 @@ maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs')
 
 const BASE_STYLES = {
   standard: {
-    name: '🗺️ Estándar',
+    icon: '🗺️',
 
     style: {
       version: 8,
@@ -42,7 +44,7 @@ const BASE_STYLES = {
   },
 
   topo: {
-    name: '⛰️ Topográfico',
+    icon: '⛰️',
 
     style: {
       version: 8,
@@ -69,7 +71,7 @@ const BASE_STYLES = {
   },
 
   satellite: {
-    name: '🛰️ Satelital',
+    icon: '🛰️',
 
     style: {
       version: 8,
@@ -159,6 +161,7 @@ interface MapInnerProps {
 /* -------------------------------------------------------------------------- */
 
 export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 13, trackPoints = [] }: MapInnerProps) {
+  const t = useTranslations('Workouts')
   const mapContainerRef = useRef<HTMLDivElement>(null)
 
   const mapRef = useRef<maplibregl.Map | null>(null)
@@ -168,8 +171,15 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
   const markersRef = useRef<maplibregl.Marker[]>([])
 
   const [selectedLayer, setSelectedLayer] = useState<BaseStyleKey>('standard')
+  const [layerMenuOpen, setLayerMenuOpen] = useState(false)
 
   const [mapReady, setMapReady] = useState(false)
+
+  const layerLabels: Record<BaseStyleKey, string> = {
+    standard: t('map.standard'),
+    topo: t('map.topographic'),
+    satellite: t('map.satellite'),
+  }
 
   /*
    * Coordenadas válidas para MapLibre.
@@ -215,10 +225,10 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
       const startPopup = new maplibregl.Popup({
         offset: 10,
       }).setHTML(`
-          <div class="p-1 text-center font-sans text-xs">
-            <b>Punto de Largada</b>
+          <div class="p-1 text-center font-sans text-xs text-slate-900">
+            <b>${t('map.startPoint')}</b>
             <br/>
-            <span class="text-[10px] text-gray-500">
+            <span class="text-[10px] text-slate-600">
               ${startCoord[1].toFixed(5)},
               ${startCoord[0].toFixed(5)}
             </span>
@@ -248,10 +258,10 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         const endPopup = new maplibregl.Popup({
           offset: 10,
         }).setHTML(`
-            <div class="p-1 text-center font-sans text-xs">
-              <b>Punto de Llegada</b>
+            <div class="p-1 text-center font-sans text-xs text-slate-900">
+              <b>${t('map.endPoint')}</b>
               <br/>
-              <span class="text-[10px] text-gray-500">
+              <span class="text-[10px] text-slate-600">
                 ${endCoord[1].toFixed(5)},
                 ${endCoord[0].toFixed(5)}
               </span>
@@ -268,7 +278,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         markersRef.current.push(endMarker)
       }
     },
-    [clearMarkers, coordinates],
+    [clearMarkers, coordinates, t],
   )
 
   /* ---------------------------------------------------------------------- */
@@ -387,8 +397,10 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
         }
       }
 
+      // style.load can precede raster source readiness. Wait for this style
+      // to become idle rather than deferring until the next basemap selection.
       if (!map.isStyleLoaded()) {
-        map.once('style.load', renderLoadedStyle)
+        map.once('idle', renderLoadedStyle)
         return
       }
 
@@ -427,6 +439,7 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
        * el scroll del mouse no hace zoom.
        */
       scrollZoom: false,
+      attributionControl: false,
     })
 
     mapRef.current = map
@@ -441,6 +454,15 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     /* -------------------------------------------------------------------- */
     /* CONTROLS                                                             */
     /* -------------------------------------------------------------------- */
+
+    // Bottom-right controls are prepended by MapLibre: register attribution
+    // first so the navigation group appears above the compact info toggle.
+    map.addControl(
+      new maplibregl.AttributionControl({
+        compact: true,
+      }),
+      'bottom-right',
+    )
 
     map.addControl(
       new maplibregl.NavigationControl({
@@ -461,7 +483,21 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     /* LOAD                                                                 */
     /* -------------------------------------------------------------------- */
 
-    const handleLoad = () => setMapReady(true)
+    // MapLibre's compact option keeps credits expanded until the first map interaction.
+    // Collapse only on initial load; the native info button can still reopen them.
+    const collapseInitialAttribution = () => {
+      const attribution = map.getContainer().querySelector<HTMLElement>('.maplibregl-ctrl-attrib')
+      if (!attribution) return
+
+      // Keep MapLibre's native control dimensions and disclosure styling.
+      attribution.classList.remove('maplibregl-compact-show')
+      attribution.removeAttribute('open')
+    }
+
+    const handleLoad = () => {
+      collapseInitialAttribution()
+      setMapReady(true)
+    }
 
     map.on('load', handleLoad)
 
@@ -554,22 +590,46 @@ export default function MapInner({ lon = -68.5440881, lat = -31.529822, zoom = 1
     <div className='relative w-full h-full rounded-2xl overflow-hidden'>
       <div ref={mapContainerRef} className='w-full h-full' />
 
-      {/* Selector de mapas */}
-      <div className='absolute top-3 right-3 bg-white/95 dark:bg-gray-900/95 p-1.5 rounded-xl shadow-lg flex flex-col gap-1 z-10 text-xs border border-border/50'>
-        {(Object.keys(BASE_STYLES) as BaseStyleKey[]).map((key) => (
-          <button
-            key={key}
-            type='button'
-            onClick={() => setSelectedLayer(key)}
-            className={`px-3 py-1.5 rounded-lg text-left transition-all ${
-              selectedLayer === key
-                ? 'bg-primary text-primary-foreground font-semibold shadow-sm'
-                : 'text-muted-foreground hover:bg-black/5 dark:hover:bg-white/5'
-            }`}
-          >
-            {BASE_STYLES[key].name}
-          </button>
-        ))}
+      {/* Compact basemap switcher: preserve the mapped style keys and MapLibre lifecycle. */}
+      <div
+        className='absolute right-3 top-3 z-10 flex flex-col items-end gap-1.5 text-sm'
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') setLayerMenuOpen(false)
+        }}
+      >
+        <button
+          type='button'
+          aria-expanded={layerMenuOpen}
+          aria-controls='basemap-layer-options'
+          aria-label={t('map.layers')}
+          title={t('map.layers')}
+          onClick={() => setLayerMenuOpen((open) => !open)}
+          className='relative flex size-[29px] items-center justify-center rounded-md border border-border bg-background/95 p-0 text-foreground shadow-lg backdrop-blur-sm transition-colors before:absolute before:-inset-[7.5px] before:content-[""] hover:bg-accent/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+        >
+          <Layers3 className='size-4 shrink-0' aria-hidden='true' />
+        </button>
+        {layerMenuOpen && (
+          <div id='basemap-layer-options' className='flex w-max max-w-[calc(100vw-2rem)] flex-col gap-1 rounded-xl border border-border bg-background/95 p-1.5 text-foreground shadow-lg backdrop-blur-sm'>
+            {(Object.keys(BASE_STYLES) as BaseStyleKey[]).map((key) => (
+              <button
+                key={key}
+                type='button'
+                aria-pressed={selectedLayer === key}
+                onClick={() => {
+                  setSelectedLayer(key)
+                  setLayerMenuOpen(false)
+                }}
+                className={`min-h-[var(--size-ept-touch-target)] rounded-lg px-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  selectedLayer === key
+                    ? 'bg-primary font-semibold text-primary-foreground'
+                    : 'text-foreground hover:bg-accent/20'
+                }`}
+              >
+                {BASE_STYLES[key].icon} {layerLabels[key]}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
