@@ -74,6 +74,7 @@ Before starting the next story or phase, follow the fresh-chat bootstrap contrac
 
 - [`research/`](research/) — scientific/product research and rationale. Research informs contracts but is not automatically implementation scope.
 - [`product/`](product/) — product-facing documentation.
+- [`product/kan-577-accessibility-audit.md`](product/kan-577-accessibility-audit.md) — completed KAN-577/T8 Coach and Athlete responsive, zoom, keyboard, locale and visual hierarchy audit; verified targeted RED→GREEN fixes and full `pn verify --db` PASS. Parent KAN-508 integration and KAN-578/T9 remain separate.
 - [`glossary/`](glossary/) — terminology.
 - [`superpowers/`](superpowers/) — implementation plans/workflow artifacts; completed plans must be clearly treated as historical rather than pending work.
 
