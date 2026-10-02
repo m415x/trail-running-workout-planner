@@ -1,23 +1,40 @@
-import { lstat, readFile } from 'node:fs/promises'
+import { constants } from 'node:fs'
+import { lstat, open } from 'node:fs/promises'
 import { isAbsolute, join, win32 } from 'node:path'
 
 import { readApprovedLocalSandboxPin } from './local-cluster-pin'
 
 type FileInspection = {
   isFile: () => boolean
+  isDirectory?: () => boolean
   isSymbolicLink: () => boolean
+}
+
+type PinFileHandle = {
+  stat: () => Promise<FileInspection>
+  readFile: (options?: { encoding: 'utf8' }) => Promise<string>
+  close: () => Promise<void>
 }
 
 type LocalPinFileRequest = {
   repositoryRoot: string
-  inspect?: (path: string) => Promise<FileInspection>
-  read?: (path: string) => Promise<string>
+  inspectDirectory?: (path: string) => Promise<FileInspection>
+  openFile?: (path: string, flags: number) => Promise<PinFileHandle>
 }
 
 /**
- * Reads a fixed, untracked local approval document. The file is a prerequisite
- * for later authorization, not permission to execute migrations or seed data.
- * This function performs no database I/O.
+ * Operator approval is read via a single open file descriptor, not through
+ * separate path-based lstat/readFile calls. The directory must not be a
+ * symlink; O_NOFOLLOW additionally rejects a final-component symlink where
+ * supported. The handle is closed in all outcomes.
+ *
+ * This protects against swapping the final path after opening the handle.
+ * The non-atomic directory lstat remains a limitation on platforms where
+ * openat-style directory-relative handling is unavailable (notably Windows).
+ * The operator approval directory must be locally controlled.
+ *
+ * This function performs no PostgreSQL operation and never grants mutation
+ * authority by itself.
  */
 export async function loadApprovedLocalSandboxPinFile(
   request: LocalPinFileRequest,
@@ -33,19 +50,34 @@ export async function loadApprovedLocalSandboxPinFile(
     throw new Error('Trusted local sandbox pin root is invalid')
   }
 
-  const path = join(root, '.coach-sandbox-local', 'approved-cluster.json')
+  const directory = join(root, '.coach-sandbox-local')
+  const path = join(directory, 'approved-cluster.json')
+  let handle: PinFileHandle | undefined
 
   try {
-    const inspection = await (request.inspect ?? lstat)(path)
-    if (!inspection.isFile() || inspection.isSymbolicLink()) {
-      throw new Error('Approval file is not a regular file')
+    const parent = await (request.inspectDirectory ?? lstat)(directory)
+    if (!parent.isDirectory?.() || parent.isSymbolicLink()) {
+      throw new Error('Invalid approval directory')
+    }
+
+    handle = await (request.openFile ?? open)(path, constants.O_RDONLY | constants.O_NOFOLLOW) as PinFileHandle
+    const stat = await handle.stat()
+    if (!stat.isFile() || stat.isSymbolicLink()) {
+      throw new Error('Invalid approval file')
     }
 
     return await readApprovedLocalSandboxPin({
-      readTrustedDocument: () => (request.read ?? ((file: string) => readFile(file, 'utf8')))(path),
+      readTrustedDocument: () => handle!.readFile({ encoding: 'utf8' }),
     })
   } catch {
-    // Never expose filesystem paths or contents from an underlying error.
     throw new Error('Trusted local sandbox pin file unavailable or invalid')
+  } finally {
+    if (handle) {
+      try {
+        await handle.close()
+      } catch {
+        throw new Error('Trusted local sandbox pin file closure failed')
+      }
+    }
   }
 }
