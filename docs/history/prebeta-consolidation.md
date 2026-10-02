@@ -1,6 +1,6 @@
 # KAN-473 — pre-auth MVP experience consolidation (H1–H5)
 
-Status: H5 KAN-508 **integration candidate** (2026-10-02); not yet merged to `dev`, so this record is not a completed-epic claim. Jira KAN-473 and KAN-508 remain `En curso` until the T9 integration gate and post-merge verification are accepted.
+Status: H5 KAN-508 **merged and post-merge verified** (2026-10-02). PR #33 merged to `dev` at SHA `36731f576ad9f17916ed2594af774499f24e978f`. Operator confirmed exactly this HEAD and full integrated `pn verify --db` PASS. Jira task/story closure recorded separately; KAN-473 epic disposition must reconcile deliberately deferred child issues KAN-359 and KAN-579, not misrepresent them as complete.
 
 ## Authority and scope
 
@@ -43,4 +43,12 @@ KAN-298 (authenticated identity, scope, roles/permissions and RLS contract), KAN
 
 ## Integration completion condition
 
-This record must be revisited after PR/merge and post-merge verification; only then may T9, KAN-508 and conditionally KAN-473 close under `AGENTS.md`. Record the PR and merged `dev` SHA and final local check explicitly, or state any unresolved exception. Do not alter the issue's acceptance criteria implicitly through this document.
+PR #33 and post-merge `dev` gate are now evidenced above. T9 and KAN-508 closure may proceed after their Jira documentation checks; KAN-473 epic status is conditional on explicit reconciliation of deferred children KAN-359 and KAN-579. Closing UX consolidation never declares the final beta gate complete.
+
+## Post-merge dev verification (2026-10-02)
+
+- PR [#33](https://github.com/m415x/trail-running-workout-planner/pull/33) was merged through GitHub with explicit expected-head SHA guard; merge SHA `36731f576ad9f17916ed2594af774499f24e978f`. Immediate remote `dev` HEAD and merged PR state both verified to equal that SHA.
+- **Operator post-merge integrated verification**: local `git rev-parse HEAD` returned the exact merge SHA; `pn verify --db` **PASS**: Tests 44930ms; TypeScript 74392ms; ESLint 66577ms; Build 204000ms; i18n 592ms; SQLite 42697ms; total **433188ms**. This proves the six-stage local gate for that exact merge commit; it is not an independently executed remote PostgreSQL/Supabase or browser automation gate.
+- **Acceptance provenance:** browser MapLibre GREEN (T9 Jira 11250), functional Coach/Athlete/Membership 12/12 GREEN without observations (T9 Jira 11252), plus historical T8 focused proof and docs audit. No revised runtime production code was introduced after the accepted candidate test: H5 closure docs commits 3232530c, 03159b22, b8881efc and ca50aa9f followed the pre-merge candidate gate.
+- **Deferred-children reconciliation required at epic level:** Jira JQL `parent = KAN-473` includes 13 items; KAN-359 remains an open future typography preference issue and KAN-579 remains an open post-KAN-298 auditable withdrawal feature. Neither is an original H1–H5 acceptance blocker, and neither may be marked complete by closing KAN-473. The epic's administrative disposition requires explicit preservation of these statuses/ownership and no misleading beta-ready declaration.
+- **Final documentation edits** made after the operator ran the integrated gate amend only Markdown documentation. They do not change executable behavior. They produce a newer `dev` commit than the exact verified merge SHA; do not present the newer docs-only commit as separately tested.
