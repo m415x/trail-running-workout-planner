@@ -36,6 +36,14 @@ test('KAN-585 binds real Drizzle SQL objects and canonical migrator to the same 
             events.push('set-marker')
             return [{ environmentMarker: 'trail-running-coach-local-sandbox' }]
           }
+          if (query.includes('to_regclass(')) {
+            events.push('journal-check')
+            return [{ journal: null }]
+          }
+          if (query.includes('pg_catalog.pg_class')) {
+            events.push('collision-check')
+            return []
+          }
           if (query.includes('current_setting(')) {
             events.push('marker-readback')
             return [{ environmentMarker: 'trail-running-coach-local-sandbox' }]
@@ -50,10 +58,11 @@ test('KAN-585 binds real Drizzle SQL objects and canonical migrator to the same 
     directUrl: localUrl,
     expectedClusterSystemIdentifier: pin,
     migrationsFolder: '/workspace/project/drizzle/supabase',
+    canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
     database: createVerifiedDrizzleMigrationHost(database),
     loadCanonicalMigrations: () => migrations,
   })
-  assert.deepEqual(events, ['begin', 'pin-check', 'set-marker', 'marker-readback', 'migrate', 'commit'])
+  assert.deepEqual(events, ['begin', 'pin-check', 'set-marker', 'marker-readback', 'journal-check', 'collision-check', 'migrate', 'commit'])
 })
 
 test('KAN-585 cannot migrate when transaction identity query fails, and never reopens a connection', async () => {
@@ -78,7 +87,8 @@ test('KAN-585 cannot migrate when transaction identity query fails, and never re
       directUrl: localUrl,
       expectedClusterSystemIdentifier: pin,
       migrationsFolder: '/workspace/project/drizzle/supabase',
-      database: createVerifiedDrizzleMigrationHost(database),
+      canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
+    database: createVerifiedDrizzleMigrationHost(database),
       loadCanonicalMigrations: () => [{ sql: ['SELECT 1'], hash: 'hash', folderMillis: 1, bps: true }],
     }),
     (error: unknown) => error instanceof Error && !error.message.includes('PRIVATE'),
