@@ -25,7 +25,7 @@ export async function inspectCoachSandboxFreshMigrationTarget(request: {
     || !rows[0]
     || typeof rows[0] !== 'object'
     || Array.isArray(rows[0])
-    || !Object.hasOwn(rows[0], 'journal')
+    || !Object.prototype.hasOwnProperty.call(rows[0], 'journal')
     || rows[0].journal !== null
   ) {
     throw new Error('Sandbox fresh migration target requires an absent Drizzle journal')
