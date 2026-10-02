@@ -152,6 +152,37 @@
         "tapering": "Taper",
         "race": "Race"
       }
+    },
+    "loadPreview": {
+      "description": "Weekly proposal calculated from the saved strategy and planning horizon.",
+      "volume": "Volume (km)",
+      "elevation": "Elevation gain (m D+)",
+      "manualVolume": "Manual volume: {count}",
+      "manualElevation": "Manual elevation gain: {count}",
+      "week": "Week {count}",
+      "initial": "Start",
+      "maximum": "Maximum",
+      "peakElevation": "Peak D+",
+      "weeks": "{count, plural, one {# week} other {# weeks}}",
+      "manual": "Manual",
+      "generated": "Generated",
+      "resolveConflicts": "Resolve conflicts before saving the proposal.",
+      "saveHelp": "Saving preserves manually overridden volume and elevation values separately."
+    },
+    "intensityDistribution": {
+      "description": "Weekly target generated according to the period, microcycle and group objective.",
+      "method": "Method",
+      "referencePercentage": "of reference",
+      "heartRateZones": "Heart-rate zones",
+      "maxIntense": "Maximum: {count, plural, one {# intense session} other {# intense sessions}}",
+      "manualStrategy": "Manual strategy",
+      "empty": "Save the progression to generate weekly intensity targets.",
+      "week": "Week {count}",
+      "manual": "Manual",
+      "predominant": "{zone} predominant",
+      "noIntense": "No intense sessions",
+      "intenseSessions": "{count, plural, one {# intense session} other {# intense sessions}}",
+      "recoveryDays": "{count, plural, one {# recovery day} other {# recovery days}}"
     }
   }
 }
