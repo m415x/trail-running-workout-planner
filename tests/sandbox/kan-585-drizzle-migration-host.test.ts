@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { SQL } from 'drizzle-orm/sql'
@@ -12,7 +13,8 @@ const pin = '1234567890123456789'
 test('KAN-585 binds real Drizzle SQL objects and canonical migrator to the same outer transaction session', async () => {
   const events: string[] = []
   const session = { identity: 'same-transaction-session' }
-  const migrations = [{ sql: ['CREATE TABLE "synthetic_only" ("id" text)'], hash: 'synthetic-hash', folderMillis: 1, bps: true }]
+  const syntheticSql = 'CREATE TABLE "synthetic_only" ("id" text)'
+  const migrations = [{ sql: [syntheticSql], hash: createHash('sha256').update(syntheticSql).digest('hex'), folderMillis: 1, bps: true }]
   const database = {
     dialect: {
       migrate: async (actualMigrations: typeof migrations, actualSession: typeof session) => {
@@ -89,7 +91,7 @@ test('KAN-585 cannot migrate when transaction identity query fails, and never re
       migrationsFolder: '/workspace/project/drizzle/supabase',
       canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
     database: createVerifiedDrizzleMigrationHost(database),
-      loadCanonicalMigrations: () => [{ sql: ['SELECT 1'], hash: 'hash', folderMillis: 1, bps: true }],
+      loadCanonicalMigrations: () => [{ sql: ['CREATE TABLE "synthetic_only" ("id" text)'], hash: createHash('sha256').update('CREATE TABLE "synthetic_only" ("id" text)').digest('hex'), folderMillis: 1, bps: true }],
     }),
     (error: unknown) => error instanceof Error && !error.message.includes('PRIVATE'),
   )
