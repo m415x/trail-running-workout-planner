@@ -1,0 +1,38 @@
+# KAN-566 — Coach PostgreSQL sandbox destination contract
+
+Status: T1 draft, 2026-10-02. This document does **not** assert that an external sandbox exists or that a real PostgreSQL server has been authenticated.
+
+## Authority and isolation
+
+- Follow `AGENTS.md` and `docs/agent-harness.md`; development integration is `dev`.
+- The primary local application runtime remains SQLite. The production-reserved Supabase destination is never an allowable sandbox target.
+- A separate Free project is a future **option**, not an allocated resource: the available project quota, prices and billing must be checked, then its creation approved separately.
+- T1 adds a **pure inspection** boundary at `lib/sandbox/sandbox-destination.ts`. It performs no database operation and never logs a connection string or password.
+- In T2, **before** any migration, seed or reset, require an independent, authenticated physical-project identity check and authorization for the exact operation. A matching URL or mutable environment variable alone is **not** proof of project identity. Refuse operations if identity cannot be established. The allowlist must come from trusted server-only configuration.
+
+## Approved target descriptor candidates
+
+| Kind | Endpoint contract | Approval boundary |
+| --- | --- | --- |
+| Local | `postgresql://postgres:<secret>@127.0.0.1:54322/postgres` | Accept structural inspection; Docker/CLI and PostgreSQL identity checks belong to T2/T3 |
+| Cloud | PostgreSQL direct endpoint `db.<approved-ref>.supabase.co:5432/postgres?sslmode=require` with explicit exact project ref allowlist | No remote provisioning/connection/mutation authorized yet |
+| Anything else | Rejected | Never fall back to production or an implicit default |
+
+The inspector produces a non-secret descriptor without the original URL. It does not return a reusable authenticated connection, nor does it enable data mutations.
+
+## Threat cases
+
+- Missing kind/URL; unknown kind; noncanonical local host or port; unexpected database or username.
+- Hostname suffix tricks, project-ref mismatch, unsupported URL parameters, TLS downgrade and query-string injection.
+- Production credentials presented as an allegedly local sandbox; errors must never include secrets.
+- Runtime environment variables cannot bypass T2 checks. No browser-side or `NEXT_PUBLIC_` credentials.
+
+## Operational staging
+
+1. **T1:** Pure syntax and allowlist inspection, documented rejection contract; focused tests.
+2. **T2:** Trusted authorization, server-only secrets, actual destination identity verification, action-specific fail-closed mutation guards, negative tests.
+3. **T3:** Isolated Supabase CLI/Docker lifecycle and existing Drizzle migration journal (no second application migration authority).
+4. **T4/T5:** Physical PostgreSQL verification and explicitly synthetic deterministic seed.
+5. **T6/T7:** Only Group list/create/edit/reload and restricted logical reset; all other Coach/Athlete PostgreSQL coverage remains unverified.
+
+An operation requiring a cloud instance must stop until quota, pricing, target identity and explicit provisioning authorization are obtained. There is no automatic cloud project delete and no broad managed-schema reset.
