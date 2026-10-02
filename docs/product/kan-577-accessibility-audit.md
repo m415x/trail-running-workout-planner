@@ -1,13 +1,13 @@
 # KAN-577 — T8 residual accessibility and usability audit
 
-Status: **IN PROGRESS** (2026-10-01). Scope: KAN-508 T8. Branch: `feat/KAN-508-prebeta-ux-consolidation`.
+Status: **T8 ACCEPTED — CLOSED** (operator verification 2026-10-01; Jira KAN-577). Scope: KAN-508 T8. Branch: `feat/KAN-508-prebeta-ux-consolidation`.
 
 ## Scope and guardrails
 
 - Audit representative Coach and Athlete MVP flows, both ES/EN, light/dark, keyboard, mobile/tablet/desktop, zoom and increased text. Only **bounded, demonstrated residual defects** qualify for T8 implementation. UX fixes owned by T2–T7 stay attributed to their owner, and do not become T8 refactors by default.
 - Root font-size stays **120% mobile** and **100% from 640px**. KAN-359 remains open; preference/persistence or root changes require a new approved decision.
 - Preserve KAN-569 MapLibre rendering/worker/style lifecycle and H1–H5 membership economics. No architecture or generic UI-state rewrites.
-- `pn verify --db`, final T9 browser benchmark and merge belong to **KAN-578 (T9)**; they have not been executed here.
+- The full `pn verify --db` gate was additionally executed for T8 closure and is **PASS** (see final closure record below). The final T9 browser benchmark and parent branch merge remain assigned to **KAN-578 (T9)** / KAN-508 closure.
 - Source observations below are NOT a claim of actual WCAG compliance, browser testing, 200% zoom testing or an observed defect.
 
 ## Evidence legend
@@ -233,3 +233,20 @@ Operator ran `pn verify --db`: **Tests FAIL (3)**; **TypeScript PASS, ESLint PAS
 - `tests/memberships/athlete-membership-page-integration.test.ts` expected `membership.charges`, but T8 explicitly removed duplicated snapshot and retained authoritative `<MembershipAccountState accountState={membership.accountState} economicHistory={membership.economicHistory} debtExperience={membership.debtExperience} />` from scoped read-only loader. Test now asserts the single ledger and no reintroduced duplicate mapping; commit `72a5c16c`. No billing production change.
 
 These are **candidate test expectation corrections** based on verified code, not yet GREEN. Next operator focused command: `pn tdd tests/athlete-session-execution-guidance.test.ts tests/maps/maplibre-initial-attribution-collapse.test.ts tests/memberships/athlete-membership-page-integration.test.ts`. If focused GREEN, rerun complete `pn verify --db`. Jira and story remain open until both gates and closure review are confirmed. Defer branch merge to parent KAN-508.
+
+## T8 final acceptance and closure record
+
+**Operator final full gate:** `pn verify --db` result **PASS**, total **133032 ms**; Tests PASS (41845 ms), TypeScript PASS (9195 ms), ESLint PASS (20165 ms), Build PASS (20439 ms), i18n PASS (401 ms), SQLite PASS (40987 ms). The previous three static assertions were reconciled to verified existing behavior in commits `f045c860` (locale-aware effort priority), `7fbef54a` (typed MapLibre attribution selector), `72a5c16c` (single authoritative Membership account view); no runtime code was changed by those three test repairs. Earlier targeted fixes each used operator-confirmed RED→GREEN, including Athlete competition width, Membership layout/disclosures and duplicate-currency formatting.
+
+**Acceptance by audit dimension** (operator-reported manual browser evidence, not independent browser automation):
+
+| Criterion | Result / evidence |
+| --- | --- |
+| Representative Coach and Athlete pages | GREEN: Coach planning subgroups, Athletes list, Membership with and without billing terms; Athlete Home, Plan and Competitions, Stats, Profile, bottom navigation. |
+| Responsive, overflow and zoom | GREEN for requested 360/390 px, 200% zoom, desktop width parity on Plan/Competitions; no outstanding reproducible UI blocker reported. |
+| Keyboard, focus, disclosure | GREEN for requested keyboard checks, particularly Coach Membership management, economic histories and Athlete navigation. |
+| ES/EN and light/dark | Operator accepted final requested matrix; changed UI strings localized, historic seed prose deliberately not translated as authorable planning data. |
+| Semantic contrast and touch foundations | Source-reviewed component tokens; targeted visual/manual evidence accepted, but **not** a comprehensive WCAG audit or screen-reader certification. |
+| No domain/persistence regression | Full tests + TypeScript + ESLint + Build + i18n + SQLite PASS. H1–H5, physiological truth and cartographic lifecycle preserved. |
+
+**Scope separation and next handoff:** This is the completion of **KAN-577 (T8)**, not the completion of parent **KAN-508** or parent release epic. No independent T8 PR/merge of the shared `feat/KAN-508-prebeta-ux-consolidation` branch: its remaining subtasks and **KAN-578 T9** must be reconciled and closed through the parent integration workflow. KAN-359 typography preference remains a separately controlled product boundary; KAN-580 quick individual payments, KAN-581 membership shell colors, KAN-565 bulk list research, and KAN-298 authentication blocking remain independent backlog, not T8 defects. Preserve historical in-progress notes above as the time-ordered evidence trail; final status in this section supersedes them.
