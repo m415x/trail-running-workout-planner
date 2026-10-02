@@ -8,7 +8,7 @@ type MarkerRow = {
 }
 
 type SandboxTransaction = {
-  unsafe: (statement: string) => Promise<readonly MarkerRow[]>
+  unsafe: (statement: string) => Promise<unknown[]>
 }
 
 type TransactionClient = {
@@ -47,14 +47,14 @@ export async function verifyLocalSandboxMarkerInTransaction(request: {
       await verifyThenSetLocalSandboxSessionMarker({
         expectedClusterSystemIdentifier: request.expectedClusterSystemIdentifier,
         inExplicitTransaction: true,
-        query: statement => transaction.unsafe(statement),
+        query: async statement => transaction.unsafe(statement) as Promise<MarkerRow[]>,
       })
 
       let markerRows: readonly MarkerRow[]
       try {
         markerRows = await transaction.unsafe(
           "SELECT current_setting('app.coach_sandbox_marker', true) AS \"environmentMarker\"",
-        )
+        ) as MarkerRow[]
       } catch {
         throw new Error('Sandbox transaction-local marker readback failed')
       }
