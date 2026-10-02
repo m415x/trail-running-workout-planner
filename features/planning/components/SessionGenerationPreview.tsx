@@ -198,7 +198,7 @@ export function SessionGenerationPreview({
           <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
             <p className='mb-2 font-medium text-destructive'>{t('sessionPreview.review')}</p>
             <ul className='space-y-1 text-muted-foreground'>
-              {warnings.map((warning) => <li key={formatWarning(warning)}>• {warning}</li>)}
+              {warnings.map((warning) => <li key={warning}>• {formatWarning(warning)}</li>)}
             </ul>
           </div>
         )}
