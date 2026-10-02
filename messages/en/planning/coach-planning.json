@@ -140,7 +140,14 @@
       "noZone": "No zone",
       "competitionNote": "Competition · excluded from taper training volume.",
       "review": "Review the proposal",
-      "saveHelp": "Save this proposal to publish it to the calendar."
+      "saveHelp": "Save this proposal to publish it to the calendar.",
+      "missingTemplate": "No active template is compatible with the {role} role, the {period} period, and the {microcycleType} microcycle.",
+      "periods": {
+        "general_preparatory": "general preparation",
+        "specific_preparatory": "specific preparation",
+        "competitive": "competitive",
+        "transition": "transition"
+      }
     },
     "microcycleType": {
       "ariaLabel": "Microcycle type",
