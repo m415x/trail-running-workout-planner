@@ -92,3 +92,54 @@ test('KAN-584 executes one local synthetic seed only after identity and allowed 
   assert.equal(result, 'seed complete')
   assert.deepEqual(order, ['identity', 'mutation'])
 })
+
+test('KAN-584 rejects mismatched database and nonlocal project identities', async () => {
+  for (const candidate of [
+    { database: 'production', environmentMarker: 'trail-running-coach-local-sandbox', projectRef: null },
+    { database: 'postgres', environmentMarker: 'trail-running-coach-local-sandbox', projectRef: 'another-project' },
+    { database: 'postgres', environmentMarker: 'trail-running-coach-local-sandbox' },
+  ]) {
+    let executed = false
+    await assert.rejects(
+      authorizeSandboxMutation({
+        destination: local,
+        operation: 'seed',
+        readPhysicalIdentity: async () => candidate,
+        execute: async () => { executed = true },
+      }),
+      /identity/i,
+    )
+    assert.equal(executed, false)
+  }
+})
+
+test('KAN-584 never exposes a credential from physical identity lookup errors', async () => {
+  const secret = 'MUST_NOT_APPEAR_IN_EXCEPTION'
+  await assert.rejects(
+    authorizeSandboxMutation({
+      destination: local,
+      operation: 'seed',
+      readPhysicalIdentity: async () => {
+        throw new Error('connection failed: ' + secret)
+      },
+      execute: async () => 'unexpected',
+    }),
+    (error: unknown) => error instanceof Error
+      && /identity/i.test(error.message)
+      && !error.message.includes(secret),
+  )
+})
+
+test('KAN-584 cannot be bypassed with an unknown mutation operation', async () => {
+  let executed = false
+  await assert.rejects(
+    authorizeSandboxMutation({
+      destination: local,
+      operation: 'drop_everything' as 'migrate',
+      readPhysicalIdentity: verifiedLocal,
+      execute: async () => { executed = true },
+    }),
+    /operation/i,
+  )
+  assert.equal(executed, false)
+})
