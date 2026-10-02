@@ -91,3 +91,19 @@ gate. Access to `pg_control_system()` depends on PostgreSQL permissions:
 missing permission or any query error must fail closed, not trigger a fallback
 or automatic privilege escalation. The local Supabase lifecycle, pin
 provisioning and real driver wiring remain unverified.
+
+## T2 same-session pinned adapter
+
+`runPinnedCoachSandboxOperation` composes the guarded command boundary,
+single-statement SQL identity reader, independently pinned PostgreSQL cluster
+identifier and connection lifecycle. The caller's `execute` callback receives
+exactly the connection whose `query` supplied the validated physical identity;
+missing pins reject without opening a connection. Unknown operations, reset and
+nonlocal destinations remain rejected.
+
+The adapter is intentionally callback-driven. Tests use a fake connection,
+and **do not** prove that an actual PostgreSQL server, its permissions, its
+session marker or a live migration path has been validated. T2/T3 must still
+establish a concrete safe connection provider and controlled CLI before
+migrations or seeds are permitted. Direct production-oriented Drizzle
+migration commands have not been reclassified as sandbox-safe.
