@@ -46,7 +46,7 @@ export function MembershipAccountState({
       currency,
     }).format(minor / 100)
 
-    return `${formatted} ${currency}`
+    return formatted
   }
 
   const formatDate = (value: string) =>
