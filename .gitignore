@@ -58,3 +58,6 @@ sqlite.db
 
 # MapLibre generated worker assets
 public/maplibre/
+
+# Operator-approved local PostgreSQL sandbox pin (never commit)
+/.coach-sandbox-local/
