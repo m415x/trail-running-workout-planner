@@ -1,4 +1,4 @@
-import { PgDialect } from 'drizzle-orm/pg-core'
+import { PgDatabase, PgDialect } from 'drizzle-orm/pg-core'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { SQL } from 'drizzle-orm/sql'
 
@@ -73,7 +73,9 @@ export function createInstalledPostgresJsDrizzleMigrationHost(
   database: PostgresJsDatabase,
 ) {
   const dialect = new PgDialect()
-  type Session = Parameters<typeof dialect.migrate>[1]
+  // Matches the installed Drizzle PgDatabase constructor's actual session
+  // contract, used by the official postgres.js migrator.
+  type Session = ConstructorParameters<typeof PgDatabase>[1]
   return {
     dialect: {
       migrate: async (
