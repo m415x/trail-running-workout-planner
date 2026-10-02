@@ -10,9 +10,16 @@ const marker = 'trail-running-coach-local-sandbox'
 
 function fixture(options: { journal?: string | null; relations?: string[] } = {}) {
   const calls: string[] = []
+  type CatalogRow = {
+    database?: string | null
+    clusterSystemIdentifier?: string | null
+    environmentMarker?: string | null
+    journal?: string | null
+    name?: string
+  }
   const database = {
     dialect: { migrate: async () => { calls.push('MIGRATE') } },
-    transaction: async (callback: (tx: { session: object; execute: (sql: string) => Promise<unknown[]> }) => Promise<void>) => {
+    transaction: async (callback: (tx: { session: object; execute: (sql: string) => Promise<CatalogRow[]> }) => Promise<void>) => {
       calls.push('BEGIN')
       try {
         await callback({
@@ -103,4 +110,25 @@ test('KAN-585 verifies fresh journal and all table names within tx before canoni
     'MIGRATE',
     'COMMIT',
   ])
+})
+
+test('KAN-585 rejects absent canonical SQL inventory before opening a transaction', async () => {
+  const f = fixture()
+  await assert.rejects(
+    () => runVerifiedCanonicalDrizzleTransaction({
+      directUrl: url,
+      expectedClusterSystemIdentifier: pin,
+      migrationsFolder: folder,
+      database: f.database,
+      canonicalSqlInventory: [],
+      loadCanonicalMigrations: () => [{
+        sql: ['CREATE TABLE "users" ("id" text)'],
+        hash: 'synthetic-hash',
+        folderMillis: 1,
+        bps: true,
+      }],
+    }),
+    /canonical|inventory|migration/i,
+  )
+  assert.deepEqual(f.calls, [])
 })
