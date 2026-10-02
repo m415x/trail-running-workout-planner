@@ -107,3 +107,7 @@ session marker or a live migration path has been validated. T2/T3 must still
 establish a concrete safe connection provider and controlled CLI before
 migrations or seeds are permitted. Direct production-oriented Drizzle
 migration commands have not been reclassified as sandbox-safe.
+
+## T2 reserved PostgreSQL driver boundary
+
+`runCoachSandboxWithReservedPostgres` is a callback-driven adapter for the postgres.js `reserve()`/`unsafe()`/`release()`/`end()` lifecycle. It validates the local destination, trusted pin and operation **before constructing a client**, verifies identity on the reserved session, passes that exact session to the operation, and releases the connection and closes the client even when verification rejects it. The focused tests inject a fake postgres.js-compatible client. This is **not** a live PostgreSQL validation or an executable sandbox migration/seed command. No cloud, reset, data migration or automatic production fallback is authorized. The existing `db:supabase:migrate` script remains separate and outside this safeguard. T2 stays open for end-to-end integration/validation, with local CLI lifecycle under T3.
