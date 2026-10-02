@@ -55,7 +55,7 @@ export function inspectSandboxDestination(input: SandboxDestinationInput): Sandb
     throw new Error('An explicit cloud project allowlist is required')
   }
 
-  const match = /^db\\.([a-z0-9]+)\\.supabase\\.co$/.exec(parsed.hostname)
+  const match = /^db\.([a-z0-9]+)\.supabase\.co$/.exec(parsed.hostname)
   const projectRef = match?.[1]
 
   if (
