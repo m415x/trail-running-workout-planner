@@ -50,15 +50,6 @@ interface LoadProgressionPreviewProps {
 
 const initialActionState: PersistProgressionFormState = {}
 
-const microcycleLabels: Record<MicrocycleType, string> = {
-  base: 'Base',
-  development: 'Desarrollo',
-  shock: 'Carga',
-  deload: 'Descarga',
-  tapering: 'Taper',
-  race: 'Semana de carrera',
-}
-
 const loadFocusLabelKeys: Record<MicrocycleLoadFocus, 'balanced' | 'volume' | 'elevation' | 'recovery' | 'race_specific'> = {
   balanced: 'balanced',
   volume: 'volume',
@@ -94,6 +85,7 @@ export function LoadProgressionPreview({
   locale,
 }: LoadProgressionPreviewProps) {
   const t = useTranslations('CoachPlanning')
+  const presentationLocale = locale === 'en' ? 'en-US' : 'es-AR'
   const manualVolumePoints = points.filter((point) => point.volumeSource === 'manual')
   const manualElevationPoints = points.filter((point) => point.elevationSource === 'manual')
   const elevationValues = points.flatMap((point) => (
@@ -112,30 +104,30 @@ export function LoadProgressionPreview({
           <div>
             <CardTitle>{t('loadPreviewTitle')}</CardTitle>
             <CardDescription>
-              Propuesta semanal calculada desde la estrategia y el horizonte guardados.
+              {t('loadPreview.description')}
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
             <Badge variant='outline'>
               <span className='size-2 rounded-full bg-[var(--chart-1)]' />
-              Volumen (km)
+              {t('loadPreview.volume')}
             </Badge>
             {hasElevation && (
               <Badge variant='outline'>
                 <span className='size-2 rounded-full bg-[var(--chart-2)]' />
-                Desnivel (m D+)
+                {t('loadPreview.elevation')}
               </Badge>
             )}
             {manualVolumePoints.length > 0 && (
               <Badge variant='outline'>
                 <span className='size-2 rounded-full bg-[var(--chart-4)]' />
-                Volumen manual: {manualVolumePoints.length}
+                {t('loadPreview.manualVolume', { count: manualVolumePoints.length })}
               </Badge>
             )}
             {manualElevationPoints.length > 0 && (
               <Badge variant='outline'>
                 <span className='size-2 rounded-full bg-[var(--chart-5)]' />
-                D+ manual: {manualElevationPoints.length}
+                {t('loadPreview.manualElevation', { count: manualElevationPoints.length })}
               </Badge>
             )}
           </div>
@@ -144,14 +136,14 @@ export function LoadProgressionPreview({
       <CardContent className='space-y-5'>
         <ChartContainer
           config={{
-            volume: { label: 'Volumen', color: 'var(--chart-1)' },
-            elevation: { label: 'Desnivel', color: 'var(--chart-2)' },
+            volume: { label: t('loadPreview.volume'), color: 'var(--chart-1)' },
+            elevation: { label: t('loadPreview.elevation'), color: 'var(--chart-2)' },
           }}
           className='h-72 w-full aspect-auto'
         >
           <LineChart data={points} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} />
-            <XAxis dataKey='weekNumber' tickLine={false} axisLine={false} tickFormatter={(value) => `S${value}`} />
+            <XAxis dataKey='weekNumber' tickLine={false} axisLine={false} tickFormatter={(value) => t('loadPreview.week', { count: Number(value) })} />
             <YAxis
               yAxisId='volume'
               unit=' km'
@@ -183,17 +175,17 @@ export function LoadProgressionPreview({
 
                 return (
                   <div className='space-y-1 rounded-md border bg-background px-3 py-2 text-sm shadow-md'>
-                    <p className='font-medium'>Semana {point.weekNumber}</p>
+                    <p className='font-medium'>{t('loadPreview.week', { count: point.weekNumber })}</p>
                     <p className='text-muted-foreground'>
-                      {microcycleLabels[point.type]}
+                      {t(`microcycleType.types.${point.type}`)}
                     </p>
                     <p className='text-muted-foreground'>{t(`loadFocus.${loadFocusLabelKeys[point.loadFocus]}`)}</p>
                     <p className='font-semibold'>
-                      {point.volumeKm.toLocaleString('es-AR')} km · {point.volumeSource === 'manual' ? 'Manual' : 'Generado'}
+                      {point.volumeKm.toLocaleString(presentationLocale)} km · {point.volumeSource === 'manual' ? t('loadPreview.manual') : t('loadPreview.generated')}
                     </p>
                     {point.elevationGain !== null && (
                       <p className='font-semibold'>
-                        +{point.elevationGain.toLocaleString('es-AR')} m D+ · {point.elevationSource === 'manual' ? 'Manual' : 'Generado'}
+                        +{point.elevationGain.toLocaleString(presentationLocale)} m D+ · {point.elevationSource === 'manual' ? t('loadPreview.manual') : t('loadPreview.generated')}
                       </p>
                     )}
                   </div>
@@ -254,12 +246,12 @@ export function LoadProgressionPreview({
         </ChartContainer>
 
         <div className='flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground'>
-          <span>Inicio: {initialVolumeKm.toLocaleString('es-AR')} km</span>
-          <span>Máximo: {maximumVolumeKm.toLocaleString('es-AR')} km</span>
+          <span>{t('loadPreview.initial')}: {initialVolumeKm.toLocaleString(presentationLocale)} km</span>
+          <span>{t('loadPreview.maximum')}: {maximumVolumeKm.toLocaleString(presentationLocale)} km</span>
           {hasElevation && (
-            <span>Pico D+: {Math.max(...elevationValues).toLocaleString('es-AR')} m</span>
+            <span>{t('loadPreview.peakElevation')}: {Math.max(...elevationValues).toLocaleString(presentationLocale)} m</span>
           )}
-          <span>{points.length} semanas</span>
+          <span>{t('loadPreview.weeks', { count: points.length })}</span>
         </div>
 
         {warnings.length > 0 && (
@@ -282,9 +274,9 @@ export function LoadProgressionPreview({
             {actionState.error ? (
               <p className='text-destructive' role='alert'>{actionState.error}</p>
             ) : conflicts.length > 0 ? (
-              <p>Resolvé los conflictos antes de guardar la propuesta.</p>
+              <p>{t('loadPreview.resolveConflicts')}</p>
             ) : (
-              <p>El guardado conservará por separado los valores de volumen y D+ marcados como manuales.</p>
+              <p>{t('loadPreview.saveHelp')}</p>
             )}
           </div>
           <Button type='submit' disabled={isPending || conflicts.length > 0}>
