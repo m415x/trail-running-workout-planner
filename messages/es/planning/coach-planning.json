@@ -183,6 +183,17 @@
       "noIntense": "Sin sesiones intensas",
       "intenseSessions": "{count, plural, one {# sesión intensa} other {# sesiones intensas}}",
       "recoveryDays": "{count, plural, one {# día de recuperación} other {# días de recuperación}}"
+    },
+    "microcycleEditor": {
+      "startDateAria": "Fecha inicial del microciclo",
+      "endDateAria": "Fecha final del microciclo",
+      "notesPlaceholder": "Agregá indicaciones u observaciones para esta semana.",
+      "notesAria": "Notas del microciclo",
+      "notesHelp": "Dejá el campo vacío para eliminar la nota.",
+      "elevationPlaceholder": "Sin D+",
+      "elevationAria": "Desnivel positivo objetivo en metros",
+      "sourceManual": "Manual",
+      "sourceGenerated": "Generado"
     }
   }
 }
