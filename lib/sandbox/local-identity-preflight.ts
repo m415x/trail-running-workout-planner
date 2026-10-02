@@ -1,7 +1,7 @@
 import { inspectSandboxDestination } from './sandbox-destination'
 import { loadApprovedLocalSandboxPinFile } from './local-pin-file'
 import { readLocalSandboxSqlIdentity, type LocalSandboxSqlIdentityRow } from './postgres-sql-identity'
-import { verifyLocalSandboxPhysicalIdentity } from './postgres-physical-identity'
+import { verifyLocalSandboxClusterPin, verifyLocalSandboxPhysicalIdentity } from './postgres-physical-identity'
 
 type ReadOnlyConnection = {
   unsafe: (statement: string) => Promise<readonly LocalSandboxSqlIdentityRow[]>
@@ -27,9 +27,10 @@ type ReadOnlyIdentityRequest<Connection extends ReadOnlyConnection> = {
  * loads an operator-approved pin, reserves one session and issues only the
  * identity SELECT. It cannot migrate, seed, reset or authorize future writes.
  */
-export async function checkLocalSandboxReadOnlyIdentity<
-  Connection extends ReadOnlyConnection,
->(request: ReadOnlyIdentityRequest<Connection>): Promise<{ verified: true }> {
+async function checkReadOnlyPreflight<Connection extends ReadOnlyConnection>(
+  request: ReadOnlyIdentityRequest<Connection>,
+  mode: 'physical-cluster' | 'marker-required',
+): Promise<{ verified: true }> {
   inspectSandboxDestination({ kind: 'local', directUrl: request.directUrl })
 
   let approvedPin: string
@@ -59,12 +60,17 @@ export async function checkLocalSandboxReadOnlyIdentity<
       throw new Error('Sandbox read-only PostgreSQL session failed')
     }
 
-    await verifyLocalSandboxPhysicalIdentity({
+    const verification = {
       expectedClusterSystemIdentifier: approvedPin,
       queryIdentity: () => readLocalSandboxSqlIdentity(
         statement => connection!.unsafe(statement),
       ),
-    })
+    }
+    if (mode === 'physical-cluster') {
+      await verifyLocalSandboxClusterPin(verification)
+    } else {
+      await verifyLocalSandboxPhysicalIdentity(verification)
+    }
     return { verified: true }
   } finally {
     try {
@@ -79,4 +85,25 @@ export async function checkLocalSandboxReadOnlyIdentity<
       }
     }
   }
+}
+
+/**
+ * First-stage read-only preflight: the operator-approved physical cluster is
+ * verified without relying on any caller-controlled session marker.
+ * This does not authorize any database writes.
+ */
+export async function checkLocalSandboxReadOnlyCluster<
+  Connection extends ReadOnlyConnection,
+>(request: ReadOnlyIdentityRequest<Connection>): Promise<{ verified: true }> {
+  return checkReadOnlyPreflight(request, 'physical-cluster')
+}
+
+/**
+ * Stricter read-only compatibility probe requiring the legacy session marker.
+ * Retained independently so mutation guards are never relaxed implicitly.
+ */
+export async function checkLocalSandboxReadOnlyIdentity<
+  Connection extends ReadOnlyConnection,
+>(request: ReadOnlyIdentityRequest<Connection>): Promise<{ verified: true }> {
+  return checkReadOnlyPreflight(request, 'marker-required')
 }
