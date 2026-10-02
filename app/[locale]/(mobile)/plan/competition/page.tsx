@@ -28,7 +28,7 @@ export default async function PlanCompetitionPage() {
   const t = await getTranslations('stats')
   const today = new Date().toISOString().slice(0, 10)
   const result = await getCurrentAthleteRaceRegistrationsAction({ today })
-  if (result.status !== 'success') return <p className='p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
+  if (result.status !== 'success') return <p className='mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6'>{t('competitionError')}</p>
 
   const labels: Labels = {
     unknown: t('competitionDetail.registrations.unknown'),
@@ -42,7 +42,7 @@ export default async function PlanCompetitionPage() {
     },
   }
 
-  return <section className='space-y-5 pb-2'>
+  return <section className='mx-auto w-full max-w-5xl space-y-5 px-4 py-6 sm:px-6'>
     <Link href='/plan' className='inline-flex items-center gap-2 text-sm font-semibold text-primary'><ArrowLeft className='size-4' />Plan</Link>
     <header><Mountain className='mb-2 size-5' /><h1 className='font-heading text-2xl font-bold'>{t('competition')}</h1><p className='mt-1 text-sm text-muted-foreground'>{t('competitionDetail.registrations.upcoming')}</p></header>
     {result.data.upcoming.length === 0
