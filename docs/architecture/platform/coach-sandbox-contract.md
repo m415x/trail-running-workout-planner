@@ -72,3 +72,22 @@ diagnostics. Negative tests explicitly check non-execution on mismatches.
 ## T2 pinned PostgreSQL identity validator
 
 `verifyLocalSandboxPhysicalIdentity` now compares a query-provided database name, local sandbox marker and PostgreSQL cluster system identifier against a separately trusted pin. An absent pin is rejected **before** the query; mismatches and database driver errors fail closed without echoing connection details. The cluster identifier must be independently obtained and approved, not copied from the target query response. Tests use an injected identity reader: **no actual SQL query, running local Supabase, or secured Drizzle CLI entrypoint is implied**. Those integration boundaries remain pending under T2/T3. Existing production deployment commands are unchanged.
+
+## T2 PostgreSQL read-only identity SQL
+
+`lib/sandbox/postgres-sql-identity.ts` now defines a single SQL `SELECT`
+reading `current_database()`, the session setting
+`current_setting('app.coach_sandbox_marker', true)`, and
+`pg_control_system().system_identifier`. Its caller-supplied executor must
+run the statement on the **same authenticated PostgreSQL session** used for
+the subsequent operation and then call `verifyLocalSandboxPhysicalIdentity`
+with an independently trusted cluster pin. This module does not open a
+connection or invoke any migration, seed or reset.
+
+**Operational caveats:** the custom PostgreSQL setting is session-scoped and
+must never be accepted as independent proof of identity; only an independently
+pinned cluster identifier plus the additional checks supplies the intended
+gate. Access to `pg_control_system()` depends on PostgreSQL permissions:
+missing permission or any query error must fail closed, not trigger a fallback
+or automatic privilege escalation. The local Supabase lifecycle, pin
+provisioning and real driver wiring remain unverified.
