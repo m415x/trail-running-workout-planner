@@ -14,48 +14,58 @@ const approvedDocument = JSON.stringify({
   approvedByOperator: true,
 })
 
-test('KAN-585 reads an explicitly scoped non-symlink operator approval file', async () => {
+test('KAN-585 only opens an explicitly scoped local operator approval file', async () => {
   const paths: string[] = []
+  let closed = 0
   const pin = await loadApprovedLocalSandboxPinFile({
     repositoryRoot: root,
-    inspect: async path => {
+    inspectDirectory: async path => {
       paths.push(path)
-      return { isFile: () => true, isSymbolicLink: () => false }
+      return { isFile: () => false, isDirectory: () => true, isSymbolicLink: () => false }
     },
-    read: async path => {
+    openFile: async path => {
       paths.push(path)
-      return approvedDocument
+      return {
+        stat: async () => ({ isFile: () => true, isSymbolicLink: () => false }),
+        readFile: async () => approvedDocument,
+        close: async () => { closed++ },
+      }
     },
   })
   assert.equal(pin, '1234567890123456789')
-  assert.deepEqual(paths, [approvedFile, approvedFile])
+  assert.deepEqual(paths, [join(root, '.coach-sandbox-local'), approvedFile])
+  assert.equal(closed, 1)
 })
 
-test('KAN-585 rejects symlinks, non-files, missing documents and unsafe roots without reading data', async () => {
+test('KAN-585 rejects symlinked or non-file approval handles and unsafe roots', async () => {
   for (const stat of [
     { isFile: () => false, isSymbolicLink: () => false },
     { isFile: () => true, isSymbolicLink: () => true },
   ]) {
     let reads = 0
+    let closed = 0
     await assert.rejects(
       () => loadApprovedLocalSandboxPinFile({
         repositoryRoot: root,
-        inspect: async () => stat,
-        read: async () => { reads++; return approvedDocument },
+        inspectDirectory: async () => ({ isDirectory: () => true, isFile: () => false, isSymbolicLink: () => false }),
+        openFile: async () => ({
+          stat: async () => stat,
+          readFile: async () => { reads++; return approvedDocument },
+          close: async () => { closed++ },
+        }),
       }),
       /trusted|pin|approval/i,
     )
     assert.equal(reads, 0)
+    assert.equal(closed, 1)
   }
   await assert.rejects(() => loadApprovedLocalSandboxPinFile({
     repositoryRoot: '.',
-    inspect: async () => { throw new Error('should not inspect') },
-    read: async () => approvedDocument,
+    inspectDirectory: async () => { throw new Error('should not inspect') },
   }), /trusted|pin|approval/i)
   await assert.rejects(() => loadApprovedLocalSandboxPinFile({
     repositoryRoot: root,
-    inspect: async () => { throw new Error('password=PRIVATE') },
-    read: async () => approvedDocument,
+    inspectDirectory: async () => { throw new Error('password=PRIVATE') },
   }), (error: unknown) => error instanceof Error && !error.message.includes('PRIVATE'))
 })
 
