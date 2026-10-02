@@ -1,7 +1,3 @@
-type DrizzleJournalRow = {
-  journal?: string | null
-}
-
 /**
  * Read-only preflight for a fresh application migration target. Supabase may
  * have its own managed schemas; absence of the Drizzle journal is necessary,
@@ -11,9 +7,9 @@ type DrizzleJournalRow = {
  * No connection, DDL, mutation, migration, or fallback is performed here.
  */
 export async function inspectCoachSandboxFreshMigrationTarget(request: {
-  query: (statement: string) => Promise<readonly DrizzleJournalRow[]>
+  query: (statement: string) => Promise<unknown>
 }): Promise<{ fresh: true }> {
-  let rows: readonly DrizzleJournalRow[]
+  let rows: unknown
   try {
     rows = await request.query(
       "SELECT to_regclass('drizzle.__drizzle_migrations')::text AS \"journal\"",
@@ -23,7 +19,15 @@ export async function inspectCoachSandboxFreshMigrationTarget(request: {
     throw new Error('Sandbox Drizzle migration journal inspection failed')
   }
 
-  if (!Array.isArray(rows) || rows.length !== 1 || rows[0]?.journal !== null) {
+  if (
+    !Array.isArray(rows)
+    || rows.length !== 1
+    || !rows[0]
+    || typeof rows[0] !== 'object'
+    || Array.isArray(rows[0])
+    || !Object.hasOwn(rows[0], 'journal')
+    || rows[0].journal !== null
+  ) {
     throw new Error('Sandbox fresh migration target requires an absent Drizzle journal')
   }
 
