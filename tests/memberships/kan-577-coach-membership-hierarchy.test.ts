@@ -6,7 +6,7 @@ const detail = readFileSync('app/[locale]/dashboard/athletes/[athleteId]/page.ts
 const account = readFileSync('features/memberships/components/MembershipAccountState.tsx', 'utf8')
 const actions = readFileSync('features/memberships/components/AthleteBillingTermsForm.tsx', 'utf8')
 const translations = ['es', 'en'].map(locale =>
-  JSON.parse(readFileSync(`messages/${locale}/athlete-detail.json`, 'utf8')),
+  JSON.parse(readFileSync(`messages/${locale}/athletes/detail.json`, 'utf8')),
 )
 
 test('KAN-577 coach membership has clear default summary and a single charge ledger', () => {
