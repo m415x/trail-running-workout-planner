@@ -4,9 +4,13 @@ import { isAbsolute, join, win32 } from 'node:path'
 
 import { readApprovedLocalSandboxPin } from './local-cluster-pin'
 
+type DirectoryInspection = {
+  isDirectory: () => boolean
+  isSymbolicLink: () => boolean
+}
+
 type FileInspection = {
   isFile: () => boolean
-  isDirectory?: () => boolean
   isSymbolicLink: () => boolean
 }
 
@@ -18,7 +22,7 @@ type PinFileHandle = {
 
 type LocalPinFileRequest = {
   repositoryRoot: string
-  inspectDirectory?: (path: string) => Promise<FileInspection>
+  inspectDirectory?: (path: string) => Promise<DirectoryInspection>
   openFile?: (path: string, flags: number) => Promise<PinFileHandle>
 }
 
@@ -56,7 +60,7 @@ export async function loadApprovedLocalSandboxPinFile(
 
   try {
     const parent = await (request.inspectDirectory ?? lstat)(directory)
-    if (!parent.isDirectory?.() || parent.isSymbolicLink()) {
+    if (!parent.isDirectory() || parent.isSymbolicLink()) {
       throw new Error('Invalid approval directory')
     }
 
