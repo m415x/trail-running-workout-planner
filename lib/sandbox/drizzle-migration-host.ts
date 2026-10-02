@@ -1,3 +1,4 @@
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { SQL } from 'drizzle-orm/sql'
 
 import { createDrizzleTransactionIdentityQuery } from './drizzle-identity-query-adapter'
@@ -46,6 +47,39 @@ export function createVerifiedDrizzleMigrationHost<Session>(
 ) {
   return {
     dialect: database.dialect,
+    transaction: (callback: (transaction: {
+      session: Session
+      execute: (statement: string) => Promise<readonly IdentityRow[]>
+    }) => Promise<void>) => database.transaction(async tx => {
+      const query = createDrizzleTransactionIdentityQuery({
+        execute: statement => tx.execute(statement),
+      })
+      await callback({
+        session: tx.session,
+        execute: statement => query(statement) as Promise<readonly IdentityRow[]>,
+      })
+    }),
+  }
+}
+
+/**
+ * Explicitly typed bridge for the actual installed postgres.js Drizzle API.
+ * This keeps PgDialect.migrate's PgSession parameter intact rather than
+ * widening it to unknown (which breaks function-parameter variance).
+ * No connection, transaction or migration is started by this factory.
+ */
+export function createInstalledPostgresJsDrizzleMigrationHost(
+  database: PostgresJsDatabase,
+) {
+  type Session = Parameters<typeof database.dialect.migrate>[1]
+  return {
+    dialect: {
+      migrate: async (
+        migrations: CanonicalMigration[],
+        session: Session,
+        config: { migrationsFolder: string },
+      ) => database.dialect.migrate(migrations, session, config),
+    },
     transaction: (callback: (transaction: {
       session: Session
       execute: (statement: string) => Promise<readonly IdentityRow[]>
