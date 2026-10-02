@@ -68,7 +68,7 @@ export function verifyCanonicalDrizzleSqlCorrespondence(request: {
     if (
       migration.hash !== hash
       || migration.sql.length !== expectedStatements.length
-      || migration.sql.some((statement, statementIndex) => (
+      || migration.sql.some((statement: unknown, statementIndex: number) => (
         typeof statement !== 'string'
         || statement !== expectedStatements[statementIndex]
       ))
