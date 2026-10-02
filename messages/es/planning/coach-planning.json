@@ -152,6 +152,37 @@
         "tapering": "Taper",
         "race": "Carrera"
       }
+    },
+    "loadPreview": {
+      "description": "Propuesta semanal calculada desde la estrategia y el horizonte guardados.",
+      "volume": "Volumen (km)",
+      "elevation": "Desnivel (m D+)",
+      "manualVolume": "Volumen manual: {count}",
+      "manualElevation": "D+ manual: {count}",
+      "week": "Semana {count}",
+      "initial": "Inicio",
+      "maximum": "Máximo",
+      "peakElevation": "Pico D+",
+      "weeks": "{count, plural, one {# semana} other {# semanas}}",
+      "manual": "Manual",
+      "generated": "Generado",
+      "resolveConflicts": "Resolvé los conflictos antes de guardar la propuesta.",
+      "saveHelp": "El guardado conservará por separado los valores de volumen y D+ marcados como manuales."
+    },
+    "intensityDistribution": {
+      "description": "Objetivo semanal generado según el período, el microciclo y el objetivo del grupo.",
+      "method": "Método",
+      "referencePercentage": "de referencia",
+      "heartRateZones": "Zonas FC",
+      "maxIntense": "Máximo: {count, plural, one {# intensa} other {# intensas}}",
+      "manualStrategy": "Estrategia manual",
+      "empty": "Guardá la progresión para generar los objetivos semanales de intensidad.",
+      "week": "Semana {count}",
+      "manual": "Manual",
+      "predominant": "{zone} predominante",
+      "noIntense": "Sin sesiones intensas",
+      "intenseSessions": "{count, plural, one {# sesión intensa} other {# sesiones intensas}}",
+      "recoveryDays": "{count, plural, one {# día de recuperación} other {# días de recuperación}}"
     }
   }
 }
