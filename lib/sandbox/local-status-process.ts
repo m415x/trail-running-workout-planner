@@ -52,11 +52,11 @@ export async function checkLocalCoachSandboxStatusWithProcess(request: {
         executable,
         args,
         {
-        cwd,
-        shell: false,
-        timeout: 15000,
-        maxBuffer: 65536,
-        windowsHide: true,
+          cwd,
+          shell: false,
+          timeout: 15000,
+          maxBuffer: 65536,
+          windowsHide: true,
         },
       )
     },
