@@ -1,3 +1,5 @@
+import { readFile, readdir } from 'node:fs/promises'
+import { resolve } from 'node:path'
 import { inspectCoachSandboxMigrationJournal } from './migration-journal'
 
 const journalPath = 'drizzle/supabase/meta/_journal.json'
@@ -44,4 +46,20 @@ export async function loadCoachSandboxMigrationInventory(
 
   const sqlFiles = names.filter((name) => name.endsWith('.sql'))
   return inspectCoachSandboxMigrationJournal(journal, sqlFiles)
+}
+
+/**
+ * Inspect the repository's checked-in Drizzle migration inventory.
+ * The root is explicitly supplied; only readFile/readdir are used.
+ * Missing files or journal drift stop the operation before any DB access.
+ */
+export async function loadRepositoryCoachSandboxMigrationInventory(
+  repositoryRoot: string,
+): Promise<{ orderedMigrationFiles: string[]; migrationCount: number }> {
+  const root = resolve(repositoryRoot)
+
+  return loadCoachSandboxMigrationInventory({
+    readText: (path) => readFile(resolve(root, path), 'utf8'),
+    listNames: (path) => readdir(resolve(root, path)),
+  })
 }
