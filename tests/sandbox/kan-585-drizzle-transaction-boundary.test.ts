@@ -15,6 +15,8 @@ function fixture(physical = pin) {
     database?: string | null
     clusterSystemIdentifier?: string | null
     environmentMarker?: string | null
+    journal?: string | null
+    name?: string
   }
   type FakeTransaction = {
     session: typeof session
@@ -47,6 +49,14 @@ function fixture(physical = pin) {
                 events.push('set-local-marker')
                 return [{ environmentMarker: marker }]
               }
+              if (sql.includes('to_regclass(')) {
+                events.push('check-journal')
+                return [{ journal: null }]
+              }
+              if (sql.includes('pg_catalog.pg_class')) {
+                events.push('check-collisions')
+                return []
+              }
               if (sql.includes('current_setting(')) {
                 events.push('read-local-marker')
                 return [{ environmentMarker: marker }]
@@ -77,6 +87,7 @@ test('KAN-585 executes canonical Drizzle migrator only after pin+marker verifica
     expectedClusterSystemIdentifier: pin,
     migrationsFolder: migrationFolder,
     database: f.database,
+    canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
     loadCanonicalMigrations: f.loadCanonicalMigrations,
   })
   assert.deepEqual(f.events, [
@@ -85,6 +96,8 @@ test('KAN-585 executes canonical Drizzle migrator only after pin+marker verifica
     'read-physical',
     'set-local-marker',
     'read-local-marker',
+    'check-journal',
+    'check-collisions',
     'canonical-drizzle-migrate',
     'commit',
   ])
@@ -97,6 +110,7 @@ test('KAN-585 rolls back and never invokes Drizzle migration on physical mismatc
     expectedClusterSystemIdentifier: pin,
     migrationsFolder: migrationFolder,
     database: f.database,
+    canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
     loadCanonicalMigrations: f.loadCanonicalMigrations,
   }), /cluster|identity|sandbox/i)
   assert.deepEqual(f.events, ['load-canonical-migrations', 'begin', 'read-physical', 'rollback'])
@@ -112,7 +126,8 @@ test('KAN-585 rejects unapproved destination and missing pin before loading migr
       ...request,
       migrationsFolder: migrationFolder,
       database: f.database,
-      loadCanonicalMigrations: f.loadCanonicalMigrations,
+      canonicalSqlInventory: [{ filename: '0000_synthetic.sql', sql: 'CREATE TABLE "synthetic_only" ("id" text)' }],
+    loadCanonicalMigrations: f.loadCanonicalMigrations,
     }), /local|pin|cluster|sandbox/i)
     assert.deepEqual(f.events, [])
   }
