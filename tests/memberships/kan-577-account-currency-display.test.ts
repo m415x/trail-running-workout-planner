@@ -15,12 +15,18 @@ test('KAN-577 Membership uses the currency symbol/code supplied by Intl only onc
   )
 })
 
-test('KAN-577 currency output convention includes the amount and no trailing duplicate ARS', () => {
+test('KAN-577 Intl output includes one locale-specific currency part without an extra suffix', () => {
   for (const locale of ['es-AR', 'en-US']) {
     const formatted = new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'ARS',
     }).format(25000)
-    assert.equal((formatted.match(/ARS/g) ?? []).length, 1)
+    const formatter = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'ARS',
+    })
+    const parts = formatter.formatToParts(25000)
+    assert.equal(parts.filter(part => part.type === 'currency').length, 1)
+    assert.equal(formatted, parts.map(part => part.value).join(''))
   }
 })
