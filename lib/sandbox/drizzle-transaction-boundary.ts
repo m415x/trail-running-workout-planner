@@ -3,6 +3,7 @@ import { isAbsolute, win32 } from 'node:path'
 import { inspectCoachSandboxApplicationTableCollisions } from './application-table-collisions'
 import { inspectSandboxDestination } from './sandbox-destination'
 import { inspectCoachSandboxFreshMigrationTarget } from './fresh-migration-target'
+import { verifyCanonicalDrizzleSqlCorrespondence } from './drizzle-sql-correspondence'
 import { verifyThenSetLocalSandboxSessionMarker } from './local-session-marker'
 
 type CanonicalMigration = {
@@ -92,6 +93,11 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
   ) {
     throw new Error('Canonical Drizzle migration inventory invalid')
   }
+
+  verifyCanonicalDrizzleSqlCorrespondence({
+    canonicalSqlInventory: request.canonicalSqlInventory,
+    migrations,
+  })
 
   await request.database.transaction(async tx => {
     // Every statement and dialect migration shares the transaction session.
