@@ -1,6 +1,8 @@
 import { isAbsolute, win32 } from 'node:path'
 
+import { inspectCoachSandboxApplicationTableCollisions } from './application-table-collisions'
 import { inspectSandboxDestination } from './sandbox-destination'
+import { inspectCoachSandboxFreshMigrationTarget } from './fresh-migration-target'
 import { verifyThenSetLocalSandboxSessionMarker } from './local-session-marker'
 
 type CanonicalMigration = {
@@ -14,6 +16,8 @@ type TransactionRow = {
   database?: string | null
   environmentMarker?: string | null
   clusterSystemIdentifier?: string | null
+  journal?: string | null
+  name?: string
 }
 
 type VerifiedDrizzleTransaction<Session> = {
@@ -47,6 +51,7 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
   directUrl?: string
   expectedClusterSystemIdentifier?: string
   migrationsFolder: string
+  canonicalSqlInventory: readonly { filename: string; sql: string }[]
   database: DrizzleTransactionHost<Session>
   loadCanonicalMigrations: (folder: string) => CanonicalMigration[]
 }): Promise<void> {
@@ -60,6 +65,10 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
     || !(isAbsolute(request.migrationsFolder) || win32.isAbsolute(request.migrationsFolder))
   ) {
     throw new Error('Canonical sandbox migration folder must be absolute')
+  }
+
+  if (!Array.isArray(request.canonicalSqlInventory) || request.canonicalSqlInventory.length === 0) {
+    throw new Error('Canonical SQL migration inventory required')
   }
 
   let migrations: CanonicalMigration[]
@@ -109,6 +118,12 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
     ) {
       throw new Error('Sandbox transaction marker readback mismatch')
     }
+
+    await inspectCoachSandboxFreshMigrationTarget({ query })
+    await inspectCoachSandboxApplicationTableCollisions({
+      migrations: request.canonicalSqlInventory,
+      query,
+    })
 
     await request.database.dialect.migrate(
       migrations,
