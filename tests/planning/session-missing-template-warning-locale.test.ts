@@ -27,7 +27,7 @@ test('KAN-577 generation warnings use one localized presentation in event and su
   assert.ok(preview.includes('formatWarning(warning)'))
   assert.ok(preview.includes('warnings.map((warning)'))
   assert.ok(preview.includes('event.warnings.map((warning)'))
-  assert.ok(preview.includes('proposal={proposal}'))
+  assert.ok(preview.includes('value={JSON.stringify(proposal)}'))
   for (const t of [es, en]) {
     assert.ok(t.sessionPreview.missingTemplate)
     for (const period of ['general_preparatory','specific_preparatory','competitive','transition']) {
