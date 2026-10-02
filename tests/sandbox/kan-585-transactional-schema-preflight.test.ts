@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
 
 import { runVerifiedCanonicalDrizzleTransaction } from '../../lib/sandbox/drizzle-transaction-boundary'
@@ -72,7 +73,7 @@ function attempt(f: ReturnType<typeof fixture>) {
     canonicalSqlInventory: source,
     loadCanonicalMigrations: () => [{
       sql: ['CREATE TABLE "users" ("id" text)'],
-      hash: 'synthetic-hash',
+      hash: createHash('sha256').update('CREATE TABLE "users" ("id" text);').digest('hex'),
       folderMillis: 1,
       bps: true,
     }],
@@ -123,7 +124,7 @@ test('KAN-585 rejects absent canonical SQL inventory before opening a transactio
       canonicalSqlInventory: [],
       loadCanonicalMigrations: () => [{
         sql: ['CREATE TABLE "users" ("id" text)'],
-        hash: 'synthetic-hash',
+        hash: createHash('sha256').update('CREATE TABLE "users" ("id" text);').digest('hex'),
         folderMillis: 1,
         bps: true,
       }],
