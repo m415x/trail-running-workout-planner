@@ -11,7 +11,7 @@ test('KAN-576 initially minimizes the actual MapLibre attribution disclosure aft
   // MapLibre's compact option does NOT mean initially collapsed: its internal
   // maplibregl-compact-show class reveals provider text until first drag.
   assert.match(source, /const collapseInitialAttribution = \(\) => \{/)
-  assert.match(source, /querySelector\(['"]\.maplibregl-ctrl-attrib['"]\)/)
+  assert.match(source, /querySelector(?:<HTMLElement>)?\(['"]\.maplibregl-ctrl-attrib['"]\)/)
   assert.match(source, /classList\.remove\(['"]maplibregl-compact-show['"]\)/)
   assert.match(source, /removeAttribute\(['"]open['"]\)/)
   assert.match(source, /const handleLoad = \(\) => \{[\s\S]*?collapseInitialAttribution\(\)[\s\S]*?setMapReady\(true\)[\s\S]*?\}/)
