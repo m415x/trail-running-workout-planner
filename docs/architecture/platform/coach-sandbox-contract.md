@@ -36,3 +36,31 @@ The inspector produces a non-secret descriptor without the original URL. It does
 5. **T6/T7:** Only Group list/create/edit/reload and restricted logical reset; all other Coach/Athlete PostgreSQL coverage remains unverified.
 
 An operation requiring a cloud instance must stop until quota, pricing, target identity and explicit provisioning authorization are obtained. There is no automatic cloud project delete and no broad managed-schema reset.
+
+## T2 local-only mutation gate — implementation stage (KAN-584)
+
+`authorizeSandboxMutation` rejects all cloud mutations, all resets and
+unknown operation names before invoking any caller-supplied mutation. Only
+`migrate` and `seed` are recognized **for the local sandbox**, and each must
+pass both URL inspection and an identity callback reporting the exact expected
+database name, local environment marker and absent cloud project reference.
+Connection/driver errors are normalized so passwords cannot appear in
+diagnostics. Negative tests explicitly check non-execution on mismatches.
+
+**Limitations:**
+- The physical identity callback is injectable for tests; it is not yet wired
+  to a real, authenticated PostgreSQL connection. No physical identity query
+  or actual migrate/seed is claimed as executed in this stage.
+- The callback that observes identity and the callback that mutates must be
+  wired against the **same verified connection/transaction** in T3. Do not
+  assemble independent connections and treat this guard as sufficient to
+  prevent time-of-check/time-of-use mismatches.
+- The existing direct `db:supabase:migrate` command is **not** intercepted by
+  this function. Until guarded CLI integration is implemented and tested,
+  operators must not execute direct database-changing commands against any
+  cloud endpoint under the KAN-566 pilot.
+- The local Supabase CLI port shown here is an explicitly authorized *target
+  shape* for the pilot, not proof of a currently running local stack.
+- Reset remains denied regardless of any confirmation text until T7 defines
+  and tests a bounded object allowlist, actual destination identity and
+  operation-specific confirmation. No cloud deletion or managed-schema reset.
