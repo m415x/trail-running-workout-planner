@@ -8,6 +8,7 @@ import { persistGeneratedSessions } from '@/app/actions/session-generation-actio
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
+import { parseMissingTemplateWarning } from '@/lib/session-generation/missing-template-warning'
 import type { MicrocycleType } from '@/types/training/periodization.types'
 import type {
   SharedSessionEventProposal,
@@ -53,6 +54,16 @@ export function SessionGenerationPreview({
   const regionalContext = resolveApplicationRegionalContext({ language })
   const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
   const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
+  const formatWarning = (warning: string) => {
+    const parsed = parseMissingTemplateWarning(warning)
+    if (!parsed) return warning
+
+    return t('sessionPreview.missingTemplate', {
+      role: t(`roles.${parsed.role}`),
+      period: t(`sessionPreview.periods.${parsed.period}`),
+      microcycleType: t(`microcycleType.types.${parsed.microcycleType}`),
+    })
+  }
 
   return (
     <Card>
@@ -169,7 +180,7 @@ export function SessionGenerationPreview({
                           <div className='space-y-1 text-sm text-destructive'>
                             {event.warnings.map((warning) => (
                               <p key={warning} className='flex gap-1.5'>
-                                <AlertTriangle className='mt-0.5 size-4 shrink-0' /> {warning}
+                                <AlertTriangle className='mt-0.5 size-4 shrink-0' /> {formatWarning(warning)}
                               </p>
                             ))}
                           </div>
@@ -187,7 +198,7 @@ export function SessionGenerationPreview({
           <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm'>
             <p className='mb-2 font-medium text-destructive'>{t('sessionPreview.review')}</p>
             <ul className='space-y-1 text-muted-foreground'>
-              {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
+              {warnings.map((warning) => <li key={formatWarning(warning)}>• {warning}</li>)}
             </ul>
           </div>
         )}
