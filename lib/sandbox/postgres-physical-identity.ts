@@ -55,3 +55,43 @@ export async function verifyLocalSandboxPhysicalIdentity(
     projectRef: null,
   }
 }
+
+/**
+ * First-stage, read-only verification of physical PostgreSQL identity.
+ * It deliberately ignores the mutable session marker: a copied marker
+ * cannot establish trust, and an absent marker does not mask a valid pin.
+ *
+ * The caller must supply a separately approved cluster identifier. This
+ * check alone does not authorize migration, seed, reset or any other write.
+ */
+export async function verifyLocalSandboxClusterPin(
+  request: LocalSandboxPhysicalIdentityRequest,
+): Promise<{ database: 'postgres'; clusterSystemIdentifier: string }> {
+  const pin = request.expectedClusterSystemIdentifier
+  if (typeof pin !== 'string' || pin.trim() === '') {
+    throw new Error('Trusted physical cluster pin is required for sandbox identity')
+  }
+
+  let row: PostgreSqlIdentityRow
+  try {
+    row = await request.queryIdentity()
+  } catch {
+    // Driver errors may include connection URLs, credentials or query input.
+    throw new Error('PostgreSQL sandbox cluster identity query failed')
+  }
+
+  if (
+    !row
+    || row.database !== 'postgres'
+    || typeof row.clusterSystemIdentifier !== 'string'
+    || row.clusterSystemIdentifier.length === 0
+    || row.clusterSystemIdentifier !== pin
+  ) {
+    throw new Error('PostgreSQL sandbox physical cluster identity mismatch')
+  }
+
+  return {
+    database: 'postgres',
+    clusterSystemIdentifier: pin,
+  }
+}
