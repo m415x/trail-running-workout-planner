@@ -72,7 +72,7 @@ function attempt(f: ReturnType<typeof fixture>) {
     database: f.database,
     canonicalSqlInventory: source,
     loadCanonicalMigrations: () => [{
-      sql: ['CREATE TABLE "users" ("id" text)'],
+      sql: [source[0].sql],
       hash: createHash('sha256').update('CREATE TABLE "users" ("id" text);').digest('hex'),
       folderMillis: 1,
       bps: true,
@@ -123,7 +123,7 @@ test('KAN-585 rejects absent canonical SQL inventory before opening a transactio
       database: f.database,
       canonicalSqlInventory: [],
       loadCanonicalMigrations: () => [{
-        sql: ['CREATE TABLE "users" ("id" text)'],
+        sql: [source[0].sql],
         hash: createHash('sha256').update('CREATE TABLE "users" ("id" text);').digest('hex'),
         folderMillis: 1,
         bps: true,
