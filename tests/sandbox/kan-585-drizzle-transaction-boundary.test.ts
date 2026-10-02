@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { createHash } from 'node:crypto'
 import test from 'node:test'
 
 import { runVerifiedCanonicalDrizzleTransaction } from '../../lib/sandbox/drizzle-transaction-boundary'
@@ -22,7 +23,8 @@ function fixture(physical = pin) {
     session: typeof session
     execute: (sql: string) => Promise<IdentityRow[]>
   }
-  const migrations = [{ sql: ['CREATE TABLE "synthetic_only" ("id" text)'], hash: 'synthetic-hash', folderMillis: 1, bps: true }]
+  const syntheticSql = 'CREATE TABLE "synthetic_only" ("id" text)'
+  const migrations = [{ sql: [syntheticSql], hash: createHash('sha256').update(syntheticSql).digest('hex'), folderMillis: 1, bps: true }]
   return {
     events,
     migrations,
