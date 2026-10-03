@@ -1,4 +1,4 @@
-import type { AthleteCategoryCode, AthleteLevelCode } from '../../types/athlete/athlete.types'
+import type { AthleteCategoryCode, AthleteLevelCode } from '../../types/athlete/group.types'
 import { inspectSandboxDestination } from './sandbox-destination'
 
 type SyntheticTeamFixture = Readonly<{ id: string; name: string }>
