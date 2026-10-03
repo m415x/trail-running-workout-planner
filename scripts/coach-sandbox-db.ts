@@ -67,6 +67,7 @@ export type PinnedCoachSandboxRequest<Connection extends PinnedCoachSandboxConne
   directUrl?: string
   operation: string
   expectedClusterSystemIdentifier?: string
+  confirmation?: string
   open: () => Promise<Connection>
   execute: (connection: Connection) => Promise<Result>
   close: (connection: Connection) => Promise<void>
