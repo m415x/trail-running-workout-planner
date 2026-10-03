@@ -91,8 +91,23 @@ export function createInstalledPostgresJsDrizzleMigrationHost(
       const query = createDrizzleTransactionIdentityQuery({
         execute: statement => tx.execute(statement),
       })
+
+      // PgDialect.migrate calls session.transaction() for its inner migration
+      // loop. tx._.session belongs to postgres.js TransactionSql, whose
+      // client supports savepoint(), not begin(). Delegate nested transactions
+      // through Drizzle's transaction object so the same outer connection
+      // and its savepoint semantics are preserved.
+      const migrationSession = new Proxy(tx._.session, {
+        get(target, property, receiver) {
+          if (property === 'transaction') {
+            return tx.transaction.bind(tx)
+          }
+          return Reflect.get(target, property, receiver)
+        },
+      })
+
       await callback({
-        session: tx._.session,
+        session: migrationSession,
         execute: statement => query(statement) as Promise<readonly IdentityRow[]>,
       })
     }),
