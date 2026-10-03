@@ -91,6 +91,48 @@ Preserve the following boundary while the implementation is pending:
   aggregate gate for subsequent changes. Keep the first real DDL execution
   strictly withheld until its own authorization.
 
+## KAN-598 — Installed Drizzle nested-transaction compatibility risk (2026-10-03)
+
+**Unresolved technical blocker before any live DDL.** Static inspection of the
+version-tagged upstream sources for `drizzle-orm@0.45.2` identified a
+plausible mismatch, **not a reproduced runtime failure**:
+
+1. Our `createInstalledPostgresJsDrizzleMigrationHost` in
+   `lib/sandbox/drizzle-migration-host.ts` opens `database.transaction` and
+   passes `tx._.session` to the canonical `PgDialect.migrate`.
+2. Upstream `PgDialect.migrate` creates the Drizzle schema/journal using
+   `session.execute` and then invokes `session.transaction` for the SQL
+   migration loop.
+3. Upstream `PostgresJsSession.transaction` invokes `this.client.begin`,
+   whereas `PostgresJsTransaction.transaction` invokes a
+   `this.session.client.savepoint`. The postgres.js `TransactionSql` type
+   declares `savepoint`, not `begin`.
+
+Consequently passing an already transaction-scoped Drizzle **session**, rather
+than using the transaction object's savepoint interface, may fail at runtime
+when the real migrator attempts to begin a nested transaction. Existing focused
+suites inject synthetic `dialect.migrate` callbacks and therefore do not prove
+the installed migrator's nested transaction works. Successful TypeScript,
+SQLite and read-only local probe results cannot resolve this.
+
+Before enabling a migration entrypoint: inspect the *installed*, lockfile-
+resolved Drizzle/postgres.js code and types, design a compatibility regression
+that executes no DDL or database calls, and reconcile the correct Drizzle
+transaction/savepoint ownership without replacing canonical migration hash/
+journal handling. Obtain a fresh focused GREEN and full regression gate.
+Live migration/rollback verification still requires separate explicit human
+authorization; do not test the hypothesis by applying DDL without it.
+
+Sources inspected:
+- `drizzle-team/drizzle-orm`, tag `0.45.2`,
+  `drizzle-orm/src/pg-core/dialect.ts` and
+  `drizzle-orm/src/postgres-js/session.ts`.
+- `porsager/postgres`, `types/index.d.ts`, `Sql.begin` vs
+  `TransactionSql.savepoint`.
+
+Jira: KAN-598 comment **11411** (technical blocker), independent of the
+C14 tool-security hold. No actual migration or PostgreSQL write occurred.
+
 ## Approved decomposition and next gates
 
 - **KAN-585 (T3)**: local laboratory, independent cluster approval, canonical source inventory and real diagnostic probe. Only close with focused evidence and durable documentation reconciled.
