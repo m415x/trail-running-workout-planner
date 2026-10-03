@@ -23,6 +23,7 @@ test('KAN-584 reserves one PostgreSQL connection for physical identity and guard
   const result = await runCoachSandboxWithReservedPostgres({
     directUrl,
     operation: 'seed',
+    confirmation: 'seed',
     expectedClusterSystemIdentifier: clusterId,
     createClient: () => {
       calls.push('client')
@@ -52,6 +53,7 @@ test('KAN-584 rejects unauthorized destination or missing pin before constructin
     await assert.rejects(() => runCoachSandboxWithReservedPostgres({
       directUrl: url,
       operation: 'seed',
+    confirmation: 'seed',
       expectedClusterSystemIdentifier: pin,
       createClient: () => {
         clients++
@@ -68,6 +70,7 @@ test('KAN-584 releases session and driver after identity mismatch without execut
   await assert.rejects(() => runCoachSandboxWithReservedPostgres({
     directUrl,
     operation: 'migrate',
+    confirmation: 'migrate',
     expectedClusterSystemIdentifier: 'another-cluster',
     createClient: () => ({
       reserve: async () => ({
