@@ -17,11 +17,25 @@ export async function runInstalledLocalCanonicalMigration(request: {
   directUrl?: string
   readTrustedDocument?: (path: string) => Promise<string>
   openDriver?: () => Promise<InstalledMigrationDriver>
+  // This runtime guard is mandatory even when both approval JSON files exist.
+  // The caller must secure independent, explicit human DDL permission first.
+  authorizeExecution?: () => Promise<boolean>
 }): Promise<void> {
   await runIndependentlyApprovedCanonicalMigration({
     repositoryRoot: request.repositoryRoot,
     directUrl: request.directUrl,
     readTrustedDocument: request.readTrustedDocument,
+    beforeApprovedMigration: async () => {
+      let authorized = false
+      try {
+        authorized = (await request.authorizeExecution?.()) === true
+      } catch {
+        // A callback error is a denial. Never leak underlying diagnostics.
+      }
+      if (!authorized) {
+        throw new Error('Explicit runtime migration authorization required')
+      }
+    },
     openDriver: request.openDriver ?? (async () =>
       createLocalPostgresJsDrizzleMigrationDriver({ directUrl: request.directUrl })),
   })
