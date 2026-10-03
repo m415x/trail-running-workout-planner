@@ -12,6 +12,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
 - [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
+- [`architecture/platform/coach-sandbox-mutation-guards.md`](architecture/platform/coach-sandbox-mutation-guards.md) — KAN-584/T2 fail-closed local mutation contract, operation-specific confirmation limitations, focused evidence and downstream execution owners.
 - [`architecture/platform/coach-sandbox-local-laboratory.md`](architecture/platform/coach-sandbox-local-laboratory.md) — KAN-566/T3 verified local PostgreSQL preflight, independent physical pin, read-only probe, evidence limits, and approved T3b/T3c migration gates.
 - [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H5 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, derived account/history projection and Coach/Athlete prior-debt experience.
 
