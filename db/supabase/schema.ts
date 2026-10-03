@@ -143,9 +143,7 @@ export const athleteProfiles = pgTable('athlete_profiles', {
   ...baseColumns,
 
   userId: text('user_id')
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'restrict' }),
 
   teamId: text('team_id')
     .notNull()
@@ -166,7 +164,9 @@ export const athleteProfiles = pgTable('athlete_profiles', {
   // Fisiología y datos médicos vigentes (calculados del último registro)
   physiology: jsonb('physiology').$type<AthletePhysiology>(),
   medical: jsonb('medical').$type<MedicalRecord>(),
-})
+}, (table) => [
+  uniqueIndex('athlete_profiles_user_team_unique').on(table.userId, table.teamId),
+])
 
 export const planningCohortMemberships = pgTable(
   'planning_cohort_memberships',
