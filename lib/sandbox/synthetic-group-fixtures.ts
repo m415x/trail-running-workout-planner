@@ -45,3 +45,56 @@ export function buildSyntheticGroupFixtureInventory(): {
 export function validateSyntheticGroupFixtureTarget(directUrl?: string) {
   return inspectSandboxDestination({ kind: 'local', directUrl })
 }
+
+/**
+ * Pure model of the declared PK, FK and composite UNIQUE constraints.
+ * It intentionally does not insert records or claim actual PostgreSQL enforcement.
+ */
+export function validateSyntheticGroupFixtureInventory(inventory: {
+  teams: readonly SyntheticTeamFixture[]
+  groups: readonly SyntheticGroupFixture[]
+}): { valid: true } {
+  if (!inventory || !Array.isArray(inventory.teams) || !Array.isArray(inventory.groups)) {
+    throw new Error('Invalid synthetic fixture inventory')
+  }
+
+  const teamIds = new Set<string>()
+  for (const team of inventory.teams) {
+    if (!team || typeof team.id !== 'string' || !team.id || typeof team.name !== 'string' || !team.name) {
+      throw new Error('Invalid synthetic team fixture')
+    }
+    if (teamIds.has(team.id)) {
+      throw new Error('Duplicate synthetic team identity')
+    }
+    teamIds.add(team.id)
+  }
+
+  const groupIds = new Set<string>()
+  const combinations = new Set<string>()
+  for (const group of inventory.groups) {
+    if (!group || typeof group.id !== 'string' || !group.id) {
+      throw new Error('Invalid synthetic group identity')
+    }
+    if (groupIds.has(group.id)) {
+      throw new Error('Duplicate synthetic group identity')
+    }
+    groupIds.add(group.id)
+
+    if (!teamIds.has(group.teamId)) {
+      throw new Error('Synthetic group references missing team')
+    }
+    if (
+      !['E', 'U', 'M', 'H', 'S', 'B'].includes(group.categoryCode)
+      || !['1', '2', '3'].includes(group.levelCode)
+    ) {
+      throw new Error('Invalid synthetic group category or level')
+    }
+    const uniqueKey = JSON.stringify([group.teamId, group.categoryCode, group.levelCode])
+    if (combinations.has(uniqueKey)) {
+      throw new Error('Duplicate synthetic group combination')
+    }
+    combinations.add(uniqueKey)
+  }
+
+  return { valid: true }
+}
