@@ -25,6 +25,7 @@ export type ReservedSandboxOperationRequest<
 > = {
   directUrl?: string
   operation: string
+  confirmation?: string
   expectedClusterSystemIdentifier?: string
   createClient: () => SandboxPostgresClient<Connection>
   execute: (connection: Connection) => Promise<Result>
@@ -56,6 +57,10 @@ export async function runCoachSandboxWithReservedPostgres<
     throw new Error('Unsupported sandbox operation')
   }
 
+  if (request.confirmation !== request.operation) {
+    throw new Error('Sandbox operation-specific confirmation required')
+  }
+
   let client: SandboxPostgresClient<Connection>
   try {
     client = request.createClient()
@@ -67,6 +72,7 @@ export async function runCoachSandboxWithReservedPostgres<
     return await runCoachSandboxOperation({
       directUrl: request.directUrl,
       operation: request.operation,
+      confirmation: request.confirmation,
       open: () => client.reserve(),
       identify: (connection) => verifyLocalSandboxPhysicalIdentity({
         expectedClusterSystemIdentifier: request.expectedClusterSystemIdentifier,
