@@ -63,6 +63,34 @@ Before anybody can invoke the installed migration path against the local cluster
 
 TDD evidence for the T3b setup is in individual **KAN-598/C04–C12 RED/GREEN** Jira comments; C12 operator-reported GREEN is in Jira comment **11400**. The GREEN assertions are from operator-reported focused tests/typecheck, not from a live DDL exercise. The operator's full `pn verify --db` was **PASS on 2026-10-03** after C13 restored safe phase-specific preflight errors (Jira KAN-598 comment **11404**): Tests 53023ms, TypeScript 11076ms, ESLint 25087ms, Build 21446ms, i18n 450ms, SQLite 40356ms; total 151438ms. An earlier full gate FAIL (three KAN-585 preflight assertions) was explicitly recorded in Jira **11402**, not erased; C13 correction commit `2f8d4d67bca021a7f786ccb49c4cf2cb47e6102e` and implementation Jira **11403**. `pn verify --db` includes SQLite scenarios but does **not** include Supabase migration. A new authorized read-only local probe may be run immediately before requesting a separately approved DDL operation; neither a prior probe nor this full PASS constitutes operator authorization to migrate. Subsequent execution must be separately evidenced.
 
+## KAN-598/C14 — Blocked operational composition (2026-10-03)
+
+**Status: RED recorded, implementation and GREEN pending.** The synthetic
+`tests/sandbox/kan-598-bounded-operational-composition.test.ts` was committed
+at `6b6740b26594017417f66f16d67d4544a9a8af72`; the operator reported
+`pn tdd:red tests/sandbox/kan-598-bounded-operational-composition.test.ts`
+as RED (Jira KAN-598 comment **11409**). A subsequent attempt to add the
+corresponding operational composition module was blocked by the execution
+tool's security control: **no such module was committed, and GREEN has not
+been observed**. This is a delivery blocker, not a failed PostgreSQL migration.
+
+Preserve the following boundary while the implementation is pending:
+
+- Do **not** publish a package script, `main()`, executable migration command,
+  environment-selected database URL, cloud override, reset or automatic retry.
+- CLI syntax `--apply`, two trusted local JSON documents and a callback
+  returning `true` are **not independent proof of human consent**. Explicit
+  human go/no-go for the specific 29-migration DDL operation remains separate,
+  before its execution.
+- The tested composition design is a **synthetic seam only**; passing a future
+  unit test would not establish live PostgreSQL transaction compatibility,
+  absence of unrelated preexisting objects, or safe real rollback.
+- Before advancing beyond the current checkpoint, resolve the tool/security
+  blocker through an authorized review path rather than working around it.
+  Once legitimately implemented, request focused GREEN, then rerun the
+  aggregate gate for subsequent changes. Keep the first real DDL execution
+  strictly withheld until its own authorization.
+
 ## Approved decomposition and next gates
 
 - **KAN-585 (T3)**: local laboratory, independent cluster approval, canonical source inventory and real diagnostic probe. Only close with focused evidence and durable documentation reconciled.
