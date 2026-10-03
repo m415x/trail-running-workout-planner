@@ -14,6 +14,7 @@ import { readLocalSandboxSqlIdentity, type LocalSandboxSqlIdentityRow } from '..
  */
 export type CoachSandboxOperationRequest<Connection, Result> = {
   operation: string
+  confirmation?: string
   directUrl?: string
   open: () => Promise<Connection>
   identify: (connection: Connection) => Promise<PhysicalSandboxIdentity>
@@ -37,9 +38,14 @@ export async function runCoachSandboxOperation<Connection, Result>(
     throw new Error('Unsupported sandbox operation')
   }
 
+  if (request.confirmation !== request.operation) {
+    throw new Error('Sandbox operation-specific confirmation required')
+  }
+
   return withVerifiedLocalSandboxConnection({
     directUrl: request.directUrl,
     operation: request.operation,
+    confirmation: request.confirmation,
     open: request.open,
     identify: request.identify,
     execute: request.execute,
@@ -77,6 +83,7 @@ export async function runPinnedCoachSandboxOperation<
   return runCoachSandboxOperation({
     directUrl: request.directUrl,
     operation: request.operation,
+    confirmation: request.confirmation,
     open: request.open,
     identify: (connection) => verifyLocalSandboxPhysicalIdentity({
       expectedClusterSystemIdentifier: request.expectedClusterSystemIdentifier,
