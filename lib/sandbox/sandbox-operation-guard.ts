@@ -16,6 +16,7 @@ export type PhysicalSandboxIdentity = {
 export type SandboxMutationRequest<T> = {
   destination: SandboxDestinationInput
   operation: SandboxMutationOperation
+  confirmation?: string
   readPhysicalIdentity: () => Promise<PhysicalSandboxIdentity>
   execute: () => Promise<T>
 }
@@ -45,6 +46,12 @@ export async function authorizeSandboxMutation<T>(request: SandboxMutationReques
 
   if (request.operation !== 'migrate' && request.operation !== 'seed') {
     throw new Error('Unrecognized sandbox operation')
+  }
+
+  // An operation-specific confirmation is mandatory, not an authorization to mutate.
+  // Physical identity and independent operator permission remain separate gates.
+  if (request.confirmation !== request.operation) {
+    throw new Error('Sandbox operation-specific confirmation required')
   }
 
   let identity: PhysicalSandboxIdentity
