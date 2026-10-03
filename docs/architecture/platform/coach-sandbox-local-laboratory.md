@@ -234,3 +234,45 @@ in progress.
 - **Evidence classes:** Stage A static/synthetic tests are distinct from
   physical local PostgreSQL integration and from remote/cloud execution;
   no inference across classes is permitted.
+
+## KAN-587/T5 — deterministic Group fixtures, non-operational checkpoint (2026-10-03)
+
+This checkpoint is **pure and synthetic only**. The existing branch contains
+`lib/sandbox/synthetic-group-fixtures.ts`; it generates a fixed, obviously
+fictional `teams` record and two `athlete_groups` records using only columns
+declared in `db/supabase/schema.ts` (team `id,name`; group
+`id,teamId,categoryCode,levelCode`). The domain's existing category codes
+are E/U/M/H/S/B and level codes 1/2/3, defined in
+`types/athlete/group.types.ts`. No seed command, insert/query function,
+connection or executable entrypoint is added.
+
+The pure integrity validator models declared primary key uniqueness, group
+foreign-key references to existing teams, the scoped unique index
+`athlete_groups_team_category_level_unique`, and known category/level
+codes. The destination helper reuses `inspectSandboxDestination` with
+`kind: 'local'`, rejecting missing/remote/noncanonical URLs; this is only
+structural validation, **not physical cluster verification or permission to
+seed**. Regenerating the inventory produces independent values unaffected by
+mutations to a previous returned inventory.
+
+Operator-reported `pn tdd` GREEN (focused tests plus TypeScript) is recorded
+in Jira KAN-587:
+- **F1–F2:** test commit `6149429a`, initial implementation
+  `4649abfd`, corrected canonical type import `921b4234`; initial RED
+  comment 11433 and intermediate TypeScript RED 11435, GREEN 11436.
+  Tests: `kan-587-synthetic-group-contracts.test.ts`.
+- **F3:** RED comment 11438 / test `8ef5b2d9`; implementation
+  `4212f2bc`; GREEN comment 11440.
+  Test: `kan-587-synthetic-group-integrity.test.ts`.
+- **F4:** existing-behavior regression commit `9067a794`, GREEN comment
+  11442; no fabricated preceding RED.
+  Test: `kan-587-synthetic-group-scope-repeatability.test.ts`.
+
+**Unverified and out of scope:** PostgreSQL insert and subsequent readback,
+physical FK/UNIQUE constraints, physical repeatability/idempotent seeding,
+actual cluster isolation, effects of conflicting preexisting records, and
+rollback. Such acceptance requires a separately authorized, genuinely
+connected local PostgreSQL workflow. KAN-587 stays **En curso**. C14/KAN-598
+remains blocked; KAN-599 retains ownership of physical migration journal,
+hashes, repeatability and rollback. No real DDL, migration, seed or reset
+occurred in this checkpoint.
