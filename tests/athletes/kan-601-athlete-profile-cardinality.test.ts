@@ -33,7 +33,7 @@ for (const schemaPath of ['db/schema.ts', 'db/supabase/schema.ts']) {
     )
     assert.doesNotMatch(
       section,
-      /userId:[\s\S]*?references\(\(\) => users\.id,\s*\{\s*onDelete:\s*'cascade'/,
+      /\.references\(\(\) => users\.id,\s*\{\s*onDelete:\s*'cascade'/,
       'deleting an EPT User cannot cascade-delete sporting history',
     )
   })
