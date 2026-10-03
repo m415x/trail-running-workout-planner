@@ -99,7 +99,8 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
     migrations,
   })
 
-  await request.database.transaction(async tx => {
+  try {
+    await request.database.transaction(async tx => {
     // Every statement and dialect migration shares the transaction session.
     const query = (statement: string) => tx.execute(statement)
 
@@ -142,5 +143,10 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
       // expose driver diagnostics: they can contain SQL and credentials.
       throw new Error('Sandbox canonical Drizzle migration failed')
     }
-  })
+    })
+  } catch {
+    // Includes BEGIN/COMMIT/ROLLBACK failures from the installed driver.
+    // Do not expose SQL, credentials or driver diagnostics to callers.
+    throw new Error('Sandbox canonical Drizzle transaction failed')
+  }
 }
