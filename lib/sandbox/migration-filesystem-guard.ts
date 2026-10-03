@@ -32,7 +32,6 @@ export async function inspectCanonicalMigrationFilesystemPaths(request: {
 
   if (
     !Array.isArray(orderedMigrationFiles)
-    || orderedMigrationFiles.length === 0
     || orderedMigrationFiles.some((filename, index) => (
       typeof filename !== 'string'
       || !canonicalFilename.test(filename)
