@@ -29,7 +29,7 @@ async function runGuardedCoachSandboxMigrationOperation(
   return loaded.runGuardedCoachSandboxMigrationOperation(request)
 }
 
-const localUrl = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+const localUrl = 'postgresql://postgres:fixture-not-a-secret@127.0.0.1:54322/postgres'
 
 test('KAN-598/C14 refuses --apply without a runtime execution authorization before any coordinator call', async () => {
   let called = false
