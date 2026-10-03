@@ -93,7 +93,7 @@ Preserve the following boundary while the implementation is pending:
 
 ## KAN-598 — Installed Drizzle nested-transaction compatibility risk (2026-10-03)
 
-**Unresolved technical blocker before any live DDL.** Static inspection of the
+**Static compatibility concern investigated with synthetic GREEN (C15); live PostgreSQL execution not established.** Static inspection of the
 version-tagged upstream sources for `drizzle-orm@0.45.2` identified a
 plausible mismatch, **not a reproduced runtime failure**:
 
@@ -130,8 +130,10 @@ Sources inspected:
 - `porsager/postgres`, `types/index.d.ts`, `Sql.begin` vs
   `TransactionSql.savepoint`.
 
-Jira: KAN-598 comment **11411** (technical blocker), independent of the
-C14 tool-security hold. No actual migration or PostgreSQL write occurred.
+C15 operator-reported focused tests/typecheck subsequently reached **GREEN** (Jira KAN-598 comment **11420**) after correcting the installed Drizzle host to delegate nested `session.transaction` to the outer Drizzle transaction's savepoint path (commit `0e55c7e2`), correcting the synthetic nested `tx.execute` test fixture (`f038424c`), and isolating the unrelated missing C14 module from TypeScript compilation (`522f62aa`). The test uses the real installed `PgDialect.migrate` with an in-memory client, **not** a physical PostgreSQL transaction; no migration/rollback guarantee is asserted.
+
+Jira: KAN-598 comments **11411**, **11420**, independent of the
+C14 tool-security hold. C14 still RED. No actual migration or PostgreSQL write occurred.
 
 ## Approved decomposition and next gates
 
