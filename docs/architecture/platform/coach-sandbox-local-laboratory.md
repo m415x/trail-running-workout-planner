@@ -36,6 +36,32 @@ An operator-approved local file at `.coach-sandbox-local/approved-cluster.json` 
 - Existing source inventory guards check journal, file names, SQL bytes/hashes and filesystem types before opening the guarded migration transaction; source recheck is point-in-time and **does not eliminate filesystem TOCTOU**.
 - **Not executed**: application of the 29 migrations, physical journal/hash verification after application, rollback/replay, seed insertion, reset, cloud operations or a schema/RLS functional verifier.
 
+## KAN-598 / T3b — Canonical migration review checkpoint (2026-10-03)
+
+This checkpoint is **remote source inspection only**. It is not a migration run, a live
+PostgreSQL preflight, a GREEN of the full KAN-598 acceptance criteria, or permission
+to perform DDL.
+
+- Branch inspected: `feat/KAN-566-coach-supabase-sandbox` from its then-current remote HEAD. The repository's canonical `dev` remains the bootstrap baseline; no changes to `drizzle/supabase` are authorized in T3b.
+- The version 7 PostgreSQL journal `drizzle/supabase/meta/_journal.json` lists **29 contiguous indices (0–28)**. Every referenced `0000_…` through `0028_…` SQL file was retrieved and reviewed by filename and significant DDL statements. All journal entries declare statement breakpoints.
+- The reviewed SQL includes application tables, indexes, foreign keys, ALTER TABLE operations and RLS activation. The inspection did not identify `CREATE INDEX CONCURRENTLY`, `CREATE EXTENSION` or a separate transaction-management statement demanding out-of-transaction execution. **This observation is not a runtime SQL validity guarantee**, and does not establish no unexpected statement exists.
+- The installed migration-bundle guard checks journal/file coverage, symlink and ancestor path boundaries, full SQL source correspondence with Drizzle's installed reader, SHA-256 values consumed by Drizzle, statement order and an immediate pretransaction SQL reread. These protections are point-in-time and do not eliminate filesystem TOCTOU or establish signed Git provenance. This review **did not independently compute the 29 hashes**.
+- Before migration, the transaction boundary must match the independently pinned physical PostgreSQL system identifier, establish/read a transaction-local marker, reject a preexisting Drizzle journal and application table name collisions, and pass the same Drizzle transaction session to its canonical migrator. The absence of `drizzle.__drizzle_migrations` alone does not prove a completely empty schema.
+- `runInstalledLocalCanonicalMigration` wires the independent pin/intent documents to the migration-specific postgres.js driver and guarded runner. `runCoachSandboxMigrationCli` currently only validates an injected `--apply` callback: **there is no user-facing executable migration command or package.json migration alias**. It must not be represented as an executable procedure.
+
+### Mandatory operational approval boundary
+
+Before anybody can invoke the installed migration path against the local cluster:
+
+1. Reconcile the actual local checkout/branch and SQL journal against the reviewed Git SHA; rerun applicable focused gates for any code changes. Do not equate a past synthetic GREEN with a fresh runtime check.
+2. Establish that the target is the intended disposable Supabase CLI/Docker installation, with local-only endpoint and separately approved physical cluster pin. Independently recheck the live cluster identity and fresh target at execution time; stop on any mismatched pin, existing journal, application-table collision, filesystem drift or unexpected managed-object overlap.
+3. Review the exact application operation and effects: **apply only the existing 29 Drizzle SQL migrations** to a fresh local PostgreSQL target, without generating SQL, seeding, resetting, changing Supabase-managed schemas, using cloud/production or importing real athlete data.
+4. Obtain a **separate explicit human go/no-go for that specific DDL execution** after presenting this scope, target, safety checks and failure/rollback limitations. `--apply`, an `approvedByOperator` JSON field and prior TDD approvals are not evidence of this consent.
+5. Only after approval, make the operational entrypoint available through an independently reviewed bounded procedure. Never run generic `pn db:supabase:migrate` for the sandbox by default. On failure, stop and capture sanitized diagnostics; do not auto-reset or retry.
+6. Record actual operator-local/agent/CI results faithfully in **KAN-598**, including the migrator result, migration count and any errors, without printing cluster identifiers, passwords or connection URLs. T3b does not certify post-application hashes, replay or transaction rollback on a real cluster: those are expressly owned by KAN-599/T3c and need separate authorization when they mutate the database.
+
+TDD evidence for the T3b setup is in individual **KAN-598/C04–C11 RED/GREEN** Jira comments; the GREEN assertions are from operator-reported focused test runs, not from a live DDL exercise. Subsequent execution must be separately evidenced.
+
 ## Approved decomposition and next gates
 
 - **KAN-585 (T3)**: local laboratory, independent cluster approval, canonical source inventory and real diagnostic probe. Only close with focused evidence and durable documentation reconciled.
