@@ -391,3 +391,89 @@ inspection and obtain separate approval for a concrete activation design.
 
 This refinement is source inspection only, not a GREEN of functional
 PostgreSQL Group paths and not authorization to change product UI/actions.
+
+### KAN-588/T6 expanded dependency and mixed-authority matrix (2026-10-03)
+
+This is an expanded **source-grounded dependency assessment, NOT an
+exhaustively proven repository-wide search**. The connected GitHub code
+search returned zero hits even for confirmed symbols in the active branch.
+Direct remote Git checkout was unavailable in the agent execution
+environment. Exact known files were read through the GitHub connector.
+Before implementing any PG adapter, obtain a reliable full-tree symbol
+scan on the authorized checkout; unresolved matches are a **gate**.
+
+| Entry/route | Immediate dependency | Persistence authority today | Pilot | Risk if only Group records use PG |
+| --- | --- | --- | --- | --- |
+| groups list page | `getGroupsByTeam` | SQLite `db/index.ts` | One of four | List displays PG items whose detail still queries SQLite |
+| groups new page | `GroupForm` → `createGroup` | SQLite | One of four | Redirect to list using different DB if mixed |
+| groups edit page | `getGroupById` → `GroupForm` → `updateGroup` | SQLite | Two of four | Form prefill and write could differ across sources |
+| GroupForm client | `useActionState` and action imports | SQLite server actions | Only creation/edit contracts | Runtime form cannot be switched implicitly |
+| group detail page | `getGroupWithMembers` | SQLite joined groups/athletes/users | EXCLUDED | PG-only group gives notFound, or stale membership |
+| group members/new page | `getEligibleAthletesForGroup` | SQLite eligibility | EXCLUDED | PG-only group cannot authorize assignment |
+| GroupMemberAssignmentForm | `assignAthleteToGroup` | SQLite athlete-actions with `createAthleteGroupAssignmentAction` | EXCLUDED | Mixed writes violate group/athlete authority |
+| eligible-athletes helper | `BetterSQLite3Database`, `.sync()` | SQLite | EXCLUDED | Not reusable as PG adapter without widening |
+| `group-actions.ts` | `@/db`, `@/db/schema`, Zod, `next/cache`, `next/navigation` | SQLite | Four functions only | Moving entire module widens scope |
+| `db/index.ts` | better-sqlite3 → `sqlite.db` | SQLite | Preserve | Global replacement breaks rest of app |
+
+Navigation: existing Group create/update actions `revalidatePath(groupsPath(locale))`
+then `redirect(groupsPath(locale))`, Spanish `/dashboard/groups` and English
+`/en/dashboard/groups`. Listing links to `/[groupId]` (excluded membership
+detail) and `/[groupId]/edit` (allowed get-by-id + update). The group detail
+route also links to `/[groupId]/members/new` (excluded). The member assignment
+form calls `assignAthleteToGroup` from `app/actions/athlete-actions.ts`
+which creates a SQLite-backed group assignment action and passes Next cache
+invalidation and redirect dependencies. This is *not* a Group CRUD pilot
+operation. `revalidatePath` affects the product cache and is not a
+persistence adaptation contract.
+
+**Minimal isolated walkthrough conclusion:** a production UI walkthrough
+that follows its natural detail/members navigation **cannot** be claimed
+to use only the four approved operations. A prospective isolated sandbox
+harness could call `getGroupsByTeam → createGroup → getGroupsByTeam →
+getGroupById → updateGroup → getGroupById` through a separately approved
+bounded adapter, with no application UI routes or membership links. This is
+an **option only**, not an implemented, tested, connected, or authorized
+harness. A physical integration remains blocked by missing PG schema
+application/operational authorization.
+
+**Shared domain vs adapters:** share the declared category/level codes,
+composite `(teamId, categoryCode, levelCode)` uniqueness, group ID identity,
+`isDeleted=false` visibility and current create/update Zod semantics
+(including empty description normalization and immutable category/level
+on edit). Do not introduce a competing schema or reimplement these
+business rules in a second mutable layer. The current hardcoded
+`team_1` is local dev state, not authenticated tenant authority.
+Differentiate repository-side transactional duplicate handling and
+physical PostgreSQL UNIQUE enforcement; the SQLite pre-read duplicate
+check alone cannot guarantee PG concurrency behavior.
+
+**Architectural options (for later approval):**
+- **A — dedicated sandbox-only invocation/harness (bounded):** prospective
+  pure Group contract plus injected PG adapter limited to exactly four
+  operations, called only from a separately authorized isolated process
+  with fixed, independently verified local physical identity. Production
+  actions/UI remain SQLite; no mixed navigation. Requires distinct
+  permission and full-tree consumer check before implementation.
+- **B — product route adaptation:** touches production Group action/form/
+  routing and creates mixing hazards with excluded detail/member routes;
+  **outside the current authorized pilot**, requires explicit new scope.
+- **C — global DB engine switch:** forbidden by current architecture,
+  cannot be used as fallback or for convenience.
+
+**Fail-closed criteria for a future adapter:** absent/unapproved sandbox
+context, remote/wrong cluster pin, invalid URL, unsupported operation,
+cross-team references and failed preflight must reject **before** any
+database driver is opened; never fall back to SQLite, even when read fails.
+Pure G1 tests prove only a synthetic allowlist and parser, not physical
+identity, no-import-side-effect proofs or no-fallback behavior of a
+nonexistent adapter. Those tests must be authored against the exact
+eventually approved integration, with synthetic spies first and then
+independent live-local tests (query/rollback, FK/UNIQUE, team isolation,
+soft delete, cache and route compatibility).
+
+**Evidence and gaps:** G1/G2 GREEN recorded in Jira 11447/11449, limited
+to pure/static tests. This expansion inspected sources but ran **no tests**.
+The exhaustive branch-wide dependency search remains unverified due to
+the source-access limitation above and is explicitly required before
+operational design signoff. No PostgreSQL access, schema modification,
+fixture insertion, reset, CLI entrypoint or product UI change.
