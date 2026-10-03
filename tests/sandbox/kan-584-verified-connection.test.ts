@@ -10,6 +10,7 @@ test('KAN-584 uses the same connection for identification and execution', async 
   const result = await withVerifiedLocalSandboxConnection({
     directUrl,
     operation: 'seed',
+    confirmation: 'seed',
     open: async () => connection,
     identify: async (db) => {
       assert.equal(db, connection)
@@ -36,6 +37,7 @@ test('KAN-584 closes without executing on identity mismatch', async () => {
   await assert.rejects(() => withVerifiedLocalSandboxConnection({
     directUrl,
     operation: 'migrate',
+    confirmation: 'migrate',
     open: async () => ({}),
     identify: async () => ({ database: 'postgres', environmentMarker: 'other', projectRef: null }),
     execute: async () => { executed = true },
