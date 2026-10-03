@@ -201,8 +201,7 @@ in progress.
   restrictions, missing C14 entrypoint, declared runtime authorization and
   absence of a direct import-time driver invocation. Such checks cannot
   prove an entire module dependency graph has no import side effects.
-  **Execution result remains pending** until the operator runs the focused
-  test. Do not record GREEN or RED without that execution.
+  **Operator-reported GREEN on 2026-10-03:** `pn tdd tests/sandbox/kan-598-stage-a-nonoperational-contracts.test.ts` (focused test plus TypeScript by runner contract); Jira KAN-598 comment 11431. This does not certify runtime import-side effects or operational DDL safety.
 - The C14 dynamic-import tests remain RED until the blocked operation is
   separately resolved. Do not rewrite them to pass using a stand-in module.
 
