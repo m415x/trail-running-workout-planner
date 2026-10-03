@@ -12,7 +12,7 @@ test('KAN-585 explicit local probe CLI invokes one read-only verification and re
     probe: async repositoryRoot => {
       called += 1
       actualRoot = repositoryRoot
-      return { verified: true, freshJournal: true },
+      return { verified: true, freshJournal: true }
     },
   })
   assert.equal(called, 1)
@@ -30,7 +30,7 @@ test('KAN-585 read-only probe CLI rejects flags before reading pins or opening c
       repositoryRoot: process.cwd(),
       probe: async () => {
         invoked = true
-        return { verified: true, freshJournal: true },
+        return { verified: true, freshJournal: true }
       },
     }), /argument|probe|sandbox|local/i)
     assert.equal(invoked, false)
