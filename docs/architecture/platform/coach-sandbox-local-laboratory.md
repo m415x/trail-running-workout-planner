@@ -34,6 +34,7 @@ An operator-approved local file at `.coach-sandbox-local/approved-cluster.json` 
 - Operator-reported focused `pn tdd` suites including typecheck: GREEN after the syntax correction at `65c7902321587ef52cce415fb0831fc281da7ce5`. Jira evidence: KAN-585 comment 11350.
 - Operator-reported **real local PostgreSQL probe**: `verified=true freshJournal=true`. Jira evidence: KAN-585 comment 11351.
 - Existing source inventory guards check journal, file names, SQL bytes/hashes and filesystem types before opening the guarded migration transaction; source recheck is point-in-time and **does not eliminate filesystem TOCTOU**.
+- **Operator-reported refreshed read-only diagnostic (2026-10-03):** `tsx scripts/coach-sandbox-status-cli.ts` -> `Local sandbox status: available`; `tsx scripts/coach-sandbox-probe-cli.ts` -> `Local sandbox probe: verified=true freshJournal=true`. Jira KAN-598 comment **11406**. These verify a pinned local cluster and absent Drizzle journal at probe time, **not** total schema emptiness, migration readiness at a later time, or authorization for DDL.
 - **Not executed**: application of the 29 migrations, physical journal/hash verification after application, rollback/replay, seed insertion, reset, cloud operations or a schema/RLS functional verifier.
 
 ## KAN-598 / T3b — Canonical migration review checkpoint (2026-10-03)
