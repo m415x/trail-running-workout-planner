@@ -276,3 +276,83 @@ connected local PostgreSQL workflow. KAN-587 stays **En curso**. C14/KAN-598
 remains blocked; KAN-599 retains ownership of physical migration journal,
 hashes, repeatability and rollback. No real DDL, migration, seed or reset
 occurred in this checkpoint.
+
+## KAN-588/T6 — bounded Group pilot design, non-operational checkpoint (2026-10-03)
+
+**Status:** Analysis/pure contracts only; no PostgreSQL Group runtime integration
+has been implemented or authorized. SQLite remains the authority for the
+existing application. KAN-588 stays **En curso**.
+
+### Actual dependency boundary
+
+- `app/actions/group-actions.ts` contains the four approved operations
+  `getGroupsByTeam`, `getGroupById`, `createGroup`, `updateGroup`;
+  it imports `@/db` and the SQLite schema, using synchronous Drizzle
+  operations for writes, plus Zod validation, Next cache invalidation and
+  redirects.
+- The same actions module also exports **excluded**
+  `getGroupWithMembers` and `getEligibleAthletesForGroup`, which access
+  athlete membership and eligibility. Migrating the entire module would
+  cross the approved boundary.
+- `db/index.ts` constructs a `better-sqlite3` connection to `sqlite.db`.
+  `app/[locale]/dashboard/groups/page.tsx` imports
+  `getGroupsByTeam`; additional form/detail/edit consumers must be
+  enumerated and confirmed before any integration. Code-search results
+  alone are insufficient to assert this graph exhaustive.
+- No general `data.ts` migration or full Coach persistence selection is
+  part of this pilot. The PostgreSQL schema already declares
+  `teams` and `athlete_groups`, including FK to `teams` and
+  `UNIQUE(team_id,category_code,level_code)`.
+
+### Minimal future integration proposal — NOT implemented or approved
+
+1. **Keep untouched:** `app/actions/group-actions.ts`,
+   `db/index.ts`, existing production pages and forms, SQLite relations
+   and the unrelated membership/eligibility operations.
+2. **Pure contracts:** reuse category/level codes from
+   `types/athlete/group.types.ts`, the existing action's Zod input
+   constraints, domain uniqueness semantics, team/deleted filtering,
+   description normalization, and the four named operation boundaries.
+   Avoid duplicating authoritative business rules.
+3. **Prospective adapter:** only after a separate implementation decision,
+   consider one bounded Group PostgreSQL repository for exactly these
+   four operations, with injected already-verified local connection.
+   No app-wide engine selector, environment-based implicit switch, fallback
+   to SQLite, or second business authority.
+4. **Activation:** only from a separate, explicitly authorized sandbox
+   context with independently verified physical cluster identity, fixed
+   local endpoint, and a specific execution authorization. The current
+   `lib/groups/group-pilot-intent.ts` **only** accepts
+   `surface: 'synthetic_test'`; it returns declarative metadata and is
+   deliberately *not* an operational activation mechanism.
+5. **Consumer preservation:** production list/create/detail/edit routes
+   retain their SQLite path. No activation inside existing server actions
+   or production UI, and no edits to excluded functions.
+6. **Risk review:** both databases would otherwise become competing
+   authorities for sporting groups. Prohibit mixed writes and silent
+   fallback; keep sandbox data separate and visibly synthetic. Scope each
+   lookup/mutation by team and enforce deleted-row visibility;
+   PostgreSQL uniqueness race must be checked by physical integration, not
+   a pre-insert duplicate lookup alone.
+
+### Evidence and remaining gates
+
+- **G1 test-first RED** operator report: Jira KAN-588 11445;
+  implementation `lib/groups/group-pilot-intent.ts` commit
+  `fe145d07`; focused `pn tdd` GREEN operator report: Jira 11447.
+- **G2 source/isolation regression** commit `a8da8e05`;
+  focused `pn tdd` GREEN operator report: Jira 11449. No preceding
+  RED is asserted for this existing-behavior regression.
+- These tests examine pure intent constraints and static imports. They
+  do **not** demonstrate complete transitive import purity, live
+  PostgreSQL identity, transactional group CRUD, or functional UI parity.
+- Before functional authorization: finish consumer mapping for forms,
+  edit/detail and revalidation; approve exact sandbox-only activation,
+  authorize physical PostgreSQL access separately from C14;
+  test read/list/create/update with isolated local target, physical
+  unique/FK behavior, cross-team and soft-delete cases, race/rollback,
+  SQLite unchanged, and both localized UI routes. KAN-589 owns later
+  real functional walkthrough and protected reset, not this checkpoint.
+- C14/KAN-598 remains blocked; KAN-587 and KAN-599 retain their
+  independent scope and statuses. No real PostgreSQL connection,
+  migrations, seeds, DDL or resets occurred.
