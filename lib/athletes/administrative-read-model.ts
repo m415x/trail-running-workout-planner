@@ -45,12 +45,12 @@ export function projectAthleteAdministrativeRead(
   }
 
   const profileName = athlete.firstName !== null && athlete.lastName !== null
-  const legacyName = athlete.user !== null
-  const name = profileName
-    ? { firstName: athlete.firstName, lastName: athlete.lastName, source: 'athlete_profile' as const }
-    : legacyName
-      ? { firstName: athlete.user.firstName, lastName: athlete.user.lastName, source: 'legacy_user' as const }
-      : null
+  let name: AthleteAdministrativeRead['name'] = null
+  if (athlete.firstName !== null && athlete.lastName !== null) {
+    name = { firstName: athlete.firstName, lastName: athlete.lastName, source: 'athlete_profile' }
+  } else if (athlete.user !== null) {
+    name = { firstName: athlete.user.firstName, lastName: athlete.user.lastName, source: 'legacy_user' }
+  }
 
   const email = athlete.contactEmail !== null
     ? { value: athlete.contactEmail, source: 'athlete_profile' as const }
