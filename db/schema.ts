@@ -150,6 +150,10 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
 
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
 
+  // Administrative facts owned by the sporting profile, not the EPT account.
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  contactEmail: text('contact_email'),
   nickName: text('nick_name'),
   dni: text('dni').notNull(),
   birthday: text('birthday'), // 'YYYY-MM-DD'
