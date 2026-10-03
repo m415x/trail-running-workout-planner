@@ -16,6 +16,9 @@ export async function runIndependentlyApprovedCanonicalMigration<Database>(reque
   directUrl?: string
   readTrustedDocument?: (path: string) => Promise<string>
   openDriver: () => Promise<{ database: Database; close: () => Promise<unknown> }>
+  // Optional pre-execution gate for the installed operational composition.
+  // Legacy injected-contract tests remain independent of operator approvals.
+  beforeApprovedMigration?: () => Promise<void>
   migrateCanonical?: (input: {
     repositoryRoot: string
     directUrl: string
@@ -30,6 +33,7 @@ export async function runIndependentlyApprovedCanonicalMigration<Database>(reque
     directUrl: request.directUrl,
     readTrustedDocument: reader,
     runApprovedMigration: async verified => {
+      await request.beforeApprovedMigration?.()
       await runApprovedCanonicalLocalDrizzleMigration({
         repositoryRoot: verified.repositoryRoot,
         directUrl: verified.directUrl,
