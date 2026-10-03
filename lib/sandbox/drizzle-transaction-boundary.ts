@@ -131,10 +131,16 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
       query,
     })
 
-    await request.database.dialect.migrate(
-      migrations,
-      tx.session,
-      { migrationsFolder: request.migrationsFolder },
-    )
+    try {
+      await request.database.dialect.migrate(
+        migrations,
+        tx.session,
+        { migrationsFolder: request.migrationsFolder },
+      )
+    } catch {
+      // Throw *inside* the transaction callback to force rollback. Never
+      // expose driver diagnostics: they can contain SQL and credentials.
+      throw new Error('Sandbox canonical Drizzle migration failed')
+    }
   })
 }
