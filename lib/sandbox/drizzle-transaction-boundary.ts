@@ -3,6 +3,7 @@ import { isAbsolute, win32 } from 'node:path'
 import { inspectCoachSandboxApplicationTableCollisions } from './application-table-collisions'
 import { inspectSandboxDestination } from './sandbox-destination'
 import { inspectCoachSandboxFreshMigrationTarget } from './fresh-migration-target'
+import { inspectCoachSandboxDrizzleNamespace } from './drizzle-namespace-preflight'
 import { verifyCanonicalDrizzleSqlCorrespondence } from './drizzle-sql-correspondence'
 import { verifyThenSetLocalSandboxSessionMarker } from './local-session-marker'
 
@@ -101,7 +102,7 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
 
   // Track the verified boundary phase rather than exposing raw driver errors.
   // A categorical, fixed diagnostic keeps preflight failures actionable.
-  let phase: 'start' | 'physical' | 'journal' | 'collision' | 'migration' | 'finish' = 'start'
+  let phase: 'start' | 'physical' | 'journal' | 'namespace' | 'collision' | 'migration' | 'finish' = 'start'
   try {
     await request.database.transaction(async tx => {
       phase = 'physical'
@@ -132,6 +133,8 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
 
     phase = 'journal'
     await inspectCoachSandboxFreshMigrationTarget({ query })
+    phase = 'namespace'
+    await inspectCoachSandboxDrizzleNamespace({ query })
     phase = 'collision'
     await inspectCoachSandboxApplicationTableCollisions({
       migrations: request.canonicalSqlInventory,
@@ -159,6 +162,7 @@ export async function runVerifiedCanonicalDrizzleTransaction<Session>(request: {
       start: 'Sandbox Drizzle transaction start failed',
       physical: 'Sandbox physical cluster identity or transaction marker failed',
       journal: 'Sandbox Drizzle migration journal preflight failed',
+      namespace: 'Sandbox Drizzle namespace preflight failed',
       collision: 'Sandbox application table collision preflight failed',
       migration: 'Sandbox canonical Drizzle migration failed',
       finish: 'Sandbox Drizzle transaction completion failed',
