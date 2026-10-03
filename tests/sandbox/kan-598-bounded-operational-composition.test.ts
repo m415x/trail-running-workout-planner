@@ -1,0 +1,52 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+
+import { runGuardedCoachSandboxMigrationOperation } from '../../scripts/coach-sandbox-migration-operation'
+
+const localUrl = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+
+test('KAN-598/C14 refuses --apply without a runtime execution authorization before any coordinator call', async () => {
+  let called = false
+  await assert.rejects(() => runGuardedCoachSandboxMigrationOperation({
+    args: ['--apply'],
+    repositoryRoot: process.cwd(),
+    invokeInstalledMigration: async () => { called = true },
+  }), /authorization|consent|approval/i)
+  assert.equal(called, false)
+})
+
+test('KAN-598/C14 binds the only supported local endpoint and passes runtime authorization to installed coordinator', async () => {
+  const calls: { root: string; url: string; authorization: boolean }[] = []
+  const authorizeExecution = async () => true
+  await runGuardedCoachSandboxMigrationOperation({
+    args: ['--apply'],
+    repositoryRoot: process.cwd(),
+    authorizeExecution,
+    invokeInstalledMigration: async input => {
+      calls.push({
+        root: input.repositoryRoot,
+        url: input.directUrl,
+        authorization: await input.authorizeExecution(),
+      })
+    },
+  })
+  // Synthetic delegate: never construct a real driver or touch PostgreSQL.
+  assert.deepEqual(calls, [{
+    root: process.cwd(),
+    url: localUrl,
+    authorization: true,
+  }])
+})
+
+test('KAN-598/C14 rejects invalid commands before calling authorization or installed migration coordinator', async () => {
+  let approved = false
+  let invoked = false
+  await assert.rejects(() => runGuardedCoachSandboxMigrationOperation({
+    args: ['--apply', '--force'],
+    repositoryRoot: process.cwd(),
+    authorizeExecution: async () => { approved = true; return true },
+    invokeInstalledMigration: async () => { invoked = true },
+  }), /argument|operation|explicit/i)
+  assert.equal(approved, false)
+  assert.equal(invoked, false)
+})
