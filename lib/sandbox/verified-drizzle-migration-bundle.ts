@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 
+import { inspectCanonicalRepositoryAncestorDirectories } from './migration-repository-ancestors'
+
 import { loadCanonicalDrizzleMigrationMetadata } from './canonical-drizzle-migrations'
 import { verifyCanonicalDrizzleSqlCorrespondence } from './drizzle-sql-correspondence'
 import { loadRepositoryCoachSandboxMigrationInventory } from './migration-inventory'
@@ -20,6 +22,8 @@ import { inspectCanonicalMigrationFilesystemPaths } from './migration-filesystem
 export async function loadVerifiedRepositoryDrizzleMigrationBundle(request: {
   repositoryRoot: string
 }) {
+  await inspectCanonicalRepositoryAncestorDirectories({ repositoryRoot: request.repositoryRoot })
+
   const repositoryRoot = resolve(request.repositoryRoot)
   const migrationsFolder = resolve(repositoryRoot, 'drizzle', 'supabase')
 
