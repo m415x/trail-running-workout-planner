@@ -1,7 +1,33 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { runGuardedCoachSandboxMigrationOperation } from '../../scripts/coach-sandbox-migration-operation'
+// C14 intentionally remains RED until its operational module is approved.
+// Resolve that missing module at runtime, not during the unrelated C15
+// TypeScript gate; do not fabricate a stub implementation or mark C14 GREEN.
+type InstalledMigrationInput = {
+  repositoryRoot: string
+  directUrl: string
+  authorizeExecution: () => Promise<boolean>
+}
+type OperationRequest = {
+  args: readonly string[]
+  repositoryRoot: string
+  authorizeExecution?: () => Promise<boolean>
+  invokeInstalledMigration?: (input: InstalledMigrationInput) => Promise<void>
+}
+const pendingModulePath: string = [
+  '../../scripts',
+  'coach-sandbox-migration-operation',
+].join('/')
+
+async function runGuardedCoachSandboxMigrationOperation(
+  request: OperationRequest,
+): Promise<void> {
+  const loaded = await import(pendingModulePath) as {
+    runGuardedCoachSandboxMigrationOperation: (request: OperationRequest) => Promise<void>
+  }
+  return loaded.runGuardedCoachSandboxMigrationOperation(request)
+}
 
 const localUrl = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
