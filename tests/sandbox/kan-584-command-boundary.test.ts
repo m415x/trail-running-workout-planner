@@ -15,6 +15,7 @@ test('KAN-584 never opens a connection for missing, cloud or unsafe destinations
     await assert.rejects(
       () => runCoachSandboxOperation({
         operation: 'migrate',
+    confirmation: 'migrate',
         directUrl: url,
         open: async () => { opens++; return {} },
         identify: async () => ({
@@ -58,6 +59,7 @@ test('KAN-584 permits an explicitly verified local operation through the guarded
   const session = { id: 'one-session' }
   const result = await runCoachSandboxOperation({
     operation: 'seed',
+    confirmation: 'seed',
     directUrl: localUrl,
     open: async () => { observed.push('open'); return session },
     identify: async (connection) => {
