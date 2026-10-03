@@ -23,11 +23,16 @@ export async function loadVerifiedRepositoryDrizzleMigrationBundle(request: {
   const repositoryRoot = resolve(request.repositoryRoot)
   const migrationsFolder = resolve(repositoryRoot, 'drizzle', 'supabase')
 
+  // First inspect directories and journal BEFORE reading the journal.
+  await inspectCanonicalMigrationFilesystemPaths({
+    repositoryRoot,
+    orderedMigrationFiles: [],
+  })
+
   const inventory = await loadRepositoryCoachSandboxMigrationInventory(repositoryRoot)
 
-  // Fail closed before SQL file reads or Drizzle's synchronous metadata reader.
-  // Initial journal read occurs during inventory discovery; the earlier-read
-  // provenance and concurrent-replacement problem remains a separate gate.
+  // Inspect every SQL path before reading SQL and Drizzle metadata.
+  // Filesystem replacements between these checks and opens remain a separate gate.
   await inspectCanonicalMigrationFilesystemPaths({
     repositoryRoot,
     orderedMigrationFiles: inventory.orderedMigrationFiles,
