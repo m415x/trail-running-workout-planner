@@ -21,6 +21,7 @@ test('KAN-584 reads and pins physical SQL identity on the same connection as the
   const result = await runPinnedCoachSandboxOperation({
     directUrl: url,
     operation: 'seed',
+    confirmation: 'seed',
     expectedClusterSystemIdentifier: pin,
     open: async () => { calls.push('open'); return connection },
     execute: async (active) => {
@@ -42,6 +43,7 @@ test('KAN-584 refuses missing pin before opening connection', async () => {
   await assert.rejects(() => runPinnedCoachSandboxOperation({
     directUrl: url,
     operation: 'seed',
+    confirmation: 'seed',
     expectedClusterSystemIdentifier: undefined,
     open: async () => { opened = true; return { query: async () => [matching] } },
     execute: async () => { throw new Error('mutation must not run') },
@@ -56,6 +58,7 @@ test('KAN-584 copied sandbox marker cannot bypass a mismatched physical cluster'
   await assert.rejects(() => runPinnedCoachSandboxOperation({
     directUrl: url,
     operation: 'migrate',
+    confirmation: 'migrate',
     expectedClusterSystemIdentifier: 'different-cluster',
     open: async () => ({ query: async () => [matching] }),
     execute: async () => { executed = true },
