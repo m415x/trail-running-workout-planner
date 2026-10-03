@@ -140,9 +140,7 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
   ...baseColumns,
 
   userId: text('user_id')
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'restrict' }),
 
   teamId: text('team_id')
     .notNull()
@@ -163,7 +161,9 @@ export const athleteProfiles = sqliteTable('athlete_profiles', {
   // Fisiología y datos médicos vigentes (calculados del último registro)
   physiology: text('physiology', { mode: 'json' }).$type<AthletePhysiology>(),
   medical: text('medical', { mode: 'json' }).$type<MedicalRecord>(),
-})
+}, (table) => [
+  uniqueIndex('athlete_profiles_user_team_unique').on(table.userId, table.teamId),
+])
 
 export const planningCohortMemberships = sqliteTable(
   'planning_cohort_memberships',
