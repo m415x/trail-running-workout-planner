@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { loadCanonicalDrizzleMigrationMetadata } from './canonical-drizzle-migrations'
 import { verifyCanonicalDrizzleSqlCorrespondence } from './drizzle-sql-correspondence'
 import { loadRepositoryCoachSandboxMigrationInventory } from './migration-inventory'
+import { inspectCanonicalMigrationFilesystemPaths } from './migration-filesystem-guard'
 
 /**
  * Assemble one read-only migration bundle from the existing PostgreSQL Drizzle
@@ -23,6 +24,14 @@ export async function loadVerifiedRepositoryDrizzleMigrationBundle(request: {
   const migrationsFolder = resolve(repositoryRoot, 'drizzle', 'supabase')
 
   const inventory = await loadRepositoryCoachSandboxMigrationInventory(repositoryRoot)
+
+  // Fail closed before SQL file reads or Drizzle's synchronous metadata reader.
+  // Initial journal read occurs during inventory discovery; the earlier-read
+  // provenance and concurrent-replacement problem remains a separate gate.
+  await inspectCanonicalMigrationFilesystemPaths({
+    repositoryRoot,
+    orderedMigrationFiles: inventory.orderedMigrationFiles,
+  })
 
   let canonicalSqlInventory: { filename: string; sql: string }[]
   try {
