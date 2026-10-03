@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { PgDialect } from 'drizzle-orm/pg-core'
 import { PostgresJsSession } from 'drizzle-orm/postgres-js/session'
+import type { SQL } from 'drizzle-orm/sql'
 import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js'
 import type { Sql } from 'postgres'
 
@@ -36,12 +37,23 @@ test('KAN-598/C15 installed dialect migration uses savepoint inside existing pos
   const database = {
     transaction: async (callback: (tx: {
       _: { session: ReturnType<typeof makeSession> }
-      transaction: (nested: (tx: { _: { session: ReturnType<typeof makeSession> } }) => Promise<void>) => Promise<void>
+      transaction: (nested: (tx: {
+        _: { session: ReturnType<typeof makeSession> }
+        execute: (statement: SQL) => Promise<unknown>
+      }) => Promise<void>) => Promise<void>
     }) => Promise<void>) => {
       await callback({
         _: { session: makeSession() },
         transaction: async nested =>
-          transactionClient.savepoint(async () => nested({ _: { session: makeSession() } })),
+          transactionClient.savepoint(async () => {
+            const nestedSession = makeSession()
+            return nested({
+              _: { session: nestedSession },
+              // Drizzle's real PgDialect.migrate executes SQL on the nested
+              // transaction object, not solely on its private session.
+              execute: statement => nestedSession.execute(statement),
+            })
+          }),
       })
     },
   }
