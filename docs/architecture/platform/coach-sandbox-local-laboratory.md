@@ -356,3 +356,38 @@ existing application. KAN-588 stays **En curso**.
 - C14/KAN-598 remains blocked; KAN-587 and KAN-599 retain their
   independent scope and statuses. No real PostgreSQL connection,
   migrations, seeds, DDL or resets occurred.
+
+### KAN-588/T6 consumer trace — verified direct route chain (2026-10-03)
+
+The earlier unverified detail/form mapping is now grounded in the following
+exact files on the existing feature branch (inspection only; no runtime edits):
+
+| Route or component | Direct Group consumption | Pilot boundary |
+| --- | --- | --- |
+| `app/[locale]/dashboard/groups/page.tsx` | `getGroupsByTeam()` from `group-actions` | Approved operation; **production remains SQLite** |
+| `app/[locale]/dashboard/groups/new/page.tsx` | renders `features/groups/components/GroupForm.tsx` | Form dispatches approved `createGroup` |
+| `app/[locale]/dashboard/groups/[groupId]/edit/page.tsx` | `getGroupById(groupId)`, then `GroupForm` | Approved read and form `updateGroup` |
+| `features/groups/components/GroupForm.tsx` | `useActionState(isEditing ? updateGroup : createGroup)` | Approved operations; preserve existing form/locale/redirect/error semantics |
+| `app/[locale]/dashboard/groups/[groupId]/page.tsx` | `getGroupWithMembers(groupId)` | **Excluded**: joins athlete/user data |
+| `app/[locale]/dashboard/groups/[groupId]/members/new/page.tsx` | `getEligibleAthletesForGroup(groupId)` | **Excluded**: eligibility/assignment workflow |
+| `lib/groups/eligible-athletes.ts` | `BetterSQLite3Database` type and SQLite `.sync()` reads | **Excluded** |
+
+`GroupForm` submits locale, groupId for edit, category/level only on create,
+description and edit-only isActive. The existing Zod actions validate the
+inputs and invoke Next `revalidatePath` and `redirect`; these effects are
+not portable persistence contracts and must not be duplicated inside a
+future PostgreSQL repository. The current actions use fixed
+`CURRENT_TEAM_ID = 'team_1'`, an unsuitable independent authenticated
+tenant authority for any expanded sandbox or product runtime.
+
+**Conclusion:** detail and assignment URLs visually participate in the
+sporting-group experience but are not all within the four-operation pilot.
+Routing their UI to PostgreSQL while retaining SQLite membership readers
+would create mixed-database/authority views. Any approved future sandbox
+walkthrough must explicitly isolate or omit these excluded routes rather
+than silently making them functional. Before actual integration, verify
+other imports and redirects by complete repository-level dependency
+inspection and obtain separate approval for a concrete activation design.
+
+This refinement is source inspection only, not a GREEN of functional
+PostgreSQL Group paths and not authorization to change product UI/actions.
