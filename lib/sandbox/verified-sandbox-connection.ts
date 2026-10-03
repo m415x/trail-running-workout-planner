@@ -8,6 +8,7 @@ import {
 type VerifiedLocalSandboxRequest<Connection, Result> = {
   directUrl: string
   operation: SandboxMutationOperation
+  confirmation?: string
   open: () => Promise<Connection>
   identify: (connection: Connection) => Promise<PhysicalSandboxIdentity>
   execute: (connection: Connection) => Promise<Result>
@@ -38,6 +39,10 @@ export async function withVerifiedLocalSandboxConnection<Connection, Result>(
     throw new Error('Unsupported sandbox operation')
   }
 
+  if (request.confirmation !== request.operation) {
+    throw new Error('Sandbox operation-specific confirmation required')
+  }
+
   let connection: Connection
   try {
     connection = await request.open()
@@ -50,6 +55,7 @@ export async function withVerifiedLocalSandboxConnection<Connection, Result>(
     return await authorizeSandboxMutation({
       destination: { kind: 'local', directUrl: request.directUrl },
       operation: request.operation,
+      confirmation: request.confirmation,
       readPhysicalIdentity: () => request.identify(connection),
       execute: () => request.execute(connection),
     })
