@@ -30,7 +30,13 @@ test('KAN-598/C07 aborts transaction after mid-migration failure and never leaks
     },
     transaction: async (callback: (tx: {
       session: typeof session
-      execute: (statement: string) => Promise<unknown[]>
+      execute: (statement: string) => Promise<readonly {
+        database?: string | null
+        environmentMarker?: string | null
+        clusterSystemIdentifier?: string | null
+        journal?: string | null
+        name?: string
+      }[]>
     }) => Promise<void>) => {
       events.push('begin')
       try {
