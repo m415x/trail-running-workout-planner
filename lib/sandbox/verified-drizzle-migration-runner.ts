@@ -1,4 +1,5 @@
 import { inspectSandboxDestination } from './sandbox-destination'
+import { verifyCanonicalMigrationSqlSnapshotUnchanged } from './migration-snapshot-recheck'
 import { runVerifiedCanonicalDrizzleTransaction } from './drizzle-transaction-boundary'
 import { loadVerifiedRepositoryDrizzleMigrationBundle } from './verified-drizzle-migration-bundle'
 
@@ -58,6 +59,13 @@ export async function runVerifiedRepositoryDrizzleMigrationTransaction<Session>(
 
   const bundle = await loadVerifiedRepositoryDrizzleMigrationBundle({
     repositoryRoot: request.repositoryRoot,
+  })
+
+  // Read back every verified SQL source immediately before opening BEGIN.
+  // This detects observable drift; it does not provide a TOCTOU-free lock.
+  await verifyCanonicalMigrationSqlSnapshotUnchanged({
+    migrationsFolder: bundle.migrationsFolder,
+    canonicalSqlInventory: bundle.canonicalSqlInventory,
   })
 
   await runVerifiedCanonicalDrizzleTransaction({
