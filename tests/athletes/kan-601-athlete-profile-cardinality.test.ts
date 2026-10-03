@@ -18,12 +18,12 @@ for (const schemaPath of ['db/schema.ts', 'db/supabase/schema.ts']) {
     assert.match(section, /userId:\s*text\('user_id'\)/)
     assert.doesNotMatch(
       section,
-      /userId:\s*text\('user_id'\)[\s\S]*?\.notNull\(\)/,
+      /userId:\s*text\('user_id'\)\s*\.notNull\(\)/,
       'an athlete can exist without an EPT User',
     )
     assert.doesNotMatch(
       section,
-      /userId:\s*text\('user_id'\)[\s\S]*?\.unique\(\)/,
+      /userId:\s*text\('user_id'\)(?:\s*\.notNull\(\))?\s*\.unique\(\)/,
       'a user can have athletes in different teams',
     )
     assert.match(
