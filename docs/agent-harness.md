@@ -6,6 +6,52 @@ This document describes the development harness used to execute Jira stories wit
 
 The goal is not minimum token usage in isolation. The goal is to reduce wasted context, redundant tool activity and retry loops **without reducing correctness, acceptance-criteria coverage, verification honesty or handoff quality**.
 
+## Current command behavior and per-cycle Jira evidence
+
+This section documents the **observed** runner implementations in `package.json`, `scripts/tdd.ts`, `scripts/typecheck-runner.ts`, `scripts/test-runner.ts`, `scripts/verify.ts` and `scripts/verify-cli.ts`, checked against canonical `dev` and the active KAN-566 branch on 2026-10-03. It is an operational companion to `AGENTS.md`, **not** a revision of the frozen historical `harness-eval-v1` experiment or of the scripts themselves.
+
+### Commands: actual stages and failure semantics
+
+| Invocation | Git synchronization | Tests | TypeScript | Additional gates |
+| --- | --- | --- | --- | --- |
+| `pn tdd:red <test-file> [...]` | First, `git pull --ff-only -q` | Focused files via `tsx --test` | **No** | None |
+| `pn tdd <test-file> [...]` | First, same pull | Same focused files | **Yes, only if focused tests pass**: `scripts/typecheck-runner.ts` | None |
+| `pn tsc` | No | No | `next typegen` followed by `tsc --noEmit` | None |
+| `pn verify` | No explicit pull | Full `pn test` discovery of `tests/**/*.test.ts` | `pn tsc` | `pn lint`, `pn build`, `pn i18n:check` |
+| `pn verify --db` | No explicit pull | Same full suite | Same `pn tsc` | Same lint/build/i18n plus `pn db:sqlite:check` scenarios |
+
+Both TDD entrypoints are aliases to `scripts/tdd.ts` (`tdd:red` passes `--red`). `git pull --ff-only -q` uses the **currently checked-out local branch and its configured Git upstream**, not a fixed `dev` ref. It may retrieve the wrong branch for the intended story if local checkout/upstream is wrong; therefore inspect actual checkout/tracking state when material. If the pull fails (divergence, no tracking, conflicts, network, etc.), the runner stops **before tests** with nonzero exit and prints `RED`; that output is **sync failure, not an expected test-first RED**, and must be diagnosed rather than counted as valid TDD evidence. Lack of test-file arguments exits with usage/code 2 before sync.
+
+`pn tdd:red` exits immediately after focused tests, whether passing or failing; it **never** typechecks. `pn tdd` emits `RED` if focused tests fail and **does not run** TypeScript in that case. If tests pass it invokes exactly the same `scripts/typecheck-runner.ts` as `pn tsc`: Next.js `typegen` followed by TypeScript `--noEmit`, stopping if either fails. Only after all executed stages succeed is `GREEN` printed. An expected TDD RED must be attributed to the intended assertion/contract, not mere import/transform, synchronization, or environment errors.
+
+Normal TDD output is compact. `--verbose` reveals inherited test/TypeScript/command output for diagnosis; routine successful operation should not require verbose logs. The output may contain diagnostics in addition to the terminal `GREEN`/`RED` marker, so these are not literally the only possible printed lines.
+
+**Avoid redundant instructions:** after operator-confirmed `pn tdd` GREEN on unchanged files, do not reflexively request `pn tsc` again for the same focused cycle. This is not permission to skip a required final gate, or to treat focused GREEN as equivalent to `pn verify --db`. The verification runner runs **all five** stages (tests, tsc, lint, build, i18n) and optionally a **sixth**, SQLite scenarios; it aggregates failures rather than stopping at the first failed stage. It does **not** itself run remote Supabase/PostgreSQL migrate/verify, security checks, browser/manual walkthrough, or authorization gates. Those remain distinct where the story requires them. Neither `pn tdd` nor `pn tsc` includes ESLint, build, i18n or DB checks.
+
+### Jira: record each significant RED and GREEN when observed
+
+For each meaningful test-first cycle, choose a concise stable identifier **within the active subtask** (for example `KAN-598/C04`) and publish **two separate comments** as the phases occur. Do not accumulate phase evidence only in the parent story or wait until closure. Reuse the same ID in both comments and in subsequent corrections to that cycle. Preserve the task-closing summary with links/references; it does **not** replace per-cycle evidence.
+
+```text
+KAN-598/C04 RED | goal: <one contract>
+Run: <exact focused command> | source: operator-local / agent-run / CI
+Expected: <specific failure> | observed: RED (<relevant assertion/diagnostic>)
+Git: <test commit/ref, if known>
+```
+
+```text
+KAN-598/C04 GREEN | fix: <brief change>
+Run: <exact focused command> | source: operator-local / agent-run / CI
+Observed: GREEN (<scope; pn tdd includes TypeScript if successful>)
+Git: <implementation commit/ref, if known>
+```
+
+Use the **result actually communicated by the operator** for their local runs: a reported compact `RED`/`GREEN` establishes that status for the specified execution context, but does not supply fabricated test counts, output, coverage, host identity or database effects. If the reported result is ambiguous (for instance a sync error also prints `RED`), obtain the relevant diagnostic before certifying a valid RED cycle. Never describe local operator execution as agent-run or CI evidence. If Jira is unavailable, retain exact cycle ID, command, observed result, source and commit as **pending Jira synchronization** in the working/handoff context; retry when available and never claim that a comment was published until the connector confirms it.
+
+Close the task only after its applicable focused evidence and acceptance scope are reconciled. The **final task-closing Jira comment** summarizes cycle IDs, commits, gates, remaining limitations/deferred work and links to the individual phase comments. The parent story receives relevant reconciliation at its own milestones, not a replacement copy of every subtask TDD record.
+
+---
+
 ## Harness architecture
 
 ```text
