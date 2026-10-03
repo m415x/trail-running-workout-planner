@@ -477,3 +477,53 @@ The exhaustive branch-wide dependency search remains unverified due to
 the source-access limitation above and is explicitly required before
 operational design signoff. No PostgreSQL access, schema modification,
 fixture insertion, reset, CLI entrypoint or product UI change.
+
+### KAN-588/T6 full-checkout static inventory gate (2026-10-03)
+
+**Result: NOT CERTIFIED.** An independent complete repository checkout was not
+available in the agent execution container (no project Git tree). The
+connected GitHub code search has previously returned empty results for
+symbols confirmed by direct file reads. No zero-hit result is evidence
+of absence. Existing `scripts/tdd.ts`, `scripts/test-runner.ts` and
+`scripts/verify-cli.ts` are test/verification runners; no established
+complete consumer/dependency inventory command was identified in
+`package.json` or `docs/agent-harness.md`. Do **not** add a second scanner
+on partial sources merely to generate a synthetic GREEN.
+
+A human/operator with an intact checkout of the **same exact branch and
+recorded Git SHA** can reproduce the missing inventory using the existing
+Git CLI. The following **read-only Bash** procedure requires no database,
+Next server or credentials:
+
+```bash
+git status --short
+git branch --show-current
+git rev-parse HEAD
+git ls-files -z > /tmp/kan-588-tracked-paths.nul
+git grep -n -E '\b(getGroupsByTeam|getGroupById|createGroup|updateGroup|getGroupWithMembers|getEligibleAthletesForGroup|assignAthleteToGroup)\b' -- '*.ts' '*.tsx' ':!node_modules' || test "$?" -eq 1
+git grep -n -E "(group-actions|GroupForm|group-pilot-intent|eligible-athletes|@/db|@/db/schema|@/app/actions/athlete-actions|revalidatePath|redirect)" -- 'app/**/*.ts' 'app/**/*.tsx' 'features/**/*.ts' 'features/**/*.tsx' 'lib/**/*.ts' 'lib/**/*.tsx' 'db/**/*.ts' 'tests/**/*.ts' || test "$?" -eq 1
+git grep -n -E '(export[[:space:]]+\*|export[[:space:]]+\{|import[[:space:]]*\(|require[[:space:]]*\()' -- 'app/**/*.ts' 'app/**/*.tsx' 'features/**/*.ts' 'features/**/*.tsx' 'lib/**/*.ts' 'lib/**/*.tsx' 'db/**/*.ts' || test "$?" -eq 1
+```
+
+Record **all outputs**, exact SHA and the tracked-file count; compare
+symbol matches with the verified known chain above. Then trace every
+matching imported/exported/reexported binding and **call site**
+(recursively, including `@/...` aliases, `useActionState`, route
+navigation, dynamic imports, barrels and transitive calls). A name
+search alone does not establish an exhaustive graph; inspect potential
+computed/dynamic module paths and indirect calls manually. Classify
+each edge as one of: authorized Group operation, excluded
+membership/eligibility, cache/navigation only, unrelated, or unresolved.
+Confirm no newly discovered `data.ts` dependency crosses the four
+operations. Report unresolved edges as blockers, not as negatives.
+
+**Gate to close non-operational refinement:** independently archived
+whole-tree outputs tied to a Git SHA; source-backed resolved call graph
+with dynamic-import/reexport exceptions reviewed; authorized vs excluded
+matrix and cache/redirect edges reconciled; no uninspected consumers.
+This procedure has **not been run**, and no new GREEN is asserted.
+
+The architectural choice remains **A, isolated laboratory only**.
+There is no authorized PostgreSQL adapter, alternate executable
+entrypoint, fallback, seeding or product UI switch. KAN-588 remains
+open; KAN-587, KAN-598/C14 and KAN-599 remain unchanged.
