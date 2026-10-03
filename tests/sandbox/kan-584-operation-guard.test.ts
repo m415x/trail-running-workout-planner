@@ -20,6 +20,7 @@ test('KAN-584 refuses mutation before checking physical database identity', asyn
     () => authorizeSandboxMutation({
       destination: local,
       operation: 'seed',
+      confirmation: 'seed',
       readPhysicalIdentity: async () => {
         throw new Error('identity unavailable')
       },
@@ -36,6 +37,7 @@ test('KAN-584 refuses mismatched or missing physical sandbox markers', async () 
     await assert.rejects(() => authorizeSandboxMutation({
       destination: local,
       operation: 'migrate',
+      confirmation: 'migrate',
       readPhysicalIdentity: async () => ({
         database: 'postgres', environmentMarker, projectRef: null,
       }),
@@ -54,6 +56,7 @@ test('KAN-584 refuses unapproved cloud mutations even with a matching URL and ma
       allowedCloudProjectRefs: ['sandboxref123'],
     },
     operation: 'migrate',
+      confirmation: 'migrate',
     readPhysicalIdentity: async () => ({
       database: 'postgres',
       environmentMarker: 'trail-running-coach-cloud-sandbox',
@@ -80,6 +83,7 @@ test('KAN-584 executes one local synthetic seed only after identity and allowed 
   const result = await authorizeSandboxMutation({
     destination: local,
     operation: 'seed',
+      confirmation: 'seed',
     readPhysicalIdentity: async () => {
       order.push('identity')
       return verifiedLocal()
@@ -104,6 +108,7 @@ test('KAN-584 rejects mismatched database and nonlocal project identities', asyn
       authorizeSandboxMutation({
         destination: local,
         operation: 'seed',
+      confirmation: 'seed',
         readPhysicalIdentity: async () => candidate,
         execute: async () => { executed = true },
       }),
@@ -119,6 +124,7 @@ test('KAN-584 never exposes a credential from physical identity lookup errors', 
     authorizeSandboxMutation({
       destination: local,
       operation: 'seed',
+      confirmation: 'seed',
       readPhysicalIdentity: async () => {
         throw new Error('connection failed: ' + secret)
       },
