@@ -152,3 +152,86 @@ The read-only `inspectCoachSandboxDrizzleNamespace` inspects `pg_catalog.pg_clas
 Operator-reported focused `pn tdd` GREEN (including TypeScript): C16 helper tests (Jira 11425), C17 structural ordering tests (Jira 11427), and C18 fake-transaction negative-behavior tests (Jira 11429). C18 confirms the mock migrator is never invoked and the public relation query is not reached on occupied `drizzle` relations. No real PostgreSQL transaction, rollback, migration, or schema security condition has been verified by these tests. The complete gate has **not** been rerun for these commits.
 
 **Blocking constraint remains unchanged:** C14 operational composition has a recorded RED and was stopped by a tool security control (Jira 11410). The missing module has not been implemented; do not bypass this control through an alternate entrypoint. KAN-598 must remain in progress without enabling migration execution. Explicit approval for physical DDL is separate and has not been given.
+
+## KAN-598/C14 — Stage A security review (2026-10-03)
+
+**Approval scope:** non-operational source review and synthetic tests only. This does
+not approve a migration entrypoint, PostgreSQL mutation, DDL, a new runner, or a
+workaround for a tool restriction. C14 remains RED/blocked and KAN-598 remains
+in progress.
+
+### Rejection record and limits of knowledge
+
+- **Attempted operation:** create `scripts/coach-sandbox-migration-operation.ts`
+  as an operational composition module (not a request to execute SQL).
+- **Reported mechanism:** the prior agent's file-writing/execution tool was
+  rejected by a provider security control, as recorded in Jira KAN-598
+  comments 11409–11410.
+- **Exact tool/API name, invocation/request ID, original rejection message,
+  policy rule and remediation channel:** **not available in the retained
+  Jira/repository evidence**. Do not infer an enforcement reason or invent a
+  review ticket/approval.
+- **Confirmed aftermath:** no module committed, no executable entrypoint,
+  C14 test RED, no real migrations applied. This is a tool-authorization
+  blocker, not evidence of a defective PostgreSQL migration.
+- **Legitimate review route:** have the owner/operator who encountered the
+  rejection retrieve the original tool error (tool name, timestamp, request
+  identifier, redacted message, policy/permission category if disclosed),
+  then request review through the tool provider's officially supported
+  administrator/security/support escalation channel. Require an explicit
+  disposition covering that exact operation. No alternate tool, path, file
+  name or delegate may be used to bypass the rejection.
+
+### Stage A non-operational findings
+
+- C14 uses a deliberately missing runtime-loaded module; it is not evidence
+  that the intended module exists or that migration composition is safe.
+- Existing `runInstalledLocalCanonicalMigration` requires a runtime
+  `authorizeExecution` callback in addition to independently checked
+  local documents. Even a callback returning true is *not* operator consent.
+- The destination parser requires local `127.0.0.1:54322/postgres` and
+  rejects unsafe variations. A syntactically valid URL does not identify
+  the physical cluster; the independently approved PostgreSQL system ID
+  and same-transaction preflight are still mandatory.
+- C14's old `postgres:postgres` test fixture password was changed to
+  `fixture-not-a-secret` (synthetic, never a real credential). This preserves
+  host/port/database endpoint checks without normalizing a default password.
+- `tests/sandbox/kan-598-stage-a-nonoperational-contracts.test.ts`
+  adds static and pure negative contract assertions for destination
+  restrictions, missing C14 entrypoint, declared runtime authorization and
+  absence of a direct import-time driver invocation. Such checks cannot
+  prove an entire module dependency graph has no import side effects.
+  **Execution result remains pending** until the operator runs the focused
+  test. Do not record GREEN or RED without that execution.
+- The C14 dynamic-import tests remain RED until the blocked operation is
+  separately resolved. Do not rewrite them to pass using a stand-in module.
+
+### Future operational authorization dossier (prepared, not submitted)
+
+- **Target:** a disposable Supabase CLI/Docker PostgreSQL instance reached
+  at `127.0.0.1:54322/postgres`; independently pinned system identifier
+  must be checked at execution time, without recording its secret/identity
+  value in public evidence. This document does not assert current live state.
+- **Proposed effect:** apply exactly the 29 existing Drizzle migrations
+  indexed 0–28 in `drizzle/supabase/meta/_journal.json` to a verified empty
+  application migration target. No schema regeneration, alternative CLI
+  migration chain, cloud, production, seeds, reset or real athlete records.
+- **Preflight before DDL:** verify checkout Git SHA and migration bytes;
+  canonical journal/filesystem inventory and hashes; independent cluster
+  approval; fixed destination and connected physical identity; transaction
+  marker; absent migration journal; empty Drizzle relation catalog;
+  no application table name collisions; supported nested savepoint semantics.
+  Failure must be sanitized, stop the attempt and require diagnosis rather
+  than retry/reset automatically.
+- **Recovery limitations:** synthetic checks do not certify transactional
+  rollback of all PostgreSQL DDL, Supabase-managed objects, full-catalog
+  emptiness, journal integrity after migration or safe repetition. T3c
+  KAN-599 owns physical journal/hash/rollback/repeat evidence.
+- **Separate authorizations required:** (1) provider-authorized disposition
+  of the blocked file operation; (2) explicit operator go/no-go for the
+  exact cluster/29-migration DDL execution **after fresh preflight**.
+  Neither has been established here. There is no authorized operational
+  procedure to execute now.
+- **Evidence classes:** Stage A static/synthetic tests are distinct from
+  physical local PostgreSQL integration and from remote/cloud execution;
+  no inference across classes is permitted.
