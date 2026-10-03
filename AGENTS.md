@@ -52,8 +52,8 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 - `pn verify` — complete local closure gates (`test`, `tsc`, `lint`, `build`, `i18n:check`) with compact PASS/FAIL summary and diagnostics; `pn verify -v` streams full output; `pn verify --db` adds the local SQLite scenario gate (no remote Supabase).
 - `pn lint` — ESLint
 - `pn tsc` — typecheck
-- `pn tdd:red <test-file> [...]` — sync + focused RED-phase test run with compact output
-- `pn tdd <test-file> [...]` — sync + focused tests + `pn tsc` with compact output; add `--verbose` for diagnostics
+- `pn tdd:red <test-file> [...]` — sync against current branch upstream + focused tests only (no typecheck); sync failures print RED but are not valid TDD RED evidence
+- `pn tdd <test-file> [...]` — same sync + focused tests + canonical `pn tsc` stages on test success; do not repeat `pn tsc` after unchanged GREEN solely for focused verification. See `docs/agent-harness.md` for command matrix and evidence rules; add `--verbose` for diagnostics.
 - `pn build` — production build
 - `pn db:sqlite:push` / `pn db:sqlite:generate` — local SQLite schema tooling
 - `pn db:sqlite:upgrade` / `pn db:sqlite:verify` / `pn db:sqlite:check` — supported local SQLite lifecycle and scenario gate
@@ -181,7 +181,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Merge completed story branches into `dev`, not `main` and not the legacy `dashboard` branch.
 - Default to **remote-first** inspection/versioning and focused validation during implementation.
 - Before each task, inspect only the related contracts, implementation and tests needed to understand the boundary; check whether part of the task already exists before adding abstractions.
-- Keep Jira synchronized with real implementation/evidence and use small coherent commits aligned with the active task.
+- Keep Jira synchronized **at each significant RED and GREEN**, not only at task closure: post separate, cycle-ID-linked comments in the active subtask with scope, command, result and source (operator/agent/CI), failure evidence or fix/commit respectively. If Jira is unavailable, retain evidence as **pending sync**, never claim publication. The brief format and examples are in `docs/agent-harness.md`. Use small coherent commits aligned with the active task.
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
 - Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
@@ -199,7 +199,7 @@ Jira status must represent actual execution state, not intended state.
 - Before implementation begins on a task/subtask, transition it to **En curso**. Ensure its parent story is also **En curso** while story implementation is active.
 - Never leave actively implemented work in **Por hacer**.
 - Before completing a task, run the focused verification required by its scope and reconcile the result against the original Jira intent.
-- Add a concise task-closing Jira comment recording relevant commits, tests/checks that actually ran and their results, delivered invariants, and material limitations/deferred work.
+- Add separate RED and GREEN Jira comments as each significant TDD phase is confirmed (see `docs/agent-harness.md`); preserve a concise final task-closing comment with commits, executed checks, delivered invariants, limitations and links to those cycle comments. The closure comment never substitutes for the individual phase evidence.
 - Only after the required task evidence exists, transition the task to **Finalizada**. Never use **Finalizada** as an intention or optimistic state.
 - Keep the parent story **En curso** while any approved implementation task remains incomplete.
 - Before completing a story, require all approved story tasks to be **Finalizada**, run the complete story gate, perform the acceptance-criteria review and applicable manual walkthrough, reconcile durable docs/handoff, and record story-level closure evidence in Jira.
@@ -214,7 +214,7 @@ Use RED/GREEN TDD for new or changed behavior whenever a focused automated test 
 3. Implement the smallest coherent production change that satisfies the contract.
 4. Re-run the focused test and establish **GREEN**.
 5. Refactor only while preserving GREEN, then reconcile against task scope.
-6. Record meaningful RED/GREEN evidence in Jira when closing the task; do not claim executions that did not run.
+6. Immediately after each significant observed RED, add a RED comment in the active Jira subtask with cycle ID, goal, exact test command, expected failure and relevant actual diagnostic. Immediately after each confirmed GREEN, add its own linked GREEN comment with fix, exact executed command, reported result and commit/ref. Do not defer either comment to closure, infer execution from code, or mark an unrelated environment/sync failure as a valid RED; if Jira fails, record pending sync explicitly.
 
 When asking the human to execute focused tests in the local terminal, use the repository TDD runner by default so routine runs remain portable and do not flood conversational context:
 
@@ -223,7 +223,7 @@ pn tdd:red tests/field-performance-test-history.test.ts
 pn tdd tests/field-performance-test-history.test.ts
 ```
 
-`pn tdd:red` performs `git pull --ff-only -q` and the supplied focused tests. `pn tdd` performs the same sync/test run and then the canonical `pn tsc` typecheck. Both print only `GREEN` or `RED` by default. Add `--verbose` to either command when diagnostics are required. Keep `pn tsc` as the single typecheck script; do not add duplicate aliases for `tsc --noEmit`.
+Both runners attempt `git pull --ff-only -q` against the **current local branch's configured upstream** (not hardcoded `dev`) before any tests; a pull failure exits 1, prints `RED`, and prevents tests/typechecking (therefore is **not** a TDD RED). `pn tdd:red` runs only the specified focused tests after sync; `pn tdd` additionally calls the canonical `scripts/typecheck-runner.ts` **only after tests pass**, equivalent to `pn tsc` (`next typegen` then `tsc --noEmit`). By default they print compact RED/GREEN status plus diagnostics on ordinary `pn tdd` failures; `--verbose` streams underlying output. `pn tsc` alone does not pull or test. `pn verify --db` still separately runs full test/tsc/lint/build/i18n/SQLite closure stages; no remote Supabase gate is implied. The authoritative matrix and per-phase Jira format are in `docs/agent-harness.md`.
 
 - If the compact result is the expected `RED` during the RED phase, continue without requesting full output unless the failure reason is ambiguous.
 - If a result is unexpected — RED when GREEN is expected, GREEN when RED is expected, or an environment/compile failure is suspected — request or run the narrowest diagnostic command needed to expose failure details.
