@@ -144,3 +144,11 @@ C14 tool-security hold. C14 still RED. No actual migration or PostgreSQL write o
 - **KAN-586 (T4)**: distinct physical schema, constraints, indexes, foreign keys and structural RLS verification, blocked by KAN-599.
 
 Do not treat approval of this task reorganization, a GREEN unit test or successful read-only probe as permission to apply SQL migrations, seeds or reset the database. Maintain the broader KAN-566 boundaries: no production, cloud, personal data, real athletes, pre-auth authorization claims or replacement migration system.
+
+## KAN-598/C16–C18 — Drizzle namespace preflight (2026-10-03)
+
+The read-only `inspectCoachSandboxDrizzleNamespace` inspects `pg_catalog.pg_class` joined to `pg_catalog.pg_namespace` for existing relations in the `drizzle` namespace, rejecting nonempty or malformed results and sanitizing driver errors. It runs within `runVerifiedCanonicalDrizzleTransaction` after the absent-journal check and before public application-table collision checks and `PgDialect.migrate`, using the existing verified transaction query. This is a **bounded relation-catalog check**, not a proof that all PostgreSQL object classes or other namespaces are empty.
+
+Operator-reported focused `pn tdd` GREEN (including TypeScript): C16 helper tests (Jira 11425), C17 structural ordering tests (Jira 11427), and C18 fake-transaction negative-behavior tests (Jira 11429). C18 confirms the mock migrator is never invoked and the public relation query is not reached on occupied `drizzle` relations. No real PostgreSQL transaction, rollback, migration, or schema security condition has been verified by these tests. The complete gate has **not** been rerun for these commits.
+
+**Blocking constraint remains unchanged:** C14 operational composition has a recorded RED and was stopped by a tool security control (Jira 11410). The missing module has not been implemented; do not bypass this control through an alternate entrypoint. KAN-598 must remain in progress without enabling migration execution. Explicit approval for physical DDL is separate and has not been given.
