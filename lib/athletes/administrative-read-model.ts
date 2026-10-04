@@ -44,7 +44,6 @@ export function projectAthleteAdministrativeRead(
     throw new Error('Athlete administrative identity mismatch')
   }
 
-  const profileName = athlete.firstName !== null && athlete.lastName !== null
   let name: AthleteAdministrativeRead['name'] = null
   if (athlete.firstName !== null && athlete.lastName !== null) {
     name = { firstName: athlete.firstName, lastName: athlete.lastName, source: 'athlete_profile' }
@@ -56,7 +55,7 @@ export function projectAthleteAdministrativeRead(
     ? { value: athlete.contactEmail, source: 'athlete_profile' as const }
     : athlete.user
       ? { value: athlete.user.email, source: 'legacy_user' as const }
-      : { value: null, source: profileName ? 'athlete_profile' as const : 'missing' as const }
+      : { value: null, source: 'missing' as const }
 
   return {
     athleteId: athlete.id,

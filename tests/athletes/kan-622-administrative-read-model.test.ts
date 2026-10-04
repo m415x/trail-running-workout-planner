@@ -13,7 +13,7 @@ test('KAN-622 preserves profile-owned name and contact for an unlinked athlete',
   assert.equal(view.teamId, 'team-1')
   assert.equal(view.userId, null)
   assert.deepEqual(view.name, { firstName: 'Ana', lastName: 'Acosta', source: 'athlete_profile' })
-  assert.deepEqual(view.email, { value: null, source: 'athlete_profile' })
+  assert.deepEqual(view.email, { value: null, source: 'missing' })
 })
 
 test('KAN-622 reads legacy User names without claiming they are athlete-owned facts', () => {
