@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { createElement, type ComponentProps } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -39,4 +40,27 @@ test('KAN-634 keeps unknown neutral and accessible without falsely claiming curr
   assert.match(html, /Membership information unavailable/)
   assert.doesNotMatch(html, /Up to date/)
   assert.match(html, /role="status"/)
+})
+
+test('KAN-634 warning and danger use materially stronger light/dark semantic surfaces after browser acceptance feedback', () => {
+  const warning = renderNotice('es', { tone: 'warning', message: 'current_pending' })
+  assert.match(warning, /bg-amber-200/)
+  assert.match(warning, /dark:bg-amber-900\/70/)
+
+  const danger = renderNotice('es', { tone: 'danger', message: 'current_overdue' })
+  assert.match(danger, /bg-red-200/)
+  assert.match(danger, /dark:bg-red-900\/70/)
+
+  const shellSource = readFileSync('lib/memberships/athlete-home-economic-shell.ts', 'utf8')
+  assert.match(shellSource, /warning: 'bg-amber-100 dark:bg-amber-900\/50'/)
+  assert.match(shellSource, /danger: 'bg-red-100 dark:bg-red-900\/50'/)
+})
+
+test('KAN-634 due-day picker uses the shared bounded themed Select instead of a native popup', () => {
+  const source = readFileSync('features/memberships/components/GlobalDueDateExceptionForm.tsx', 'utf8')
+  assert.doesNotMatch(source, /<select/)
+  assert.match(source, /SelectTrigger/)
+  assert.match(source, /SelectContent/)
+  assert.match(source, /SelectItem/)
+  assert.match(source, /className='w-full'/)
 })
