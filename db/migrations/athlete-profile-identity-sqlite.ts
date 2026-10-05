@@ -567,7 +567,6 @@ export function migrateAthleteProfileIdentitySqlite(
 
   const entry = journal.entries[16]
   if (
-    journal.entries.length !== 17 ||
     entry?.idx !== 16 ||
     entry.tag !== '0016_athlete_profile_identity' ||
     entry.when !== 1790802001000
