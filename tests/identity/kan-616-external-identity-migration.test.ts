@@ -24,7 +24,10 @@ for (const dialect of ['sqlite', 'supabase'] as const) {
     const migration = latestMigration(dialect)
 
     assert.match(migration.sql, /CREATE TABLE ["`]external_identity_links["`]/i)
-    assert.match(migration.sql, /["`]user_id["`][\s\S]*REFERENCES ["`](?:public["`]\.)?["`]users["`]/i)
+    assert.match(
+      migration.sql,
+      /FOREIGN KEY\s*\(\s*["`]user_id["`]\s*\)[\s\S]*REFERENCES\s+(?:["`]public["`]\.)?["`]users["`]/i,
+    )
     assert.match(migration.sql, /["`]provider["`]/)
     assert.match(migration.sql, /["`]subject["`]/)
     assert.match(
