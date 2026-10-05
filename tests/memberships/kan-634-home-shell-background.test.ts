@@ -6,10 +6,10 @@ import { resolveAthleteEconomicShellBackground } from '../../lib/memberships/ath
 test('KAN-634 maps the approved H4/H5 tones to static light/dark shell classes', () => {
   assert.equal(resolveAthleteEconomicShellBackground('normal'), 'bg-background')
   assert.equal(resolveAthleteEconomicShellBackground('neutral'), 'bg-background')
-  assert.match(resolveAthleteEconomicShellBackground('warning'), /bg-amber-50/)
-  assert.match(resolveAthleteEconomicShellBackground('warning'), /dark:bg-amber-950/)
-  assert.match(resolveAthleteEconomicShellBackground('danger'), /bg-red-50/)
-  assert.match(resolveAthleteEconomicShellBackground('danger'), /dark:bg-red-950/)
+  assert.match(resolveAthleteEconomicShellBackground('warning'), /bg-amber-100/)
+  assert.match(resolveAthleteEconomicShellBackground('warning'), /dark:bg-amber-900/)
+  assert.match(resolveAthleteEconomicShellBackground('danger'), /bg-red-100/)
+  assert.match(resolveAthleteEconomicShellBackground('danger'), /dark:bg-red-900/)
 })
 
 test('KAN-634 shell only maps tones, never makes route access decisions', () => {
