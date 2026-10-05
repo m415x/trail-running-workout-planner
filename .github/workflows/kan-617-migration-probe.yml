@@ -1,4 +1,4 @@
-name: KAN-617 migration probe
+name: KAN-617 migration promotion bridge
 
 on:
   push:
@@ -6,23 +6,19 @@ on:
       - feat/KAN-601-identity-memberships
     paths:
       - '.github/workflows/kan-617-migration-probe.yml'
-      - 'db/schema.ts'
-      - 'db/supabase/schema.ts'
-  workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  generate:
+  promote:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout triggering commit
+      - name: Checkout temp promotion branch
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
-          ref: ${{ github.sha }}
+          ref: tmp/KAN-617-generated-migrations
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -35,11 +31,11 @@ jobs:
           cache: pnpm
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-      - name: Generate migrations
+      - name: Generate Drizzle migrations
         run: |
           pnpm db:sqlite:generate
           pnpm db:supabase:generate
-      - name: Verify generated scope
+      - name: Verify bounded generated scope
         shell: bash
         run: |
           sqlite_sql="$(ls drizzle/sqlite/0018_*.sql)"
@@ -49,21 +45,12 @@ jobs:
           ! grep -Eq '__new_athlete_profiles|DROP TABLE .?athlete_profiles' "$sqlite_sql"
           ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$sqlite_sql"
           ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$pg_sql"
-          git status --short drizzle/sqlite drizzle/supabase
-      - name: Emit generated artifacts for connector promotion
+      - name: Commit generated artifacts to temp branch
         shell: bash
         run: |
-          emit() {
-            local key="$1"
-            local file="$2"
-            echo "KAN617_ARTIFACT_BEGIN:$key:$(basename "$file")"
-            gzip -c "$file" | base64 -w0
-            echo
-            echo "KAN617_ARTIFACT_END:$key"
-          }
-          emit SQLITE_SQL "$(ls drizzle/sqlite/0018_*.sql)"
-          emit SQLITE_SNAPSHOT drizzle/sqlite/meta/0018_snapshot.json
-          emit SQLITE_JOURNAL drizzle/sqlite/meta/_journal.json
-          emit PG_SQL "$(ls drizzle/supabase/0031_*.sql)"
-          emit PG_SNAPSHOT drizzle/supabase/meta/0031_snapshot.json
-          emit PG_JOURNAL drizzle/supabase/meta/_journal.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add drizzle/sqlite/0018_*.sql drizzle/sqlite/meta/0018_snapshot.json drizzle/sqlite/meta/_journal.json
+          git add drizzle/supabase/0031_*.sql drizzle/supabase/meta/0031_snapshot.json drizzle/supabase/meta/_journal.json
+          git commit -m "feat(KAN-617): 🧭 version team membership persistence"
+          git push origin HEAD:tmp/KAN-617-generated-migrations
