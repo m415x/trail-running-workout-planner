@@ -8,13 +8,6 @@ import { Button } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 import { Input } from '@ui/input'
 import { Label } from '@ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@ui/select'
 
 type Locale = 'es' | 'en'
 
@@ -24,7 +17,6 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [period, setPeriod] = useState('')
-  const [dueDay, setDueDay] = useState('')
 
   const daysInMonth = useMemo(() => {
     const [year, month] = period.split('-').map(Number)
@@ -37,8 +29,8 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
     setSuccess(null)
     const selectedPeriod = String(formData.get('period') ?? '')
     const [year, month] = selectedPeriod.split('-').map(Number)
-    const selectedDueDay = Number(formData.get('dueDay'))
-    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(selectedDueDay).padStart(2, '0')}`
+    const dueDay = Number(formData.get('dueDay'))
+    const dueDate = `${year}-${String(month).padStart(2, '0')}-${String(dueDay).padStart(2, '0')}`
 
     startTransition(async () => {
       const result = await applyGlobalDueDateExceptionAction({
@@ -81,23 +73,17 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
               <Label htmlFor='exceptionDueDay'>
                 {t('dueDay')}
               </Label>
-              <Select
+              <select
+                id='exceptionDueDay'
                 name='dueDay'
-                value={dueDay}
-                onValueChange={(value) => setDueDay(value ?? '')}
+                className='h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs'
                 required
               >
-                <SelectTrigger id='exceptionDueDay' className='w-full'>
-                  <SelectValue placeholder={t('selectDay')} />
-                </SelectTrigger>
-                <SelectContent align='start' className='max-h-64 bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-50'>
-                  {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
-                    <SelectItem key={day} value={String(day)}>
-                      {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option className='text-slate-950' value=''>{t('selectDay')}</option>
+                {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
+                  <option className='text-slate-950' key={day} value={day}>{day}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className='space-y-2'>
