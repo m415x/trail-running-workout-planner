@@ -89,8 +89,6 @@ test('KAN-615 reruns applied 0016 with canonical INTEGER metadata', () => {
       entries: Array<{ tag: string; when: number }>
     }
 
-    assert.equal(journal.entries.length, 17)
-
     const entry = journal.entries[16]
     assert.equal(entry.tag, '0016_athlete_profile_identity')
 
@@ -131,7 +129,7 @@ test('KAN-615 reruns applied 0016 with canonical INTEGER metadata', () => {
 
       assert.deepEqual(
         identifiers.map(row => row.id),
-        Array.from({ length: 17 }, (_, index) => index + 1),
+        Array.from({ length: journal.entries.length }, (_, index) => index + 1),
       )
 
       assert.deepEqual(conversionDb.pragma('foreign_key_check'), [])
@@ -152,7 +150,7 @@ test('KAN-615 reruns applied 0016 with canonical INTEGER metadata', () => {
         ORDER BY rowid
       `).all() as Array<{ hash: string; created_at: number }>
 
-      assert.equal(history.length, 17)
+      assert.equal(history.length, journal.entries.length)
       assert.deepEqual(history[16], {
         hash,
         created_at: entry.when,
