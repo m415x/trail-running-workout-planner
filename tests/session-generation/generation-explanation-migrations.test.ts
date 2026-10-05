@@ -48,19 +48,16 @@ describe('GenerationExplanation historical persistence migrations', () => {
       fs.readFileSync(path.join(root, 'drizzle/supabase/meta/_journal.json'), 'utf8'),
     ) as { entries: Array<{ tag: string }> }
 
-    assert.deepEqual(
-      sqliteJournal.entries.slice(-2).map(entry => entry.tag),
-      [
-        '0015_generation_explanation_provenance',
-        '0016_athlete_profile_identity',
-      ],
+    const sqliteTags = sqliteJournal.entries.map(entry => entry.tag)
+    const supabaseTags = supabaseJournal.entries.map(entry => entry.tag)
+
+    assert.equal(
+      sqliteTags.indexOf('0016_athlete_profile_identity'),
+      sqliteTags.indexOf('0015_generation_explanation_provenance') + 1,
     )
-    assert.deepEqual(
-      supabaseJournal.entries.slice(-2).map(entry => entry.tag),
-      [
-        '0028_generation_explanation_provenance',
-        '0029_athlete_profile_identity',
-      ],
+    assert.equal(
+      supabaseTags.indexOf('0029_athlete_profile_identity'),
+      supabaseTags.indexOf('0028_generation_explanation_provenance') + 1,
     )
   })
 
