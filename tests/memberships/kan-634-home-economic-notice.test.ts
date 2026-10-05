@@ -63,4 +63,6 @@ test('KAN-634 due-day picker uses the shared bounded themed Select instead of a 
   assert.match(source, /SelectContent/)
   assert.match(source, /SelectItem/)
   assert.match(source, /className='w-full'/)
+  assert.match(source, /dark:bg-slate-950/)
+  assert.match(source, /dark:text-slate-50/)
 })
