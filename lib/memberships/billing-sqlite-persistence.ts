@@ -95,7 +95,10 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort & PaymentPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort & PaymentPersistencePort & {
+  listPersistedMonthlyCharges: NonNullable<BillingPersistencePort['listPersistedMonthlyCharges']>
+  listPaymentRevisionsForCharges: (chargeIds: readonly string[]) => Promise<PersistedPaymentRevision[]>
+} {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
