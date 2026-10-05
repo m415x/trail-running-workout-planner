@@ -30,8 +30,9 @@ export function selectQuickPaymentCharge<TCharge extends QuickPaymentCharge>(inp
     (charge) => Number.isSafeInteger(charge.remainingMinor) && charge.remainingMinor > 0,
   )
 
-  const selectedCharge = input.source.kind === 'charge'
-    ? eligibleCharges.find((charge) => charge.id === input.source.monthlyChargeId)
+  const source = input.source
+  const selectedCharge = source.kind === 'charge'
+    ? eligibleCharges.find((charge) => charge.id === source.monthlyChargeId)
     : eligibleCharges.find((charge) =>
         charge.year === input.currentPeriod.year && charge.month === input.currentPeriod.month,
       )
