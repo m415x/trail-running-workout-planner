@@ -38,3 +38,8 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
       - name: Run focused membership contract tests
         run: pnpm exec tsx --test tests/memberships/kan-62*.test.ts
+      - name: Lint focused Membership files
+        run: pnpm exec eslint features/memberships/components/QuickPaymentDialog.tsx lib/memberships/quick-payment-*.ts tests/memberships/kan-62*.test.ts
+      - name: TypeScript diagnostics (repository baseline, not a GREEN gate)
+        continue-on-error: true
+        run: pnpm exec tsc --noEmit --pretty false
