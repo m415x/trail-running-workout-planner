@@ -63,4 +63,4 @@ jobs:
       - name: Verify exact revision
         run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
       - name: Full local closure gate including isolated SQLite scenarios
-        run: pnpm verify --db
+        run: node node_modules/tsx/dist/cli.mjs scripts/verify-cli.ts --db
