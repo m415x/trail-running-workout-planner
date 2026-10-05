@@ -11,7 +11,6 @@ import {
   athleteGroups,
   athleteProfiles,
   planningCohortMemberships,
-  users,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
 import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
@@ -201,14 +200,6 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
 
   try {
     db.transaction((tx) => {
-      const existingUser = tx.query.users.findFirst({
-        where: eq(users.email, data.email),
-      }).sync()
-
-      if (existingUser) {
-        throw new Error('Ya existe un usuario con ese email')
-      }
-
       const existingDni = tx.query.athleteProfiles.findFirst({
         where: and(eq(athleteProfiles.dni, data.dni), eq(athleteProfiles.isDeleted, false)),
       }).sync()
@@ -218,26 +209,17 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
       }
 
       const now = new Date().toISOString()
-      const userId = randomUUID()
       const athleteId = randomUUID()
-
-      tx.insert(users).values({
-        id: userId,
-        role: 'athlete',
-        userName: data.email,
-        email: data.email,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        createdAt: now,
-        updatedAt: now,
-      }).run()
 
       tx.insert(athleteProfiles).values({
         id: athleteId,
-        userId,
+        userId: null,
         teamId: CURRENT_TEAM_ID,
         groupId: null,
         isActive: true,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        contactEmail: data.email,
         nickName: nullable(data.nickName),
         dni: data.dni,
         birthday: nullable(data.birthday),
