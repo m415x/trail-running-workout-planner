@@ -650,11 +650,11 @@ export function migrateAthleteProfileIdentitySqlite(
           "physiology" text,
           "medical" text,
           FOREIGN KEY ("user_id") REFERENCES "users"("id")
-            ON DELETE restrict,
+            ON UPDATE no action ON DELETE restrict,
           FOREIGN KEY ("team_id") REFERENCES "teams"("id")
-            ON DELETE cascade,
+            ON UPDATE no action ON DELETE cascade,
           FOREIGN KEY ("group_id") REFERENCES "athlete_groups"("id")
-            ON DELETE set null
+            ON UPDATE no action ON DELETE set null
         );
 
         INSERT INTO "__new_athlete_profiles" (
