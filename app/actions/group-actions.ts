@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, athleteProfiles } from '@/db/schema'
+import { athleteGroups } from '@/db/schema'
 import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
 import { getSportingGroupWithMembers } from '@/lib/groups/group-members-read'
 
