@@ -1,4 +1,4 @@
-name: KAN-617 migration promotion bridge
+name: KAN-617 migration consistency
 
 on:
   push:
@@ -6,19 +6,25 @@ on:
       - feat/KAN-601-identity-memberships
     paths:
       - '.github/workflows/kan-617-migration-probe.yml'
+      - 'db/schema.ts'
+      - 'db/supabase/schema.ts'
+      - 'drizzle/sqlite/**'
+      - 'drizzle/supabase/**'
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  promote:
+  generated-metadata-consistency:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout temp promotion branch
+      - name: Checkout triggering commit
         uses: actions/checkout@v4
         with:
-          ref: tmp/KAN-617-generated-migrations
+          persist-credentials: false
+          ref: ${{ github.sha }}
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -31,26 +37,15 @@ jobs:
           cache: pnpm
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-      - name: Generate Drizzle migrations
+      - name: Regenerate SQLite and PG metadata
         run: |
           pnpm db:sqlite:generate
           pnpm db:supabase:generate
-      - name: Verify bounded generated scope
+      - name: Require generation no-op
         shell: bash
         run: |
-          sqlite_sql="$(ls drizzle/sqlite/0018_*.sql)"
-          pg_sql="$(ls drizzle/supabase/0031_*.sql)"
-          grep -q 'team_memberships' "$sqlite_sql"
-          grep -q 'team_memberships' "$pg_sql"
-          ! grep -Eq '__new_athlete_profiles|DROP TABLE .?athlete_profiles' "$sqlite_sql"
-          ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$sqlite_sql"
-          ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$pg_sql"
-      - name: Commit generated artifacts to temp branch
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add drizzle/sqlite/0018_*.sql drizzle/sqlite/meta/0018_snapshot.json drizzle/sqlite/meta/_journal.json
-          git add drizzle/supabase/0031_*.sql drizzle/supabase/meta/0031_snapshot.json drizzle/supabase/meta/_journal.json
-          git commit -m "feat(KAN-617): 🧭 version team membership persistence"
-          git push origin HEAD:tmp/KAN-617-generated-migrations
+          changes="$(git status --porcelain -- drizzle/sqlite drizzle/supabase)"
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            exit 1
+          fi
