@@ -11,8 +11,8 @@ test('KAN-634 exposes pending and overdue economic signals as readable ES/EN tex
     state: { tone: 'warning', message: 'current_pending' },
   }))
   assert.match(warning, /Cuota pendiente/)
-  assert.match(warning, /href="\\/profile"/)
-  assert.doesNotMatch(warning, /href="\\/es\\/profile"/)
+  assert.match(warning, /href="\/profile"/)
+  assert.doesNotMatch(warning, /href="\/es\/profile"/)
   assert.match(warning, /role="status"/)
 
   const danger = renderToStaticMarkup(createElement(AthleteHomeEconomicNotice, {
