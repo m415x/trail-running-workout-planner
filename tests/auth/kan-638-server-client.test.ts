@@ -28,5 +28,5 @@ test('KAN-638 server auth factory tolerates read-only cookie stores used by Serv
 test('KAN-638 server auth factory refuses incomplete public Supabase configuration', () => {
   assert.match(source, /NEXT_PUBLIC_SUPABASE_URL/)
   assert.match(source, /NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/)
-  assert.match(source, /if\s*\(.*!url.*\|\|.*!publishableKey/s)
+  assert.match(source, /if\\s*\\([\\s\\S]*!url[\\s\\S]*\\|\\|[\\s\\S]*!publishableKey/)
 })
