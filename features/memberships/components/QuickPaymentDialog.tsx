@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { prepareQuickPaymentDraft, validateQuickPaymentDraft } from '@/lib/memberships/quick-payment-draft'
+import { parseQuickPaymentAmountMinor } from '@/lib/memberships/quick-payment-amount'
 import type { QuickPaymentCharge, QuickPaymentSource } from '@/lib/memberships/quick-payment-selection'
 
 type QuickPaymentDialogProps = {
@@ -30,12 +31,6 @@ type QuickPaymentDialogProps = {
 
 function amountInput(minor: number | null) {
   return minor === null ? '' : (minor / 100).toFixed(2)
-}
-
-function parseMinor(value: string): number {
-  if (!/^\d+(?:[.,]\d{1,2})?$/.test(value)) return NaN
-  const [units, cents = ''] = value.replace(',', '.').split('.')
-  return Number(units) * 100 + Number(cents.padEnd(2, '0'))
 }
 
 /** Controlled by either Coach entry point; the existing H3 action remains the write authority. */
@@ -99,7 +94,7 @@ export function QuickPaymentDialog({
     setError(null)
     setSuccess(null)
     const checked = validateQuickPaymentDraft({
-      charges, athleteId, monthlyChargeId, amountMinor: parseMinor(amount),
+      charges, athleteId, monthlyChargeId, amountMinor: parseQuickPaymentAmountMinor(amount) ?? NaN,
       paymentMethod, paidAt, locale,
     })
     if (!checked.ok) {
