@@ -53,7 +53,6 @@ export function AthleteHomeEconomicNotice({
       <p className='font-medium'>{labels[state.message]}</p>
       <Link
         href='/profile'
-        locale={locale}
         className='mt-2 inline-flex min-h-10 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current'
       >
         {labels.link}
