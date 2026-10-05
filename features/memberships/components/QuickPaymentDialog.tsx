@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { registerManualPaymentAction } from '@/app/actions/membership-actions'
@@ -38,6 +38,11 @@ export function QuickPaymentDialog({
   open, onOpenChange, athleteId, displayName, charges, blockedForPriorDebt,
   currentPeriod, operationalDate, source, locale, onRegistered,
 }: QuickPaymentDialogProps) {
+  const baseId = useId()
+  const periodId = `${baseId}-period`
+  const amountId = `${baseId}-amount`
+  const methodId = `${baseId}-method`
+  const dateId = `${baseId}-date`
   const initial = prepareQuickPaymentDraft({ charges, currentPeriod, operationalDate, source, blockedForPriorDebt })
   const [monthlyChargeId, setMonthlyChargeId] = useState(initial.monthlyChargeId ?? '')
   const [amount, setAmount] = useState(amountInput(initial.amountMinor))
@@ -148,8 +153,8 @@ export function QuickPaymentDialog({
         ) : (
           <form onSubmit={submit} className='space-y-4'>
             <div className='space-y-2'>
-              <Label htmlFor='quick-payment-period'>{isEn ? 'Period' : 'Período'}</Label>
-              <select id='quick-payment-period' value={monthlyChargeId} onChange={event => changeCharge(event.target.value)}
+              <Label htmlFor={periodId}>{isEn ? 'Period' : 'Período'}</Label>
+              <select id={periodId} value={monthlyChargeId} onChange={event => changeCharge(event.target.value)}
                 disabled={isPending || submitted} required className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
                 <option value=''>{isEn ? 'Select a period' : 'Seleccioná un período'}</option>
                 {eligible.map(charge => (
@@ -164,13 +169,13 @@ export function QuickPaymentDialog({
               <p>{isEn ? 'Outstanding balance' : 'Saldo pendiente'}: {chosen ? money(chosen.remainingMinor, chosen.currency) : '—'}</p>
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='quick-payment-amount'>{isEn ? 'Amount' : 'Importe'}</Label>
-              <Input id='quick-payment-amount' value={amount} onChange={event => setAmount(event.target.value)}
+              <Label htmlFor={amountId}>{isEn ? 'Amount' : 'Importe'}</Label>
+              <Input id={amountId} value={amount} onChange={event => setAmount(event.target.value)}
                 inputMode='decimal' type='text' required disabled={isPending || submitted || !chosen} />
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='quick-payment-method'>{isEn ? 'Payment method' : 'Método de pago'}</Label>
-              <select id='quick-payment-method' value={paymentMethod}
+              <Label htmlFor={methodId}>{isEn ? 'Payment method' : 'Método de pago'}</Label>
+              <select id={methodId} value={paymentMethod}
                 onChange={event => setPaymentMethod(event.target.value as 'cash' | 'bank_transfer')}
                 disabled={isPending || submitted} className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
                 <option value='cash'>{isEn ? 'Cash' : 'Efectivo'}</option>
@@ -178,8 +183,8 @@ export function QuickPaymentDialog({
               </select>
             </div>
             <div className='space-y-2'>
-              <Label htmlFor='quick-payment-date'>{isEn ? 'Payment date' : 'Fecha del pago'}</Label>
-              <Input id='quick-payment-date' type='date' value={paidAt}
+              <Label htmlFor={dateId}>{isEn ? 'Payment date' : 'Fecha del pago'}</Label>
+              <Input id={dateId} type='date' value={paidAt}
                 onChange={event => setPaidAt(event.target.value)} disabled={isPending || submitted} required />
             </div>
             {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
