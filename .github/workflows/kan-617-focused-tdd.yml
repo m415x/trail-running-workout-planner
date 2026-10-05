@@ -15,6 +15,10 @@ on:
       - 'db/supabase/schema.ts'
   workflow_dispatch:
 
+concurrency:
+  group: kan-617-focused-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
