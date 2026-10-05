@@ -10,11 +10,11 @@ import {
 } from '@/app/actions/planning-cohort-actions'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
+import type { AthleteAdministrativeReadInput } from '@/lib/athletes/administrative-read-model'
+import { getGroupMemberOptionName } from '@/features/groups/lib/group-member-option-label'
 
-interface AthleteOption {
-  id: string
+interface AthleteOption extends AthleteAdministrativeReadInput {
   nickName: string | null
-  user: { firstName: string; lastName: string }
 }
 
 interface MembershipFormBaseProps {
@@ -62,7 +62,7 @@ export function PlanningCohortAssignmentForm({ locale, cohortId, athletes, defau
           <option value=''>Seleccionar atleta</option>
           {athletes.map((athlete) => (
             <option key={athlete.id} value={athlete.id}>
-              {athlete.user.lastName}, {athlete.user.firstName}{athlete.nickName ? ` · “${athlete.nickName}”` : ''}
+              {getGroupMemberOptionName(athlete)}{athlete.nickName ? ` · “${athlete.nickName}”` : ''}
             </option>
           ))}
         </select>

@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { TrainingGoalForm } from '@/features/training-goals/components/TrainingGoalForm'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent } from '@ui/card'
 
@@ -21,10 +22,13 @@ export default async function NewTrainingGoalPage({ params }: NewTrainingGoalPag
     notFound()
   }
 
+  const administrative = projectAthleteAdministrativeRead(athlete)
   const athletePath = locale === 'es'
     ? `/dashboard/athletes/${athlete.id}`
     : `/${locale}/dashboard/athletes/${athlete.id}`
-  const athleteName = `${athlete.user.firstName} ${athlete.user.lastName}`
+  const athleteName = administrative.name
+    ? `${administrative.name.firstName} ${administrative.name.lastName}`
+    : athlete.dni ?? athlete.id
 
   return (
     <div className='mx-auto w-full max-w-3xl space-y-6'>

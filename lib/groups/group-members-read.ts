@@ -1,11 +1,15 @@
-import { and, eq, isNull, ne, or } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import * as schema from '@/db/schema'
 import { athleteGroups, athleteProfiles } from '@/db/schema'
 import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 
-export function getEligibleAthletesForSportingGroup(input: {
+/**
+ * Team-scoped read boundary for one sporting group and its retained members.
+ * Inactive athletes remain visible; soft-deleted or cross-team profiles do not.
+ */
+export function getSportingGroupWithMembers(input: {
   db: BetterSQLite3Database<typeof schema>
   teamId: string
   groupId: string
@@ -14,7 +18,6 @@ export function getEligibleAthletesForSportingGroup(input: {
     where: and(
       eq(athleteGroups.id, input.groupId),
       eq(athleteGroups.teamId, input.teamId),
-      eq(athleteGroups.isActive, true),
       eq(athleteGroups.isDeleted, false),
     ),
   }).sync()
@@ -23,18 +26,11 @@ export function getEligibleAthletesForSportingGroup(input: {
 
   const athletes = input.db.query.athleteProfiles.findMany({
     where: and(
+      eq(athleteProfiles.groupId, input.groupId),
       eq(athleteProfiles.teamId, input.teamId),
-      eq(athleteProfiles.isActive, true),
       eq(athleteProfiles.isDeleted, false),
-      or(
-        isNull(athleteProfiles.groupId),
-        ne(athleteProfiles.groupId, input.groupId),
-      ),
     ),
-    with: {
-      user: true,
-      group: true,
-    },
+    with: { user: true },
   }).sync()
 
   athletes.sort((first, second) => {
@@ -53,5 +49,5 @@ export function getEligibleAthletesForSportingGroup(input: {
     return first.id.localeCompare(second.id)
   })
 
-  return { group, athletes }
+  return { ...group, athletes }
 }

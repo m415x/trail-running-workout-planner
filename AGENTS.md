@@ -180,6 +180,12 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Work in a story branch created from `dev`; keep commits aligned with the active Jira task.
 - Merge completed story branches into `dev`, not `main` and not the legacy `dashboard` branch.
 - Default to **remote-first** inspection/versioning and focused validation during implementation.
+- Prefer **resolution/delivery micro-sprints** when reconciling blocked or partially delivered work: one primary objective at a time, closed scope, and an explicit exit condition.
+- After a stable GREEN for an independently deliverable task/cut, create a recoverable commit before moving to the next cut. An uncommitted working tree must never be the sole carrier of accepted work.
+- Bind test, CI and manual-acceptance evidence to an exact commit SHA or otherwise recoverable tree. Reuse evidence only while that exact tree still exists and has not materially changed; if the tree is lost or materially changed, rerun the affected evidence.
+- When blocked, record the cause, affected scope, criticality, objective unblock condition, and any independent work that remains enabled. Do not automatically promote unrelated failures or technical debt into global story blockers.
+- A dependency-specific gate may close a bounded dependent correction even when the global gate fails for work outside that correction, but only when the dependency, remaining failures and explicit exception are documented.
+- Micro-sprint pressure never justifies sacrificing historical integrity, isolation, security or authorization boundaries.
 - Before each task, inspect only the related contracts, implementation and tests needed to understand the boundary; check whether part of the task already exists before adding abstractions.
 - Keep Jira synchronized with real implementation/evidence and use small coherent commits aligned with the active task.
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).

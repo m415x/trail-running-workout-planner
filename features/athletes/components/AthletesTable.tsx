@@ -25,17 +25,16 @@ import {
 } from '@/features/athletes/lib/athlete-active-state-confirmation'
 
 import type { AthleteCategoryCode, AthleteLevelCode } from '@/types'
+import type { AthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 
 export interface AthleteListItem {
   id: string
   phone: string | null
   isActive: boolean
+  administrative: AthleteAdministrativeRead
   user: {
-    firstName: string
-    lastName: string
-    email: string
     avatar: string | null
-  }
+  } | null
   group: {
     categoryCode: AthleteCategoryCode
     levelCode: AthleteLevelCode
@@ -96,7 +95,12 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
 
           <TableBody>
             {athletes.map((athlete) => {
-              const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+              const fullName = athlete.administrative.name
+                ? `${athlete.administrative.name.firstName} ${athlete.administrative.name.lastName}`
+                : athlete.id
+              const initials = athlete.administrative.name
+                ? getInitials(athlete.administrative.name.firstName, athlete.administrative.name.lastName)
+                : '—'
               const groupCode = athlete.group
                 ? `${athlete.group.categoryCode}${athlete.group.levelCode}`
                 : null
@@ -117,8 +121,8 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                   <TableCell>
                     <div className='flex items-center gap-3'>
                       <Avatar className='size-9'>
-                        <AvatarImage src={athlete.user.avatar ?? undefined} alt={fullName} />
-                        <AvatarFallback>{getInitials(athlete.user.firstName, athlete.user.lastName)}</AvatarFallback>
+                        <AvatarImage src={athlete.user?.avatar ?? undefined} alt={fullName} />
+                        <AvatarFallback>{initials}</AvatarFallback>
                       </Avatar>
                       <Link href={basePath} className='font-medium hover:underline'>
                         {fullName}
@@ -128,7 +132,7 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
 
                   <TableCell>
                     <div className='space-y-0.5'>
-                      <p>{athlete.user.email}</p>
+                      <p>{athlete.administrative.email.value ?? '—'}</p>
                       {athlete.phone && <p className='text-xs text-muted-foreground'>{athlete.phone}</p>}
                     </div>
                   </TableCell>

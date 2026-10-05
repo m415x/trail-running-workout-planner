@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
+import { getGroupMemberOptionName } from '@/features/groups/lib/group-member-option-label'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -70,7 +71,7 @@ function MembershipTable({
         <TableBody>
           {memberships.map((membership) => {
             const athlete = membership.athleteProfile
-            const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+            const fullName = getGroupMemberOptionName(athlete)
 
             return (
               <TableRow key={membership.id}>

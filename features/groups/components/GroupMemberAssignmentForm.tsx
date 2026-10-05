@@ -10,14 +10,11 @@ import {
 } from '@/app/actions/athlete-actions'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
+import type { AthleteAdministrativeReadInput } from '@/lib/athletes/administrative-read-model'
+import { getGroupMemberOptionName } from '@/features/groups/lib/group-member-option-label'
 
-interface EligibleAthlete {
-  id: string
+interface EligibleAthlete extends AthleteAdministrativeReadInput {
   groupId: string | null
-  user: {
-    firstName: string
-    lastName: string
-  }
   group: {
     categoryCode: string
     levelCode: string
@@ -78,7 +75,7 @@ export function GroupMemberAssignmentForm({
         >
           <option value='' disabled>{t('selectAthlete')}</option>
           {athletes.map((athlete) => {
-            const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+            const fullName = getGroupMemberOptionName(athlete)
             const currentGroup = athlete.group
               ? `${athlete.group.categoryCode}${athlete.group.levelCode}`
               : t('withoutSportingGroup')

@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -14,6 +14,8 @@ import {
   users,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
+import { updateAthleteAdministration } from '@/lib/athletes/update-athlete-administration'
 
 export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
 import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
@@ -21,6 +23,17 @@ import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-s
 
 export interface AthleteFormState {
   error?: string
+  values?: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    dni?: string
+    nickName?: string
+    birthday?: string
+    phone?: string
+    emergencyContact?: string
+    emergencyPhone?: string
+  }
 }
 
 const CURRENT_TEAM_ID = 'team_1'
@@ -41,9 +54,35 @@ const athleteFormSchema = z.object({
   locale: z.string().trim().default('es'),
 })
 
+const athleteEditFormSchema = athleteFormSchema.extend({
+  email: z.union([
+    z.literal(''),
+    z.email('Ingresá un email válido'),
+  ]).transform((value) => value.toLowerCase()),
+  nameWriteIntent: z.enum(['preserve', 'replace']),
+})
+
 
 function nullable(value?: string) {
   return value || null
+}
+
+function athleteFormValues(formData: FormData): AthleteFormState['values'] {
+  const value = (name: string) => {
+    const entry = formData.get(name)
+    return typeof entry === 'string' ? entry : undefined
+  }
+  return {
+    firstName: value('firstName'),
+    lastName: value('lastName'),
+    email: value('email'),
+    dni: value('dni'),
+    nickName: value('nickName'),
+    birthday: value('birthday'),
+    phone: value('phone'),
+    emergencyContact: value('emergencyContact'),
+    emergencyPhone: value('emergencyPhone'),
+  }
 }
 
 function athletesPath(locale: string) {
@@ -74,10 +113,23 @@ export async function getAthletesByTeam() {
     })
 
     athletes.sort((first, second) => {
-      const firstName = `${first.user.lastName} ${first.user.firstName}`
-      const secondName = `${second.user.lastName} ${second.user.firstName}`
+      const firstAdministrative = projectAthleteAdministrativeRead(first)
+      const secondAdministrative = projectAthleteAdministrativeRead(second)
+      const firstName = firstAdministrative.name
+        ? `${firstAdministrative.name.lastName} ${firstAdministrative.name.firstName}`
+        : null
+      const secondName = secondAdministrative.name
+        ? `${secondAdministrative.name.lastName} ${secondAdministrative.name.firstName}`
+        : null
 
-      return firstName.localeCompare(secondName, 'es')
+      if (firstName === null && secondName !== null) return 1
+      if (firstName !== null && secondName === null) return -1
+      if (firstName !== null && secondName !== null) {
+        const byName = firstName.localeCompare(secondName, 'es')
+        if (byName !== 0) return byName
+      }
+
+      return first.id.localeCompare(second.id)
     })
 
     const today = getCurrentDateInArgentina()
@@ -90,6 +142,7 @@ export async function getAthletesByTeam() {
 
       return {
         ...athlete,
+        administrative: projectAthleteAdministrativeRead(athlete),
         currentPlanningCohort: currentMembership
           ? { id: currentMembership.planningCohort.id, name: currentMembership.planningCohort.name }
           : null,
@@ -216,79 +269,42 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
 
 export async function updateAthlete(_previousState: AthleteFormState, formData: FormData): Promise<AthleteFormState> {
   const athleteId = formData.get('athleteId')?.toString()
-  const parsed = athleteFormSchema.safeParse(Object.fromEntries(formData))
+  const parsed = athleteEditFormSchema.safeParse(Object.fromEntries(formData))
+
+  const values = athleteFormValues(formData)
 
   if (!athleteId) {
-    return { error: 'No se pudo identificar al atleta' }
+    return { error: 'No se pudo identificar al atleta', values }
   }
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
   }
 
   const data = parsed.data
 
   try {
-    db.transaction((tx) => {
-      const athlete = tx.query.athleteProfiles.findFirst({
-        where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
-      }).sync()
-
-      if (!athlete) {
-        throw new Error('Atleta no encontrado')
-      }
-
-      const duplicateEmail = tx.query.users.findFirst({
-        where: and(eq(users.email, data.email), ne(users.id, athlete.userId)),
-      }).sync()
-
-      if (duplicateEmail) {
-        throw new Error('Ya existe un usuario con ese email')
-      }
-
-      const duplicateDni = tx.query.athleteProfiles.findFirst({
-        where: and(
-          eq(athleteProfiles.dni, data.dni),
-          ne(athleteProfiles.id, athlete.id),
-          eq(athleteProfiles.isDeleted, false),
-        ),
-      }).sync()
-
-      if (duplicateDni) {
-        throw new Error('Ya existe un atleta con ese DNI')
-      }
-
-      const now = new Date().toISOString()
-
-      tx
-        .update(users)
-        .set({
-          userName: data.email,
-          email: data.email,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          updatedAt: now,
-        })
-        .where(eq(users.id, athlete.userId))
-        .run()
-
-      tx
-        .update(athleteProfiles)
-        .set({
-          nickName: nullable(data.nickName),
-          dni: data.dni,
-          birthday: nullable(data.birthday),
-          phone: nullable(data.phone),
-          emergencyContact: nullable(data.emergencyContact),
-          emergencyPhone: nullable(data.emergencyPhone),
-          updatedAt: now,
-        })
-        .where(eq(athleteProfiles.id, athlete.id))
-        .run()
+    updateAthleteAdministration(db, {
+      teamId: CURRENT_TEAM_ID,
+      athleteId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      contactEmail: nullable(data.email),
+      dni: data.dni,
+      nickName: nullable(data.nickName),
+      birthday: nullable(data.birthday),
+      phone: nullable(data.phone),
+      emergencyContact: nullable(data.emergencyContact),
+      emergencyPhone: nullable(data.emergencyPhone),
+      nameWriteIntent: data.nameWriteIntent,
+      updatedAt: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Error updating athlete:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta' }
+    return {
+      error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta',
+      values,
+    }
   }
 
   const path = athletesPath(data.locale)

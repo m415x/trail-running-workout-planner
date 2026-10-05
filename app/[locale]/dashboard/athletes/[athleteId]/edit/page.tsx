@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { AthleteForm } from '@/features/athletes/components/AthleteForm'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 
 interface EditAthletePageProps {
   params: Promise<{ locale: string; athleteId: string }>
@@ -17,6 +18,8 @@ export default async function EditAthletePage({ params }: EditAthletePageProps) 
     notFound()
   }
 
+  const administrative = projectAthleteAdministrativeRead(athlete)
+
   return (
     <div className='mx-auto w-full max-w-3xl space-y-6'>
       <div>
@@ -28,9 +31,11 @@ export default async function EditAthletePage({ params }: EditAthletePageProps) 
         locale={locale}
         athlete={{
           id: athlete.id,
-          firstName: athlete.user.firstName,
-          lastName: athlete.user.lastName,
-          email: athlete.user.email,
+          firstName: administrative.name?.firstName ?? '',
+          lastName: administrative.name?.lastName ?? '',
+          email: administrative.email.source === 'athlete_profile'
+            ? administrative.email.value ?? ''
+            : '',
           dni: athlete.dni,
           nickName: athlete.nickName,
           birthday: athlete.birthday,
