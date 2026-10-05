@@ -34,5 +34,13 @@ for (const dialect of ['sqlite', 'supabase'] as const) {
       migration.sql,
       /(?:UNIQUE[\s\S]*["`]provider["`][\s\S]*["`]subject["`]|external_identity_links_provider_subject_unique)/i,
     )
+
+    if (dialect === 'sqlite') {
+      assert.doesNotMatch(
+        migration.sql,
+        /(?:__new_athlete_profiles|\bDROP TABLE\s+["`]athlete_profiles["`]|\bALTER TABLE\s+["`]__new_athlete_profiles["`])/i,
+        'KAN-616 migration must not rebuild athlete_profiles',
+      )
+    }
   })
 }
