@@ -12,6 +12,10 @@ on:
       - 'drizzle/supabase/**'
   workflow_dispatch:
 
+concurrency:
+  group: kan-617-migration-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
