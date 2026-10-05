@@ -1,0 +1,61 @@
+name: KAN-617 migration probe
+
+on:
+  push:
+    branches:
+      - feat/KAN-601-identity-memberships
+    paths:
+      - '.github/workflows/kan-617-migration-probe.yml'
+      - 'db/schema.ts'
+      - 'db/supabase/schema.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Generate SQLite migration
+        run: pnpm db:sqlite:generate
+      - name: Generate PostgreSQL static migration
+        run: pnpm db:supabase:generate
+      - name: Show generated status
+        run: |
+          git status --short drizzle/sqlite drizzle/supabase
+          git diff -- drizzle/sqlite/meta/_journal.json drizzle/supabase/meta/_journal.json
+      - name: Package generated artifacts
+        run: |
+          mkdir -p /tmp/kan-617-generated/drizzle/sqlite/meta
+          mkdir -p /tmp/kan-617-generated/drizzle/supabase/meta
+          cp drizzle/sqlite/0018_*.sql /tmp/kan-617-generated/drizzle/sqlite/
+          cp drizzle/sqlite/meta/0018_snapshot.json /tmp/kan-617-generated/drizzle/sqlite/meta/
+          cp drizzle/sqlite/meta/_journal.json /tmp/kan-617-generated/drizzle/sqlite/meta/
+          cp drizzle/supabase/0031_*.sql /tmp/kan-617-generated/drizzle/supabase/
+          cp drizzle/supabase/meta/0031_snapshot.json /tmp/kan-617-generated/drizzle/supabase/meta/
+          cp drizzle/supabase/meta/_journal.json /tmp/kan-617-generated/drizzle/supabase/meta/
+      - name: Upload generated artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kan-617-generated-migrations
+          path: /tmp/kan-617-generated
+          if-no-files-found: error
