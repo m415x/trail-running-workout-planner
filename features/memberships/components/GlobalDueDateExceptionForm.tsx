@@ -90,7 +90,7 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
                 <SelectTrigger id='exceptionDueDay' className='w-full'>
                   <SelectValue placeholder={t('selectDay')} />
                 </SelectTrigger>
-                <SelectContent align='start' className='max-h-64'>
+                <SelectContent align='start' className='max-h-64 bg-white text-slate-950 dark:bg-slate-950 dark:text-slate-50'>
                   {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
                     <SelectItem key={day} value={String(day)}>
                       {day}
