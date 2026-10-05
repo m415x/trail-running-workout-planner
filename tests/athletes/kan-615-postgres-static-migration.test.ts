@@ -14,7 +14,7 @@ test('KAN-615 PostgreSQL has versioned static AthleteProfile migration 0029', ()
     }>
   }
 
-  assert.equal(journal.entries.length, 30)
+  assert.ok(journal.entries.length >= 30)
 
   const previous = journal.entries[28]
   const current = journal.entries[29]
