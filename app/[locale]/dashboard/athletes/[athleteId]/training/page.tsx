@@ -17,6 +17,7 @@ import { RealizedTrainingCalendar } from '@/features/athletes/components/Realize
 import { RealizedTrainingHistory } from '@/features/athletes/components/RealizedTrainingHistory'
 import { TrainingLoadSummary } from '@/features/athletes/components/TrainingLoadSummary'
 import { deriveAthleteAdherence } from '@/lib/adherence/athlete-adherence'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import type { RealizedTrainingCorrectionRecord } from '@/types/training/realized-training-correction.types'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
@@ -116,7 +117,10 @@ export default async function AthleteTrainingPage({ params, searchParams }: Athl
   const correctionsByWorkoutLogId: Readonly<Record<string, readonly RealizedTrainingCorrectionRecord[]>> =
     Object.fromEntries(correctionsEntries)
 
-  const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+  const administrative = projectAthleteAdministrativeRead(athlete)
+  const fullName = administrative.name
+    ? `${administrative.name.firstName} ${administrative.name.lastName}`
+    : athlete.dni ?? athlete.id
   const detailPath = athletePath(locale, athlete.id)
   const trainingPath = `${detailPath}/training`
   const labels = locale === 'en'
