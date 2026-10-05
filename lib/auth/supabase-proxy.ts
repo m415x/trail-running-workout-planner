@@ -1,54 +1,56 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+import { createSupabaseProxySessionRefresher } from './supabase-proxy-core'
+
+const refreshSession = createSupabaseProxySessionRefresher({
+  createClient: ({ url, publishableKey, cookies }) =>
+    createServerClient(url, publishableKey, {
+      cookies: {
+        getAll: cookies.getAll,
+        setAll: cookies.setAll,
+      },
+    }),
+  getConfig: () => ({
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    publishableKey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  }),
+})
+
 export async function refreshSupabaseProxySession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set({ name, value, ...options })
-          })
-
-          response = NextResponse.next({ request })
-
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set({ name, value, ...options })
-          })
-        },
+  const result = await refreshSession({
+    cookies: {
+      getAll: () => request.cookies.getAll(),
+      set: (cookie) => {
+        request.cookies.set({
+          name: cookie.name,
+          value: cookie.value,
+          ...cookie.options,
+        })
       },
     },
-  )
+  })
 
-  try {
-    const { data, error } = await supabase.auth.getClaims()
+  if (result.status === 'verified') {
+    response = NextResponse.next({ request })
 
-    if (error || !data?.claims?.sub) {
-      return {
-        status: 'invalid' as const,
-        response,
-      }
+    for (const cookie of result.cookies) {
+      response.cookies.set({
+        name: cookie.name,
+        value: cookie.value,
+        ...cookie.options,
+      })
     }
 
     response.headers.set('Cache-Control', 'private, no-store')
     response.headers.set('Pragma', 'no-cache')
     response.headers.set('Expires', '0')
+  }
 
-    return {
-      status: 'verified' as const,
-      response,
-    }
-  } catch {
-    return {
-      status: 'invalid' as const,
-      response,
-    }
+  return {
+    status: result.status,
+    response,
   }
 }
