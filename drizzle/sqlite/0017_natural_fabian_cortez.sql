@@ -10,4 +10,4 @@ CREATE TABLE `external_identity_links` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `external_identity_links_provider_subject_unique` ON `external_identity_links` (`provider`,`subject`);--> statement-breakpoint
-CREATE INDEX `external_identity_links_user_idx` ON `external_identity_links` (`user_id`);--> statement-breakpoint
+CREATE INDEX `external_identity_links_user_idx` ON `external_identity_links` (`user_id`);
