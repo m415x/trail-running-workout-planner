@@ -9,7 +9,7 @@ test('KAN-633 actual SQLite batch selects revisions in one bounded SELECT, witho
   const selected: string[] = []
   const sqlite = new Database(':memory:', {
     verbose: (statement: unknown) => {
-      if (typeof statement === 'string' && /^select\\b/i.test(statement.trim())) selected.push(statement)
+      if (typeof statement === 'string' && /^select\b/i.test(statement.trim())) selected.push(statement)
     },
   })
   try {
