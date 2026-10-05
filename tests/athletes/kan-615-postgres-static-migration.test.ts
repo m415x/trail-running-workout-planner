@@ -32,9 +32,9 @@ test('KAN-615 PostgreSQL has versioned static AthleteProfile migration 0029', ()
     'utf8',
   )
 
-  assert.match(sql, /ADD COLUMN[\\s\\S]*"first_name"/i)
-  assert.match(sql, /ADD COLUMN[\\s\\S]*"last_name"/i)
-  assert.match(sql, /ADD COLUMN[\\s\\S]*"contact_email"/i)
+  assert.match(sql, /ADD COLUMN[\s\S]*"first_name"/i)
+  assert.match(sql, /ADD COLUMN[\s\S]*"last_name"/i)
+  assert.match(sql, /ADD COLUMN[\s\S]*"contact_email"/i)
 
   assert.match(sql, /UPDATE\s+"athlete_profiles"/i)
   assert.match(sql, /FROM\s+"users"/i)
