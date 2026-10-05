@@ -3,36 +3,46 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-const source = fs.readFileSync(
-  path.join(process.cwd(), 'app/actions/athlete-actions.ts'),
-  'utf8',
-)
+function source(file: string): string {
+  return fs.readFileSync(path.join(process.cwd(), file), 'utf8')
+}
 
 function createAthleteBody(): string {
-  const start = source.indexOf('export async function createAthlete')
-  const end = source.indexOf('export async function updateAthlete')
+  const action = source('app/actions/athlete-actions.ts')
+  const start = action.indexOf('export async function createAthlete')
+  const end = action.indexOf('export async function updateAthlete')
 
   assert.notEqual(start, -1)
   assert.notEqual(end, -1)
-  return source.slice(start, end)
+  return action.slice(start, end)
 }
 
-test('KAN-618 creates AthleteProfile administration without creating an EPT User', () => {
+test('KAN-618 create action delegates AthleteProfile administration without creating an EPT User', () => {
   const body = createAthleteBody()
 
   assert.doesNotMatch(body, /tx\.insert\(users\)/)
   assert.doesNotMatch(body, /existingUser/)
-  assert.match(body, /tx\.insert\(athleteProfiles\)/)
+  assert.match(body, /createAthleteAdministration\(db,/)
   assert.match(body, /firstName:\s*data\.firstName/)
   assert.match(body, /lastName:\s*data\.lastName/)
   assert.match(body, /contactEmail:\s*data\.email/)
-  assert.match(body, /userId:\s*null/)
 })
 
-test('KAN-618 keeps athlete creation and billing initialization in one transaction', () => {
+test('KAN-618 creation boundary owns one transaction and unlinked AthleteProfile persistence', () => {
+  const boundary = source('lib/athletes/create-athlete-administration.ts')
+
+  assert.match(boundary, /database\.transaction\(\(tx\) => \{/)
+  assert.match(boundary, /tx\.insert\(athleteProfiles\)/)
+  assert.match(boundary, /userId:\s*null/)
+  assert.match(boundary, /firstName:\s*input\.firstName/)
+  assert.match(boundary, /lastName:\s*input\.lastName/)
+  assert.match(boundary, /contactEmail:\s*input\.contactEmail/)
+  assert.match(boundary, /initializeBilling\(tx\)/)
+})
+
+test('KAN-618 action composes billing initialization through the transaction callback', () => {
   const body = createAthleteBody()
 
-  assert.match(body, /db\.transaction\(\(tx\) => \{/)
   assert.match(body, /createMembershipServerActionRuntime\(\{[\s\S]*db:\s*tx/)
   assert.match(body, /initializeNewAthleteBillingInTransaction/)
 })
