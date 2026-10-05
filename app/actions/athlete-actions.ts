@@ -13,6 +13,7 @@ import {
   planningCohortMemberships,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
+import { setAthleteProfileActiveState } from '@/lib/athletes/athlete-profile-lifecycle'
 import { createAthleteAdministration } from '@/lib/athletes/create-athlete-administration'
 import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import { updateAthleteAdministration } from '@/lib/athletes/update-athlete-administration'
@@ -283,21 +284,12 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
 
 export async function setAthleteActiveState(athleteId: string, isActive: boolean, locale: string = 'es') {
   try {
-    const athlete = db.query.athleteProfiles.findFirst({
-      where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
-    }).sync()
-
-    if (!athlete) {
-      return { success: false as const, error: 'Atleta no encontrado' }
-    }
-
-    db.update(athleteProfiles)
-      .set({
-        isActive,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(eq(athleteProfiles.id, athleteId))
-      .run()
+    setAthleteProfileActiveState(db, {
+      teamId: CURRENT_TEAM_ID,
+      athleteId,
+      isActive,
+      updatedAt: new Date().toISOString(),
+    })
 
     revalidatePath(athletesPath(locale))
 
