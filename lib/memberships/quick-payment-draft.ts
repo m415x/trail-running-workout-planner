@@ -35,7 +35,7 @@ export function validateQuickPaymentDraft(input: {
   athleteId: string
   monthlyChargeId: string | null
   amountMinor: number
-  paymentMethod: 'cash' | 'bank_transfer'
+  paymentMethod: string
   paidAt: string
   locale: 'es' | 'en'
 }): { ok: true; value: {
