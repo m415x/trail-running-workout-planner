@@ -90,6 +90,31 @@ export const users = pgTable('users', {
   avatar: text('avatar'),
 })
 
+/**
+ * Persisted association between one external identity and one EPT User.
+ *
+ * Static PostgreSQL contract only in KAN-616. Provider session/token
+ * verification is intentionally deferred to KAN-602.
+ */
+export const externalIdentityLinks = pgTable(
+  'external_identity_links',
+  {
+    ...baseColumns,
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    provider: text('provider').notNull(),
+    subject: text('subject').notNull(),
+  },
+  (table) => [
+    uniqueIndex('external_identity_links_provider_subject_unique').on(
+      table.provider,
+      table.subject,
+    ),
+    index('external_identity_links_user_idx').on(table.userId),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 3. ATHLETE GROUPS (Grupos de entrenamiento)                                */
 /* -------------------------------------------------------------------------- */
