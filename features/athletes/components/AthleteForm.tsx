@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { startTransition, useActionState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -17,6 +17,7 @@ import {
   type AthleteFormDirtyValues,
 } from '@/features/athletes/lib/athlete-form-dirty-values'
 import { shouldMarkAthleteEditSaved } from '@/features/athletes/lib/athlete-edit-submit-guard'
+import { prepareAthleteEditFormData } from '@/features/athletes/lib/athlete-edit-form-data'
 import { buttonVariants, Button } from '@ui/button'
 import { Input } from '@ui/input'
 
@@ -91,9 +92,20 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
+  const submitAction = athlete
+    ? (formData: FormData) => {
+        prepareAthleteEditFormData(
+          { firstName: athlete.firstName, lastName: athlete.lastName },
+          formData,
+        )
+        startTransition(() => {
+          formAction(formData)
+        })
+      }
+    : formAction
 
   return (
-    <form action={formAction} className='space-y-6'>
+    <form action={submitAction} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {athlete?.id && <input type='hidden' name='athleteId' value={athlete.id} />}
 
