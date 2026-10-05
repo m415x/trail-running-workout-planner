@@ -11,7 +11,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/realized-training/`](architecture/realized-training/) — durable realized-training evidence, plan-real comparison and capture contracts.
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
-- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md).
+- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md) and [identity/team-membership authority](architecture/platform/identity-and-team-membership.md).
 - [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H5 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, derived account/history projection and Coach/Athlete prior-debt experience.
 
 ### Monitoring baseline
@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-473.md`](handoffs/kan-473.md), covering the completed KAN-504/KAN-505/KAN-506/KAN-507 baseline and the KAN-508 H5 entry boundary. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-601.md`](handoffs/kan-601.md), covering the KAN-601 H1 identity/team-membership closure candidate. [`handoffs/kan-473.md`](handoffs/kan-473.md) remains recent pre-auth consolidation context only. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Verification runner
 
@@ -84,3 +84,9 @@ Before starting the next story or phase, follow the fresh-chat bootstrap contrac
 ## Reading rule
 
 For new work, read `AGENTS.md`, this index, the current epic/story handoff when one exists, the latest completed epic history when relevant, and only the durable domain documents required by the scope. Then reconcile them with focused current code/tests and the complete Jira issue. Retrieve additional detail just in time instead of preloading the repository or relying on chat history.
+
+## Identity / KAN-601 closure baseline
+
+- [`architecture/platform/identity-and-team-membership.md`](architecture/platform/identity-and-team-membership.md) — durable H1 authority, AthleteProfile identity, lifecycle and persistence boundaries.
+- [`research/kan-601-persistence-evidence.md`](research/kan-601-persistence-evidence.md) — explicit PURE / SQLITE REAL / POSTGRESQL STATIC / POSTGRESQL REAL evidence matrix.
+- [`handoffs/kan-601.md`](handoffs/kan-601.md) — final KAN-601 reconciliation matrix and closure candidate sequence.
