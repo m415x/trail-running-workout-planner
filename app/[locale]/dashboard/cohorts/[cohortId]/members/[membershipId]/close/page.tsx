@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getPlanningCohortDetail } from '@/app/actions/planning-cohort-actions'
 import { PlanningCohortClosureForm } from '@/features/planning-cohorts/components/PlanningCohortMembershipForms'
+import { getGroupMemberOptionName } from '@/features/groups/lib/group-member-option-label'
 import { buttonVariants } from '@ui/button'
 
 interface CloseCohortMembershipPageProps { params: Promise<{ locale: string; cohortId: string; membershipId: string }> }
@@ -21,7 +22,7 @@ export default async function CloseCohortMembershipPage({ params }: CloseCohortM
   if (!cohort || !membership) notFound()
 
   const detailPath = locale === 'es' ? `/dashboard/cohorts/${cohortId}` : `/${locale}/dashboard/cohorts/${cohortId}`
-  const athleteName = `${membership.athleteProfile.user.firstName} ${membership.athleteProfile.user.lastName}`
+  const athleteName = getGroupMemberOptionName(membership.athleteProfile)
 
   return (
     <div className='mx-auto w-full max-w-2xl space-y-6'>
