@@ -7,8 +7,8 @@ import { createDrizzleQuickPaymentBatchReader } from '../../lib/memberships/quic
 
 test('KAN-627 real SQLite: two bounded scoped SELECTs, active revisions and no cross-team leakage', async () => {
   const queries: string[] = []
-  const sqlite = new Database(':memory:', { verbose: (sql) => {
-    if (/^select\b/i.test(sql.trim())) queries.push(sql)
+  const sqlite = new Database(':memory:', { verbose: (sql: unknown) => {
+    if (typeof sql === 'string' && /^select\b/i.test(sql.trim())) queries.push(sql)
   } })
   try {
     sqlite.exec(`
