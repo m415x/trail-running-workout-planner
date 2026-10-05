@@ -56,13 +56,9 @@ test('KAN-634 warning and danger use materially stronger light/dark semantic sur
   assert.match(shellSource, /danger: 'bg-red-100 dark:bg-red-900\/50'/)
 })
 
-test('KAN-634 due-day picker uses the shared bounded themed Select instead of a native popup', () => {
+test('KAN-634 preserves the native due-day selector and gives its popup options readable text', () => {
   const source = readFileSync('features/memberships/components/GlobalDueDateExceptionForm.tsx', 'utf8')
-  assert.doesNotMatch(source, /<select/)
-  assert.match(source, /SelectTrigger/)
-  assert.match(source, /SelectContent/)
-  assert.match(source, /SelectItem/)
-  assert.match(source, /className='w-full'/)
-  assert.match(source, /dark:bg-slate-950/)
-  assert.match(source, /dark:text-slate-50/)
+  assert.match(source, /<select/)
+  assert.doesNotMatch(source, /SelectTrigger|SelectContent|SelectItem/)
+  assert.match(source, /<option[^>]*className='text-slate-950'/)
 })
