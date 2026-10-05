@@ -1,0 +1,68 @@
+name: KAN-581 verification
+
+on:
+  push:
+    branches:
+      - feat/KAN-581-athlete-home-economic-status
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  focused-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Confirm exact revision
+        run: |
+          echo "Expected: ${{ github.sha }}"
+          echo "Checked out: $(git rev-parse HEAD)"
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: KAN-581 focused tests
+        run: pnpm exec tsx --test tests/memberships/kan-63*.test.ts
+
+  closure-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify exact revision
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: Bootstrap temporary checkout SQLite for existing repository integration tests
+        run: pnpm db:sqlite:upgrade
+      - name: Full local closure gate including isolated SQLite scenarios
+        run: node node_modules/tsx/dist/cli.mjs scripts/verify-cli.ts --db
