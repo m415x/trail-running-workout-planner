@@ -23,6 +23,17 @@ import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-s
 
 export interface AthleteFormState {
   error?: string
+  values?: {
+    firstName?: string
+    lastName?: string
+    email?: string
+    dni?: string
+    nickName?: string
+    birthday?: string
+    phone?: string
+    emergencyContact?: string
+    emergencyPhone?: string
+  }
 }
 
 const CURRENT_TEAM_ID = 'team_1'
@@ -54,6 +65,24 @@ const athleteEditFormSchema = athleteFormSchema.extend({
 
 function nullable(value?: string) {
   return value || null
+}
+
+function athleteFormValues(formData: FormData): AthleteFormState['values'] {
+  const value = (name: string) => {
+    const entry = formData.get(name)
+    return typeof entry === 'string' ? entry : undefined
+  }
+  return {
+    firstName: value('firstName'),
+    lastName: value('lastName'),
+    email: value('email'),
+    dni: value('dni'),
+    nickName: value('nickName'),
+    birthday: value('birthday'),
+    phone: value('phone'),
+    emergencyContact: value('emergencyContact'),
+    emergencyPhone: value('emergencyPhone'),
+  }
 }
 
 function athletesPath(locale: string) {
@@ -242,12 +271,14 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   const athleteId = formData.get('athleteId')?.toString()
   const parsed = athleteEditFormSchema.safeParse(Object.fromEntries(formData))
 
+  const values = athleteFormValues(formData)
+
   if (!athleteId) {
-    return { error: 'No se pudo identificar al atleta' }
+    return { error: 'No se pudo identificar al atleta', values }
   }
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados' }
+    return { error: parsed.error.issues[0]?.message ?? 'Revisá los datos ingresados', values }
   }
 
   const data = parsed.data
@@ -270,7 +301,10 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
     })
   } catch (error) {
     console.error('Error updating athlete:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta' }
+    return {
+      error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta',
+      values,
+    }
   }
 
   const path = athletesPath(data.locale)
