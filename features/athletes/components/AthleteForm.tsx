@@ -92,6 +92,7 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
   const action = athlete ? updateAthlete : createAthlete
   const [state, formAction, pending] = useActionState(action, initialState)
   const athletesPath = locale === 'es' ? '/dashboard/athletes' : `/${locale}/dashboard/athletes`
+  const submitted = state.values
   const submitAction = athlete
     ? (formData: FormData) => {
         prepareAthleteEditFormData(
@@ -118,13 +119,13 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
       )}
 
       <div className='grid gap-4 sm:grid-cols-2'>
-        <Field label={t('firstName')} name='firstName' defaultValue={athlete?.firstName} required />
-        <Field label={t('lastName')} name='lastName' defaultValue={athlete?.lastName} required />
-        <Field label={t('email')} name='email' type='email' defaultValue={athlete?.email} required />
-        <Field label={t('dni')} name='dni' defaultValue={athlete?.dni} required />
-        <Field label={t('nickName')} name='nickName' defaultValue={athlete?.nickName} />
-        <Field label={t('birthday')} name='birthday' type='date' max={today} defaultValue={athlete?.birthday} />
-        <Field label={t('phone')} name='phone' type='tel' defaultValue={athlete?.phone} />
+        <Field label={t('firstName')} name='firstName' defaultValue={submitted?.firstName ?? athlete?.firstName} required />
+        <Field label={t('lastName')} name='lastName' defaultValue={submitted?.lastName ?? athlete?.lastName} required />
+        <Field label={t('email')} name='email' type='email' defaultValue={submitted?.email ?? athlete?.email} required />
+        <Field label={t('dni')} name='dni' defaultValue={submitted?.dni ?? athlete?.dni} required />
+        <Field label={t('nickName')} name='nickName' defaultValue={submitted?.nickName ?? athlete?.nickName} />
+        <Field label={t('birthday')} name='birthday' type='date' max={today} defaultValue={submitted?.birthday ?? athlete?.birthday} />
+        <Field label={t('phone')} name='phone' type='tel' defaultValue={submitted?.phone ?? athlete?.phone} />
       </div>
 
       <div className='space-y-4 rounded-xl border p-4'>
@@ -133,8 +134,8 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
           <p className='text-sm text-muted-foreground'>{t('emergencyDescription')}</p>
         </div>
         <div className='grid gap-4 sm:grid-cols-2'>
-          <Field label={t('emergencyContact')} name='emergencyContact' defaultValue={athlete?.emergencyContact} />
-          <Field label={t('emergencyPhone')} name='emergencyPhone' type='tel' defaultValue={athlete?.emergencyPhone} />
+          <Field label={t('emergencyContact')} name='emergencyContact' defaultValue={submitted?.emergencyContact ?? athlete?.emergencyContact} />
+          <Field label={t('emergencyPhone')} name='emergencyPhone' type='tel' defaultValue={submitted?.emergencyPhone ?? athlete?.emergencyPhone} />
         </div>
       </div>
 
