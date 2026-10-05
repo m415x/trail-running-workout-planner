@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { createElement } from 'react'
+import { createElement, type ComponentProps } from 'react'
 import { NextIntlClientProvider } from 'next-intl'
 import { renderToStaticMarkup } from 'react-dom/server'
 import test from 'node:test'
@@ -8,11 +8,11 @@ import { AthleteHomeEconomicNotice } from '../../features/memberships/components
 import type { AthleteEconomicVisualState } from '../../lib/memberships/athlete-home-economic-visual'
 
 const renderNotice = (locale: 'es' | 'en', state: AthleteEconomicVisualState) =>
-  renderToStaticMarkup(createElement(NextIntlClientProvider, {
-    locale,
-    messages: {},
-    children: createElement(AthleteHomeEconomicNotice, { locale, state }),
-  }))
+  renderToStaticMarkup(createElement(
+    NextIntlClientProvider,
+    { locale, messages: {} } as ComponentProps<typeof NextIntlClientProvider>,
+    createElement(AthleteHomeEconomicNotice, { locale, state }),
+  ))
 
 test('KAN-634 exposes pending and overdue economic signals as readable ES/EN text, not color alone', () => {
   const warning = renderNotice('es', { tone: 'warning', message: 'current_pending' })
