@@ -695,34 +695,107 @@ export function runPartialMetadataHeadScenario(projectRoot = process.cwd()): voi
   const workspace = createScenarioWorkspace('partial-metadata-head')
   try {
     const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
-    const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
     const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
 
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
 
     const sqlite = new Database(workspace.sqlitePath, { fileMustExist: true })
+    let beforeSchema: unknown[]
+    let beforeMetadata: unknown[]
+
     try {
-      const journal = JSON.parse(readMigrationJournal()) as { entries: Array<{ when: number }> }
+      const journal = JSON.parse(readMigrationJournal()) as {
+        entries: Array<{ when: number }>
+      }
       const keepThrough = journal.entries[1]?.when
-      if (keepThrough === undefined) throw new Error('SQLite journal must contain 0001')
-      sqlite.prepare('DELETE FROM __drizzle_migrations WHERE created_at > ?').run(keepThrough)
+      if (keepThrough === undefined) {
+        throw new Error('SQLite journal must contain 0001')
+      }
+
+      sqlite.prepare(
+        'DELETE FROM __drizzle_migrations WHERE created_at > ?',
+      ).run(keepThrough)
+
+      beforeSchema = sqlite.prepare(`
+        SELECT type, name, tbl_name, sql
+        FROM sqlite_master
+        ORDER BY type, name
+      `).all()
+
+      beforeMetadata = sqlite.prepare(`
+        SELECT rowid, id, hash, created_at
+        FROM __drizzle_migrations
+        ORDER BY rowid
+      `).all()
     } finally {
       sqlite.close()
     }
 
-    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
-    runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
-    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    const execution = spawnSync(
+      process.execPath,
+      [tsxCli, upgradeScript],
+      {
+        cwd: workspace.root,
+        env: {
+          ...process.env,
+          TSX_TSCONFIG_PATH: resolve(projectRoot, 'tsconfig.json'),
+          SQLITE_SCENARIO_MODE: '1',
+          SQLITE_DATABASE_PATH: workspace.sqlitePath,
+        },
+        encoding: 'utf8',
+        timeout: 120000,
+        maxBuffer: 4 * 1024 * 1024,
+      },
+    )
 
-    const reconciled = new Database(workspace.sqlitePath, { fileMustExist: true })
+    if (execution.error) throw execution.error
+    if (execution.status === 0) {
+      throw new Error(
+        'Partial migration metadata on physical HEAD was repaired silently',
+      )
+    }
+
+    const output = `${execution.stdout ?? ''}\n${execution.stderr ?? ''}`
+    if (!/AthleteProfile incompatible applied 0016/i.test(output)) {
+      throw new Error(
+        'Partial migration metadata was not rejected by the KAN-615 applied-0016 integrity guard',
+      )
+    }
+
+    const rejected = new Database(workspace.sqlitePath, {
+      readonly: true,
+      fileMustExist: true,
+    })
+
     try {
-      const journal = JSON.parse(readMigrationJournal()) as { entries: Array<{ when: number }> }
-      const metadataCount = (reconciled.prepare('SELECT COUNT(*) AS count FROM __drizzle_migrations').get() as { count: number }).count
-      if (metadataCount !== journal.entries.length) {
-        throw new Error('Verified HEAD schema did not reconcile complete canonical migration metadata')
+      const afterSchema = rejected.prepare(`
+        SELECT type, name, tbl_name, sql
+        FROM sqlite_master
+        ORDER BY type, name
+      `).all()
+
+      const afterMetadata = rejected.prepare(`
+        SELECT rowid, id, hash, created_at
+        FROM __drizzle_migrations
+        ORDER BY rowid
+      `).all()
+
+      if (
+        JSON.stringify(afterSchema) !== JSON.stringify(beforeSchema) ||
+        JSON.stringify(afterMetadata) !== JSON.stringify(beforeMetadata)
+      ) {
+        throw new Error(
+          'Rejected partial migration metadata state was mutated',
+        )
+      }
+
+      if ((rejected.pragma('foreign_key_check') as unknown[]).length > 0) {
+        throw new Error(
+          'Rejected partial migration metadata state has foreign-key violations',
+        )
       }
     } finally {
-      reconciled.close()
+      rejected.close()
     }
   } finally {
     removeScenarioWorkspace(workspace)
@@ -755,6 +828,7 @@ export function describeSqliteVerificationCoverage(): string {
     'existing-data preservation',
     'fresh-vs-upgraded drift comparison',
     'safe rerun idempotence',
+    'partial HEAD metadata rejection without mutation',
   ].join('; ')
 }
 
