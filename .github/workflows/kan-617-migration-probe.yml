@@ -35,27 +35,35 @@ jobs:
           cache: pnpm
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-      - name: Generate SQLite migration
-        run: pnpm db:sqlite:generate
-      - name: Generate PostgreSQL static migration
-        run: pnpm db:supabase:generate
-      - name: Show generated status
+      - name: Generate migrations
         run: |
+          pnpm db:sqlite:generate
+          pnpm db:supabase:generate
+      - name: Verify generated scope
+        shell: bash
+        run: |
+          sqlite_sql="$(ls drizzle/sqlite/0018_*.sql)"
+          pg_sql="$(ls drizzle/supabase/0031_*.sql)"
+          grep -q 'team_memberships' "$sqlite_sql"
+          grep -q 'team_memberships' "$pg_sql"
+          ! grep -Eq '__new_athlete_profiles|DROP TABLE .?athlete_profiles' "$sqlite_sql"
+          ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$sqlite_sql"
+          ! grep -Eq 'INSERT[[:space:]]+INTO[[:space:]]+.?team_memberships.*(users|athlete_profiles)' "$pg_sql"
           git status --short drizzle/sqlite drizzle/supabase
-          git diff -- drizzle/sqlite/meta/_journal.json drizzle/supabase/meta/_journal.json
-      - name: Package generated artifacts
+      - name: Emit generated artifacts for connector promotion
+        shell: bash
         run: |
-          mkdir -p /tmp/kan-617-generated/drizzle/sqlite/meta
-          mkdir -p /tmp/kan-617-generated/drizzle/supabase/meta
-          cp drizzle/sqlite/0018_*.sql /tmp/kan-617-generated/drizzle/sqlite/
-          cp drizzle/sqlite/meta/0018_snapshot.json /tmp/kan-617-generated/drizzle/sqlite/meta/
-          cp drizzle/sqlite/meta/_journal.json /tmp/kan-617-generated/drizzle/sqlite/meta/
-          cp drizzle/supabase/0031_*.sql /tmp/kan-617-generated/drizzle/supabase/
-          cp drizzle/supabase/meta/0031_snapshot.json /tmp/kan-617-generated/drizzle/supabase/meta/
-          cp drizzle/supabase/meta/_journal.json /tmp/kan-617-generated/drizzle/supabase/meta/
-      - name: Upload generated artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: kan-617-generated-migrations
-          path: /tmp/kan-617-generated
-          if-no-files-found: error
+          emit() {
+            local key="$1"
+            local file="$2"
+            echo "KAN617_ARTIFACT_BEGIN:$key:$(basename "$file")"
+            gzip -c "$file" | base64 -w0
+            echo
+            echo "KAN617_ARTIFACT_END:$key"
+          }
+          emit SQLITE_SQL "$(ls drizzle/sqlite/0018_*.sql)"
+          emit SQLITE_SNAPSHOT drizzle/sqlite/meta/0018_snapshot.json
+          emit SQLITE_JOURNAL drizzle/sqlite/meta/_journal.json
+          emit PG_SQL "$(ls drizzle/supabase/0031_*.sql)"
+          emit PG_SNAPSHOT drizzle/supabase/meta/0031_snapshot.json
+          emit PG_JOURNAL drizzle/supabase/meta/_journal.json
