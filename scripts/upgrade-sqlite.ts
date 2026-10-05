@@ -358,7 +358,6 @@ if (state === "versioned") {
       }
 
       if (
-        journal.entries.length !== 17 ||
         journal.entries[16]?.idx !== 16 ||
         journal.entries[16]?.tag !== '0016_athlete_profile_identity' ||
         journal.entries[16]?.when !== 1790802001000
