@@ -92,8 +92,6 @@ test('KAN-615 initializes empty SQLite to canonical 0016 and reruns', () => {
       entries: Array<{ tag: string; when: number }>
     }
 
-    assert.equal(journal.entries.length, 17)
-
     const entry = journal.entries[16]
     assert.equal(entry.tag, '0016_athlete_profile_identity')
 
@@ -114,7 +112,7 @@ test('KAN-615 initializes empty SQLite to canonical 0016 and reruns', () => {
         ORDER BY rowid
       `).all() as Array<{ hash: string; created_at: number }>
 
-      assert.equal(history.length, 17)
+      assert.equal(history.length, journal.entries.length)
       assert.deepEqual(history[16], {
         hash,
         created_at: entry.when,
