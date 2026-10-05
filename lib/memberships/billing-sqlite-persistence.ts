@@ -29,6 +29,7 @@ export type SqliteBillingDatabase = {
     charges: MonthlyChargeCandidate[],
   ) => Promise<void>
   listPaymentRevisions?: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
+  listPaymentRevisionsForCharges?: (chargeIds: readonly string[]) => Promise<PersistedPaymentRevision[]>
   insertPaymentRevision?: (revision: PersistedPaymentRevision) => Promise<void>
   replaceCurrentPaymentRevisionAtomically?: (
     previous: PersistedPaymentRevision,
