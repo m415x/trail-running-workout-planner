@@ -113,6 +113,40 @@ export const externalIdentityLinks = sqliteTable(
   ],
 )
 
+/**
+ * Organizational membership is the single authority for the preset a User
+ * holds inside one team. users.role remains legacy data and is not consulted
+ * by TeamMembership resolution.
+ */
+export const teamMemberships = sqliteTable(
+  'team_memberships',
+  {
+    ...baseColumns,
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'restrict' }),
+    preset: text('preset').notNull().$type<UserRole>(),
+    effectiveFrom: text('effective_from').notNull(),
+    effectiveUntil: text('effective_until'),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+  },
+  (table) => [
+    index('team_memberships_user_team_dates_idx').on(
+      table.userId,
+      table.teamId,
+      table.effectiveFrom,
+      table.effectiveUntil,
+    ),
+    check(
+      'team_memberships_date_order_check',
+      sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`,
+    ),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 3. ATHLETE GROUPS (Grupos de entrenamiento)                                */
 /* -------------------------------------------------------------------------- */
