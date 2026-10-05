@@ -4,15 +4,12 @@ import { athleteProfiles, monthlyCharges, paymentRevisions } from '@/db/schema'
 import { projectQuickPaymentBatch } from './quick-payment-batch-projection'
 
 type Row = Record<string, unknown>
+type JoinedQuery = {
+  innerJoin: (table: unknown, condition: unknown) => JoinedQuery
+  where: (condition: unknown) => Promise<Row[]>
+}
 type Query = {
-  select: () => {
-    from: (table: unknown) => {
-      innerJoin: (table: unknown, condition: unknown) => {
-        innerJoin: (table: unknown, condition: unknown) => unknown
-        where: (condition: unknown) => Promise<Row[]>
-      }
-    }
-  }
+  select: () => { from: (table: unknown) => JoinedQuery }
 }
 
 function chargeRow(row: Row): Row {
