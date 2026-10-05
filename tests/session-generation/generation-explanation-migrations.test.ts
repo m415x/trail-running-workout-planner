@@ -40,7 +40,7 @@ describe('GenerationExplanation historical persistence migrations', () => {
     assert.doesNotMatch(sql, /ALTER TABLE "group_session_prescriptions"/i)
   })
 
-  it('registers both migrations as canonical HEAD entries', () => {
+  it('keeps both generation-explanation migrations in canonical lineage before identity migrations', () => {
     const sqliteJournal = JSON.parse(
       fs.readFileSync(path.join(root, 'drizzle/sqlite/meta/_journal.json'), 'utf8'),
     ) as { entries: Array<{ tag: string }> }
@@ -48,13 +48,19 @@ describe('GenerationExplanation historical persistence migrations', () => {
       fs.readFileSync(path.join(root, 'drizzle/supabase/meta/_journal.json'), 'utf8'),
     ) as { entries: Array<{ tag: string }> }
 
-    assert.equal(
-      sqliteJournal.entries.at(-1)?.tag,
-      '0015_generation_explanation_provenance',
+    assert.deepEqual(
+      sqliteJournal.entries.slice(-2).map(entry => entry.tag),
+      [
+        '0015_generation_explanation_provenance',
+        '0016_athlete_profile_identity',
+      ],
     )
-    assert.equal(
-      supabaseJournal.entries.at(-1)?.tag,
-      '0028_generation_explanation_provenance',
+    assert.deepEqual(
+      supabaseJournal.entries.slice(-2).map(entry => entry.tag),
+      [
+        '0028_generation_explanation_provenance',
+        '0029_athlete_profile_identity',
+      ],
     )
   })
 

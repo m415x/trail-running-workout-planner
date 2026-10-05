@@ -5,10 +5,13 @@ import { migratePlanningCohortsSqlite } from '@/db/migrations/planning-cohorts-s
 import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-training-timing-sqlite'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { existsSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')
@@ -29,6 +32,86 @@ function runDrizzleKit(args: string[]): void {
   const result = spawnSync(process.execPath, [drizzleKitCli, ...args], { cwd: projectRoot, stdio: "inherit", shell: false })
   if (result.error) throw result.error
   if (result.status !== 0) process.exit(result.status ?? 1)
+}
+
+
+/**
+ * Advances the recognized legacy route through the real canonical SQLite
+ * migrations that precede KAN-615. Drizzle remains responsible for both the
+ * physical changes and migration metadata; this function only bounds the
+ * existing journal so the protected 0016 sentinel is never executed.
+ */
+function migrateLegacyCanonicalHistoryThrough0015(
+  sqlite: Database.Database,
+): void {
+  const migrationsRoot = resolve(projectRoot, 'drizzle/sqlite')
+  const journal = JSON.parse(
+    readFileSync(resolve(migrationsRoot, 'meta/_journal.json'), 'utf8'),
+  ) as {
+    version: string
+    dialect: string
+    entries: Array<{
+      idx: number
+      version: string
+      when: number
+      tag: string
+      breakpoints: boolean
+    }>
+  }
+
+  const targetIndex = journal.entries.findIndex(
+    entry => entry.tag === '0015_generation_explanation_provenance',
+  )
+  const protectedIndex = journal.entries.findIndex(
+    entry => entry.tag === '0016_athlete_profile_identity',
+  )
+
+  if (
+    targetIndex !== 15 ||
+    protectedIndex !== 16 ||
+    journal.entries[targetIndex]?.when !== 1790802000000 ||
+    journal.entries[protectedIndex]?.when !== 1790802001000
+  ) {
+    throw new Error(
+      'SQLite canonical legacy history is incompatible with the KAN-615 0015 boundary',
+    )
+  }
+
+  const historicalEntries = journal.entries.slice(0, targetIndex + 1)
+  if (historicalEntries.some((entry, index) => entry.idx !== index)) {
+    throw new Error(
+      'SQLite canonical legacy history is not contiguous through 0015',
+    )
+  }
+
+  const directory = mkdtempSync(
+    join(tmpdir(), 'kan-636-canonical-through-0015-'),
+  )
+
+  try {
+    mkdirSync(resolve(directory, 'meta'))
+    writeFileSync(
+      resolve(directory, 'meta/_journal.json'),
+      JSON.stringify({
+        version: journal.version,
+        dialect: journal.dialect,
+        entries: historicalEntries,
+      }),
+    )
+
+    for (const entry of historicalEntries) {
+      copyFileSync(
+        resolve(migrationsRoot, `${entry.tag}.sql`),
+        resolve(directory, `${entry.tag}.sql`),
+      )
+    }
+
+    migrate(drizzle(sqlite), {
+      migrationsFolder: directory,
+    })
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 }
 
 function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecognized' {
@@ -617,6 +700,23 @@ if (state === 'legacy') {
     })()
   } finally {
     sqlite.close()
+  }
+
+  const canonical = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    canonical.pragma('foreign_keys = ON')
+
+    // The RED path already proved that canonical 0002-0015 migrations are
+    // applicable to this reconciled legacy origin. Bound Drizzle at 0015,
+    // then let the single KAN-615 executor own the protected 0016 transition.
+    migrateLegacyCanonicalHistoryThrough0015(canonical)
+    migrateAthleteProfileIdentitySqlite(canonical)
+
+    if ((canonical.pragma('foreign_key_check') as unknown[]).length > 0) {
+      throw new Error('Legacy SQLite KAN-615 migration failed foreign-key verification')
+    }
+  } finally {
+    canonical.close()
   }
 }
 
