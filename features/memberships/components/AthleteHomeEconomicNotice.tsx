@@ -24,8 +24,8 @@ const copy = {
 
 const toneClass: Record<AthleteEconomicVisualState['tone'], string> = {
   normal: 'border-border bg-background text-foreground',
-  warning: 'border-amber-400 bg-amber-50 text-amber-950 dark:border-amber-700 dark:bg-amber-950/35 dark:text-amber-100',
-  danger: 'border-red-400 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950/35 dark:text-red-100',
+  warning: 'border-amber-600 bg-amber-200 text-amber-950 dark:border-amber-500 dark:bg-amber-900/70 dark:text-amber-50',
+  danger: 'border-red-600 bg-red-200 text-red-950 dark:border-red-500 dark:bg-red-900/70 dark:text-red-50',
   neutral: 'border-border bg-muted/50 text-foreground',
 }
 
