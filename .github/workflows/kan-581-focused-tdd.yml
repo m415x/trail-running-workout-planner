@@ -1,4 +1,4 @@
-name: KAN-581 focused TDD
+name: KAN-581 verification
 
 on:
   push:
@@ -38,3 +38,29 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.sha }}"
       - name: KAN-581 focused tests
         run: pnpm exec tsx --test tests/memberships/kan-63*.test.ts
+
+  closure-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify exact revision
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: Full local closure gate including isolated SQLite scenarios
+        run: pnpm verify --db
