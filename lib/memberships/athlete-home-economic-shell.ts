@@ -7,8 +7,8 @@ import type { AthleteEconomicVisualTone } from './athlete-home-economic-visual'
 const shellBackground: Record<AthleteEconomicVisualTone, string> = {
   normal: 'bg-background',
   neutral: 'bg-background',
-  warning: 'bg-amber-50 dark:bg-amber-950/25',
-  danger: 'bg-red-50 dark:bg-red-950/25',
+  warning: 'bg-amber-100 dark:bg-amber-900/50',
+  danger: 'bg-red-100 dark:bg-red-900/50',
 }
 
 export function resolveAthleteEconomicShellBackground(
