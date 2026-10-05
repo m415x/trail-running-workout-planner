@@ -1,0 +1,41 @@
+name: KAN-617 focused TDD
+
+on:
+  push:
+    branches:
+      - feat/KAN-601-identity-memberships
+    paths:
+      - '.github/workflows/kan-617-focused-tdd.yml'
+      - 'tests/identity/kan-617-team-membership-authority.test.ts'
+      - 'lib/identity/team-membership.ts'
+      - 'db/schema.ts'
+      - 'db/supabase/schema.ts'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  red-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout RED contract commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: 105807aed81dd7a72203c58037de334238b4c556
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Execute KAN-617 RED
+        run: pnpm exec tsx --test tests/identity/kan-617-team-membership-authority.test.ts
