@@ -123,6 +123,13 @@ export function createSqliteBillingPersistencePort(
       await database.insertMonthlyCharges(teamId, athleteId, charges)
     },
 
+    async listPaymentRevisionsForCharges(chargeIds: readonly string[]) {
+      if (!database.listPaymentRevisionsForCharges) {
+        throw new Error('SQLite billing database does not support batch Payment reads')
+      }
+      return database.listPaymentRevisionsForCharges(chargeIds)
+    },
+
     async listPaymentRevisions(monthlyChargeId) {
       if (!database.listPaymentRevisions) {
         throw new Error('SQLite billing database does not support Payment reads')
