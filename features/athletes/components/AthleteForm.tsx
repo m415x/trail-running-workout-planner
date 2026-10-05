@@ -121,7 +121,7 @@ function AthleteFormContent({ locale, athlete }: AthleteFormProps) {
       <div className='grid gap-4 sm:grid-cols-2'>
         <Field label={t('firstName')} name='firstName' defaultValue={submitted?.firstName ?? athlete?.firstName} required />
         <Field label={t('lastName')} name='lastName' defaultValue={submitted?.lastName ?? athlete?.lastName} required />
-        <Field label={t('email')} name='email' type='email' defaultValue={submitted?.email ?? athlete?.email} required />
+        <Field label={t('email')} name='email' type='email' defaultValue={submitted?.email ?? athlete?.email} required={!athlete} />
         <Field label={t('dni')} name='dni' defaultValue={submitted?.dni ?? athlete?.dni} required />
         <Field label={t('nickName')} name='nickName' defaultValue={submitted?.nickName ?? athlete?.nickName} />
         <Field label={t('birthday')} name='birthday' type='date' max={today} defaultValue={submitted?.birthday ?? athlete?.birthday} />
