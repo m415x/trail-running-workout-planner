@@ -46,9 +46,26 @@ export type SupabaseProxyRefreshResult =
       cookies: SupabaseProxyCookie[]
     }
   | {
+      status: 'anonymous'
+      cookies: SupabaseProxyCookie[]
+    }
+  | {
       status: 'invalid'
       cookies: SupabaseProxyCookie[]
     }
+
+function isAuthSessionMissingError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false
+  }
+
+  const candidate = error as {
+    name?: unknown
+    message?: unknown
+  }
+
+  return candidate.name === 'AuthSessionMissingError'
+}
 
 export function createSupabaseProxySessionRefresher(input: {
   createClient: SupabaseProxyClientFactory
@@ -84,6 +101,10 @@ export function createSupabaseProxySessionRefresher(input: {
       })
 
       const { data, error } = await client.auth.getClaims()
+
+      if (isAuthSessionMissingError(error)) {
+        return { status: 'anonymous', cookies: [] }
+      }
 
       if (error || !data?.claims?.sub?.trim()) {
         return { status: 'invalid', cookies: [] }
