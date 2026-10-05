@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Checkout RED contract commit
+      - name: Checkout exact RED contract commit
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -37,5 +37,40 @@ jobs:
           cache: pnpm
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
-      - name: Execute KAN-617 RED
+      - name: Confirm expected RED
+        shell: bash
+        run: |
+          set +e
+          pnpm exec tsx --test tests/identity/kan-617-team-membership-authority.test.ts > /tmp/kan-617-red.log 2>&1
+          status=$?
+          cat /tmp/kan-617-red.log
+          test "$status" -ne 0
+          grep -E "team-membership|ERR_MODULE_NOT_FOUND|Cannot find module" /tmp/kan-617-red.log
+
+  green-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Verify exact revision
+        run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: KAN-617 focused behavior
         run: pnpm exec tsx --test tests/identity/kan-617-team-membership-authority.test.ts
+      - name: TypeScript
+        run: pnpm tsc
