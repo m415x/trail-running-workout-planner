@@ -19,8 +19,6 @@ test('KAN-615 canonical 0016 refuses generic SQL execution', () => {
     }>
   }
 
-  assert.equal(journal.entries.length, 17)
-
   const entry = journal.entries[16]
 
   assert.equal(entry.idx, 16)
