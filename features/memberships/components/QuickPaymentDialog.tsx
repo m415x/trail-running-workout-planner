@@ -46,9 +46,13 @@ export function QuickPaymentDialog({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const pendingRef = useRef(false)
+  const submittedRef = useRef(false)
   useEffect(() => {
     if (!open) return
+    submittedRef.current = false
+    setSubmitted(false)
     const draft = prepareQuickPaymentDraft({ charges, currentPeriod, operationalDate, source, blockedForPriorDebt })
     setMonthlyChargeId(draft.monthlyChargeId ?? '')
     setAmount(amountInput(draft.amountMinor))
@@ -77,6 +81,8 @@ export function QuickPaymentDialog({
   function changeOpen(next: boolean) {
     if (pendingRef.current) return
     if (next) {
+      submittedRef.current = false
+      setSubmitted(false)
       const draft = prepareQuickPaymentDraft({ charges, currentPeriod, operationalDate, source, blockedForPriorDebt })
       setMonthlyChargeId(draft.monthlyChargeId ?? '')
       setAmount(amountInput(draft.amountMinor))
@@ -90,7 +96,7 @@ export function QuickPaymentDialog({
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pendingRef.current) return
+    if (pendingRef.current || submittedRef.current) return
     setError(null)
     setSuccess(null)
     const checked = validateQuickPaymentDraft({
@@ -109,6 +115,8 @@ export function QuickPaymentDialog({
         setError(isEn ? 'The payment could not be recorded. Refresh the balance and try again.' : 'No se pudo registrar el pago. Actualizá el saldo e intentá nuevamente.')
         return
       }
+      submittedRef.current = true
+      setSubmitted(true)
       setSuccess(isEn ? 'Payment recorded.' : 'Pago registrado.')
       onRegistered?.()
     } catch {
@@ -142,7 +150,7 @@ export function QuickPaymentDialog({
             <div className='space-y-2'>
               <Label htmlFor='quick-payment-period'>{isEn ? 'Period' : 'Período'}</Label>
               <select id='quick-payment-period' value={monthlyChargeId} onChange={event => changeCharge(event.target.value)}
-                disabled={isPending} required className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
+                disabled={isPending || submitted} required className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
                 <option value=''>{isEn ? 'Select a period' : 'Seleccioná un período'}</option>
                 {eligible.map(charge => (
                   <option value={charge.id} key={charge.id}>
@@ -158,13 +166,13 @@ export function QuickPaymentDialog({
             <div className='space-y-2'>
               <Label htmlFor='quick-payment-amount'>{isEn ? 'Amount' : 'Importe'}</Label>
               <Input id='quick-payment-amount' value={amount} onChange={event => setAmount(event.target.value)}
-                inputMode='decimal' type='text' required disabled={isPending || !chosen} />
+                inputMode='decimal' type='text' required disabled={isPending || submitted || !chosen} />
             </div>
             <div className='space-y-2'>
               <Label htmlFor='quick-payment-method'>{isEn ? 'Payment method' : 'Método de pago'}</Label>
               <select id='quick-payment-method' value={paymentMethod}
                 onChange={event => setPaymentMethod(event.target.value as 'cash' | 'bank_transfer')}
-                disabled={isPending} className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
+                disabled={isPending || submitted} className='flex h-9 w-full rounded-md border border-input bg-background px-3 text-sm'>
                 <option value='cash'>{isEn ? 'Cash' : 'Efectivo'}</option>
                 <option value='bank_transfer'>{isEn ? 'Bank transfer' : 'Transferencia bancaria'}</option>
               </select>
@@ -172,7 +180,7 @@ export function QuickPaymentDialog({
             <div className='space-y-2'>
               <Label htmlFor='quick-payment-date'>{isEn ? 'Payment date' : 'Fecha del pago'}</Label>
               <Input id='quick-payment-date' type='date' value={paidAt}
-                onChange={event => setPaidAt(event.target.value)} disabled={isPending} required />
+                onChange={event => setPaidAt(event.target.value)} disabled={isPending || submitted} required />
             </div>
             {error && <p role='alert' className='text-sm text-destructive'>{error}</p>}
             {success && <p role='status' className='text-sm'>{success}</p>}
