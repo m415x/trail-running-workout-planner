@@ -1,6 +1,7 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import type { FormEvent } from 'react'
 
 import { registerManualPaymentAction } from '@/app/actions/membership-actions'
 import {
@@ -51,6 +52,18 @@ export function QuickPaymentDialog({
   const [success, setSuccess] = useState<string | null>(null)
   const [isPending, setIsPending] = useState(false)
   const pendingRef = useRef(false)
+  useEffect(() => {
+    if (!open) return
+    const draft = prepareQuickPaymentDraft({ charges, currentPeriod, operationalDate, source, blockedForPriorDebt })
+    setMonthlyChargeId(draft.monthlyChargeId ?? '')
+    setAmount(amountInput(draft.amountMinor))
+    setPaymentMethod('cash')
+    setPaidAt(draft.paidAt)
+    setError(null)
+    setSuccess(null)
+  // Reset when parent opens an instance; changing a selected period stays local.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
   const regional = resolveApplicationRegionalContext({ language: locale })
   const isEn = locale === 'en'
   const eligible = charges.filter(charge => Number.isSafeInteger(charge.remainingMinor) && charge.remainingMinor > 0)
@@ -80,7 +93,7 @@ export function QuickPaymentDialog({
     onOpenChange(next)
   }
 
-  async function submit(event: React.FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (pendingRef.current) return
     setError(null)
