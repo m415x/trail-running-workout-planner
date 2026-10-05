@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server'
 
 import { getActiveAthleteGroups, getAthleteById } from '@/app/actions/athlete-actions'
 import { AthleteGroupForm } from '@/features/athletes/components/AthleteGroupForm'
+import { getGroupMemberOptionName } from '@/features/groups/lib/group-member-option-label'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
@@ -36,7 +37,7 @@ export default async function AthleteGroupPage({ params }: AthleteGroupPageProps
     notFound()
   }
 
-  const athleteName = `${athlete.user.firstName} ${athlete.user.lastName}`
+  const athleteName = getGroupMemberOptionName(athlete)
   const groupCode = athlete.group
     ? `${athlete.group.categoryCode}${athlete.group.levelCode}`
     : null
