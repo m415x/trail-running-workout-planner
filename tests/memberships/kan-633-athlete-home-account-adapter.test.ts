@@ -24,8 +24,8 @@ test('KAN-633 account adapter scopes membership checks, charge reads and payment
         calls.push('charges:' + teamId + ':' + athleteId)
         return [charge]
       },
-      listPaymentRevisions: async (chargeId: string) => {
-        calls.push('payments:' + chargeId)
+      listPaymentRevisionsForCharges: async (chargeIds: readonly string[]) => {
+        calls.push('payments-batch:' + chargeIds.join(','))
         return []
       },
     }),
@@ -36,7 +36,7 @@ test('KAN-633 account adapter scopes membership checks, charge reads and payment
   assert.deepEqual(result.charges.map(c => [c.year, c.month, c.status, c.remainingMinor]), [
     [2026, 10, 'pending', 2500000],
   ])
-  assert.deepEqual(calls, ['scope:team-a:ath-a', 'terms:team-a:ath-a', 'charges:team-a:ath-a', 'payments:oct'])
+  assert.deepEqual(calls, ['scope:team-a:ath-a', 'terms:team-a:ath-a', 'charges:team-a:ath-a', 'payments-batch:oct'])
   calls.length = 0
   await assert.rejects(read({ teamId: 'team-b', athleteId: 'ath-a', cutoffDate: '2026-10-06' }))
   assert.deepEqual(calls, ['scope:team-b:ath-a'])
@@ -48,7 +48,7 @@ test('KAN-633 missing terms or charges is unavailable, not economically settled'
       athleteBelongsToTeam: async () => true,
       listBillingTerms: async () => [],
       listPersistedMonthlyCharges: async () => [],
-      listPaymentRevisions: async () => [],
+      listPaymentRevisionsForCharges: async () => [],
     }),
   })
   assert.deepEqual(await read({ teamId: 'team-a', athleteId: 'ath-a', cutoffDate: '2026-10-06' }), {
