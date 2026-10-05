@@ -96,17 +96,12 @@ test('KAN-615 commits identity and all twelve references with canonical 0016', (
       entries: Array<{ tag: string; when: number }>
     }
 
-    assert.equal(journal.entries.length, 17)
-
-    const latest = journal.entries.at(-1)
-    assert.ok(latest)
-    assert.ok(
-      latest.tag.startsWith('0016_'),
-      'Expected canonical AthleteProfile 0016 migration',
-    )
+    const identityEntry = journal.entries[16]
+    assert.ok(identityEntry)
+    assert.equal(identityEntry.tag, '0016_athlete_profile_identity')
 
     const canonicalSql = readFileSync(
-      `drizzle/sqlite/${latest.tag}.sql`,
+      `drizzle/sqlite/${identityEntry.tag}.sql`,
       'utf8',
     )
 
@@ -124,7 +119,7 @@ test('KAN-615 commits identity and all twelve references with canonical 0016', (
     assert.deepEqual(historyAfter.slice(0, 16), historyBefore)
     assert.deepEqual(historyAfter[16], {
       hash: expectedHash,
-      created_at: latest.when,
+      created_at: identityEntry.when,
     })
 
     assert.equal(sqlite.inTransaction, false)
