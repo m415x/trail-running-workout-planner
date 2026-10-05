@@ -14,12 +14,13 @@ test('KAN-619 server action delegates athlete active-state changes through the t
     /import\s+\{\s*setAthleteProfileActiveState\s*\}\s+from\s+['"]@\/lib\/athletes\/athlete-profile-lifecycle['"]/,
   )
 
-  const actionMatch = source.match(
-    /export async function setAthleteActiveState[\s\S]*?\n}\n/,
-  )
-  assert.ok(actionMatch, 'setAthleteActiveState action must exist')
+  const start = source.indexOf('export async function setAthleteActiveState')
+  const end = source.indexOf('export const assignAthleteToGroup', start)
 
-  const action = actionMatch[0]
+  assert.notEqual(start, -1, 'setAthleteActiveState action must exist')
+  assert.notEqual(end, -1, 'setAthleteActiveState action boundary must exist')
+
+  const action = source.slice(start, end)
 
   assert.match(
     action,
