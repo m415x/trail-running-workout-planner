@@ -473,7 +473,7 @@ if (state === "versioned") {
       ).all() as Array<{ id: number | null }>
 
       if (
-        metadataIdentifiers.length !== 17 ||
+        metadataIdentifiers.length !== journal.entries.length ||
         metadataIdentifiers.some((record, index) =>
           metadataFormat === 'serial'
             ? record.id !== null
