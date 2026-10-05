@@ -13,6 +13,7 @@ import {
   planningCohortMemberships,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
+import { createAthleteAdministration } from '@/lib/athletes/create-athlete-administration'
 import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import { updateAthleteAdministration } from '@/lib/athletes/update-athlete-administration'
 
@@ -199,37 +200,23 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
   const data = parsed.data
 
   try {
-    db.transaction((tx) => {
-      const existingDni = tx.query.athleteProfiles.findFirst({
-        where: and(eq(athleteProfiles.dni, data.dni), eq(athleteProfiles.isDeleted, false)),
-      }).sync()
+    const now = new Date().toISOString()
+    const athleteId = randomUUID()
 
-      if (existingDni) {
-        throw new Error('Ya existe un atleta con ese DNI')
-      }
-
-      const now = new Date().toISOString()
-      const athleteId = randomUUID()
-
-      tx.insert(athleteProfiles).values({
-        id: athleteId,
-        userId: null,
-        teamId: CURRENT_TEAM_ID,
-        groupId: null,
-        isActive: true,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        contactEmail: data.email,
-        nickName: nullable(data.nickName),
-        dni: data.dni,
-        birthday: nullable(data.birthday),
-        phone: nullable(data.phone),
-        emergencyContact: nullable(data.emergencyContact),
-        emergencyPhone: nullable(data.emergencyPhone),
-        createdAt: now,
-        updatedAt: now,
-      }).run()
-
+    createAthleteAdministration(db, {
+      athleteId,
+      teamId: CURRENT_TEAM_ID,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      contactEmail: data.email,
+      dni: data.dni,
+      nickName: nullable(data.nickName),
+      birthday: nullable(data.birthday),
+      phone: nullable(data.phone),
+      emergencyContact: nullable(data.emergencyContact),
+      emergencyPhone: nullable(data.emergencyPhone),
+      createdAt: now,
+    }, (tx) => {
       createMembershipServerActionRuntime({
         db: tx,
         createId: randomUUID,
