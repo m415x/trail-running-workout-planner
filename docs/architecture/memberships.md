@@ -159,6 +159,25 @@ H5 adds no table, schema field, migration, mutable blocking state, session, role
 H1–H5 introduce no credit balance, automatic payment redistribution, gateway/provider/webhook/checkout model, additional charges, authentication or authorization, and no implicit proration.
 
 
+## Athlete Home economic disclosure (KAN-581)
+
+KAN-581 adds a read-only Athlete Home projection over the existing H4/H5 contract. It does not create a new economic authority and does not change H1–H5 persistence or derivation.
+
+Home reads one team-scoped athlete account snapshot at the server-resolved civil date for `America/Argentina/Buenos_Aires`. The adapter batches Payment revisions for the relevant charges, delegates charge status to H4 and prior-debt priority to H5, and projects only the minimum Home summary: current charge status/remaining amount, availability, and `blockedForPriorDebt`.
+
+The presentation mapping is deliberately small:
+
+- current `settled` with zero remaining amount → normal;
+- current `pending` with positive remaining amount → warning;
+- current `overdue` with positive remaining amount → danger;
+- H5 prior-month overdue debt → danger with explicit prior-debt copy, taking priority over the current-month state;
+- missing terms, missing materialized current charge, invalid/inconsistent data or read failure → neutral/unknown, never implicitly settled.
+
+The MobileShell background is presentation-only and resets to the ordinary background when leaving Home. Text remains authoritative so color is never the sole communication channel. ES/EN copy links to the athlete account surface. KAN-581 adds no route guard, authentication, authorization, session mutation or CSS-based denial of access; effective access enforcement remains reserved for KAN-298.
+
+The Home bell remains outside this contract. KAN-581 explicitly does not implement a notification center, notification persistence, read/unread state, event delivery, permissions or bell-menu UX. Economic notices may be integrated into a future notification-center story without changing the H4/H5 economic source of truth.
+
+
 ## Epic 5 closure boundary
 
 KAN-464 closes Epic 5 without introducing a new economic authority. H1–H5 above are the durable Membership billing contract.
