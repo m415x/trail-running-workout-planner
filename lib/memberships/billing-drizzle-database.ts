@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 
 import {
   athleteBillingTerms,
@@ -255,6 +255,19 @@ export function createDrizzleBillingDatabase(
           ...mapCharge(persisted),
         }
       })
+    },
+
+    async listPaymentRevisionsForCharges(chargeIds: readonly string[]) {
+      if (chargeIds.length === 0) return []
+      const rows = await client
+        .select()
+        .from(paymentRevisions)
+        .where(and(
+          inArray(paymentRevisions.monthlyChargeId, [...chargeIds]),
+          eq(paymentRevisions.isDeleted, false),
+        ))
+
+      return rows.map(mapPaymentRevision)
     },
 
     async listPaymentRevisions(monthlyChargeId) {

@@ -79,9 +79,9 @@ export function GlobalDueDateExceptionForm({ locale }: { locale: Locale }) {
                 className='h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm shadow-xs'
                 required
               >
-                <option value=''>{t('selectDay')}</option>
+                <option className='text-slate-950' value=''>{t('selectDay')}</option>
                 {Array.from({ length: daysInMonth }, (_, index) => index + 1).map((day) => (
-                  <option key={day} value={day}>{day}</option>
+                  <option className='text-slate-950' key={day} value={day}>{day}</option>
                 ))}
               </select>
             </div>

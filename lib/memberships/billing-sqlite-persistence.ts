@@ -29,6 +29,7 @@ export type SqliteBillingDatabase = {
     charges: MonthlyChargeCandidate[],
   ) => Promise<void>
   listPaymentRevisions?: (monthlyChargeId: string) => Promise<PersistedPaymentRevision[]>
+  listPaymentRevisionsForCharges?: (chargeIds: readonly string[]) => Promise<PersistedPaymentRevision[]>
   insertPaymentRevision?: (revision: PersistedPaymentRevision) => Promise<void>
   replaceCurrentPaymentRevisionAtomically?: (
     previous: PersistedPaymentRevision,
@@ -94,7 +95,10 @@ export type SqliteBillingDatabase = {
 
 export function createSqliteBillingPersistencePort(
   database: SqliteBillingDatabase,
-): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort & PaymentPersistencePort {
+): BillingPersistencePort & GlobalDueDateExceptionPersistencePort & MonthlyChargeReductionPersistencePort & MonthlyChargeExtensionPersistencePort & PaymentPersistencePort & {
+  listPersistedMonthlyCharges: NonNullable<BillingPersistencePort['listPersistedMonthlyCharges']>
+  listPaymentRevisionsForCharges: (chargeIds: readonly string[]) => Promise<PersistedPaymentRevision[]>
+} {
   return {
     athleteBelongsToTeam: (teamId, athleteId) =>
       database.athleteBelongsToTeam(teamId, athleteId),
@@ -120,6 +124,13 @@ export function createSqliteBillingPersistencePort(
       }
 
       await database.insertMonthlyCharges(teamId, athleteId, charges)
+    },
+
+    async listPaymentRevisionsForCharges(chargeIds: readonly string[]) {
+      if (!database.listPaymentRevisionsForCharges) {
+        throw new Error('SQLite billing database does not support batch Payment reads')
+      }
+      return database.listPaymentRevisionsForCharges(chargeIds)
     },
 
     async listPaymentRevisions(monthlyChargeId) {
