@@ -16,6 +16,7 @@ type EconomicPort = {
   listBillingTerms: (teamId: string, athleteId: string) => Promise<readonly { id: string }[]>
   listPersistedMonthlyCharges: (teamId: string, athleteId: string) => Promise<readonly ScopedCharge[]>
   listPaymentRevisions: (monthlyChargeId: string) => Promise<PaymentRevision[]>
+  listPaymentRevisionsForCharges?: (chargeIds: readonly string[]) => Promise<PaymentRevision[]>
 }
 
 /**
@@ -50,10 +51,19 @@ export function createAthleteHomeEconomicAccountAdapter({
       throw new Error('Monthly charges are outside the requested economic scope')
     }
 
+    const allowedChargeIds = new Set(charges.map(charge => charge.id))
+    const batched = port.listPaymentRevisionsForCharges
+      ? await port.listPaymentRevisionsForCharges(charges.map(charge => charge.id))
+      : null
+    if (batched?.some(revision => !allowedChargeIds.has(revision.monthlyChargeId))) {
+      throw new Error('Payment revision is outside requested charge scope')
+    }
     const entries = await Promise.all(charges.map(async charge => ({
       id: charge.id,
       charge: charge as MonthlyChargeCandidate,
-      paymentRevisions: await port.listPaymentRevisions(charge.id),
+      paymentRevisions: batched
+        ? batched.filter(revision => revision.monthlyChargeId === charge.id)
+        : await port.listPaymentRevisions(charge.id),
     })))
     const account = deriveMembershipAccountState({ cutoffDate, charges: entries })
     const periodById = new Map(charges.map(charge => [charge.id, charge]))
