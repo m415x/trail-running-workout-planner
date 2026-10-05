@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, Pencil, UserPlus, UsersRound } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
 
 import { getGroupWithMembers } from '@/app/actions/group-actions'
+import { projectGroupMemberDetail } from '@/features/groups/lib/group-member-detail-presentation'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
@@ -12,10 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 interface GroupDetailPageProps {
   params: Promise<{ locale: string; groupId: string }>
-}
-
-function getInitials(firstName: string, lastName: string) {
-  return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
 }
 
 export default async function GroupDetailPage({ params }: GroupDetailPageProps) {
@@ -91,7 +88,8 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                 </TableHeader>
                 <TableBody>
                   {group.athletes.map((athlete) => {
-                    const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+                    const presentation = projectGroupMemberDetail(athlete)
+                    const fullName = presentation.name
                     const athletePath = `${athletesPath}/${athlete.id}`
 
                     return (
@@ -99,8 +97,8 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                         <TableCell>
                           <div className='flex items-center gap-3'>
                             <Avatar className='size-9'>
-                              <AvatarImage src={athlete.user.avatar ?? undefined} alt={fullName} />
-                              <AvatarFallback>{getInitials(athlete.user.firstName, athlete.user.lastName)}</AvatarFallback>
+                              <AvatarImage src={athlete.user?.avatar ?? undefined} alt={fullName} />
+                              <AvatarFallback>{presentation.initials}</AvatarFallback>
                             </Avatar>
                             <div>
                               <Link href={athletePath} className='font-medium hover:underline'>{fullName}</Link>
@@ -109,7 +107,7 @@ export default async function GroupDetailPage({ params }: GroupDetailPageProps) 
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p>{athlete.user.email}</p>
+                          <p>{presentation.email ?? '—'}</p>
                           {athlete.phone && <p className='text-xs text-muted-foreground'>{athlete.phone}</p>}
                         </TableCell>
                         <TableCell>

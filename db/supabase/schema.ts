@@ -90,6 +90,65 @@ export const users = pgTable('users', {
   avatar: text('avatar'),
 })
 
+/**
+ * Persisted association between one external identity and one EPT User.
+ *
+ * Static PostgreSQL contract only in KAN-616. Provider session/token
+ * verification is intentionally deferred to KAN-602.
+ */
+export const externalIdentityLinks = pgTable(
+  'external_identity_links',
+  {
+    ...baseColumns,
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    provider: text('provider').notNull(),
+    subject: text('subject').notNull(),
+  },
+  (table) => [
+    uniqueIndex('external_identity_links_provider_subject_unique').on(
+      table.provider,
+      table.subject,
+    ),
+    index('external_identity_links_user_idx').on(table.userId),
+  ],
+)
+
+/**
+ * Organizational membership is the single authority for the preset a User
+ * holds inside one team. users.role remains legacy data and is not consulted
+ * by TeamMembership resolution.
+ */
+export const teamMemberships = pgTable(
+  'team_memberships',
+  {
+    ...baseColumns,
+    userId: text('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'restrict' }),
+    preset: text('preset').notNull().$type<UserRole>(),
+    effectiveFrom: text('effective_from').notNull(),
+    effectiveUntil: text('effective_until'),
+    isActive: boolean('is_active').notNull().default(true),
+  },
+  (table) => [
+    index('team_memberships_user_team_dates_idx').on(
+      table.userId,
+      table.teamId,
+      table.effectiveFrom,
+      table.effectiveUntil,
+    ),
+    check(
+      'team_memberships_date_order_check',
+      sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`,
+    ),
+  ],
+)
+
 /* -------------------------------------------------------------------------- */
 /* 3. ATHLETE GROUPS (Grupos de entrenamiento)                                */
 /* -------------------------------------------------------------------------- */
@@ -143,9 +202,7 @@ export const athleteProfiles = pgTable('athlete_profiles', {
   ...baseColumns,
 
   userId: text('user_id')
-    .notNull()
-    .unique()
-    .references(() => users.id, { onDelete: 'cascade' }),
+    .references(() => users.id, { onDelete: 'restrict' }),
 
   teamId: text('team_id')
     .notNull()
@@ -155,6 +212,10 @@ export const athleteProfiles = pgTable('athlete_profiles', {
 
   isActive: boolean('is_active').notNull().default(true),
 
+  // Administrative facts owned by the sporting profile, not the EPT account.
+  firstName: text('first_name'),
+  lastName: text('last_name'),
+  contactEmail: text('contact_email'),
   nickName: text('nick_name'),
   dni: text('dni').notNull(),
   birthday: text('birthday'), // 'YYYY-MM-DD'
@@ -166,7 +227,9 @@ export const athleteProfiles = pgTable('athlete_profiles', {
   // Fisiología y datos médicos vigentes (calculados del último registro)
   physiology: jsonb('physiology').$type<AthletePhysiology>(),
   medical: jsonb('medical').$type<MedicalRecord>(),
-})
+}, (table) => [
+  uniqueIndex('athlete_profiles_user_team_unique').on(table.userId, table.teamId),
+])
 
 export const planningCohortMemberships = pgTable(
   'planning_cohort_memberships',
@@ -569,6 +632,7 @@ export const sessionGenerationModificationRecords = pgTable('session_generation_
   action: text('action').$type<SessionGenerationModificationAction>().notNull(),
   ownership: text('ownership').$type<SessionGenerationOwnership>().notNull(),
   generationKey: text('generation_key'),
+  generationExplanation: jsonb('generation_explanation'),
   previousValue: text('previous_value'),
   newValue: text('new_value'),
   changedByUserId: text('changed_by_user_id').references(() => users.id, { onDelete: 'set null' }),

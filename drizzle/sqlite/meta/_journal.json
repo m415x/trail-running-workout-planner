@@ -113,6 +113,27 @@
       "when": 1790802000000,
       "tag": "0015_generation_explanation_provenance",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "6",
+      "when": 1790802001000,
+      "tag": "0016_athlete_profile_identity",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1791226018979,
+      "tag": "0017_natural_fabian_cortez",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "6",
+      "when": 1791228324653,
+      "tag": "0018_daily_aqueduct",
+      "breakpoints": true
     }
   ]
 }

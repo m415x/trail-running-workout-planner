@@ -9,6 +9,19 @@ if (scenarioMode && !scenarioDatabasePath) {
   throw new Error('SQLITE_DATABASE_PATH is required for isolated SQLite scenario verification')
 }
 
+if (scenarioMode) {
+  const destination = resolve(scenarioDatabasePath!)
+  const persistent = resolve('sqlite.db')
+
+  if (process.platform === 'win32'
+    ? destination.toLowerCase() === persistent.toLowerCase()
+    : destination === persistent) {
+    throw new Error(
+      'SQLite scenario must not target persistent sqlite.db',
+    )
+  }
+}
+
 // Schema and migration paths belong to the repository. Scenario verification
 // must provide an explicit database path; normal development retains sqlite.db.
 export default defineConfig({

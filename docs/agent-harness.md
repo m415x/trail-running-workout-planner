@@ -37,6 +37,54 @@ fresh-chat capable next story
 - Large tool outputs should not be repeatedly reloaded or carried conceptually after their decision-relevant findings and stable locators are known.
 - A Jira story is the natural compaction boundary: closure converts working context into architecture, glossary/research changes where relevant, indexes, Jira evidence and a concise handoff.
 
+## Micro-sprints and recovery harness
+
+Use a micro-sprint when the immediate goal is resolution, recovery or delivery of a bounded increment rather than expansion of a story. A micro-sprint has one primary objective, a closed scope and one explicit exit condition:
+
+- **Exit A — verified and integrated increment:** the bounded increment is reconstructed/implemented, its required evidence is current, and it is integrated into its intended parent/integration branch.
+- **Exit B — one demonstrated external material blocker:** exactly one remaining blocker outside the bounded scope is shown with objective evidence, ownership/dependency is clear, and no independent in-scope work remains enabled.
+
+### Evidence identity and reuse
+
+Treat every verification result as a relation between **result ↔ exact SHA/recoverable tree**. Record the SHA/tree with focused tests, full gates, CI and manual acceptance whenever the result is used for delivery or closure.
+
+Evidence remains reusable when the exact verified tree still exists and subsequent changes cannot affect the verified contract (for example, a later documentation-only commit after a product-code gate, when that limitation is stated). Repeat the affected evidence when the verified tree no longer exists, the working tree was lost, production/test code changed materially, integration/rebase changed the relevant tree, or the prior evidence cannot be mapped unambiguously to a recoverable state. Never promote a historical GREEN from an unrecoverable tree into current acceptance.
+
+### Recoverable checkpoint after GREEN
+
+After a stable GREEN for an independently meaningful task/cut, create a recoverable commit before beginning the next cut. A dirty working tree may be used during TDD, but must not be the only durable carrier of accepted implementation or acceptance evidence. Keep commits coherent enough that the verified cut can be recovered, reviewed and integrated independently.
+
+### Lost unpublished working tree protocol
+
+If accepted work existed only in an unpublished/uncommitted tree and that tree is lost:
+
+1. Stop treating its GREEN/manual acceptance as current evidence.
+2. Establish the last exact recoverable remote/local SHA and confirm the loss using the available recovery mechanisms (worktrees, stash/reflog/fsck/editor history where applicable) without inventing recovery success.
+3. Reconstruct only from durable authority: current code/tests, architecture, Jira decisions/comments, remote commits and recorded evidence. Do not reconstruct from remembered implementation details alone.
+4. Use a dedicated recovery branch from the exact recoverable base when reconstruction would otherwise contaminate integration history.
+5. Re-run focused tests and any manual/runtime acceptance invalidated by reconstruction. Do not rerun unaffected historical gates merely for ceremony.
+6. Review the complete reconstruction diff against its base before integration.
+
+### Failure and blocker classification
+
+Classify a failure before expanding scope:
+
+- **In-scope defect:** the failing behavior violates the current micro-sprint contract or was introduced/changed by its tree. Fix it within the micro-sprint using focused TDD/acceptance.
+- **Independent defect:** reproducible outside the micro-sprint tree or owned by another explicit contract/story. Record it and keep it out of scope unless product authority changes the boundary.
+- **Technical debt:** a known weakness that does not prevent the bounded acceptance/contract. Track it, but do not automatically make it a global blocker.
+- **Integration blocker:** the increment is correct in isolation but cannot yet reach its intended integration branch because a required dependency/base is absent or incompatible. Document the dependency and integrate through the dependency branch when appropriate.
+- **Transient infrastructure failure:** tooling/CI/network/runtime failure without evidence of product regression. Retry only after diagnosis; do not rewrite product code to satisfy infrastructure noise.
+
+A blocker record must state cause, affected scope, criticality, objective unblock condition and independent work still enabled.
+
+### Dependent branches and gates
+
+When a correction depends on a feature branch that is not yet in `dev`, integrate the correction into that dependency branch first rather than forcing an isolated merge to `dev`. Preserve branch/history integrity and document the dependency chain. A bounded dependency-specific gate may be accepted even if a wider gate is RED for unrelated incomplete consumers or independent infrastructure, provided the scoped gate is sufficient for the correction and the exception is explicit.
+
+Run focused verification during each cut. Run the full gate when the current integration candidate can invalidate cross-cutting behavior, at story/parent closure, or after material post-gate code changes. Do **not** rerun a full gate when an exact recoverable tree already has valid evidence and no relevant code/integration change occurred; preserve and reference that evidence instead.
+
+Stop expanding the micro-sprint and request a human decision when completing the bounded objective would require changing an approved product/security contract, absorbing an independent story, fabricating authority/identity, rewriting historical migration state, weakening isolation/security, or choosing between materially different product semantics. Exit B is valid only when the remaining blocker is external, singular and objectively demonstrated.
+
 ### Tool/error rules
 
 - Use the narrowest available action that answers the current question.

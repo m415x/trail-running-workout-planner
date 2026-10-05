@@ -18,6 +18,7 @@ import { getAthleteBillingTermsFormModel } from '@/lib/memberships/athlete-billi
 import { createDrizzleBillingDatabase } from '@/lib/memberships/billing-drizzle-database'
 import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sqlite-persistence'
 import { projectAthleteRaceCompetition } from '@/lib/competitions/race-registration-application'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import { listRaceCourses, listRaceEditions, listRaceEvents } from '@/lib/race-catalog/catalog-repository'
 import { listRaceRegistrationsForAthlete } from '@/lib/competitions/race-registration-repository'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
@@ -135,10 +136,16 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
         }
       : null,
   })
+  const administrative = projectAthleteAdministrativeRead(athlete)
   const participationLabels: Record<string, string> = es
     ? { started: 'Inició', finished: 'Finalizó', dnf: 'DNF', dns: 'DNS', unknown: 'Desconocido' }
     : { started: 'Started', finished: 'Finished', dnf: 'DNF', dns: 'DNS', unknown: 'Unknown' }
-  const fullName = `${athlete.user.firstName} ${athlete.user.lastName}`
+  const fullName = administrative.name
+    ? `${administrative.name.firstName} ${administrative.name.lastName}`
+    : t('notProvided')
+  const initials = administrative.name
+    ? getInitials(administrative.name.firstName, administrative.name.lastName)
+    : '—'
   const groupCode = athlete.group ? `${athlete.group.categoryCode}${athlete.group.levelCode}` : null
   const listPath = athletePath(locale)
   const editPath = athletePath(locale, `/${athlete.id}/edit`)
@@ -152,7 +159,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
       <div className='flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between'>
         <div className='flex items-center gap-4'>
           <Link href={listPath} aria-label={t('backToList')} className={buttonVariants({ variant: 'ghost', size: 'icon' })}><ArrowLeft /></Link>
-          <Avatar className='size-14'><AvatarImage src={athlete.user.avatar ?? undefined} alt={fullName} /><AvatarFallback>{getInitials(athlete.user.firstName, athlete.user.lastName)}</AvatarFallback></Avatar>
+          <Avatar className='size-14'><AvatarImage src={athlete.user?.avatar ?? undefined} alt={fullName} /><AvatarFallback>{initials}</AvatarFallback></Avatar>
           <div><div className='flex flex-wrap items-center gap-2'><h2 className='text-3xl font-bold tracking-tight'>{fullName}</h2>{athlete.isActive ? <Badge variant='outline' className='border-emerald-500/40 text-emerald-700 dark:text-emerald-400'>{t('active')}</Badge> : <Badge variant='outline' className='text-muted-foreground'>{t('inactive')}</Badge>}</div><p className='text-muted-foreground'>{athlete.nickName ? `“${athlete.nickName}”` : t('profile')}</p></div>
         </div>
         <DropdownMenu><DropdownMenuTrigger className={buttonVariants({ variant: 'outline' })} aria-label={tActions('menuFor', { name: fullName })}>{tActions('actions')}<EllipsisVertical /></DropdownMenuTrigger><DropdownMenuContent align='end' className='w-56'><DropdownMenuItem render={<Link href={trainingPath} />}><Activity />{tActions('realizedTraining')}</DropdownMenuItem><DropdownMenuItem render={<Link href={newGoalPath} />}><Target />{tActions('newGoal')}</DropdownMenuItem><DropdownMenuItem render={<Link href={groupPath} />}><UsersRound />{athlete.groupId ? tActions('changeGroup') : tActions('assignGroup')}</DropdownMenuItem><DropdownMenuItem render={<Link href={editPath} />}><Pencil />{tActions('editAthlete')}</DropdownMenuItem></DropdownMenuContent></DropdownMenu>
@@ -161,7 +168,7 @@ export default async function AthleteDetailPage({ params }: AthleteDetailPagePro
       <div className='grid gap-6 md:grid-cols-2'>
         <CoachTrack1000mPanel athleteId={athleteId} locale={locale} labels={{ faster: t('faster'), slower: t('slower'), same: t('same'), insufficientEvidence: t('insufficientEvidence'), unavailable: t('unavailable'), historyLoadError: t('historyLoadError') }} events={testEventsResult.success ? testEventsResult.data : []} pending={pendingEvidenceResult.success ? pendingEvidenceResult.data : []} eventsError={!testEventsResult.success} pendingError={!pendingEvidenceResult.success} historyResult={testHistoryResult} />
         <Card><CardHeader><CardTitle>{t('personalData')}</CardTitle></CardHeader><CardContent><dl className='grid gap-5 sm:grid-cols-2'><DetailItem label='DNI' value={athlete.dni} fallback={t('notProvided')} /><DetailItem label={t('birthDate')} value={formatDate(athlete.birthday, locale, t('notProvided'))} fallback={t('notProvided')} /><DetailItem label={t('nickname')} value={athlete.nickName} fallback={t('notProvided')} /><div><dt className='text-sm text-muted-foreground'>{t('group')}</dt><dd className='mt-1'>{groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>{t('noGroup')}</Badge>}</dd></div></dl></CardContent></Card>
-        <Card><CardHeader><CardTitle>{t('contact')}</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{athlete.user.email}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>{t('phone')}</p><p className='font-medium'>{athlete.phone || t('notProvided')}</p></div></div></CardContent></Card>
+        <Card><CardHeader><CardTitle>{t('contact')}</CardTitle></CardHeader><CardContent className='space-y-5'><div className='flex gap-3'><Mail className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>Email</p><p className='font-medium'>{administrative.email.value ?? t('notProvided')}</p></div></div><div className='flex gap-3'><Phone className='mt-0.5 size-4 text-muted-foreground' /><div><p className='text-sm text-muted-foreground'>{t('phone')}</p><p className='font-medium'>{athlete.phone || t('notProvided')}</p></div></div></CardContent></Card>
 
         <Card className='md:col-span-2'>
           <Accordion>

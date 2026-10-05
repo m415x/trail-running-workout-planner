@@ -3,6 +3,7 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import * as schema from '@/db/schema'
 import { athleteGroups, athleteProfiles } from '@/db/schema'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 
 export function getEligibleAthletesForSportingGroup(input: {
   db: BetterSQLite3Database<typeof schema>
@@ -37,10 +38,19 @@ export function getEligibleAthletesForSportingGroup(input: {
   }).sync()
 
   athletes.sort((first, second) => {
-    const firstName = `${first.user.lastName} ${first.user.firstName}`
-    const secondName = `${second.user.lastName} ${second.user.firstName}`
+    const firstName = projectAthleteAdministrativeRead(first).name
+    const secondName = projectAthleteAdministrativeRead(second).name
 
-    return firstName.localeCompare(secondName, 'es')
+    if (firstName === null && secondName !== null) return 1
+    if (firstName !== null && secondName === null) return -1
+    if (firstName && secondName) {
+      const byLastName = firstName.lastName.localeCompare(secondName.lastName, 'es')
+      if (byLastName !== 0) return byLastName
+      const byFirstName = firstName.firstName.localeCompare(secondName.firstName, 'es')
+      if (byFirstName !== 0) return byFirstName
+    }
+
+    return first.id.localeCompare(second.id)
   })
 
   return { group, athletes }

@@ -7,8 +7,9 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
-import { athleteGroups, athleteProfiles } from '@/db/schema'
+import { athleteGroups } from '@/db/schema'
 import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
+import { getSportingGroupWithMembers } from '@/lib/groups/group-members-read'
 
 const CURRENT_TEAM_ID = 'team_1'
 
@@ -65,32 +66,11 @@ export async function getEligibleAthletesForGroup(groupId: string) {
 }
 
 export async function getGroupWithMembers(groupId: string) {
-  const group = await db.query.athleteGroups.findFirst({
-    where: and(
-      eq(athleteGroups.id, groupId),
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-      eq(athleteGroups.isDeleted, false),
-    ),
-    with: {
-      athletes: {
-        where: eq(athleteProfiles.isDeleted, false),
-        with: {
-          user: true,
-        },
-      },
-    },
+  return getSportingGroupWithMembers({
+    db,
+    teamId: CURRENT_TEAM_ID,
+    groupId,
   })
-
-  if (!group) return null
-
-  group.athletes.sort((first, second) => {
-    const firstName = `${first.user.lastName} ${first.user.firstName}`
-    const secondName = `${second.user.lastName} ${second.user.firstName}`
-
-    return firstName.localeCompare(secondName, 'es')
-  })
-
-  return group
 }
 
 export async function createGroup(_previousState: GroupFormState, formData: FormData): Promise<GroupFormState> {

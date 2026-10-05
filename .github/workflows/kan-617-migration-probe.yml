@@ -1,0 +1,55 @@
+name: KAN-617 migration consistency
+
+on:
+  push:
+    branches:
+      - feat/KAN-601-identity-memberships
+    paths:
+      - '.github/workflows/kan-617-migration-probe.yml'
+      - 'db/schema.ts'
+      - 'db/supabase/schema.ts'
+      - 'drizzle/sqlite/**'
+      - 'drizzle/supabase/**'
+  workflow_dispatch:
+
+concurrency:
+  group: kan-617-migration-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  generated-metadata-consistency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout triggering commit
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 12.4.1
+          run_install: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Regenerate SQLite and PG metadata
+        run: |
+          pnpm db:sqlite:generate
+          pnpm db:supabase:generate
+      - name: Require generation no-op
+        shell: bash
+        run: |
+          changes="$(git status --porcelain -- drizzle/sqlite drizzle/supabase)"
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            exit 1
+          fi

@@ -1,17 +1,21 @@
+import { migrateAthleteProfileIdentitySqlite } from "@/db/migrations/athlete-profile-identity-sqlite"
 import { migrateCompetitionEntriesSqlite } from '@/db/migrations/competition-entries-sqlite'
 import { migrateMacrocycleTargetRaceDateSqlite } from '@/db/migrations/macrocycle-target-race-date-sqlite'
 import { migratePlanningCohortsSqlite } from '@/db/migrations/planning-cohorts-sqlite'
 import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-training-timing-sqlite'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { existsSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')
-const drizzleKitCli = process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit'
+const drizzleKitCli = resolve(import.meta.dirname, "../node_modules/drizzle-kit/bin.cjs")
 const projectRoot = resolve(import.meta.dirname, '..')
 const scenarioMode = process.env.SQLITE_SCENARIO_MODE === '1'
 const sqlitePath = scenarioMode
@@ -25,9 +29,89 @@ function runNode(args: string[]): void {
 }
 
 function runDrizzleKit(args: string[]): void {
-  const result = spawnSync(drizzleKitCli, args, { cwd: projectRoot, stdio: 'inherit', shell: process.platform === 'win32' })
+  const result = spawnSync(process.execPath, [drizzleKitCli, ...args], { cwd: projectRoot, stdio: "inherit", shell: false })
   if (result.error) throw result.error
   if (result.status !== 0) process.exit(result.status ?? 1)
+}
+
+
+/**
+ * Advances the recognized legacy route through the real canonical SQLite
+ * migrations that precede KAN-615. Drizzle remains responsible for both the
+ * physical changes and migration metadata; this function only bounds the
+ * existing journal so the protected 0016 sentinel is never executed.
+ */
+function migrateLegacyCanonicalHistoryThrough0015(
+  sqlite: Database.Database,
+): void {
+  const migrationsRoot = resolve(projectRoot, 'drizzle/sqlite')
+  const journal = JSON.parse(
+    readFileSync(resolve(migrationsRoot, 'meta/_journal.json'), 'utf8'),
+  ) as {
+    version: string
+    dialect: string
+    entries: Array<{
+      idx: number
+      version: string
+      when: number
+      tag: string
+      breakpoints: boolean
+    }>
+  }
+
+  const targetIndex = journal.entries.findIndex(
+    entry => entry.tag === '0015_generation_explanation_provenance',
+  )
+  const protectedIndex = journal.entries.findIndex(
+    entry => entry.tag === '0016_athlete_profile_identity',
+  )
+
+  if (
+    targetIndex !== 15 ||
+    protectedIndex !== 16 ||
+    journal.entries[targetIndex]?.when !== 1790802000000 ||
+    journal.entries[protectedIndex]?.when !== 1790802001000
+  ) {
+    throw new Error(
+      'SQLite canonical legacy history is incompatible with the KAN-615 0015 boundary',
+    )
+  }
+
+  const historicalEntries = journal.entries.slice(0, targetIndex + 1)
+  if (historicalEntries.some((entry, index) => entry.idx !== index)) {
+    throw new Error(
+      'SQLite canonical legacy history is not contiguous through 0015',
+    )
+  }
+
+  const directory = mkdtempSync(
+    join(tmpdir(), 'kan-636-canonical-through-0015-'),
+  )
+
+  try {
+    mkdirSync(resolve(directory, 'meta'))
+    writeFileSync(
+      resolve(directory, 'meta/_journal.json'),
+      JSON.stringify({
+        version: journal.version,
+        dialect: journal.dialect,
+        entries: historicalEntries,
+      }),
+    )
+
+    for (const entry of historicalEntries) {
+      copyFileSync(
+        resolve(migrationsRoot, `${entry.tag}.sql`),
+        resolve(directory, `${entry.tag}.sql`),
+      )
+    }
+
+    migrate(drizzle(sqlite), {
+      migrationsFolder: directory,
+    })
+  } finally {
+    rmSync(directory, { recursive: true, force: true })
+  }
 }
 
 function classifyExistingSqlite(): 'fresh' | 'versioned' | 'legacy' | 'unrecognized' {
@@ -230,6 +314,334 @@ function reconcileVersionedHeadMetadata(): boolean {
 }
 
 const state = classifyExistingSqlite()
+
+if (state === "versioned") {
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
+
+  try {
+    const columns = sqlite.pragma(
+      'table_info(athlete_profiles)'
+    ) as Array<{ name: string; notnull: number }>
+
+    const userId = columns.find(column =>
+      column.name === 'user_id'
+    )
+
+    const expectedNewColumns = [
+      'first_name',
+      'last_name',
+      'contact_email',
+    ]
+
+    const requiresIdentityUpgrade =
+      !userId ||
+      userId.notnull !== 0 ||
+      expectedNewColumns.some(name =>
+        !columns.some(column => column.name === name)
+      )
+
+    if (requiresIdentityUpgrade) {
+      // The dedicated preflight determines whether the
+      // complete 0015 origin is legitimate.
+      // Unexpected metadata must not bypass this gate.
+      migrateAthleteProfileIdentitySqlite(sqlite)
+    } else {
+      // A physically upgraded AthleteProfile must already have
+      // its complete, canonical 0016 history. Never repair it.
+      const journal = JSON.parse(
+        readFileSync(
+          resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'),
+          'utf8',
+        ),
+      ) as {
+        entries: Array<{ idx: number; tag: string; when: number }>
+      }
+
+      if (
+        journal.entries[16]?.idx !== 16 ||
+        journal.entries[16]?.tag !== '0016_athlete_profile_identity' ||
+        journal.entries[16]?.when !== 1790802001000
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: canonical journal',
+        )
+      }
+
+      // A migrated 0016 database must retain one of the two
+      // historically authorized physical metadata formats.
+      const metadataDefinition = sqlite.prepare(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = '__drizzle_migrations'",
+      ).get() as { sql: string } | undefined
+
+      const normalizeMetadataDdl = (value: string) =>
+        value
+          .replace(/"/g, '')
+          .replace(/\s+/g, ' ')
+          .replace(/\s*([(),])\s*/g, '$1')
+          .trim()
+          .toUpperCase()
+
+      const actualMetadataDdl = metadataDefinition?.sql
+        ? normalizeMetadataDdl(metadataDefinition.sql)
+        : null
+
+      const serialMetadataDdl = normalizeMetadataDdl(
+        'CREATE TABLE __drizzle_migrations (id SERIAL PRIMARY KEY, hash TEXT NOT NULL, created_at NUMERIC)',
+      )
+
+      const integerMetadataDdl = normalizeMetadataDdl(
+        'CREATE TABLE __drizzle_migrations (id INTEGER PRIMARY KEY AUTOINCREMENT, hash TEXT NOT NULL, created_at NUMERIC)',
+      )
+
+      const metadataFormat =
+        actualMetadataDdl === serialMetadataDdl ? 'serial'
+        : actualMetadataDdl === integerMetadataDdl ? 'integer'
+        : null
+
+      if (!metadataFormat) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: metadata structure',
+        )
+      }
+
+      const metadataColumns = sqlite.pragma(
+        'table_xinfo(__drizzle_migrations)',
+      ) as Array<{
+        name: string
+        type: string
+        notnull: number
+        dflt_value: string | null
+        pk: number
+        hidden: number
+      }>
+
+      const expectedMetadataColumns = [
+        [
+          'id',
+          metadataFormat === 'serial' ? 'SERIAL' : 'INTEGER',
+          0, null, 1, 0,
+        ],
+        ['hash', 'TEXT', 1, null, 0, 0],
+        ['created_at', 'NUMERIC', 0, null, 0, 0],
+      ]
+
+      const actualMetadataColumns = metadataColumns.map(column => [
+        column.name,
+        column.type.toUpperCase(),
+        column.notnull,
+        column.dflt_value,
+        column.pk,
+        column.hidden,
+      ])
+
+      if (
+        JSON.stringify(actualMetadataColumns) !==
+        JSON.stringify(expectedMetadataColumns)
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: metadata structure',
+        )
+      }
+
+      const metadataIndexes = sqlite.pragma(
+        'index_list(__drizzle_migrations)',
+      ) as Array<{
+        name: string
+        unique: number
+        origin: string
+        partial: number
+      }>
+
+      const validMetadataIndexes =
+        metadataFormat === 'serial'
+          ? metadataIndexes.length === 1 &&
+            metadataIndexes[0].name ===
+              'sqlite_autoindex___drizzle_migrations_1' &&
+            metadataIndexes[0].unique === 1 &&
+            metadataIndexes[0].origin === 'pk' &&
+            metadataIndexes[0].partial === 0
+          : metadataIndexes.length === 0
+
+      if (!validMetadataIndexes) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: metadata structure',
+        )
+      }
+
+      const metadataIdentifiers = sqlite.prepare(
+        'SELECT id FROM __drizzle_migrations ORDER BY rowid',
+      ).all() as Array<{ id: number | null }>
+
+      if (
+        metadataIdentifiers.length !== journal.entries.length ||
+        metadataIdentifiers.some((record, index) =>
+          metadataFormat === 'serial'
+            ? record.id !== null
+            : !Number.isSafeInteger(record.id) ||
+              record.id !== index + 1
+        )
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: metadata identifiers',
+        )
+      }
+
+      const expected = journal.entries.map(entry => ({
+        hash: createHash('sha256')
+          .update(
+            readFileSync(
+              resolve(projectRoot, 'drizzle/sqlite', entry.tag + '.sql'),
+              'utf8',
+            ),
+          )
+          .digest('hex'),
+        created_at: entry.when,
+      }))
+
+      const actual = sqlite.prepare(
+        'SELECT hash, created_at FROM __drizzle_migrations ORDER BY rowid',
+      ).all()
+
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: migration history',
+        )
+      }
+
+      // Exact physical contract produced by the dedicated 0016 executor.
+      // Reject any extra, missing or altered column without repairing it.
+      const expectedColumns = [
+        ['id', 'TEXT', 1, 1, null],
+        ['is_deleted', 'INTEGER', 1, 0, 'false'],
+        ['created_at', 'TEXT', 1, 0, null],
+        ['updated_at', 'TEXT', 1, 0, null],
+        ['user_id', 'TEXT', 0, 0, null],
+        ['team_id', 'TEXT', 1, 0, null],
+        ['group_id', 'TEXT', 0, 0, null],
+        ['is_active', 'INTEGER', 1, 0, 'true'],
+        ['first_name', 'TEXT', 0, 0, null],
+        ['last_name', 'TEXT', 0, 0, null],
+        ['contact_email', 'TEXT', 0, 0, null],
+        ['nick_name', 'TEXT', 0, 0, null],
+        ['dni', 'TEXT', 1, 0, null],
+        ['birthday', 'TEXT', 0, 0, null],
+        ['phone', 'TEXT', 0, 0, null],
+        ['emergency_contact', 'TEXT', 0, 0, null],
+        ['emergency_phone', 'TEXT', 0, 0, null],
+        ['physiology', 'TEXT', 0, 0, null],
+        ['medical', 'TEXT', 0, 0, null],
+      ]
+
+      const physicalColumns = sqlite.pragma(
+        'table_info(athlete_profiles)',
+      ) as Array<{
+        name: string
+        type: string
+        notnull: number
+        pk: number
+        dflt_value: string | null
+      }>
+
+      const actualColumns = physicalColumns.map(column => [
+        column.name,
+        column.type.toUpperCase(),
+        column.notnull,
+        column.pk,
+        column.dflt_value === null
+          ? null
+          : column.dflt_value.trim().toLowerCase(),
+      ])
+
+      if (
+        JSON.stringify(actualColumns) !==
+        JSON.stringify(expectedColumns)
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: columns',
+        )
+      }
+
+      const expectedForeignKeys = [
+        ['group_id', 'athlete_groups', 'id', 'SET NULL', 'NO ACTION'],
+        ['team_id', 'teams', 'id', 'CASCADE', 'NO ACTION'],
+        ['user_id', 'users', 'id', 'RESTRICT', 'NO ACTION'],
+      ]
+
+      const physicalForeignKeys = sqlite.pragma(
+        'foreign_key_list(athlete_profiles)',
+      ) as Array<{
+        id: number
+        seq: number
+        table: string
+        from: string
+        to: string
+        on_delete: string
+        on_update: string
+      }>
+
+      const actualForeignKeys = physicalForeignKeys.map(fk => [
+        fk.from,
+        fk.table,
+        fk.to,
+        fk.on_delete.toUpperCase(),
+        fk.on_update.toUpperCase(),
+      ]).sort((a, b) => String(a[0]).localeCompare(String(b[0])))
+
+      if (
+        physicalForeignKeys.some(fk => fk.seq !== 0) ||
+        JSON.stringify(actualForeignKeys) !==
+          JSON.stringify(expectedForeignKeys)
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: foreign keys',
+        )
+      }
+
+      const indexes = sqlite.pragma(
+        'index_list(athlete_profiles)',
+      ) as Array<{
+        name: string
+        unique: number
+        origin: string
+        partial: number
+      }>
+
+      const secondary = indexes.filter(index =>
+        index.origin !== 'pk'
+      )
+
+      const identityIndex = secondary[0]
+
+      if (
+        secondary.length !== 1 ||
+        identityIndex?.name !== 'athlete_profiles_user_team_unique' ||
+        identityIndex.unique !== 1 ||
+        identityIndex.origin !== 'c' ||
+        identityIndex.partial !== 0
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: unique index',
+        )
+      }
+
+      const indexedColumns = sqlite.pragma(
+        'index_info("athlete_profiles_user_team_unique")',
+      ) as Array<{ name: string }>
+
+      if (
+        JSON.stringify(indexedColumns.map(column => column.name)) !==
+        JSON.stringify(['user_id', 'team_id'])
+      ) {
+        throw new Error(
+          'AthleteProfile incompatible applied 0016: index columns',
+        )
+      }
+    }
+  } finally {
+    sqlite.close()
+  }
+}
+
 if (state !== 'fresh') {
   const sqlite = new Database(sqlitePath, { fileMustExist: true })
   try {
@@ -287,6 +699,23 @@ if (state === 'legacy') {
     })()
   } finally {
     sqlite.close()
+  }
+
+  const canonical = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    canonical.pragma('foreign_keys = ON')
+
+    // The RED path already proved that canonical 0002-0015 migrations are
+    // applicable to this reconciled legacy origin. Bound Drizzle at 0015,
+    // then let the single KAN-615 executor own the protected 0016 transition.
+    migrateLegacyCanonicalHistoryThrough0015(canonical)
+    migrateAthleteProfileIdentitySqlite(canonical)
+
+    if ((canonical.pragma('foreign_key_check') as unknown[]).length > 0) {
+      throw new Error('Legacy SQLite KAN-615 migration failed foreign-key verification')
+    }
+  } finally {
+    canonical.close()
   }
 }
 

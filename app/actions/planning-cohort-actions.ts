@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, isNull, ne } from 'drizzle-orm'
+import { and, eq, inArray, isNull, ne } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -16,6 +16,8 @@ import {
   planningCohortMemberships,
   planningCohorts,
 } from '@/db/schema'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
+import { sortPlanningCohortMembers } from '@/lib/planning-cohorts/member-order'
 import {
   validatePlanningCohortMembership,
   validatePlanningCohortMembershipClosure,
@@ -138,12 +140,19 @@ export async function getAthletesForPlanningCohort(cohortId: string) {
     with: { user: true },
   })
 
-  athletes.sort((first, second) => (
-    `${first.user.lastName} ${first.user.firstName}`.localeCompare(
-      `${second.user.lastName} ${second.user.firstName}`,
-      'es',
-    )
-  ))
+  athletes.sort((first, second) => {
+    const firstName = projectAthleteAdministrativeRead(first).name
+    const secondName = projectAthleteAdministrativeRead(second).name
+    if (firstName === null && secondName !== null) return 1
+    if (firstName !== null && secondName === null) return -1
+    if (firstName && secondName) {
+      const byLastName = firstName.lastName.localeCompare(secondName.lastName, 'es')
+      if (byLastName !== 0) return byLastName
+      const byFirstName = firstName.firstName.localeCompare(secondName.firstName, 'es')
+      if (byFirstName !== 0) return byFirstName
+    }
+    return first.id.localeCompare(second.id)
+  })
 
   return { cohort, athletes }
 }
@@ -231,7 +240,15 @@ export async function getPlanningCohortsByTeam() {
     with: {
       group: true,
       memberships: {
-        where: eq(planningCohortMemberships.isDeleted, false),
+        where: and(
+          eq(planningCohortMemberships.isDeleted, false),
+          inArray(
+            planningCohortMemberships.athleteProfileId,
+            db.select({ id: athleteProfiles.id })
+              .from(athleteProfiles)
+              .where(eq(athleteProfiles.teamId, CURRENT_TEAM_ID)),
+          ),
+        ),
       },
       planningVariant: true,
     },
@@ -273,14 +290,7 @@ export async function getPlanningCohortDetail(cohortId: string) {
     cohort.planningVariant = null
   }
 
-  cohort.memberships.sort((first, second) => {
-    const nameComparison = first.athleteProfile.user.lastName.localeCompare(
-      second.athleteProfile.user.lastName,
-      'es',
-    )
-
-    return nameComparison || second.startDate.localeCompare(first.startDate)
-  })
+  sortPlanningCohortMembers(cohort.memberships)
 
   return cohort
 }
