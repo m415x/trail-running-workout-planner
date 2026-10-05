@@ -62,5 +62,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Verify exact revision
         run: test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+      - name: Bootstrap temporary checkout SQLite for existing repository integration tests
+        run: pnpm db:sqlite:upgrade
       - name: Full local closure gate including isolated SQLite scenarios
         run: node node_modules/tsx/dist/cli.mjs scripts/verify-cli.ts --db
