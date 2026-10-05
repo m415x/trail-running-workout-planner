@@ -19,6 +19,7 @@ import {
   sessions,
   workouts,
 } from '@/db/schema'
+import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-read-model'
 import { createDrizzleAthleteSessionAdjustmentDatabase } from '@/lib/planning-cohorts/athlete-session-adjustment-drizzle-database'
 import {
   createAthleteSessionAdjustmentPersistenceAdapter,
@@ -300,9 +301,14 @@ export async function getSessionAthleteAdjustmentReview(
     const dose = currentPayload?.dose ?? null
     const assignment = currentPayload?.assignment ?? null
 
+    const administrative = projectAthleteAdministrativeRead(athlete)
+    const athleteName = administrative.name
+      ? `${administrative.name.lastName} ${administrative.name.firstName}`
+      : athlete.id
+
     rows.push({
       athleteId: athlete.id,
-      athleteName: `${athlete.user.lastName} ${athlete.user.firstName}`,
+      athleteName,
       sourcePrescriptionId: reviewAdjustment?.sourcePrescriptionId ?? effectiveSourcePrescription!.id,
       distanceKm: dose?.distanceKm?.kind === 'override' ? dose.distanceKm.value : null,
       durationMin: dose?.durationMin?.kind === 'override' ? dose.durationMin.value : null,
