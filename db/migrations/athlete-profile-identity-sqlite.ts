@@ -31,6 +31,8 @@ export function assertAthleteProfileUpgradePreconditions(
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+const projectRoot = resolve(import.meta.dirname, '../..')
+
 type HistoricalColumn = {
   type: string
   primaryKey: boolean
@@ -80,7 +82,7 @@ export function assertAthleteProfileHistoricalStructureSqlite(
 
   const snapshot = JSON.parse(
     readFileSync(
-      resolve(process.cwd(), 'drizzle/sqlite/meta/0015_snapshot.json'),
+      resolve(projectRoot, 'drizzle/sqlite/meta/0015_snapshot.json'),
       'utf8',
     ),
   ) as {
@@ -216,7 +218,7 @@ export function assertAthleteProfileIncomingReferencesSqlite(
 
   const snapshot = JSON.parse(
     readFileSync(
-      resolve(process.cwd(), 'drizzle/sqlite/meta/0015_snapshot.json'),
+      resolve(projectRoot, 'drizzle/sqlite/meta/0015_snapshot.json'),
       'utf8',
     ),
   ) as {
@@ -422,7 +424,7 @@ export function assertAthleteProfileMigrationHistorySqlite(
 
   const journal = JSON.parse(
     readFileSync(
-      resolve(process.cwd(), 'drizzle/sqlite/meta/_journal.json'),
+      resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'),
       'utf8',
     ),
   ) as { entries: CanonicalMigrationEntry[] }
@@ -438,7 +440,7 @@ if (headIndex < 0) {
   const expected = journal.entries.slice(0, headIndex + 1)
     .map(entry => {
       const sql = readFileSync(
-        resolve(process.cwd(), 'drizzle/sqlite', `${entry.tag}.sql`),
+        resolve(projectRoot, 'drizzle/sqlite', `${entry.tag}.sql`),
         'utf8',
       )
 
@@ -556,7 +558,7 @@ export function migrateAthleteProfileIdentitySqlite(
 
   const journal = JSON.parse(
     readFileSync(
-      resolve(process.cwd(), 'drizzle/sqlite/meta/_journal.json'),
+      resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'),
       'utf8',
     ),
   ) as {
@@ -574,7 +576,7 @@ export function migrateAthleteProfileIdentitySqlite(
   }
 
   const migrationSql = readFileSync(
-    resolve(process.cwd(), `drizzle/sqlite/${entry.tag}.sql`),
+    resolve(projectRoot, `drizzle/sqlite/${entry.tag}.sql`),
     'utf8',
   )
 
