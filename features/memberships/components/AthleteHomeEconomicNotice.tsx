@@ -1,4 +1,5 @@
 import type { AthleteEconomicVisualState } from '@/lib/memberships/athlete-home-economic-visual'
+import { Link } from '@/i18n/routing'
 
 const copy = {
   es: {
@@ -50,12 +51,13 @@ export function AthleteHomeEconomicNotice({
       className={`min-w-0 rounded-lg border p-3 text-sm ${toneClass[state.tone]}`}
     >
       <p className='font-medium'>{labels[state.message]}</p>
-      <a
-        href={`/${locale}/profile`}
+      <Link
+        href='/profile'
+        locale={locale}
         className='mt-2 inline-flex min-h-10 items-center rounded-md underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current'
       >
         {labels.link}
-      </a>
+      </Link>
     </aside>
   )
 }
