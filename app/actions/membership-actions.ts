@@ -5,6 +5,10 @@ import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createMembershipActionHandlers } from '@/lib/memberships/membership-action-handlers'
 
 const CURRENT_TEAM_ID = 'team_1'
@@ -26,6 +30,20 @@ export async function configureTeamEconomicPolicyAction(input: {
   currency: string
   ordinaryDueDay: number
 }) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      forbidden: true as const,
+      reason: access.reason,
+    }
+  }
+
   return handlers.configureTeamEconomicPolicy(input)
 }
 
