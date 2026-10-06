@@ -91,6 +91,19 @@ export type CurrentAthleteData = NonNullable<Awaited<ReturnType<typeof getCurren
 export async function getWeeklySchedule(
   startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -140,6 +153,19 @@ export async function getWeeklySchedule(
 export async function getCurrentAthletePlanningWeek(
   startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -406,6 +432,19 @@ export async function getCurrentAthletePlanningWeek(
 }
 
 export async function getAthleteShoes() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athleteShoes = await db.query.shoes.findMany({
       where: and(eq(shoes.athleteId, CURRENT_ATHLETE_PROFILE_ID), eq(shoes.isActive, true), eq(shoes.isDeleted, false)),
