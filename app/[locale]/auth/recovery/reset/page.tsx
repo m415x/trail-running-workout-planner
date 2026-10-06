@@ -2,7 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
-import { readSupabaseServerSessionState } from '@/lib/auth/supabase-server-session-state'
+import { readSupabaseRecoverySessionState } from '@/lib/auth/supabase-recovery-session-state'
 import { RecoveryResetForm } from './RecoveryResetForm'
 
 export default async function RecoveryResetPage({
@@ -14,7 +14,7 @@ export default async function RecoveryResetPage({
   const locale = rawLocale === 'en' ? 'en' : 'es'
 
   const supabase = await createSupabaseServerClient()
-  const session = await readSupabaseServerSessionState(supabase.auth)
+  const session = await readSupabaseRecoverySessionState(supabase.auth)
 
   if (session.status !== 'verified') {
     redirect(
