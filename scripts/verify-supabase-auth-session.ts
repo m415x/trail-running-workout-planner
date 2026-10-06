@@ -1,4 +1,7 @@
+import { config } from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
+
+config({ path: '.env.local' })
 
 function requireEnv(name: string): string {
   const value = process.env[name]?.trim()
