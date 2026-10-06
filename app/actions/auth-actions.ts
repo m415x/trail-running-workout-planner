@@ -13,8 +13,7 @@ export type LoginActionState =
   | { status: 'unlinked' }
   | { status: 'invalid' }
 
-function formValue(formData: FormData, name: string): string {
-  const value = formData.get(name)
+function stringValue(value: FormDataEntryValue | null): string {
   return typeof value === 'string' ? value : ''
 }
 
@@ -26,10 +25,10 @@ export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
-  const email = formValue(formData, 'email')
-  const password = formValue(formData, 'password')
-  const locale = localeValue(formValue(formData, 'locale'))
-  const returnTo = formValue(formData, 'returnTo') || null
+  const email = stringValue(formData.get('email'))
+  const password = stringValue(formData.get('password'))
+  const locale = localeValue(stringValue(formData.get('locale')))
+  const returnTo = stringValue(formData.get('returnTo')) || null
 
   const auth = await createSupabaseServerClient()
   const lookup = createExternalIdentityLookup()
