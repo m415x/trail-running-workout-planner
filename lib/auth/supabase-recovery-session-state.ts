@@ -3,10 +3,15 @@ export interface SupabaseRecoverySessionAuth {
     data: {
       claims: {
         sub?: string | null
-        amr?: Array<{
-          method?: string | null
-          timestamp?: number | null
-        }> | null
+        amr?:
+          | Array<
+              | string
+              | {
+                  method?: string | null
+                  timestamp?: number | null
+                }
+            >
+          | null
       }
     } | null
     error: unknown
@@ -25,6 +30,12 @@ export type SupabaseRecoverySessionState =
   | { status: 'verified' }
   | { status: 'invalid' }
 
+function isRecoveryMethod(entry: string | { method?: string | null }): boolean {
+  return typeof entry === 'string'
+    ? entry === 'recovery'
+    : entry.method === 'recovery'
+}
+
 export async function readSupabaseRecoverySessionState(
   auth: SupabaseRecoverySessionAuth,
 ): Promise<SupabaseRecoverySessionState> {
@@ -41,7 +52,7 @@ export async function readSupabaseRecoverySessionState(
     if (
       !subject
       || !Array.isArray(amr)
-      || !amr.some((entry) => entry?.method === 'recovery')
+      || !amr.some(isRecoveryMethod)
     ) {
       return { status: 'invalid' }
     }
