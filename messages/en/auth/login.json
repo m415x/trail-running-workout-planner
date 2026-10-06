@@ -8,6 +8,8 @@
     "submitting": "Signing in…",
     "invalidCredentials": "The email or password is invalid.",
     "unlinked": "This account does not yet have access enabled in EPT.",
-    "invalid": "The session could not be validated. Try again."
+    "invalid": "The session could not be validated. Try again.",
+    "forgotPassword": "Forgot password",
+    "recoveryUpdated": "Password updated. Sign in with your new password."
   }
 }
