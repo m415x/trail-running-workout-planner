@@ -295,6 +295,57 @@ function repairFalselyReconciledBillingH2Metadata(): void {
   }
 }
 
+function repairFalselyReconciledH1Metadata(): void {
+  const sqlite = new Database(sqlitePath, { fileMustExist: true })
+  try {
+    const tables = new Set(
+      (sqlite.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as { name: string }[])
+        .map(row => row.name),
+    )
+
+    const h1Tables = [
+      'external_identity_links',
+      'team_memberships',
+    ]
+    const presentH1Tables = h1Tables.filter(table => tables.has(table))
+
+    if (presentH1Tables.length === h1Tables.length) return
+    if (presentH1Tables.length > 0) {
+      throw new Error(
+        'SQLite H1 identity schema is inconsistent: H1 tables are only partially present; refusing automatic metadata repair',
+      )
+    }
+
+    const journal = JSON.parse(
+      readFileSync(resolve(projectRoot, 'drizzle/sqlite/meta/_journal.json'), 'utf8'),
+    ) as { entries: Array<{ tag: string; when: number }> }
+
+    const externalIdentityEntry = journal.entries.find(
+      entry => entry.tag === '0017_natural_fabian_cortez',
+    )
+    const teamMembershipEntry = journal.entries.find(
+      entry => entry.tag === '0018_daily_aqueduct',
+    )
+
+    if (!externalIdentityEntry || !teamMembershipEntry) {
+      throw new Error(
+        'SQLite migration journal is missing canonical H1 identity migrations 0017/0018',
+      )
+    }
+
+    const deleteMigration = sqlite.prepare(
+      'DELETE FROM __drizzle_migrations WHERE created_at = ?',
+    )
+
+    sqlite.transaction(() => {
+      deleteMigration.run(externalIdentityEntry.when)
+      deleteMigration.run(teamMembershipEntry.when)
+    })()
+  } finally {
+    sqlite.close()
+  }
+}
+
 function reconcileVersionedHeadMetadata(): boolean {
   const verification = spawnSync(process.execPath, [tsxCli, resolve(projectRoot, 'scripts/verify-sqlite.ts')], {
     stdio: 'ignore',
@@ -650,7 +701,10 @@ if (state !== 'fresh') {
     sqlite.close()
   }
 }
-if (state === 'versioned') repairFalselyReconciledBillingH2Metadata()
+if (state === 'versioned') {
+  repairFalselyReconciledBillingH2Metadata()
+  repairFalselyReconciledH1Metadata()
+}
 if (state === 'unrecognized') {
   throw new Error(
     'Unrecognized SQLite schema; refusing automatic migration before destructive mutation',
