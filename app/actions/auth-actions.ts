@@ -1,9 +1,11 @@
 'use server'
 
+import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { authenticateEptLogin } from '@/lib/auth/login-flow'
+import { requestPasswordRecovery } from '@/lib/auth/password-recovery-request'
 import type { SupportedAuthLocale } from '@/lib/auth/safe-return-path'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 
@@ -69,4 +71,34 @@ export async function logoutAction(
   }
 
   redirect(locale === 'en' ? '/en/login' : '/es/login')
+}
+
+
+export type PasswordRecoveryRequestActionState =
+  | { status: 'idle' }
+  | { status: 'accepted' }
+  | { status: 'error' }
+
+export async function requestPasswordRecoveryAction(
+  _previousState: PasswordRecoveryRequestActionState,
+  formData: FormData,
+): Promise<PasswordRecoveryRequestActionState> {
+  const email = stringValue(formData.get('email'))
+  const locale = localeValue(stringValue(formData.get('locale')))
+  const requestHeaders = await headers()
+  const origin = requestHeaders.get('origin') ?? ''
+
+  const supabase = await createSupabaseServerClient()
+  const result = await requestPasswordRecovery({
+    auth: supabase.auth,
+    email,
+    locale,
+    origin,
+  })
+
+  if (result.status === 'accepted') {
+    return { status: 'accepted' }
+  }
+
+  return { status: 'error' }
 }
