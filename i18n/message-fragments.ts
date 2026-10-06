@@ -5,6 +5,7 @@ export const messageFragmentPaths = [
   'common/weather',
   'auth/login',
   'auth/recovery',
+  'auth/unlinked',
   'planning/base-planning',
   'planning/coach-planning',
   'planning/training-goals',
