@@ -38,3 +38,9 @@ test('KAN-638 real verifier fails if claims and Auth user subjects disagree', ()
   assert.match(source, /!==/)
   assert.match(source, /process\.exitCode\s*=\s*1/)
 })
+
+test('KAN-642 real verifier loads .env.local explicitly before reading Auth variables', () => {
+  assert.match(source, /dotenv/)
+  assert.match(source, /\.env\.local/)
+  assert.match(source, /config\(/)
+})
