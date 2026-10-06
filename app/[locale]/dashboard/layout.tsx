@@ -14,10 +14,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { logoutAction } from '@/app/actions/auth-actions'
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations('CoachShell')
+  const locale = useLocale()
+  const logoutLocale = locale === 'en' ? 'en' : 'es'
 
   return (
     <DashboardDirtyFormGuardProvider>
@@ -51,7 +54,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <DropdownMenuItem>{t('profile')}</DropdownMenuItem>
                   <DropdownMenuItem>{t('settings')}</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className='text-red-600 focus:text-red-600'>{t('signOut')}</DropdownMenuItem>
+                  <DropdownMenuItem
+                    className='text-red-600 focus:text-red-600'
+                    onSelect={() => void logoutAction(logoutLocale)}
+                  >
+                    {t('signOut')}
+                  </DropdownMenuItem>
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
