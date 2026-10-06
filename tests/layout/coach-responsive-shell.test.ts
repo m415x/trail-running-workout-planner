@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
-const coachLayout = readFileSync('app/[locale]/dashboard/layout.tsx', 'utf8')
+const coachLayout = readFileSync('app/[locale]/dashboard/DashboardShell.tsx', 'utf8')
 const coachSidebar = readFileSync('components/dashboard/app-sidebar.tsx', 'utf8')
 const globalsCss = readFileSync('app/globals.css', 'utf8')
 
