@@ -1,7 +1,7 @@
 export type SupportedAuthLocale = 'es' | 'en'
 
-function normalizeLocale(locale: SupportedAuthLocale): SupportedAuthLocale {
-  return locale === 'en' ? 'en' : 'es'
+function isSupportedLocale(locale: string): locale is SupportedAuthLocale {
+  return locale === 'es' || locale === 'en'
 }
 
 function containsRedirectEscape(path: string): boolean {
@@ -18,8 +18,11 @@ export function resolveSafeAuthReturnPath(
   candidate: string | null | undefined,
   locale: SupportedAuthLocale,
 ): string {
-  const safeLocale = normalizeLocale(locale)
-  const fallback = `/${safeLocale}`
+  if (!isSupportedLocale(locale)) {
+    return '/es'
+  }
+
+  const fallback = `/${locale}`
 
   if (!candidate) {
     return fallback
@@ -35,7 +38,7 @@ export function resolveSafeAuthReturnPath(
     return fallback
   }
 
-  const expectedPrefix = `/${safeLocale}`
+  const expectedPrefix = `/${locale}`
 
   if (value !== expectedPrefix && !value.startsWith(`${expectedPrefix}/`)) {
     return fallback
