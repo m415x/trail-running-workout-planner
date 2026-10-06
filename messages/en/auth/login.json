@@ -1,0 +1,13 @@
+{
+  "Login": {
+    "title": "Sign in",
+    "description": "Sign in with your account to continue.",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "invalidCredentials": "The email or password is invalid.",
+    "unlinked": "This account does not yet have access enabled in EPT.",
+    "invalid": "The session could not be validated. Try again."
+  }
+}
