@@ -30,7 +30,8 @@
     "db:seed": "pn db:seed:base && pn db:seed:race-catalog && pn db:seed:realized-training && pn db:seed:plan-real",
     "tdd:red": "tsx scripts/tdd.ts --red",
     "tdd": "tsx scripts/tdd.ts",
-    "prebuild": "node ./scripts/copy-maplibre-worker.mjs"
+    "prebuild": "node ./scripts/copy-maplibre-worker.mjs",
+    "auth:supabase:verify": "tsx scripts/verify-supabase-auth-session.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
