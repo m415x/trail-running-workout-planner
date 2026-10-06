@@ -647,3 +647,13 @@ test('versioned SQLite intensity migration covers every legacy percentage column
     assert.match(sql, new RegExp(newColumn), `missing canonical column handling for ${table}`)
   }
 })
+
+test('KAN-642 versioned HEAD reconciliation refuses missing H1 physical tables before metadata repair', () => {
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite.ts'), 'utf8')
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(verifier, /external_identity_links/)
+  assert.match(verifier, /team_memberships/)
+  assert.match(runner, /reconcileVersionedHeadMetadata/)
+  assert.match(runner, /verify-sqlite/)
+})
