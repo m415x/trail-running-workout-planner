@@ -39,8 +39,7 @@ export async function configureTeamEconomicPolicyAction(input: {
   if (access.status !== 'authenticated') {
     return {
       success: false as const,
-      forbidden: true as const,
-      reason: access.reason,
+      error: 'Acceso no autorizado',
     }
   }
 
