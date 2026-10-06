@@ -25,7 +25,8 @@ test('KAN-638 builds the proxy auth client with createServerClient and the appro
   assert.match(authProxySource, /createServerClient/)
   assert.match(authProxySource, /process\.env\.NEXT_PUBLIC_SUPABASE_URL/)
   assert.match(authProxySource, /process\.env\.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/)
-  assert.match(authProxySource, /getClaims\(\)/)
+  assert.match(authProxySource, /createSupabaseProxySessionRefresher/)
+  assert.doesNotMatch(authProxySource, /auth\.getClaims\(\)/)
   assert.doesNotMatch(authProxySource, /getSession\(\)/)
 })
 
