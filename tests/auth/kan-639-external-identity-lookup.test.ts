@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { readFileSync } from 'node:fs'
 
 import { createExternalIdentityLookup } from '../../lib/auth/external-identity-lookup'
 
@@ -31,7 +32,7 @@ test('KAN-639 maps persisted external identity rows into the session identity lo
 })
 
 test('KAN-639 Drizzle lookup filters by provider and subject and joins the linked EPT User', () => {
-  const source = require('node:fs').readFileSync(
+  const source = readFileSync(
     'lib/auth/external-identity-lookup.ts',
     'utf8',
   )
