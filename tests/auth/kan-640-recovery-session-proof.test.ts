@@ -6,7 +6,7 @@ import {
   type SupabaseRecoverySessionAuth,
 } from '../../lib/auth/supabase-recovery-session-state'
 
-function authWithClaims(amr: Array<{ method?: string; timestamp?: number }>): SupabaseRecoverySessionAuth {
+function authWithClaims(amr: Array<string | { method?: string; timestamp?: number }>): SupabaseRecoverySessionAuth {
   return {
     async getClaims() {
       return {
@@ -53,6 +53,17 @@ test('KAN-640 accepts recovery when AMR also contains other methods', async () =
         { method: 'password', timestamp: 1 },
         { method: 'recovery', timestamp: 2 },
       ]),
+    ),
+    { status: 'verified' },
+  )
+})
+
+
+
+test('KAN-640 accepts the string AMR representation exposed by current Supabase types', async () => {
+  assert.deepEqual(
+    await readSupabaseRecoverySessionState(
+      authWithClaims(['password', 'recovery']),
     ),
     { status: 'verified' },
   )
