@@ -40,6 +40,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/en/common/athlete-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/en/common/weather.json')).default
+      case 'auth/login':
+        return (await import('@/messages/en/auth/login.json')).default
       case 'planning/base-planning':
         return (await import('@/messages/en/planning/base-planning.json')).default
       case 'planning/coach-planning':
@@ -95,6 +97,8 @@ async function importFragment(locale: SupportedLocale, path: string): Promise<Me
         return (await import('@/messages/es/common/athlete-shell.json')).default
       case 'common/weather':
         return (await import('@/messages/es/common/weather.json')).default
+      case 'auth/login':
+        return (await import('@/messages/es/auth/login.json')).default
       case 'planning/base-planning':
         return (await import('@/messages/es/planning/base-planning.json')).default
       case 'planning/coach-planning':
