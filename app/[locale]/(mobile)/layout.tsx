@@ -1,35 +1,40 @@
-'use client'
+import { redirect } from 'next/navigation'
 
-import { BottomNavigationBar } from '@/components/layout/BottomNavigationBar'
-import { ScrollArea } from '@ui/scroll-area'
-import { MobileShellProvider, useMobileShell } from '@/context/MobileShellContext'
-import { cn } from '@/lib/utils'
+import { MobileShell } from '@/components/layout/MobileShell'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 
-function MobileShellInner({ children }: { children: React.ReactNode }) {
-  const { shellBgColor } = useMobileShell()
+export default async function MobileLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}) {
+  const { locale: rawLocale } = await params
+  const locale = rawLocale === 'en' ? 'en' : 'es'
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
 
-  return (
-    <div className='fixed inset-0 w-full overflow-hidden overscroll-none bg-background'>
-      <div
-        className={cn(
-          'relative flex h-dvh max-h-dvh w-full flex-col overflow-hidden',
-          shellBgColor,
-        )}
-      >
-        <ScrollArea className='min-h-0 w-full flex-1'>
-          <main className='px-2 pt-2 pb-21'>{children}</main>
-        </ScrollArea>
-
-        <BottomNavigationBar />
-      </div>
-    </div>
+  const access = await requireAuthenticatedEptSession(
+    {
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    },
+    {
+      locale,
+      returnTo: `/${locale}`,
+    },
   )
-}
 
-export default function MobileLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <MobileShellProvider>
-      <MobileShellInner>{children}</MobileShellInner>
-    </MobileShellProvider>
-  )
+  if (access.status === 'unlinked') {
+    redirect(`/${locale}/auth/unlinked`)
+  }
+
+  if (access.status === 'redirect') {
+    redirect(access.location)
+  }
+
+  return <MobileShell>{children}</MobileShell>
 }
