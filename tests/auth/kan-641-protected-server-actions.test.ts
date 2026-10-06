@@ -27,7 +27,8 @@ test('KAN-641 Coach economic mutation applies H2 action guard before handler exe
   assert.ok(guardIndex >= 0)
   assert.ok(handlerIndex > guardIndex)
   assert.match(body, /status\s*!==\s*['"]authenticated['"]/)
-  assert.match(body, /forbidden/)
+  assert.match(body, /success:\s*false/)
+  assert.match(body, /error:\s*['\"]Acceso no autorizado['\"]/)
 })
 
 test('KAN-641 Athlete current-profile read applies H2 action guard before database access', () => {
