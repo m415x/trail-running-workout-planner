@@ -19,6 +19,10 @@ import {
   users,
 } from '@/db/schema'
 import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
@@ -36,6 +40,21 @@ function formatISODate(date: Date) {
 
 export async function getCurrentAthlete() {
   try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return {
+        success: false as const,
+        error: 'Acceso no autorizado',
+        forbidden: true as const,
+        reason: access.reason,
+      }
+    }
+
     const user = await db.query.users.findFirst({
       where: and(eq(users.id, CURRENT_USER_ID), eq(users.isDeleted, false)),
 
