@@ -30,11 +30,11 @@ export async function loginAction(
   const locale = localeValue(stringValue(formData.get('locale')))
   const returnTo = stringValue(formData.get('returnTo')) || null
 
-  const auth = await createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const lookup = createExternalIdentityLookup()
 
   const result = await authenticateEptLogin({
-    auth,
+    auth: supabase.auth,
     lookup,
     email,
     password,
