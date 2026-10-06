@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { authenticateEptLogin } from '@/lib/auth/login-flow'
 import { requestPasswordRecovery } from '@/lib/auth/password-recovery-request'
+import { completePasswordRecovery } from '@/lib/auth/password-recovery-update'
 import type { SupportedAuthLocale } from '@/lib/auth/safe-return-path'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 
@@ -101,4 +102,29 @@ export async function requestPasswordRecoveryAction(
   }
 
   return { status: 'error' }
+}
+
+
+export type PasswordRecoveryUpdateActionState =
+  | { status: 'idle' }
+  | { status: 'invalid' }
+
+export async function completePasswordRecoveryAction(
+  _previousState: PasswordRecoveryUpdateActionState,
+  formData: FormData,
+): Promise<PasswordRecoveryUpdateActionState> {
+  const password = stringValue(formData.get('password'))
+  const locale = localeValue(stringValue(formData.get('locale')))
+
+  const supabase = await createSupabaseServerClient()
+  const result = await completePasswordRecovery(
+    supabase.auth,
+    password,
+  )
+
+  if (result.status === 'updated') {
+    redirect(locale === 'en' ? '/en/login?recovery=updated' : '/es/login?recovery=updated')
+  }
+
+  return { status: 'invalid' }
 }
