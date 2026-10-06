@@ -54,6 +54,14 @@ test('the canonical upgrade contract defines supported legacy-state handling', (
   assert.match(contract, /preserv/i)
 })
 
+test('KAN-642 SQLite HEAD verifier requires H1 identity authority tables', () => {
+  const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
+  const verifier = fs.readFileSync(verifierPath, 'utf8')
+
+  assert.match(verifier, /external_identity_links/)
+  assert.match(verifier, /team_memberships/)
+})
+
 test('the SQLite verifier owns detection of the recorded_by_user_id drift regression', () => {
   const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
   const verifier = fs.readFileSync(verifierPath, 'utf8')
