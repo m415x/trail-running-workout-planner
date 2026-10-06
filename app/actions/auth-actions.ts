@@ -56,3 +56,17 @@ export async function loginAction(
 
   return { status: 'invalid' }
 }
+
+
+export async function logoutAction(
+  locale: SupportedAuthLocale,
+): Promise<{ status: 'invalid' }> {
+  const supabase = await createSupabaseServerClient()
+  const signOutResult = await supabase.auth.signOut()
+
+  if (signOutResult.error) {
+    return { status: 'invalid' }
+  }
+
+  redirect(locale === 'en' ? '/en/login' : '/es/login')
+}
