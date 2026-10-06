@@ -55,7 +55,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className='text-red-600 focus:text-red-600'
-                      onSelect={() => void logoutAction(logoutLocale)}
+                      onClick={() => void logoutAction(logoutLocale)}
                     >
                       {t('signOut')}
                     </DropdownMenuItem>
