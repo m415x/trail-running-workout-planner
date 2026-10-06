@@ -58,6 +58,13 @@ export function LoginForm({
         />
       </div>
 
+      <a
+        href={locale === 'en' ? '/en/auth/recovery' : '/es/auth/recovery'}
+        className='text-sm underline underline-offset-4'
+      >
+        {t('forgotPassword')}
+      </a>
+
       {message ? (
         <p role='alert' className='text-sm text-destructive'>
           {message}
