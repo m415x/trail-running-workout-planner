@@ -657,3 +657,15 @@ test('KAN-642 versioned HEAD reconciliation refuses missing H1 physical tables b
   assert.match(runner, /reconcileVersionedHeadMetadata/)
   assert.match(runner, /verify-sqlite/)
 })
+
+test('KAN-642 repairs falsely reconciled H1 identity metadata only when both physical tables are absent', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /repairFalselyReconciledH1Metadata/)
+  assert.match(runner, /external_identity_links/)
+  assert.match(runner, /team_memberships/)
+  assert.match(runner, /0017_natural_fabian_cortez/)
+  assert.match(runner, /0018_daily_aqueduct/)
+  assert.match(runner, /partially present|partial/i)
+  assert.match(runner, /DELETE FROM __drizzle_migrations WHERE created_at = \?/)
+})
