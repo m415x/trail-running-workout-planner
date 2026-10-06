@@ -7,10 +7,10 @@ export default async function LoginPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>
-  searchParams: Promise<{ returnTo?: string | string[] }>
+  searchParams: Promise<{ returnTo?: string | string[]; recovery?: string | string[] }>
 }) {
   const { locale: rawLocale } = await params
-  const { returnTo: rawReturnTo } = await searchParams
+  const { returnTo: rawReturnTo, recovery } = await searchParams
   const locale = rawLocale === 'en' ? 'en' : 'es'
   const returnTo = typeof rawReturnTo === 'string' ? rawReturnTo : ''
   const t = await getTranslations({ locale, namespace: 'Login' })
@@ -22,6 +22,12 @@ export default async function LoginPage({
           <h1 className='text-2xl font-semibold'>{t('title')}</h1>
           <p className='text-sm text-muted-foreground'>{t('description')}</p>
         </header>
+
+        {recovery === 'updated' ? (
+          <p role='status' className='text-sm text-muted-foreground'>
+            {t('recoveryUpdated')}
+          </p>
+        ) : null}
 
         <LoginForm locale={locale} returnTo={returnTo} />
       </section>
