@@ -4,9 +4,9 @@ import { readFileSync } from 'node:fs'
 
 const source = readFileSync('app/[locale]/auth/recovery/reset/page.tsx', 'utf8')
 
-test('KAN-640 reset page verifies the current Supabase session server-side before rendering', () => {
+test('KAN-640 reset page verifies a recovery-specific Supabase session server-side before rendering', () => {
   assert.match(source, /createSupabaseServerClient/)
-  assert.match(source, /readSupabaseServerSessionState/)
+  assert.match(source, /readSupabaseRecoverySessionState/)
   assert.match(source, /session\.status\s*!==\s*['"]verified['"]/)
 })
 
@@ -16,7 +16,7 @@ test('KAN-640 reset page fails closed to localized recovery when the session is 
 })
 
 test('KAN-640 reset page renders the password form only after verified session state', () => {
-  const verificationIndex = source.indexOf('readSupabaseServerSessionState')
+  const verificationIndex = source.indexOf('readSupabaseRecoverySessionState')
   const formIndex = source.indexOf('<RecoveryResetForm')
 
   assert.ok(verificationIndex >= 0)
