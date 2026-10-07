@@ -190,6 +190,22 @@ function runAssignment(
   })
 }
 
+function authorizedActionDependencies() {
+  return {
+    requireAccess: async () => ({
+      status: 'authenticated' as const,
+      userId: 'user-athlete',
+    }),
+    authorize: async (
+      _access: { status: 'authenticated'; userId: string },
+      request: { resource: { teamId: string } },
+    ) => ({
+      allowed: true,
+      teamId: request.resource.teamId,
+    }),
+  }
+}
+
 describe('assignAthleteToGroup SQLite integration', () => {
   it('closes every open previous-group cohort at D-1, preserves closed history and changes the group atomically', () => {
     const fixture = createDatabase()
@@ -382,7 +398,7 @@ describe('assignAthleteToGroup Server Action boundary', () => {
     try {
       const action = createAthleteGroupAssignmentAction({
         db: fixture.db,
-        teamId: 'team_1',
+        ...authorizedActionDependencies(),
         createId: () => 'history-group-return',
         now: () => '2026-09-28T15:00:00.000Z',
         today: () => '2026-09-28',
@@ -419,14 +435,14 @@ describe('assignAthleteToGroup Server Action boundary', () => {
     }
   })
 
-  it('rejects a sporting-group return context that does not match the assignment destination', async () => {
+  it('ignores an inconsistent sporting-group return context for authorization and falls back to athlete navigation', async () => {
     const fixture = createDatabase()
     const effects: string[] = []
 
     try {
       const action = createAthleteGroupAssignmentAction({
         db: fixture.db,
-        teamId: 'team_1',
+        ...authorizedActionDependencies(),
         createId: () => 'history-invalid-return',
         now: () => '2026-09-28T15:00:00.000Z',
         today: () => '2026-09-28',
@@ -444,14 +460,18 @@ describe('assignAthleteToGroup Server Action boundary', () => {
 
       const result = await action({}, formData)
 
-      assert.match(result.error ?? '', /context|grupo|group/i)
+      assert.deepEqual(result, {})
       assert.equal(
         fixture.db.select({ groupId: athleteProfiles.groupId })
           .from(athleteProfiles)
           .get()?.groupId,
-        'group-old',
+        'group-new',
       )
-      assert.deepEqual(effects, [])
+      assert.deepEqual(effects, [
+        'revalidate:/en/dashboard/athletes',
+        'revalidate:/en/dashboard/athletes/athlete-1',
+        'redirect:/en/dashboard/athletes/athlete-1',
+      ])
     } finally {
       fixture.sqlite.close()
     }
@@ -466,7 +486,7 @@ describe('assignAthleteToGroup Server Action boundary', () => {
 
       const action = createAthleteGroupAssignmentAction({
         db: fixture.db,
-        teamId: 'team_1',
+        ...authorizedActionDependencies(),
         createId: () => 'history-action',
         now: () => '2026-09-28T15:00:00.000Z',
         today: () => '2026-09-28',
