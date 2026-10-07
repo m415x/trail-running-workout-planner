@@ -12,6 +12,8 @@ import {
 } from '@/db/schema'
 import { assignAthleteToGroupSynchronously } from '@/lib/athletes/group-assignment'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
+import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
+import type { H4aActiveTeamAuthorizationRequest } from '@/lib/authorization/h4a-active-team-authorization'
 import { resolveAthleteGroupOnDate } from '@/lib/planning-cohorts/planning-resolution'
 
 function createDatabase() {
@@ -197,12 +199,18 @@ function authorizedActionDependencies() {
       userId: 'user-athlete',
     }),
     authorize: async (
-      _access: { status: 'authenticated'; userId: string },
-      request: { resource: { teamId: string } },
-    ) => ({
-      allowed: true,
-      teamId: request.resource.teamId,
-    }),
+      access: RequireAuthenticatedActionResult,
+      request: H4aActiveTeamAuthorizationRequest,
+    ) => {
+      if (access.status !== 'authenticated') {
+        return { allowed: false as const }
+      }
+
+      return {
+        allowed: true,
+        teamId: request.resource.teamId,
+      }
+    },
   }
 }
 
