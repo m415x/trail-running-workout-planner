@@ -481,7 +481,16 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
 
 export const assignAthleteToGroup = createAthleteGroupAssignmentAction({
   db,
-  teamId: CURRENT_TEAM_ID,
+  requireAccess: async () => {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+  },
+  authorize: (access, request) =>
+    createH4aNextServerAuthorizationBoundary().authorize(access, request),
   createId: randomUUID,
   now: () => new Date().toISOString(),
   today: getCurrentDateInArgentina,
