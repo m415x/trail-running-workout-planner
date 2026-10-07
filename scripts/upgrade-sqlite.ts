@@ -523,13 +523,24 @@ if (state === "versioned") {
         'SELECT id FROM __drizzle_migrations ORDER BY rowid',
       ).all() as Array<{ id: number | null }>
 
-      if (
-        metadataIdentifiers.length !== journal.entries.length ||
+      const hasInvalidIntegerIdentifiers =
+        metadataFormat === 'integer' &&
         metadataIdentifiers.some((record, index) =>
+          !Number.isSafeInteger(record.id) ||
+          Number(record.id) <= 0 ||
+          (
+            index > 0 &&
+            Number(record.id) <= Number(metadataIdentifiers[index - 1]?.id)
+          )
+        )
+
+      if (
+        metadataIdentifiers.length < 17 ||
+        metadataIdentifiers.length > journal.entries.length ||
+        (
           metadataFormat === 'serial'
-            ? record.id !== null
-            : !Number.isSafeInteger(record.id) ||
-              record.id !== index + 1
+            ? metadataIdentifiers.some(record => record.id !== null)
+            : hasInvalidIntegerIdentifiers
         )
       ) {
         throw new Error(
@@ -537,7 +548,9 @@ if (state === "versioned") {
         )
       }
 
-      const expected = journal.entries.map(entry => ({
+      const expected = journal.entries
+        .slice(0, metadataIdentifiers.length)
+        .map(entry => ({
         hash: createHash('sha256')
           .update(
             readFileSync(
@@ -546,8 +559,8 @@ if (state === "versioned") {
             ),
           )
           .digest('hex'),
-        created_at: entry.when,
-      }))
+          created_at: entry.when,
+        }))
 
       const actual = sqlite.prepare(
         'SELECT hash, created_at FROM __drizzle_migrations ORDER BY rowid',
