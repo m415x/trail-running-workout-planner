@@ -87,6 +87,34 @@ Any missing or inconsistent authority produces deny.
 
 ASSIGNED_ATHLETES at step 7 always produces deny while reserved.
 
+## Persisted grant lifecycle
+
+H3 persists authorization grants as historical, non-destructive records.
+
+A persisted grant records:
+
+- beneficiary User and Team;
+- one concrete capability;
+- one executable scope plus its target when the scope requires one;
+- mandatory finite `effectiveFrom` / `effectiveUntil` validity;
+- granting User and reason;
+- optional complete revocation metadata.
+
+The physical schema enforces that `effectiveUntil > effectiveFrom`, SPORTING_GROUP has a target, SELF/TEAM do not, and revocation metadata is either wholly absent or wholly present. Revocation does not delete or overwrite the original grant evidence.
+
+SQLite migration `0019` and PostgreSQL migration `0032` are the canonical H3 persistence additions. KAN-603 closure treats SQLite lifecycle execution as real local evidence and PostgreSQL migration consistency as static evidence only; it does not claim remote PostgreSQL application or H7B RLS.
+
+## Reusable effective authorization boundary
+
+The reusable H3 decision is split deliberately into two layers:
+
+- the pure effective resolver composes TeamMembership, capability preset, AthleteProfile SELF identity, grants and scope coverage;
+- the authenticated boundary accepts the H2 `RequireAuthenticatedActionResult` and injects the authenticated internal EPT `userId` into that resolver.
+
+Caller-facing H3 input has no actor/user field. Anonymous, unlinked or invalid H2 states deny before H3 evaluation. This prevents a client-selected actor identifier from becoming authorization authority.
+
+KAN-603 provides this reusable boundary but does not exhaustively migrate Coach/Athlete vertical consumers. That enforcement belongs to the downstream H4/H5/H6 stories named below.
+
 ## Deferred boundaries
 
 H3 does not implement:
