@@ -131,7 +131,7 @@ export const teamMemberships = sqliteTable(
       .references(() => teams.id, { onDelete: 'restrict' }),
     preset: text('preset').notNull().$type<TeamMembershipPreset>(),
     effectiveFrom: text('effective_from').notNull(),
-    effectiveUntil: text('effective_until'),
+    effectiveUntil: text('effective_until').notNull(),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
