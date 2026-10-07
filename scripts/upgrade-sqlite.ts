@@ -231,10 +231,24 @@ function establishCanonicalMigrationMetadata(
   for (const entry of journal.entries.slice(0, appliedCount)) {
     const migrationPath = resolve(projectRoot, 'drizzle/sqlite', `${entry.tag}.sql`)
     const sql = readFileSync(migrationPath, 'utf8')
-    const hash = createHash('sha256').update(sql).digest('hex')
+    const rawHash = createHash('sha256').update(sql).digest('hex')
+    const canonicalHash =
+      entry.tag === '0016_athlete_profile_identity'
+        ? createHash('sha256')
+            .update(sql.replace(/\r\n/g, '\n'))
+            .digest('hex')
+        : rawHash
+
     const row = existing.get(entry.when) as { hash: string } | undefined
     if (row) {
-      if (row.hash !== hash) {
+      const acceptedExistingHash =
+        row.hash === canonicalHash ||
+        (
+          entry.tag === '0016_athlete_profile_identity' &&
+          row.hash === rawHash
+        )
+
+      if (!acceptedExistingHash) {
         throw new Error(
           `SQLite migration metadata conflict at canonical timestamp ${entry.when}`,
         )
@@ -242,7 +256,7 @@ function establishCanonicalMigrationMetadata(
       continue
     }
 
-    insert.run(hash, entry.when)
+    insert.run(canonicalHash, entry.when)
   }
 }
 
