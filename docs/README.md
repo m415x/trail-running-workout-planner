@@ -11,7 +11,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/realized-training/`](architecture/realized-training/) — durable realized-training evidence, plan-real comparison and capture contracts.
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
-- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md), [identity/team-membership authority](architecture/platform/identity-and-team-membership.md) and [authentication session lifecycle](architecture/platform/authentication-session-lifecycle.md).
+- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md), [identity/team-membership authority](architecture/platform/identity-and-team-membership.md), [authentication session lifecycle](architecture/platform/authentication-session-lifecycle.md) and [authorization capabilities/scopes](architecture/platform/authorization-capabilities-scopes.md).
 - [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H5 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, derived account/history projection and Coach/Athlete prior-debt experience.
 
 ### Monitoring baseline
@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-602.md`](handoffs/kan-602.md), covering the KAN-602 H2 authenticated-session closure candidate. [`handoffs/kan-601.md`](handoffs/kan-601.md) remains the immediately preceding H1 identity/team-membership baseline and [`handoffs/kan-473.md`](handoffs/kan-473.md) remains recent pre-auth consolidation context only. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. The current operational handoff is [`handoffs/kan-603.md`](handoffs/kan-603.md), covering the KAN-603 H3 authorization closure candidate. [`handoffs/kan-602.md`](handoffs/kan-602.md) remains the completed H2 authenticated-session baseline and [`handoffs/kan-601.md`](handoffs/kan-601.md) remains the preceding H1 identity/team-membership baseline. [`handoffs/kan-473.md`](handoffs/kan-473.md) is retained only as recent pre-auth consolidation context. Completed Epic 5 evolution is consolidated in [`history/epic-5.md`](history/epic-5.md).
 
 ## Verification runner
 
@@ -62,13 +62,13 @@ KAN-464 closure evidence includes the H1–H5 cross-contract regression, focused
 
 The legacy `memberships` table is preserved but is not the authority for the new economic domain. Epic 5 adds no authentication/session/role/permission model, gateway/webhook/checkout model or generic settings framework. Differential training fees and other additional charges remain an explicit future extension and must not be represented as a second membership or by deforming `MonthlyCharge`.
 
-KAN-473 — Functional + UX pre-beta consolidation — is completed and integrated. KAN-298 is the active phase. Within KAN-298, KAN-601 H1 is completed and establishes the internal identity / TeamMembership / AthleteProfile baseline. KAN-602 H2 is the current closure candidate and adds Supabase Auth session lifecycle, login/logout, recovery and server-side H2 protection while leaving capability/scope authorization to KAN-603.
+KAN-473 — Functional + UX pre-beta consolidation — is completed and integrated. KAN-298 is the active phase. Within KAN-298, KAN-601 H1 is completed and establishes the internal identity / TeamMembership / AthleteProfile baseline. KAN-602 H2 is completed and provides the authenticated internal EPT User boundary. KAN-603 H3 is the current closure candidate and adds non-hierarchical TeamMembership capability presets, SELF/SPORTING_GROUP/TEAM scopes, reserved fail-closed ASSIGNED_ATHLETES, bounded temporary delegation, persisted grant lifecycle and the reusable authenticated H2→H3 authorization boundary.
 
 KAN-505, KAN-506, KAN-507 and KAN-508 are completed pre-auth baselines. KAN-538, KAN-568 and KAN-569 are also resolved. Their historical delivery evidence remains in the KAN-473 handoff/history, but they are not the current execution scope. KAN-359 and KAN-579 remain separately deferred and are not KAN-601 acceptance blockers. KAN-472 remains post-auth.
 
 KAN-581 adds a post-Epic read-only Athlete Home economic disclosure over H4/H5. Home uses a server-side Buenos Aires civil cutoff, preserves team/athlete isolation, prioritizes H5 prior-month overdue debt, distinguishes normal/warning/danger/neutral without treating missing data as settled, resets the MobileShell presentation when leaving Home, and adds no access guard before KAN-298. Interactive acceptance covered ES/EN, light/dark, 360/390 px, 200% zoom, keyboard/focus/screen-reader behavior, Home/Profile navigation and BottomNavigationBar clearance. The notification bell remains deliberately outside KAN-581; a notification center requires its own event/persistence/read-state/permissions/UX contract.
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-602.md`](handoffs/kan-602.md); [`handoffs/kan-601.md`](handoffs/kan-601.md) remains the H1 baseline and the KAN-473 handoff is retained only as recent pre-auth consolidation context.
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution baseline is [`handoffs/kan-603.md`](handoffs/kan-603.md); [`handoffs/kan-602.md`](handoffs/kan-602.md) remains the completed H2 baseline, [`handoffs/kan-601.md`](handoffs/kan-601.md) remains the H1 baseline and the KAN-473 handoff is retained only as recent pre-auth consolidation context.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
@@ -91,6 +91,12 @@ For new work, read `AGENTS.md`, this index, the current epic/story handoff when 
 - [`research/kan-601-persistence-evidence.md`](research/kan-601-persistence-evidence.md) — explicit PURE / SQLITE REAL / POSTGRESQL STATIC / POSTGRESQL REAL evidence matrix.
 - [`handoffs/kan-601.md`](handoffs/kan-601.md) — final KAN-601 reconciliation matrix and closure candidate sequence.
 
+
+
+## Authorization / KAN-603 closure baseline
+
+- [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable H3 capability, scope, delegation, persistence and effective-authorization contract.
+- [`handoffs/kan-603.md`](handoffs/kan-603.md) — final KAN-603 reconciliation matrix and closure sequence.
 
 ## Authentication session / KAN-602 closure baseline
 

@@ -4,6 +4,7 @@ import { relations, sql } from 'drizzle-orm'
 
 import type {
   UserRole,
+  TeamMembershipPreset,
   AthleteCategoryCode,
   AthleteLevelCode,
   AthletePhysiology,
@@ -130,7 +131,7 @@ export const teamMemberships = pgTable(
     teamId: text('team_id')
       .notNull()
       .references(() => teams.id, { onDelete: 'restrict' }),
-    preset: text('preset').notNull().$type<UserRole>(),
+    preset: text('preset').notNull().$type<TeamMembershipPreset>(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
     isActive: boolean('is_active').notNull().default(true),
@@ -145,6 +146,70 @@ export const teamMemberships = pgTable(
     check(
       'team_memberships_date_order_check',
       sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`,
+    ),
+  ],
+)
+
+/**
+ * Bounded H3 authorization grant lifecycle.
+ *
+ * This records only authority provenance needed to evaluate temporary grants.
+ * Cross-domain audit and PostgreSQL RLS remain owned by H7A/H7B.
+ */
+export const authorizationGrants = pgTable(
+  'authorization_grants',
+  {
+    ...baseColumns,
+    beneficiaryUserId: text('beneficiary_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    teamId: text('team_id')
+      .notNull()
+      .references(() => teams.id, { onDelete: 'restrict' }),
+    capability: text('capability').notNull(),
+    scope: text('scope').notNull(),
+    scopeTargetId: text('scope_target_id'),
+    effectiveFrom: text('effective_from').notNull(),
+    effectiveUntil: text('effective_until').notNull(),
+    grantedByUserId: text('granted_by_user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'restrict' }),
+    reason: text('reason').notNull(),
+    revokedAt: text('revoked_at'),
+    revokedByUserId: text('revoked_by_user_id')
+      .references(() => users.id, { onDelete: 'restrict' }),
+    revocationReason: text('revocation_reason'),
+  },
+  (table) => [
+    index('authorization_grants_beneficiary_team_dates_idx').on(
+      table.beneficiaryUserId,
+      table.teamId,
+      table.effectiveFrom,
+      table.effectiveUntil,
+    ),
+    index('authorization_grants_team_capability_idx').on(
+      table.teamId,
+      table.capability,
+    ),
+    check(
+      'authorization_grants_scope_check',
+      sql`${table.scope} in ('self', 'sporting_group', 'team')`,
+    ),
+    check(
+      'authorization_grants_scope_target_check',
+      sql`(${table.scope} = 'sporting_group' and ${table.scopeTargetId} is not null) or (${table.scope} in ('self', 'team') and ${table.scopeTargetId} is null)`,
+    ),
+    check(
+      'authorization_grants_date_order_check',
+      sql`${table.effectiveUntil} > ${table.effectiveFrom}`,
+    ),
+    check(
+      'authorization_grants_revocation_order_check',
+      sql`${table.revokedAt} is null or ${table.revokedAt} >= ${table.effectiveFrom}`,
+    ),
+    check(
+      'authorization_grants_revocation_metadata_check',
+      sql`(${table.revokedAt} is null and ${table.revokedByUserId} is null and ${table.revocationReason} is null) or (${table.revokedAt} is not null and ${table.revokedByUserId} is not null and ${table.revocationReason} is not null)`,
     ),
   ],
 )

@@ -3,25 +3,33 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-function latestMigration(dialect: 'sqlite' | 'supabase') {
+function teamMembershipMigration(dialect: 'sqlite' | 'supabase') {
   const root = path.join(process.cwd(), 'drizzle', dialect)
   const journal = JSON.parse(
     fs.readFileSync(path.join(root, 'meta', '_journal.json'), 'utf8'),
   ) as { entries: Array<{ idx: number; tag: string }> }
 
-  const latest = journal.entries.at(-1)
-  assert.ok(latest, `${dialect} migration journal is not empty`)
+  for (const entry of [...journal.entries].reverse()) {
+    const sql = fs.readFileSync(
+      path.join(root, `${entry.tag}.sql`),
+      'utf8',
+    )
 
-  return {
-    idx: latest.idx,
-    tag: latest.tag,
-    sql: fs.readFileSync(path.join(root, `${latest.tag}.sql`), 'utf8'),
+    if (/CREATE TABLE ["`]team_memberships["`]/i.test(sql)) {
+      return {
+        idx: entry.idx,
+        tag: entry.tag,
+        sql,
+      }
+    }
   }
+
+  assert.fail(`${dialect} TeamMembership migration not found`)
 }
 
 for (const dialect of ['sqlite', 'supabase'] as const) {
   test(`KAN-617 versions TeamMembership without legacy-role authority for ${dialect}`, () => {
-    const migration = latestMigration(dialect)
+    const migration = teamMembershipMigration(dialect)
 
     assert.match(migration.sql, /CREATE TABLE ["`]team_memberships["`]/i)
     assert.match(

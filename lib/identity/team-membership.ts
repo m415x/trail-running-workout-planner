@@ -2,7 +2,7 @@ import { and, desc, eq, gt, isNull, lte, or } from 'drizzle-orm'
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 
 import { teamMemberships } from '@/db/schema'
-import type { UserRole } from '@/types'
+import type { TeamMembershipPreset } from '@/types'
 
 export interface ResolveTeamMembershipPresetInput {
   userId: string
@@ -13,7 +13,7 @@ export interface ResolveTeamMembershipPresetInput {
 export function resolveTeamMembershipPreset<TSchema extends Record<string, unknown>>(
   database: BetterSQLite3Database<TSchema>,
   input: ResolveTeamMembershipPresetInput,
-): UserRole | null {
+): TeamMembershipPreset | null {
   const rows = database
     .select({
       preset: teamMemberships.preset,
