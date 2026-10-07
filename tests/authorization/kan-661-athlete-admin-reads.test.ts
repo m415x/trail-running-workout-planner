@@ -62,6 +62,22 @@ describe('KAN-661 authorized administrative AthleteProfile reads', () => {
     assert.doesNotMatch(detail, /users\.role|\.role\s*===/)
   })
 
+  it('keeps administrative reads free of physiology, medical and planning payloads', () => {
+    const list = sliceBetween(
+      'export async function getAthletesByTeam',
+      'export async function getAthleteById',
+    )
+    const detail = sliceBetween(
+      'export async function getAthleteById',
+      'export async function getActiveAthleteGroups',
+    )
+
+    assert.match(list, /projectAthleteAdministrativeRead/)
+    assert.doesNotMatch(list, /planningCohortMemberships|currentPlanningCohort|hasPlanningCohortConflict/)
+    assert.doesNotMatch(list, /\.\.\.athlete/)
+    assert.doesNotMatch(detail, /return\s+athlete\b/)
+  })
+
   it('does not return administrative athlete data when H2 or H3 denies access', () => {
     const list = sliceBetween(
       'export async function getAthletesByTeam',
