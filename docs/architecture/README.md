@@ -45,6 +45,7 @@ Key competition documents:
 - `platform/sqlite-local-operations.md` — supported local SQLite bootstrap, upgrade, preservation, drift and rerun lifecycle.
 - `platform/identity-and-team-membership.md` — KAN-601 durable identity model: User, ExternalIdentityLink, TeamMembership authority, nullable AthleteProfile linkage, non-destructive lifecycle and persistence evidence boundaries.
 - `platform/authentication-session-lifecycle.md` — KAN-602 durable H2 contract for Supabase Auth session states, cookie refresh, login/logout, recovery, safe returns and server-side surface protection.
+- `platform/authorization-capabilities-scopes.md` — KAN-603 durable H3 contract for non-hierarchical capability presets, executable SELF/SPORTING_GROUP/TEAM scopes, reserved ASSIGNED_ATHLETES, delegation limits and fail-closed precedence.
 
 ## Cross-domain invariants
 
