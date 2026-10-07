@@ -9,7 +9,7 @@ export interface AuthorizationGrantRecord {
   scope: AuthorizationScope
   scopeTargetId: string | null
   effectiveFrom: string
-  effectiveUntil: string | null
+  effectiveUntil: string
   grantedByUserId: string
   reason: string
   revokedAt: string | null
@@ -22,7 +22,7 @@ function assertValidGrantLifecycle(grant: AuthorizationGrantRecord): void {
     throw new Error('Reserved authorization scope')
   }
 
-  if (grant.effectiveUntil !== null && grant.effectiveUntil <= grant.effectiveFrom) {
+  if (grant.effectiveUntil <= grant.effectiveFrom) {
     throw new Error('Invalid authorization grant validity')
   }
 
@@ -63,7 +63,7 @@ export function isAuthorizationGrantActive(
   assertValidGrantLifecycle(grant)
 
   if (at < grant.effectiveFrom) return false
-  if (grant.effectiveUntil !== null && at >= grant.effectiveUntil) return false
+  if (at >= grant.effectiveUntil) return false
   if (grant.revokedAt !== null && at >= grant.revokedAt) return false
 
   return true
