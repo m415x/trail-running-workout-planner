@@ -95,7 +95,7 @@ test('KAN-615 upgrades real scenario and reruns without mutation', () => {
     assert.equal(entry.tag, '0016_athlete_profile_identity')
 
     const hash = createHash('sha256')
-      .update(readFileSync(`drizzle/sqlite/${entry.tag}.sql`, 'utf8'))
+      .update(readFileSync(`drizzle/sqlite/${entry.tag}.sql`, 'utf8').replace(/\r\n/g, '\n'))
       .digest('hex')
 
     const firstDb = new Database(databasePath, {
