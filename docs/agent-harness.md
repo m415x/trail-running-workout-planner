@@ -37,6 +37,37 @@ fresh-chat capable next story
 - Large tool outputs should not be repeatedly reloaded or carried conceptually after their decision-relevant findings and stable locators are known.
 - A Jira story is the natural compaction boundary: closure converts working context into architecture, glossary/research changes where relevant, indexes, Jira evidence and a concise handoff.
 
+## Fresh-chat and focused TDD execution contract
+
+The intended fresh-chat prompt is deliberately small because the durable workflow lives in `AGENTS.md` and this harness. A fresh chat should normally need only to request the durable bootstrap, reconstruction of the current remote/Jira state and a brief diagnosis before implementation.
+
+Canonical minimal bootstrap shape:
+
+```text
+Vamos a continuar Trail Running Workout Planner.
+
+Trabajá exclusivamente según AGENTS.md y docs/agent-harness.md.
+Ejecutá el fresh-chat bootstrap durable, reconstruí el estado remoto real de GitHub/Jira desde dev y determiná qué historia está materialmente habilitada.
+Comenzá con un diagnóstico breve del baseline y la próxima intervención propuesta. No implementes todavía.
+```
+
+Do not expand this prompt with durable workflow rules, current SHAs, branch names or remembered story state. If temporary continuity context is supplied, treat it only as a claim to verify.
+
+### Focused TDD workflow
+
+After the story/task decomposition or TDD cycle has been approved, execution is continuous: advance RED → GREEN → next independently meaningful RED without requesting routine intermediate confirmation. Stop only for an unexpected result, a material source-of-truth discrepancy, a real product/security decision, a blocker that changes the approved scope, or evidence that the decomposition itself is no longer valid.
+
+The default hybrid loop is:
+
+1. Inspect/edit/version work remote-first through GitHub on the active story branch.
+2. Give the human the exact Bash command for the focused phase: `pn tdd:red <test-file> [...]` for RED or `pn tdd <test-file> [...]` for GREEN.
+3. The human runs that command locally in Git Bash and returns the output/evidence.
+4. Bind that evidence to the exact tested SHA/recoverable tree. Do not describe local output as evidence for a different commit.
+5. After stable GREEN for an independently verifiable cut, create/confirm a recoverable checkpoint before beginning the next cut.
+6. Do not trigger GitHub Actions for each TDD microcommit. Reserve Actions for story/integration closure or a verification that specifically requires the remote runner.
+
+When a focused command fails outside the expected RED, classify it before changing product scope: in-scope defect, independent defect, technical debt, integration blocker or transient infrastructure failure. Do not create a new story, absorb unrelated debt or broaden the current task automatically.
+
 ## Micro-sprints and recovery harness
 
 Use a micro-sprint when the immediate goal is resolution, recovery or delivery of a bounded increment rather than expansion of a story. A micro-sprint has one primary objective, a closed scope and one explicit exit condition:
