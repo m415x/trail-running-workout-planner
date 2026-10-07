@@ -201,7 +201,7 @@ export const authorizationGrants = pgTable(
     ),
     check(
       'authorization_grants_date_order_check',
-      sql`${table.effectiveUntil} is null or ${table.effectiveUntil} > ${table.effectiveFrom}`,
+      sql`${table.effectiveUntil} > ${table.effectiveFrom}`,
     ),
     check(
       'authorization_grants_revocation_order_check',
