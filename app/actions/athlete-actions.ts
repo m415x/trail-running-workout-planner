@@ -10,7 +10,6 @@ import { db } from '@/db'
 import {
   athleteGroups,
   athleteProfiles,
-  planningCohortMemberships,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
 import { setAthleteProfileActiveState } from '@/lib/athletes/athlete-profile-lifecycle'
@@ -19,7 +18,6 @@ import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-
 import { updateAthleteAdministration } from '@/lib/athletes/update-athlete-administration'
 
 export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
-import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
@@ -149,12 +147,33 @@ export async function getAthletesByTeam() {
         eq(athleteProfiles.teamId, authorizationResult.teamId),
         eq(athleteProfiles.isDeleted, false),
       ),
+      columns: {
+        id: true,
+        teamId: true,
+        userId: true,
+        groupId: true,
+        isActive: true,
+        firstName: true,
+        lastName: true,
+        contactEmail: true,
+        phone: true,
+      },
       with: {
-        user: true,
-        group: true,
-        planningCohortMemberships: {
-          where: eq(planningCohortMemberships.isDeleted, false),
-          with: { planningCohort: true },
+        user: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        group: {
+          columns: {
+            id: true,
+            categoryCode: true,
+            levelCode: true,
+          },
         },
       },
     })
@@ -179,23 +198,17 @@ export async function getAthletesByTeam() {
       return first.id.localeCompare(second.id)
     })
 
-    const today = getCurrentDateInArgentina()
-    const listItems = athletes.map(({ planningCohortMemberships: memberships, ...athlete }) => {
-      const currentMemberships = memberships.filter((membership) => (
-        !membership.planningCohort.isDeleted
-        && classifyPlanningCohortMembership(membership, today) === 'current'
-      ))
-      const currentMembership = currentMemberships.length === 1 ? currentMemberships[0] : null
-
-      return {
-        ...athlete,
-        administrative: projectAthleteAdministrativeRead(athlete),
-        currentPlanningCohort: currentMembership
-          ? { id: currentMembership.planningCohort.id, name: currentMembership.planningCohort.name }
-          : null,
-        hasPlanningCohortConflict: currentMemberships.length > 1,
-      }
-    })
+    const listItems = athletes.map((athlete) => ({
+      id: athlete.id,
+      teamId: athlete.teamId,
+      userId: athlete.userId,
+      groupId: athlete.groupId,
+      isActive: athlete.isActive,
+      phone: athlete.phone,
+      user: athlete.user,
+      group: athlete.group,
+      administrative: projectAthleteAdministrativeRead(athlete),
+    }))
 
     return {
       success: true as const,
@@ -218,9 +231,39 @@ export async function getAthleteById(athleteId: string) {
       eq(athleteProfiles.id, athleteId),
       eq(athleteProfiles.isDeleted, false),
     ),
+    columns: {
+      id: true,
+      teamId: true,
+      userId: true,
+      groupId: true,
+      isActive: true,
+      firstName: true,
+      lastName: true,
+      contactEmail: true,
+      nickName: true,
+      dni: true,
+      birthday: true,
+      phone: true,
+      emergencyContact: true,
+      emergencyPhone: true,
+    },
     with: {
-      user: true,
-      group: true,
+      user: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatar: true,
+        },
+      },
+      group: {
+        columns: {
+          id: true,
+          categoryCode: true,
+          levelCode: true,
+        },
+      },
     },
   })
 
@@ -248,7 +291,24 @@ export async function getAthleteById(athleteId: string) {
     return undefined
   }
 
-  return athlete
+  return {
+    id: athlete.id,
+    teamId: athlete.teamId,
+    userId: athlete.userId,
+    groupId: athlete.groupId,
+    isActive: athlete.isActive,
+    firstName: athlete.firstName,
+    lastName: athlete.lastName,
+    contactEmail: athlete.contactEmail,
+    nickName: athlete.nickName,
+    dni: athlete.dni,
+    birthday: athlete.birthday,
+    phone: athlete.phone,
+    emergencyContact: athlete.emergencyContact,
+    emergencyPhone: athlete.emergencyPhone,
+    user: athlete.user,
+    group: athlete.group,
+  }
 }
 
 export async function getActiveAthleteGroups() {
