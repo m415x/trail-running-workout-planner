@@ -15,13 +15,16 @@ export function updateSportingGroupAdministration<TSchema extends Record<string,
   database: BetterSQLite3Database<TSchema>,
   input: UpdateSportingGroupAdministrationInput,
 ): void {
-  const group = database.query.athleteGroups.findFirst({
-    where: and(
+  const group = database
+    .select({ id: athleteGroups.id })
+    .from(athleteGroups)
+    .where(and(
       eq(athleteGroups.id, input.groupId),
       eq(athleteGroups.teamId, input.teamId),
       eq(athleteGroups.isDeleted, false),
-    ),
-  }).sync()
+    ))
+    .limit(1)
+    .get()
 
   if (!group) {
     throw new Error('Grupo no encontrado')
