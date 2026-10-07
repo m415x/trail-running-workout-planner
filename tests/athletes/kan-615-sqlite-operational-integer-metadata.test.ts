@@ -93,7 +93,7 @@ test('KAN-615 reruns applied 0016 with canonical INTEGER metadata', () => {
     assert.equal(entry.tag, '0016_athlete_profile_identity')
 
     const hash = createHash('sha256')
-      .update(readFileSync(`drizzle/sqlite/${entry.tag}.sql`, 'utf8'))
+      .update(readFileSync(`drizzle/sqlite/${entry.tag}.sql`, 'utf8').replace(/\r\n/g, '\n'))
       .digest('hex')
 
     // Convert only the temporary metadata table to canonical
