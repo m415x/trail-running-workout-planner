@@ -53,10 +53,22 @@ export async function getGroupsByTeam() {
     readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
   })
 
-  if (access.status !== 'authenticated') return []
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
+  }
 
   const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
-  if (activeTeam.status !== 'resolved') return []
+  if (activeTeam.status !== 'resolved') {
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
+  }
 
   const authorization = createH4aNextServerAuthorizationBoundary()
   const authorizationResult = await authorization.authorize(access, {
@@ -67,16 +79,25 @@ export async function getGroupsByTeam() {
   })
 
   if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
-    return []
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
   }
 
-  return db.query.athleteGroups.findMany({
+  const groups = await db.query.athleteGroups.findMany({
     where: and(
       eq(athleteGroups.teamId, authorizationResult.teamId),
       eq(athleteGroups.isDeleted, false),
     ),
     orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
+
+  return {
+    success: true as const,
+    data: groups,
+  }
 }
 
 export async function getGroupById(groupId: string) {
