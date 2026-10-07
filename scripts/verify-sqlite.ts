@@ -6,6 +6,7 @@ try {
     'users',
     'external_identity_links',
     'team_memberships',
+    'authorization_grants',
     'athlete_profiles',
     'field_performance_tests',
     'team_economic_policies',
