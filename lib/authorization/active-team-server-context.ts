@@ -4,6 +4,7 @@ import {
   clearActiveTeamCookie,
   validateActiveTeamSelection,
   type ActiveTeamSelectionMembership,
+  type ActiveTeamCookie,
 } from './active-team-selection'
 import {
   resolveActiveTeamContext,
@@ -15,7 +16,7 @@ export interface ActiveTeamCookieStore {
   set(
     name: string,
     value: string,
-    options: Record<string, unknown>,
+    options: ActiveTeamCookie['options'],
   ): void
 }
 
