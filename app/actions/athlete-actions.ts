@@ -43,8 +43,6 @@ export interface AthleteFormState {
   }
 }
 
-const CURRENT_TEAM_ID = 'team_1'
-
 const athleteFormSchema = z.object({
   firstName: z.string().trim().min(2, 'Ingresá el nombre del atleta'),
   lastName: z.string().trim().min(2, 'Ingresá el apellido del atleta'),
@@ -254,9 +252,36 @@ export async function getAthleteById(athleteId: string) {
 }
 
 export async function getActiveAthleteGroups() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return []
+  }
+
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') {
+    return []
+  }
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizationResult = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: activeTeam.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+
+  if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+    return []
+  }
+
   return db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, authorizationResult.teamId),
       eq(athleteGroups.isActive, true),
       eq(athleteGroups.isDeleted, false),
     ),
