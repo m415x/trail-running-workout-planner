@@ -133,7 +133,7 @@ export const teamMemberships = pgTable(
       .references(() => teams.id, { onDelete: 'restrict' }),
     preset: text('preset').notNull().$type<TeamMembershipPreset>(),
     effectiveFrom: text('effective_from').notNull(),
-    effectiveUntil: text('effective_until'),
+    effectiveUntil: text('effective_until').notNull(),
     isActive: boolean('is_active').notNull().default(true),
   },
   (table) => [
