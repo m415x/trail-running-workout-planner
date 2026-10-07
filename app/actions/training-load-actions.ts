@@ -14,7 +14,7 @@ export async function getAthleteTrainingLoadAction(
   }
 
   const athlete = await getAthleteById(athleteId)
-  if (!athlete || athlete.isDeleted) {
+  if (!athlete) {
     return { success: false as const, data: null }
   }
 
