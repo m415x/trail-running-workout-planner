@@ -245,7 +245,7 @@ export async function createGroup(_previousState: GroupFormState, formData: Form
     })
   } catch (error) {
     console.error('Error creating group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo crear el grupo' }
+    return { error: 'No se pudo crear el grupo' }
   }
 
   const path = groupsPath(data.locale)
@@ -310,7 +310,7 @@ export async function updateGroup(_previousState: GroupFormState, formData: Form
     })
   } catch (error) {
     console.error('Error updating group:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo actualizar el grupo' }
+    return { error: 'No se pudo actualizar el grupo' }
   }
 
   const path = groupsPath(data.locale)
