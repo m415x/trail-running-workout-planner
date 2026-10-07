@@ -26,6 +26,7 @@ import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 
 export interface AthleteFormState {
   error?: string
@@ -120,10 +121,19 @@ export async function getAthletesByTeam() {
       }
     }
 
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') {
+      return {
+        success: false as const,
+        data: [],
+        error: 'No autorizado',
+      }
+    }
+
     const authorization = createH4aNextServerAuthorizationBoundary()
     const authorizationResult = await authorization.authorize(access, {
       capability: 'athlete.admin.manage',
-      resource: { teamId: '' },
+      resource: { teamId: activeTeam.teamId },
       at: new Date().toISOString(),
       requiredScope: 'team',
     })
