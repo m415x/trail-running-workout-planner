@@ -131,7 +131,7 @@ export const teamMemberships = sqliteTable(
       .references(() => teams.id, { onDelete: 'restrict' }),
     preset: text('preset').notNull().$type<TeamMembershipPreset>(),
     effectiveFrom: text('effective_from').notNull(),
-    effectiveUntil: text('effective_until').notNull(),
+    effectiveUntil: text('effective_until'),
     isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -168,7 +168,7 @@ export const authorizationGrants = sqliteTable(
     scope: text('scope').notNull(),
     scopeTargetId: text('scope_target_id'),
     effectiveFrom: text('effective_from').notNull(),
-    effectiveUntil: text('effective_until'),
+    effectiveUntil: text('effective_until').notNull(),
     grantedByUserId: text('granted_by_user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'restrict' }),
