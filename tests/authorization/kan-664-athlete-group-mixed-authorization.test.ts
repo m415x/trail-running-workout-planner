@@ -15,18 +15,29 @@ function section(source: string, startMarker: string, endMarker?: string): strin
 }
 
 describe('KAN-664 authorized mixed Athlete/Group reads', () => {
+  it('centralizes both administrative capabilities against stored group ownership', () => {
+    const helper = section(
+      groupActions,
+      'async function authorizeMixedGroupRead',
+      'export async function getEligibleAthletesForGroup',
+    )
+
+    assert.match(helper, /athleteGroups\.id/)
+    assert.match(helper, /resource:\s*\{\s*teamId:\s*group\.teamId/)
+    assert.match(helper, /capability:\s*['"]athlete\.admin\.manage['"]/)
+    assert.match(helper, /capability:\s*['"]sporting_group\.admin\.manage['"]/)
+    assert.match(helper, /requiredScope:\s*['"]team['"]/)
+    assert.doesNotMatch(helper, /CURRENT_TEAM_ID/)
+  })
+
   for (const [start, end] of [
     ['export async function getEligibleAthletesForGroup', 'export async function getGroupWithMembers'],
     ['export async function getGroupWithMembers', 'export async function createGroup'],
   ] as const) {
-    it(`${start} requires both administrative capabilities against stored group ownership`, () => {
+    it(`${start} delegates to the mixed authorization boundary`, () => {
       const body = section(groupActions, start, end)
 
-      assert.match(body, /athleteGroups\.id/)
-      assert.match(body, /resource:\s*\{\s*teamId:\s*group\.teamId/)
-      assert.match(body, /capability:\s*['"]athlete\.admin\.manage['"]/)
-      assert.match(body, /capability:\s*['"]sporting_group\.admin\.manage['"]/)
-      assert.match(body, /requiredScope:\s*['"]team['"]/)
+      assert.match(body, /authorizeMixedGroupRead\(groupId\)/)
       assert.doesNotMatch(body, /CURRENT_TEAM_ID/)
     })
   }
