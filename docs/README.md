@@ -11,7 +11,7 @@ Domain and technical contracts that current implementation should preserve unles
 - [`architecture/realized-training/`](architecture/realized-training/) — durable realized-training evidence, plan-real comparison and capture contracts.
 - [`architecture/monitoring/`](architecture/monitoring/) — monitoring, Training Response and Athlete Stats analytics/disclosure contracts.
 - [`architecture/planning/`](architecture/planning/) — planning-domain contracts.
-- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md), [identity/team-membership authority](architecture/platform/identity-and-team-membership.md) and [authentication session lifecycle](architecture/platform/authentication-session-lifecycle.md).
+- [`architecture/platform/`](architecture/platform/) — platform/infrastructure contracts, including the supported [SQLite local lifecycle](architecture/platform/sqlite-local-operations.md), [identity/team-membership authority](architecture/platform/identity-and-team-membership.md), [authentication session lifecycle](architecture/platform/authentication-session-lifecycle.md) and [authorization capabilities/scopes](architecture/platform/authorization-capabilities-scopes.md).
 - [`architecture/memberships.md`](architecture/memberships.md) — Epic 5 H1–H5 economic contract: temporal policy/terms/charges, auditable exceptions, append-only Payments, derived account/history projection and Coach/Athlete prior-debt experience.
 
 ### Monitoring baseline
