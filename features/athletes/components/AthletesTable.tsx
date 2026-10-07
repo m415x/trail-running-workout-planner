@@ -39,8 +39,6 @@ export interface AthleteListItem {
     categoryCode: AthleteCategoryCode
     levelCode: AthleteLevelCode
   } | null
-  currentPlanningCohort: { id: string; name: string } | null
-  hasPlanningCohortConflict: boolean
 }
 
 interface AthletesTableProps {
@@ -109,11 +107,6 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                 : `/${locale}/dashboard/athletes/${athlete.id}`
               const editPath = `${basePath}/edit`
               const groupPath = `${basePath}/group`
-              const cohortPath = athlete.currentPlanningCohort
-                ? (locale === 'es'
-                    ? `/dashboard/cohorts/${athlete.currentPlanningCohort.id}`
-                    : `/${locale}/dashboard/cohorts/${athlete.currentPlanningCohort.id}`)
-                : null
               const isChangingState = isPending && pendingAthleteId === athlete.id
 
               return (
@@ -140,13 +133,6 @@ export function AthletesTable({ athletes, locale }: AthletesTableProps) {
                   <TableCell>
                     <div className='flex flex-col items-start gap-1'>
                       {groupCode ? <Badge variant='secondary'>{groupCode}</Badge> : <Badge variant='outline'>{t('noGroup')}</Badge>}
-                      {athlete.hasPlanningCohortConflict ? (
-                        <span className='text-xs font-medium text-destructive'>{t('cohortConflict')}</span>
-                      ) : athlete.currentPlanningCohort && cohortPath ? (
-                        <Link href={cohortPath} className='max-w-48 truncate text-xs text-muted-foreground hover:text-foreground hover:underline'>
-                          {athlete.currentPlanningCohort.name}
-                        </Link>
-                      ) : null}
                     </div>
                   </TableCell>
 
