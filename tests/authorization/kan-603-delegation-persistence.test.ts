@@ -35,6 +35,7 @@ test('KAN-657 persists the bounded H3 grant lifecycle fields', () => {
   assert.equal('actorSnapshot' in columns, false)
   assert.equal('auditPayload' in columns, false)
   assert.equal('rlsPolicy' in columns, false)
+  assert.equal(columns.effectiveUntil.notNull, true)
 })
 
 const activeGrant = (
