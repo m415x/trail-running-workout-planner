@@ -106,7 +106,7 @@ test('KAN-615 commits identity and all twelve references with canonical 0016', (
     )
 
     const expectedHash = createHash('sha256')
-      .update(canonicalSql)
+      .update(canonicalSql.replace(/\r\n/g, '\n'))
       .digest('hex')
 
     const historyAfter = sqlite.prepare(`

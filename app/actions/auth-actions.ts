@@ -9,6 +9,7 @@ import { requestPasswordRecovery } from '@/lib/auth/password-recovery-request'
 import { completePasswordRecovery } from '@/lib/auth/password-recovery-update'
 import type { SupportedAuthLocale } from '@/lib/auth/safe-return-path'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 
 export type LoginActionState =
   | { status: 'idle' }
@@ -70,6 +71,9 @@ export async function logoutAction(
   if (signOutResult.error) {
     return { status: 'invalid' }
   }
+
+  const context = createActiveTeamNextServerContext()
+  await context.clear()
 
   redirect(locale === 'en' ? '/en/login' : '/es/login')
 }

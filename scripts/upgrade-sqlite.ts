@@ -231,10 +231,24 @@ function establishCanonicalMigrationMetadata(
   for (const entry of journal.entries.slice(0, appliedCount)) {
     const migrationPath = resolve(projectRoot, 'drizzle/sqlite', `${entry.tag}.sql`)
     const sql = readFileSync(migrationPath, 'utf8')
-    const hash = createHash('sha256').update(sql).digest('hex')
+    const rawHash = createHash('sha256').update(sql).digest('hex')
+    const canonicalHash =
+      entry.tag === '0016_athlete_profile_identity'
+        ? createHash('sha256')
+            .update(sql.replace(/\r\n/g, '\n'))
+            .digest('hex')
+        : rawHash
+
     const row = existing.get(entry.when) as { hash: string } | undefined
     if (row) {
-      if (row.hash !== hash) {
+      const acceptedExistingHash =
+        row.hash === canonicalHash ||
+        (
+          entry.tag === '0016_athlete_profile_identity' &&
+          row.hash === rawHash
+        )
+
+      if (!acceptedExistingHash) {
         throw new Error(
           `SQLite migration metadata conflict at canonical timestamp ${entry.when}`,
         )
@@ -242,7 +256,7 @@ function establishCanonicalMigrationMetadata(
       continue
     }
 
-    insert.run(hash, entry.when)
+    insert.run(canonicalHash, entry.when)
   }
 }
 
@@ -523,13 +537,24 @@ if (state === "versioned") {
         'SELECT id FROM __drizzle_migrations ORDER BY rowid',
       ).all() as Array<{ id: number | null }>
 
-      if (
-        metadataIdentifiers.length !== journal.entries.length ||
+      const hasInvalidIntegerIdentifiers =
+        metadataFormat === 'integer' &&
         metadataIdentifiers.some((record, index) =>
+          !Number.isSafeInteger(record.id) ||
+          Number(record.id) <= 0 ||
+          (
+            index > 0 &&
+            Number(record.id) <= Number(metadataIdentifiers[index - 1]?.id)
+          )
+        )
+
+      if (
+        metadataIdentifiers.length < 17 ||
+        metadataIdentifiers.length > journal.entries.length ||
+        (
           metadataFormat === 'serial'
-            ? record.id !== null
-            : !Number.isSafeInteger(record.id) ||
-              record.id !== index + 1
+            ? metadataIdentifiers.some(record => record.id !== null)
+            : hasInvalidIntegerIdentifiers
         )
       ) {
         throw new Error(
@@ -537,23 +562,45 @@ if (state === "versioned") {
         )
       }
 
-      const expected = journal.entries.map(entry => ({
-        hash: createHash('sha256')
-          .update(
-            readFileSync(
-              resolve(projectRoot, 'drizzle/sqlite', entry.tag + '.sql'),
-              'utf8',
-            ),
+      const expected = journal.entries
+        .slice(0, metadataIdentifiers.length)
+        .map(entry => {
+          const migrationSql = readFileSync(
+            resolve(projectRoot, 'drizzle/sqlite', entry.tag + '.sql'),
+            'utf8',
           )
-          .digest('hex'),
-        created_at: entry.when,
-      }))
+          const rawHash = createHash('sha256')
+            .update(migrationSql)
+            .digest('hex')
+          const canonicalHash =
+            entry.tag === '0016_athlete_profile_identity'
+              ? createHash('sha256')
+                  .update(migrationSql.replace(/\r\n/g, '\n'))
+                  .digest('hex')
+              : rawHash
+
+          return {
+            rawHash,
+            canonicalHash,
+            created_at: entry.when,
+          }
+        })
 
       const actual = sqlite.prepare(
         'SELECT hash, created_at FROM __drizzle_migrations ORDER BY rowid',
-      ).all()
+      ).all() as Array<{ hash: string; created_at: number }>
 
-      if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      const hasMigrationHistoryDrift = actual.some((record, index) => {
+        const canonical = expected[index]
+        if (!canonical || record.created_at !== canonical.created_at) return true
+
+        return (
+          record.hash !== canonical.rawHash &&
+          record.hash !== canonical.canonicalHash
+        )
+      })
+
+      if (hasMigrationHistoryDrift) {
         throw new Error(
           'AthleteProfile incompatible applied 0016: migration history',
         )

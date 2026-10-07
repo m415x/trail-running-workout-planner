@@ -24,7 +24,20 @@ test('KAN-619 server action delegates athlete active-state changes through the t
 
   assert.match(
     action,
-    /setAthleteProfileActiveState\(db,\s*\{[\s\S]*?teamId:\s*CURRENT_TEAM_ID[\s\S]*?athleteId[\s\S]*?isActive/,
+    /setAthleteProfileActiveState\(db,\s*\{[\s\S]*?teamId:\s*authorizationResult\.teamId[\s\S]*?athleteId[\s\S]*?isActive/,
+  )
+  assert.match(
+    action,
+    /capability:\s*['"]athlete\.admin\.manage['"]/,
+  )
+  assert.match(
+    action,
+    /resource:\s*\{\s*teamId:\s*athlete\.teamId\s*\}/,
+  )
+  assert.doesNotMatch(
+    action,
+    /CURRENT_TEAM_ID/,
+    'server action must derive Team authority from the authorized resource context',
   )
   assert.doesNotMatch(
     action,

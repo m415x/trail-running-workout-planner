@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
@@ -45,4 +45,57 @@ test('KAN-620 ORM migrator advances canonical 0016 state through current SQLite 
   } finally {
     rmSync(directory, { recursive: true, force: true })
   }
+})
+
+
+test('KAN-666 SQLite upgrader accepts canonical post-0016 prefix metadata with AUTOINCREMENT gaps', () => {
+  const source = readFileSync(resolve('scripts/upgrade-sqlite.ts'), 'utf8')
+
+  assert.doesNotMatch(
+    source,
+    /record\.id\s*!==\s*index\s*\+\s*1/,
+    'AUTOINCREMENT ids are bookkeeping identities and may contain gaps after a supported metadata repair',
+  )
+  assert.match(
+    source,
+    /created_at/,
+    'canonical applied-prefix validation must remain anchored by migration timestamps',
+  )
+  assert.match(
+    source,
+    /hash/,
+    'canonical applied-prefix validation must remain anchored by migration hashes',
+  )
+})
+
+test('KAN-666 SQLite HEAD verifier requires the H3 authorization_grants table', () => {
+  const source = readFileSync(resolve('scripts/verify-sqlite.ts'), 'utf8')
+
+  assert.match(
+    source,
+    /['"]authorization_grants['"]/,
+    'HEAD verification must reject a database that has not applied canonical migration 0019',
+  )
+})
+
+
+test('KAN-666 canonicalizes the dedicated 0016 hash across LF and CRLF checkouts', () => {
+  const executor = readFileSync(
+    resolve('db/migrations/athlete-profile-identity-sqlite.ts'),
+    'utf8',
+  )
+  const upgrader = readFileSync(resolve('scripts/upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(
+    executor,
+    /migrationSql\.replace\(\/\\r\\n\/g, ['"]\\n['"]\)/,
+  )
+  assert.match(
+    upgrader,
+    /entry\.tag === ['"]0016_athlete_profile_identity['"]/,
+  )
+  assert.match(
+    upgrader,
+    /record\.hash !== canonical\.rawHash[\s\S]*record\.hash !== canonical\.canonicalHash/,
+  )
 })

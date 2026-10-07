@@ -115,11 +115,37 @@ Caller-facing H3 input has no actor/user field. Anonymous, unlinked or invalid H
 
 KAN-603 provides this reusable boundary but does not exhaustively migrate Coach/Athlete vertical consumers. That enforcement belongs to the downstream H4/H5/H6 stories named below.
 
+
+## H4A Coach administrative enforcement (KAN-604)
+
+KAN-604 is the first downstream vertical enforcement of the H3 boundary for Coach-side AthleteProfile and Sporting Group administration.
+
+The active Team is operational context, not authority:
+
+- H2 continues to resolve only the authenticated internal `userId`;
+- the server resolves the active Team from current TeamMembership evidence and the `ept_active_team` cookie when present;
+- the cookie stores only a Team identifier, is `HttpOnly`, `SameSite=Lax`, `Path=/` and secure in production;
+- the cookie never grants membership, preset or capability authority and is revalidated on every resolution;
+- exactly one applicable TeamMembership may auto-resolve the Team;
+- multiple applicable memberships without an explicit validated selection fail closed;
+- stale, malformed, cross-user or otherwise invalid Team context fails closed;
+- Team selection is accepted only after server-side H2 identity resolution and membership validation.
+
+H4A uses the H3 capabilities `athlete.admin.manage` and `sporting_group.admin.manage` with TEAM scope. Preset names are not checked by H4A callers.
+
+Resource identifiers remain locators, not authority. Detail/update/lifecycle operations derive the stored resource Team before H3 evaluation, so an active Team cannot make a cross-Team AthleteProfile or Sporting Group accessible.
+
+Mixed Athlete/Group reads and Athlete→Sporting Group movement require both capabilities. The movement action derives `changedByUserId` from the authenticated H2 User, validates both stored resource Teams and destination activity before mutation, and delegates the final write to the existing atomic group-assignment boundary.
+
+`returnContext` is navigation-only input. It cannot affect actor, Team, capability, ownership or selected resource and an inconsistent value must not turn an otherwise authorized operation into an authorization denial.
+
+KAN-604 does not introduce a second application session, a client-authoritative Team store, a generic permission editor, or a complete multi-Team UX.
+
 ## Deferred boundaries
 
 H3 does not implement:
 
-- exhaustive Coach/Athlete vertical enforcement (KAN-604 through KAN-608);
+- remaining Coach/Athlete vertical enforcement after completed H4A KAN-604 (KAN-605 through KAN-608);
 - economic blocking rules (KAN-609);
 - cross-domain sensitive-operation audit (KAN-610);
 - PostgreSQL RLS/effective-actor enforcement (KAN-611);

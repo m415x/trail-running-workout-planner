@@ -587,7 +587,7 @@ export function migrateAthleteProfileIdentitySqlite(
   }
 
   const migrationHash = createHash('sha256')
-    .update(migrationSql)
+    .update(migrationSql.replace(/\r\n/g, '\n'))
     .digest('hex')
 
   const relatedTables = [

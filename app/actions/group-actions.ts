@@ -1,7 +1,7 @@
 'use server'
 
 import { randomUUID } from 'node:crypto'
-import { and, eq, ne } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
@@ -10,8 +10,14 @@ import { db } from '@/db'
 import { athleteGroups } from '@/db/schema'
 import { getEligibleAthletesForSportingGroup } from '@/lib/groups/eligible-athletes'
 import { getSportingGroupWithMembers } from '@/lib/groups/group-members-read'
-
-const CURRENT_TEAM_ID = 'team_1'
+import { createSportingGroupAdministration } from '@/lib/groups/create-sporting-group-administration'
+import { updateSportingGroupAdministration } from '@/lib/groups/update-sporting-group-administration'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 
 const categoryCodes = ['E', 'U', 'M', 'H', 'S', 'B'] as const
 const levelCodes = ['1', '2', '3'] as const
@@ -41,34 +47,153 @@ function groupsPath(locale: SupportedLocale) {
 }
 
 export async function getGroupsByTeam() {
-  return db.query.athleteGroups.findMany({
-    where: and(eq(athleteGroups.teamId, CURRENT_TEAM_ID), eq(athleteGroups.isDeleted, false)),
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
+  }
+
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') {
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
+  }
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizationResult = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: activeTeam.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+
+  if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+    return {
+      success: false as const,
+      data: [],
+      error: 'No autorizado',
+    }
+  }
+
+  const groups = await db.query.athleteGroups.findMany({
+    where: and(
+      eq(athleteGroups.teamId, authorizationResult.teamId),
+      eq(athleteGroups.isDeleted, false),
+    ),
     orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
+
+  return {
+    success: true as const,
+    data: groups,
+  }
 }
 
 export async function getGroupById(groupId: string) {
-  return db.query.athleteGroups.findFirst({
+  const group = await db.query.athleteGroups.findFirst({
     where: and(
       eq(athleteGroups.id, groupId),
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
       eq(athleteGroups.isDeleted, false),
     ),
   })
+
+  if (!group) return undefined
+
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') return undefined
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizationResult = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: group.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+
+  if (!authorizationResult.allowed) return undefined
+
+  return group
+}
+
+async function authorizeMixedGroupRead(groupId: string) {
+  const group = await db.query.athleteGroups.findFirst({
+    where: and(
+      eq(athleteGroups.id, groupId),
+      eq(athleteGroups.isDeleted, false),
+    ),
+  })
+
+  if (!group) return null
+
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') return null
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const athleteAuthorization = await authorization.authorize(access, {
+    capability: 'athlete.admin.manage',
+    resource: { teamId: group.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!athleteAuthorization.allowed || !('teamId' in athleteAuthorization)) {
+    return null
+  }
+
+  const groupAuthorization = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: group.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!groupAuthorization.allowed || !('teamId' in groupAuthorization)) {
+    return null
+  }
+
+  return {
+    group,
+    teamId: groupAuthorization.teamId,
+  }
 }
 
 export async function getEligibleAthletesForGroup(groupId: string) {
+  const authorizationResult = await authorizeMixedGroupRead(groupId)
+  if (!authorizationResult) return null
+
   return getEligibleAthletesForSportingGroup({
     db,
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorizationResult.teamId,
     groupId,
   })
 }
 
 export async function getGroupWithMembers(groupId: string) {
+  const authorizationResult = await authorizeMixedGroupRead(groupId)
+  if (!authorizationResult) return null
+
   return getSportingGroupWithMembers({
     db,
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorizationResult.teamId,
     groupId,
   })
 }
@@ -83,30 +208,41 @@ export async function createGroup(_previousState: GroupFormState, formData: Form
   const data = parsed.data
 
   try {
-    const duplicate = db.query.athleteGroups.findFirst({
-      where: and(
-        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
-        eq(athleteGroups.categoryCode, data.categoryCode),
-        eq(athleteGroups.levelCode, data.levelCode),
-      ),
-    }).sync()
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
 
-    if (duplicate) {
-      return { error: `Ya existe el grupo ${data.categoryCode}${data.levelCode}` }
+    if (access.status !== 'authenticated') {
+      return { error: 'No autorizado' }
     }
 
-    const now = new Date().toISOString()
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') {
+      return { error: 'No autorizado' }
+    }
 
-    db.insert(athleteGroups).values({
-      id: randomUUID(),
-      teamId: CURRENT_TEAM_ID,
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'sporting_group.admin.manage',
+      resource: { teamId: activeTeam.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return { error: 'No autorizado' }
+    }
+
+    createSportingGroupAdministration(db, {
+      groupId: randomUUID(),
+      teamId: authorizationResult.teamId,
       categoryCode: data.categoryCode,
       levelCode: data.levelCode,
       description: data.description || null,
-      isActive: true,
-      createdAt: now,
-      updatedAt: now,
-    }).run()
+      createdAt: new Date().toISOString(),
+    })
   } catch (error) {
     console.error('Error creating group:', error)
     return { error: 'No se pudo crear el grupo' }
@@ -132,26 +268,46 @@ export async function updateGroup(_previousState: GroupFormState, formData: Form
   const data = parsed.data
 
   try {
-    const group = db.query.athleteGroups.findFirst({
+    const group = await db.query.athleteGroups.findFirst({
       where: and(
         eq(athleteGroups.id, groupId),
-        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
         eq(athleteGroups.isDeleted, false),
       ),
-    }).sync()
+    })
 
     if (!group) {
       return { error: 'Grupo no encontrado' }
     }
 
-    db.update(athleteGroups)
-      .set({
-        description: data.description || null,
-        isActive: data.isActive,
-        updatedAt: new Date().toISOString(),
-      })
-      .where(and(eq(athleteGroups.id, group.id), ne(athleteGroups.isDeleted, true)))
-      .run()
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return { error: 'No autorizado' }
+    }
+
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'sporting_group.admin.manage',
+      resource: { teamId: group.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return { error: 'No autorizado' }
+    }
+
+    updateSportingGroupAdministration(db, {
+      groupId,
+      teamId: authorizationResult.teamId,
+      description: data.description || null,
+      isActive: data.isActive,
+      updatedAt: new Date().toISOString(),
+    })
   } catch (error) {
     console.error('Error updating group:', error)
     return { error: 'No se pudo actualizar el grupo' }

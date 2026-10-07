@@ -14,7 +14,7 @@ interface GroupsPageProps {
 export default async function GroupsPage({ params }: GroupsPageProps) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'CoachPlanningAudience.sportingGroups' })
-  const groups = await getGroupsByTeam()
+  const result = await getGroupsByTeam()
   const groupsPath = locale === 'es' ? '/dashboard/groups' : `/${locale}/dashboard/groups`
 
   return (
@@ -27,7 +27,11 @@ export default async function GroupsPage({ params }: GroupsPageProps) {
         <Link href={`${groupsPath}/new`} className={buttonVariants()}><Plus /> {t('new')}</Link>
       </div>
 
-      {groups.length === 0 ? (
+      {!result.success ? (
+        <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive'>
+          {result.error}
+        </div>
+      ) : result.data.length === 0 ? (
         <Card>
           <CardHeader>
             <CardTitle>{t('emptyTitle')}</CardTitle>
@@ -36,7 +40,7 @@ export default async function GroupsPage({ params }: GroupsPageProps) {
         </Card>
       ) : (
         <div className='grid gap-4 sm:grid-cols-2 xl:grid-cols-3'>
-          {groups.map((group) => {
+          {result.data.map((group) => {
             const code = `${group.categoryCode}${group.levelCode}`
             return (
               <Card key={group.id} className={!group.isActive ? 'opacity-60' : undefined}>

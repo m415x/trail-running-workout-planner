@@ -25,7 +25,8 @@ export default async function SessionsPage({ params, searchParams }: SessionsPag
   const { locale } = await params
   const t = await getTranslations('Sessions')
   const query = await searchParams
-  const [sessions, groups] = await Promise.all([getSessionsByTeam(), getGroupsByTeam()])
+  const [sessions, groupsResult] = await Promise.all([getSessionsByTeam(), getGroupsByTeam()])
+  const groups = groupsResult.success ? groupsResult.data : []
   const sessionsPath = locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
   const requestedGroupId = typeof query.group === 'string' ? query.group : ''
   const selectedGroup = groups.find((group) => group.id === requestedGroupId)

@@ -10,7 +10,6 @@ import { db } from '@/db'
 import {
   athleteGroups,
   athleteProfiles,
-  planningCohortMemberships,
 } from '@/db/schema'
 import { createAthleteGroupAssignmentAction } from '@/lib/athletes/group-assignment-action'
 import { setAthleteProfileActiveState } from '@/lib/athletes/athlete-profile-lifecycle'
@@ -19,8 +18,13 @@ import { projectAthleteAdministrativeRead } from '@/lib/athletes/administrative-
 import { updateAthleteAdministration } from '@/lib/athletes/update-athlete-administration'
 
 export type { AthleteGroupFormState } from '@/lib/athletes/group-assignment-action'
-import { classifyPlanningCohortMembership } from '@/lib/planning-cohorts/membership-view'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 
 export interface AthleteFormState {
   error?: string
@@ -36,8 +40,6 @@ export interface AthleteFormState {
     emergencyPhone?: string
   }
 }
-
-const CURRENT_TEAM_ID = 'team_1'
 
 const athleteFormSchema = z.object({
   firstName: z.string().trim().min(2, 'Ingresá el nombre del atleta'),
@@ -101,14 +103,77 @@ function getCurrentDateInArgentina() {
 
 export async function getAthletesByTeam() {
   try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return {
+        success: false as const,
+        data: [],
+        error: 'No autorizado',
+      }
+    }
+
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') {
+      return {
+        success: false as const,
+        data: [],
+        error: 'No autorizado',
+      }
+    }
+
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'athlete.admin.manage',
+      resource: { teamId: activeTeam.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return {
+        success: false as const,
+        data: [],
+        error: 'No autorizado',
+      }
+    }
+
     const athletes = await db.query.athleteProfiles.findMany({
-      where: and(eq(athleteProfiles.teamId, CURRENT_TEAM_ID), eq(athleteProfiles.isDeleted, false)),
+      where: and(
+        eq(athleteProfiles.teamId, authorizationResult.teamId),
+        eq(athleteProfiles.isDeleted, false),
+      ),
+      columns: {
+        id: true,
+        teamId: true,
+        userId: true,
+        groupId: true,
+        isActive: true,
+        firstName: true,
+        lastName: true,
+        contactEmail: true,
+        phone: true,
+      },
       with: {
-        user: true,
-        group: true,
-        planningCohortMemberships: {
-          where: eq(planningCohortMemberships.isDeleted, false),
-          with: { planningCohort: true },
+        user: {
+          columns: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatar: true,
+          },
+        },
+        group: {
+          columns: {
+            id: true,
+            categoryCode: true,
+            levelCode: true,
+          },
         },
       },
     })
@@ -133,23 +198,17 @@ export async function getAthletesByTeam() {
       return first.id.localeCompare(second.id)
     })
 
-    const today = getCurrentDateInArgentina()
-    const listItems = athletes.map(({ planningCohortMemberships: memberships, ...athlete }) => {
-      const currentMemberships = memberships.filter((membership) => (
-        !membership.planningCohort.isDeleted
-        && classifyPlanningCohortMembership(membership, today) === 'current'
-      ))
-      const currentMembership = currentMemberships.length === 1 ? currentMemberships[0] : null
-
-      return {
-        ...athlete,
-        administrative: projectAthleteAdministrativeRead(athlete),
-        currentPlanningCohort: currentMembership
-          ? { id: currentMembership.planningCohort.id, name: currentMembership.planningCohort.name }
-          : null,
-        hasPlanningCohortConflict: currentMemberships.length > 1,
-      }
-    })
+    const listItems = athletes.map((athlete) => ({
+      id: athlete.id,
+      teamId: athlete.teamId,
+      userId: athlete.userId,
+      groupId: athlete.groupId,
+      isActive: athlete.isActive,
+      phone: athlete.phone,
+      user: athlete.user,
+      group: athlete.group,
+      administrative: projectAthleteAdministrativeRead(athlete),
+    }))
 
     return {
       success: true as const,
@@ -167,23 +226,122 @@ export async function getAthletesByTeam() {
 }
 
 export async function getAthleteById(athleteId: string) {
-  return db.query.athleteProfiles.findFirst({
+  const athlete = await db.query.athleteProfiles.findFirst({
     where: and(
       eq(athleteProfiles.id, athleteId),
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
       eq(athleteProfiles.isDeleted, false),
     ),
+    columns: {
+      id: true,
+      teamId: true,
+      userId: true,
+      groupId: true,
+      isActive: true,
+      firstName: true,
+      lastName: true,
+      contactEmail: true,
+      nickName: true,
+      dni: true,
+      birthday: true,
+      phone: true,
+      emergencyContact: true,
+      emergencyPhone: true,
+    },
     with: {
-      user: true,
-      group: true,
+      user: {
+        columns: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatar: true,
+        },
+      },
+      group: {
+        columns: {
+          id: true,
+          categoryCode: true,
+          levelCode: true,
+        },
+      },
     },
   })
+
+  if (!athlete) return undefined
+
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return undefined
+  }
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizationResult = await authorization.authorize(access, {
+    capability: 'athlete.admin.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+
+  if (!authorizationResult.allowed) {
+    return undefined
+  }
+
+  return {
+    id: athlete.id,
+    teamId: athlete.teamId,
+    userId: athlete.userId,
+    groupId: athlete.groupId,
+    isActive: athlete.isActive,
+    firstName: athlete.firstName,
+    lastName: athlete.lastName,
+    contactEmail: athlete.contactEmail,
+    nickName: athlete.nickName,
+    dni: athlete.dni,
+    birthday: athlete.birthday,
+    phone: athlete.phone,
+    emergencyContact: athlete.emergencyContact,
+    emergencyPhone: athlete.emergencyPhone,
+    user: athlete.user,
+    group: athlete.group,
+  }
 }
 
 export async function getActiveAthleteGroups() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return []
+  }
+
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') {
+    return []
+  }
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizationResult = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: activeTeam.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+
+  if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+    return []
+  }
+
   return db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, authorizationResult.teamId),
       eq(athleteGroups.isActive, true),
       eq(athleteGroups.isDeleted, false),
     ),
@@ -201,12 +359,39 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
   const data = parsed.data
 
   try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return { error: 'No autorizado' }
+    }
+
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') {
+      return { error: 'No autorizado' }
+    }
+
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'athlete.admin.manage',
+      resource: { teamId: activeTeam.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return { error: 'No autorizado' }
+    }
+
     const now = new Date().toISOString()
     const athleteId = randomUUID()
 
     createAthleteAdministration(db, {
       athleteId,
-      teamId: CURRENT_TEAM_ID,
+      teamId: authorizationResult.teamId,
       firstName: data.firstName,
       lastName: data.lastName,
       contactEmail: data.email,
@@ -222,14 +407,14 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
         db: tx,
         createId: randomUUID,
       }).initializeNewAthleteBillingInTransaction({
-        teamId: CURRENT_TEAM_ID,
+        teamId: authorizationResult.teamId,
         athleteId,
         effectiveFrom: getCurrentDateInArgentina(),
       })
     })
   } catch (error) {
     console.error('Error creating athlete:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo crear el atleta' }
+    return { error: 'No se pudo crear el atleta' }
   }
 
   const path = athletesPath(data.locale)
@@ -254,8 +439,41 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   const data = parsed.data
 
   try {
+    const athlete = await db.query.athleteProfiles.findFirst({
+      where: and(
+        eq(athleteProfiles.id, athleteId),
+        eq(athleteProfiles.isDeleted, false),
+      ),
+    })
+
+    if (!athlete) {
+      return { error: 'No se pudo identificar al atleta', values }
+    }
+
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return { error: 'No autorizado', values }
+    }
+
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'athlete.admin.manage',
+      resource: { teamId: athlete.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return { error: 'No autorizado', values }
+    }
+
     updateAthleteAdministration(db, {
-      teamId: CURRENT_TEAM_ID,
+      teamId: authorizationResult.teamId,
       athleteId,
       firstName: data.firstName,
       lastName: data.lastName,
@@ -272,7 +490,7 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   } catch (error) {
     console.error('Error updating athlete:', error)
     return {
-      error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta',
+      error: 'No se pudo actualizar el atleta',
       values,
     }
   }
@@ -284,8 +502,50 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
 
 export async function setAthleteActiveState(athleteId: string, isActive: boolean, locale: string = 'es') {
   try {
+    const athlete = await db.query.athleteProfiles.findFirst({
+      where: and(
+        eq(athleteProfiles.id, athleteId),
+        eq(athleteProfiles.isDeleted, false),
+      ),
+    })
+
+    if (!athlete) {
+      return {
+        success: false as const,
+        error: 'No se pudo identificar al atleta',
+      }
+    }
+
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return {
+        success: false as const,
+        error: 'No autorizado',
+      }
+    }
+
+    const authorization = createH4aNextServerAuthorizationBoundary()
+    const authorizationResult = await authorization.authorize(access, {
+      capability: 'athlete.admin.manage',
+      resource: { teamId: athlete.teamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    })
+
+    if (!authorizationResult.allowed || !('teamId' in authorizationResult)) {
+      return {
+        success: false as const,
+        error: 'No autorizado',
+      }
+    }
+
     setAthleteProfileActiveState(db, {
-      teamId: CURRENT_TEAM_ID,
+      teamId: authorizationResult.teamId,
       athleteId,
       isActive,
       updatedAt: new Date().toISOString(),
@@ -299,14 +559,23 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
 
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : 'No se pudo actualizar el estado del atleta',
+      error: 'No se pudo actualizar el estado del atleta',
     }
   }
 }
 
 export const assignAthleteToGroup = createAthleteGroupAssignmentAction({
   db,
-  teamId: CURRENT_TEAM_ID,
+  requireAccess: async () => {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+  },
+  authorize: (access, request) =>
+    createH4aNextServerAuthorizationBoundary().authorize(access, request),
   createId: randomUUID,
   now: () => new Date().toISOString(),
   today: getCurrentDateInArgentina,
