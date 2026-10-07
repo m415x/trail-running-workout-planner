@@ -17,13 +17,16 @@ export function createSportingGroupAdministration<TSchema extends Record<string,
   database: BetterSQLite3Database<TSchema>,
   input: CreateSportingGroupAdministrationInput,
 ): void {
-  const duplicate = database.query.athleteGroups.findFirst({
-    where: and(
+  const duplicate = database
+    .select({ id: athleteGroups.id })
+    .from(athleteGroups)
+    .where(and(
       eq(athleteGroups.teamId, input.teamId),
       eq(athleteGroups.categoryCode, input.categoryCode),
       eq(athleteGroups.levelCode, input.levelCode),
-    ),
-  }).sync()
+    ))
+    .limit(1)
+    .get()
 
   if (duplicate) {
     throw new Error(`Ya existe el grupo ${input.categoryCode}${input.levelCode}`)
