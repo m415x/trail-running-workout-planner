@@ -140,7 +140,8 @@ export function createAthleteGroupAssignmentAction<
         },
       })
     } catch (error) {
-      return { error: error instanceof Error ? error.message : 'No se pudo cambiar el grupo' }
+      console.error('Error assigning athlete to group:', error)
+      return { error: 'No se pudo cambiar el grupo' }
     }
 
     const listPath = athletesPath(data.locale)
