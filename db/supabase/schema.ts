@@ -4,6 +4,7 @@ import { relations, sql } from 'drizzle-orm'
 
 import type {
   UserRole,
+  TeamMembershipPreset,
   AthleteCategoryCode,
   AthleteLevelCode,
   AthletePhysiology,
@@ -130,7 +131,7 @@ export const teamMemberships = pgTable(
     teamId: text('team_id')
       .notNull()
       .references(() => teams.id, { onDelete: 'restrict' }),
-    preset: text('preset').notNull().$type<UserRole>(),
+    preset: text('preset').notNull().$type<TeamMembershipPreset>(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
     isActive: boolean('is_active').notNull().default(true),
