@@ -77,3 +77,25 @@ test('KAN-666 SQLite HEAD verifier requires the H3 authorization_grants table', 
     'HEAD verification must reject a database that has not applied canonical migration 0019',
   )
 })
+
+
+test('KAN-666 canonicalizes the dedicated 0016 hash across LF and CRLF checkouts', () => {
+  const executor = readFileSync(
+    resolve('db/migrations/athlete-profile-identity-sqlite.ts'),
+    'utf8',
+  )
+  const upgrader = readFileSync(resolve('scripts/upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(
+    executor,
+    /migrationSql\.replace\(\/\\r\\n\/g, ['"]\\n['"]\)/,
+  )
+  assert.match(
+    upgrader,
+    /entry\.tag === ['"]0016_athlete_profile_identity['"]/,
+  )
+  assert.match(
+    upgrader,
+    /record\.hash !== canonical\.rawHash[\s\S]*record\.hash !== canonical\.canonicalHash/,
+  )
+})
