@@ -19,8 +19,6 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 
-const CURRENT_TEAM_ID = 'team_1'
-
 const categoryCodes = ['E', 'U', 'M', 'H', 'S', 'B'] as const
 const levelCodes = ['1', '2', '3'] as const
 const locales = ['es', 'en'] as const
@@ -112,18 +110,69 @@ export async function getGroupById(groupId: string) {
   return group
 }
 
+async function authorizeMixedGroupRead(groupId: string) {
+  const group = await db.query.athleteGroups.findFirst({
+    where: and(
+      eq(athleteGroups.id, groupId),
+      eq(athleteGroups.isDeleted, false),
+    ),
+  })
+
+  if (!group) return null
+
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') return null
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const athleteAuthorization = await authorization.authorize(access, {
+    capability: 'athlete.admin.manage',
+    resource: { teamId: group.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!athleteAuthorization.allowed || !('teamId' in athleteAuthorization)) {
+    return null
+  }
+
+  const groupAuthorization = await authorization.authorize(access, {
+    capability: 'sporting_group.admin.manage',
+    resource: { teamId: group.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!groupAuthorization.allowed || !('teamId' in groupAuthorization)) {
+    return null
+  }
+
+  return {
+    group,
+    teamId: groupAuthorization.teamId,
+  }
+}
+
 export async function getEligibleAthletesForGroup(groupId: string) {
+  const authorizationResult = await authorizeMixedGroupRead(groupId)
+  if (!authorizationResult) return null
+
   return getEligibleAthletesForSportingGroup({
     db,
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorizationResult.teamId,
     groupId,
   })
 }
 
 export async function getGroupWithMembers(groupId: string) {
+  const authorizationResult = await authorizeMixedGroupRead(groupId)
+  if (!authorizationResult) return null
+
   return getSportingGroupWithMembers({
     db,
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorizationResult.teamId,
     groupId,
   })
 }
