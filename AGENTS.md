@@ -72,6 +72,18 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 
 Start at `README.md` → `docs/README.md`; do not reconstruct completed work from old chats. Handoffs are temporary; history is consolidated per epic.
 
+## Fresh-chat bootstrap contract
+
+Fresh chats must be able to resume project work from durable authority without depending on conversation history or a long bootstrap prompt.
+
+- Treat prior chats and model memory only as navigation hints. They are never project authority and must not be used to carry forward branch heads, Jira state, approvals, blockers, test results or implementation facts without re-verification.
+- Start from the current remote `dev` integration state. Verify the real remote HEAD before creating or reusing a work branch; a SHA or branch mentioned in an earlier chat or prompt is stale until checked.
+- Reconstruct execution state from Jira before selecting work. Read the candidate story's description, comments, relations, dependencies, subtasks and recent durable evidence; backlog order or satisfied technical dependencies alone do not prove that a story is materially enabled.
+- Reconcile Jira with the current handoff, relevant architecture/docs and current code/tests. Surface material disagreement instead of silently choosing one source.
+- If the apparent next story is waiting on product discovery, an unresolved decision, an operational dependency or another demonstrated blocker, do not materialize or implement it. Preserve reusable analysis, record the blocker when appropriate, and identify another story in the same epic/roadmap that can advance safely and independently.
+- Begin a fresh chat with a short baseline diagnosis: verified `dev` HEAD, current Jira state, the story actually enabled to advance, blockers/decisions that matter, and the proposed first intervention. Do not create/reuse a branch, create subtasks or implement until the story analysis/decomposition requires and receives the approval defined below.
+- Keep bootstrap prompts intentionally short and idempotent. Stable workflow rules belong in this file or `docs/agent-harness.md`; story-specific facts supplied by a prompt must still be verified against durable sources.
+
 ## Story bootstrap and context discipline
 
 For every new story, reconstruct state from durable sources before proposing tasks or code. Memory and prior chats may help navigation but are never project authority.
