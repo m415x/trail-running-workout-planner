@@ -1,0 +1,19 @@
+{
+  "Recovery": {
+    "requestTitle": "Recover access",
+    "requestDescription": "Enter your email and, when applicable, you will receive a link to reset your password.",
+    "email": "Email",
+    "requestSubmit": "Send link",
+    "requestSubmitting": "Sending…",
+    "accepted": "If the account can receive recovery, we will send a link by email.",
+    "requestError": "The request could not be processed. Try again.",
+    "invalidLink": "The recovery link is invalid, expired, or has already been used.",
+    "resetTitle": "New password",
+    "resetDescription": "Enter a new password to complete recovery.",
+    "newPassword": "New password",
+    "resetSubmit": "Save password",
+    "resetSubmitting": "Saving…",
+    "invalidReset": "The password could not be updated. Request a new link and try again.",
+    "backToLogin": "Back to sign in"
+  }
+}

@@ -19,6 +19,10 @@ import {
   users,
 } from '@/db/schema'
 import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
@@ -36,6 +40,21 @@ function formatISODate(date: Date) {
 
 export async function getCurrentAthlete() {
   try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+
+    if (access.status !== 'authenticated') {
+      return {
+        success: false as const,
+        error: 'Acceso no autorizado',
+        forbidden: true as const,
+        reason: access.reason,
+      }
+    }
+
     const user = await db.query.users.findFirst({
       where: and(eq(users.id, CURRENT_USER_ID), eq(users.isDeleted, false)),
 
@@ -72,6 +91,19 @@ export type CurrentAthleteData = NonNullable<Awaited<ReturnType<typeof getCurren
 export async function getWeeklySchedule(
   startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -121,6 +153,19 @@ export async function getWeeklySchedule(
 export async function getCurrentAthletePlanningWeek(
   startDateIso: string = getMondayFromISODate(getCurrentDateInArgentina()),
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athlete = await db.query.athleteProfiles.findFirst({
       where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
@@ -387,6 +432,19 @@ export async function getCurrentAthletePlanningWeek(
 }
 
 export async function getAthleteShoes() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+
+  if (access.status !== 'authenticated') {
+    return {
+      success: false as const,
+      error: 'Acceso no autorizado',
+    }
+  }
+
   try {
     const athleteShoes = await db.query.shoes.findMany({
       where: and(eq(shoes.athleteId, CURRENT_ATHLETE_PROFILE_ID), eq(shoes.isActive, true), eq(shoes.isDeleted, false)),

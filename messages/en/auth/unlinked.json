@@ -1,0 +1,7 @@
+{
+  "Unlinked": {
+    "title": "Access not enabled",
+    "description": "The session is valid, but this account does not have EPT access enabled yet.",
+    "backToLogin": "Back to sign in"
+  }
+}

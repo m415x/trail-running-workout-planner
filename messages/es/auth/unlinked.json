@@ -1,0 +1,7 @@
+{
+  "Unlinked": {
+    "title": "Acceso no habilitado",
+    "description": "La sesión es válida, pero esta cuenta todavía no tiene acceso habilitado en EPT.",
+    "backToLogin": "Volver a iniciar sesión"
+  }
+}

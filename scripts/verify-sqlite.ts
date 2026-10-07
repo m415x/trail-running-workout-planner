@@ -4,6 +4,8 @@ const sqlite = new Database(process.env.SQLITE_SCENARIO_MODE === '1' ? (process.
 try {
   const requiredTables = [
     'users',
+    'external_identity_links',
+    'team_memberships',
     'athlete_profiles',
     'field_performance_tests',
     'team_economic_policies',

@@ -1,0 +1,15 @@
+{
+  "Login": {
+    "title": "Iniciar sesión",
+    "description": "Ingresá con tu cuenta para continuar.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "submit": "Ingresar",
+    "submitting": "Ingresando…",
+    "invalidCredentials": "El correo o la contraseña no son válidos.",
+    "unlinked": "Esta cuenta todavía no tiene acceso habilitado en EPT.",
+    "invalid": "No se pudo validar la sesión. Intentá nuevamente.",
+    "forgotPassword": "Olvidé mi contraseña",
+    "recoveryUpdated": "Contraseña actualizada. Iniciá sesión con tu nueva contraseña."
+  }
+}

@@ -54,6 +54,14 @@ test('the canonical upgrade contract defines supported legacy-state handling', (
   assert.match(contract, /preserv/i)
 })
 
+test('KAN-642 SQLite HEAD verifier requires H1 identity authority tables', () => {
+  const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
+  const verifier = fs.readFileSync(verifierPath, 'utf8')
+
+  assert.match(verifier, /external_identity_links/)
+  assert.match(verifier, /team_memberships/)
+})
+
 test('the SQLite verifier owns detection of the recorded_by_user_id drift regression', () => {
   const verifierPath = path.join(process.cwd(), 'scripts', 'verify-sqlite.ts')
   const verifier = fs.readFileSync(verifierPath, 'utf8')
@@ -638,4 +646,26 @@ test('versioned SQLite intensity migration covers every legacy percentage column
     assert.match(sql, new RegExp(oldColumn), `missing legacy column handling for ${table}`)
     assert.match(sql, new RegExp(newColumn), `missing canonical column handling for ${table}`)
   }
+})
+
+test('KAN-642 versioned HEAD reconciliation refuses missing H1 physical tables before metadata repair', () => {
+  const verifier = fs.readFileSync(path.join(process.cwd(), 'scripts', 'verify-sqlite.ts'), 'utf8')
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(verifier, /external_identity_links/)
+  assert.match(verifier, /team_memberships/)
+  assert.match(runner, /reconcileVersionedHeadMetadata/)
+  assert.match(runner, /verify-sqlite/)
+})
+
+test('KAN-642 repairs falsely reconciled H1 identity metadata only when both physical tables are absent', () => {
+  const runner = fs.readFileSync(path.join(process.cwd(), 'scripts', 'upgrade-sqlite.ts'), 'utf8')
+
+  assert.match(runner, /repairFalselyReconciledH1Metadata/)
+  assert.match(runner, /external_identity_links/)
+  assert.match(runner, /team_memberships/)
+  assert.match(runner, /0017_natural_fabian_cortez/)
+  assert.match(runner, /0018_daily_aqueduct/)
+  assert.match(runner, /partially present|partial/i)
+  assert.match(runner, /DELETE FROM __drizzle_migrations WHERE created_at = \?/)
 })

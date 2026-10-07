@@ -1,0 +1,19 @@
+{
+  "Recovery": {
+    "requestTitle": "Recuperar acceso",
+    "requestDescription": "Ingresá tu correo y, si corresponde, recibirás un enlace para restablecer tu contraseña.",
+    "email": "Correo electrónico",
+    "requestSubmit": "Enviar enlace",
+    "requestSubmitting": "Enviando…",
+    "accepted": "Si la cuenta puede recibir recuperación, te enviaremos un enlace por correo.",
+    "requestError": "No se pudo procesar la solicitud. Intentá nuevamente.",
+    "invalidLink": "El enlace de recuperación no es válido, venció o ya fue utilizado.",
+    "resetTitle": "Nueva contraseña",
+    "resetDescription": "Ingresá una nueva contraseña para completar la recuperación.",
+    "newPassword": "Nueva contraseña",
+    "resetSubmit": "Guardar contraseña",
+    "resetSubmitting": "Guardando…",
+    "invalidReset": "No se pudo actualizar la contraseña. Solicitá un nuevo enlace e intentá nuevamente.",
+    "backToLogin": "Volver a iniciar sesión"
+  }
+}
