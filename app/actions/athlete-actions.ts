@@ -414,7 +414,7 @@ export async function createAthlete(_previousState: AthleteFormState, formData: 
     })
   } catch (error) {
     console.error('Error creating athlete:', error)
-    return { error: error instanceof Error ? error.message : 'No se pudo crear el atleta' }
+    return { error: 'No se pudo crear el atleta' }
   }
 
   const path = athletesPath(data.locale)
@@ -490,7 +490,7 @@ export async function updateAthlete(_previousState: AthleteFormState, formData: 
   } catch (error) {
     console.error('Error updating athlete:', error)
     return {
-      error: error instanceof Error ? error.message : 'No se pudo actualizar el atleta',
+      error: 'No se pudo actualizar el atleta',
       values,
     }
   }
@@ -559,7 +559,7 @@ export async function setAthleteActiveState(athleteId: string, isActive: boolean
 
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : 'No se pudo actualizar el estado del atleta',
+      error: 'No se pudo actualizar el estado del atleta',
     }
   }
 }
