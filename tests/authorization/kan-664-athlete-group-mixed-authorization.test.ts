@@ -53,14 +53,19 @@ describe('KAN-664 authorized Athlete to Sporting Group movement', () => {
   })
 
   it('requires both capabilities before invoking the atomic assignment boundary', () => {
-    assert.match(assignmentAction, /capability:\s*['"]athlete\.admin\.manage['"]/)
-    assert.match(assignmentAction, /capability:\s*['"]sporting_group\.admin\.manage['"]/)
-    assert.match(assignmentAction, /assignAthleteToGroupSynchronously/)
+    const body = section(
+      assignmentAction,
+      'return async function assignAthleteToGroupAction',
+    )
+
+    assert.match(body, /capability:\s*['"]athlete\.admin\.manage['"]/)
+    assert.match(body, /capability:\s*['"]sporting_group\.admin\.manage['"]/)
+    assert.match(body, /assignAthleteToGroupSynchronously/)
     assert.ok(
-      assignmentAction.indexOf('athlete.admin.manage') < assignmentAction.indexOf('assignAthleteToGroupSynchronously'),
+      body.indexOf('athlete.admin.manage') < body.indexOf('assignAthleteToGroupSynchronously'),
     )
     assert.ok(
-      assignmentAction.indexOf('sporting_group.admin.manage') < assignmentAction.indexOf('assignAthleteToGroupSynchronously'),
+      body.indexOf('sporting_group.admin.manage') < body.indexOf('assignAthleteToGroupSynchronously'),
     )
   })
 
