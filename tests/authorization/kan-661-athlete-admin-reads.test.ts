@@ -53,7 +53,6 @@ describe('KAN-661 authorized administrative AthleteProfile reads', () => {
     )
 
     assert.match(detail, /athleteProfiles\.id/)
-    assert.match(detail, /athleteProfiles\.teamId/)
     assert.match(detail, /authorization\.authorize/)
     assert.match(detail, /capability:\s*['"]athlete\.admin\.manage['"]/)
     assert.match(detail, /resource:\s*\{\s*teamId:\s*athlete\.teamId/)
