@@ -19,6 +19,8 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 
+const CURRENT_TEAM_ID = 'team_1'
+
 const categoryCodes = ['E', 'U', 'M', 'H', 'S', 'B'] as const
 const levelCodes = ['1', '2', '3'] as const
 const locales = ['es', 'en'] as const
