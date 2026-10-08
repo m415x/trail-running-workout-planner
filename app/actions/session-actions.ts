@@ -15,6 +15,7 @@ import { createActiveTeamNextServerContext } from '@/lib/authorization/active-te
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
+import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
 import { WORKOUT_TYPES, type TrainingIntensity, type WorkoutTemplate } from '@/types'
 import {
@@ -417,12 +418,13 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         eq(groupSessionPrescriptions.isDeleted, false),
       )).all().map(({ groupId }) => groupId))]
     const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
-    const groupIds = [...new Set([...existingGroupIds, ...resultingGroupIds])]
-    if (groupIds.length === 0) return { errorCode: 'groupNotFound' }
-    const scopeDecisions = await Promise.all(groupIds.map((groupId) =>
-      planningAccess.authorizeGroup(groupId),
-    ))
-    if (!scopeDecisions.every(Boolean)) return { errorCode: 'groupNotFound' }
+    const authorized = await executeAuthorizedSessionMutation({
+      existingGroupIds,
+      resultingGroupIds,
+      authorizeGroup: planningAccess.authorizeGroup,
+      mutate: () => {},
+    })
+    if (!authorized) return { errorCode: 'groupNotFound' }
 
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
