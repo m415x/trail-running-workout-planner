@@ -21,6 +21,13 @@ import {
   microcycles,
   planningModificationRecords,
 } from '@/db/schema'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createH4bPlanningAuthorizationBoundary } from '@/lib/authorization/h4b-planning-authorization'
 import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
@@ -160,10 +167,43 @@ function belongsToEditablePlan(
   )
 }
 
+async function requirePlanningReadAccess() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+  return { access, teamId: activeTeam.teamId }
+}
+
+function createPlanningReadAuthorization(
+  ownership: ReadonlyMap<string, { teamId: string; sportingGroupIds: string[] }>,
+) {
+  const h3 = createH4aNextServerAuthorizationBoundary()
+  return createH4bPlanningAuthorizationBoundary({
+    resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
+    async loadOwnership(resourceId) {
+      return ownership.get(resourceId) ?? null
+    },
+    async authorize(access, request) {
+      return h3.authorize(access, {
+        capability: request.capability,
+        resource: request.resource,
+        at: request.at,
+      })
+    },
+  })
+}
+
 export async function getGroupTrainingPlans() {
+  const authenticated = await requirePlanningReadAccess()
+  if (!authenticated) return []
   const groups = await db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, authenticated.teamId),
       eq(athleteGroups.isDeleted, false),
     ),
   })
@@ -191,7 +231,20 @@ export async function getGroupTrainingPlans() {
     },
   })
 
-  return plans.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+  const ownership = new Map(plans.map((plan) => [plan.id, {
+    teamId: plan.group.teamId,
+    sportingGroupIds: [plan.groupId],
+  }]))
+  const planningAuthorization = createPlanningReadAuthorization(ownership)
+  const decisions = await Promise.all(plans.map((plan) =>
+    planningAuthorization.authorize(authenticated.access, {
+      resourceId: plan.id,
+      at: new Date().toISOString(),
+    }),
+  ))
+  const allowed = plans.filter((_plan, index) => decisions[index]?.allowed === true)
+
+  return allowed.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
     .map((plan) => ({
       ...plan,
       macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
@@ -199,6 +252,8 @@ export async function getGroupTrainingPlans() {
 }
 
 export async function getGroupTrainingPlanById(planId: string) {
+  const authenticated = await requirePlanningReadAccess()
+  if (!authenticated) return null
   const plan = await db.query.groupTrainingPlans.findFirst({
     where: and(
       eq(groupTrainingPlans.id, planId),
@@ -220,9 +275,19 @@ export async function getGroupTrainingPlanById(planId: string) {
     },
   })
 
-  if (!plan || plan.group.teamId !== CURRENT_TEAM_ID || plan.group.isDeleted) {
+  if (!plan || plan.group.teamId !== authenticated.teamId || plan.group.isDeleted) {
     return null
   }
+
+  const planningAuthorization = createPlanningReadAuthorization(new Map([[
+    plan.id,
+    { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
+  ]]))
+  const authorization = await planningAuthorization.authorize(authenticated.access, {
+    resourceId: plan.id,
+    at: new Date().toISOString(),
+  })
+  if (!authorization.allowed) return null
 
   const loadStrategy = db.query.loadStrategies.findFirst({
     where: and(
