@@ -9,6 +9,12 @@ import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { intensityStrategies } from '@/db/intensity-strategy-schema'
 import { loadStrategies } from '@/db/load-strategy-schema'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
@@ -34,7 +40,6 @@ import type {
   LoadStrategyDraft,
 } from '@/types'
 
-const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 const planningIntents = ['development', 'base', 'maintenance'] as const
 
@@ -106,16 +111,35 @@ export async function createGroupPlanWithLoadStrategy(
   let planId: string
 
   try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+    if (access.status !== 'authenticated') return { error: t('groupUnavailable') }
+
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') return { error: t('groupUnavailable') }
+
     const group = db.query.athleteGroups.findFirst({
       where: and(
         eq(athleteGroups.id, data.groupId),
-        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+        eq(athleteGroups.teamId, activeTeam.teamId),
         eq(athleteGroups.isDeleted, false),
         eq(athleteGroups.isActive, true),
       ),
     }).sync()
 
     if (!group) {
+      return { error: t('groupUnavailable') }
+    }
+
+    const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId: group.teamId, sportingGroupId: group.id },
+      at: new Date().toISOString(),
+    })
+    if (!authorization.allowed || !('teamId' in authorization)) {
       return { error: t('groupUnavailable') }
     }
 
@@ -243,7 +267,7 @@ export async function createGroupPlanWithLoadStrategy(
           field: modification.field,
           previousValue: modification.previousValue,
           newValue: modification.newValue,
-          changedByUserId: null,
+          changedByUserId: access.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
