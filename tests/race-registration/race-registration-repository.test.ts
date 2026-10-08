@@ -26,7 +26,7 @@ try {
       maxBuffer: 8 * 1024 * 1024,
     },
   )
-  assert.equal(upgrade.error, undefined, upgrade.error?.message)
+  assert.equal(upgrade.error, undefined, upgrade.error?.message ?? 'SQLite upgrade process failed')
   assert.equal(upgrade.status, 0, `Canonical SQLite bootstrap failed:\n${upgrade.stdout}\n${upgrade.stderr}`)
 } catch (error) {
   rmSync(workspace, { recursive: true, force: true })
