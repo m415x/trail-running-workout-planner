@@ -30,7 +30,7 @@ describe('KAN-672 H4B dated Planning Cohort membership RED', () => {
   it('assignment validates AthleteProfile ownership from persistence and records the H2 actor', () => {
     const body = action('assignAthleteToPlanningCohort')
     assert.match(body, /athleteProfiles\.teamId/)
-    assert.match(body, /cohort\.groupId/)
+    assert.match(body, /authorizeGroup\(scopedCohort\.groupId,\s*scopedCohort\.teamId\)/)
     assert.match(body, /validatePlanningCohortMembership\(/)
     assert.doesNotMatch(body, /assignedByUserId:\s*null/)
     assert.match(body, /assignedByUserId:\s*planningContext\.access\.userId/)
