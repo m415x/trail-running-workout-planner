@@ -10,3 +10,11 @@ test('KAN-681 real race registration repository test provisions SQLite before im
   assert.match(source, /import\(['"]@\/lib\/race-catalog\/catalog-repository['"]\)/, 'Real repository must be imported dynamically only after setup')
   assert.match(source, /after\(/, 'Isolated SQLite must be removed at teardown')
 })
+
+test('KAN-681 teardown is registered before async repository initialization', () => {
+  const source = readFileSync('tests/race-registration/race-registration-repository.test.ts', 'utf8')
+  const teardown = source.indexOf('after(() =>')
+  const asynchronousInitialization = source.indexOf('before(async () =>')
+  assert.ok(teardown >= 0 && asynchronousInitialization >= 0 && teardown < asynchronousInitialization,
+    'Teardown must be registered before dynamic imports that can fail')
+})
