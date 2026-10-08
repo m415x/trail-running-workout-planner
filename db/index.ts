@@ -9,8 +9,12 @@ import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
 
-// Conexión a la base de datos local en un archivo sqlite.db
-const sqlite = new Database('sqlite.db')
+// The isolated SQLite scenario contract is shared with the canonical upgrade verifier.
+// Never fall back to the developer DB when scenario mode is explicitly enabled.
+const sqlitePath = process.env.SQLITE_SCENARIO_MODE === '1'
+  ? process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()
+  : 'sqlite.db'
+const sqlite = new Database(sqlitePath, { fileMustExist: process.env.SQLITE_SCENARIO_MODE === '1' })
 
 // Instancia de Drizzle con autocompletado, tipos y relaciones de todos los módulos del esquema
 export const db = drizzle(sqlite, {
