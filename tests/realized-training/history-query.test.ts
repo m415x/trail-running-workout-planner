@@ -9,9 +9,13 @@ import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-tr
 import type { ManualRealizedTrainingCaptureInput } from '@/types/training/realized-training-capture.types'
 
 it('lists realized evidence only when athlete and team scopes both match', async () => {
-  const originalDirectory = process.cwd()
   const directory = mkdtempSync(join(tmpdir(), 'kan294-'))
-  const sqlite = new Database(join(directory, 'sqlite.db'))
+  const databasePath = join(directory, 'sqlite.db')
+  const sqlite = new Database(databasePath)
+  const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+  const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+  process.env.SQLITE_SCENARIO_MODE = '1'
+  process.env.SQLITE_DATABASE_PATH = databasePath
   let closeRepository: (() => void) | undefined
 
   try {
@@ -31,7 +35,6 @@ it('lists realized evidence only when athlete and team scopes both match', async
         ('a3','now','now','u3','t2','three');
     `)
 
-    process.chdir(directory)
     const {
       createManualRealizedTrainingRecord,
       listRealizedTrainingRecordsForAthlete,
@@ -39,7 +42,6 @@ it('lists realized evidence only when athlete and team scopes both match', async
     } = await import('@/lib/realized-training/realized-training-repository')
     const { db } = await import('@/db')
     closeRepository = () => db.$client.close()
-    process.chdir(originalDirectory)
 
     const unknown = { state: 'unknown' } as const
     const capture = (
@@ -97,7 +99,10 @@ it('lists realized evidence only when athlete and team scopes both match', async
       [older.id],
     )
   } finally {
-    process.chdir(originalDirectory)
+    if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+    else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+    if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+    else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
     closeRepository?.()
     sqlite.close()
     rmSync(directory, { recursive: true, force: true })
