@@ -16,6 +16,7 @@ import { useTranslations } from 'next-intl'
 
 import { Link, usePathname, useRouter } from '@/i18n/routing'
 import { useDashboardDirtyFormGuard } from '@/components/forms/dashboard-dirty-form-guard'
+import { selectCoachSidebarDestinations } from './coach-sidebar-destinations'
 import {
   Sidebar,
   SidebarContent,
@@ -84,6 +85,7 @@ export function AppSidebar({ visibleDestinations }: { visibleDestinations: reado
   const { guardNavigation } = useDashboardDirtyFormGuard()
   const { setOpenMobile } = useSidebar()
   const t = useTranslations('CoachShell')
+  const allowedDestinations = selectCoachSidebarDestinations(visibleDestinations)
 
   return (
     <Sidebar collapsible='icon'>
@@ -104,7 +106,7 @@ export function AppSidebar({ visibleDestinations }: { visibleDestinations: reado
           <SidebarGroupLabel>{t('management')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.filter((item) => visibleDestinations.includes(item.href)).map((item) => {
+              {navigationItems.filter((item) => allowedDestinations.includes(item.href)).map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
                 const label = t(`navigation.${item.labelKey}`)
 
