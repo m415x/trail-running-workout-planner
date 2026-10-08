@@ -24,6 +24,8 @@
     "db:supabase:verify:h11": "tsx db/supabase/verify-planning-review-transaction.ts",
     "db:studio": "drizzle-kit studio",
     "db:seed:base": "tsx db/seed.ts",
+    "db:seed:acceptance": "pn db:seed:base && pn exec tsx scripts/provision-h4b-acceptance-actors.ts --apply",
+    "db:seed:acceptance:check": "pn exec tsx scripts/provision-h4b-acceptance-actors.ts",
     "db:seed:race-catalog": "tsx db/seeds/race-catalog-fixtures.ts",
     "db:seed:realized-training": "tsx db/seeds/realized-training-fixtures.ts",
     "db:seed:plan-real": "tsx db/seeds/plan-real-comparison-fixtures.ts",
