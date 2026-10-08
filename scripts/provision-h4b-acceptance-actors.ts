@@ -72,17 +72,17 @@ try {
   } else if (statuses.has('complete')) {
     console.log('PASS: all four actors already provisioned; no mutation')
   } else {
-    const insertUser = sqlite.prepare('INSERT INTO users(id,user_name,email,first_name,last_name) VALUES (?,?,?,?,?)')
-    const insertLink = sqlite.prepare("INSERT INTO external_identity_links(id,user_id,provider,subject) VALUES (?,?,'supabase',?)")
-    const insertMembership = sqlite.prepare('INSERT INTO team_memberships(id,user_id,team_id,preset,effective_from,is_active) VALUES (?,?,?,?,?,1)')
-    const insertProfile = sqlite.prepare('INSERT INTO athlete_profiles(id,user_id,team_id,group_id,dni,first_name,last_name,contact_email) VALUES (?,?,?,?,?,?,?,?)')
+    const insertUser = sqlite.prepare('INSERT INTO users(id,user_name,email,first_name,last_name,created_at,updated_at) VALUES (?,?,?,?,?,?,?)')
+    const insertLink = sqlite.prepare("INSERT INTO external_identity_links(id,user_id,provider,subject,created_at,updated_at) VALUES (?,?,'supabase',?,?,?)")
+    const insertMembership = sqlite.prepare('INSERT INTO team_memberships(id,user_id,team_id,preset,effective_from,is_active,created_at,updated_at) VALUES (?,?,?,?,?,1,?,?)')
+    const insertProfile = sqlite.prepare('INSERT INTO athlete_profiles(id,user_id,team_id,group_id,dni,first_name,last_name,contact_email,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?)')
     sqlite.transaction(()=>{
       const now = new Date().toISOString()
       for (const actor of actors) {
-        insertUser.run(actor.userId,`accept.h4b.${actor.preset}`,actor.email,actor.firstName,actor.lastName)
-        insertLink.run(`accept_h4b_link_${actor.preset}`,actor.userId,actor.subject)
-        insertMembership.run(`accept_h4b_membership_${actor.preset}`,actor.userId,teamId,actor.preset,now)
-        if (actor.preset==='athlete') insertProfile.run('accept_h4b_profile_athlete',actor.userId,teamId,athleteGroupId,'ACCEPT-H4B-ATHLETE',actor.firstName,actor.lastName,actor.email)
+        insertUser.run(actor.userId,`accept.h4b.${actor.preset}`,actor.email,actor.firstName,actor.lastName,now,now)
+        insertLink.run(`accept_h4b_link_${actor.preset}`,actor.userId,actor.subject,now,now)
+        insertMembership.run(`accept_h4b_membership_${actor.preset}`,actor.userId,teamId,actor.preset,now,now,now)
+        if (actor.preset==='athlete') insertProfile.run('accept_h4b_profile_athlete',actor.userId,teamId,athleteGroupId,'ACCEPT-H4B-ATHLETE',actor.firstName,actor.lastName,actor.email,now,now)
       }
     }).immediate()
     console.log('PASS: four independent local EPT identities provisioned atomically')
