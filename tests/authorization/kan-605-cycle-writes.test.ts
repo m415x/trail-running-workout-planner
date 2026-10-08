@@ -35,9 +35,22 @@ describe('KAN-670 H4B cycle/progression writes authorization RED', () => {
       assert.doesNotMatch(action, /CURRENT_TEAM_ID/)
       assert.match(action, /requireAuthenticated|authorizePlanning|planningAuthorization|createH4bPlanningAuthorizationBoundary/)
       assert.match(action, /planning\.manage|createH4bPlanningAuthorizationBoundary|authorizePlanning/)
-      assert.match(action, /allowed|authorized/)
+      assert.match(action, /if\s*\(!authenticated\)\s*return\s*\{\s*error:\s*'No autorizado'\s*\}/)
     })
   }
+
+  it('the shared write helper checks persisted plan/group ownership and H3 allow before returning the H2 actor', () => {
+    const helperStart = source.indexOf('async function authorizePlanningCycleWrite(')
+    const helperEnd = source.indexOf('export async function getGroupTrainingPlans(', helperStart)
+    assert.ok(helperStart !== -1 && helperEnd > helperStart)
+    const helper = source.slice(helperStart, helperEnd)
+    assert.match(helper, /requireAuthenticatedPlanningReadAccess/)
+    assert.match(helper, /groupTrainingPlans\.id/)
+    assert.match(helper, /plan\.group\.teamId\s*!==\s*authenticated\.teamId/)
+    assert.match(helper, /planningAuthorization\.authorize\(/)
+    assert.match(helper, /if\s*\(!decision\.allowed\)\s*return null/)
+    assert.match(helper, /return authenticated\.access/)
+  })
 
   it('microcycle modifications record H2 user rather than null provenance', () => {
     for (const name of actions.filter((name) => name.startsWith('updateMicrocycle'))) {
