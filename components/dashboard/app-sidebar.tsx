@@ -78,7 +78,7 @@ const navigationItems = [
   },
 ] as const
 
-export function AppSidebar() {
+export function AppSidebar({ visibleDestinations }: { visibleDestinations: readonly string[] }) {
   const pathname = usePathname()
   const router = useRouter()
   const { guardNavigation } = useDashboardDirtyFormGuard()
@@ -104,7 +104,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>{t('management')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => {
+              {navigationItems.filter((item) => visibleDestinations.includes(item.href)).map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
                 const label = t(`navigation.${item.labelKey}`)
 
