@@ -5,6 +5,8 @@ import test from 'node:test'
 const realWriters = [
   'tests/realized-training/history-query.test.ts',
   'tests/realized-training/repository-timing.test.ts',
+  'tests/realized-training/isolation.test.ts',
+  'tests/readiness/durable-realized-training.test.ts',
 ]
 
 test('KAN-684 legacy real-writer tests select their isolated SQLite explicitly', () => {
