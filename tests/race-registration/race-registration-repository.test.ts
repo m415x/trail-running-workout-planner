@@ -1,13 +1,52 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { describe, it } from 'node:test'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { after, describe, it } from 'node:test'
 
-import { createRaceCourse, createRaceEdition, createRaceEvent } from '@/lib/race-catalog/catalog-repository'
-import {
-  createRaceRegistration,
-  findRaceRegistrationInEdition,
-  getRaceRegistration,
-} from '@/lib/competitions/race-registration-repository'
+// Bootstrap canonical SQLite before importing any repository that loads @/db.
+const workspace = mkdtempSync(join(tmpdir(), 'kan-681-registration-'))
+const databasePath = join(workspace, 'test.sqlite')
+const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+process.env.SQLITE_SCENARIO_MODE = '1'
+process.env.SQLITE_DATABASE_PATH = databasePath
+
+let closeDatabase: (() => void) | undefined
+try {
+  const upgrade = spawnSync(
+    process.execPath,
+    [resolve('node_modules/tsx/dist/cli.mjs'), resolve('scripts/upgrade-sqlite.ts')],
+    {
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 120_000,
+      maxBuffer: 8 * 1024 * 1024,
+    },
+  )
+  assert.equal(upgrade.error, undefined, upgrade.error?.message)
+  assert.equal(upgrade.status, 0, `Canonical SQLite bootstrap failed:\n${upgrade.stdout}\n${upgrade.stderr}`)
+} catch (error) {
+  rmSync(workspace, { recursive: true, force: true })
+  throw error
+}
+
+const { createRaceCourse, createRaceEdition, createRaceEvent } = await import('@/lib/race-catalog/catalog-repository')
+const { createRaceRegistration, findRaceRegistrationInEdition, getRaceRegistration } =
+  await import('@/lib/competitions/race-registration-repository')
+const { db } = await import('@/db')
+closeDatabase = () => db.$client.close()
+
+after(() => {
+  closeDatabase?.()
+  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
+  rmSync(workspace, { recursive: true, force: true })
+})
 
 function catalog() {
   const event = createRaceEvent({ name: `Ansilta XK ${randomUUID()}` })
