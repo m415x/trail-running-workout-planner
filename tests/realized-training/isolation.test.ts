@@ -31,9 +31,13 @@ function capture(athleteId: string): ManualRealizedTrainingCaptureInput {
 }
 
 it('rejects correction when the workout log belongs to another athlete', async () => {
-  const originalDirectory = process.cwd()
   const directory = mkdtempSync(join(tmpdir(), 'kan294-correction-'))
-  const sqlite = new Database(join(directory, 'sqlite.db'))
+  const databasePath = join(directory, 'sqlite.db')
+  const sqlite = new Database(databasePath)
+  const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+  const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+  process.env.SQLITE_SCENARIO_MODE = '1'
+  process.env.SQLITE_DATABASE_PATH = databasePath
   let closeRepository: (() => void) | undefined
 
   try {
@@ -51,7 +55,6 @@ it('rejects correction when the workout log belongs to another athlete', async (
         ('a2','now','now','u2','t2','two');
     `)
 
-    process.chdir(directory)
     const { createManualRealizedTrainingRecord } = await import(
       '@/lib/realized-training/realized-training-repository'
     )
@@ -60,7 +63,6 @@ it('rejects correction when the workout log belongs to another athlete', async (
     )
     const { db } = await import('@/db')
     closeRepository = () => db.$client.close()
-    process.chdir(originalDirectory)
 
     const ownedByFirstAthlete = createManualRealizedTrainingRecord(capture('a1'))
 
@@ -86,7 +88,10 @@ it('rejects correction when the workout log belongs to another athlete', async (
       .get(ownedByFirstAthlete.id) as { distanceKm: number }
     assert.equal(persistedDistance.distanceKm, 12)
   } finally {
-    process.chdir(originalDirectory)
+    if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+    else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+    if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+    else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
     closeRepository?.()
     sqlite.close()
     rmSync(directory, { recursive: true, force: true })
