@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { after, describe, it } from 'node:test'
+import { after, before, describe, it } from 'node:test'
 
 // Bootstrap canonical SQLite before importing any repository that loads @/db.
 const workspace = mkdtempSync(join(tmpdir(), 'kan-681-registration-'))
@@ -33,11 +33,25 @@ try {
   throw error
 }
 
-const { createRaceCourse, createRaceEdition, createRaceEvent } = await import('@/lib/race-catalog/catalog-repository')
-const { createRaceRegistration, findRaceRegistrationInEdition, getRaceRegistration } =
-  await import('@/lib/competitions/race-registration-repository')
-const { db } = await import('@/db')
-closeDatabase = () => db.$client.close()
+let createRaceCourse: typeof import('@/lib/race-catalog/catalog-repository').createRaceCourse
+let createRaceEdition: typeof import('@/lib/race-catalog/catalog-repository').createRaceEdition
+let createRaceEvent: typeof import('@/lib/race-catalog/catalog-repository').createRaceEvent
+let createRaceRegistration: typeof import('@/lib/competitions/race-registration-repository').createRaceRegistration
+let findRaceRegistrationInEdition: typeof import('@/lib/competitions/race-registration-repository').findRaceRegistrationInEdition
+let getRaceRegistration: typeof import('@/lib/competitions/race-registration-repository').getRaceRegistration
+
+before(async () => {
+  const catalogRepository = await import('@/lib/race-catalog/catalog-repository')
+  const registrationRepository = await import('@/lib/competitions/race-registration-repository')
+  const { db } = await import('@/db')
+  createRaceCourse = catalogRepository.createRaceCourse
+  createRaceEdition = catalogRepository.createRaceEdition
+  createRaceEvent = catalogRepository.createRaceEvent
+  createRaceRegistration = registrationRepository.createRaceRegistration
+  findRaceRegistrationInEdition = registrationRepository.findRaceRegistrationInEdition
+  getRaceRegistration = registrationRepository.getRaceRegistration
+  closeDatabase = () => db.$client.close()
+})
 
 after(() => {
   closeDatabase?.()
