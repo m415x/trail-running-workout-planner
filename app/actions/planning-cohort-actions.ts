@@ -7,6 +7,12 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { competitionEntries } from '@/db/competition-entry-schema'
 import {
   athleteGroups,
@@ -106,33 +112,63 @@ function formValues(formData: FormData): PlanningCohortFormState['values'] {
   }
 }
 
+async function requirePlanningContext() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizeGroup = async (groupId: string, teamId: string) => {
+    if (teamId !== activeTeam.teamId) return false
+    const decision = await authorization.authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId, sportingGroupId: groupId },
+      at: new Date().toISOString(),
+    })
+    return decision.allowed
+  }
+  return { access, teamId: activeTeam.teamId, authorizeGroup }
+}
+
 /** Lists active sporting groups eligible to receive a new cohort. */
 export async function getActiveGroupsForPlanningCohort() {
-  return db.query.athleteGroups.findMany({
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return []
+  const groups = await db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, planningContext.teamId),
       eq(athleteGroups.isActive, true),
       eq(athleteGroups.isDeleted, false),
     ),
     orderBy: (groups, { asc }) => [asc(groups.categoryCode), asc(groups.levelCode)],
   })
+  const visible = await Promise.all(groups.map((group) =>
+    planningContext.authorizeGroup(group.id, group.teamId),
+  ))
+  return groups.filter((_group, index) => visible[index])
 }
 
 /** Lists active athletes from the cohort's parent group for manual assignment. */
 export async function getAthletesForPlanningCohort(cohortId: string) {
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return null
   const cohort = await db.query.planningCohorts.findFirst({
     where: and(
       eq(planningCohorts.id, cohortId),
-      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.teamId, planningContext.teamId),
       eq(planningCohorts.isDeleted, false),
     ),
   })
 
-  if (!cohort) return null
+  if (!cohort || !await planningContext.authorizeGroup(cohort.groupId, cohort.teamId)) return null
 
   const athletes = await db.query.athleteProfiles.findMany({
     where: and(
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.teamId, planningContext.teamId),
       eq(athleteProfiles.groupId, cohort.groupId),
       eq(athleteProfiles.isActive, true),
       eq(athleteProfiles.isDeleted, false),
@@ -159,10 +195,12 @@ export async function getAthletesForPlanningCohort(cohortId: string) {
 
 /** Resolves and labels the shared plan applicable to an athlete on one date. */
 export async function getAthletePlanningResolutionOnDate(athleteId: string, date: string) {
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return null
   const athlete = await db.query.athleteProfiles.findFirst({
     where: and(
       eq(athleteProfiles.id, athleteId),
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.teamId, planningContext.teamId),
       eq(athleteProfiles.isDeleted, false),
     ),
     with: {
@@ -173,6 +211,8 @@ export async function getAthletePlanningResolutionOnDate(athleteId: string, date
   })
 
   if (!athlete) return null
+  const effectiveGroup = resolveAthleteGroupOnDate(athlete.groupId, athlete.groupHistory, date)
+  if (!effectiveGroup.groupId || !await planningContext.authorizeGroup(effectiveGroup.groupId, athlete.teamId)) return null
 
   const groupResolution = resolveAthleteGroupOnDate(athlete.groupId, athlete.groupHistory, date)
   const memberships = await db.query.planningCohortMemberships.findMany({
@@ -202,8 +242,13 @@ export async function getAthletePlanningResolutionOnDate(athleteId: string, date
     })
 
   const visibleBasePlans = basePlans.filter((plan) => (
-    plan.group.teamId === CURRENT_TEAM_ID && !plan.group.isDeleted
+    plan.group.teamId === planningContext.teamId && !plan.group.isDeleted
   ))
+  const permittedMemberships = (await Promise.all(memberships.map(async (membership) =>
+    membership.planningCohort.teamId === planningContext.teamId
+    && await planningContext.authorizeGroup(membership.planningCohort.groupId, membership.planningCohort.teamId)
+  )))
+  if (permittedMemberships.some((permitted) => !permitted)) return null
   const resolution = resolveAthletePlanningOnDate({
     athleteTeamId: athlete.teamId,
     currentGroupId: athlete.groupId,
@@ -232,9 +277,11 @@ export async function getAthletePlanningResolutionOnDate(athleteId: string, date
 
 /** Lists visible planning cohorts for the current development team. */
 export async function getPlanningCohortsByTeam() {
-  return db.query.planningCohorts.findMany({
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return []
+  const cohorts = await db.query.planningCohorts.findMany({
     where: and(
-      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.teamId, planningContext.teamId),
       eq(planningCohorts.isDeleted, false),
     ),
     with: {
@@ -246,7 +293,7 @@ export async function getPlanningCohortsByTeam() {
             planningCohortMemberships.athleteProfileId,
             db.select({ id: athleteProfiles.id })
               .from(athleteProfiles)
-              .where(eq(athleteProfiles.teamId, CURRENT_TEAM_ID)),
+              .where(eq(athleteProfiles.teamId, planningContext.teamId)),
           ),
         ),
       },
@@ -254,14 +301,20 @@ export async function getPlanningCohortsByTeam() {
     },
     orderBy: (cohorts, { asc }) => [asc(cohorts.status), asc(cohorts.name)],
   })
+  const visible = await Promise.all(cohorts.map((cohort) =>
+    planningContext.authorizeGroup(cohort.groupId, cohort.teamId),
+  ))
+  return cohorts.filter((_cohort, index) => visible[index])
 }
 
 /** Gets one cohort with its persisted plan and complete membership history. */
 export async function getPlanningCohortDetail(cohortId: string) {
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return null
   const cohort = await db.query.planningCohorts.findFirst({
     where: and(
       eq(planningCohorts.id, cohortId),
-      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.teamId, planningContext.teamId),
       eq(planningCohorts.isDeleted, false),
     ),
     with: {
@@ -284,7 +337,7 @@ export async function getPlanningCohortDetail(cohortId: string) {
     },
   })
 
-  if (!cohort) return null
+  if (!cohort || !await planningContext.authorizeGroup(cohort.groupId, cohort.teamId)) return null
 
   if (cohort.planningVariant?.isDeleted) {
     cohort.planningVariant = null
@@ -297,10 +350,12 @@ export async function getPlanningCohortDetail(cohortId: string) {
 
 /** Loads the valid base plans and their competition snapshots for one active planning subgroup. */
 export async function getPlanningCohortVariantDerivationContext(cohortId: string) {
+  const planningContext = await requirePlanningContext()
+  if (!planningContext) return null
   const cohort = await db.query.planningCohorts.findFirst({
     where: and(
       eq(planningCohorts.id, cohortId),
-      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.teamId, planningContext.teamId),
       eq(planningCohorts.isDeleted, false),
     ),
     with: {
@@ -309,7 +364,8 @@ export async function getPlanningCohortVariantDerivationContext(cohortId: string
     },
   })
 
-  if (!cohort || cohort.group.isDeleted) return null
+  if (!cohort || cohort.group.isDeleted
+    || !await planningContext.authorizeGroup(cohort.groupId, cohort.teamId)) return null
 
   const basePlans = await db.query.groupTrainingPlans.findMany({
     where: and(
@@ -322,7 +378,7 @@ export async function getPlanningCohortVariantDerivationContext(cohortId: string
   })
 
   const visibleBasePlans = basePlans.filter((plan) => (
-    plan.group.teamId === CURRENT_TEAM_ID && !plan.group.isDeleted
+    plan.group.teamId === planningContext.teamId && !plan.group.isDeleted
   ))
 
   const competitions = visibleBasePlans.length === 0
@@ -423,10 +479,12 @@ export async function createPlanningCohort(
   const data = parsed.data
 
   try {
+    const planningContext = await requirePlanningContext()
+    if (!planningContext) return { error: 'No autorizado', values }
     const group = db.query.athleteGroups.findFirst({
       where: and(
         eq(athleteGroups.id, data.groupId),
-        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+        eq(athleteGroups.teamId, planningContext.teamId),
         eq(athleteGroups.isActive, true),
         eq(athleteGroups.isDeleted, false),
       ),
@@ -436,9 +494,12 @@ export async function createPlanningCohort(
       return { error: 'El grupo seleccionado no está disponible', values }
     }
 
+    const authorized = await planningContext.authorizeGroup(group.id, group.teamId)
+    if (!authorized) return { error: 'No autorizado', values }
+
     const duplicate = db.query.planningCohorts.findFirst({
       where: and(
-        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.teamId, planningContext.teamId),
         eq(planningCohorts.groupId, group.id),
         eq(planningCohorts.name, data.name),
         eq(planningCohorts.isDeleted, false),
@@ -452,7 +513,7 @@ export async function createPlanningCohort(
     const now = new Date().toISOString()
     db.insert(planningCohorts).values({
       id: randomUUID(),
-      teamId: CURRENT_TEAM_ID,
+      teamId: planningContext.teamId,
       groupId: group.id,
       name: data.name,
       purpose: data.purpose,
@@ -488,22 +549,26 @@ export async function updatePlanningCohort(
   const data = parsed.data
 
   try {
+    const planningContext = await requirePlanningContext()
+    if (!planningContext) return { error: 'No autorizado', values }
     const cohort = db.query.planningCohorts.findFirst({
       where: and(
         eq(planningCohorts.id, cohortId),
-        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.teamId, planningContext.teamId),
         eq(planningCohorts.isDeleted, false),
       ),
     }).sync()
 
     if (!cohort) return { error: 'Cohorte no encontrada', values }
+    const authorized = await planningContext.authorizeGroup(cohort.groupId, cohort.teamId)
+    if (!authorized) return { error: 'No autorizado', values }
     if (cohort.status === 'archived') {
       return { error: 'Una cohorte archivada conserva su historial y no puede modificarse', values }
     }
 
     const duplicate = db.query.planningCohorts.findFirst({
       where: and(
-        eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+        eq(planningCohorts.teamId, planningContext.teamId),
         eq(planningCohorts.groupId, cohort.groupId),
         eq(planningCohorts.name, data.name),
         eq(planningCohorts.isDeleted, false),
@@ -523,7 +588,7 @@ export async function updatePlanningCohort(
       updatedAt: new Date().toISOString(),
     }).where(and(
       eq(planningCohorts.id, cohort.id),
-      eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+      eq(planningCohorts.teamId, planningContext.teamId),
       eq(planningCohorts.isDeleted, false),
     )).run()
   } catch (error) {
