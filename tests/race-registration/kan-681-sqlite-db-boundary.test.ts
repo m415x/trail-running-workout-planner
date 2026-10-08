@@ -13,5 +13,5 @@ test('KAN-681 SQLite DB boundary honors scenario path and refuses missing isolat
 test('KAN-681 scenario path cannot point at the developer SQLite database', () => {
   const source = readFileSync('db/index.ts', 'utf8')
   assert.match(source, /resolve\(/, 'Scenario path must be normalized before use')
-  assert.match(source, /SQLITE_DATABASE_PATH[\\s\\S]*sqlite\\.db/, 'Scenario bootstrap must explicitly reject the developer SQLite path')
+  assert.match(source, /SQLITE_DATABASE_PATH[\s\S]*sqlite\.db/, 'Scenario bootstrap must explicitly reject the developer SQLite path')
 })
