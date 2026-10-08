@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3'
+import { resolve } from 'node:path'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as coreSchema from '@/db/schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
@@ -11,10 +12,21 @@ import * as raceRegistrationSchema from '@/db/race-registration-schema'
 
 // The isolated SQLite scenario contract is shared with the canonical upgrade verifier.
 // Never fall back to the developer DB when scenario mode is explicitly enabled.
-const sqlitePath = process.env.SQLITE_SCENARIO_MODE === '1'
-  ? process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()
+const scenarioMode = process.env.SQLITE_SCENARIO_MODE === '1'
+const sqlitePath = scenarioMode
+  ? resolve(process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })())
   : 'sqlite.db'
-const sqlite = new Database(sqlitePath, { fileMustExist: process.env.SQLITE_SCENARIO_MODE === '1' })
+
+// An isolated scenario must never reuse the repository's development sqlite.db.
+// Resolving both paths also rejects relative aliases such as ./sqlite.db.
+if (scenarioMode) {
+  const developmentPath = resolve(import.meta.dirname, '../sqlite.db')
+  const normalized = (path: string) => process.platform === 'win32' ? path.toLowerCase() : path
+  if (normalized(sqlitePath) === normalized(developmentPath)) {
+    throw new Error('SQLITE_DATABASE_PATH cannot target the development sqlite.db in scenario mode')
+  }
+}
+const sqlite = new Database(sqlitePath, { fileMustExist: scenarioMode })
 
 // Instancia de Drizzle con autocompletado, tipos y relaciones de todos los módulos del esquema
 export const db = drizzle(sqlite, {
