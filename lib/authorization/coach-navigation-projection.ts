@@ -7,10 +7,14 @@ import type { CapabilityKey } from './capability-catalog'
 
 export interface CoachNavigationProjectionDeps {
   resolveActiveTeam(userId: string): Promise<ActiveTeamContextResult>
-  authorize(
+  authorize?(
     access: RequireAuthenticatedActionResult,
     request: H4aAuthorizationRequest,
   ): Promise<{ allowed: boolean }>
+  loadAuthorizer?(
+    access: RequireAuthenticatedActionResult,
+    teamId: string,
+  ): Promise<(request: H4aAuthorizationRequest) => { allowed: boolean }>
 }
 
 /**
@@ -35,14 +39,21 @@ export function createCoachNavigationProjection(deps: CoachNavigationProjectionD
 
       // Fail closed as one coherent projection: never expose a partially
       // evaluated capability set after unavailable authorization evidence.
+      const evaluator = deps.loadAuthorizer
+        ? await deps.loadAuthorizer(access, team.teamId)
+        : null
+      if (!evaluator && !deps.authorize) return basic
+      const at = new Date().toISOString()
       const decisions = await Promise.all(keys.map(async (capability) => ({
         capability,
-        decision: await deps.authorize(access, {
-          teamId: team.teamId,
-          capability,
-          resource: { teamId: team.teamId },
-          at: new Date().toISOString(),
-        }),
+        decision: evaluator
+          ? evaluator({ teamId: team.teamId, capability, resource: { teamId: team.teamId }, at })
+          : await deps.authorize!(access, {
+            teamId: team.teamId,
+            capability,
+            resource: { teamId: team.teamId },
+            at,
+          }),
       })))
 
       const allowed = new Set<CapabilityKey>(
