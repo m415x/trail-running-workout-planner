@@ -10,10 +10,11 @@ import {
 import { createActiveTeamNextServerContext } from './active-team-next-server'
 import { createH4aActiveTeamAuthorizationBoundary } from './h4a-active-team-authorization'
 import { createH4aAuthorizationAdapter } from './h4a-authorization-adapter'
+import { createCoachNavigationServerProjection } from './coach-navigation-server-projection'
 import type { CapabilityKey } from './capability-catalog'
 import type { AuthorizationScope } from './scope-resolution'
 
-function createH4aNextServerEvidenceSource() {
+export function createH4aNextServerEvidenceSource() {
   return {
     async loadMemberships(userId: string, teamId: string) {
       return db
@@ -93,5 +94,14 @@ export function createH4aNextServerAuthorizationBoundary() {
   return createH4aActiveTeamAuthorizationBoundary({
     resolveActiveTeam: (userId) => activeTeam.resolve(userId),
     authorize: (access, request) => authorization.authorize(access, request),
+  })
+}
+
+/** Build a fresh request-scoped Coach navigation projection from existing H4A evidence. */
+export function createCoachNavigationNextServerProjection() {
+  const activeTeam = createActiveTeamNextServerContext()
+  return createCoachNavigationServerProjection({
+    resolveActiveTeam: (userId) => activeTeam.resolve(userId),
+    evidence: createH4aNextServerEvidenceSource(),
   })
 }
