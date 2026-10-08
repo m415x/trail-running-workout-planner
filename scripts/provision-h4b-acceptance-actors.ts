@@ -72,14 +72,14 @@ try {
   } else if (statuses.has('complete')) {
     console.log('PASS: all four actors already provisioned; no mutation')
   } else {
-    const insertUser = sqlite.prepare('INSERT INTO users(id,role,user_name,email,first_name,last_name) VALUES (?,?,?,?,?,?)')
+    const insertUser = sqlite.prepare('INSERT INTO users(id,user_name,email,first_name,last_name) VALUES (?,?,?,?,?)')
     const insertLink = sqlite.prepare("INSERT INTO external_identity_links(id,user_id,provider,subject) VALUES (?,?,'supabase',?)")
     const insertMembership = sqlite.prepare('INSERT INTO team_memberships(id,user_id,team_id,preset,effective_from,is_active) VALUES (?,?,?,?,?,1)')
     const insertProfile = sqlite.prepare('INSERT INTO athlete_profiles(id,user_id,team_id,group_id,dni,first_name,last_name,contact_email) VALUES (?,?,?,?,?,?,?,?)')
     sqlite.transaction(()=>{
       const now = new Date().toISOString()
       for (const actor of actors) {
-        insertUser.run(actor.userId,'athlete',`accept.h4b.${actor.preset}`,actor.email,actor.firstName,actor.lastName)
+        insertUser.run(actor.userId,`accept.h4b.${actor.preset}`,actor.email,actor.firstName,actor.lastName)
         insertLink.run(`accept_h4b_link_${actor.preset}`,actor.userId,actor.subject)
         insertMembership.run(`accept_h4b_membership_${actor.preset}`,actor.userId,teamId,actor.preset,now)
         if (actor.preset==='athlete') insertProfile.run('accept_h4b_profile_athlete',actor.userId,teamId,athleteGroupId,'ACCEPT-H4B-ATHLETE',actor.firstName,actor.lastName,actor.email)
