@@ -40,6 +40,15 @@ let createRaceRegistration: typeof import('@/lib/competitions/race-registration-
 let findRaceRegistrationInEdition: typeof import('@/lib/competitions/race-registration-repository').findRaceRegistrationInEdition
 let getRaceRegistration: typeof import('@/lib/competitions/race-registration-repository').getRaceRegistration
 
+after(() => {
+  closeDatabase?.()
+  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
+  rmSync(workspace, { recursive: true, force: true })
+})
+
 before(async () => {
   const catalogRepository = await import('@/lib/race-catalog/catalog-repository')
   const registrationRepository = await import('@/lib/competitions/race-registration-repository')
@@ -53,14 +62,7 @@ before(async () => {
   closeDatabase = () => db.$client.close()
 })
 
-after(() => {
-  closeDatabase?.()
-  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
-  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
-  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
-  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
-  rmSync(workspace, { recursive: true, force: true })
-})
+
 
 function catalog() {
   const event = createRaceEvent({ name: `Ansilta XK ${randomUUID()}` })
