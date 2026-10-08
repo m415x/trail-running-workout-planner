@@ -147,6 +147,56 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
 
+    // Verify the H4B shared fixture on a freshly migrated temporary SQLite,
+    // then rerun the real base seed to assert idempotence of the same records.
+    const assertSharedFixture = () => {
+      const check = new Database(workspace.sqlitePath, { readonly: true, fileMustExist: true })
+      try {
+        const rows = check.prepare(`
+          SELECT s.id AS session_id, s.team_id, s.generation_ownership,
+                 p.id AS prescription_id, p.group_id, p.microcycle_id,
+                 g.team_id AS group_team_id, gp.group_id AS plan_group_id
+          FROM sessions s
+          JOIN group_session_prescriptions p ON p.session_id = s.id
+          JOIN athlete_groups g ON g.id = p.group_id
+          JOIN microcycles mi ON mi.id = p.microcycle_id
+          JOIN mesocycles me ON me.id = mi.mesocycle_id
+          JOIN macrocycles ma ON ma.id = me.macrocycle_id
+          JOIN group_training_plans gp ON gp.id = ma.group_training_plan_id
+          WHERE s.id = 'accept_h4b_shared_session'
+            AND s.is_deleted = 0 AND p.is_deleted = 0
+          ORDER BY p.id
+        `).all() as Array<{
+          session_id: string; team_id: string; generation_ownership: string
+          prescription_id: string; group_id: string; microcycle_id: string
+          group_team_id: string; plan_group_id: string
+        }>
+        const expectedGroups = ['team_1_M1', 'team_1_S2']
+        const actualGroups = rows.map(row => row.group_id).sort()
+        if (JSON.stringify(actualGroups) !== JSON.stringify(expectedGroups)
+          || rows.some(row => row.team_id !== 'team_1'
+            || row.group_team_id !== 'team_1'
+            || row.plan_group_id !== row.group_id
+            || row.generation_ownership !== 'manual')
+          || new Set(rows.map(row => row.microcycle_id)).size !== 2
+        ) {
+          throw new Error(`H4B shared fixture invalid: ${JSON.stringify(rows)}`)
+        }
+        if ((check.pragma('foreign_key_check') as unknown[]).length > 0) {
+          throw new Error('H4B shared fixture violates foreign keys')
+        }
+        return JSON.stringify(rows)
+      } finally {
+        check.close()
+      }
+    }
+
+    const firstSharedFixture = assertSharedFixture()
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
+    if (assertSharedFixture() !== firstSharedFixture) {
+      throw new Error('H4B shared fixture was modified by repeat base seed')
+    }
+
     const sqlite = new Database(workspace.sqlitePath, { fileMustExist: true })
     try {
       const overlappingPlanning = sqlite.prepare(`
