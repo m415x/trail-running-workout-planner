@@ -137,6 +137,7 @@ async function planningReadAccess() {
   const authorization = createH4aNextServerAuthorizationBoundary()
   return {
     teamId: activeTeam.teamId,
+    userId: access.userId,
     async authorizeGroup(groupId: string) {
       const group = await db.query.athleteGroups.findFirst({
         where: and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)),
@@ -402,10 +403,26 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   const data = parsed.data
 
   try {
+    const planningAccess = await planningReadAccess()
+    if (!planningAccess) return { errorCode: 'sessionNotFound' }
     const existingSession = db.query.sessions.findFirst({
-      where: and(eq(sessions.id, sessionId), eq(sessions.teamId, CURRENT_TEAM_ID), eq(sessions.isDeleted, false)),
+      where: and(eq(sessions.id, sessionId), eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
     }).sync()
     if (!existingSession) return { errorCode: 'sessionNotFound' }
+
+    const existingGroupIds = [...new Set(db.select({ groupId: groupSessionPrescriptions.groupId })
+      .from(groupSessionPrescriptions)
+      .where(and(
+        eq(groupSessionPrescriptions.sessionId, sessionId),
+        eq(groupSessionPrescriptions.isDeleted, false),
+      )).all().map(({ groupId }) => groupId))]
+    const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
+    const groupIds = [...new Set([...existingGroupIds, ...resultingGroupIds])]
+    if (groupIds.length === 0) return { errorCode: 'groupNotFound' }
+    const scopeDecisions = await Promise.all(groupIds.map((groupId) =>
+      planningAccess.authorizeGroup(groupId),
+    ))
+    if (!scopeDecisions.every(Boolean)) return { errorCode: 'groupNotFound' }
 
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
@@ -414,7 +431,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       const workout = db.query.workouts.findFirst({
         where: and(
           eq(workouts.id, data.workoutId),
-          eq(workouts.teamId, CURRENT_TEAM_ID),
+          eq(workouts.teamId, planningAccess.teamId),
           eq(workouts.isDeleted, false),
         ),
       }).sync()
@@ -473,7 +490,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
             workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
             locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
           }),
-          changedByUserId: null, createdAt: now, updatedAt: now,
+          changedByUserId: planningAccess.userId, createdAt: now, updatedAt: now,
         }).run()
       }
 
@@ -507,7 +524,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
             ownership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             generationKey: previousPrescription.generationKey,
             previousValue: JSON.stringify(previousPrescription),
-            newValue: JSON.stringify(prescription), changedByUserId: null,
+            newValue: JSON.stringify(prescription), changedByUserId: planningAccess.userId,
             createdAt: now, updatedAt: now,
           }).run()
         }
