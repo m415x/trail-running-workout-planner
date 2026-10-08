@@ -412,6 +412,8 @@ export async function derivePlanningCohortVariantAction(
   }
 
   try {
+    const planningContext = await requirePlanningContext()
+    if (!planningContext) return { error: 'No autorizado', values }
     const context = await getPlanningCohortVariantDerivationContext(cohortId)
 
     if (!context || context.cohort.status !== 'active') {
@@ -427,6 +429,18 @@ export async function derivePlanningCohortVariantAction(
       return { error: 'El plan base seleccionado ya no está disponible para este subgrupo', values }
     }
 
+    const cohortAuthorized = await planningContext.authorizeGroup(
+      context.cohort.groupId,
+      context.cohort.teamId,
+    )
+    const sourceAuthorized = await planningContext.authorizeGroup(
+      reviewedBasePlan.groupId,
+      reviewedBasePlan.group.teamId,
+    )
+    if (!cohortAuthorized || !sourceAuthorized) {
+      return { error: 'No autorizado', values }
+    }
+
     const reviewedCompetitionIds = new Set(
       reviewedBasePlan.competitionEntries.map((competition) => competition.id),
     )
@@ -440,7 +454,7 @@ export async function derivePlanningCohortVariantAction(
 
     persistPlanningCohortVariantSynchronously({
       db,
-      teamId: CURRENT_TEAM_ID,
+      teamId: planningContext.teamId,
       cohortId,
       sourcePlanId,
       title,
