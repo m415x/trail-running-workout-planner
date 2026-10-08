@@ -278,7 +278,7 @@ export async function persistGeneratedSessions(
             insertPrescriptionAudit(tx, {
               id: prescriptionId, planId, sessionId, generationKey: operation.proposal.generationKey,
               action: 'generated_created', previousValue: null, newValue: values,
-              generationExplanation, now,
+              generationExplanation, now, changedByUserId: generationAccess.userId,
             })
           } else if (samePlanningScopePrescription.generationOwnership === 'generated') {
             tx.update(groupSessionPrescriptions).set(record)
@@ -287,7 +287,7 @@ export async function persistGeneratedSessions(
               id: samePlanningScopePrescription.id, planId, sessionId,
               generationKey: operation.proposal.generationKey, action: 'generated_updated',
               previousValue: samePlanningScopePrescription, newValue: values,
-              generationExplanation, now,
+              generationExplanation, now, changedByUserId: generationAccess.userId,
             })
           }
         } else {
@@ -300,7 +300,7 @@ export async function persistGeneratedSessions(
             id: operation.existingId!, planId, sessionId,
             generationKey: operation.proposal.generationKey, action: 'generated_updated',
             previousValue: previousPrescription ?? null, newValue: values,
-            generationExplanation, now,
+            generationExplanation, now, changedByUserId: generationAccess.userId,
           })
         }
       }
@@ -313,7 +313,7 @@ export async function persistGeneratedSessions(
           if (previous) insertPrescriptionAudit(tx, {
             id, planId, sessionId: previous.sessionId,
             generationKey: previous.generationKey ?? '', action: 'generated_removed',
-            previousValue: previous, newValue: null, now,
+            previousValue: previous, newValue: null, now, changedByUserId: generationAccess.userId,
           })
         }
       }
@@ -393,6 +393,7 @@ function insertPrescriptionAudit(
     previousValue: unknown
     newValue: unknown
     now: string
+    changedByUserId: string
   } & (
     | {
         action: 'generated_created' | 'generated_updated'
@@ -418,7 +419,7 @@ function insertPrescriptionAudit(
       : values.generationExplanation,
     previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
     newValue: newValue === null ? null : serializeAuditValue(newValue),
-    changedByUserId: generationAccess.userId, createdAt: values.now, updatedAt: values.now,
+    changedByUserId: values.changedByUserId, createdAt: values.now, updatedAt: values.now,
   }).run()
 }
 
