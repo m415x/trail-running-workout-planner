@@ -23,6 +23,7 @@ import { seedCompetitions } from '@/db/seeds/competitions'
 import { seedGroups } from '@/db/seeds/groups'
 import { seedPlanningTemplatesAndSessions } from '@/db/seeds/planning-templates-and-sessions'
 import { seedTeamAndCoach } from '@/db/seeds/team-and-coach'
+import { seedH4bSharedSession } from '@/db/seeds/h4b-shared-session'
 
 import { suggestLoadStrategy } from '@/lib/periodization/load-strategy-recommender'
 
@@ -745,6 +746,21 @@ async function seed() {
   if (prescriptionRows.length > 0) {
     await db.insert(groupSessionPrescriptions).values(prescriptionRows).onConflictDoNothing().run()
   }
+
+  // Acceptance fixture: one manual session shared by two independently planned groups.
+  // Keep this inside the reproducible seed rather than inserting through an ad-hoc CLI.
+  const m1Microcycles = seededMicrocyclesByPlan.get('m1_42k')
+  if (!m1Microcycles?.[0] || !s2Microcycles[0]) {
+    throw new Error('Missing S2/M1 microcycles required for H4B acceptance seed')
+  }
+  await seedH4bSharedSession(db, {
+    teamId,
+    date: currentWeekStart,
+    s2GroupId: getGroupId('S2'),
+    m1GroupId: getGroupId('M1'),
+    s2MicrocycleId: s2Microcycles[0].id,
+    m1MicrocycleId: m1Microcycles[0].id,
+  })
 
   // -----------------------------------------------------------------------
   // 11. Registros de ejecución del atleta
