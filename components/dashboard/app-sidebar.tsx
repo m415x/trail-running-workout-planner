@@ -105,7 +105,7 @@ export function AppSidebar({ visibleDestinations }: { visibleDestinations: reado
         <SidebarGroup>
           <SidebarGroupLabel>{t('management')}</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu aria-label={t('management')}>
               {navigationItems.filter((item) => allowedDestinations.includes(item.href)).map((item) => {
                 const isActive = item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
                 const label = t(`navigation.${item.labelKey}`)
