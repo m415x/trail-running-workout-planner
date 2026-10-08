@@ -30,7 +30,7 @@ test('KAN-691 denies privileged entries when H2 is absent or active Team is ambi
     authorize: async () => { authorizeCalls++; return { allowed: true } },
   })
   assert.deepEqual(await project({ status: 'authenticated', userId: 'ept-user' }), ['/dashboard'])
-  assert.deepEqual(await project({ status: 'unauthenticated' }), [])
+  assert.deepEqual(await project({ status: 'forbidden', reason: 'anonymous' }), [])
   assert.equal(authorizeCalls, 0)
 })
 
