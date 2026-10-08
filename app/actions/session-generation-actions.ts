@@ -5,6 +5,12 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import {
   groupSessionPrescriptions,
   groupTrainingPlans,
@@ -24,7 +30,46 @@ import type { GenerationExplanation } from '@/lib/session-generation/generation-
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
-const CURRENT_TEAM_ID = 'team_1'
+async function authorizePlanningGeneration(planId: string) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+
+  const plan = await db.select({
+    id: groupTrainingPlans.id,
+    groupId: groupTrainingPlans.groupId,
+    teamId: athleteGroups.teamId,
+  }).from(groupTrainingPlans)
+    .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
+    .where(and(
+      eq(groupTrainingPlans.id, planId),
+      eq(groupTrainingPlans.isDeleted, false),
+      eq(athleteGroups.isDeleted, false),
+      eq(athleteGroups.teamId, activeTeam.teamId),
+    )).get()
+  if (!plan) return null
+
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const authorizeGroup = async (groupId: string) => {
+    const group = await db.query.athleteGroups.findFirst({
+      where: and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)),
+    })
+    if (!group || group.teamId !== activeTeam.teamId) return false
+    const decision = await authorization.authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId: group.teamId, sportingGroupId: group.id },
+      at: new Date().toISOString(),
+    })
+    return decision.allowed
+  }
+  if (!await authorizeGroup(plan.groupId)) return null
+  return { userId: access.userId, teamId: activeTeam.teamId, authorizeGroup }
+}
 
 export interface PersistGeneratedSessionsState {
   error?: string
@@ -43,6 +88,8 @@ export async function persistGeneratedSessions(
   if (!planId || !rawProposal) return { error: 'No se pudo identificar la propuesta.' }
 
   try {
+    const generationAccess = await authorizePlanningGeneration(planId)
+    if (!generationAccess) return { error: 'No autorizado' }
     const proposal = parseProposal(rawProposal)
     const generationExplanations = rawGenerationExplanations
       ? parseGenerationExplanationSnapshots(rawGenerationExplanations)
@@ -56,7 +103,7 @@ export async function persistGeneratedSessions(
       .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
       .where(and(
         eq(groupTrainingPlans.id, planId),
-        eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+        eq(athleteGroups.teamId, generationAccess.teamId),
         eq(groupTrainingPlans.isDeleted, false),
       ))
       .get()
@@ -94,6 +141,27 @@ export async function persistGeneratedSessions(
     const persistedEvents = [...new Map(
       [...persistedEventsById, ...persistedEventsByKey].map((event) => [event.id, event]),
     ).values()]
+
+    // A shared session can belong to other plans. Check every current group,
+    // including prescriptions outside the source plan, before reconciliation.
+    const affectedSessionIds = [...new Set(persistedEvents.map((event) => event.id))]
+    const allCurrentPrescriptions = affectedSessionIds.length === 0 ? [] : await db.select({
+      groupId: groupSessionPrescriptions.groupId,
+    }).from(groupSessionPrescriptions)
+      .where(and(
+        inArray(groupSessionPrescriptions.sessionId, affectedSessionIds),
+        eq(groupSessionPrescriptions.isDeleted, false),
+      )).all()
+    const priorGroupIds = allCurrentPrescriptions.map(({ groupId }) => groupId)
+    const resultingGroupIds = proposal.events.flatMap((event) =>
+      event.prescriptions.map((prescription) => prescription.prescription.groupId))
+    const allGroups = [...new Set([plan.groupId, ...priorGroupIds, ...resultingGroupIds])]
+    const decisions = await Promise.all(allGroups.map((groupId) => generationAccess.authorizeGroup(groupId)))
+    if (!decisions.every(Boolean)) return { error: 'No autorizado' }
+    // Also reject collisions with events owned by another Team.
+    if (persistedEvents.some((event) => event.teamId !== generationAccess.teamId)) {
+      return { error: 'No autorizado' }
+    }
 
     const reconciliation = reconcileSessionGeneration({
       proposal,
@@ -133,7 +201,7 @@ export async function persistGeneratedSessions(
         eventIdByKey.set(operation.proposal.sharedEventKey, id)
         if (operation.action === 'create') {
           tx.insert(sessions).values({
-            id, teamId: CURRENT_TEAM_ID, workoutId: values.sourceTemplateId,
+            id, teamId: generationAccess.teamId, workoutId: values.sourceTemplateId,
             date: values.date, title: values.title, type: values.type,
             locationKey: values.locationKey, trackPath: values.trackPath,
             structure: values.structure, notes: values.notes,
@@ -155,7 +223,7 @@ export async function persistGeneratedSessions(
             action: operation.action === 'create' ? 'generated_created' : 'generated_updated',
             ownership: 'generated', generationKey: operation.proposal.sharedEventKey,
             previousValue: previousAuditValue ? serializeAuditValue(previousAuditValue) : null,
-            newValue: serializeAuditValue(nextAuditValue), changedByUserId: null,
+            newValue: serializeAuditValue(nextAuditValue), changedByUserId: generationAccess.userId,
             createdAt: now, updatedAt: now,
           }).run()
         }
@@ -265,7 +333,7 @@ export async function persistGeneratedSessions(
             action: 'generated_removed', ownership: 'generated',
             generationKey: previous?.sharedEventKey ?? null,
             previousValue: previous ? serializeAuditValue(previous) : null,
-            newValue: null, changedByUserId: null, createdAt: now, updatedAt: now,
+            newValue: null, changedByUserId: generationAccess.userId, createdAt: now, updatedAt: now,
           }).run()
         }
       }
@@ -350,7 +418,7 @@ function insertPrescriptionAudit(
       : values.generationExplanation,
     previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
     newValue: newValue === null ? null : serializeAuditValue(newValue),
-    changedByUserId: null, createdAt: values.now, updatedAt: values.now,
+    changedByUserId: generationAccess.userId, createdAt: values.now, updatedAt: values.now,
   }).run()
 }
 
