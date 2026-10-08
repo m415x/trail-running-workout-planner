@@ -328,11 +328,21 @@ export async function createSession(_previousState: SessionFormState, formData: 
   const data = parsed.data
 
   try {
+    const planningAccess = await planningReadAccess()
+    if (!planningAccess) return { errorCode: 'createFailed' }
+
+    const requestedGroups = [...new Set(prescriptions.data.map((prescription) => prescription.groupId))]
+    if (requestedGroups.length === 0) return { errorCode: 'groupNotFound' }
+    const groupDecisions = await Promise.all(requestedGroups.map((groupId) =>
+      planningAccess.authorizeGroup(groupId),
+    ))
+    if (!groupDecisions.every(Boolean)) return { errorCode: 'groupNotFound' }
+
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
         where: and(
           eq(workouts.id, data.workoutId),
-          eq(workouts.teamId, CURRENT_TEAM_ID),
+          eq(workouts.teamId, planningAccess.teamId),
           isNull(workouts.archivedAt),
           eq(workouts.isDeleted, false),
         ),
@@ -361,7 +371,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
     const sessionId = randomUUID()
     db.transaction((tx) => {
       tx.insert(sessions).values({
-        id: sessionId, teamId: CURRENT_TEAM_ID, workoutId: data.workoutId,
+        id: sessionId, teamId: planningAccess.teamId, workoutId: data.workoutId,
         date: data.date, title: data.title, type: data.type, locationKey: data.locationKey,
         trackPath: data.trackPath, structure, notes: data.notes, createdAt: now, updatedAt: now,
       }).run()
