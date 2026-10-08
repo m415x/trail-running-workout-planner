@@ -5,6 +5,13 @@ import { and, eq, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { athleteGroups } from '@/db/schema'
 import {
   athleteProfiles,
   athleteSessionAdjustmentRevisions,
@@ -36,7 +43,41 @@ import type {
 import type { IntensityZone } from '@/types/training/intensity.types'
 import { isWorkoutType } from '@/types/training/workout.types'
 
-const CURRENT_TEAM_ID = 'team_1'
+async function authorizeSessionAdjustment(sessionId: string) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+  const session = await db.query.sessions.findFirst({
+    where: and(eq(sessions.id, sessionId), eq(sessions.teamId, activeTeam.teamId), eq(sessions.isDeleted, false)),
+  })
+  if (!session) return null
+  const prescriptions = await db.query.groupSessionPrescriptions.findMany({
+    where: and(eq(groupSessionPrescriptions.sessionId, sessionId), eq(groupSessionPrescriptions.isDeleted, false)),
+    columns: { groupId: true },
+  })
+  const groupIds = [...new Set(prescriptions.map((item) => item.groupId))]
+  if (groupIds.length === 0) return null
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  const decisions = await Promise.all(groupIds.map(async (groupId) => {
+    const group = await db.query.athleteGroups.findFirst({
+      where: and(eq(athleteGroups.id, groupId), eq(athleteGroups.teamId, activeTeam.teamId), eq(athleteGroups.isDeleted, false)),
+    })
+    if (!group) return false
+    const decision = await authorization.authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId: group.teamId, sportingGroupId: group.id },
+      at: new Date().toISOString(),
+    })
+    return decision.allowed
+  }))
+  if (!decisions.every(Boolean)) return null
+  return { userId: access.userId, teamId: activeTeam.teamId }
+}
 
 export interface SessionAthleteAdjustmentReviewItem {
   athleteId: string
@@ -65,10 +106,12 @@ export interface SessionAthleteAdjustmentReviewItem {
 export async function getSessionAthleteAdjustmentReview(
   sessionId: string,
 ): Promise<SessionAthleteAdjustmentReviewItem[]> {
+  const planningAccess = await authorizeSessionAdjustment(sessionId)
+  if (!planningAccess) return []
   const session = await db.query.sessions.findFirst({
     where: and(
       eq(sessions.id, sessionId),
-      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.teamId, planningAccess.teamId),
       eq(sessions.isDeleted, false),
     ),
     with: {
@@ -81,7 +124,7 @@ export async function getSessionAthleteAdjustmentReview(
 
   const athletes = await db.query.athleteProfiles.findMany({
     where: and(
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.teamId, planningAccess.teamId),
       eq(athleteProfiles.isDeleted, false),
       eq(athleteProfiles.isActive, true),
     ),
@@ -358,6 +401,14 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   }
   if (!reason.trim()) return { error: 'reasonRequired' }
 
+  const planningAccess = await authorizeSessionAdjustment(sessionId)
+  if (!planningAccess) return { error: 'sourcePrescriptionNotFound' }
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.teamId, planningAccess.teamId), eq(athleteProfiles.isDeleted, false)),
+  })
+  if (!athlete) return { error: 'sourcePrescriptionNotFound' }
+
   const sourcePrescription = await db.query.groupSessionPrescriptions.findFirst({
     where: and(
       eq(groupSessionPrescriptions.id, sourcePrescriptionId),
@@ -370,6 +421,7 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
   const effectiveSourcePrescriptionId = await resolveEffectiveSourcePrescriptionId({
     sessionId,
     athleteId,
+    teamId: planningAccess.teamId,
   })
   if (effectiveSourcePrescriptionId !== sourcePrescriptionId) {
     return { error: 'staleSourcePrescription' }
@@ -393,7 +445,7 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
       ? (await db.query.workouts.findFirst({
           where: and(
             eq(workouts.id, stimulusWorkoutId),
-            eq(workouts.teamId, CURRENT_TEAM_ID),
+            eq(workouts.teamId, planningAccess.teamId),
             eq(workouts.isDeleted, false),
           ),
         })) ?? null
@@ -414,7 +466,7 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
     await persistence.applyRevision({
       adjustment: {
         id: adjustmentId,
-        teamId: CURRENT_TEAM_ID,
+        teamId: planningAccess.teamId,
         athleteId,
         sourcePrescriptionId,
       },
@@ -427,7 +479,7 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
           assignment: assignment.value,
         },
         reason,
-        changedByUserId: null,
+        changedByUserId: planningAccess.userId,
         isCurrent: true,
       },
     })
@@ -443,11 +495,12 @@ export async function saveAthleteSessionAdjustment(_previousState: { error?: str
 async function resolveEffectiveSourcePrescriptionId(input: {
   sessionId: string
   athleteId: string
+  teamId: string
 }) {
   const session = await db.query.sessions.findFirst({
     where: and(
       eq(sessions.id, input.sessionId),
-      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.teamId, input.teamId),
       eq(sessions.isDeleted, false),
     ),
     with: {
@@ -461,7 +514,7 @@ async function resolveEffectiveSourcePrescriptionId(input: {
   const athlete = await db.query.athleteProfiles.findFirst({
     where: and(
       eq(athleteProfiles.id, input.athleteId),
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+      eq(athleteProfiles.teamId, input.teamId),
       eq(athleteProfiles.isDeleted, false),
     ),
   })
