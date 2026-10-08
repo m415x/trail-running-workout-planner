@@ -191,6 +191,75 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
       }
     }
 
+    // Provision acceptance actors only inside the isolated temporary workspace.
+    // The CLI safety guard refuses scenario mode, so this dedicated test
+    // deliberately runs with a disposable cwd and without that mode variable.
+    const actorScript = resolve(projectRoot, 'scripts/provision-h4b-acceptance-actors.ts')
+    const runActorFixture = (apply: boolean) => {
+      const execution = spawnSync(process.execPath, [
+        tsxCli, actorScript, ...(apply ? ['--apply'] : []),
+      ], {
+        cwd: workspace.root,
+        env: {
+          ...process.env,
+          NODE_ENV: 'test',
+          CI: 'false',
+          SQLITE_SCENARIO_MODE: '',
+          TSX_TSCONFIG_PATH: resolve(projectRoot, 'tsconfig.json'),
+        },
+        encoding: 'utf8',
+        timeout: 120000,
+      })
+      if (execution.error || execution.status !== 0) {
+        throw new Error(`Acceptance actor fixture failed: ${String(execution.error ?? '')} ${execution.stdout} ${execution.stderr}`)
+      }
+      return execution.stdout
+    }
+    if (!runActorFixture(false).includes('"status": "absent"')) {
+      throw new Error('Acceptance actors were not absent on fresh SQLite')
+    }
+    if (!runActorFixture(true).includes('four independent local EPT identities provisioned atomically')) {
+      throw new Error('Acceptance actors did not initialize on fresh SQLite')
+    }
+    if (!runActorFixture(true).includes('already provisioned; no mutation')) {
+      throw new Error('Acceptance actors rerun was not idempotent')
+    }
+
+    const verifyActors = new Database(workspace.sqlitePath, { readonly: true, fileMustExist: true })
+    try {
+      const expected = [
+        ['athlete', '1579feb3-60b3-45eb-83f6-c8eb312cd4c8'],
+        ['assistant', 'd2764887-4301-4b15-982a-71ef47274e90'],
+        ['coach', '65375bd2-4a7a-4a00-bf41-d289ec1d54f5'],
+        ['admin', '6b6c6713-a0da-4854-8eba-46dcba22e8ac'],
+      ] as const
+      for (const [preset, subject] of expected) {
+        const userId = `accept_h4b_${preset}`
+        const links = verifyActors.prepare(
+          "SELECT user_id FROM external_identity_links WHERE provider='supabase' AND subject=? AND is_deleted=0",
+        ).all(subject) as Array<{ user_id: string }>
+        const memberships = verifyActors.prepare(
+          'SELECT preset FROM team_memberships WHERE user_id=? AND team_id=? AND is_active=1 AND is_deleted=0 AND effective_until IS NULL',
+        ).all(userId, 'team_1') as Array<{ preset: string }>
+        const profiles = verifyActors.prepare(
+          'SELECT id,group_id FROM athlete_profiles WHERE user_id=? AND team_id=? AND is_deleted=0',
+        ).all(userId, 'team_1') as Array<{id:string;group_id:string|null}>
+        if (links.length !== 1 || links[0]?.user_id !== userId
+          || memberships.length !== 1 || memberships[0]?.preset !== preset
+          || (preset === 'athlete'
+            ? profiles.length !== 1 || profiles[0]?.id !== 'accept_h4b_profile_athlete'
+              || profiles[0]?.group_id !== 'team_1_S2'
+            : profiles.length !== 0)) {
+          throw new Error(`Invalid acceptance actor on fresh SQLite: ${preset}`)
+        }
+      }
+      if ((verifyActors.pragma('foreign_key_check') as unknown[]).length > 0) {
+        throw new Error('Acceptance actor fixture violates foreign keys')
+      }
+    } finally {
+      verifyActors.close()
+    }
+
     const firstSharedFixture = assertSharedFixture()
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
     if (assertSharedFixture() !== firstSharedFixture) {
