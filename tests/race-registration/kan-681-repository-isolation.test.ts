@@ -18,3 +18,11 @@ test('KAN-681 teardown is registered before async repository initialization', ()
   assert.ok(teardown >= 0 && asynchronousInitialization >= 0 && teardown < asynchronousInitialization,
     'Teardown must be registered before dynamic imports that can fail')
 })
+
+test('KAN-681 restores test environment if canonical SQLite bootstrap fails', () => {
+  const source = readFileSync('tests/race-registration/race-registration-repository.test.ts', 'utf8')
+  const bootstrapCatch = source.match(/catch \(error\) \{([\s\S]*?)throw error\s*\}/)?.[1]
+  assert.ok(bootstrapCatch, 'Canonical bootstrap must have an explicit failure cleanup')
+  assert.match(bootstrapCatch, /previousScenarioMode/, 'Failure cleanup must restore SQLITE_SCENARIO_MODE')
+  assert.match(bootstrapCatch, /previousDatabasePath/, 'Failure cleanup must restore SQLITE_DATABASE_PATH')
+})
