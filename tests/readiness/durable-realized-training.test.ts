@@ -40,9 +40,13 @@ function capture(): ManualRealizedTrainingCaptureInput {
 }
 
 it('uses durable realized evidence and preserves legacy ambiguity', async () => {
-  const originalDirectory = process.cwd()
   const directory = mkdtempSync(join(tmpdir(), 'kan295-durable-'))
-  const sqlite = new Database(join(directory, 'sqlite.db'))
+  const databasePath = join(directory, 'sqlite.db')
+  const sqlite = new Database(databasePath)
+  const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+  const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+  process.env.SQLITE_SCENARIO_MODE = '1'
+  process.env.SQLITE_DATABASE_PATH = databasePath
   let closeRepository: (() => void) | undefined
 
   try {
@@ -64,7 +68,6 @@ it('uses durable realized evidence and preserves legacy ambiguity', async () => 
       );
     `)
 
-    process.chdir(directory)
     const { createManualRealizedTrainingRecord } = await import(
       '@/lib/realized-training/realized-training-repository'
     )
@@ -73,7 +76,6 @@ it('uses durable realized evidence and preserves legacy ambiguity', async () => 
     )
     const { db } = await import('@/db')
     closeRepository = () => db.$client.close()
-    process.chdir(originalDirectory)
 
     createManualRealizedTrainingRecord(capture())
 
@@ -106,7 +108,10 @@ it('uses durable realized evidence and preserves legacy ambiguity', async () => 
     assert.ok(legacy.summary.limitations.includes('legacy_record_without_metric_evidence'))
     assert.ok(legacy.summary.limitations.includes('insufficient_distanceKm_coverage'))
   } finally {
-    process.chdir(originalDirectory)
+    if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+    else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+    if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+    else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
     closeRepository?.()
     sqlite.close()
     rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 })
