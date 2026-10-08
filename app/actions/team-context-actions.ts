@@ -1,5 +1,7 @@
 'use server'
 
+import { revalidatePath } from 'next/cache'
+
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
@@ -35,5 +37,9 @@ export async function selectActiveTeamAction(
   }
 
   const context = createActiveTeamNextServerContext()
-  return context.select(access.userId, proposedTeamId)
+  const result = await context.select(access.userId, proposedTeamId)
+  if (result.status === 'accepted') {
+    revalidatePath('/[locale]/dashboard', 'layout')
+  }
+  return result
 }
