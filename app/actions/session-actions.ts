@@ -418,14 +418,6 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         eq(groupSessionPrescriptions.isDeleted, false),
       )).all().map(({ groupId }) => groupId))]
     const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
-    const authorized = await executeAuthorizedSessionMutation({
-      existingGroupIds,
-      resultingGroupIds,
-      authorizeGroup: planningAccess.authorizeGroup,
-      mutate: () => {},
-    })
-    if (!authorized) return { errorCode: 'groupNotFound' }
-
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
 
@@ -469,7 +461,11 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       .where(inArray(microcycles.id, selectedMicrocycleIds)).all()
     const planIdByMicrocycle = new Map(auditPlans.map(({ microcycleId, planId }) => [microcycleId, planId]))
 
-    db.transaction((tx) => {
+    const authorized = await executeAuthorizedSessionMutation({
+      existingGroupIds,
+      resultingGroupIds,
+      authorizeGroup: planningAccess.authorizeGroup,
+      mutate: () => db.transaction((tx) => {
       tx.update(sessions).set({
         workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
         locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
@@ -531,7 +527,9 @@ export async function updateSession(_previousState: SessionFormState, formData: 
           }).run()
         }
       }
+      }),
     })
+    if (!authorized) return { errorCode: 'groupNotFound' }
   } catch (error) {
     console.error('Error updating session:', error)
     return { errorCode: 'updateFailed' }
