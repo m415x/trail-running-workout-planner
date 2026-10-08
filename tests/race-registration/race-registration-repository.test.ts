@@ -1,13 +1,72 @@
 import assert from 'node:assert/strict'
+import { spawnSync } from 'node:child_process'
 import { randomUUID } from 'node:crypto'
-import { describe, it } from 'node:test'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { after, before, describe, it } from 'node:test'
 
-import { createRaceCourse, createRaceEdition, createRaceEvent } from '@/lib/race-catalog/catalog-repository'
-import {
-  createRaceRegistration,
-  findRaceRegistrationInEdition,
-  getRaceRegistration,
-} from '@/lib/competitions/race-registration-repository'
+// Bootstrap canonical SQLite before importing any repository that loads @/db.
+const workspace = mkdtempSync(join(tmpdir(), 'kan-681-registration-'))
+const databasePath = join(workspace, 'test.sqlite')
+const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+process.env.SQLITE_SCENARIO_MODE = '1'
+process.env.SQLITE_DATABASE_PATH = databasePath
+
+let closeDatabase: (() => void) | undefined
+try {
+  const upgrade = spawnSync(
+    process.execPath,
+    [resolve('node_modules/tsx/dist/cli.mjs'), resolve('scripts/upgrade-sqlite.ts')],
+    {
+      env: process.env,
+      encoding: 'utf8',
+      timeout: 120_000,
+      maxBuffer: 8 * 1024 * 1024,
+    },
+  )
+  assert.equal(upgrade.error, undefined, upgrade.error?.message ?? 'SQLite upgrade process failed')
+  assert.equal(upgrade.status, 0, `Canonical SQLite bootstrap failed:\n${upgrade.stdout}\n${upgrade.stderr}`)
+} catch (error) {
+  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
+  rmSync(workspace, { recursive: true, force: true })
+  throw error
+}
+
+let createRaceCourse: typeof import('@/lib/race-catalog/catalog-repository').createRaceCourse
+let createRaceEdition: typeof import('@/lib/race-catalog/catalog-repository').createRaceEdition
+let createRaceEvent: typeof import('@/lib/race-catalog/catalog-repository').createRaceEvent
+let createRaceRegistration: typeof import('@/lib/competitions/race-registration-repository').createRaceRegistration
+let findRaceRegistrationInEdition: typeof import('@/lib/competitions/race-registration-repository').findRaceRegistrationInEdition
+let getRaceRegistration: typeof import('@/lib/competitions/race-registration-repository').getRaceRegistration
+
+after(() => {
+  closeDatabase?.()
+  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
+  rmSync(workspace, { recursive: true, force: true })
+})
+
+before(async () => {
+  const catalogRepository = await import('@/lib/race-catalog/catalog-repository')
+  const registrationRepository = await import('@/lib/competitions/race-registration-repository')
+  const { db } = await import('@/db')
+  createRaceCourse = catalogRepository.createRaceCourse
+  createRaceEdition = catalogRepository.createRaceEdition
+  createRaceEvent = catalogRepository.createRaceEvent
+  createRaceRegistration = registrationRepository.createRaceRegistration
+  findRaceRegistrationInEdition = registrationRepository.findRaceRegistrationInEdition
+  getRaceRegistration = registrationRepository.getRaceRegistration
+  closeDatabase = () => db.$client.close()
+})
+
+
 
 function catalog() {
   const event = createRaceEvent({ name: `Ansilta XK ${randomUUID()}` })
