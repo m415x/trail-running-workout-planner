@@ -10,7 +10,7 @@ const actors = [
   ['ATHLETE', '1579feb3-60b3-45eb-83f6-c8eb312cd4c8'],
   ['ASSISTANT', 'd2764887-4301-4b15-982a-71ef47274e90'],
   ['COACH', '65375bd2-4a7a-4a00-bf41-d289ec1d54f5'],
-  ['ADMIN', '4db66f1f-0ee7-4829-b69e-a52c951bd9a4'],
+  ['ADMIN', '6b6c6713-a0da-4854-8eba-46dcba22e8ac'],
 ] as const
 
 try {
