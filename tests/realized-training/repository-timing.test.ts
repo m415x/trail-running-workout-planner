@@ -8,9 +8,13 @@ import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-tr
 import type { ManualRealizedTrainingCaptureInput } from '@/types/training/realized-training-capture.types'
 
 it('round-trips actual timing through the durable repository and rolls back a rejected sidecar', async () => {
-  const originalDirectory = process.cwd()
   const directory = mkdtempSync(join(tmpdir(), 'kan290-'))
-  const sqlite = new Database(join(directory, 'sqlite.db'))
+  const databasePath = join(directory, 'sqlite.db')
+  const sqlite = new Database(databasePath)
+  const previousScenarioMode = process.env.SQLITE_SCENARIO_MODE
+  const previousDatabasePath = process.env.SQLITE_DATABASE_PATH
+  process.env.SQLITE_SCENARIO_MODE = '1'
+  process.env.SQLITE_DATABASE_PATH = databasePath
   let closeRepository: (() => void) | undefined
   try {
     sqlite.exec(readFileSync('drizzle/sqlite/0000_baseline.sql','utf8'))
@@ -20,11 +24,9 @@ it('round-trips actual timing through the durable repository and rolls back a re
         VALUES ('u','now','now','user','u@example.test','Test','User');
       INSERT INTO athlete_profiles (id,created_at,updated_at,user_id,team_id,dni)
         VALUES ('a','now','now','u','t','test');`)
-    process.chdir(directory)
     const { createManualRealizedTrainingRecord, getRealizedTrainingRecord } = await import('@/lib/realized-training/realized-training-repository')
     const { db } = await import('@/db')
     closeRepository = () => db.$client.close()
-    process.chdir(originalDirectory)
     const unknown = {state:'unknown'} as const
     const input: ManualRealizedTrainingCaptureInput = {
       athleteId:'a', sessionId:null, workoutId:null, date:'2026-09-13',
@@ -48,7 +50,10 @@ it('round-trips actual timing through the durable repository and rolls back a re
     assert.equal(getRealizedTrainingRecord(record.id)?.performedAt,null)
     assert.equal(getRealizedTrainingRecord(record.id)?.metrics.distanceKm.state,'unknown')
   } finally {
-    process.chdir(originalDirectory)
+    if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+    else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+    if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+    else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
     closeRepository?.()
     sqlite.close()
     // Windows can keep a just-closed SQLite directory briefly locked. Retry the
