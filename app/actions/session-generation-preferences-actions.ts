@@ -6,6 +6,12 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { sessionGenerationPreferences } from '@/db/session-generation-preferences-schema'
 import { athleteGroups, groupTrainingPlans } from '@/db/schema'
 import {
@@ -18,7 +24,6 @@ import {
   serializeSessionGenerationPreferences,
 } from '@/lib/session-generation/generation-preferences-persistence'
 
-const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 
 const updatePreferencesSchema = z.object({
@@ -38,23 +43,44 @@ function planningPath(locale: string, planId: string) {
   return `${base}/${planId}`
 }
 
-function getEditablePlan(planId: string) {
-  return db.select({
+async function authorizePlanningPreferences(planId: string) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+
+  const plan = await db.select({
     id: groupTrainingPlans.id,
+    groupId: groupTrainingPlans.groupId,
+    teamId: athleteGroups.teamId,
   })
     .from(groupTrainingPlans)
     .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
     .where(and(
       eq(groupTrainingPlans.id, planId),
       eq(groupTrainingPlans.isDeleted, false),
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, activeTeam.teamId),
       eq(athleteGroups.isDeleted, false),
     ))
     .get()
+  if (!plan) return null
+
+  const decision = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'planning.manage',
+    resource: { teamId: plan.teamId, sportingGroupId: plan.groupId },
+    at: new Date().toISOString(),
+  })
+  if (!decision.allowed) return null
+  return { userId: access.userId, teamId: activeTeam.teamId, planId: plan.id }
 }
 
 export async function getSessionGenerationPreferencesForPlan(planId: string) {
-  if (!getEditablePlan(planId)) return null
+  const authorizedPlan = await authorizePlanningPreferences(planId)
+  if (!authorizedPlan) return null
 
   const stored = db.query.sessionGenerationPreferences.findFirst({
     where: and(
@@ -83,7 +109,8 @@ export async function updateSessionGenerationPreferences(
   }
 
   const data = parsed.data
-  if (!getEditablePlan(data.planId)) {
+  const authorizedPlan = await authorizePlanningPreferences(data.planId)
+  if (!authorizedPlan) {
     return { error: 'La planificación no está disponible' }
   }
 

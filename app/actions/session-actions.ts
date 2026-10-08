@@ -7,8 +7,15 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
+import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
 import { WORKOUT_TYPES, type TrainingIntensity, type WorkoutTemplate } from '@/types'
 import {
@@ -119,9 +126,54 @@ function sessionsPath(locale: string) {
   return locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`
 }
 
-export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
-  return db.query.sessions.findMany({
-    where: and(eq(sessions.teamId, teamId), eq(sessions.isDeleted, false)),
+async function planningReadAccess() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+  const authorization = createH4aNextServerAuthorizationBoundary()
+  return {
+    teamId: activeTeam.teamId,
+    userId: access.userId,
+    async authorizeGroup(groupId: string) {
+      const group = await db.query.athleteGroups.findFirst({
+        where: and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)),
+      })
+      if (!group || group.teamId !== activeTeam.teamId) return false
+      const decision = await authorization.authorize(access, {
+        capability: 'planning.manage',
+        resource: { teamId: group.teamId, sportingGroupId: group.id },
+        at: new Date().toISOString(),
+      })
+      return decision.allowed
+    },
+  }
+}
+
+async function authorizeSessionRead(sessionId: string, planningAccess: NonNullable<Awaited<ReturnType<typeof planningReadAccess>>>) {
+  const session = await db.query.sessions.findFirst({
+    where: and(eq(sessions.id, sessionId), eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
+  })
+  if (!session) return false
+  const prescriptions = await db.query.groupSessionPrescriptions.findMany({
+    where: and(eq(groupSessionPrescriptions.sessionId, sessionId), eq(groupSessionPrescriptions.isDeleted, false)),
+    columns: { groupId: true },
+  })
+  const groups = [...new Set(prescriptions.map((item) => item.groupId))]
+  if (!groups.length) return false
+  const decisions = await Promise.all(groups.map((groupId) => planningAccess.authorizeGroup(groupId)))
+  return decisions.every(Boolean)
+}
+
+export async function getSessionsByTeam(_teamId?: string) {
+  const planningAccess = await planningReadAccess()
+  if (!planningAccess) return []
+  const rows = await db.query.sessions.findMany({
+    where: and(eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
     with: {
       location: true,
       sessionPrescriptions: {
@@ -132,13 +184,17 @@ export async function getSessionsByTeam(teamId: string = CURRENT_TEAM_ID) {
     },
     orderBy: (table, { asc }) => [asc(table.date), asc(table.title)],
   })
+  const decisions = await Promise.all(rows.map((session) => authorizeSessionRead(session.id, planningAccess)))
+  return rows.filter((_session, index) => decisions[index])
 }
 
 export async function getSessionById(sessionId: string) {
+  const planningAccess = await planningReadAccess()
+  if (!planningAccess || !await authorizeSessionRead(sessionId, planningAccess)) return undefined
   return db.query.sessions.findFirst({
     where: and(
       eq(sessions.id, sessionId),
-      eq(sessions.teamId, CURRENT_TEAM_ID),
+      eq(sessions.teamId, planningAccess.teamId),
       eq(sessions.isDeleted, false),
     ),
     with: {
@@ -152,6 +208,8 @@ export async function getSessionById(sessionId: string) {
 }
 
 export async function getSessionGenerationExplanationReview(sessionId: string) {
+  const planningAccess = await planningReadAccess()
+  if (!planningAccess || !await authorizeSessionRead(sessionId, planningAccess)) return []
   const activePrescriptions = db.select({
     id: groupSessionPrescriptions.id,
     generationOwnership: groupSessionPrescriptions.generationOwnership,
@@ -201,9 +259,11 @@ export async function getSessionGenerationExplanationReview(sessionId: string) {
 }
 
 export async function getSessionFormOptions(includeWorkoutId?: string | null) {
+  const planningAccess = await planningReadAccess()
+  if (!planningAccess) return { workouts: [], locations: [], groups: [] }
   const workoutOptions = db.query.workouts.findMany({
     where: and(
-      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.teamId, planningAccess.teamId),
       includeWorkoutId
         ? or(isNull(workouts.archivedAt), eq(workouts.id, includeWorkoutId))
         : isNull(workouts.archivedAt),
@@ -214,7 +274,7 @@ export async function getSessionFormOptions(includeWorkoutId?: string | null) {
   const locationOptions = db.select().from(trainingLocations).orderBy(trainingLocations.name).all()
   const groupRows = db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, planningAccess.teamId),
       eq(athleteGroups.isActive, true),
       eq(athleteGroups.isDeleted, false),
     ),
@@ -241,7 +301,9 @@ export async function getSessionFormOptions(includeWorkoutId?: string | null) {
     },
   }).sync()
 
-  const groups = groupRows.map((group) => ({
+  const allowed = await Promise.all(groupRows.map((group) => planningAccess.authorizeGroup(group.id)))
+  const visibleGroupRows = groupRows.filter((_group, index) => allowed[index])
+  const groups = visibleGroupRows.map((group) => ({
     id: group.id,
     code: `${group.categoryCode}${group.levelCode}`,
     microcycles: group.trainingPlans.flatMap((plan) => plan.macrocycles.flatMap((macrocycle) =>
@@ -255,7 +317,7 @@ export async function getSessionFormOptions(includeWorkoutId?: string | null) {
     )),
   }))
 
-  return { workouts: workoutOptions.map(sessionTemplateOption), locations: locationOptions, groups }
+  return { workouts: groups.length ? workoutOptions.map(sessionTemplateOption) : [], locations: groups.length ? locationOptions : [], groups }
 }
 
 export async function createSession(_previousState: SessionFormState, formData: FormData): Promise<SessionFormState> {
@@ -268,11 +330,21 @@ export async function createSession(_previousState: SessionFormState, formData: 
   const data = parsed.data
 
   try {
+    const planningAccess = await planningReadAccess()
+    if (!planningAccess) return { errorCode: 'createFailed' }
+
+    const requestedGroups = [...new Set(prescriptions.data.map((prescription) => prescription.groupId))]
+    if (requestedGroups.length === 0) return { errorCode: 'groupNotFound' }
+    const groupDecisions = await Promise.all(requestedGroups.map((groupId) =>
+      planningAccess.authorizeGroup(groupId),
+    ))
+    if (!groupDecisions.every(Boolean)) return { errorCode: 'groupNotFound' }
+
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
         where: and(
           eq(workouts.id, data.workoutId),
-          eq(workouts.teamId, CURRENT_TEAM_ID),
+          eq(workouts.teamId, planningAccess.teamId),
           isNull(workouts.archivedAt),
           eq(workouts.isDeleted, false),
         ),
@@ -301,7 +373,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
     const sessionId = randomUUID()
     db.transaction((tx) => {
       tx.insert(sessions).values({
-        id: sessionId, teamId: CURRENT_TEAM_ID, workoutId: data.workoutId,
+        id: sessionId, teamId: planningAccess.teamId, workoutId: data.workoutId,
         date: data.date, title: data.title, type: data.type, locationKey: data.locationKey,
         trackPath: data.trackPath, structure, notes: data.notes, createdAt: now, updatedAt: now,
       }).run()
@@ -332,11 +404,20 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   const data = parsed.data
 
   try {
+    const planningAccess = await planningReadAccess()
+    if (!planningAccess) return { errorCode: 'sessionNotFound' }
     const existingSession = db.query.sessions.findFirst({
-      where: and(eq(sessions.id, sessionId), eq(sessions.teamId, CURRENT_TEAM_ID), eq(sessions.isDeleted, false)),
+      where: and(eq(sessions.id, sessionId), eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
     }).sync()
     if (!existingSession) return { errorCode: 'sessionNotFound' }
 
+    const existingGroupIds = [...new Set(db.select({ groupId: groupSessionPrescriptions.groupId })
+      .from(groupSessionPrescriptions)
+      .where(and(
+        eq(groupSessionPrescriptions.sessionId, sessionId),
+        eq(groupSessionPrescriptions.isDeleted, false),
+      )).all().map(({ groupId }) => groupId))]
+    const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
     if (referenceError) return referenceError
 
@@ -344,7 +425,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       const workout = db.query.workouts.findFirst({
         where: and(
           eq(workouts.id, data.workoutId),
-          eq(workouts.teamId, CURRENT_TEAM_ID),
+          eq(workouts.teamId, planningAccess.teamId),
           eq(workouts.isDeleted, false),
         ),
       }).sync()
@@ -380,7 +461,11 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       .where(inArray(microcycles.id, selectedMicrocycleIds)).all()
     const planIdByMicrocycle = new Map(auditPlans.map(({ microcycleId, planId }) => [microcycleId, planId]))
 
-    db.transaction((tx) => {
+    const authorized = await executeAuthorizedSessionMutation({
+      existingGroupIds,
+      resultingGroupIds,
+      authorizeGroup: planningAccess.authorizeGroup,
+      mutate: () => db.transaction((tx) => {
       tx.update(sessions).set({
         workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
         locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
@@ -403,7 +488,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
             workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
             locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
           }),
-          changedByUserId: null, createdAt: now, updatedAt: now,
+          changedByUserId: planningAccess.userId, createdAt: now, updatedAt: now,
         }).run()
       }
 
@@ -437,12 +522,14 @@ export async function updateSession(_previousState: SessionFormState, formData: 
             ownership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             generationKey: previousPrescription.generationKey,
             previousValue: JSON.stringify(previousPrescription),
-            newValue: JSON.stringify(prescription), changedByUserId: null,
+            newValue: JSON.stringify(prescription), changedByUserId: planningAccess.userId,
             createdAt: now, updatedAt: now,
           }).run()
         }
       }
+      }),
     })
+    if (!authorized) return { errorCode: 'groupNotFound' }
   } catch (error) {
     console.error('Error updating session:', error)
     return { errorCode: 'updateFailed' }

@@ -21,6 +21,13 @@ import {
   microcycles,
   planningModificationRecords,
 } from '@/db/schema'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createH4bPlanningAuthorizationBoundary } from '@/lib/authorization/h4b-planning-authorization'
 import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
@@ -34,7 +41,6 @@ import { persistIntensityPlanning } from '@/lib/periodization/intensity-persiste
 import { suggestIntensityStrategy } from '@/lib/periodization/intensity-strategy-recommender'
 import type { AthleteGroupCode, IntensityStrategyDraft, LoadStrategyDraft } from '@/types'
 
-const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 const microcycleTypes = ['base', 'development', 'shock', 'deload', 'tapering', 'race'] as const
 
@@ -155,15 +161,72 @@ function belongsToEditablePlan(
     && plan
     && plan.id === planId
     && !plan.isDeleted
-    && plan.group.teamId === CURRENT_TEAM_ID
     && !plan.group.isDeleted,
   )
 }
 
+async function requireAuthenticatedPlanningReadAccess() {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') return null
+  return { access, teamId: activeTeam.teamId }
+}
+
+function createPlanningReadAuthorization(
+  ownership: ReadonlyMap<string, { teamId: string; sportingGroupIds: string[] }>,
+) {
+  const h3 = createH4aNextServerAuthorizationBoundary()
+  return createH4bPlanningAuthorizationBoundary({
+    resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
+    async loadOwnership(resourceId) {
+      return ownership.get(resourceId) ?? null
+    },
+    async authorize(access, request) {
+      return h3.authorize(access, {
+        capability: request.capability,
+        resource: request.resource,
+        at: request.at,
+      })
+    },
+  })
+}
+
+async function authorizePlanningCycleWrite(planId: string) {
+  const authenticated = await requireAuthenticatedPlanningReadAccess()
+  if (!authenticated) return null
+
+  const plan = await db.query.groupTrainingPlans.findFirst({
+    where: and(
+      eq(groupTrainingPlans.id, planId),
+      eq(groupTrainingPlans.isDeleted, false),
+    ),
+    with: { group: true },
+  })
+  if (!plan || plan.group.isDeleted || plan.group.teamId !== authenticated.teamId) return null
+
+  const planningAuthorization = createPlanningReadAuthorization(new Map([[
+    plan.id,
+    { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
+  ]]))
+  const decision = await planningAuthorization.authorize(authenticated.access, {
+    resourceId: plan.id,
+    at: new Date().toISOString(),
+  })
+  if (!decision.allowed) return null
+  return authenticated.access
+}
+
 export async function getGroupTrainingPlans() {
+  const authenticated = await requireAuthenticatedPlanningReadAccess()
+  if (!authenticated) return []
   const groups = await db.query.athleteGroups.findMany({
     where: and(
-      eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+      eq(athleteGroups.teamId, authenticated.teamId),
       eq(athleteGroups.isDeleted, false),
     ),
   })
@@ -191,7 +254,20 @@ export async function getGroupTrainingPlans() {
     },
   })
 
-  return plans.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+  const ownership = new Map(plans.map((plan) => [plan.id, {
+    teamId: plan.group.teamId,
+    sportingGroupIds: [plan.groupId],
+  }]))
+  const planningAuthorization = createPlanningReadAuthorization(ownership)
+  const decisions = await Promise.all(plans.map((plan) =>
+    planningAuthorization.authorize(authenticated.access, {
+      resourceId: plan.id,
+      at: new Date().toISOString(),
+    }),
+  ))
+  const allowed = plans.filter((_plan, index) => decisions[index]?.allowed === true)
+
+  return allowed.sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
     .map((plan) => ({
       ...plan,
       macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
@@ -199,6 +275,8 @@ export async function getGroupTrainingPlans() {
 }
 
 export async function getGroupTrainingPlanById(planId: string) {
+  const authenticated = await requireAuthenticatedPlanningReadAccess()
+  if (!authenticated) return null
   const plan = await db.query.groupTrainingPlans.findFirst({
     where: and(
       eq(groupTrainingPlans.id, planId),
@@ -220,9 +298,19 @@ export async function getGroupTrainingPlanById(planId: string) {
     },
   })
 
-  if (!plan || plan.group.teamId !== CURRENT_TEAM_ID || plan.group.isDeleted) {
+  if (!plan || plan.group.teamId !== authenticated.teamId || plan.group.isDeleted) {
     return null
   }
+
+  const planningAuthorization = createPlanningReadAuthorization(new Map([[
+    plan.id,
+    { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
+  ]]))
+  const authorization = await planningAuthorization.authorize(authenticated.access, {
+    resourceId: plan.id,
+    at: new Date().toISOString(),
+  })
+  if (!authorization.allowed) return null
 
   const loadStrategy = db.query.loadStrategies.findFirst({
     where: and(
@@ -283,6 +371,9 @@ export async function saveLoadProgression(
   }
 
   const data = parsed.data
+
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
 
   try {
     const plan = await getGroupTrainingPlanById(data.planId)
@@ -427,6 +518,9 @@ export async function updateMicrocycleVolume(
 
   const data = parsed.data
 
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
+
   try {
     const microcycle = getEditableMicrocycle(data.microcycleId)
     const plan = microcycle?.mesocycle.macrocycle.groupTrainingPlan
@@ -460,7 +554,7 @@ export async function updateMicrocycleVolume(
           field: 'target_volume_km',
           previousValue: microcycle.targetVolumeKm?.toString() ?? null,
           newValue: data.targetVolumeKm.toString(),
-          changedByUserId: null,
+          changedByUserId: authenticated.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
@@ -488,6 +582,9 @@ export async function updateMicrocycleElevation(
   }
 
   const data = parsed.data
+
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
 
   try {
     const microcycle = getEditableMicrocycle(data.microcycleId)
@@ -537,7 +634,7 @@ export async function updateMicrocycleElevation(
           field: 'target_elevation_gain',
           previousValue: microcycle.targetElevationGain?.toString() ?? null,
           newValue: data.targetElevationGain?.toString() ?? null,
-          changedByUserId: null,
+          changedByUserId: authenticated.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
@@ -565,6 +662,9 @@ export async function updateMicrocycleDates(
   }
 
   const data = parsed.data
+
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
   const start = parseISO(data.startDate)
   const end = parseISO(data.endDate)
   const durationDays = differenceInCalendarDays(end, start) + 1
@@ -658,7 +758,7 @@ export async function updateMicrocycleDates(
           field: 'date_range',
           previousValue: JSON.stringify({ startDate: microcycle.startDate, endDate: microcycle.endDate }),
           newValue: JSON.stringify({ startDate: data.startDate, endDate: data.endDate }),
-          changedByUserId: null,
+          changedByUserId: authenticated.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
@@ -686,6 +786,9 @@ export async function updateMicrocycleType(
   }
 
   const data = parsed.data
+
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
 
   try {
     const microcycle = getEditableMicrocycle(data.microcycleId)
@@ -719,7 +822,7 @@ export async function updateMicrocycleType(
           field: 'type',
           previousValue: microcycle.type,
           newValue: data.type,
-          changedByUserId: null,
+          changedByUserId: authenticated.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
@@ -747,6 +850,9 @@ export async function updateMicrocycleNotes(
   }
 
   const data = parsed.data
+
+  const authenticated = await authorizePlanningCycleWrite(data.planId)
+  if (!authenticated) return { error: 'No autorizado' }
 
   try {
     const microcycle = getEditableMicrocycle(data.microcycleId)
@@ -782,7 +888,7 @@ export async function updateMicrocycleNotes(
           field: 'notes',
           previousValue: microcycle.notes,
           newValue: nextNotes,
-          changedByUserId: null,
+          changedByUserId: authenticated.userId,
           createdAt: now,
           updatedAt: now,
         }).run()
