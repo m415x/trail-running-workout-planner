@@ -167,7 +167,7 @@ function belongsToEditablePlan(
   )
 }
 
-async function requirePlanningReadAccess() {
+async function requireAuthenticatedPlanningReadAccess() {
   const supabase = await createSupabaseServerClient()
   const lookup = createExternalIdentityLookup()
   const access = await requireAuthenticatedEptAction({
@@ -199,7 +199,7 @@ function createPlanningReadAuthorization(
 }
 
 export async function getGroupTrainingPlans() {
-  const authenticated = await requirePlanningReadAccess()
+  const authenticated = await requireAuthenticatedPlanningReadAccess()
   if (!authenticated) return []
   const groups = await db.query.athleteGroups.findMany({
     where: and(
@@ -252,7 +252,7 @@ export async function getGroupTrainingPlans() {
 }
 
 export async function getGroupTrainingPlanById(planId: string) {
-  const authenticated = await requirePlanningReadAccess()
+  const authenticated = await requireAuthenticatedPlanningReadAccess()
   if (!authenticated) return null
   const plan = await db.query.groupTrainingPlans.findFirst({
     where: and(
