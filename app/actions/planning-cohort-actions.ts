@@ -621,11 +621,25 @@ export async function assignAthleteToPlanningCohort(
   const data = parsed.data
 
   try {
+    const planningContext = await requirePlanningContext()
+    if (!planningContext) return { error: 'No autorizado', values }
+
+    const scopedCohort = await db.query.planningCohorts.findFirst({
+      where: and(
+        eq(planningCohorts.id, data.cohortId),
+        eq(planningCohorts.teamId, planningContext.teamId),
+        eq(planningCohorts.isDeleted, false),
+      ),
+    })
+    if (!scopedCohort) return { error: 'Cohorte no encontrada', values }
+    const authorized = await planningContext.authorizeGroup(scopedCohort.groupId, scopedCohort.teamId)
+    if (!authorized) return { error: 'No autorizado', values }
+
     db.transaction((tx) => {
       const cohort = tx.query.planningCohorts.findFirst({
         where: and(
           eq(planningCohorts.id, data.cohortId),
-          eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+          eq(planningCohorts.teamId, planningContext.teamId),
           eq(planningCohorts.isDeleted, false),
         ),
         with: { group: true },
@@ -636,7 +650,7 @@ export async function assignAthleteToPlanningCohort(
       const athlete = tx.query.athleteProfiles.findFirst({
         where: and(
           eq(athleteProfiles.id, data.athleteProfileId),
-          eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
+          eq(athleteProfiles.teamId, planningContext.teamId),
           eq(athleteProfiles.isDeleted, false),
         ),
       }).sync()
@@ -663,7 +677,7 @@ export async function assignAthleteToPlanningCohort(
         athleteProfileId: athlete.id,
         startDate: data.startDate,
         endDate: null,
-        assignedByUserId: null,
+        assignedByUserId: planningContext.access.userId,
         assignmentReason: data.reason || null,
         endedByUserId: null,
         endReason: null,
@@ -717,11 +731,25 @@ export async function closePlanningCohortMembership(
   const data = parsed.data
 
   try {
+    const planningContext = await requirePlanningContext()
+    if (!planningContext) return { error: 'No autorizado', values }
+
+    const scopedCohort = await db.query.planningCohorts.findFirst({
+      where: and(
+        eq(planningCohorts.id, data.cohortId),
+        eq(planningCohorts.teamId, planningContext.teamId),
+        eq(planningCohorts.isDeleted, false),
+      ),
+    })
+    if (!scopedCohort) return { error: 'Cohorte no encontrada', values }
+    const authorized = await planningContext.authorizeGroup(scopedCohort.groupId, scopedCohort.teamId)
+    if (!authorized) return { error: 'No autorizado', values }
+
     db.transaction((tx) => {
       const cohort = tx.query.planningCohorts.findFirst({
         where: and(
           eq(planningCohorts.id, data.cohortId),
-          eq(planningCohorts.teamId, CURRENT_TEAM_ID),
+          eq(planningCohorts.teamId, planningContext.teamId),
           eq(planningCohorts.isDeleted, false),
         ),
       }).sync()
@@ -743,7 +771,7 @@ export async function closePlanningCohortMembership(
 
       tx.update(planningCohortMemberships).set({
         endDate: data.endDate,
-        endedByUserId: null,
+        endedByUserId: planningContext.access.userId,
         endReason: data.reason || null,
         updatedAt: new Date().toISOString(),
       }).where(and(
