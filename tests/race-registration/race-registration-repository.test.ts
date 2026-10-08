@@ -29,6 +29,10 @@ try {
   assert.equal(upgrade.error, undefined, upgrade.error?.message ?? 'SQLite upgrade process failed')
   assert.equal(upgrade.status, 0, `Canonical SQLite bootstrap failed:\n${upgrade.stdout}\n${upgrade.stderr}`)
 } catch (error) {
+  if (previousScenarioMode === undefined) delete process.env.SQLITE_SCENARIO_MODE
+  else process.env.SQLITE_SCENARIO_MODE = previousScenarioMode
+  if (previousDatabasePath === undefined) delete process.env.SQLITE_DATABASE_PATH
+  else process.env.SQLITE_DATABASE_PATH = previousDatabasePath
   rmSync(workspace, { recursive: true, force: true })
   throw error
 }
