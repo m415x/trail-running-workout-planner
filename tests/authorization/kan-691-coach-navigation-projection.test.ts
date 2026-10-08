@@ -15,7 +15,7 @@ test('KAN-691 computes Coach navigation from H2 actor, resolved active Team and 
       assert.equal(request.teamId, 'team-a')
       assert.deepEqual(request.resource, { teamId: 'team-a' })
       calls.push(request.capability)
-      return { allowed: request.capability === 'planning.manage' },
+      return { allowed: request.capability === 'planning.manage' }
     },
   })
   const result = await project({ status: 'authenticated', userId: 'ept-user' })
