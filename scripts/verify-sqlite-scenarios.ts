@@ -155,6 +155,7 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
         const rows = check.prepare(`
           SELECT s.id AS session_id, s.team_id, s.generation_ownership,
                  p.id AS prescription_id, p.group_id, p.microcycle_id,
+                 s.date AS session_date, mi.start_date AS microcycle_start, mi.end_date AS microcycle_end,
                  g.team_id AS group_team_id, gp.group_id AS plan_group_id
           FROM sessions s
           JOIN group_session_prescriptions p ON p.session_id = s.id
@@ -169,6 +170,7 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
         `).all() as Array<{
           session_id: string; team_id: string; generation_ownership: string
           prescription_id: string; group_id: string; microcycle_id: string
+          session_date: string; microcycle_start: string; microcycle_end: string
           group_team_id: string; plan_group_id: string
         }>
         const expectedGroups = ['team_1_M1', 'team_1_S2']
@@ -177,6 +179,8 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
           || rows.some(row => row.team_id !== 'team_1'
             || row.group_team_id !== 'team_1'
             || row.plan_group_id !== row.group_id
+            || row.session_date < row.microcycle_start
+            || row.session_date > row.microcycle_end
             || row.generation_ownership !== 'manual')
           || new Set(rows.map(row => row.microcycle_id)).size !== 2
         ) {
