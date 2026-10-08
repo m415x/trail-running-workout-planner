@@ -1,5 +1,6 @@
 import type { db as sqliteDb } from '@/db/index'
-import { groupSessionPrescriptions, sessions } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+import { groupSessionPrescriptions, microcycles, sessions } from '@/db/schema'
 
 type SeedDb = typeof sqliteDb
 
@@ -21,10 +22,41 @@ export async function seedH4bSharedSession(
   },
 ): Promise<void> {
   const sessionId = 'accept_h4b_shared_session'
+  const persisted = await db.select({
+    id: microcycles.id,
+    startDate: microcycles.startDate,
+    endDate: microcycles.endDate,
+  }).from(microcycles).where(eq(microcycles.id, input.s2MicrocycleId)).all()
+  const peer = await db.select({
+    id: microcycles.id,
+    startDate: microcycles.startDate,
+    endDate: microcycles.endDate,
+  }).from(microcycles).where(eq(microcycles.id, input.m1MicrocycleId)).all()
+  if (persisted.length !== 1 || peer.length !== 1) {
+    throw new Error('H4B fixture: missing persisted microcycles')
+  }
+  const s2 = persisted[0]!
+  const m1 = peer[0]!
+  const date = s2.startDate > m1.startDate ? s2.startDate : m1.startDate
+  if (date > s2.endDate || date > m1.endDate) {
+    throw new Error('H4B fixture: microcycles have no shared date')
+  }
+  const existing = await db.select({
+    teamId: sessions.teamId,
+    title: sessions.title,
+    ownership: sessions.generationOwnership,
+    isDeleted: sessions.isDeleted,
+  }).from(sessions).where(eq(sessions.id, sessionId)).all()
+  if (existing.length && (
+    existing[0]?.teamId !== input.teamId ||
+    existing[0]?.title !== 'Aceptación H4B — sesión compartida S2/M1' ||
+    existing[0]?.ownership !== 'manual' ||
+    existing[0]?.isDeleted
+  )) throw new Error('H4B fixture: existing session not owned by fixture')
   await db.insert(sessions).values({
     id: sessionId,
     teamId: input.teamId,
-    date: input.date,
+    date,
     title: 'Aceptación H4B — sesión compartida S2/M1',
     type: 'Base',
     workoutId: null,
@@ -35,6 +67,9 @@ export async function seedH4bSharedSession(
     generationOwnership: 'manual',
     sharedEventKey: null,
   }).onConflictDoNothing().run()
+
+  // Reconcile only this owned acceptance session after a seed rerun on a new week.
+  await db.update(sessions).set({ date }).where(eq(sessions.id, sessionId)).run()
 
   await db.insert(groupSessionPrescriptions).values([
     {
