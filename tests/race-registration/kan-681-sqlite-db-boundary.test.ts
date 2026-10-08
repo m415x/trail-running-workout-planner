@@ -15,3 +15,9 @@ test('KAN-681 scenario path cannot point at the developer SQLite database', () =
   assert.match(source, /resolve\(/, 'Scenario path must be normalized before use')
   assert.match(source, /SQLITE_DATABASE_PATH[\s\S]*sqlite\.db/, 'Scenario bootstrap must explicitly reject the developer SQLite path')
 })
+
+test('KAN-681 Node test processes cannot silently use the development SQLite fallback', () => {
+  const source = readFileSync('db/index.ts', 'utf8')
+  assert.match(source, /NODE_TEST_CONTEXT/, 'Shared DB bootstrap must recognize Node test runner context')
+  assert.match(source, /scenarioMode\s*\|\|/, 'Node test runner must require isolated DB selection even without scenario opt-in')
+})
