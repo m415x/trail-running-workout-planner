@@ -127,3 +127,37 @@ export function createH5aEffectiveSessionNextServerBoundary() {
     },
   })
 }
+
+/**
+ * Validates persisted Drizzle locator rows before passing the session and
+ * prescriptions into effective planning resolution. This does NOT, by itself,
+ * authorize an effective sporting plan or an Athlete action.
+ */
+export function loadEffectiveSessionLocatorFromDatabase<
+  P extends { id: string; sessionId: string; isDeleted: boolean | number },
+>(input: {
+  self: { userId: string; teamId: string; athleteProfileId: string }
+  athlete: {
+    id: string; userId: string | null; teamId: string;
+    isDeleted: boolean | number; isActive: boolean | number
+  } | null
+  session: { id: string; teamId: string; isDeleted: boolean | number } | null
+  prescriptions: readonly P[]
+}): { status: 'denied' } | { status: 'resolved'; prescriptions: P[] } {
+  const { self, athlete, session } = input
+  if (
+    !self.userId || !self.teamId || !self.athleteProfileId
+    || !athlete || athlete.id !== self.athleteProfileId
+    || athlete.userId !== self.userId || athlete.teamId !== self.teamId
+    || Boolean(athlete.isDeleted) || !Boolean(athlete.isActive)
+    || !session || session.teamId !== self.teamId
+    || Boolean(session.isDeleted)
+  ) return { status: 'denied' }
+
+  return {
+    status: 'resolved',
+    prescriptions: input.prescriptions.filter(
+      prescription => prescription.sessionId === session.id && !Boolean(prescription.isDeleted),
+    ),
+  }
+}
