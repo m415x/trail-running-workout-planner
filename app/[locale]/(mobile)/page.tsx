@@ -27,6 +27,7 @@ function currentWeekRangeInTimeZone(timeZone: string) {
 export default async function MobileHomePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'RaceCatalog' })
+  const tPlan = await getTranslations({ locale, namespace: 'AthletePlan' })
   const regionalContext = resolveApplicationRegionalContext({
     language: locale === 'en' ? 'en' : 'es',
   })
@@ -39,6 +40,14 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
     getCurrentAthleteRealizedTrainingRangeAction(range.startDate, range.endDate),
     getCurrentAthleteTrack1000mPerformanceAction(today),
   ])
+
+  if (athleteRes.forbidden || realizedRes.status === 'denied' || (!scheduleRes.success && scheduleRes.error === 'Acceso no autorizado')) {
+    return (
+      <div role='alert' className='flex min-h-[60dvh] items-center justify-center p-4 text-center text-destructive'>
+        <p>{tPlan('unauthorized')}</p>
+      </div>
+    )
+  }
 
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
     return (
