@@ -4,10 +4,7 @@ import { authorizeEffectiveCapability, type EffectiveTeamMembership } from './ef
 import { resolveSelfAthleteProfile, type AthleteProfileLink } from './scope-resolution'
 
 interface H5aSelfContextDeps {
-  resolveActiveTeam(userId: string): Promise<
-    | { status: 'resolved'; teamId: string }
-    | { status: string }
-  >
+  resolveActiveTeam(userId: string): Promise<{ status: string; teamId?: string }>
   loadMemberships(userId: string, teamId: string): Promise<readonly EffectiveTeamMembership[]>
   loadAthleteProfiles(userId: string, teamId: string): Promise<readonly AthleteProfileLink[]>
 }
@@ -34,7 +31,7 @@ export function createH5aSelfContextBoundary(deps: H5aSelfContextDeps) {
 
       try {
         const team = await deps.resolveActiveTeam(access.userId)
-        if (team.status !== 'resolved' || !('teamId' in team)) {
+        if (team.status !== 'resolved' || typeof team.teamId !== 'string') {
           return { status: 'denied' }
         }
 
