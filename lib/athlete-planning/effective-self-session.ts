@@ -30,7 +30,7 @@ export function resolveEffectiveSelfSession(input: {
     date: string
     isDeleted: boolean
   } | null
-  prescriptions: AthleteSessionPrescriptionCandidate[]
+  prescriptions: (AthleteSessionPrescriptionCandidate & { sessionId: string })[]
 }): { status: 'resolved'; athleteProfileId: string; sessionId: string; prescriptionId: string } | { status: 'denied' } {
   if (
     !input.athleteProfileId
@@ -54,7 +54,7 @@ export function resolveEffectiveSelfSession(input: {
 
     const prescription = resolveAthleteSessionPrescription({
       planning,
-      prescriptions: input.prescriptions,
+      prescriptions: input.prescriptions.filter((candidate) => candidate.sessionId === input.sessionId),
     })
     if (prescription.status !== 'resolved') return { status: 'denied' }
     if (input.prescriptionId && input.prescriptionId !== prescription.prescriptionId) {
