@@ -2,10 +2,11 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { createH5bSelfContextBoundary } from '@/lib/authorization/h5b-self-context'
+import type { EffectiveTeamMembership } from '@/lib/authorization/effective-authorization'
 
 const at = '2026-10-09T12:00:00.000Z'
 const access = { status: 'authenticated' as const, userId: 'user_a' }
-const memberships = [{ userId: 'user_a', teamId: 'team_a', preset: 'athlete' as const, effectiveFrom: '2026-01-01T00:00:00.000Z', effectiveUntil: null, isActive: true }]
+const memberships: EffectiveTeamMembership[] = [{ userId: 'user_a', teamId: 'team_a', preset: 'athlete', effectiveFrom: '2026-01-01T00:00:00.000Z', effectiveUntil: null, isActive: true }]
 const profiles = [{ id: 'athlete_a', userId: 'user_a', teamId: 'team_a' }]
 
 function boundary(options: {
