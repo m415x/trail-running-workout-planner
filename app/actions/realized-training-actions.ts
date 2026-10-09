@@ -51,16 +51,26 @@ import type {
  * editable input; legacy/imported rows remain captured but read-only.
  */
 export async function getManualRealizedSessionStateAction(sessionId: string) {
-  const current = await getCurrentAthlete()
-  const athlete = current.success ? current.data?.athleteProfile : null
-  if (!athlete || athlete.isDeleted) return { success: false as const }
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return { success: false as const }
+
+  const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
+  const effective = await effectiveSession.resolve(access, {
+    sessionId,
+    at: new Date().toISOString(),
+  })
+  if (effective.status !== 'resolved') return { success: false as const }
 
   const row = db
     .select({ log: workoutLogs, evidence: workoutLogEvidence })
     .from(workoutLogs)
     .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
     .where(and(
-      eq(workoutLogs.athleteId, athlete.id),
+      eq(workoutLogs.athleteId, effective.athleteProfileId),
       eq(workoutLogs.sessionId, sessionId),
       eq(workoutLogs.isDeleted, false),
       inArray(workoutLogs.status, ['completed', 'partial', 'missed']),
@@ -97,15 +107,24 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
 export async function getCurrentAthleteRealizedTrainingRangeAction(startDate: string, endDate: string) {
   if (startDate > endDate) return { success: false as const, data: [] }
 
-  const current = await getCurrentAthlete()
-  const athlete = current.success ? current.data?.athleteProfile : null
-  if (!athlete || athlete.isDeleted) return { success: false as const, data: [] }
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return { success: false as const, data: [] }
+
+  const self = await createH5aSelfNextServerContext().resolve(access, {
+    at: new Date().toISOString(),
+    capability: 'workout_log.self.manage',
+  })
+  if (self.status !== 'resolved') return { success: false as const, data: [] }
 
   return {
     success: true as const,
     data: listRealizedTrainingRecordsForAthleteInDateRange(
-      athlete.id,
-      athlete.teamId,
+      self.athleteProfileId,
+      self.teamId,
       startDate,
       endDate,
     ),
@@ -453,19 +472,43 @@ export async function createManualRealizedTrainingAction(
 export async function correctManualRealizedTrainingAction(
   input: ManualRealizedTrainingCorrectionClientInput,
 ) {
-  const current = await getCurrentAthlete()
-  const currentUser = current.success ? current.data : null
-  const athlete = currentUser?.athleteProfile ?? null
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'Acceso no autorizado' }
+  }
 
-  if (!currentUser || !athlete || athlete.isDeleted) {
-    return { success: false as const, error: 'athlete_not_found' }
+  const now = new Date().toISOString()
+  const self = await createH5aSelfNextServerContext().resolve(access, {
+    at: now,
+    capability: 'workout_log.self.manage',
+  })
+  if (self.status !== 'resolved') {
+    return { success: false as const, error: 'Acceso no autorizado' }
+  }
+
+  // The replacement is another independent write locator: validate it even
+  // when the original log is owned by SELF.
+  if (input.replacement.sessionId !== null) {
+    const effective = await createH5aEffectiveSessionNextServerBoundary().resolve(access, {
+      at: now,
+      sessionId: input.replacement.sessionId,
+    })
+    if (effective.status !== 'resolved' || effective.athleteProfileId !== self.athleteProfileId) {
+      return { success: false as const, error: 'Acceso no autorizado' }
+    }
+  } else if (input.replacement.workoutId !== null) {
+    return { success: false as const, error: 'invalid_workout_locator' }
   }
 
   try {
     const record = correctManualRealizedTrainingRecord({
       ...input,
-      athleteId: athlete.id,
-      correctedByUserId: currentUser.id,
+      athleteId: self.athleteProfileId,
+      correctedByUserId: self.userId,
     })
     return { success: true as const, data: record }
   } catch (error) {
