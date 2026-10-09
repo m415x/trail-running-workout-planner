@@ -32,7 +32,7 @@ export function AthleteTabContent({ performance, performanceStatus = 'unknown' }
           </div>
         ) : (
           <p className='text-sm text-muted-foreground' role='status'>
-            {performanceStatus === 'denied' ? t('track1000mDenied') : performanceStatus === 'error' ? t('track1000mError') : t('track1000mUnknown')}
+            {performanceStatus === 'denied' ? t('track1000mDenied') : performanceStatus === 'error' ? t('track1000mError') : reference?.status === 'unknown' ? t('track1000mUnknown') : t('track1000mUnknown')}
           </p>
         )}
       </CustomCard>
