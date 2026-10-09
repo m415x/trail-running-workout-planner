@@ -21,6 +21,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   const today = getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)
   const performanceResult = await getCurrentAthleteTrack1000mPerformanceAction(today)
   const performance = performanceResult.success ? performanceResult.data : null
+  const performanceStatus = performanceResult.success
+    ? performanceResult.data.reference.status === 'unknown' ? 'unknown' as const : 'loaded' as const
+    : performanceResult.error === 'not_authorized' ? 'denied' as const : 'error' as const
   const loadMembership = createAthleteMembershipPageLoader({
     createPort: (database: typeof db) =>
       createSqliteBillingPersistencePort(createDrizzleBillingDatabase(database)),
@@ -37,6 +40,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   return (
     <ProfileTab
       performance={performance}
+      performanceStatus={performanceStatus}
       membershipStatus={
         <AthleteMembershipStatus
           locale={locale === 'en' ? 'en' : 'es'}
