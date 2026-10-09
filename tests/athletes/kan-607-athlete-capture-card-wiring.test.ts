@@ -4,8 +4,8 @@ import test from 'node:test'
 
 const hook = readFileSync('features/workouts/hooks/useWorkoutCard.ts', 'utf8')
 const card = readFileSync('features/workouts/components/WorkoutCard.tsx', 'utf8')
-const es = JSON.parse(readFileSync('messages/es.json', 'utf8'))
-const en = JSON.parse(readFileSync('messages/en.json', 'utf8'))
+const es = JSON.parse(readFileSync('messages/es/realized-training/workouts.json', 'utf8'))
+const en = JSON.parse(readFileSync('messages/en/realized-training/workouts.json', 'utf8'))
 
 test('KAN-703 hook represents loading, denied, and error rather than silently disabling capture', () => {
   assert.match(hook, /resolveAthleteCaptureUiState/)
