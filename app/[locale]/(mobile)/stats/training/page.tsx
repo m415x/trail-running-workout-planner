@@ -10,6 +10,7 @@ export default async function TrainingStatsPage() {
   const t = await getTranslations('stats')
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'details' })
+  if (result.status === 'denied') return <p role='alert' className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('summary.denied')}</p>
   if (result.status !== 'loaded' || !('series' in result.data.training)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('trainingError')}</p>
 
   const { training } = result.data
