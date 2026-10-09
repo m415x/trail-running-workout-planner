@@ -4,11 +4,11 @@ import { useTranslations } from 'next-intl'
 import { currentUser } from '@/data/data'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
-import { AthleteTabContent } from '@profile/components/AthleteTabContent'
+import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/components/AthleteTabContent'
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus }: { membershipStatus?: React.ReactNode }) {
+export function ProfileTab({ membershipStatus, performance }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null }) {
   const t = useTranslations('AthleteProfile')
 
   return (
@@ -33,7 +33,7 @@ export function ProfileTab({ membershipStatus }: { membershipStatus?: React.Reac
         </TabsList>
 
         <TabsContent value='athlete'>
-          <AthleteTabContent />
+          <AthleteTabContent performance={performance} />
         </TabsContent>
 
         <TabsContent value='gear'>
