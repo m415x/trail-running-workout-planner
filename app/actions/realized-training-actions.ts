@@ -57,14 +57,14 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
   const access = await requireAuthenticatedEptAction({
     readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
   })
-  if (access.status !== 'authenticated') return { success: false as const }
+  if (access.status !== 'authenticated') return { success: false as const, status: 'denied' as const }
 
   const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
   const effective = await effectiveSession.resolve(access, {
     sessionId,
     at: new Date().toISOString(),
   })
-  if (effective.status !== 'resolved') return { success: false as const }
+  if (effective.status !== 'resolved') return { success: false as const, status: 'denied' as const }
 
   const row = db
     .select({ log: workoutLogs, evidence: workoutLogEvidence })
@@ -106,20 +106,20 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
  * evidence here.
  */
 export async function getCurrentAthleteRealizedTrainingRangeAction(startDate: string, endDate: string) {
-  if (startDate > endDate) return { success: false as const, data: [] }
+  if (startDate > endDate) return { success: false as const, error: 'invalid_range' as const, data: [] }
 
   const supabase = await createSupabaseServerClient()
   const lookup = createExternalIdentityLookup()
   const access = await requireAuthenticatedEptAction({
     readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
   })
-  if (access.status !== 'authenticated') return { success: false as const, data: [] }
+  if (access.status !== 'authenticated') return { success: false as const, status: 'denied' as const, data: [] }
 
   const self = await createH5aSelfNextServerContext().resolve(access, {
     at: new Date().toISOString(),
     capability: 'workout_log.self.manage',
   })
-  if (self.status !== 'resolved') return { success: false as const, data: [] }
+  if (self.status !== 'resolved') return { success: false as const, status: 'denied' as const, data: [] }
 
   return {
     success: true as const,
