@@ -9,6 +9,7 @@ export default async function AdherenceStatsPage() {
   const t = await getTranslations('stats')
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'details' })
+  if (result.status === 'denied') return <p role='alert' className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('summary.denied')}</p>
   if (result.status !== 'loaded' || !('eligiblePlannedSessions' in result.data.adherence)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('adherenceError')}</p>
 
   const { adherence } = result.data
