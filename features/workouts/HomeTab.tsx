@@ -30,7 +30,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
   const handleWeekChange = async (startDateIso: string) => {
     const result = await getCurrentAthletePlanningWeek(startDateIso)
     if (result.success && result.data) return { status: 'loaded' as const, data: result.data.sessions }
-    if (result.error === 'Acceso no autorizado') return { status: 'denied' as const }
+    if (result.status === 'unauthorized') return { status: 'denied' as const }
     return { status: 'error' as const }
   }
 
