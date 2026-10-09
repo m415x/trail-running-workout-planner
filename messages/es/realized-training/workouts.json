@@ -66,7 +66,10 @@
       "saveFailed": "No se pudo guardar el entrenamiento. Tus datos se conservaron; intentá nuevamente.",
       "clear": "Limpiar formulario",
       "cancel": "Cancelar",
-      "save": "Guardar"
+      "save": "Guardar",
+      "durationHours": "Horas",
+      "durationMinutes": "Minutos",
+      "durationSeconds": "Segundos"
     },
     "home": {
       "greeting": "Hola, {name}",
