@@ -24,7 +24,14 @@
         "z3": "Tempo / Ritmo",
         "z4": "Umbral Anaeróbico",
         "z5": "Capacidad Máxima / VO2"
-      }
+      },
+      "track1000mTime": "Tiempo de 1000 m",
+      "track1000mPace": "Ritmo de 1000 m",
+      "track1000mSpeed": "Velocidad media",
+      "track1000mDate": "Fecha de evaluación",
+      "track1000mUnknown": "Sin referencia de 1000 m disponible",
+      "track1000mDenied": "No tenés permiso para ver estos datos.",
+      "track1000mError": "No pudimos cargar tus datos de rendimiento."
     },
     "gear": {
       "shoes": "Zapatillas en Rotación",
