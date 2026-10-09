@@ -37,8 +37,7 @@ export function createAthleteStatsTrainingSources(
 
   return {
     listRealizedTraining,
-    getTrainingLoad: async (input) => {
-      const records = await listRealizedTraining(input)
+    getTrainingLoad: async (input, records) => {
       return buildAthleteTrainingLoadState({
         athleteId: input.athleteId,
         startDate: input.startDate,
