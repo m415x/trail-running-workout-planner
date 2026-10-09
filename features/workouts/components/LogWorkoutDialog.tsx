@@ -56,7 +56,6 @@ export function LogWorkoutDialog({
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
       <DialogContent className='max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
-        <span tabIndex={0} aria-hidden='true' className='sr-only focus:outline-none' />
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
@@ -70,19 +69,19 @@ export function LogWorkoutDialog({
 
         <ScrollArea className='flex-1 min-h-0 w-full'>
           <div className='space-y-4 pt-4 pb-1 px-0.5'>
-            <label className='block space-y-1 text-xs'>
+            <label htmlFor='performedAt' className='block space-y-1 text-xs'>
               <span>{t('dialog.performedAt')}</span>
-              <PrimaryInput type='datetime-local' step='1' required value={performedLocal}
+              <PrimaryInput id='performedAt' type='datetime-local' step='1' required value={performedLocal}
                 disabled={isSaving} onChange={(event) => setPerformedLocal(event.target.value)} />
               <span className='text-muted-foreground'>{t('dialog.localTimeHint')}</span>
             </label>
             {saveError && <p role='alert' className='text-sm text-destructive'>{t(`dialog.${saveError}`)}</p>}
             <div className='grid grid-cols-2 gap-2.5'>
               <div className='space-y-1'>
-                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='distance' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <MapPin size={11} /> {t('dialog.distance')}
                 </label>
-                <PrimaryInput
+                <PrimaryInput id='distance'
                   type='number'
                   step='0.01'
                   min='0'
@@ -98,9 +97,13 @@ export function LogWorkoutDialog({
                 </label>
 
                 <div className='grid grid-cols-3 gap-1.5'>
-                  <PrimaryInput type='number' min='0' placeholder='0' value={timeHr} onChange={(e) => setTimeHr(e.target.value)} />
-                  <PrimaryInput type='number' min='0' placeholder='0' value={timeMin} onChange={(e) => handleMinutesChange(e.target.value)} />
+                  <label htmlFor='durationHours' className='sr-only'>{t('dialog.durationHours')}</label>
+                  <PrimaryInput id='durationHours' type='number' min='0' placeholder='0' value={timeHr} onChange={(e) => setTimeHr(e.target.value)} />
+                  <label htmlFor='durationMinutes' className='sr-only'>{t('dialog.durationMinutes')}</label>
+                  <PrimaryInput id='durationMinutes' type='number' min='0' placeholder='0' value={timeMin} onChange={(e) => handleMinutesChange(e.target.value)} />
+                  <label htmlFor='durationSeconds' className='sr-only'>{t('dialog.durationSeconds')}</label>
                   <PrimaryInput
+                    id='durationSeconds'
                     type='number'
                     min='0'
                     max='59'
@@ -112,10 +115,10 @@ export function LogWorkoutDialog({
               </div>
 
               <div className='space-y-1'>
-                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='elevationGain' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <Mountain size={11} /> {t('dialog.elevation')}
                 </label>
-                <PrimaryInput
+                <PrimaryInput id='elevationGain'
                   type='number'
                   min='0'
                   step='1'
@@ -126,10 +129,10 @@ export function LogWorkoutDialog({
               </div>
 
               <div className='space-y-1'>
-                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='averageHeartRate' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <HeartPulse size={11} /> {t('dialog.heartRate')}
                 </label>
-                <PrimaryInput
+                <PrimaryInput id='averageHeartRate'
                   type='number'
                   min='0'
                   step='1'
