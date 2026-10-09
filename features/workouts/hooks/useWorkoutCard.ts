@@ -25,6 +25,7 @@ import { getWorkoutIcon } from '@/lib/workout-helpers'
 import { formatPace, paceToSpeed } from '@/lib/formatters'
 import { fetchDailyWeather } from '@/service/weather/open-meteo'
 import { resolveExecutionGuidance } from '@/lib/physiology/execution-guidance'
+import { resolveAthleteCaptureUiState, type AthleteCaptureUiState } from '@workouts/lib/athlete-capture-ui-state'
 
 interface UseWorkoutCardParams {
   workout: WorkoutCardProps['workout']
@@ -58,7 +59,10 @@ export function useWorkoutCard({
   const [isLoadingWeather, setIsLoadingWeather] = useState(true)
   const sessionId = String(workout.id)
   const [captureState, setCaptureState] = useState<DurableCaptureState | null>(null)
-  const isCaptureReady = captureState?.sessionId === sessionId
+  const [captureUiState, setCaptureUiState] = useState<AthleteCaptureUiState>(() =>
+    resolveAthleteCaptureUiState({ kind: 'loading' }),
+  )
+  const isCaptureReady = captureUiState.canCapture && captureState?.sessionId === sessionId
   const isLogged = isCaptureReady ? captureState.captured : initialIsCompleted
   const canEditLoggedWorkout = Boolean(
     isCaptureReady && captureState?.captured && captureState.workoutLogId && captureState.editableInput,
@@ -66,8 +70,12 @@ export function useWorkoutCard({
 
   useEffect(() => {
     let active = true
+    setCaptureState(null)
+    setCaptureUiState(resolveAthleteCaptureUiState({ kind: 'loading' }))
     getManualRealizedSessionStateAction(sessionId).then(result => {
-      if (active && result.success) {
+      if (!active) return
+      setCaptureUiState(resolveAthleteCaptureUiState({ kind: 'response', response: result }))
+      if (result.success) {
         setCaptureState({
           sessionId,
           captured: result.captured,
@@ -76,7 +84,10 @@ export function useWorkoutCard({
         })
       }
     }).catch(() => {
-      // Keep capture disabled when persisted state cannot be verified.
+      if (active) {
+        setCaptureState(null)
+        setCaptureUiState(resolveAthleteCaptureUiState({ kind: 'error' }))
+      }
     })
     return () => { active = false }
   }, [sessionId])
@@ -209,6 +220,7 @@ export function useWorkoutCard({
     isFuture,
     isLogged,
     isCaptureReady,
+    captureUiState,
     canEditLoggedWorkout,
     editableCaptureInput: captureState?.editableInput ?? null,
     stats,
