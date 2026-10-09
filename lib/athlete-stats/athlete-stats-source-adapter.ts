@@ -18,7 +18,7 @@ interface SubjectPeriod extends AthleteStatsSubject {
 
 export interface AthleteStatsSourceDependencies {
   readonly listRealizedTraining: (input: SubjectPeriod) => Promise<readonly RealizedTrainingRecord[]>
-  readonly getTrainingLoad: (input: SubjectPeriod) => Promise<AthleteTrainingLoadState>
+  readonly getTrainingLoad: (input: SubjectPeriod, records: readonly RealizedTrainingRecord[]) => Promise<AthleteTrainingLoadState>
   readonly getAdherence: (input: SubjectPeriod) => Promise<AthleteAdherence>
   readonly getCompetitionContext: (input: SubjectPeriod) => Promise<CompetitionContext>
 }
@@ -44,14 +44,14 @@ export async function loadAthleteStatsProjectionInput(
   const currentScope = { ...subject, ...period }
   const previousScope = { ...subject, ...previous }
 
-  const [currentRecords, previousRecords, load, adherence, competition] = await Promise.all([
+  const [currentRecords, previousRecords, adherence, competition] = await Promise.all([
     dependencies.listRealizedTraining(currentScope),
     dependencies.listRealizedTraining(previousScope),
-    dependencies.getTrainingLoad(currentScope),
     dependencies.getAdherence(currentScope),
     dependencies.getCompetitionContext(currentScope),
   ])
 
+  const load = await dependencies.getTrainingLoad(currentScope, currentRecords)
   const training = summarizeRealizedTraining(currentRecords)
   const previousTraining = summarizeRealizedTraining(previousRecords)
 
