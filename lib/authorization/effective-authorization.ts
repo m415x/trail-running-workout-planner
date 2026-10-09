@@ -76,13 +76,14 @@ function hasBaseCapability(
 function scopeForBaseCapability(
   input: EffectiveAuthorizationInput,
 ): AuthorizationScope {
-  return input.requiredScope ?? 'team'
+  return getCapabilityDefinition(input.capability).requiredScope ?? input.requiredScope ?? 'team'
 }
 
 function hasGrantCapability(
   input: EffectiveAuthorizationInput,
   selfAthleteProfileId: string | null,
 ): boolean {
+  if (!getCapabilityDefinition(input.capability).delegable) return false
   return input.grants.some((grant) => {
     if (grant.beneficiaryUserId !== input.authenticatedUserId) return false
     if (grant.teamId !== input.teamId) return false
