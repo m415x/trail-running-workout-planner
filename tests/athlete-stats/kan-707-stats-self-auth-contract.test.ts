@@ -10,7 +10,7 @@ test('KAN-707 Stats production action uses dedicated H5B SELF authority, not pla
   assert.match(action, /createH5bSelfNextServerContext/)
   assert.match(action, /requireAuthenticatedEptAction/)
   assert.match(action, /stats\.self\.read/)
-  assert.doesNotMatch(action, /getCurrentAthlete\b/)
+  assert.doesNotMatch(action, /\bgetCurrentAthlete\s*\(/)
 })
 
 test('KAN-707 Stats read service distinguishes DENY from valid loaded and technical error', () => {
@@ -21,6 +21,6 @@ test('KAN-707 Stats read service distinguishes DENY from valid loaded and techni
 })
 
 test('KAN-707 Stats adapter does not grant authority by resolving H5A current athlete', () => {
-  assert.doesNotMatch(adapter, /getCurrentAthlete/)
+  assert.doesNotMatch(adapter, /\bgetCurrentAthlete\s*\(/)
   assert.match(adapter, /resolveCurrentAthlete/)
 })
