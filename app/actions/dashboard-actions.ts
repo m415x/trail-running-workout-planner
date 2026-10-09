@@ -173,9 +173,19 @@ export async function getCurrentAthletePlanningWeek(
   }
 
   try {
+    const self = await createH5aSelfNextServerContext().resolve(access, {
+      at: new Date().toISOString(),
+      capability: 'planning.self.read',
+    })
+    if (self.status !== 'resolved') {
+      return { success: false as const, error: 'Acceso no autorizado' }
+    }
+
     const current = await getCurrentAthlete()
     const athlete = current.success ? current.data?.athleteProfile : null
-    if (!athlete) return { success: false as const, error: 'Acceso no autorizado' }
+    if (!athlete || athlete.id !== self.athleteProfileId || athlete.teamId !== self.teamId) {
+      return { success: false as const, error: 'Acceso no autorizado' }
+    }
 
     const today = getCurrentDateInArgentina()
     const startDate = startDateIso
