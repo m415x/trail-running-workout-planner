@@ -8,7 +8,7 @@ import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/compone
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error' }) {
   const t = useTranslations('AthleteProfile')
 
   return (
@@ -33,7 +33,7 @@ export function ProfileTab({ membershipStatus, performance }: { membershipStatus
         </TabsList>
 
         <TabsContent value='athlete'>
-          <AthleteTabContent performance={performance} />
+          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} />
         </TabsContent>
 
         <TabsContent value='gear'>
