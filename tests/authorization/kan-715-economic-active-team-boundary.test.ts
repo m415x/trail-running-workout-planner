@@ -47,7 +47,7 @@ test('KAN-715 policy and operations are distinct effective Team capabilities', a
 
 test('KAN-715 fails closed on invalid H2, Team, revocation, duplicate membership and mismatched ownership', async () => {
   const cases = [
-    { h: harness(), actor: { status: 'forbidden' as const, reason: 'anonymous' } },
+    { h: harness(), actor: { status: 'forbidden' as const, reason: 'anonymous' as const } },
     { h: harness({ activeTeam: { status: 'denied' } }), actor: access },
     { h: harness({ activeTeam: { status: 'resolved', teamId: 'team_b' } }), actor: access },
     { h: harness({ members: [{ ...membership, isActive: false }] }), actor: access },
