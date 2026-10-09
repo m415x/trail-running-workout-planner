@@ -39,6 +39,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
 
   return (
     <ProfileTab
+      athleteProfile={athleteProfile}
       performance={performance}
       performanceStatus={performanceStatus}
       membershipStatus={
