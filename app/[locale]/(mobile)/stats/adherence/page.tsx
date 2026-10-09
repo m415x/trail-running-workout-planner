@@ -9,7 +9,7 @@ export default async function AdherenceStatsPage() {
   const t = await getTranslations('stats')
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'details' })
-  if (result.status !== 'success' || !('eligiblePlannedSessions' in result.data.adherence)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('adherenceError')}</p>
+  if (result.status !== 'loaded' || !('eligiblePlannedSessions' in result.data.adherence)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('adherenceError')}</p>
 
   const { adherence } = result.data
   const evidence = [[t('adherenceDetail.eligible'), adherence.eligiblePlannedSessions], [t('adherenceDetail.confirmedOutcomes'), adherence.confirmedOutcomeSessions], [t('adherenceDetail.unknownOutcome'), adherence.unknownSessions]] as const
