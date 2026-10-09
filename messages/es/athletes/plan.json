@@ -30,6 +30,7 @@
     "calendar": {
       "today": "Hoy",
       "selectedWeek": "Semana seleccionada"
-    }
+    },
+    "unauthorized": "Acceso no autorizado"
   }
 }
