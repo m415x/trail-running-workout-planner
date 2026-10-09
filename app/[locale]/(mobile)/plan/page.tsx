@@ -5,6 +5,7 @@ import { Link } from '@/i18n/routing'
 
 import { getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
 import { AthleteSessionCard } from '@/features/athlete-planning/components/AthleteSessionCard'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { cn } from '@/lib/utils'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Badge } from '@ui/badge'
@@ -22,7 +23,7 @@ export default async function PlanPage({ params }: PlanPageProps) {
   const result = await getCurrentAthletePlanningWeek()
 
   if (!result.success || !result.data) {
-    return <Card className='mt-4'><CardContent className='py-8 text-center text-sm text-destructive'>{result.error ?? t('loadError')}</CardContent></Card>
+    return <AthletePageState message={result.error === 'Acceso no autorizado' ? t('unauthorized') : result.error ?? t('loadError')} />
   }
 
   const { athlete, today, startDate, endDate, sessions } = result.data
