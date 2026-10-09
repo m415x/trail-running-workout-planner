@@ -16,7 +16,7 @@ test('KAN-699 Athlete effective planning requires an explicit server-side planni
 
 test('KAN-699 planning week never treats failed SELF authorization as an empty valid calendar', () => {
   assert.match(planning, /success:\s*false/)
-  assert.match(planning, /Acceso no autorizado/)
+  assert.match(planning, /status:\s*['\"]unauthorized['\"]/)
   assert.match(planning, /athlete\.teamId/)
   assert.match(planning, /athlete\.id/)
 })
