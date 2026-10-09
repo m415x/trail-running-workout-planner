@@ -31,25 +31,25 @@ const projectionInput = {
 } satisfies AthleteStatsProjectionInput
 
 describe('athlete stats action wiring', () => {
-  it('derives the stats subject from the current-athlete boundary', async () => {
+  it('derives the stats subject from the authorized SELF boundary', async () => {
     let loadedSubject: { athleteId: string; teamId: string } | null = null
     const action = createAthleteStatsAction({
-      getCurrentAthlete: async () => ({ success: true, data: { athleteProfile: { id: 'athlete-1', teamId: 'team-1', isDeleted: false } } }),
+      resolveCurrentAthlete: async () => ({ athleteId: 'athlete-1', teamId: 'team-1' }),
       loadProjectionInput: async subject => { loadedSubject = subject; return projectionInput },
     })
     const result = await action({ startDate: '2026-09-08', endDate: '2026-09-14', view: 'summary' })
-    assert.equal(result.status, 'success')
+    assert.equal(result.status, 'loaded')
     assert.deepEqual(loadedSubject, { athleteId: 'athlete-1', teamId: 'team-1' })
   })
 
-  it('does not manufacture a subject when current-athlete resolution is unavailable', async () => {
+  it('does not manufacture a subject when authorized SELF resolution is denied', async () => {
     let loaded = false
     const action = createAthleteStatsAction({
-      getCurrentAthlete: async () => ({ success: false, error: 'not found' }),
+      resolveCurrentAthlete: async () => null,
       loadProjectionInput: async () => { loaded = true; return projectionInput },
     })
     const result = await action({ startDate: '2026-09-08', endDate: '2026-09-14', view: 'details' })
-    assert.deepEqual(result, { status: 'error', code: 'current_athlete_unavailable' })
+    assert.deepEqual(result, { status: 'denied' })
     assert.equal(loaded, false)
   })
 })

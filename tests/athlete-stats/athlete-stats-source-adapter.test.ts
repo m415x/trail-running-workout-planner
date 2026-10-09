@@ -82,9 +82,9 @@ describe('athlete stats source adapter', () => {
       { startDate: '2026-09-08', endDate: '2026-09-14' },
       dependencies({
         listRealizedTraining: async ({ athleteId, teamId }) => { subjects.push({ athleteId, teamId }); return [] },
-        getTrainingLoad: async ({ athleteId, teamId, startDate, endDate }) => {
+        getTrainingLoad: async ({ athleteId, teamId, startDate, endDate }, records) => {
           subjects.push({ athleteId, teamId })
-          return dependencies().getTrainingLoad({ athleteId, teamId, startDate, endDate })
+          return dependencies().getTrainingLoad({ athleteId, teamId, startDate, endDate }, records)
         },
         getAdherence: async ({ athleteId, teamId }) => {
           subjects.push({ athleteId, teamId })

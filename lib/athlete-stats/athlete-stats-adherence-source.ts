@@ -1,4 +1,4 @@
-import { getAthletePlanRealComparisonAction } from '@/app/actions/realized-training-actions'
+import { getSelfAthletePlanRealComparison } from './athlete-stats-self-comparison'
 import { deriveAthleteAdherence } from '@/lib/adherence/athlete-adherence'
 import type { AthleteStatsSourceDependencies } from '@/lib/athlete-stats/athlete-stats-source-adapter'
 import type { AthletePlanRealComparison, PlanRealComparisonWindow } from '@/types/training/plan-real-comparison.types'
@@ -13,12 +13,13 @@ interface PlanRealComparisonResult {
 export interface AthleteStatsAdherenceSourceDependencies {
   readonly getAthletePlanRealComparison: (
     athleteId: string,
+    teamId: string,
     window: PlanRealComparisonWindow,
   ) => Promise<PlanRealComparisonResult>
 }
 
 const productionDependencies: AthleteStatsAdherenceSourceDependencies = {
-  getAthletePlanRealComparison: getAthletePlanRealComparisonAction,
+  getAthletePlanRealComparison: getSelfAthletePlanRealComparison,
 }
 
 function periodKind(input: SubjectPeriod): PlanRealComparisonWindow['kind'] {
@@ -39,7 +40,7 @@ export function createAthleteStatsAdherenceSource(
         startDate: input.startDate,
         endDate: input.endDate,
       }
-      const result = await dependencies.getAthletePlanRealComparison(input.athleteId, window)
+      const result = await dependencies.getAthletePlanRealComparison(input.athleteId, input.teamId, window)
       const comparison = result.success ? result.data : null
       if (!comparison) throw new Error('Athlete Stats adherence source unavailable')
       if (comparison.athleteId !== input.athleteId || comparison.teamId !== input.teamId) {

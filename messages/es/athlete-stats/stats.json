@@ -20,7 +20,8 @@
       "viewDetail": "Ver detalle",
       "explore": "Profundizar",
       "nextCompetition": "Próxima competencia",
-      "viewCalendar": "Ver calendario"
+      "viewCalendar": "Ver calendario",
+      "denied": "No tenés permiso para consultar estas estadísticas."
     },
     "trainingDetail": {
       "activityRecorded": "Actividad registrada",

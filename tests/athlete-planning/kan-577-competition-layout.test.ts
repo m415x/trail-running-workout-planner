@@ -18,8 +18,8 @@ test('KAN-577 Athlete Plan competitions uses the same centered desktop width and
 })
 
 test('KAN-577 competition error state stays within the bounded width instead of spanning the entire shell', () => {
-  assert.match(competition, /result\.status !== 'success'/)
-  assert.match(competition, /if \(result\.status !== 'success'\) return <(?:p|section|div) className='[^']*max-w-5xl[^']*'/)
+  assert.match(competition, /result\.status !== 'loaded'/)
+  assert.match(competition, /if \(result\.status !== 'loaded'\) return <(?:p|section|div) className='[^']*max-w-5xl[^']*'/)
 })
 
 test('KAN-577 competition preserves navigation, registration grid and empty state', () => {

@@ -36,7 +36,8 @@ export default async function CompetitionStatsPage() {
   const t = await getTranslations('stats')
   const today = new Date().toISOString().slice(0, 10)
   const raceRegistrations = await getCurrentAthleteRaceRegistrationsAction({ today })
-  if (raceRegistrations.status !== 'success') return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
+  if (raceRegistrations.status === 'denied') return <p role='alert' className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('summary.denied')}</p>
+  if (raceRegistrations.status !== 'loaded') return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('competitionError')}</p>
 
   const raceRegistrationData = raceRegistrations.data
   const registrationLabels: RaceRegistrationLabels = {

@@ -26,8 +26,9 @@ export interface AthleteStatsReadDependencies {
 }
 
 export type AthleteStatsReadResult =
-  | { readonly status: 'success'; readonly data: AthleteStatsSummary | AthleteStatsDetails }
-  | { readonly status: 'error'; readonly code: 'invalid_period' | 'current_athlete_unavailable' | 'stats_read_failed' }
+  | { readonly status: 'loaded'; readonly data: AthleteStatsSummary | AthleteStatsDetails }
+  | { readonly status: 'denied' }
+  | { readonly status: 'error'; readonly code: 'invalid_period' | 'stats_read_failed' }
 
 /**
  * Application read boundary for Athlete Stats. The caller supplies only a
@@ -43,7 +44,7 @@ export async function readCurrentAthleteStats(
 
   try {
     const subject = await dependencies.resolveCurrentAthlete()
-    if (!subject) return { status: 'error', code: 'current_athlete_unavailable' }
+    if (!subject) return { status: 'denied' }
 
     const input = await dependencies.loadProjectionInput(subject, {
       startDate: request.startDate,
@@ -51,7 +52,7 @@ export async function readCurrentAthleteStats(
     })
 
     return {
-      status: 'success',
+      status: 'loaded',
       data: request.view === 'summary'
         ? projectAthleteStatsSummary(input)
         : projectAthleteStatsDetails(input),

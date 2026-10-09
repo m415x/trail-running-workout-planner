@@ -8,7 +8,9 @@ test('H5 stays inside memberships and does not introduce auth/session/role enfor
   const debtComponent = readFileSync('features/memberships/components/AthleteMembershipStatus.tsx', 'utf8')
   const accountComponent = readFileSync('features/memberships/components/MembershipAccountState.tsx', 'utf8')
 
-  const combined = [athleteProfile, coachPage, debtComponent, accountComponent].join('\n')
+  // H5 is restricted to membership surfaces; H5B SELF authorization in the enclosing Profile route is independent.
+  const combined = [coachPage, debtComponent, accountComponent].join('\n')
+  assert.match(athleteProfile, /getCurrentAthleteTrack1000mPerformanceAction/)
 
   assert.doesNotMatch(combined, /authorize|authorization|permission|roleGuard|sessionGuard/i)
   assert.doesNotMatch(combined, /blockedForPriorDebt\s*&&\s*redirect|redirect\([^)]*debt/i)

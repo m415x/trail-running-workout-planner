@@ -24,7 +24,14 @@
         "z3": "Tempo / Pace",
         "z4": "Anaerobic Threshold",
         "z5": "Max Capacity / VO2"
-      }
+      },
+      "track1000mTime": "1000 m time",
+      "track1000mPace": "1000 m pace",
+      "track1000mSpeed": "Average speed",
+      "track1000mDate": "Assessment date",
+      "track1000mUnknown": "No 1000 m reference available",
+      "track1000mDenied": "You don't have permission to view this data.",
+      "track1000mError": "We couldn't load your performance data."
     },
     "gear": {
       "shoes": "Shoes in Rotation",

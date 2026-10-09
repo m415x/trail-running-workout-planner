@@ -141,6 +141,19 @@ Mixed Athlete/Group reads and Athlete→Sporting Group movement require both cap
 
 KAN-604 does not introduce a second application session, a client-authoritative Team store, a generic permission editor, or a complete multi-Team UX.
 
+## H5B SELF Stats and physiology contract (KAN-608 / T1)
+
+H5B adds **two dedicated non-delegable SELF-only read capabilities**: `stats.self.read` and `physiology.self.read`. Both are explicit in ATHLETE, ASSISTANT, COACH and ADMIN base presets, but every call must jointly prove valid H2 internal User, currently active Team and TeamMembership, the requested capability and a unique active owned AthleteProfile in that Team. The preset is never authority to read another athlete. An absent or ambiguous profile fails closed with internal `no_profile`; missing rights yield denied, never an empty dataset. A client-provided athleteId, userId, teamId or resource ID is never sporting subject authority.
+
+- `stats.self.read`: only the athlete's own athlete-safe Stats projections, including realized training, descriptive load, adherence, factual competition context, periods, derived aggregates, longitudinal trends and counts. All projected metrics are protected information. Neutral analytics and internal Coach read models do not acquire SELF authority transitively.
+- `physiology.self.read`: **positive disclosure allowlist only**. The initial allowlist is the athlete's current RunningReference (source evaluation identity, protocol, performed date, fixed distance and observed elapsed seconds); accepted and active, temporally eligible `1000m_track` factual evolution/history (performed date, evaluation identity, elapsed seconds and official/self-directed classification); and deterministic pace/speed calculations from those eligible observations. No later-dated, rejected, pending-review or invalidated evidence is eligible for RunningReference/evolution disclosure. A missing reference remains `unknown`, never zero.
+
+The allowlist was checked against current SQLite `field_performance_tests` (athleteId, performedAt, protocol, distanceM, elapsedTimeSec, lifecycle, executionContext, provenance, notes) and the existing Athlete /stats 1000 m presentation. The legacy `physiology_records` table also persists `pamTimeSec`, `pamPaceFormatted`, `pamSpeedKmh`, `maxHr`, `restHr`, `thresholdHr`, `weightKg`, `heightCm`, testType and notes; AthleteProfile has physiology/medical JSON. **None of these additional legacy physiology or medical fields is included** without an independently verified explicit Athlete disclosure contract. Existing Profile tab hardcodes physiology values and HR zones; those values are not authoritative evidence and must not become H5B projections by convenience. T7 will reconcile its real source/UI without broadening this allowlist silently.
+
+`physiology.read` remains Coach-only and never substitutes for `physiology.self.read`; `field_evidence_1000m.manage` remains separate Coach authority. H5B read capabilities authorize no writes: not official 1000 m creation/modification/review/invalidation, TestEvents management, authorship or `recordedByUserId`, and not audit/H7A. The legacy Athlete /stats registration form is **not legitimized** by these read capabilities. Any disputed official-write authority stays deferred to H4C/H7A; no provisional grant is introduced.
+
+The H5B response boundary must preserve `denied` != valid `loaded/empty` != `error`, and `unknown`/`insufficient` != zero. Authorization precedes all raw and derived reads, including aggregates. Source failure must not reveal internal details to the Athlete. Enforcement in actions/repositories and UI follows in KAN-608 T2–T8: T1's catalog declaration is **not** evidence that production Stats and physiology reads are already secured.
+
 ## Deferred boundaries
 
 H3 does not implement:

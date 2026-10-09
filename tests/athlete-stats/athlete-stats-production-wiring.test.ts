@@ -26,8 +26,8 @@ describe('athlete stats production wiring', () => {
       },
     })
 
-    await sources.listRealizedTraining(scope)
-    await sources.getTrainingLoad(scope)
+    const records = await sources.listRealizedTraining(scope)
+    await sources.getTrainingLoad(scope, records)
     await sources.getAdherence(scope)
     await sources.getCompetitionContext(scope)
 

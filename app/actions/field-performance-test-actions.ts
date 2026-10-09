@@ -5,6 +5,11 @@ import { revalidatePath } from 'next/cache'
 
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createH5bSelfNextServerContext } from '@/lib/authorization/h5b-self-next-server'
 import { db } from '@/db'
 import { and, eq } from 'drizzle-orm'
 import { athleteProfiles, fieldPerformanceTestEvents } from '@/db/schema'
@@ -276,12 +281,20 @@ export async function getCoachTrack1000mHistoryAction(athleteId: string, effecti
 
 
 export async function getCurrentAthleteTrack1000mPerformanceAction(effectiveDate: string) {
-  const currentAthlete = await getCurrentAthlete()
-  if (!currentAthlete.success || !currentAthlete.data?.athleteProfile) {
-    return { success: false as const, error: 'athlete_not_found' as const }
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  const self = await createH5bSelfNextServerContext().resolve(access, {
+    at: new Date().toISOString(),
+    capability: 'physiology.self.read',
+  })
+  if (self.status !== 'resolved') {
+    return { success: false as const, error: 'not_authorized' as const }
   }
 
-  const athleteId = currentAthlete.data.athleteProfile.id
+  const athleteId = self.athleteProfileId
   const eligible = listEligibleFieldPerformanceTestHistory(
     repository.listActiveByAthlete(athleteId),
     athleteId,

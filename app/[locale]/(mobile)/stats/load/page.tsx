@@ -9,7 +9,8 @@ export default async function LoadStatsPage() {
   const t = await getTranslations('stats')
   const period = athleteStatsSummaryPeriod()
   const result = await getCurrentAthleteStatsAction({ ...period, view: 'details' })
-  if (result.status !== 'success' || !('trend' in result.data.load)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('loadError')}</p>
+  if (result.status === 'denied') return <p role='alert' className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('summary.denied')}</p>
+  if (result.status !== 'loaded' || !('trend' in result.data.load)) return <p className='mx-auto max-w-5xl p-6 text-sm text-muted-foreground'>{t('loadError')}</p>
 
   const { load } = result.data
   const coverage = load.coverageRatio === null ? t('noData') : `${Math.round(load.coverageRatio * 100)}%`

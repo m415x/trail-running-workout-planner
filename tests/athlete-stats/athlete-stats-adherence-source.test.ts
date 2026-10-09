@@ -33,6 +33,7 @@ describe('athlete stats adherence source', () => {
 
     assert.deepEqual(calls, [[
       'athlete-1',
+      'team-1',
       { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
     ]])
     assert.equal(adherence.athleteId, 'athlete-1')

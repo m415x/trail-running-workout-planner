@@ -29,8 +29,8 @@ describe('athlete stats competition source', () => {
   it('reads only the calendar of the plan applicable at the stats period end', async () => {
     const calls: string[] = []
     const source = createAthleteStatsCompetitionSource({
-      getAthletePlanningResolutionOnDate: async (athleteId, date) => {
-        calls.push(`${athleteId}:${date}`)
+      getSelfPlanningResolutionOnDate: async (athleteId, teamId, date) => {
+        calls.push(`${athleteId}:${teamId}:${date}`)
         return {
           resolution: {
             status: 'resolved',
@@ -51,14 +51,14 @@ describe('athlete stats competition source', () => {
 
     const context = await source.getCompetitionContext(scope)
 
-    assert.deepEqual(calls, ['athlete-1:2026-09-14', 'plan-1'])
+    assert.deepEqual(calls, ['athlete-1:team-1:2026-09-14', 'plan-1'])
     assert.equal(context.primaryCompetition?.id, 'competition-1')
   })
 
   it('returns an empty valid context when no plan is applicable', async () => {
     let calendarRead = false
     const source = createAthleteStatsCompetitionSource({
-      getAthletePlanningResolutionOnDate: async () => ({
+      getSelfPlanningResolutionOnDate: async () => ({
         resolution: { status: 'none', reason: 'no-applicable-plan', groupId: 'group-1' },
         planTitle: null,
         cohortName: null,
@@ -74,7 +74,7 @@ describe('athlete stats competition source', () => {
 
   it('fails closed on ambiguous planning instead of mixing calendars', async () => {
     const source = createAthleteStatsCompetitionSource({
-      getAthletePlanningResolutionOnDate: async () => ({
+      getSelfPlanningResolutionOnDate: async () => ({
         resolution: {
           status: 'conflict',
           reason: 'multiple-base-plans',

@@ -33,7 +33,7 @@ describe('athlete stats production training sources', () => {
   })
 
   it('derives KAN-344 load from the same durable realized evidence boundary', async () => {
-    const records = [{ id: 'realized-1' }] as unknown as RealizedTrainingRecord[]
+    const records: RealizedTrainingRecord[] = []
     let calls = 0
     const sources = createAthleteStatsTrainingSources({
       listRealizedTrainingRecordsForAthleteInDateRange: () => {
@@ -42,7 +42,8 @@ describe('athlete stats production training sources', () => {
       },
     })
 
-    const load = await sources.getTrainingLoad(scope)
+    const realized = await sources.listRealizedTraining(scope)
+    const load = await sources.getTrainingLoad(scope, realized)
 
     assert.equal(calls, 1)
     assert.equal(load.athleteId, 'athlete-1')
