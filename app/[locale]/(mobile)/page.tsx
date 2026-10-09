@@ -42,7 +42,7 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
     getCurrentAthleteTrack1000mPerformanceAction(today),
   ])
 
-  if (athleteRes.forbidden || realizedRes.status === 'denied' || (!scheduleRes.success && scheduleRes.error === 'Acceso no autorizado')) {
+  if (athleteRes.forbidden || realizedRes.status === 'denied' || (!scheduleRes.success && scheduleRes.status === 'unauthorized')) {
     return <AthletePageState message={tPlan('unauthorized')} />
   }
 
