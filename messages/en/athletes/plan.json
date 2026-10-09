@@ -31,6 +31,7 @@
       "today": "Today",
       "selectedWeek": "Selected week"
     },
-    "unauthorized": "Access not authorized"
+    "unauthorized": "Access not authorized",
+    "loading": "Loading week…"
   }
 }
