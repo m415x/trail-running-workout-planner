@@ -5,8 +5,8 @@ import test from 'node:test'
 const stats = readFileSync('app/[locale]/(mobile)/stats/page.tsx','utf8')
 const profile = readFileSync('features/profile/components/AthleteTabContent.tsx','utf8')
 const profilePage = readFileSync('app/[locale]/(mobile)/profile/page.tsx','utf8')
-const localeEs = JSON.parse(readFileSync('messages/es.json','utf8'))
-const localeEn = JSON.parse(readFileSync('messages/en.json','utf8'))
+const localeEs = JSON.parse(readFileSync('messages/es/athletes/profile.json','utf8'))
+const localeEn = JSON.parse(readFileSync('messages/en/athletes/profile.json','utf8'))
 
 test('KAN-712 Stats distinguishes explicit H5B DENY from data-source failure', () => {
   assert.match(stats, /result\.status === 'denied'/)
