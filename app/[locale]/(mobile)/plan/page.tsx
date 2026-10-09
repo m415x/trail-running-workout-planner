@@ -23,7 +23,7 @@ export default async function PlanPage({ params }: PlanPageProps) {
   const result = await getCurrentAthletePlanningWeek()
 
   if (!result.success || !result.data) {
-    return <AthletePageState message={result.error === 'Acceso no autorizado' ? t('unauthorized') : result.error ?? t('loadError')} />
+    return <AthletePageState message={result.status === 'unauthorized' ? t('unauthorized') : t('loadError')} />
   }
 
   const { athlete, today, startDate, endDate, sessions } = result.data
