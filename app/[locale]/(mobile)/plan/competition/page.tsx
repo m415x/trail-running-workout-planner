@@ -28,7 +28,7 @@ export default async function PlanCompetitionPage() {
   const t = await getTranslations('stats')
   const today = new Date().toISOString().slice(0, 10)
   const result = await getCurrentAthleteRaceRegistrationsAction({ today })
-  if (result.status !== 'success') return <p className='mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6'>{t('competitionError')}</p>
+  if (result.status !== 'loaded') return <p className='mx-auto w-full max-w-5xl px-4 py-6 text-sm text-muted-foreground sm:px-6'>{t('competitionError')}</p>
 
   const labels: Labels = {
     unknown: t('competitionDetail.registrations.unknown'),
