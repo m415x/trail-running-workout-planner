@@ -45,7 +45,12 @@ test('KAN-701 real SQLite repository commits free SELF WorkoutLog plus evidence 
   assert.equal(persisted.athleteId, input.athleteId)
   assert.equal(persisted.sessionId, null)
   assert.equal(persisted.workoutId, null)
-  assert.equal(persisted.source, 'manual')
+  assert.equal(persisted.provenance.source, 'manual')
+  const evidence = db.get<{ source: string; workout_log_id: string }>(sql.raw(
+    'SELECT source, workout_log_id FROM workout_log_evidence',
+  ))
+  assert.equal(evidence?.source, 'manual')
+  assert.equal(evidence?.workout_log_id, persisted.id)
 
   const counts = () => ({
     logs: (db.get<{ count: number }>(sql.raw('SELECT COUNT(*) AS count FROM workout_logs')))?.count,
