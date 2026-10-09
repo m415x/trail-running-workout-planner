@@ -4,6 +4,7 @@ import test from 'node:test'
 import { loadAthleteStatsProjectionInput } from '@/lib/athlete-stats/athlete-stats-source-adapter'
 import type { AthleteStatsSourceDependencies } from '@/lib/athlete-stats/athlete-stats-source-adapter'
 import type { RealizedTrainingRecord } from '@/types/training/readiness.types'
+import { buildAthleteTrainingLoadState } from '@/lib/training-load/athlete-training-load'
 
 test('KAN-708 derives load from the same authorized current-period realized records, with no second independent read', async () => {
   const current: RealizedTrainingRecord[] = []
@@ -16,9 +17,9 @@ test('KAN-708 derives load from the same authorized current-period realized reco
       calls.push(startDate)
       return startDate === '2026-09-08' ? current : previous
     },
-    getTrainingLoad: async (_scope: unknown, records?: readonly RealizedTrainingRecord[]) => {
+    getTrainingLoad: async (scope: { athleteId: string; startDate: string; endDate: string }, records: readonly RealizedTrainingRecord[]) => {
       sharedRecords = records
-      return { state: 'insufficient_data', startDate: '2026-09-08', endDate: '2026-09-14', ruleVersion: 'srpe-duration-v1', coverageRatio: null, reasons: ['insufficient_history'], latest: null, trend: [] }
+      return buildAthleteTrainingLoadState({ ...scope, records })
     },
     getAdherence: async () => ({
       window: { kind: 'week', startDate: '2026-09-08', endDate: '2026-09-14' },
