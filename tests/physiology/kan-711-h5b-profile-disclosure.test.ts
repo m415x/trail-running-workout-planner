@@ -15,7 +15,7 @@ test('KAN-711 Athlete Profile never presents fabricated physiological measuremen
 test('KAN-711 Profile physiology is fed real H5B SELF 1000m projection, not a dummy local fixture', () => {
   assert.match(page, /getCurrentAthleteTrack1000mPerformanceAction/)
   assert.match(profile, /performance=/)
-  assert.match(physiology, /reference\.status/)
+  assert.match(physiology, /reference\?\.status/)
   assert.match(physiology, /paceLabel/)
   assert.match(physiology, /averageSpeedKmh/)
 })
