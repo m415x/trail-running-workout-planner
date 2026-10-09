@@ -1,4 +1,5 @@
 import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
+import type { CapabilityKey } from './capability-catalog'
 
 import { authorizeEffectiveCapability, type EffectiveTeamMembership } from './effective-authorization'
 import { resolveSelfAthleteProfile, type AthleteProfileLink } from './scope-resolution'
@@ -25,9 +26,11 @@ export function createH5aSelfContextBoundary(deps: H5aSelfContextDeps) {
   return {
     async resolve(
       access: RequireAuthenticatedActionResult,
-      input: { at: string },
+      input: { at: string; capability?: 'planning.self.read' | 'workout_log.self.manage' },
     ): Promise<H5aSelfContextResult> {
       if (access.status !== 'authenticated') return { status: 'denied' }
+      const capability: CapabilityKey = input.capability ?? 'planning.self.read'
+      if (capability !== 'planning.self.read' && capability !== 'workout_log.self.manage') return { status: 'denied' }
 
       try {
         const team = await deps.resolveActiveTeam(access.userId)
@@ -48,7 +51,7 @@ export function createH5aSelfContextBoundary(deps: H5aSelfContextDeps) {
         const allowed = authorizeEffectiveCapability({
           authenticatedUserId: access.userId,
           teamId: team.teamId,
-          capability: 'planning.self.read',
+          capability,
           resource: { teamId: team.teamId, athleteProfileId },
           at: input.at,
           memberships,
