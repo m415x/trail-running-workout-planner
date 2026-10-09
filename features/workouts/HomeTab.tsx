@@ -12,6 +12,8 @@ import { Team } from '@/types'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
 import type { RunningReference } from '@/lib/physiology/running-reference'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 
 interface HomeTabProps {
   initialAthlete: UseHomeTabProps['initialAthlete']
@@ -23,15 +25,20 @@ interface HomeTabProps {
 
 export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraining, locale, runningReference: initialRunningReference }: HomeTabProps) {
   const [runningReference, setRunningReference] = useState<RunningReference>(initialRunningReference)
+  const tPlan = useTranslations('AthletePlan')
 
   const handleWeekChange = async (startDateIso: string) => {
     const result = await getCurrentAthletePlanningWeek(startDateIso)
-    return result.success && result.data ? result.data.sessions : []
+    if (result.success && result.data) return { status: 'loaded' as const, data: result.data.sessions }
+    if (result.error === 'Acceso no autorizado') return { status: 'denied' as const }
+    return { status: 'error' as const }
   }
 
   const handleRealizedTrainingWeekChange = async (startDateIso: string, endDateIso: string) => {
     const result = await getCurrentAthleteRealizedTrainingRangeAction(startDateIso, endDateIso)
-    return result.success ? result.data : []
+    if (result.success) return { status: 'loaded' as const, data: result.data }
+    if (result.status === 'denied') return { status: 'denied' as const }
+    return { status: 'error' as const }
   }
 
   const {
@@ -51,6 +58,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     onNextWeek,
     onSelectDate,
     onRealizedTrainingSaved,
+    weekLoadState,
   } = useHomeTab({
     initialSchedule,
     initialRealizedTraining,
@@ -92,6 +100,13 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isDeleted: false,
+  }
+
+  if (weekLoadState === 'denied' || weekLoadState === 'error') {
+    return <AthletePageState message={weekLoadState === 'denied' ? tPlan('unauthorized') : tPlan('loadError')} />
+  }
+  if (weekLoadState === 'loading') {
+    return <div role='status' className='mx-auto w-full max-w-5xl px-4 py-6 text-center text-muted-foreground'>{tPlan('loading')}</div>
   }
 
   return (
