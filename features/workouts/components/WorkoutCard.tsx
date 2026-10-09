@@ -45,6 +45,7 @@ export function BaseWorkoutCard({
     isFuture,
     isLogged,
     isCaptureReady,
+    captureUiState,
     canEditLoggedWorkout,
     editableCaptureInput,
     stats,
@@ -101,6 +102,15 @@ export function BaseWorkoutCard({
             <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>{t('card.coachNote')}</p>
             <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
           </CustomCardInside>
+        )}
+
+        {(captureUiState.status === 'loading' || captureUiState.status === 'denied' || captureUiState.status === 'error') && (
+          <p
+            role={captureUiState.status === 'loading' ? 'status' : 'alert'}
+            className='text-xs text-muted-foreground'
+          >
+            {t(`captureState.${captureUiState.status}`)}
+          </p>
         )}
 
         {!isFuture && (

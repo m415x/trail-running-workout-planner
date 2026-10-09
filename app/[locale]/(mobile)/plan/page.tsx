@@ -5,6 +5,7 @@ import { Link } from '@/i18n/routing'
 
 import { getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
 import { AthleteSessionCard } from '@/features/athlete-planning/components/AthleteSessionCard'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { cn } from '@/lib/utils'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Badge } from '@ui/badge'
@@ -22,7 +23,7 @@ export default async function PlanPage({ params }: PlanPageProps) {
   const result = await getCurrentAthletePlanningWeek()
 
   if (!result.success || !result.data) {
-    return <Card className='mt-4'><CardContent className='py-8 text-center text-sm text-destructive'>{result.error ?? t('loadError')}</CardContent></Card>
+    return <AthletePageState message={result.status === 'unauthorized' ? t('unauthorized') : t('loadError')} />
   }
 
   const { athlete, today, startDate, endDate, sessions } = result.data
@@ -33,13 +34,13 @@ export default async function PlanPage({ params }: PlanPageProps) {
     <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
-          <div><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold sm:text-3xl'>{t('currentWeek')}</h1></div>
-          {groupCode && <Badge variant='secondary'>{t('group', { group: groupCode })}</Badge>}
+          <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{t('currentWeek')}</h1></div>
+          {groupCode && <Badge variant='secondary' className='shrink-0'>{t('group', { group: groupCode })}</Badge>}
         </div>
         <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(startDate, endDate, regionalContext.presentationLocale)}</p>
       </header>
 
-      <Link href='/plan/competition' className='flex items-center justify-between rounded-2xl border bg-card p-4 text-sm font-semibold'><span className='flex items-center gap-2'><Flag className='size-4' />{t('competitions')}</span><span className='text-primary'>{t('viewRegistrations')}</span></Link>
+      <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
 
       {!groupCode && <Card><CardContent className='py-6 text-center text-sm text-muted-foreground'>{t('noGroup')}</CardContent></Card>}
 

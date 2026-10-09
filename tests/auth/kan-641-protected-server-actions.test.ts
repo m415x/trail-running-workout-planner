@@ -48,11 +48,14 @@ test('KAN-641 Athlete current-profile read applies H2 action guard before databa
   assert.match(body, /success:\s*false/)
 })
 
-test('KAN-641 representative protected actions do not introduce H3 authorization semantics', () => {
-  const protectedSources = membership + dashboard
+test('KAN-641 H2 remains mandatory while H5A SELF explicitly narrows Athlete reads', () => {
+  const economicMutation = functionBody(membership, 'configureTeamEconomicPolicyAction')
+  assert.match(economicMutation, /requireAuthenticatedEptAction/)
+  assert.doesNotMatch(economicMutation, /createH5aSelfNextServerContext|planning\.self\.read|workout_log\.self\.manage/)
 
-  assert.doesNotMatch(
-    protectedSources,
-    /TeamMembership|capabilit(?:y|ies)|scopeCheck|authorizeCapability/i,
-  )
+  const athleteRead = functionBody(dashboard, 'getCurrentAthlete')
+  assert.match(athleteRead, /requireAuthenticatedEptAction/)
+  assert.match(athleteRead, /createH5aSelfNextServerContext/)
+  assert.match(athleteRead, /planning\.self\.read/)
+  assert.ok(athleteRead.indexOf('requireAuthenticatedEptAction') < athleteRead.indexOf('createH5aSelfNextServerContext'))
 })

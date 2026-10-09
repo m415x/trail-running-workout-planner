@@ -28,10 +28,16 @@ for (const name of [
   })
 }
 
-test('KAN-642 Athlete dashboard reads reuse the existing H2 boundary without H3 semantics', () => {
+test('KAN-642 dashboard preserves H2 authentication and adds SELF authorization to sporting reads', () => {
   assert.match(source, /requireAuthenticatedEptAction/)
   assert.match(source, /readEptSessionAccessState/)
   assert.match(source, /createSupabaseServerClient/)
   assert.match(source, /createExternalIdentityLookup/)
-  assert.doesNotMatch(source, /TeamMembership|capabilit(?:y|ies)|scopeCheck|authorizeCapability/i)
+
+  for (const name of ['getCurrentAthlete', 'getCurrentAthletePlanningWeek']) {
+    const body = functionBody(name)
+    assert.match(body, /createH5aSelfNextServerContext/)
+    assert.match(body, /planning\.self\.read/)
+    assert.ok(body.indexOf('requireAuthenticatedEptAction') < body.indexOf('createH5aSelfNextServerContext'))
+  }
 })

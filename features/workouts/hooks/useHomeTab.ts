@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import type {
@@ -67,13 +67,18 @@ export interface SessionWithWorkout {
   type: WorkoutType
 }
 
+export type HomeWeekResult<T> =
+  | { status: 'loaded'; data: T[] }
+  | { status: 'denied' }
+  | { status: 'error' }
+
 export interface UseHomeTabProps {
   initialSchedule: SessionWithWorkout[]
   initialRealizedTraining: RealizedTrainingRecord[]
   initialAthlete: CurrentAthleteData
   locale: string
-  onWeekChange: (startDateIso: string) => Promise<SessionWithWorkout[]>
-  onRealizedTrainingWeekChange: (startDateIso: string, endDateIso: string) => Promise<RealizedTrainingRecord[]>
+  onWeekChange: (startDateIso: string) => Promise<HomeWeekResult<SessionWithWorkout>>
+  onRealizedTrainingWeekChange: (startDateIso: string, endDateIso: string) => Promise<HomeWeekResult<RealizedTrainingRecord>>
 }
 
 function formatLocalISODate(date: Date): string {
@@ -167,6 +172,8 @@ export function useHomeTab({
   const [schedule, setSchedule] = useState<SessionWithWorkout[]>(initialSchedule)
   const [realizedTraining, setRealizedTraining] = useState<RealizedTrainingRecord[]>(initialRealizedTraining)
   const [isLoadingWeek, setIsLoadingWeek] = useState(false)
+  const [weekLoadState, setWeekLoadState] = useState<'loaded' | 'loading' | 'denied' | 'error'>('loaded')
+  const requestSequence = useRef(0)
   const [trackData, setTrackData] = useState<TrackData | null>(null)
 
   const athleteGroup = initialAthlete.athleteProfile.group ?? null
@@ -324,8 +331,14 @@ export function useHomeTab({
 
   const loadWeek = useCallback(
     async (nextDate: Date) => {
+      const requestId = ++requestSequence.current
       setSelectedDate(nextDate)
       setIsLoadingWeek(true)
+      setWeekLoadState('loading')
+      // A new request never renders the former week's privileged projections.
+      setSchedule([])
+      setRealizedTraining([])
+      setTrackData(null)
 
       try {
         const monday = getMonday(nextDate)
@@ -336,13 +349,25 @@ export function useHomeTab({
           onWeekChange(startDateIso),
           onRealizedTrainingWeekChange(startDateIso, endDateIso),
         ])
+        if (requestId !== requestSequence.current) return
 
-        setSchedule(newSchedule)
-        setRealizedTraining(newRealizedTraining)
+        if (newSchedule.status === 'denied' || newRealizedTraining.status === 'denied') {
+          setWeekLoadState('denied')
+          return
+        }
+        if (newSchedule.status === 'error' || newRealizedTraining.status === 'error') {
+          setWeekLoadState('error')
+          return
+        }
+        setSchedule(newSchedule.data)
+        setRealizedTraining(newRealizedTraining.data)
+        setWeekLoadState('loaded')
       } catch (error) {
+        if (requestId !== requestSequence.current) return
         console.error('Could not load training week:', error)
+        setWeekLoadState('error')
       } finally {
-        setIsLoadingWeek(false)
+        if (requestId === requestSequence.current) setIsLoadingWeek(false)
       }
     },
     [onRealizedTrainingWeekChange, onWeekChange],
@@ -391,6 +416,7 @@ export function useHomeTab({
     elevationChartData,
     TrackData: trackData,
     isLoadingWeek,
+    weekLoadState,
     onSelectDay: handleSelectDay,
     onPrevWeek: handlePrevWeek,
     onNextWeek: handleNextWeek,

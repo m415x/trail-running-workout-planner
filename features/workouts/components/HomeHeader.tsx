@@ -21,7 +21,10 @@ export function HomeHeader({
   const t = useTranslations('Workouts.home')
   const language = locale === 'en' ? 'en' : 'es'
   const { presentationLocale } = resolveApplicationRegionalContext({ language })
-  const { today, fullName, initials } = useHomeHeader(presentationLocale)
+  const { today } = useHomeHeader(presentationLocale)
+  const fullName = [athlete.firstName, athlete.lastName].filter(Boolean).join(' ').trim()
+  const displayName = athlete.nickName?.trim() || fullName || '—'
+  const initials = [athlete.firstName?.charAt(0), athlete.lastName?.charAt(0)].filter(Boolean).join('').toUpperCase() || '—'
   const groupCode = athlete.group ? buildAthleteGroupCode(athlete.group) : '--'
 
   return (
@@ -61,7 +64,7 @@ export function HomeHeader({
         <div className='flex flex-col justify-center'>
           {/* Info del Atleta */}
           <h1 className='font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl'>
-            {t('greeting', { name: athlete.nickName ?? fullName })}
+            {t('greeting', { name: displayName })}
           </h1>
 
           {/* Fecha de hoy en formato largo */}

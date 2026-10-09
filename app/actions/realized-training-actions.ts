@@ -15,6 +15,14 @@ import { workoutLogEvidence } from '@/db/readiness-schema'
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
+import { createH5aEffectiveSessionNextServerBoundary } from '@/lib/athlete-planning/effective-self-session-next-server'
+import { createManualSelfCaptureBoundary } from '@/lib/realized-training/manual-self-capture-boundary'
+import { createManualSelfCorrectionBoundary } from '@/lib/realized-training/manual-self-correction-boundary'
 import {
   correctManualRealizedTrainingRecord,
   listRealizedTrainingCorrections,
@@ -44,16 +52,26 @@ import type {
  * editable input; legacy/imported rows remain captured but read-only.
  */
 export async function getManualRealizedSessionStateAction(sessionId: string) {
-  const current = await getCurrentAthlete()
-  const athlete = current.success ? current.data?.athleteProfile : null
-  if (!athlete || athlete.isDeleted) return { success: false as const }
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return { success: false as const, status: 'denied' as const }
+
+  const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
+  const effective = await effectiveSession.resolve(access, {
+    sessionId,
+    at: new Date().toISOString(),
+  })
+  if (effective.status !== 'resolved') return { success: false as const, status: 'denied' as const }
 
   const row = db
     .select({ log: workoutLogs, evidence: workoutLogEvidence })
     .from(workoutLogs)
     .leftJoin(workoutLogEvidence, eq(workoutLogEvidence.workoutLogId, workoutLogs.id))
     .where(and(
-      eq(workoutLogs.athleteId, athlete.id),
+      eq(workoutLogs.athleteId, effective.athleteProfileId),
       eq(workoutLogs.sessionId, sessionId),
       eq(workoutLogs.isDeleted, false),
       inArray(workoutLogs.status, ['completed', 'partial', 'missed']),
@@ -88,17 +106,26 @@ export async function getManualRealizedSessionStateAction(sessionId: string) {
  * evidence here.
  */
 export async function getCurrentAthleteRealizedTrainingRangeAction(startDate: string, endDate: string) {
-  if (startDate > endDate) return { success: false as const, data: [] }
+  if (startDate > endDate) return { success: false as const, error: 'invalid_range' as const, data: [] }
 
-  const current = await getCurrentAthlete()
-  const athlete = current.success ? current.data?.athleteProfile : null
-  if (!athlete || athlete.isDeleted) return { success: false as const, data: [] }
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return { success: false as const, status: 'denied' as const, data: [] }
+
+  const self = await createH5aSelfNextServerContext().resolve(access, {
+    at: new Date().toISOString(),
+    capability: 'workout_log.self.manage',
+  })
+  if (self.status !== 'resolved') return { success: false as const, status: 'denied' as const, data: [] }
 
   return {
     success: true as const,
     data: listRealizedTrainingRecordsForAthleteInDateRange(
-      athlete.id,
-      athlete.teamId,
+      self.athleteProfileId,
+      self.teamId,
       startDate,
       endDate,
     ),
@@ -420,34 +447,22 @@ export async function getRealizedTrainingCorrectionsAction(athleteId: string, wo
 export async function createManualRealizedTrainingAction(
   input: ManualRealizedTrainingClientInput,
 ) {
-  const current = await getCurrentAthlete()
-  const athleteId = current.success ? current.data?.athleteProfile?.id : null
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
 
-  if (!athleteId) {
-    return {
-      success: false as const,
-      error: 'athlete_not_found',
-    }
-  }
+  const selfContext = createH5aSelfNextServerContext()
+  const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
+  const boundary = createManualSelfCaptureBoundary({
+    resolveSelf: (authenticated, request) => selfContext.resolve(authenticated, request),
+    resolveEffectiveSession: (authenticated, sessionId, at) =>
+      effectiveSession.resolve(authenticated, { sessionId, at }),
+    persist: (capture) => createManualRealizedTrainingRecord(capture),
+  })
 
-  try {
-    const record = createManualRealizedTrainingRecord({
-      ...input,
-      athleteId,
-    })
-
-    return {
-      success: true as const,
-      data: record,
-    }
-  } catch (error) {
-    console.error('Error persisting realized training:', error)
-
-    return {
-      success: false as const,
-      error: error instanceof Error ? error.message : 'realized_training_persistence_failed',
-    }
-  }
+  return boundary.create(access, input, new Date().toISOString())
 }
 
 /**
@@ -458,26 +473,20 @@ export async function createManualRealizedTrainingAction(
 export async function correctManualRealizedTrainingAction(
   input: ManualRealizedTrainingCorrectionClientInput,
 ) {
-  const current = await getCurrentAthlete()
-  const currentUser = current.success ? current.data : null
-  const athlete = currentUser?.athleteProfile ?? null
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
 
-  if (!currentUser || !athlete || athlete.isDeleted) {
-    return { success: false as const, error: 'athlete_not_found' }
-  }
+  const selfContext = createH5aSelfNextServerContext()
+  const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
+  const boundary = createManualSelfCorrectionBoundary({
+    resolveSelf: (authenticated, request) => selfContext.resolve(authenticated, request),
+    resolveEffectiveSession: (authenticated, sessionId, at) =>
+      effectiveSession.resolve(authenticated, { sessionId, at }),
+    persist: (correction) => correctManualRealizedTrainingRecord(correction),
+  })
 
-  try {
-    const record = correctManualRealizedTrainingRecord({
-      ...input,
-      athleteId: athlete.id,
-      correctedByUserId: currentUser.id,
-    })
-    return { success: true as const, data: record }
-  } catch (error) {
-    console.error('Error correcting realized training:', error)
-    return {
-      success: false as const,
-      error: error instanceof Error ? error.message : 'realized_training_correction_failed',
-    }
-  }
+  return boundary.correct(access, input, new Date().toISOString())
 }

@@ -11,6 +11,8 @@ export type CapabilityKey =
   | 'athlete.admin.manage'
   | 'sporting_group.admin.manage'
   | 'planning.manage'
+  | 'planning.self.read'
+  | 'workout_log.self.manage'
   | 'training.coordinate'
   | 'physiology.read'
   | 'field_evidence_1000m.manage'
@@ -24,6 +26,7 @@ export interface CapabilityDefinition {
   basePresets: readonly TeamMembershipPreset[]
   delegable: boolean
   structural: boolean
+  requiredScope?: 'self'
 }
 
 export const CAPABILITY_CATALOG = [
@@ -44,6 +47,20 @@ export const CAPABILITY_CATALOG = [
     basePresets: ['coach'],
     delegable: false,
     structural: false,
+  },
+  {
+    key: 'planning.self.read',
+    basePresets: ['athlete', 'assistant', 'coach', 'admin'],
+    delegable: false,
+    structural: false,
+    requiredScope: 'self',
+  },
+  {
+    key: 'workout_log.self.manage',
+    basePresets: ['athlete', 'assistant', 'coach', 'admin'],
+    delegable: false,
+    structural: false,
+    requiredScope: 'self',
   },
   {
     key: 'training.coordinate',

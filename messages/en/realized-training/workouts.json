@@ -66,7 +66,10 @@
       "saveFailed": "Could not save the workout. Your entries are preserved; please try again.",
       "clear": "Clear form",
       "cancel": "Cancel",
-      "save": "Save"
+      "save": "Save",
+      "durationHours": "Hours",
+      "durationMinutes": "Minutes",
+      "durationSeconds": "Seconds"
     },
     "home": {
       "greeting": "Hi, {name}",
@@ -188,6 +191,11 @@
       "normal": "Normal",
       "strong": "Strong",
       "very_strong": "Very strong"
+    },
+    "captureState": {
+      "loading": "Checking training log status…",
+      "denied": "You do not have permission to log this session.",
+      "error": "Could not check training log status."
     }
   }
 }
