@@ -5,6 +5,7 @@ import { createExternalIdentityLookup } from '@/lib/auth/external-identity-looku
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createCoachNavigationNextServerProjection } from '@/lib/authorization/h4a-next-server-authorization'
 
 export default async function DashboardLayout({
   children,
@@ -35,5 +36,8 @@ export default async function DashboardLayout({
     redirect(access.location)
   }
 
-  return <DashboardShell>{children}</DashboardShell>
+  const projectNavigation = createCoachNavigationNextServerProjection()
+  const visibleDestinations = await projectNavigation({ status: 'authenticated', userId: access.userId })
+
+  return <DashboardShell visibleDestinations={visibleDestinations}>{children}</DashboardShell>
 }

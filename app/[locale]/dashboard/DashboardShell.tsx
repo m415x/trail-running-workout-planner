@@ -16,8 +16,27 @@ import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
 import { useLocale, useTranslations } from 'next-intl'
 import { logoutAction } from '@/app/actions/auth-actions'
+import { createCoachNavigationResumeRefresh } from '@/lib/authorization/coach-navigation-resume-refresh'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+export function DashboardShell({ children, visibleDestinations }: {
+  children: React.ReactNode
+  visibleDestinations: readonly string[]
+}) {
+  const router = useRouter()
+  useEffect(() => {
+    const resume = createCoachNavigationResumeRefresh(() => router.refresh())
+    const onVisibilityChange = () => resume.onVisibilityChange(document.visibilityState === 'visible')
+    const onFocus = () => resume.onFocus()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('focus', onFocus)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [router])
+
   const t = useTranslations('CoachShell')
   const locale = useLocale()
   const logoutLocale = locale === 'en' ? 'en' : 'es'
@@ -25,7 +44,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <DashboardDirtyFormGuardProvider>
       <SidebarProvider defaultOpen={false}>
-        <AppSidebar />
+        <AppSidebar visibleDestinations={visibleDestinations} />
         <SidebarInset className='min-w-0'>
           <header className='flex h-14 shrink-0 items-center gap-2 border-b px-3 sm:px-4 md:h-16'>
             <SidebarTrigger className='-ml-1' />
