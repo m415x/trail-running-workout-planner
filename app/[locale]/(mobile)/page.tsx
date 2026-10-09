@@ -5,6 +5,7 @@ import { getCurrentAthlete, getCurrentAthletePlanningWeek } from '@/app/actions/
 import { getCurrentAthleteRealizedTrainingRangeAction } from '@/app/actions/realized-training-actions'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
 import { HomeTabClient } from '@/app/[locale]/(mobile)/HomeTabClient'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { createAthleteHomeEconomicSqliteReader } from '@/lib/memberships/athlete-home-economic-sqlite-reader'
@@ -42,19 +43,11 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
   ])
 
   if (athleteRes.forbidden || realizedRes.status === 'denied' || (!scheduleRes.success && scheduleRes.error === 'Acceso no autorizado')) {
-    return (
-      <div role='alert' className='flex min-h-[60dvh] items-center justify-center p-4 text-center text-destructive'>
-        <p>{tPlan('unauthorized')}</p>
-      </div>
-    )
+    return <AthletePageState message={tPlan('unauthorized')} />
   }
 
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
-    return (
-      <div className='flex h-screen items-center justify-center p-4 text-center text-red-500'>
-        <p>{t('errors.saveFailed')}</p>
-      </div>
-    )
+    return <AthletePageState message={t('errors.saveFailed')} />
   }
 
   // The economic disclosure is always based on the server-side civil cutoff
