@@ -15,7 +15,7 @@ export interface AthleteSelfPerformance {
  * Only the athlete-safe 1000 m RunningReference is disclosed here.
  * No hardcoded clinical metrics, zones or unapproved raw physiology fields.
  */
-export function AthleteTabContent({ performance }: { performance?: AthleteSelfPerformance | null }) {
+export function AthleteTabContent({ performance, performanceStatus = 'unknown' }: { performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error' }) {
   const t = useTranslations('AthleteProfile.physiology')
   const reference = performance?.reference
 
@@ -25,14 +25,14 @@ export function AthleteTabContent({ performance }: { performance?: AthleteSelfPe
         <CardHeader title={t('title')} icon={Activity} />
         {reference?.status === 'available' ? (
           <div className='grid grid-cols-2 gap-2'>
-            <MetricBox label='1000 m' value={`${reference.source.elapsedTimeSec} s`} />
-            <MetricBox label='Ritmo 1000 m' value={reference.derived.paceLabel} />
-            <MetricBox label='Velocidad media' value={`${reference.derived.averageSpeedKmh} km/h`} />
-            <MetricBox label='Fecha de evaluación' value={reference.source.performedAt} />
+            <MetricBox label={t('track1000mTime')} value={`${reference.source.elapsedTimeSec} s`} />
+            <MetricBox label={t('track1000mPace')} value={reference.derived.paceLabel} />
+            <MetricBox label={t('track1000mSpeed')} value={`${reference.derived.averageSpeedKmh} km/h`} />
+            <MetricBox label={t('track1000mDate')} value={reference.source.performedAt} />
           </div>
         ) : (
           <p className='text-sm text-muted-foreground' role='status'>
-            {reference?.status === 'unknown' ? 'Sin referencia 1000 m disponible' : 'Referencia 1000 m no disponible'}
+            {performanceStatus === 'denied' ? t('track1000mDenied') : performanceStatus === 'error' ? t('track1000mError') : t('track1000mUnknown')}
           </p>
         )}
       </CustomCard>
