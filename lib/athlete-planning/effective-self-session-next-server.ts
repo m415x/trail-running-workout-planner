@@ -39,6 +39,18 @@ export function createH5aEffectiveSessionNextServerBoundary() {
       })
       if (!session) return null
 
+      const locator = loadEffectiveSessionLocatorFromDatabase({
+        self: {
+          userId: self.userId,
+          teamId: self.teamId,
+          athleteProfileId: self.athleteProfileId,
+        },
+        athlete,
+        session,
+        prescriptions: session.sessionPrescriptions,
+      })
+      if (locator.status !== 'resolved') return null
+
       const groupChanges = await db.select().from(groupHistoryRecords).where(and(
         eq(groupHistoryRecords.athleteId, athlete.id),
         eq(groupHistoryRecords.isDeleted, false),
@@ -66,7 +78,7 @@ export function createH5aEffectiveSessionNextServerBoundary() {
         with: { macrocycles: true },
       })
 
-      const microcycleIds = [...new Set(session.sessionPrescriptions.map(p => p.microcycleId))]
+      const microcycleIds = [...new Set(locator.prescriptions.map(p => p.microcycleId))]
       const lineages = microcycleIds.length === 0 ? [] : await db.select({
         microcycleId: microcycles.id,
         groupTrainingPlanId: groupTrainingPlans.id,
@@ -113,7 +125,7 @@ export function createH5aEffectiveSessionNextServerBoundary() {
         session: {
           id: session.id, teamId: session.teamId, date: session.date, isDeleted: session.isDeleted,
         },
-        prescriptions: session.sessionPrescriptions.flatMap(prescription => {
+        prescriptions: locator.prescriptions.flatMap(prescription => {
           const groupTrainingPlanId = planByMicrocycle.get(prescription.microcycleId)
           return groupTrainingPlanId ? [{
             id: prescription.id,
