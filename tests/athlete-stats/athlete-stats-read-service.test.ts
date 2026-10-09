@@ -45,10 +45,10 @@ describe('athlete stats read service', () => {
       },
     )
     assert.deepEqual(requestedSubject, { athleteId: 'athlete-1', teamId: 'team-1' })
-    assert.equal(result.status, 'success')
+    assert.equal(result.status, 'loaded')
   })
 
-  it('keeps technical subject-resolution failure distinct from domain unknown states', async () => {
+  it('keeps authorization denial distinct from domain unknown states', async () => {
     const result = await readCurrentAthleteStats(
       { startDate: '2026-09-01', endDate: '2026-09-14', view: 'summary' },
       {
@@ -56,7 +56,7 @@ describe('athlete stats read service', () => {
         loadProjectionInput: async () => { throw new Error('must not load') },
       },
     )
-    assert.deepEqual(result, { status: 'error', code: 'current_athlete_unavailable' })
+    assert.deepEqual(result, { status: 'denied' })
   })
 
   it('returns athlete-safe insufficient and empty states as successful data', async () => {
@@ -67,8 +67,8 @@ describe('athlete stats read service', () => {
         loadProjectionInput: async () => input,
       },
     )
-    assert.equal(result.status, 'success')
-    if (result.status !== 'success') assert.fail('expected success')
+    assert.equal(result.status, 'loaded')
+    if (result.status !== 'loaded') assert.fail('expected loaded')
     assert.equal(result.data.load.state, 'insufficient_data')
     assert.equal(result.data.adherence.state, 'insufficient_data')
     assert.equal(result.data.competition, null)
