@@ -1,20 +1,20 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { currentUser } from '@/data/data'
+import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
 import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/components/AthleteTabContent'
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance, performanceStatus }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error' }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: CurrentAthleteData['athleteProfile'] }) {
   const t = useTranslations('AthleteProfile')
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       {/* Hero Header */}
-      <ProfileHeader user={currentUser} />
+      {athleteProfile && <ProfileHeader athlete={athleteProfile} />}
 
       {membershipStatus}
 
