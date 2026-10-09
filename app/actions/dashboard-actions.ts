@@ -168,7 +168,7 @@ export async function getCurrentAthletePlanningWeek(
   if (access.status !== 'authenticated') {
     return {
       success: false as const,
-      error: 'Acceso no autorizado',
+      status: 'unauthorized' as const,
     }
   }
 
@@ -178,13 +178,13 @@ export async function getCurrentAthletePlanningWeek(
       capability: 'planning.self.read',
     })
     if (self.status !== 'resolved') {
-      return { success: false as const, error: 'Acceso no autorizado' }
+      return { success: false as const, status: 'unauthorized' as const }
     }
 
     const current = await getCurrentAthlete()
     const athlete = current.success ? current.data?.athleteProfile : null
     if (!athlete || athlete.id !== self.athleteProfileId || athlete.teamId !== self.teamId) {
-      return { success: false as const, error: 'Acceso no autorizado' }
+      return { success: false as const, status: 'unauthorized' as const }
     }
 
     const today = getCurrentDateInArgentina()
@@ -440,7 +440,7 @@ export async function getCurrentAthletePlanningWeek(
     }
   } catch (error) {
     console.error('Error fetching athlete planning week:', error)
-    return { success: false, error: 'No se pudo cargar la planificación de la semana' }
+    return { success: false, status: 'error' as const }
   }
 }
 
