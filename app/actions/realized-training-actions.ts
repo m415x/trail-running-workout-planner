@@ -22,6 +22,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
 import { createH5aEffectiveSessionNextServerBoundary } from '@/lib/athlete-planning/effective-self-session-next-server'
 import { createManualSelfCaptureBoundary } from '@/lib/realized-training/manual-self-capture-boundary'
+import { createManualSelfCorrectionBoundary } from '@/lib/realized-training/manual-self-correction-boundary'
 import {
   correctManualRealizedTrainingRecord,
   listRealizedTrainingCorrections,
@@ -477,45 +478,15 @@ export async function correctManualRealizedTrainingAction(
   const access = await requireAuthenticatedEptAction({
     readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
   })
-  if (access.status !== 'authenticated') {
-    return { success: false as const, error: 'Acceso no autorizado' }
-  }
 
-  const now = new Date().toISOString()
-  const self = await createH5aSelfNextServerContext().resolve(access, {
-    at: now,
-    capability: 'workout_log.self.manage',
+  const selfContext = createH5aSelfNextServerContext()
+  const effectiveSession = createH5aEffectiveSessionNextServerBoundary()
+  const boundary = createManualSelfCorrectionBoundary({
+    resolveSelf: (authenticated, request) => selfContext.resolve(authenticated, request),
+    resolveEffectiveSession: (authenticated, sessionId, at) =>
+      effectiveSession.resolve(authenticated, { sessionId, at }),
+    persist: (correction) => correctManualRealizedTrainingRecord(correction),
   })
-  if (self.status !== 'resolved') {
-    return { success: false as const, error: 'Acceso no autorizado' }
-  }
 
-  // The replacement is another independent write locator: validate it even
-  // when the original log is owned by SELF.
-  if (input.replacement.sessionId !== null) {
-    const effective = await createH5aEffectiveSessionNextServerBoundary().resolve(access, {
-      at: now,
-      sessionId: input.replacement.sessionId,
-    })
-    if (effective.status !== 'resolved' || effective.athleteProfileId !== self.athleteProfileId) {
-      return { success: false as const, error: 'Acceso no autorizado' }
-    }
-  } else if (input.replacement.workoutId !== null) {
-    return { success: false as const, error: 'invalid_workout_locator' }
-  }
-
-  try {
-    const record = correctManualRealizedTrainingRecord({
-      ...input,
-      athleteId: self.athleteProfileId,
-      correctedByUserId: self.userId,
-    })
-    return { success: true as const, data: record }
-  } catch (error) {
-    console.error('Error correcting realized training:', error)
-    return {
-      success: false as const,
-      error: error instanceof Error ? error.message : 'realized_training_correction_failed',
-    }
-  }
+  return boundary.correct(access, input, new Date().toISOString())
 }
