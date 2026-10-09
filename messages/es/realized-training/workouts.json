@@ -188,6 +188,11 @@
       "normal": "Normal",
       "strong": "Fuerte",
       "very_strong": "Muy fuerte"
+    },
+    "captureState": {
+      "loading": "Comprobando el registro de entrenamiento…",
+      "denied": "No tenés permiso para registrar esta sesión.",
+      "error": "No se pudo comprobar el estado del entrenamiento."
     }
   }
 }
