@@ -18,6 +18,7 @@ import {
   shoes,
   users,
 } from '@/db/schema'
+import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
 import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
@@ -26,9 +27,6 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
-
-const CURRENT_USER_ID = 'user_1'
-const CURRENT_ATHLETE_PROFILE_ID = 'profile_user_1'
 
 function formatISODate(date: Date) {
   const year = date.getFullYear()
@@ -55,27 +53,35 @@ export async function getCurrentAthlete() {
       }
     }
 
-    const user = await db.query.users.findFirst({
-      where: and(eq(users.id, CURRENT_USER_ID), eq(users.isDeleted, false)),
-
-      with: {
-        athleteProfile: {
-          with: {
-            team: true,
-            group: true,
-          },
-        },
-      },
+    const self = await createH5aSelfNextServerContext().resolve(access, {
+      at: new Date().toISOString(),
+      capability: 'planning.self.read',
     })
-
-    if (!user?.athleteProfile) {
-      throw new Error('Atleta no encontrado')
+    if (self.status !== 'resolved') {
+      return { success: false as const, forbidden: true as const, reason: 'denied' as const, error: 'Acceso no autorizado' }
     }
 
-    return {
-      success: true,
-      data: user,
+    const [user, athleteProfile] = await Promise.all([
+      db.query.users.findFirst({
+        where: and(eq(users.id, self.userId), eq(users.isDeleted, false)),
+      }),
+      db.query.athleteProfiles.findFirst({
+        where: and(
+          eq(athleteProfiles.id, self.athleteProfileId),
+          eq(athleteProfiles.userId, self.userId),
+          eq(athleteProfiles.teamId, self.teamId),
+          eq(athleteProfiles.isDeleted, false),
+          eq(athleteProfiles.isActive, true),
+        ),
+        with: { team: true, group: true },
+      }),
+    ])
+
+    if (!user || !athleteProfile) {
+      return { success: false as const, forbidden: true as const, reason: 'no_profile' as const, error: 'Perfil deportivo no disponible' }
     }
+
+    return { success: true as const, data: { ...user, athleteProfile } }
   } catch (error) {
     console.error('Error fetching athlete:', error)
 
@@ -105,11 +111,11 @@ export async function getWeeklySchedule(
   }
 
   try {
-    const athlete = await db.query.athleteProfiles.findFirst({
-      where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
-    })
+    const current = await getCurrentAthlete()
+    const athlete = current.success ? current.data?.athleteProfile : null
+    if (!athlete) return { success: false as const, error: 'Acceso no autorizado' }
 
-    if (!athlete?.groupId) {
+    if (!athlete.groupId) {
       return { success: true, data: [] }
     }
 
@@ -167,12 +173,9 @@ export async function getCurrentAthletePlanningWeek(
   }
 
   try {
-    const athlete = await db.query.athleteProfiles.findFirst({
-      where: and(eq(athleteProfiles.id, CURRENT_ATHLETE_PROFILE_ID), eq(athleteProfiles.isDeleted, false)),
-      with: { group: true },
-    })
-
-    if (!athlete) throw new Error('Atleta no encontrado')
+    const current = await getCurrentAthlete()
+    const athlete = current.success ? current.data?.athleteProfile : null
+    if (!athlete) return { success: false as const, error: 'Acceso no autorizado' }
 
     const today = getCurrentDateInArgentina()
     const startDate = startDateIso
@@ -446,8 +449,12 @@ export async function getAthleteShoes() {
   }
 
   try {
+    const current = await getCurrentAthlete()
+    const athlete = current.success ? current.data?.athleteProfile : null
+    if (!athlete) return { success: false as const, error: 'Acceso no autorizado' }
+
     const athleteShoes = await db.query.shoes.findMany({
-      where: and(eq(shoes.athleteId, CURRENT_ATHLETE_PROFILE_ID), eq(shoes.isActive, true), eq(shoes.isDeleted, false)),
+      where: and(eq(shoes.athleteId, athlete.id), eq(shoes.isActive, true), eq(shoes.isDeleted, false)),
 
       orderBy: asc(shoes.isDefault),
     })
