@@ -7,7 +7,8 @@ const actions = readFileSync('app/actions/athlete-stats-actions.ts', 'utf8')
 describe('athlete Stats race registration action wiring', () => {
   it('resolves the current athlete server-side before loading race registrations', () => {
     assert.match(actions, /export async function getCurrentAthleteRaceRegistrationsAction/)
-    assert.match(actions, /getCurrentAthlete\(\)/)
+    assert.match(actions, /resolveCurrentAthleteStatsSubject\(\)/)
+    assert.match(actions, /createH5bSelfNextServerContext/)
     assert.match(actions, /loadAthleteRaceRegistrations/)
     assert.match(actions, /athleteId/)
     assert.match(actions, /teamId/)
