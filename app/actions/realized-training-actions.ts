@@ -15,6 +15,12 @@ import { workoutLogEvidence } from '@/db/readiness-schema'
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
+import { createH5aEffectiveSessionNextServerBoundary } from '@/lib/athlete-planning/effective-self-session-next-server'
 import {
   correctManualRealizedTrainingRecord,
   listRealizedTrainingCorrections,
@@ -420,29 +426,44 @@ export async function getRealizedTrainingCorrectionsAction(athleteId: string, wo
 export async function createManualRealizedTrainingAction(
   input: ManualRealizedTrainingClientInput,
 ) {
-  const current = await getCurrentAthlete()
-  const athleteId = current.success ? current.data?.athleteProfile?.id : null
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'Acceso no autorizado' }
+  }
 
-  if (!athleteId) {
-    return {
-      success: false as const,
-      error: 'athlete_not_found',
+  const now = new Date().toISOString()
+  const self = await createH5aSelfNextServerContext().resolve(access, {
+    at: now,
+    capability: 'workout_log.self.manage',
+  })
+  if (self.status !== 'resolved') {
+    return { success: false as const, error: 'Acceso no autorizado' }
+  }
+
+  // A free capture is independent of planning; a selected session must be
+  // effective for this exact persisted SELF sporting profile.
+  if (input.sessionId !== null) {
+    const effective = await createH5aEffectiveSessionNextServerBoundary().resolve(access, {
+      at: now,
+      sessionId: input.sessionId,
+    })
+    if (effective.status !== 'resolved' || effective.athleteProfileId !== self.athleteProfileId) {
+      return { success: false as const, error: 'Acceso no autorizado' }
     }
   }
 
   try {
     const record = createManualRealizedTrainingRecord({
       ...input,
-      athleteId,
+      athleteId: self.athleteProfileId,
     })
-
-    return {
-      success: true as const,
-      data: record,
-    }
+    return { success: true as const, data: record }
   } catch (error) {
     console.error('Error persisting realized training:', error)
-
     return {
       success: false as const,
       error: error instanceof Error ? error.message : 'realized_training_persistence_failed',
