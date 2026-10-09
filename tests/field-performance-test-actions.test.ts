@@ -92,7 +92,7 @@ test('field-test workflows are exposed from Athlete Stats and Coach athlete deta
   const coachAthlete = fs.readFileSync(coachAthletePath, 'utf8')
 
   assert.match(athleteStats, /AthleteTrack1000m/)
-  assert.match(athleteStats, /getCurrentAthleteTrack1000mTestEventsAction/)
+  assert.doesNotMatch(athleteStats, /getCurrentAthleteTrack1000mTestEventsAction|AthleteTrack1000mForm/)
   assert.match(coachAthlete, /CoachTrack1000m/)
   assert.match(coachAthlete, /getCoachTrack1000mTestEventsAction/)
   assert.match(coachAthlete, /getCoachPendingTrack1000mEvidenceAction/)
@@ -113,7 +113,7 @@ test('Athlete field-test entry point supports official and self-directed registr
   const source = fs.readFileSync(path.join(process.cwd(), 'app/[locale]/(mobile)/stats/page.tsx'), 'utf8')
   const athleteForm = fs.readFileSync(path.join(process.cwd(), 'features/field-performance-test/components/AthleteTrack1000mForm.tsx'), 'utf8')
 
-  assert.match(source, /AthleteTrack1000mForm/)
+  assert.doesNotMatch(source, /AthleteTrack1000mForm/)
   assert.match(athleteForm, /getCurrentAthleteTrack1000mEvidenceAction/)
   assert.match(athleteForm, /self_directed/)
   assert.match(athleteForm, /official/)
@@ -151,7 +151,7 @@ test('field-test UI does not introduce placeholder coach identity and preserves 
   assert.doesNotMatch(coachPage, /deferred-to-kan-298/)
   assert.doesNotMatch(coachForm, /coachUserId/)
   assert.match(athletePage, /params: Promise<\{ locale: string \}>/)
-  assert.match(athletePage, /locale=\{locale\}/)
+  assert.doesNotMatch(athletePage, /locale=\{locale\}/)
 })
 
 
@@ -359,7 +359,7 @@ test('athlete stats keeps 1000 m summary visible and moves history and registrat
 
   assert.match(stats, /Accordion/)
   assert.match(stats, /t\('track1000m\.history'/)
-  assert.match(stats, /t\('track1000m\.register'\)/)
+  assert.doesNotMatch(stats, /t\('track1000m\.register'\)/)
   assert.match(stats, /evolution\?\.series\.length/)
 })
 
