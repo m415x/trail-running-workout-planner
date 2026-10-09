@@ -1,8 +1,8 @@
-# KAN-607 / KAN-704 — H5A closure handoff (pending)
+# KAN-607 / KAN-704 — H5A closure handoff (merged)
 
 ## State and frozen scope
 
-KAN-697 through KAN-703 delivered H5A SELF: authenticated EPT User, active Team/TeamMembership, non-delegable SELF capability, unique own AthleteProfile; effective plan/session, own realized-training read, manual free/linked capture and correction, Athlete UX. KAN-704/T8 remains open; **no PR or merge is authorized by this document**. See `docs/architecture/h5a-athlete-self-access.md` and `docs/architecture/athlete-page-state-pattern.md`.
+KAN-697 through KAN-703 delivered H5A SELF: authenticated EPT User, active Team/TeamMembership, non-delegable SELF capability, unique own AthleteProfile; effective plan/session, own realized-training read, manual free/linked capture and correction, Athlete UX. KAN-704/T8 and KAN-607 are **Finalizada** in Jira. PR #46 was merged into `dev` after explicit closure and Vercel-exception approval. Merge commit: `c40a9ce728860725c0179f0a4b1af7ac6745b403`. See `docs/architecture/h5a-athlete-self-access.md` and `docs/architecture/athlete-page-state-pattern.md`.
 
 ## Evidence classification (do not merge categories)
 
@@ -12,11 +12,11 @@ KAN-697 through KAN-703 delivered H5A SELF: authenticated EPT User, active Team/
 | User-reported execution | `pn verify --db` PASS 6/6 (Tests, TypeScript, ESLint, Build, i18n, SQLite) | **Historical checkpoint only:** `6c706b3105f7fd3b152e055ec56275411fb3dcef` |
 | User-reported execution | KAN-703 ALLOW → DENY → ALLOW, independent Athlete A/B, UI ES/EN and responsive checks; T8.1/T8.2 RED→GREEN focused cycles | Reported by user; source commits and outcomes documented in Jira KAN-704 |
 | User-reported execution | Eight focused authorization/planning/capture/correction/SQLite isolation suites GREEN | Reported on `f3ef7c2cc6392cfa41429a2b922fe5e5f3690044` |
-| Still pending | `pn verify --db` **PASS 6/6 on the exact post-documentation candidate SHA** | Required for T8; cannot borrow the historical gate |
-| Still pending | Review post-documentation diff, PR toward dev, GitHub Actions, interactive zoom 200%, closure approval | Complete before merge |
-| Still pending | Merge to dev, verify merge SHA, reconcile Jira and architecture/handoff against merge | Do not mark KAN-607 complete prematurely |
+| User-reported execution | `pn verify --db` **PASS 6/6 on the exact documented pre-merge candidate** | `245b374ae08176136705bca41379c0a4095553f6`; not asserted for merge commit |
+| Verified GitHub / user-reported interactive | PR #46 merged, dev merge SHA verified; zoom 200% walkthrough GREEN informed | Merge `c40a9ce728860725c0179f0a4b1af7ac6745b403` |
+| Approved exception | Vercel deployment status failed due to provider rate limit; user explicitly approved proceeding without retry | **Not** a successful CI/deployment check |
 
-No gate result is transferred to a later SHA. If any functional change lands, evaluate impact and verify the new candidate; T8 specifically requires an integral 6/6 on the exact closure candidate.
+No gate result is transferred to a later SHA. The gate was executed on the exact pre-merge candidate; the merge commit is a distinct Git identity and was not itself retested. Any post-merge documentation commit likewise has a distinct SHA and must not inherit the gate.
 
 ## Recent micro-sprints and recoverable commits
 
@@ -31,6 +31,14 @@ No gate result is transferred to a later SHA. If any functional change lands, ev
 
 Deleting realized-training records is **independent debt outside H5A**, not a missing AC for this story. Do not implement deletion in KAN-704.
 
-## Next operator / fresh-chat checklist
+## Final integration and next fresh-chat baseline
 
-Read `AGENTS.md`, `docs/agent-harness.md`, this handoff and KAN-704 Jira evidence. Confirm exact HEAD after documentation commit; review `git diff` against `f3ef7c2...` to exclude functional edits. Run `pn verify --db` and bind all 6 results to that **new exact SHA**. Only then prepare PR, inspect Actions, complete zoom 200% interactive acceptance, obtain explicit closure/merge approval, merge and reconcile against merge SHA. Use Git Bash locally.
+- GitHub PR: https://github.com/m415x/trail-running-workout-planner/pull/46 (merged).
+- Pre-merge source candidate and user-reported PASS 6/6: `245b374ae08176136705bca41379c0a4095553f6`.
+- Merge commit verified in `dev`: `c40a9ce728860725c0179f0a4b1af7ac6745b403`.
+- Jira KAN-704 and KAN-607: Finalizada; merge evidence recorded in both.
+- Zoom 200% interactive walkthrough: GREEN informed by user.
+- Vercel: deployment rate-limited; approved explicit exception, **no remote deployment PASS**.
+- Local fixture and realized-training delete exclusions remain unchanged.
+
+Fresh chats: read `AGENTS.md`, `docs/agent-harness.md`, this handoff and relevant architecture before opening new scope. Verify the current `dev` HEAD; do not assume this handoff's own documentation update SHA equals the merge SHA or is covered by the pre-merge gate.
