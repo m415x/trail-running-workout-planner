@@ -38,6 +38,7 @@ type DrizzleQuery = {
 function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeReductionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     monthlyChargeId: String(row.monthlyChargeId),
     athleteId: String(row.athleteId),
     year: Number(row.year),
@@ -51,6 +52,7 @@ function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeRedu
 function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExtensionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     monthlyChargeId: String(row.monthlyChargeId),
     athleteId: String(row.athleteId),
     year: Number(row.year),
@@ -77,6 +79,7 @@ function mapPaymentRevision(row: QueryResult): PersistedPaymentRevision {
 function mapGlobalDueDateException(row: QueryResult): GlobalDueDateExceptionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     teamId: String(row.teamId),
     year: Number(row.year),
     month: Number(row.month),
