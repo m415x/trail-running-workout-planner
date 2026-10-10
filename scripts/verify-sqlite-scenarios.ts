@@ -708,13 +708,13 @@ function readNormalizedSchema(sqlitePath: string): string[] {
       .map(row => {
         // SQLite appends columns and can rewrite inline foreign keys on ALTER.
         // Compare the affected table by its actual columns and foreign keys.
-        if (row.type === 'table' && row.name === 'field_performance_tests') {
-          const columns = (sqlite.pragma('table_xinfo(field_performance_tests)') as Array<{
+        if (row.type === 'table' && ['field_performance_tests', 'team_economic_policies', 'athlete_billing_terms'].includes(row.name)) {
+          const columns = (sqlite.pragma(`table_xinfo(${row.name})`) as Array<{
             name: string; type: string; notnull: number; dflt_value: string | null; pk: number; hidden: number
           }>).map(({ name, type, notnull, dflt_value, pk, hidden }) =>
             ({ name, type: type.toUpperCase(), notnull, dflt_value, pk, hidden }),
           ).sort((a, b) => a.name.localeCompare(b.name))
-          const foreignKeys = (sqlite.pragma('foreign_key_list(field_performance_tests)') as Array<{
+          const foreignKeys = (sqlite.pragma(`foreign_key_list(${row.name})`) as Array<{
             table: string; from: string; to: string; on_update: string; on_delete: string; match: string; seq: number
           }>).map(({ table, from, to, on_update, on_delete, match, seq }) =>
             ({ table, from, to, on_update, on_delete, match, seq }),
