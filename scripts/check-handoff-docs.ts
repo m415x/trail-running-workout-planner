@@ -20,8 +20,10 @@ export function validateOperationalHandoff(input: OperationalHandoffInput): stri
   const storySlug = storyKey.toLowerCase()
   const handoffName = `${storySlug}.md`
   const indexedCurrent = /handoffs\/current\.md/i.test(input.docsIndexContent)
-  const indexedStory = new RegExp(`handoffs/${storySlug}\\.md`, 'i').test(input.docsIndexContent)
-  const indexNamesStory = new RegExp(`\\b${storyKey}\\b`, 'i').test(input.docsIndexContent)
+  const handoffsSection =
+    input.docsIndexContent.match(/## Handoffs\s*([\s\S]*?)(?=\n## |$)/i)?.[1] ?? ''
+  const indexedStory = new RegExp(`handoffs/${storySlug}\\.md`, 'i').test(handoffsSection)
+  const handoffsNamesStory = new RegExp(`\\b${storyKey}\\b`, 'i').test(handoffsSection)
 
   if (!input.availableHandoffs.some((name) => name.toLowerCase() === handoffName)) {
     errors.push(`Missing story handoff docs/handoffs/${handoffName} for ${storyKey}.`)
@@ -32,11 +34,11 @@ export function validateOperationalHandoff(input: OperationalHandoffInput): stri
   }
 
   if (!indexedStory) {
-    errors.push(`docs/README.md must index docs/handoffs/${handoffName}.`)
+    errors.push(`docs/README.md Handoffs section must index docs/handoffs/${handoffName}.`)
   }
 
-  if (!indexNamesStory) {
-    errors.push(`docs/README.md must identify ${storyKey} as the current integrated handoff baseline.`)
+  if (!handoffsNamesStory) {
+    errors.push(`docs/README.md Handoffs section must identify ${storyKey} as the current integrated handoff baseline.`)
   }
 
   return errors
