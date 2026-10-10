@@ -824,6 +824,7 @@ export const athleteBillingTerms = sqliteTable(
     currency: text('currency').notNull(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('athlete_billing_terms_athlete_dates_idx').on(table.athleteId, table.effectiveFrom, table.effectiveUntil),
