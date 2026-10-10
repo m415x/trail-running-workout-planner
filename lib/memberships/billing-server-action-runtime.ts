@@ -274,6 +274,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).registerManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
           paymentId: createId(),
         })
@@ -299,6 +300,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).correctManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
         })
         return { success: true }
@@ -320,6 +322,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).voidManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
         })
         return { success: true }
