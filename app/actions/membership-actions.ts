@@ -241,18 +241,21 @@ const authorizedPayments = createH6PaymentActions({
       )).get()
     return Boolean(row)
   },
-  register: (teamId, input) => runtime.registerManualPayment({
+  register: (teamId, input, authorship) => runtime.registerManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     amountMinor: input.amountMinor, paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+    authorship: authorship,
   }),
-  correct: (teamId, input) => runtime.correctManualPayment({
+  correct: (teamId, input, authorship) => runtime.correctManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     paymentId: input.paymentId, amountMinor: input.amountMinor,
     paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+    authorship: authorship,
   }),
-  voidPayment: (teamId, input) => runtime.voidManualPayment({
+  voidPayment: (teamId, input, authorship) => runtime.voidManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     paymentId: input.paymentId,
+    authorship: authorship,
   }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),
