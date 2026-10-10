@@ -1,0 +1,2 @@
+ALTER TABLE "athlete_billing_terms" ADD COLUMN "created_by_user_id" text;--> statement-breakpoint
+ALTER TABLE "athlete_billing_terms" ADD CONSTRAINT "athlete_billing_terms_created_by_user_id_users_id_fk" FOREIGN KEY ("created_by_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;
