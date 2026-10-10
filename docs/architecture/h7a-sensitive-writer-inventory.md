@@ -57,6 +57,17 @@ Baseline: `dev` at `51d9fae2e862d7450eaf0e11ccb58112f0aa3e1a`; H7A work branch `
 - `db/schema.ts`: `paymentRevisions` and `groupHistoryRecords` are existing historical data stores. Reuse their factual history; first determine whether authorship columns and atomic writes are sufficient, rather than automatically introducing an additional audit table.
 - T1 classification: named indirect runtime sinks identified, **but repository-level transitive writer completeness and historical author persistence are not yet demonstrated**. Follow-up bounded work stays with T1 discovery and, for confirmed writers, the previously approved T3–T7 cuts.
 
+## Payment persistence chain — T1 classification
+
+- `lib/memberships/billing-server-action-runtime.ts` dispatches register/correct/void to a `createBillingPersistenceAdapter` backed by `createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db))`. The current runtime input receives business identifiers and values, not a persisted actor.
+- `lib/memberships/billing-persistence.ts` defines `PaymentPersistencePort`, `PersistedPaymentRevision`, `insertPaymentRevision` and the optional atomic current-revision replacement. These domain ports model payment revisions but do not establish an H2 author.
+- `lib/memberships/billing-sqlite-persistence.ts` connects the domain port to database operations, including listing, insertion and atomic replacement of payment revisions. Passing through this port does not by itself add authorship.
+- `lib/memberships/billing-drizzle-database.ts` maps revision rows and performs actual `paymentRevisions` insert/update work; this is the concrete database sink whose transaction and concurrency behavior must be verified in T6.
+- `lib/memberships/billing-drizzle-write-repository.ts` implements policy/terms revision writes, a separate T4 persistence contract; it should not be mistaken for the payment writer.
+- `lib/memberships/billing-sqlite-transaction.ts` provides synchronous SQLite transaction support for existing billing work; applicability to each payment revision must be proven at the actual write boundary rather than inferred from the presence of a helper.
+- `db/schema.ts` `payment_revisions` has payment ID, charge ID, amount, method, date, voided and current flags, but **no authorship column**. Existing append-only payment history therefore cannot durably identify `authenticatedActorUserId` or `effectiveActorUserId`. No inferred backfill for prior revisions is allowed.
+- T1 decision: **T6 has a confirmed persistence gap**. Design of the minimum author field(s), SQLite/PostgreSQL migration and atomic insert/replacement awaits the bounded T6 RED and verification. The focused H6 callback GREEN does not satisfy this requirement.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
