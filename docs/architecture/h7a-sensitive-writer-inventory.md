@@ -68,6 +68,14 @@ Baseline: `dev` at `51d9fae2e862d7450eaf0e11ccb58112f0aa3e1a`; H7A work branch `
 - `db/schema.ts` `payment_revisions` has payment ID, charge ID, amount, method, date, voided and current flags, but **no authorship column**. Existing append-only payment history therefore cannot durably identify `authenticatedActorUserId` or `effectiveActorUserId`. No inferred backfill for prior revisions is allowed.
 - T1 decision: **T6 has a confirmed persistence gap**. Design of the minimum author field(s), SQLite/PostgreSQL migration and atomic insert/replacement awaits the bounded T6 RED and verification. The focused H6 callback GREEN does not satisfy this requirement.
 
+## Economic application writers — concrete T4/T5 routing
+
+- `lib/memberships/billing-coach-actions.ts` exposes `configureTeamEconomicPolicyAction`, `applyInitialAthleteBillingTermsAction`, `changeAthleteBillingTermsAction`, `applyGlobalDueDateExceptionAction`, `applyMonthlyChargeReductionAction`, `applyMonthlyChargeExtensionAction`, and `materializeTeamMonthlyChargesAction`. These are domain application operations and their presence alone does not establish that each direct caller has H2/H3 enforcement.
+- **T4**: policy and terms routing covers `configureTeamEconomicPolicyAction`, `applyInitialAthleteBillingTermsAction`, `changeAthleteBillingTermsAction`, and `materializeTeamMonthlyChargesAction`. `lib/memberships/billing-drizzle-write-repository.ts` / `createSynchronousDrizzleBillingRepository` supplies policy/terms revisions, but must be reviewed for actor fields, transactional author writes and existing history before implementation.
+- **T5**: exception routing covers `applyGlobalDueDateExceptionAction`, `applyMonthlyChargeReductionAction`, and `applyMonthlyChargeExtensionAction`. The protected H6 surface in `app/actions/membership-actions.ts` authenticates and authorizes requests but currently loses actor context in the callback boundary; review persisted exception revisions separately.
+- Do not merge T4/T5 merely because both pass through billing-coach-actions. Neither authorization decisions nor economic source semantics may be replaced with a generic author audit.
+- The `CURRENT_TEAM_ID` legacy handler configuration must be distinguished from the active H6 authorization path during actual caller tracing; a fixed Team ID does not establish authority.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
