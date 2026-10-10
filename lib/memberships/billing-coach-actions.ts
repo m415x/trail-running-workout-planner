@@ -1,3 +1,4 @@
+import type { TrustedH7aAuthorship } from '@/lib/authorization/h7a-trusted-authorship'
 import type {
   GlobalDueDateExceptionRevision,
   MonthlyChargeReductionRevision,
@@ -172,6 +173,7 @@ export async function applyGlobalDueDateExceptionAction(
     month: number
     dueDate: string
     reason: string
+    authorship?: TrustedH7aAuthorship
   },
   dependencies: BillingCoachActionDependencies,
 ): Promise<BillingCoachActionResult> {
@@ -191,7 +193,7 @@ export async function applyGlobalDueDateExceptionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: GlobalDueDateExceptionRevision = {
-        createdByUserId: null,
+        createdByUserId: input.authorship?.effectiveActorUserId ?? null,
         id: dependencies.createId(),
         teamId: input.teamId,
         year: input.year,
@@ -228,6 +230,7 @@ export async function applyMonthlyChargeReductionAction(
     month: number
     reductionAmountMinor: number
     reason: string
+    authorship?: TrustedH7aAuthorship
   },
   dependencies: BillingCoachActionDependencies,
 ): Promise<BillingCoachActionResult> {
@@ -250,7 +253,7 @@ export async function applyMonthlyChargeReductionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: MonthlyChargeReductionRevision = {
-        createdByUserId: null,
+        createdByUserId: input.authorship?.effectiveActorUserId ?? null,
         id: dependencies.createId(),
         athleteId: input.athleteId,
         year: input.year,
@@ -285,6 +288,7 @@ export async function applyMonthlyChargeExtensionAction(
     month: number
     extendedDueDate: string | null
     reason: string
+    authorship?: TrustedH7aAuthorship
   },
   dependencies: BillingCoachActionDependencies,
 ): Promise<BillingCoachActionResult> {
@@ -306,7 +310,7 @@ export async function applyMonthlyChargeExtensionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: MonthlyChargeExtensionRevision = {
-        createdByUserId: null,
+        createdByUserId: input.authorship?.effectiveActorUserId ?? null,
         id: dependencies.createId(),
         athleteId: input.athleteId,
         year: input.year,
