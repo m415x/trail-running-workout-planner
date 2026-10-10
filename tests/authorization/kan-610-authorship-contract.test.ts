@@ -4,7 +4,7 @@ import test from 'node:test'
 import { createH6PaymentActions } from '@/lib/memberships/h6-payment-actions'
 
 test('KAN-610/T1 payment writer receives the authenticated EPT actor, not only the active Team', async () => {
-  const observed: unknown[] = []
+  const observed: unknown[][] = []
   const actor = { status: 'authenticated' as const, userId: 'coach_a' }
   const actions = createH6PaymentActions({
     authenticate: async () => actor,
