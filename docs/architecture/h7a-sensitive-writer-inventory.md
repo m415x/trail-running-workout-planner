@@ -147,3 +147,10 @@ The repository-tree review identified internal files not covered by the action-e
 
 - `tests/authorization/kan-610-authorship-contract.test.ts`: Payments transport and client-selected Coach recorder RED → operator-reported GREEN on candidate `bbe7e8acac678fab36796c21899fe501f0842fe4`. This proves two boundary contracts, **not persisted atomic audit**.
 - `tests/authorization/kan-726-writer-inventory.test.ts`: structural requirement for this document; does not itself establish complete traversal or business correctness.
+
+## Production caller scan for identity helpers (T3)
+
+- Production caller evidence for revokeTeamMembership: none found
+- Production caller evidence for associateAuthorizedExternalIdentity: none found
+
+These lines express the current no-caller hypothesis for the focused source scan over `app/` and `lib/`, **not** a conclusion about references in scripts, tests, or external integrations. The companion executable test computes real call sites and will reject this hypothesis if a production call exists. The exported identity functions remain real lower-level database writers but must not be treated as deployed, authorized H3 actions without a verified caller. Any subsequent integration requires H2 authentication, H3 authorization and atomic author recording.
