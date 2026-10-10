@@ -69,7 +69,9 @@
       "save": "Guardar",
       "durationHours": "Horas",
       "durationMinutes": "Minutos",
-      "durationSeconds": "Segundos"
+      "durationSeconds": "Segundos",
+      "blockedForPriorDebt": "No podés registrar ni corregir este entrenamiento porque tenés una cuota vencida de un mes anterior. Tus datos se conservaron. Regularizá tu situación desde Membresía.",
+      "economicEvidenceUnavailable": "No pudimos validar temporalmente tu estado económico. La operación no se realizó y tus datos se conservaron. Intentá nuevamente más tarde."
     },
     "home": {
       "greeting": "Hola, {name}",
