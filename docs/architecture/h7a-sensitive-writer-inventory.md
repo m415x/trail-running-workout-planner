@@ -76,6 +76,16 @@ Baseline: `dev` at `51d9fae2e862d7450eaf0e11ccb58112f0aa3e1a`; H7A work branch `
 - Do not merge T4/T5 merely because both pass through billing-coach-actions. Neither authorization decisions nor economic source semantics may be replaced with a generic author audit.
 - The `CURRENT_TEAM_ID` legacy handler configuration must be distinguished from the active H6 authorization path during actual caller tracing; a fixed Team ID does not establish authority.
 
+## Organization and sporting repository sink closure (KAN-726)
+
+- `teamMemberships` and `authorizationGrants` are persisted authority models in `db/schema.ts`; `lib/authorization/grant-lifecycle.ts` evaluates grants and revocation metadata, but is not a writer. **No deployed grant mutation writer** was established by the inspected H3 path: do not invent grant/revoke actions for T3 merely because schema supports them. TeamMembership management requires explicit discovery of a real authenticated operation before changing authority.
+- `app/actions/planning-cohort-actions.ts`: `planningCohortMemberships` insert/close is performed inside SQLite transactions and attributes `assignedByUserId` / `endedByUserId` from server-resolved `planningContext.access.userId`. Preserve the existing authorization and assignment history; creation/update of planning cohorts are separate mutable records.
+- `lib/athletes/group-assignment.ts`: the existing assignment transaction writes `groupHistoryRecords` with `changedByUserId` from the authenticated H4A calling action, while updating the athlete/group link and ending affected cohort memberships. A validated actor must remain inseparable from this write.
+- `lib/physiology/field-performance-test-sqlite.ts`: `createSqliteFieldPerformanceTestRepository` implements the concrete `fieldPerformanceTests` persistence sink. It inserts new observations, performs a `review update`, and uses a `correction transaction` to invalidate the previous evidence and insert its replacement. The review update is not equivalent to append-only correction: **T7** must preserve existing lifecycle and determine whether review-specific audit evidence is sufficient.
+- `app/actions/field-performance-test-actions.ts` exports the public Coach creation/correction/review actions, and `lib/physiology/field-performance-test-application.ts` supplies application-level validation. Neither a stored `recordedBy` role nor the existence of `recordedByUserId` constitutes proof of H2-derived Coach identity; T7 must resolve trusted actor without implementing H4C authority.
+- **T3** remains limited to verified organizational writes and their current historical model; grant lifecycle read helpers are not evidence of live mutation functionality. No inferred author backfill or second authorization mechanism.
+- Classification boundary: these files and their direct sinks are identified; an unrestricted repository-wide exhaustive code traversal has not been demonstrated by focused document-presence tests. T1 closure must make this limitation explicit rather than asserting completeness without evidence.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
