@@ -391,6 +391,7 @@ export function createMembershipServerActionRuntime({
 
           service.configureTeamEconomicPolicy({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             policyId: createId(),
           })
         })
