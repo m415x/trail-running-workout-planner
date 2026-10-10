@@ -572,6 +572,7 @@ export function createDrizzleBillingDatabase(
         if (!isRetry) {
           executeMutation(tx.insert(monthlyChargeReductions).values([{
             id: revision.id,
+          createdByUserId: revision.createdByUserId,
             monthlyChargeId,
             reductionAmountMinor: revision.reductionAmountMinor,
             reason: revision.reason,
@@ -716,6 +717,7 @@ export function createDrizzleBillingDatabase(
         if (!isRetry) {
           executeMutation(tx.insert(monthlyChargeExtensions).values([{
             id: revision.id,
+          createdByUserId: revision.createdByUserId,
             monthlyChargeId,
             extendedDueDate: revision.extendedDueDate,
             reason: revision.reason,
