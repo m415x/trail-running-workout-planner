@@ -102,6 +102,13 @@ The repo tree at commit `18f91a9de21027cfbe436f8c8990110c83cf7d3a` contains **23
 
 Previously covered `athlete-actions.ts`, `group-actions.ts`, `planning-cohort-actions.ts`, `membership-actions.ts`, and `field-performance-test-actions.ts` remain classified above. Modules with no matches to this export-name heuristic are **not** evidence of no writes: anonymous exports, arrow functions, re-exports, internal functions, and non-`app/actions` routes or repositories can still write. This scan supplies code-derived discovery, **not exhaustive whole-repository proof**. No modification to authorization, persistence or H7A scope is authorized by this list alone.
 
+## Nonstandard action names excluded by the initial export heuristic
+
+- `app/actions/team-context-actions.ts`: `selectActiveTeamAction` changes the active Team context selected by the actor. This is a session/context operation, **not** the grant or TeamMembership persistence writer; selecting a Team never creates H3 authority.
+- `app/actions/session-generation-actions.ts`: `persistGeneratedSessions` delegates generated sporting sessions to persistence. It is a real planning/session mutation outside the explicitly approved H7A T3–T7 sensitive-writer set; flag for separate scope assessment rather than quietly extending KAN-610.
+- `app/actions/auth-actions.ts`: `loginAction`, `logoutAction`, and `completePasswordRecoveryAction` mutate authentication/session or credential state through auth services. They are identity lifecycle boundaries, not a trusted H7A source of author IDs from client payload. H2 server authentication remains the authoritative actor resolver for sensitive writes. This inventory classification does not require recording login/logout in a new H7A audit table.
+- The earlier `create|update|...` exported-function regex missed `select`, `persist`, `login`, `logout`, and `complete` prefixes. A naming heuristic is discovery assistance, not proof that no other internal or indirect writers exist.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
