@@ -28,6 +28,7 @@ test('initial athlete billing terms may start mid-month from the effective team 
 
   assert.deepEqual(terms, {
     id: 'terms-a',
+    createdByUserId: null,
     athleteId: 'athlete-a',
     monthlyAmountMinor: 2_500_000,
     currency: 'ARS',
