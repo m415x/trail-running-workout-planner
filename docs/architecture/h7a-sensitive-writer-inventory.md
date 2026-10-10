@@ -154,3 +154,9 @@ The repository-tree review identified internal files not covered by the action-e
 - Production caller evidence for associateAuthorizedExternalIdentity: none found
 
 These lines express the current no-caller hypothesis for the focused source scan over `app/` and `lib/`, **not** a conclusion about references in scripts, tests, or external integrations. The companion executable test computes real call sites and will reject this hypothesis if a production call exists. The exported identity functions remain real lower-level database writers but must not be treated as deployed, authorized H3 actions without a verified caller. Any subsequent integration requires H2 authentication, H3 authorization and atomic author recording.
+
+## Grant writer deployment decision (KAN-736)
+
+Grant writer deployment decision: no verified production mutation entrypoint.
+
+The `authorizationGrants` model retains `grantedByUserId` and `revokedByUserId` for historical provenance. The verified H3 path reads these grants to evaluate authority, while `lib/authorization/grant-lifecycle.ts` validates lifecycle semantics; neither constitutes a deployed grant/revoke operation. The scoped `app/` and `lib/` inventory found **no deployed grant mutation writer**. Therefore KAN-736 does not add a synthetic grant action, bypass H3, or backfill inferred authors. A future mutation entrypoint requires a fresh H2/H3 authorization review and atomic authorship persistence before activation.
