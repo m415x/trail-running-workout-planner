@@ -12,8 +12,8 @@ export function createH6EconomicExceptionActions(deps: {
   }): Promise<{ allowed: boolean; teamId?: string }>
   ownsCharge(teamId: string, athleteId: string, chargeId: string, year: number, month: number): Promise<boolean>
   globalDueDate(teamId: string, input: { year: number; month: number; dueDate: string; reason: string }, authorship: TrustedH7aAuthorship): Promise<Result>
-  reduce(teamId: string, input: Charge & { reductionAmountMinor: number }): Promise<Result>
-  extend(teamId: string, input: Charge & { extendedDueDate: string | null }): Promise<Result>
+  reduce(teamId: string, input: Charge & { reductionAmountMinor: number }, authorship: TrustedH7aAuthorship): Promise<Result>
+  extend(teamId: string, input: Charge & { extendedDueDate: string | null }, authorship: TrustedH7aAuthorship): Promise<Result>
   revalidate(path: string): void
   now(): string
 }) {
@@ -41,7 +41,7 @@ export function createH6EconomicExceptionActions(deps: {
       try {
         const context = await team()
         if (!context || !await deps.ownsCharge(context.teamId, input.athleteId, input.monthlyChargeId, input.year, input.month)) return deny()
-        const result = await deps.reduce(context.teamId, input)
+        const result = await deps.reduce(context.teamId, input, context.authorship)
         if (result.success) deps.revalidate(athletePath(input.locale, input.athleteId))
         return result
       } catch { return deny() }
@@ -50,7 +50,7 @@ export function createH6EconomicExceptionActions(deps: {
       try {
         const context = await team()
         if (!context || !await deps.ownsCharge(context.teamId, input.athleteId, input.monthlyChargeId, input.year, input.month)) return deny()
-        const result = await deps.extend(context.teamId, input)
+        const result = await deps.extend(context.teamId, input, context.authorship)
         if (result.success) deps.revalidate(athletePath(input.locale, input.athleteId))
         return result
       } catch { return deny() }
