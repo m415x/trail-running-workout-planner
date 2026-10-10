@@ -55,6 +55,7 @@ function mapTerms(row: Record<string, unknown>): AthleteBillingTerms {
   return {
     id: String(row.id),
     athleteId: String(row.athleteId),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     monthlyAmountMinor: Number(row.monthlyAmountMinor),
     currency: String(row.currency),
     effectiveFrom: String(row.effectiveFrom),
@@ -130,6 +131,7 @@ export function createSynchronousDrizzleBillingRepository(
     saveAthleteBillingTerms(terms) {
       client.insert(athleteBillingTerms).values({
         ...terms,
+        createdByUserId: terms.createdByUserId ?? null,
         isDeleted: false,
         createdAt: now(),
         updatedAt: now(),
@@ -143,6 +145,7 @@ export function createSynchronousDrizzleBillingRepository(
         .run?.()
       client.insert(athleteBillingTerms).values({
         ...replacement,
+        createdByUserId: replacement.createdByUserId ?? null,
         isDeleted: false,
         createdAt: now(),
         updatedAt: now(),
