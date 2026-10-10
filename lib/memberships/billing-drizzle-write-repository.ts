@@ -42,6 +42,7 @@ function mapPolicy(row: Record<string, unknown>): TeamEconomicPolicy {
   return {
     id: String(row.id),
     teamId: String(row.teamId),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     defaultMonthlyAmountMinor: Number(row.defaultMonthlyAmountMinor),
     currency: String(row.currency),
     ordinaryDueDay: Number(row.ordinaryDueDay),
@@ -93,6 +94,7 @@ export function createSynchronousDrizzleBillingRepository(
     saveTeamEconomicPolicy(policy) {
       client.insert(teamEconomicPolicies).values({
         ...policy,
+        createdByUserId: policy.createdByUserId ?? null,
         isDeleted: false,
         createdAt: now(),
         updatedAt: now(),
@@ -106,6 +108,7 @@ export function createSynchronousDrizzleBillingRepository(
         .run?.()
       client.insert(teamEconomicPolicies).values({
         ...replacement,
+        createdByUserId: replacement.createdByUserId ?? null,
         isDeleted: false,
         createdAt: now(),
         updatedAt: now(),
