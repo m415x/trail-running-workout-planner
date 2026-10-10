@@ -36,6 +36,10 @@ Key competition documents:
 
 `memberships.md` owns the Epic 5 membership economic foundation and post-Epic consumers: temporal team policy, athlete billing terms, monthly charge snapshots, H2 exceptions, H3 Payment revision history, H4/H5 account/debt projection, and the KAN-581 read-only Athlete Home disclosure boundary.
 
+### H6 — Economic authorization and Athlete SELF debt guard
+
+- [`h6-economic-authorization-athlete-debt-guard.md`](h6-economic-authorization-athlete-debt-guard.md) — completed KAN-609/H6 economic action authorization, reversible prior-month overdue guard, protected SELF writes and DENY/no-mutation acceptance.
+
 ### Platform
 
 `platform/` owns cross-cutting platform/infrastructure contracts.
