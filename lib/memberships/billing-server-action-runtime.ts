@@ -326,6 +326,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       effectiveFrom: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
         return { success: false, error: 'Invalid athlete billing terms input' }
@@ -349,6 +350,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       effectiveFrom: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       monthlyAmountMinor: number
       currency: string
     }): Promise<BillingActionResult> {
