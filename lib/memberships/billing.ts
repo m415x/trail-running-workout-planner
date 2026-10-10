@@ -1,6 +1,7 @@
 export type CurrencyCode = string
 
 export type TeamEconomicPolicy = {
+  createdByUserId?: string | null
   id: string
   teamId: string
   defaultMonthlyAmountMinor: number
@@ -65,6 +66,7 @@ function formatDate(year: number, month: number, day: number): string {
 }
 
 export function createTeamEconomicPolicy(input: {
+  createdByUserId?: string | null
   id: string
   teamId: string
   defaultMonthlyAmountMinor: number
@@ -93,6 +95,7 @@ export function createTeamEconomicPolicy(input: {
 }
 
 export function replaceTeamEconomicPolicy(input: {
+  createdByUserId?: string | null
   current: TeamEconomicPolicy
   replacementId: string
   effectiveFrom: string
@@ -115,6 +118,7 @@ export function replaceTeamEconomicPolicy(input: {
 
   const replacement = createTeamEconomicPolicy({
     id: input.replacementId,
+    createdByUserId: input.createdByUserId ?? null,
     teamId: input.current.teamId,
     defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
     currency: input.currency,
