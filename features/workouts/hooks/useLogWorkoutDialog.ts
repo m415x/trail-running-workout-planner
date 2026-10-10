@@ -91,7 +91,7 @@ export function useLogWorkoutDialog({
   const [isSaving, setIsSaving] = useState(false)
   const saving = useRef(false)
   const [performedLocal, setPerformedLocal] = useState(emptyValues.performedLocal)
-  const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'saveFailed' | null>(null)
+  const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'saveFailed' | 'blockedForPriorDebt' | 'economicEvidenceUnavailable' | null>(null)
 
   const applyValues = useCallback((input: ManualRealizedTrainingClientInput | null | undefined) => {
     const values = valuesFromInput(input)
@@ -189,6 +189,14 @@ export function useLogWorkoutDialog({
       const saved = await onSave(payload)
       if (!saved) {
         setSaveError('saveFailed')
+        return
+      }
+      if (saved === 'blocked_for_prior_debt') {
+        setSaveError('blockedForPriorDebt')
+        return
+      }
+      if (saved === 'economic_evidence_unavailable') {
+        setSaveError('economicEvidenceUnavailable')
         return
       }
       onClose()
