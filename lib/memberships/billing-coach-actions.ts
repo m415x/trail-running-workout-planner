@@ -191,6 +191,7 @@ export async function applyGlobalDueDateExceptionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: GlobalDueDateExceptionRevision = {
+        createdByUserId: null,
         id: dependencies.createId(),
         teamId: input.teamId,
         year: input.year,
@@ -249,6 +250,7 @@ export async function applyMonthlyChargeReductionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: MonthlyChargeReductionRevision = {
+        createdByUserId: null,
         id: dependencies.createId(),
         athleteId: input.athleteId,
         year: input.year,
@@ -304,6 +306,7 @@ export async function applyMonthlyChargeExtensionAction(
   try {
     const operation = dependencies.transaction((repository) => {
       const revision: MonthlyChargeExtensionRevision = {
+        createdByUserId: null,
         id: dependencies.createId(),
         athleteId: input.athleteId,
         year: input.year,
