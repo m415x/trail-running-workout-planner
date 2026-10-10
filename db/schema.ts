@@ -918,6 +918,7 @@ export const paymentRevisions = sqliteTable(
   {
     ...baseColumns,
     paymentId: text('payment_id').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     amountMinor: integer('amount_minor').notNull(),
     paymentMethod: text('payment_method', { enum: ['cash', 'bank_transfer'] }).notNull(),
