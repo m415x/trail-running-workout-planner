@@ -136,6 +136,7 @@ test('SQLite billing persistence exposes append-only global due-date exception r
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Vencimiento excepcional',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -166,6 +167,7 @@ test('SQLite billing persistence rejects a global due-date revision outside the 
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Otro equipo',
+      createdByUserId: null,
       isCurrent: true,
     }),
     /team|period|scope|identity/i,
@@ -212,6 +214,7 @@ test('SQLite billing persistence exposes append-only monthly charge reduction re
     month: 10,
     reductionAmountMinor: 500_000,
     reason: 'Beca deportiva',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -242,6 +245,7 @@ test('SQLite billing persistence rejects a reduction revision outside the reques
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     }),
     /charge|scope|identity/i,
@@ -280,6 +284,7 @@ test('SQLite billing persistence validates atomic reduction charge identity befo
         month: 10,
         reductionAmountMinor: 500_000,
         reason: 'Beca deportiva',
+        createdByUserId: null,
         isCurrent: true,
       },
       {
@@ -340,6 +345,7 @@ test('SQLite billing persistence exposes append-only monthly charge extension re
     month: 10,
     extendedDueDate: '2026-10-25',
     reason: 'Prórroga individual',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -370,6 +376,7 @@ test('SQLite billing persistence rejects an extension revision outside the reque
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     }),
     /charge|scope|identity/i,
