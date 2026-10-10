@@ -298,6 +298,7 @@ export function createBillingPersistenceAdapter(
         month: input.revision.month,
         dueDate: input.revision.dueDate,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions[0]
 
@@ -381,6 +382,7 @@ export function createBillingPersistenceAdapter(
         id: input.revision.id,
         reductionAmountMinor: input.revision.reductionAmountMinor,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
       if (!validatedRevision) throw new Error('Current monthly charge reduction revision not found')
@@ -443,6 +445,7 @@ export function createBillingPersistenceAdapter(
         id: input.revision.id,
         extendedDueDate: input.revision.extendedDueDate,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
       if (!validatedRevision) throw new Error('Current monthly charge extension revision not found')
