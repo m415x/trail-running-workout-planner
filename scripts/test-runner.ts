@@ -32,6 +32,19 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
 
 type TestRunResult = Pick<ReturnType<typeof spawnSync>, 'status' | 'signal' | 'error'>
 
+export function validateTestRunnerArguments(args: string[]): void {
+  if (args.length === 0) return
+
+  throw new Error(
+    [
+      'pn test does not accept test paths or positional arguments; it always runs the full suite.',
+      'Use pn tdd:red <test-file> [...] for focused RED evidence.',
+      'Use pn tdd <test-file> [...] for focused GREEN evidence plus the canonical typecheck.',
+    ].join('\n'),
+  )
+}
+
+
 export function interpretTestRunResult(result: TestRunResult): {
   exitCode: number | null
   signal: NodeJS.Signals | null
@@ -317,6 +330,7 @@ export function runTestFiles(testFiles: string[]): number {
 }
 
 async function main(): Promise<void> {
+  validateTestRunnerArguments(process.argv.slice(2))
   const testFiles = await discoverTestFiles(resolve(process.cwd(), 'tests'))
   console.log(`Discovered ${testFiles.length} test files`)
   process.exitCode = runTestFiles(testFiles)

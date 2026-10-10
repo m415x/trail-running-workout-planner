@@ -37,6 +37,54 @@ fresh-chat capable next story
 - Large tool outputs should not be repeatedly reloaded or carried conceptually after their decision-relevant findings and stable locators are known.
 - A Jira story is the natural compaction boundary: closure converts working context into architecture, glossary/research changes where relevant, indexes, Jira evidence and a concise handoff.
 
+## Harness v2 — current operational workflow
+
+Harness v2 is the current execution model. `AGENTS.md` remains the normative authority; this section explains the operational state machine that fresh chats must follow.
+
+### Execution state machine
+
+```text
+bootstrap / discovery
+        ↓
+approved decomposition
+        ↓
+focused RED → GREEN → recoverable checkpoint
+        ↓
+candidate
+        ↓
+full applicable gate + walkthrough + AC audit
+        ↓
+docs pre-merge reconciliation
+        ↓
+PR creation/update + review + required checks
+        ↓
+merge to dev
+        ↓
+post-merge reconciliation
+        ↓
+verify dev + current handoff + story handoff + indexes + Jira
+        ↓
+fresh-chat-safe
+```
+
+The approved decomposition authorizes continuous execution of its routine RED/GREEN cuts. The approved closure task likewise authorizes the routine closure sequence through merge and post-merge publication; repeated human approvals for documentation updates, PR review, merge or Jira bookkeeping are not part of the workflow. Human intervention is reserved for a material product/security decision, unexpected failure, non-trivial integration conflict, external blocker or scope change.
+
+### Runner invariants
+
+- `pn tdd:red <test-file> [...]` performs the repository sync and focused RED run.
+- `pn tdd <test-file> [...]` performs the same sync, focused GREEN run and canonical typecheck.
+- Do not ask for separate `git pull` before either runner.
+- Do not ask for separate `pn tsc` after `pn tdd`.
+- `pn test` is full-suite only and rejects positional test paths. Focused evidence belongs to the TDD runners.
+
+### Closure publication invariant
+
+A merged PR is not enough to make a story resumable by a fresh chat. Closure is complete only after the integrated `dev` head, Jira and durable documentation agree. The final publication must preserve evidence identity: candidate/gate SHA, PR head, merge SHA and later documentation-only SHAs are distinct facts. `docs/handoffs/current.md` and the relevant index must point to the newest integrated baseline, and `pn docs:handoff:check` must pass before closure is considered structurally published.
+
+### Harness v1 status
+
+`harness-eval-v1` is historical evaluation evidence. Its records remain useful rationale, but Harness v2 is now the current operational workflow and supersedes v1 instructions that deferred post-experiment changes.
+
 ## Fresh-chat and focused TDD execution contract
 
 The intended fresh-chat prompt is deliberately small because the durable workflow lives in `AGENTS.md` and this harness. A fresh chat should normally need only to request the durable bootstrap, reconstruction of the current remote/Jira state and a brief diagnosis before implementation.
@@ -126,7 +174,7 @@ Stop expanding the micro-sprint and request a human decision when completing the
 
 ## Evaluation protocol
 
-`harness-eval-v1` is frozen for the final two Epic 3 stories. Do not tune it between stories unless a rule causes a blocking safety/correctness failure. Record such an exception explicitly.
+`harness-eval-v1` is historical evaluation evidence from the Epic 3 experiment. Do not treat its freeze as current operational policy; Harness v2 above is the active workflow.
 
 At each story closure, append one compact record using the template below. Counts should be based on observable trace/evidence when available; use `unknown` rather than inventing precision.
 
@@ -147,7 +195,7 @@ At each story closure, append one compact record using the template below. Count
 - Corrective human interventions attributable to harness behavior: <count + description>
 - Durable documentation/handoff complete: <yes/no + gaps>
 - Evidence that reduced context/tool usage harmed correctness: <none/description>
-- Notes for post-experiment v2 (do not change v1 yet): <short observations>
+- Notes retained from the historical v1 experiment: <short observations>
 ```
 
 ## Behavioral evals
@@ -174,7 +222,7 @@ These are expected harness behaviors rather than product tests:
 
 ## Post-experiment review
 
-After both remaining Epic 3 stories are complete, compare their evaluation records. Classify observations as:
+The historical Epic 3 review compared the v1 evaluation records. Classify observations as:
 
 - **keep** — rule demonstrably prevented waste/error or improved continuity;
 - **remove** — rule added ceremony/context without observable value;
@@ -200,7 +248,7 @@ Only then publish a `harness-eval-v2` change. Avoid optimizing solely for fewer 
 - Corrective human interventions attributable to harness behavior: the human flagged repeated evidence requests, athlete-first edition/course filtering, Stats-vs-Plan information architecture, RaceEdition density and stale participation-editor state.
 - Durable documentation/handoff complete: yes for KAN-281; architecture, glossary, indexes, handoff and next-story baseline were consolidated by KAN-367.
 - Evidence that reduced context/tool usage harmed correctness: structural source tests and narrow static inspection gave false confidence around independent edition/course selects, a form-field contract mismatch and RSC/client state synchronization; manual runtime validation materially improved correctness.
-- Notes for post-experiment v2 (do not change v1 yet): retain source-of-truth ordering, manual closure walkthrough and focused/partitioned verification. Review how structural source tests are weighted, how already-supplied human evidence is tracked, and how retry limits are enforced for type-system/schema experiments.
+- Notes retained from the historical v1 experiment: retain source-of-truth ordering, manual closure walkthrough and focused/partitioned verification. Review how structural source tests are weighted, how already-supplied human evidence is tracked, and how retry limits are enforced for type-system/schema experiments.
 
 
 ### KAN-282 — harness-eval-v1
@@ -217,7 +265,7 @@ Only then publish a `harness-eval-v2` change. Avoid optimizing solely for fewer 
 - Corrective human interventions attributable to harness behavior: observed. The human corrected the shell assumption, exposed the missing-pull RED failure, reported the KAN-370 disappearing dialog, reported the KAN-371 RSC runtime and implicit-submit defects, and surfaced course-change confirmation plus legacy athlete i18n/future-DOB follow-up debt.
 - Durable documentation/handoff complete: yes; action-safety architecture, Epic 3 handoff, Bash shell rule, Jira evidence and follow-up issues are durable.
 - Evidence that reduced context/tool usage harmed correctness: source-regex/structural tests alone gave false confidence around client ownership and browser runtime behavior. Manual walkthroughs and targeted instrumentation were necessary; reduced source loading itself was not shown to be the cause.
-- Notes for post-experiment v2 (do not change v1 yet): keep source-of-truth ordering, focused verification, story-level full gates, manual runtime walkthroughs and durable handoffs. Revise retry enforcement, branch-aware search discipline and tracking of already-known shell/evidence state. Treat structural source tests as regression hints, not runtime proof.
+- Notes retained from the historical v1 experiment: keep source-of-truth ordering, focused verification, story-level full gates, manual runtime walkthroughs and durable handoffs. Revise retry enforcement, branch-aware search discipline and tracking of already-known shell/evidence state. Treat structural source tests as regression hints, not runtime proof.
 
 ## Post-experiment comparison — KAN-281 vs KAN-282
 
@@ -241,7 +289,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: 0; human responses during TDD supplied expected execution evidence and surfaced normal failing assertions/typecheck output.
 - Durable documentation/handoff complete: yes; memberships architecture, documentation index and KAN-493 handoff were updated before final gate.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused tests exposed legacy caller/type and UI presentation mismatches before closure.
-- Notes for post-experiment v2 (do not change v1 yet): explicit evidence-state tracking continued to prevent false RED/GREEN claims; retry-budget discipline worked for the transient Jira outage. Structural tests remain regression evidence, not substitutes for the manual closure walkthrough.
+- Notes retained from the historical v1 experiment: explicit evidence-state tracking continued to prevent false RED/GREEN claims; retry-budget discipline worked for the transient Jira outage. Structural tests remain regression evidence, not substitutes for the manual closure walkthrough.
 
 
 ### KAN-463 — harness-eval-v1
@@ -258,7 +306,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: 0; the human supplied expected RED/GREEN execution evidence and made the product decision that prior-month pending extensions must not block before implementation.
 - Durable documentation/handoff complete: yes before final gate; Membership architecture, documentation index and KAN-499 handoff record the H5 contract and KAN-464 entry boundary.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused domain/read-model/UI tests plus cross-surface boundary regressions covered the intended seams; manual walkthrough remains required closure evidence.
-- Notes for post-experiment v2 (do not change v1 yet): querying project issue-type metadata immediately after the first Jira type mismatch avoided a retry loop. Continue distinguishing product-semantic changes from implementation defects and record GREEN-on-introduction regressions honestly.
+- Notes retained from the historical v1 experiment: querying project issue-type metadata immediately after the first Jira type mismatch avoided a retry loop. Continue distinguishing product-semantic changes from implementation defects and record GREEN-on-introduction regressions honestly.
 
 
 ### KAN-504 — harness-eval-v1
@@ -275,7 +323,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: 1 minor. The human surfaced that the multi-group walkthrough case could not be reproduced naturally, which led to an evidence-class clarification rather than a product/code change.
 - Durable documentation/handoff complete: yes; planning-cohort and race-catalog planning contracts, architecture/documentation indexes and the KAN-473 handoff now encode the KAN-504 baseline and KAN-505 entry boundary.
 - Evidence that reduced context/tool usage harmed correctness: none observed. The one structural false-positive came from test scope, not reduced retrieval, and was corrected before implementation evidence was accepted.
-- Notes for post-experiment v2 (do not change v1 yet): continue treating structural tests as wiring hints rather than runtime proof. Preserve the distinction between naturally reproducible walkthrough evidence and deterministic automated evidence; do not manufacture demo data solely to satisfy a visual checklist.
+- Notes retained from the historical v1 experiment: continue treating structural tests as wiring hints rather than runtime proof. Preserve the distinction between naturally reproducible walkthrough evidence and deterministic automated evidence; do not manufacture demo data solely to satisfy a visual checklist.
 
 
 ### KAN-522 — harness-eval-v1
@@ -292,7 +340,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: 0 material; human RED/GREEN and full-gate evidence followed the approved workflow.
 - Durable documentation/handoff complete: yes; planning-cohort, session-generation and KAN-473 handoff contracts now encode planning-scope prescription identity and Athlete resolution.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused RED/GREEN cycles exposed the relevant boundaries while closure reconciliation caught the remaining manual-edit mismatch.
-- Notes for post-experiment v2 (do not change v1 yet): continue distinguishing pure reconciler preconditions from persistence/orchestration boundaries. Shorter Jira evidence payloads are more reliable with the connector.
+- Notes retained from the historical v1 experiment: continue distinguishing pure reconciler preconditions from persistence/orchestration boundaries. Shorter Jira evidence payloads are more reliable with the connector.
 
 
 ### KAN-521 — harness-eval-v1
@@ -309,7 +357,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: several product/UX findings came from the human walkthrough, but they were not caused by missing durable context; they materially improved runtime correctness and usability before closure.
 - Durable documentation/handoff complete: yes; planning architecture and KAN-473 handoff now record KAN-521 authority, audit, regeneration, Athlete resolution and deferred i18n debt.
 - Evidence that reduced context/tool usage harmed correctness: none observed. The main missed issues were runtime/interaction defects that required manual walkthrough rather than broader source loading.
-- Notes for post-experiment v2 (do not change v1 yet): preserve final manual walkthroughs and the rule that any post-gate code change invalidates closure evidence. Structural tests remain useful regression hints, but runtime state transitions and UI affordances need behavioral/manual verification.
+- Notes retained from the historical v1 experiment: preserve final manual walkthroughs and the rule that any post-gate code change invalidates closure evidence. Structural tests remain useful regression hints, but runtime state transitions and UI affordances need behavioral/manual verification.
 
 
 ### KAN-505 — harness-eval-v1
@@ -326,7 +374,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: 1 minor workflow correction; the human pointed out the redundant standalone `tsc` request during focused TDD. Other human RED/GREEN outputs and walkthrough findings were normal execution evidence rather than harness corrections.
 - Durable documentation/handoff complete: yes; session-generation architecture, documentation index and KAN-473 handoff now encode KAN-505 provenance, persistence, UI and downstream boundaries plus the KAN-506 entry point.
 - Evidence that reduced context/tool usage harmed correctness: none observed. Focused retrieval and TDD exposed the relevant seams; the remaining presentation issue was found by explicit AC-by-AC closure review.
-- Notes for post-experiment v2 (do not change v1 yet): keep explicit AC-by-AC closure review and manual walkthroughs. Track command composition more carefully so focused TDD commands are not followed by redundant standalone typecheck requests unless a story-level gate specifically requires them.
+- Notes retained from the historical v1 experiment: keep explicit AC-by-AC closure review and manual walkthroughs. Track command composition more carefully so focused TDD commands are not followed by redundant standalone typecheck requests unless a story-level gate specifically requires them.
 
 
 ### KAN-506 — harness-eval-v1
@@ -343,7 +391,7 @@ For a future v2, classify the current observations as follows: **keep** source-o
 - Corrective human interventions attributable to harness behavior: manual ES/EN walkthrough materially identified presentation debt that structural catalog parity could not detect; this validates the existing rule that `pn i18n:check` is not complete UI-localization proof.
 - Durable documentation/handoff complete: yes at formal closure; internationalization policy, documentation index, and KAN-473 handoff record the regional-consumption boundary and KAN-507 entry point.
 - Evidence that reduced context/tool usage harmed correctness: none observed. The remaining defects were runtime/presentation findings caught by the required walkthrough rather than missing broad source retrieval.
-- Notes for post-experiment v2 (do not change v1 yet): keep explicit ES/EN walkthroughs for cross-cutting localization stories, preserve focused residual-copy inventories, and treat schema-drift failures as environment evidence before modifying application code.
+- Notes retained from the historical v1 experiment: keep explicit ES/EN walkthroughs for cross-cutting localization stories, preserve focused residual-copy inventories, and treat schema-drift failures as environment evidence before modifying application code.
 
 
 ### KAN-508 — harness-eval-v1
