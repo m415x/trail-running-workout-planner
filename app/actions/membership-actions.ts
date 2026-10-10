@@ -5,13 +5,14 @@ import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
 import { and, eq } from 'drizzle-orm'
-import { teams, athleteProfiles, monthlyCharges } from '@/db/schema'
+import { teams, athleteProfiles, monthlyCharges, paymentRevisions } from '@/db/schema'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerEvidenceSource } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH6EconomicAuthorizationBoundary } from '@/lib/authorization/h6-economic-authorization'
 import { createH6PolicyAction } from '@/lib/memberships/h6-policy-action'
 import { createH6TermsAndMaterializationActions } from '@/lib/memberships/h6-terms-materialization-actions'
 import { createH6EconomicExceptionActions } from '@/lib/memberships/h6-economic-exception-actions'
+import { createH6PaymentActions } from '@/lib/memberships/h6-payment-actions'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
@@ -201,6 +202,60 @@ export async function materializeTeamMonthlyChargesAction(input: {
 }
 
 
+const authorizedPayments = createH6PaymentActions({
+  authenticate: async () => {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+  },
+  authorize: (access, request) => economicPolicyBoundary.authorize(access, request),
+  ownsCharge: async (teamId, athleteId, chargeId) => {
+    const row = db.select({ id: monthlyCharges.id }).from(monthlyCharges)
+      .innerJoin(athleteProfiles, eq(monthlyCharges.athleteId, athleteProfiles.id))
+      .where(and(
+        eq(monthlyCharges.id, chargeId),
+        eq(monthlyCharges.athleteId, athleteId),
+        eq(monthlyCharges.isDeleted, false),
+        eq(athleteProfiles.teamId, teamId),
+        eq(athleteProfiles.isDeleted, false),
+      )).get()
+    return Boolean(row)
+  },
+  ownsPayment: async (teamId, athleteId, chargeId, paymentId) => {
+    const row = db.select({ id: paymentRevisions.id }).from(paymentRevisions)
+      .innerJoin(monthlyCharges, eq(paymentRevisions.monthlyChargeId, monthlyCharges.id))
+      .innerJoin(athleteProfiles, eq(monthlyCharges.athleteId, athleteProfiles.id))
+      .where(and(
+        eq(paymentRevisions.paymentId, paymentId),
+        eq(paymentRevisions.monthlyChargeId, chargeId),
+        eq(paymentRevisions.isDeleted, false),
+        eq(monthlyCharges.id, chargeId),
+        eq(monthlyCharges.athleteId, athleteId),
+        eq(monthlyCharges.isDeleted, false),
+        eq(athleteProfiles.teamId, teamId),
+        eq(athleteProfiles.isDeleted, false),
+      )).get()
+    return Boolean(row)
+  },
+  register: (teamId, input) => runtime.registerManualPayment({
+    teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
+    amountMinor: input.amountMinor, paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+  }),
+  correct: (teamId, input) => runtime.correctManualPayment({
+    teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
+    paymentId: input.paymentId, amountMinor: input.amountMinor,
+    paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+  }),
+  voidPayment: (teamId, input) => runtime.voidManualPayment({
+    teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
+    paymentId: input.paymentId,
+  }),
+  revalidate: revalidatePath,
+  now: () => new Date().toISOString(),
+})
+
 export async function registerManualPaymentAction(input: {
   athleteId: string
   monthlyChargeId: string
@@ -209,7 +264,7 @@ export async function registerManualPaymentAction(input: {
   paidAt: string
   locale: 'es' | 'en'
 }) {
-  return handlers.registerManualPayment(input)
+  return authorizedPayments.register(input)
 }
 
 
@@ -222,7 +277,7 @@ export async function correctManualPaymentAction(input: {
   paidAt: string
   locale: 'es' | 'en'
 }) {
-  return handlers.correctManualPayment(input)
+  return authorizedPayments.correct(input)
 }
 
 export async function voidManualPaymentAction(input: {
@@ -231,5 +286,5 @@ export async function voidManualPaymentAction(input: {
   paymentId: string
   locale: 'es' | 'en'
 }) {
-  return handlers.voidManualPayment(input)
+  return authorizedPayments.voidPayment(input)
 }
