@@ -55,14 +55,14 @@ Existing SELF reads Home Athlete, Plan, Stats, Profile and Membership, together 
 | T9 KAN-722 | `tests/memberships/kan-722-h6-debt-reversal-isolation.test.ts` | Settlement/reversal, Team isolation, SELF reads retained |
 | T10 KAN-723 | `tests/authorization/kan-723-h6-closure-regression.test.ts` | Closure contract plus full gates, walkthrough, Jira/PR/merge |
 
-Each micro-sprint produces focused RED/GREEN evidence bound to recoverable SHA. Full `pn verify --db` 6/6 and interactive ES/EN acceptance belong to T10 absent a technical reason to run earlier. The T1 RED was operator-reported against `3107ed0d3a8b8fa3b5481b1d40c22abbba0cf093`; no GREEN is claimed yet.
+Each micro-sprint produces focused RED/GREEN evidence bound to recoverable SHA. Full `pn verify --db` 6/6 and interactive ES/EN acceptance belong to T10 absent a technical reason to run earlier. The T1 RED was operator-reported against `3107ed0d3a8b8fa3b5481b1d40c22abbba0cf093`; subsequent T1–T10 GREEN evidence and final 6/6 gate are recorded in the KAN-609 closure handoff.
 
 ## KAN-723/T10 acceptance and handoff (2026-10-10)
 
-- Operator-verified `pn verify --db` PASS 6/6 at `34bedaaf00d5cabb7c992f09e95ce9223e656c5e`: Tests, TypeScript, ESLint, Build, i18n and SQLite.
+- Operator-verified final `pn verify --db` PASS 6/6 at `fce3403bb10767dcd4927c8e92619a3bd2cf809d` (168150 ms): Tests, TypeScript, ESLint, Build, i18n and SQLite. Previous PASS at `34bedaaf00d5cabb7c992f09e95ce9223e656c5e` is historical, not the final gate.
 - Focused GREEN: KAN-720, KAN-721, KAN-723 UI refusal/reason localization; ES/EN form inputs survive denied saves.
 - Interactive PASS: overdue prior-month charge blocks creation; settlement permits creation/correction; payment reversal restores denial of both; future-effective charge extension unblocks both; Athlete reads continue; blocked message checked in ES/EN.
 - `unavailable` is proven by controlled tests and does not require corrupting real billing state for interactive testing.
-- The final diff review must confirm neither SELF boundary invokes persistence, revalidation or other durable side effects before H6 DENY.
+- The final PR #48 diff review confirmed neither SELF boundary invokes persistence, revalidation or other durable side effects before H6 DENY; KAN-721 was approved as sufficient no-mutation evidence.
 - Authentication and navigation follow-up is KAN-724, deliberately outside PR #48.
-- Post-merge verification remains distinct and is not claimed by premerge evidence.
+- PR #48 was merged into `dev` with merge commit `24318f1e33111b002086452add32fc11d0f7368e`; KAN-609 and KAN-723 are Finalizada. The premerge gate is SHA-specific; no post-merge 6/6 gate is claimed. See [`../handoffs/kan-609.md`](../handoffs/kan-609.md).
