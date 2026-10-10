@@ -319,7 +319,7 @@ test('persists recorder user identity through the create application boundary', 
 
   assert.equal(result.success, true)
   assert.equal(inserted[0]?.recordedBy, 'coach')
-  assert.equal(inserted[0]?.recordedByUserId, null, 'unverified coachUserId must not be persisted as factual H2 authorship')
+  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
 })
 
 
@@ -477,7 +477,7 @@ test('coach official evidence does not trust client coachUserId as recorder prov
   assert.equal(inserted[0]?.executionContext, 'official')
   assert.equal(inserted[0]?.testEventId, 'event_2026_09')
   assert.equal(inserted[0]?.recordedBy, 'coach')
-  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+  assert.equal(inserted[0]?.recordedByUserId, null, 'unverified coachUserId must not be persisted as factual H2 authorship')
   assert.equal(inserted[0]?.reviewStatus, 'accepted')
 })
 
