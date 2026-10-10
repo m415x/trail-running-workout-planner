@@ -62,6 +62,31 @@ Confirm exact versions from `package.json`/lockfile and installed docs before re
 - `pn db:supabase:verify` — verify remote application tables + RLS
 - `pn db:supabase:verify:h11` — H11 transaction semantics probe
 
+## Non-negotiable workflow invariants
+
+These rules override generic coding-agent habits for this repository.
+
+### Focused TDD command authority
+
+- `pn test` is full-suite only. Never pass a test path to `pn test`; the CLI rejects positional arguments. Use `pn tdd:red <test-file> [...]` for focused RED and `pn tdd <test-file> [...]` for focused GREEN.
+- Never request `git pull` separately when the next local command is `pn tdd:red` or `pn tdd`; both runners already execute `git pull --ff-only -q`.
+- Never request `pn tsc` separately after `pn tdd`; the GREEN runner already performs the canonical typecheck.
+- Do not substitute raw `tsx --test`, `node --test`, `pn test <file>` or another ad-hoc command for the focused runner unless diagnosing an unexpected runner/tooling failure. Diagnostic commands do not replace the canonical RED/GREEN evidence.
+
+### Continuous approved execution
+
+- Approval of a story/task decomposition authorizes continuous RED → GREEN → recoverable checkpoint → next approved cut. Do not ask for routine confirmation between those steps.
+- Approval of the final story-closure task authorizes the routine closure sequence: documentation reconciliation → PR creation/update → PR review and required checks → merge to `dev` → post-merge reconciliation → Jira closure evidence. Do not ask the human to approve documentation edits, PR review, readiness, merge, or routine post-merge bookkeeping separately.
+- Stop and request a human decision only for a material product/security decision, unexpected in-scope defect that invalidates the approved decomposition, required check/gate failure that cannot be classified mechanically, non-trivial merge/integration conflict, external blocker, or scope change.
+
+### Fresh-chat-safe closure
+
+- A story is not operationally closed merely because code is GREEN, Jira says Finalizada, or a PR was merged. It is **fresh-chat-safe** only when the integrated `dev` state and durable documentation agree on the delivered baseline.
+- The closure task must distinguish candidate/gate SHA, PR head SHA, merge SHA and any later documentation-only SHA. Never attribute a pre-merge gate to the merge commit.
+- After merge, verify the remote `dev` head and complete the post-merge documentation/Jira reconciliation before declaring the story fresh-chat-safe.
+- `docs/handoffs/current.md` must identify the latest integrated operational baseline; the story handoff and relevant indexes must be reachable and must not describe an older story as current.
+- Run `pn docs:handoff:check` during closure documentation reconciliation. A passing structural check does not replace semantic review of the handoff and indexes.
+
 ## Source-of-truth order
 
 1. Current code/schema/types and tests for actual behavior.
@@ -114,7 +139,7 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
 - Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
 - The final approved task is the story-closure task, not a generic documentation task. Its description and acceptance criteria must encode the closure evidence implied by that story: applicable full technical gates, persistence/security verification, manual walkthrough, acceptance-criteria audit, durable documentation/handoff and index reconciliation, known limitations/deferred work, Jira closure evidence, and the integration sequence back to `dev`.
-- Keep the parent story `En curso` while the closure task is being executed. Complete and record the closure task's technical/documentation evidence first; then perform the prescribed final Jira transitions so the closure task does not create a circular requirement that the parent already be closed.
+- Keep the parent story `En curso` while the closure task is being executed. Complete and record the closure task's technical/documentation evidence first; then execute the approved closure sequence continuously through PR review, merge, post-merge documentation/Jira reconciliation and fresh-chat-safe publication. Do not create a circular requirement that the parent already be closed.
 
 ## Architecture and directory map
 
@@ -296,22 +321,9 @@ The KAN-281/KAN-282 story workflow experiment used **harness-eval-v1** and is co
 
 Preserve the source-of-truth ordering, focused verification, final full gate, manual runtime walkthrough, durable handoff and fresh-chat-capable boundaries established by that evaluation. Do not modify the published harness as incidental feature work. Potential v2 changes require an explicit workflow decision based on the recorded evidence.
 
-## Fresh-chat bootstrap contract
+## Fresh-chat bootstrap reference
 
-A new chat must be able to start a story from repository/Jira state alone. Conversation memory is navigation-only and must not be required for correctness.
-
-When the human provides the minimal new-story bootstrap prompt, execute this sequence idempotently:
-
-1. Read this `AGENTS.md` and `docs/README.md` from current `dev`.
-2. Read the single current/recent operational handoff identified by the documentation index. Treat completed-story handoffs as navigation context, not current execution state.
-3. Read `docs/agent-harness.md` as the workflow evaluation/discipline companion. Apply its durable lessons throughout the story while keeping this file as operational authority; do not modify the published harness incidentally.
-4. Read only the architecture/glossary/research/history documents materially relevant to the candidate story.
-5. Verify the baseline against focused current code/tests on `dev` before trusting a stale description.
-6. Only then read the complete Jira story, its parent/dependencies, comments, relations and existing subtasks. Jira selects/scopes the next work; repository docs do not silently promote a deferred item into active scope.
-7. Reconcile discrepancies explicitly and present the story understanding, reusable infrastructure, risks, unresolved decisions and proposed bounded task decomposition.
-8. Wait for human approval of that analysis/decomposition before creating Jira tasks, a story branch or implementation commits.
-
-Repeating this bootstrap must produce the same project understanding for the same `dev` + Jira state and must not append chat-specific state to this file. Keep story-specific execution state in Jira and the current handoff; keep durable domain truth in architecture/docs/code/tests.
+The normative fresh-chat bootstrap is defined once near the top of this file under **Fresh-chat bootstrap contract**. Do not maintain a second copy here. `docs/agent-harness.md` contains the current Harness v2 execution model and historical evaluation context.
 
 ## Current completed-epic baseline
 
