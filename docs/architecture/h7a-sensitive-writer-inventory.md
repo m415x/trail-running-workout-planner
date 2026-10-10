@@ -160,3 +160,9 @@ These lines express the current no-caller hypothesis for the focused source scan
 Grant writer deployment decision: no verified production mutation entrypoint.
 
 The `authorizationGrants` model retains `grantedByUserId` and `revokedByUserId` for historical provenance. The verified H3 path reads these grants to evaluate authority, while `lib/authorization/grant-lifecycle.ts` validates lifecycle semantics; neither constitutes a deployed grant/revoke operation. The scoped `app/` and `lib/` inventory found **no deployed grant mutation writer**. Therefore KAN-736 does not add a synthetic grant action, bypass H3, or backfill inferred authors. A future mutation entrypoint requires a fresh H2/H3 authorization review and atomic authorship persistence before activation.
+
+## External identity writer deployment decision (KAN-738)
+
+External identity writer deployment decision: no verified authenticated caller.
+
+`associateAuthorizedExternalIdentity` is a real transactional SQLite helper with same-owner idempotence and cross-user collision rejection. It does not validate a provider session, authenticate an H2 actor, authorize an H3 Team, or persist author provenance. The focused production caller scan found no invocation in `app/` or `lib/`; consequently it is **not** an authenticated deployed association entrypoint. Future activation requires a validated provider credential, a trusted H2 subject, any applicable H3 scope, and atomic factual authorship, without inferring ownership from client `provider`/`subject` fields.
