@@ -199,6 +199,7 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().applyInitialTerms({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
@@ -336,6 +337,7 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().applyInitialTerms({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
@@ -369,6 +371,7 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().changeTerms({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
