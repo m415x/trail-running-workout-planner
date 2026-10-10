@@ -41,3 +41,27 @@ test('KAN-725 rejects stale or incomplete durable handoff publication', () => {
   assert.ok(errors.some((error) => error.includes('kan-609.md')))
   assert.ok(errors.some((error) => error.includes('KAN-609')))
 })
+
+
+test('KAN-725 rejects a current story mentioned outside the Handoffs section while that section is stale', () => {
+  const errors = validateOperationalHandoff({
+    currentContent: `# Current operational handoff — KAN-725 Harness v2 merged baseline
+
+## Verified integration
+- KAN-725: **Finalizada**.
+`,
+    docsIndexContent: `# Documentation index
+
+## Handoffs
+
+[handoffs/current.md](handoffs/current.md) records the completed KAN-609/H6 merged checkpoint, with details in [handoffs/kan-609.md](handoffs/kan-609.md).
+
+## Agent harness
+
+KAN-725 introduced Harness v2. See [handoffs/kan-725.md](handoffs/kan-725.md).
+`,
+    availableHandoffs: ['current.md', 'kan-609.md', 'kan-725.md'],
+  })
+
+  assert.ok(errors.some((error) => error.includes('Handoffs section')))
+})
