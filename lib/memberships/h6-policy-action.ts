@@ -1,4 +1,6 @@
 import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
+import { resolveAuthorizedH7aWriterContext } from '@/lib/authorization/h7a-trusted-authorship'
+import type { TrustedH7aAuthorship } from '@/lib/authorization/h7a-trusted-authorship'
 
 type PolicyInput = {
   effectiveFrom: string
@@ -15,7 +17,7 @@ export function createH6PolicyAction(deps: {
     access: RequireAuthenticatedActionResult,
     request: { at: string; capability: 'economic_policy.manage'; resourceId: string },
   ): Promise<{ allowed: boolean; teamId?: string }>
-  configure(teamId: string, input: PolicyInput): Promise<PolicyResult>
+  configure(teamId: string, input: PolicyInput, authorship: TrustedH7aAuthorship): Promise<PolicyResult>
   revalidate(): void
   now(): string
 }) {
@@ -30,10 +32,11 @@ export function createH6PolicyAction(deps: {
         capability: 'economic_policy.manage',
         resourceId: '__active_team_policy__',
       })
-      if (!decision.allowed || !decision.teamId) {
+      const writerContext = resolveAuthorizedH7aWriterContext(access, decision)
+      if (!writerContext) {
         return { success: false, error: 'Acceso no autorizado' }
       }
-      const result = await deps.configure(decision.teamId, input)
+      const result = await deps.configure(writerContext.teamId, input, writerContext.authorship)
       if (result.success) deps.revalidate()
       return result
     } catch {
