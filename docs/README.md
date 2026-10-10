@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-725 Harness v2 merged checkpoint**, with full workflow/closure evidence in [`handoffs/kan-725.md`](handoffs/kan-725.md) and the operational model in [`agent-harness.md`](agent-harness.md). KAN-609/H6 remains the previous product-domain baseline and is preserved in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-725 Harness v2 merged checkpoint**, with full workflow/closure evidence in [`handoffs/kan-725.md`](handoffs/kan-725.md) and the operational model in [`agent-harness.md`](agent-harness.md). KAN-609/H6 merged checkpoint remains the previous product-domain baseline and is preserved in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine actual integration state.
 
 ## Verification runner
 
