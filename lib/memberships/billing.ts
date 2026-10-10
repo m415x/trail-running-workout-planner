@@ -703,6 +703,7 @@ export type PaymentRevision = {
   paidAt: string
   voided: boolean
   isCurrent: boolean
+  createdByUserId?: string | null
 }
 
 /**
@@ -717,6 +718,7 @@ export function applyPaymentRevision(input: {
   paymentMethod: PaymentMethod
   paidAt: string
   voided: boolean
+  createdByUserId?: string | null
 }): PaymentRevision[] {
   if (!Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) {
     throw new Error('Payment amount must be a positive integer in minor units')
@@ -737,6 +739,7 @@ export function applyPaymentRevision(input: {
       revision.isCurrent ? { ...revision, isCurrent: false } : revision,
     ),
     {
+      createdByUserId: input.createdByUserId ?? null,
       revisionId: input.revisionId,
       paymentId: input.paymentId,
       monthlyChargeId: input.monthlyChargeId,
