@@ -13,23 +13,26 @@ function functionBody(source: string, name: string): string {
   return next === -1 ? source.slice(start) : source.slice(start, next)
 }
 
-test('KAN-641 Coach economic mutation applies H2 action guard before handler execution', () => {
+test('KAN-641 Coach economic mutation routes H2 and H3 ahead of persistence', () => {
   const body = functionBody(membership, 'configureTeamEconomicPolicyAction')
 
   assert.match(membership, /requireAuthenticatedEptAction/)
   assert.match(membership, /readEptSessionAccessState/)
   assert.match(membership, /createSupabaseServerClient/)
   assert.match(membership, /createExternalIdentityLookup/)
+  assert.match(membership, /createH6PolicyAction/)
+  assert.match(membership, /economicPolicyBoundary\.authorize/)
+  assert.match(membership, /runtime\.configureTeamEconomicPolicy/)
+  assert.match(body, /configureAuthorizedPolicy\(input\)/)
 
-  const guardIndex = body.indexOf('requireAuthenticatedEptAction')
-  const handlerIndex = body.indexOf('handlers.configureTeamEconomicPolicy')
-
-  assert.ok(guardIndex >= 0)
-  assert.ok(handlerIndex > guardIndex)
-  assert.match(body, /status\s*!==\s*['"]authenticated['"]/)
-  assert.match(body, /success:\s*false/)
-  assert.match(body, /error:\s*['\"]Acceso no autorizado['\"]/)
+  const policy = readFileSync('lib/memberships/h6-policy-action.ts', 'utf8')
+  assert.ok(policy.indexOf('deps.authenticate()') < policy.indexOf('deps.authorize(access'))
+  assert.ok(policy.indexOf('deps.authorize(access') < policy.indexOf('deps.configure(decision.teamId'))
+  assert.match(policy, /access\.status !== 'authenticated'/)
+  assert.match(policy, /'economic_policy\.manage'/)
+  assert.match(policy, /success: false, error: 'Acceso no autorizado'/)
 })
+
 
 test('KAN-641 Athlete current-profile read applies H2 action guard before database access', () => {
   const body = functionBody(dashboard, 'getCurrentAthlete')
@@ -50,7 +53,8 @@ test('KAN-641 Athlete current-profile read applies H2 action guard before databa
 
 test('KAN-641 H2 remains mandatory while H5A SELF explicitly narrows Athlete reads', () => {
   const economicMutation = functionBody(membership, 'configureTeamEconomicPolicyAction')
-  assert.match(economicMutation, /requireAuthenticatedEptAction/)
+  assert.match(economicMutation, /configureAuthorizedPolicy\(input\)/)
+  assert.match(membership, /requireAuthenticatedEptAction/)
   assert.doesNotMatch(economicMutation, /createH5aSelfNextServerContext|planning\.self\.read|workout_log\.self\.manage/)
 
   const athleteRead = functionBody(dashboard, 'getCurrentAthlete')
