@@ -805,6 +805,7 @@ export const teamEconomicPolicies = sqliteTable(
     ordinaryDueDay: integer('ordinary_due_day').notNull(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('team_economic_policies_team_dates_idx').on(table.teamId, table.effectiveFrom, table.effectiveUntil),
