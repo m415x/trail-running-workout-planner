@@ -18,6 +18,7 @@ export function createBillingCoachService(repository: BillingCoachRepository) {
     async configureTeamEconomicPolicy(input: {
       teamId: string
       policyId: string
+      createdByUserId?: string | null
       effectiveFrom: string
       defaultMonthlyAmountMinor: number
       currency: string
@@ -35,6 +36,7 @@ export function createBillingCoachService(repository: BillingCoachRepository) {
       if (!current) {
         const policy = createTeamEconomicPolicy({
           id: input.policyId,
+          createdByUserId: input.createdByUserId ?? null,
           teamId: input.teamId,
           defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
           currency: input.currency,
@@ -49,6 +51,7 @@ export function createBillingCoachService(repository: BillingCoachRepository) {
       const { current: closed, replacement } = replaceTeamEconomicPolicy({
         current,
         replacementId: input.policyId,
+        createdByUserId: input.createdByUserId ?? null,
         effectiveFrom: input.effectiveFrom,
         defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
         currency: input.currency,
@@ -78,6 +81,7 @@ export function createSynchronousBillingCoachService(
     configureTeamEconomicPolicy(input: {
       teamId: string
       policyId: string
+      createdByUserId?: string | null
       effectiveFrom: string
       defaultMonthlyAmountMinor: number
       currency: string
@@ -95,6 +99,7 @@ export function createSynchronousBillingCoachService(
       if (!current) {
         const policy = createTeamEconomicPolicy({
           id: input.policyId,
+          createdByUserId: input.createdByUserId ?? null,
           teamId: input.teamId,
           defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
           currency: input.currency,
@@ -109,6 +114,7 @@ export function createSynchronousBillingCoachService(
       const { current: closed, replacement } = replaceTeamEconomicPolicy({
         current,
         replacementId: input.policyId,
+        createdByUserId: input.createdByUserId ?? null,
         effectiveFrom: input.effectiveFrom,
         defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
         currency: input.currency,
