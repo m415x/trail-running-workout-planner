@@ -431,6 +431,7 @@ export async function getAthleteBillingSnapshot(input: {
 
 export type GlobalDueDateExceptionRevision = {
   id: string
+  createdByUserId: string | null
   teamId: string
   year: number
   month: number
@@ -441,6 +442,7 @@ export type GlobalDueDateExceptionRevision = {
 
 export type MonthlyChargeReductionRevision = {
   id: string
+  createdByUserId: string | null
   athleteId: string
   year: number
   month: number
@@ -451,6 +453,7 @@ export type MonthlyChargeReductionRevision = {
 
 export type MonthlyChargeExtensionRevision = {
   id: string
+  createdByUserId: string | null
   athleteId: string
   year: number
   month: number
