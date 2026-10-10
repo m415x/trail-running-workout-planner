@@ -10,13 +10,15 @@ import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
 import { SelfAssessment } from '@workouts/components/SelfAssessment'
 import { useLogWorkoutDialog } from '@workouts/hooks/useLogWorkoutDialog'
 
+export type LogWorkoutSaveOutcome = boolean | 'blocked_for_prior_debt' | 'economic_evidence_unavailable'
+
 export interface LogWorkoutDialogProps {
   isOpen?: boolean
   onClose: () => void
   workout?: WorkoutProps | null
   dateStr?: string
   initialInput?: ManualRealizedTrainingClientInput | null
-  onSave?: (loggedData: ManualRealizedTrainingClientInput) => Promise<boolean>
+  onSave?: (loggedData: ManualRealizedTrainingClientInput) => Promise<LogWorkoutSaveOutcome>
 }
 
 export function LogWorkoutDialog({
