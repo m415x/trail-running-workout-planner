@@ -134,8 +134,8 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
       )).get()
     return Boolean(row)
   },
-  globalDueDate: (teamId, input) => runtime.applyGlobalDueDateException({ ...input, teamId }),
-  reduce: (teamId, input) => runtime.applyMonthlyChargeReduction({
+  globalDueDate: (teamId, input, authorship) => runtime.applyGlobalDueDateException({ ...input, teamId, authorship }),
+  reduce: (teamId, input, authorship) => runtime.applyMonthlyChargeReduction({
     teamId,
     athleteId: input.athleteId,
     monthlyChargeId: input.monthlyChargeId,
@@ -143,8 +143,9 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
     month: input.month,
     reductionAmountMinor: input.reductionAmountMinor,
     reason: input.reason,
+    authorship,
   }),
-  extend: (teamId, input) => runtime.applyMonthlyChargeExtension({
+  extend: (teamId, input, authorship) => runtime.applyMonthlyChargeExtension({
     teamId,
     athleteId: input.athleteId,
     monthlyChargeId: input.monthlyChargeId,
@@ -152,6 +153,7 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
     month: input.month,
     extendedDueDate: input.extendedDueDate,
     reason: input.reason,
+    authorship,
   }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),
