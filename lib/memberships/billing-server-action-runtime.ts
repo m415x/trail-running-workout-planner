@@ -199,7 +199,6 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().applyInitialTerms({
             ...input,
-            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
