@@ -40,6 +40,7 @@ const globalDueDateHistory: GlobalDueDateExceptionRevision[] = [
     month: 9,
     dueDate: '2026-09-08',
     reason: 'Holiday adjustment',
+    createdByUserId: null,
     isCurrent: true,
   },
 ]
@@ -52,6 +53,7 @@ const reductionHistory: MonthlyChargeReductionRevision[] = [
     month: 9,
     reductionAmountMinor: 250_000,
     reason: 'Initial scholarship',
+    createdByUserId: null,
     isCurrent: false,
   },
   {
@@ -61,6 +63,7 @@ const reductionHistory: MonthlyChargeReductionRevision[] = [
     month: 9,
     reductionAmountMinor: 500_000,
     reason: 'Corrected scholarship',
+    createdByUserId: null,
     isCurrent: true,
   },
 ]
@@ -73,6 +76,7 @@ const extensionHistory: MonthlyChargeExtensionRevision[] = [
     month: 9,
     extendedDueDate: '2026-09-12',
     reason: 'Individual extension',
+    createdByUserId: null,
     isCurrent: true,
   },
 ]
