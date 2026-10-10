@@ -264,6 +264,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
       paidAt: string
@@ -287,6 +288,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       paymentId: string
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
@@ -310,6 +312,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       paymentId: string
     }): Promise<BillingActionResult> {
       try {
