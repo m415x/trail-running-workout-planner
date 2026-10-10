@@ -45,6 +45,7 @@ type JoinMonthBillingClient = RuntimeDatabase & {
 }
 
 type ConfigureTeamEconomicPolicyInput = {
+  authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
   teamId: string
   effectiveFrom: string
   defaultMonthlyAmountMinor: number
