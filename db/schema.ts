@@ -864,6 +864,7 @@ export const globalMonthlyDueDateExceptions = sqliteTable(
     month: integer('month').notNull(),
     dueDate: text('due_date').notNull(),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -882,6 +883,7 @@ export const monthlyChargeReductions = sqliteTable(
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     reductionAmountMinor: integer('reduction_amount_minor').notNull(),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -900,6 +902,7 @@ export const monthlyChargeExtensions = sqliteTable(
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     extendedDueDate: text('extended_due_date'),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
