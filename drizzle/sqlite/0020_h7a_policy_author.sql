@@ -1,0 +1,1 @@
+ALTER TABLE `team_economic_policies` ADD `created_by_user_id` text REFERENCES users(id) ON DELETE restrict;
