@@ -480,6 +480,7 @@ function sameChargeRevision(
 export function applyGlobalDueDateException(input: {
   revisions: GlobalDueDateExceptionRevision[]
   id: string
+  createdByUserId?: string | null
   teamId: string
   year: number
   month: number
@@ -527,6 +528,7 @@ export function applyGlobalDueDateException(input: {
       year: input.year,
       month: input.month,
       dueDate: input.dueDate,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
@@ -536,6 +538,7 @@ export function applyGlobalDueDateException(input: {
 export function applyMonthlyChargeReduction(input: {
   revisions: MonthlyChargeReductionRevision[]
   id: string
+  createdByUserId?: string | null
   charge: MonthlyChargeCandidate
   reductionAmountMinor: number
   reason: string
@@ -571,6 +574,7 @@ export function applyMonthlyChargeReduction(input: {
       year: input.charge.year,
       month: input.charge.month,
       reductionAmountMinor: input.reductionAmountMinor,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
@@ -580,6 +584,7 @@ export function applyMonthlyChargeReduction(input: {
 export function applyMonthlyChargeExtension(input: {
   revisions: MonthlyChargeExtensionRevision[]
   id: string
+  createdByUserId?: string | null
   charge: MonthlyChargeCandidate
   extendedDueDate: string | null
   reason: string
@@ -611,6 +616,7 @@ export function applyMonthlyChargeExtension(input: {
       year: input.charge.year,
       month: input.charge.month,
       extendedDueDate: input.extendedDueDate,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
