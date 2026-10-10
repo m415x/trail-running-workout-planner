@@ -16,3 +16,18 @@ export function resolveTrustedH7aAuthorship(
     effectiveActorUserId: access.userId,
   }
 }
+
+export type AuthorizedH7aWriterContext = Readonly<{
+  teamId: string
+  authorship: TrustedH7aAuthorship
+}>
+
+/** Accept only the server-side H3 authorization decision as the Team authority. */
+export function resolveAuthorizedH7aWriterContext(
+  access: RequireAuthenticatedActionResult,
+  decision: Readonly<{ allowed: boolean; teamId?: string }>,
+): AuthorizedH7aWriterContext | null {
+  const authorship = resolveTrustedH7aAuthorship(access)
+  if (!authorship || !decision.allowed || !decision.teamId) return null
+  return { teamId: decision.teamId, authorship }
+}
