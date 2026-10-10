@@ -13,7 +13,7 @@ test('KAN-725 AGENTS defines non-negotiable focused TDD and continuous closure i
   assert.match(agents, /Never request `pn tsc` separately after `pn tdd`/)
   assert.match(agents, /`pn test` is full-suite only/)
   assert.match(agents, /Approval of the final story-closure task authorizes the routine closure sequence/i)
-  assert.match(agents, /documentation.*PR.*review.*merge.*post-merge reconciliation.*Jira/is)
+  assert.match(agents, /documentation[\s\S]*PR[\s\S]*review[\s\S]*merge[\s\S]*post-merge reconciliation[\s\S]*Jira/i)
   assert.match(agents, /fresh-chat-safe/i)
 })
 
@@ -21,7 +21,7 @@ test('KAN-725 harness v2 is the current operational workflow and v1 is historica
   const harness = await read('docs/agent-harness.md')
 
   assert.match(harness, /## Harness v2 — current operational workflow/)
-  assert.match(harness, /candidate.*gate.*walkthrough.*docs pre-merge.*PR.*merge.*post-merge reconciliation.*fresh-chat-safe/is)
+  assert.match(harness, /candidate[\s\S]*gate[\s\S]*walkthrough[\s\S]*docs pre-merge[\s\S]*PR[\s\S]*merge[\s\S]*post-merge reconciliation[\s\S]*fresh-chat-safe/i)
   assert.match(harness, /harness-eval-v1.*historical/i)
   assert.doesNotMatch(harness, /do not change v1 yet/i)
 })
