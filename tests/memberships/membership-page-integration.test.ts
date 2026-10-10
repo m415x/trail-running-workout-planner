@@ -97,7 +97,7 @@ test('Coach membership page exposes a localized global monthly due-date exceptio
   assert.match(form, /t\('title'\)/)
   assert.match(source, /locale=\{supportedLocale\}/)
   assert.match(actions, /applyGlobalDueDateExceptionAction/)
-  assert.match(actions, /handlers\.applyGlobalDueDateException/)
+  assert.match(actions, /authorizedEconomicExceptions\.global/)
 })
 
 
@@ -117,9 +117,9 @@ test('Coach athlete billing surface exposes localized reduction and extension co
   assert.match(form, /t\('reduction\.title'\)/)
   assert.match(form, /t\('extension\.title'\)/)
   assert.match(actions, /applyMonthlyChargeReductionAction/)
-  assert.match(actions, /handlers\.applyMonthlyChargeReduction/)
+  assert.match(actions, /authorizedEconomicExceptions\.reduction/)
   assert.match(actions, /applyMonthlyChargeExtensionAction/)
-  assert.match(actions, /handlers\.applyMonthlyChargeExtension/)
+  assert.match(actions, /authorizedEconomicExceptions\.extension/)
 })
 
 
@@ -291,7 +291,7 @@ test('KAN-479 Coach membership page exposes localized team monthly materializati
   assert.match(form, /type=['"]month['"]/)
   assert.match(form, /materializeTeamMonthlyChargesAction/)
   assert.match(actions, /materializeTeamMonthlyChargesAction/)
-  assert.match(actions, /handlers\.materializeTeamMonthlyCharges/)
+  assert.match(actions, /authorizedTermsAndMaterialization\.materialize/)
 })
 
 

@@ -183,7 +183,11 @@ export function RestCard({ date, onRealizedTrainingSaved }: RestCardProps = {}) 
       sessionId: null,
       workoutId: null,
     })
-    if (!result.success) return false
+    if (!result.success) {
+      if (result.error === 'blocked_for_prior_debt') return 'blocked_for_prior_debt' as const
+      if (result.error === 'economic_evidence_unavailable') return 'economic_evidence_unavailable' as const
+      return false
+    }
     onRealizedTrainingSaved?.(result.data)
     return true
   }

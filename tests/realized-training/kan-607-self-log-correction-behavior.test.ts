@@ -29,6 +29,7 @@ function fixture(options: { denied?: boolean; effective?: boolean } = {}) {
         status: 'resolved' as const, athleteProfileId: 'athlete-a', sessionId,
       }
     },
+    evaluateEconomicAccess: async () => ({ status: 'allowed' as const }),
     persist: (input) => {
       writes.push(input)
       return { id: 'log-a' }

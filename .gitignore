@@ -58,3 +58,6 @@ sqlite.db
 
 # MapLibre generated worker assets
 public/maplibre/
+
+# zip files
+*.zip

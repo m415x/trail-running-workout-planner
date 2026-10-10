@@ -1,5 +1,6 @@
 import { ArrowRight, CalendarDays, ChartNoAxesColumnIncreasing, Gauge, Mountain, Route } from 'lucide-react'
 import { getTranslations } from 'next-intl/server'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 
 import { getCurrentAthleteStatsAction } from '@/app/actions/athlete-stats-actions'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
@@ -62,13 +63,14 @@ function isSummary(data: AthleteStatsSummary | AthleteStatsDetails): data is Ath
 export default async function StatsPage({ params }: { params: Promise<{ locale: string }> }) {
   await params
   const t = await getTranslations('stats')
+  const tPlan = await getTranslations('AthletePlan')
   const period = athleteStatsSummaryPeriod()
   const [result, performanceResult] = await Promise.all([
     getCurrentAthleteStatsAction({ ...period, view: 'summary' }),
     getCurrentAthleteTrack1000mPerformanceAction(period.endDate),
   ])
 
-  if (result.status === 'denied') return <section className='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6'><h1 className='font-heading text-2xl font-bold'>{t('title')}</h1><p role='alert' className='mt-4 rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>{t('summary.denied')}</p></section>
+  if (result.status === 'denied') return <AthletePageState message={tPlan('unauthorized')} />
   if (result.status === 'error' || !isSummary(result.data)) return <section className='mx-auto w-full max-w-5xl px-4 py-8 sm:px-6'><h1 className='font-heading text-2xl font-bold'>{t('title')}</h1><p role='alert' className='mt-4 rounded-2xl border bg-card p-5 text-sm text-muted-foreground'>{t('summary.error')}</p></section>
 
   const view = buildAthleteStatsSummaryView(result.data)

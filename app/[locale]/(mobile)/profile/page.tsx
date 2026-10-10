@@ -1,4 +1,6 @@
 import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
+import { getTranslations } from 'next-intl/server'
+import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
 import { AthleteMembershipStatus } from '@/features/memberships/components/AthleteMembershipStatus'
 import { ProfileTab } from '@/features/profile/ProfileTab'
@@ -12,9 +14,13 @@ import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sq
 export default async function ProfilePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
   const athleteResult = await getCurrentAthlete()
+  const tPlan = await getTranslations({ locale, namespace: 'AthletePlan' })
 
+  if (athleteResult.forbidden) {
+    return <AthletePageState message={tPlan('unauthorized')} />
+  }
   if (!athleteResult.success || !athleteResult.data?.athleteProfile) {
-    return <ProfileTab />
+    return <AthletePageState message={tPlan('loadError')} />
   }
 
   const athleteProfile = athleteResult.data.athleteProfile

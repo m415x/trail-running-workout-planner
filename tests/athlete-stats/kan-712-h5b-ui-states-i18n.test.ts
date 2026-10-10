@@ -11,7 +11,7 @@ const localeEn = JSON.parse(readFileSync('messages/en/athletes/profile.json','ut
 test('KAN-712 Stats distinguishes explicit H5B DENY from data-source failure', () => {
   assert.match(stats, /result\.status === 'denied'/)
   assert.match(stats, /result\.status === 'error'/)
-  assert.match(stats, /summary\.denied/)
+  assert.match(stats, /AthletePageState message=\{tPlan\('unauthorized'\)\}/)
   assert.match(stats, /summary\.error/)
 })
 

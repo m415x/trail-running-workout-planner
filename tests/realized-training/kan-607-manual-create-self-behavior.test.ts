@@ -30,6 +30,7 @@ function setup(options: { authenticated?: boolean; self?: boolean; effective?: b
         status: 'resolved' as const, athleteProfileId: 'athlete-a', sessionId, prescriptionId: 'prescription-a',
       }
     },
+    evaluateEconomicAccess: async () => ({ status: 'allowed' as const }),
     persist: (input) => {
       events.push('write')
       writes.push(input)

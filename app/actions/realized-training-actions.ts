@@ -22,6 +22,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
 import { createH5aEffectiveSessionNextServerBoundary } from '@/lib/athlete-planning/effective-self-session-next-server'
 import { createManualSelfCaptureBoundary } from '@/lib/realized-training/manual-self-capture-boundary'
+import { evaluateH6SelfDebtFromPersistence } from '@/lib/memberships/h6-self-debt-next-server'
 import { createManualSelfCorrectionBoundary } from '@/lib/realized-training/manual-self-correction-boundary'
 import {
   correctManualRealizedTrainingRecord,
@@ -459,6 +460,7 @@ export async function createManualRealizedTrainingAction(
     resolveSelf: (authenticated, request) => selfContext.resolve(authenticated, request),
     resolveEffectiveSession: (authenticated, sessionId, at) =>
       effectiveSession.resolve(authenticated, { sessionId, at }),
+    evaluateEconomicAccess: evaluateH6SelfDebtFromPersistence,
     persist: (capture) => createManualRealizedTrainingRecord(capture),
   })
 
@@ -485,6 +487,7 @@ export async function correctManualRealizedTrainingAction(
     resolveSelf: (authenticated, request) => selfContext.resolve(authenticated, request),
     resolveEffectiveSession: (authenticated, sessionId, at) =>
       effectiveSession.resolve(authenticated, { sessionId, at }),
+    evaluateEconomicAccess: evaluateH6SelfDebtFromPersistence,
     persist: (correction) => correctManualRealizedTrainingRecord(correction),
   })
 
