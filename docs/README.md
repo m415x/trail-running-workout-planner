@@ -49,6 +49,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 ## Agent harness
 
 - [`agent-harness.md`](agent-harness.md) — Harness v2 current operational workflow plus the preserved historical `harness-eval-v1` evaluation record. `AGENTS.md` remains the normative operational authority.
+- [`handoffs/kan-725.md`](handoffs/kan-725.md) — KAN-725 Harness v2 closure evidence; pre-merge candidate until the post-merge reconciliation publishes it as fresh-chat-safe.
 
 ## Current baseline
 
