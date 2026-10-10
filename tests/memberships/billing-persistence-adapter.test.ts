@@ -140,6 +140,9 @@ test('global due-date exception service updates an already materialized charge b
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -265,6 +268,9 @@ test('global due-date exception preserves a later effective due date from an exi
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1062,6 +1068,9 @@ test('a later global due-date exception keeps a later current individual extensi
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1129,6 +1138,9 @@ test('a global due-date exception can shadow a current extension without withdra
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1201,6 +1213,9 @@ test('a current extension re-emerges when a later global due-date correction mov
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
