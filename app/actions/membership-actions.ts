@@ -52,7 +52,7 @@ const configureAuthorizedPolicy = createH6PolicyAction({
     })
   },
   authorize: (access, request) => economicPolicyBoundary.authorize(access, request),
-  configure: (teamId, input) => runtime.configureTeamEconomicPolicy({ ...input, teamId }),
+  configure: (teamId, input, authorship) => runtime.configureTeamEconomicPolicy({ ...input, teamId, authorship }),
   revalidate: () => revalidatePath('/dashboard/membership'),
   now: () => new Date().toISOString(),
 })
