@@ -35,7 +35,7 @@ const economicPolicyBoundary = createH6EconomicAuthorizationBoundary({
   loadMemberships: (userId, teamId) => createH4aNextServerEvidenceSource().loadMemberships(userId, teamId),
   resolveResourceTeam: async (resourceId, teamId) => {
     if (resourceId !== '__active_team_policy__') return null
-    const active = db.select({ id: teams.id }).from(teams).where(eq(teams.id, teamId)).get()
+    const active = db.select({ id: teams.id, isDeleted: teams.isDeleted }).from(teams).where(eq(teams.id, teamId)).get()
     return active && !active.isDeleted ? active.id : null
   },
 })
