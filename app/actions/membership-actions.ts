@@ -5,12 +5,13 @@ import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
 import { and, eq } from 'drizzle-orm'
-import { teams, athleteProfiles } from '@/db/schema'
+import { teams, athleteProfiles, monthlyCharges } from '@/db/schema'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerEvidenceSource } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH6EconomicAuthorizationBoundary } from '@/lib/authorization/h6-economic-authorization'
 import { createH6PolicyAction } from '@/lib/memberships/h6-policy-action'
 import { createH6TermsAndMaterializationActions } from '@/lib/memberships/h6-terms-materialization-actions'
+import { createH6EconomicExceptionActions } from '@/lib/memberships/h6-economic-exception-actions'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
@@ -109,6 +110,52 @@ export async function changeAthleteBillingTermsAction(input: {
 }
 
 
+const authorizedEconomicExceptions = createH6EconomicExceptionActions({
+  authenticate: async () => {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+  },
+  authorize: (access, request) => economicPolicyBoundary.authorize(access, request),
+  ownsCharge: async (teamId, athleteId, chargeId, year, month) => {
+    const row = db.select({ id: monthlyCharges.id }).from(monthlyCharges)
+      .innerJoin(athleteProfiles, eq(monthlyCharges.athleteId, athleteProfiles.id))
+      .where(and(
+        eq(monthlyCharges.id, chargeId),
+        eq(monthlyCharges.athleteId, athleteId),
+        eq(monthlyCharges.year, year),
+        eq(monthlyCharges.month, month),
+        eq(monthlyCharges.isDeleted, false),
+        eq(athleteProfiles.teamId, teamId),
+        eq(athleteProfiles.isDeleted, false),
+      )).get()
+    return Boolean(row)
+  },
+  globalDueDate: (teamId, input) => runtime.applyGlobalDueDateException({ ...input, teamId }),
+  reduce: (teamId, input) => runtime.applyMonthlyChargeReduction({
+    teamId,
+    athleteId: input.athleteId,
+    monthlyChargeId: input.monthlyChargeId,
+    year: input.year,
+    month: input.month,
+    reductionAmountMinor: input.reductionAmountMinor,
+    reason: input.reason,
+  }),
+  extend: (teamId, input) => runtime.applyMonthlyChargeExtension({
+    teamId,
+    athleteId: input.athleteId,
+    monthlyChargeId: input.monthlyChargeId,
+    year: input.year,
+    month: input.month,
+    extendedDueDate: input.extendedDueDate,
+    reason: input.reason,
+  }),
+  revalidate: revalidatePath,
+  now: () => new Date().toISOString(),
+})
+
 export async function applyGlobalDueDateExceptionAction(input: {
   year: number
   month: number
@@ -116,7 +163,7 @@ export async function applyGlobalDueDateExceptionAction(input: {
   reason: string
   locale: 'es' | 'en'
 }) {
-  return handlers.applyGlobalDueDateException(input)
+  return authorizedEconomicExceptions.global(input)
 }
 
 
@@ -129,7 +176,7 @@ export async function applyMonthlyChargeReductionAction(input: {
   reason: string
   locale: 'es' | 'en'
 }) {
-  return handlers.applyMonthlyChargeReduction(input)
+  return authorizedEconomicExceptions.reduction(input)
 }
 
 export async function applyMonthlyChargeExtensionAction(input: {
@@ -141,7 +188,7 @@ export async function applyMonthlyChargeExtensionAction(input: {
   reason: string
   locale: 'es' | 'en'
 }) {
-  return handlers.applyMonthlyChargeExtension(input)
+  return authorizedEconomicExceptions.extension(input)
 }
 
 
