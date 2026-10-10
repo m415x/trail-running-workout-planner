@@ -228,6 +228,7 @@ export function createMembershipServerActionRuntime({
       month: number
       dueDate: string
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyGlobalDueDateExceptionAction(input, h2Dependencies)
     },
@@ -240,6 +241,7 @@ export function createMembershipServerActionRuntime({
       month: number
       reductionAmountMinor: number
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyMonthlyChargeReductionAction(input, h2Dependencies)
     },
@@ -252,6 +254,7 @@ export function createMembershipServerActionRuntime({
       month: number
       extendedDueDate: string | null
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyMonthlyChargeExtensionAction(input, h2Dependencies)
     },
