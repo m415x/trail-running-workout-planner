@@ -44,6 +44,7 @@ test('athlete membership page loader derives H4 account state and explainable hi
           month,
           dueDate: '2026-09-08',
           reason: 'Holiday adjustment',
+          createdByUserId: null,
           isCurrent: true,
         }]
       },
@@ -63,6 +64,7 @@ test('athlete membership page loader derives H4 account state and explainable hi
         month: 9,
         reductionAmountMinor: 500_000,
         reason: 'Scholarship',
+        createdByUserId: null,
         isCurrent: true,
       }],
       replaceCurrentMonthlyChargeReduction: async () => {
@@ -76,6 +78,7 @@ test('athlete membership page loader derives H4 account state and explainable hi
         month: 9,
         extendedDueDate: '2026-09-12',
         reason: 'Individual extension',
+        createdByUserId: null,
         isCurrent: true,
       }],
       replaceCurrentMonthlyChargeExtension: async () => {
