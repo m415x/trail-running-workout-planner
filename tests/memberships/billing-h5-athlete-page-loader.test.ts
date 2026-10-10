@@ -53,6 +53,7 @@ function createPort(paymentAmountMinor: number) {
       month: 8,
       extendedDueDate: '2026-08-20',
       reason: 'Individual extension',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeExtension: async () => {
