@@ -12,6 +12,7 @@ export type TeamEconomicPolicy = {
 }
 
 export type AthleteBillingTerms = {
+  createdByUserId?: string | null
   id: string
   athleteId: string
   monthlyAmountMinor: number
@@ -139,6 +140,7 @@ export function applyAthleteBillingTerms(input: {
   id: string
   athleteId: string
   policy: TeamEconomicPolicy
+  createdByUserId?: string | null
   effectiveFrom: string
   effectiveUntil?: string | null
 }): AthleteBillingTerms {
@@ -147,6 +149,7 @@ export function applyAthleteBillingTerms(input: {
 
 export function changeAthleteBillingTerms(input: {
   current: AthleteBillingTerms
+  createdByUserId?: string | null
   replacementId: string
   effectiveFrom: string
   monthlyAmountMinor: number
@@ -162,6 +165,7 @@ export function createAthleteBillingTerms(input: {
   id: string
   athleteId: string
   policy: TeamEconomicPolicy
+  createdByUserId?: string | null
   effectiveFrom: string
   effectiveUntil?: string | null
 }): AthleteBillingTerms {
@@ -176,6 +180,7 @@ export function createAthleteBillingTerms(input: {
 
   return {
     id: input.id,
+    createdByUserId: input.createdByUserId ?? null,
     athleteId: input.athleteId,
     monthlyAmountMinor: input.policy.defaultMonthlyAmountMinor,
     currency: input.policy.currency,
@@ -186,6 +191,7 @@ export function createAthleteBillingTerms(input: {
 
 export function replaceAthleteBillingTerms(input: {
   current: AthleteBillingTerms
+  createdByUserId?: string | null
   replacementId: string
   effectiveFrom: string
   monthlyAmountMinor: number
@@ -211,6 +217,7 @@ export function replaceAthleteBillingTerms(input: {
     },
     replacement: {
       id: input.replacementId,
+      createdByUserId: input.createdByUserId ?? null,
       athleteId: input.current.athleteId,
       monthlyAmountMinor: input.monthlyAmountMinor,
       currency: input.currency,
