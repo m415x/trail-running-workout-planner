@@ -155,7 +155,8 @@ export async function createCoachTrack1000mEvidence(
       testEventId: testEvent.id,
       executionContext: 'official',
       recordedBy: 'coach',
-      recordedByUserId: input.coachUserId ?? undefined,
+      // H7A: client-supplied coachUserId is never recorder authority.
+      // The later T7 server boundary will supply verified H2 authorship.
     },
     {
       resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
