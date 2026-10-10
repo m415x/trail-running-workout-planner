@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-608/H5B merge checkpoint**, with the H5B contract in [`architecture/h5b-athlete-stats-physiology-self.md`](architecture/h5b-athlete-stats-physiology-self.md). Historical H1–H4B handoffs are not current execution authority; Jira and the verified remote `dev` HEAD determine actual integration state. Completed Epic 5 evolution remains in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-609/H6 merged checkpoint**, with details in [`handoffs/kan-609.md`](handoffs/kan-609.md) and the contract in [`architecture/h6-economic-authorization-athlete-debt-guard.md`](architecture/h6-economic-authorization-athlete-debt-guard.md). Historical H1–H4B handoffs are not current execution authority; Jira and the verified remote `dev` HEAD determine actual integration state. Completed Epic 5 evolution remains in [`history/epic-5.md`](history/epic-5.md).
 
 ## Verification runner
 
@@ -112,4 +112,11 @@ For new work, read `AGENTS.md`, this index, the current epic/story handoff when 
 ## Athlete H5B / KAN-608 merged baseline
 
 - [`architecture/h5b-athlete-stats-physiology-self.md`](architecture/h5b-athlete-stats-physiology-self.md) — H5B authenticated SELF Stats, 1000 m reference, Profile disclosure and explicit unknown/denied/error semantics.
-- [`handoffs/current.md`](handoffs/current.md) — PR #47 merged H5B checkpoint, precise SHA-scoped verification evidence and outstanding post-merge review. KAN-609 remains an unselected candidate requiring fresh bootstrap and contract review.
+- [`handoffs/kan-609.md`](handoffs/kan-609.md) — completed H6 gate, acceptance, PR #48 merge SHA and approved no-mutation evidence.
+- [`handoffs/current.md`](handoffs/current.md) — current KAN-609/H6 integrated baseline and KAN-724 auth/routing follow-up.
+
+## Athlete H6 / KAN-609 merged baseline
+
+- [`architecture/h6-economic-authorization-athlete-debt-guard.md`](architecture/h6-economic-authorization-athlete-debt-guard.md) — H6 economic capabilities, reversible prior-debt SELF write guard and accepted DENY semantics.
+- [`handoffs/kan-609.md`](handoffs/kan-609.md) — KAN-609/T1–T10 final evidence and integration handoff; PR #48 merged into dev.
+- [`handoffs/current.md`](handoffs/current.md) — most recent operational baseline; KAN-724 follows independently.
