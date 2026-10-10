@@ -319,7 +319,7 @@ test('persists recorder user identity through the create application boundary', 
 
   assert.equal(result.success, true)
   assert.equal(inserted[0]?.recordedBy, 'coach')
-  assert.equal(inserted[0]?.recordedByUserId, 'user_coach_1')
+  assert.equal(inserted[0]?.recordedByUserId, null, 'unverified coachUserId must not be persisted as factual H2 authorship')
 })
 
 
@@ -446,7 +446,7 @@ test('athlete cannot claim an unavailable official TestEvent', async () => {
 })
 
 
-test('coach records official evidence for an owned athlete with coach recorder provenance', async () => {
+test('coach official evidence does not trust client coachUserId as recorder provenance before H7A T7', async () => {
   const inserted: InsertFieldPerformanceTest[] = []
 
   const result = await createCoachTrack1000mEvidence(
