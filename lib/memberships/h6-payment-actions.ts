@@ -1,4 +1,5 @@
 import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
+import { resolveAuthorizedH7aWriterContext } from '@/lib/authorization/h7a-trusted-authorship'
 
 type Locale = 'es' | 'en'
 type PaymentBase = { athleteId: string; monthlyChargeId: string; locale: Locale }
@@ -24,10 +25,11 @@ export function createH6PaymentActions(deps: {
     const actor = await deps.authenticate()
     if (actor.status !== 'authenticated') return null
     const decision = await deps.authorize(actor, { at: deps.now(), capability: 'economy.manage', resourceId: '__active_team_economy__' })
-    if (!decision.allowed || !decision.teamId) return null
-    if (!await deps.ownsCharge(decision.teamId, input.athleteId, input.monthlyChargeId)) return null
-    if (paymentId && !await deps.ownsPayment(decision.teamId, input.athleteId, input.monthlyChargeId, paymentId)) return null
-    return { teamId: decision.teamId, authorship: { authenticatedActorUserId: actor.userId, effectiveActorUserId: actor.userId } }
+    const context = resolveAuthorizedH7aWriterContext(actor, decision)
+    if (!context) return null
+    if (!await deps.ownsCharge(context.teamId, input.athleteId, input.monthlyChargeId)) return null
+    if (paymentId && !await deps.ownsPayment(context.teamId, input.athleteId, input.monthlyChargeId, paymentId)) return null
+    return context
   }
   async function execute<T extends PaymentBase>(input: T, write: (teamId: string, data: T, authorship: TrustedAuthorship) => Promise<Result>, paymentId?: string): Promise<Result> {
     try {
