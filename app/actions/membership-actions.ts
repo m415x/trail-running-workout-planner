@@ -4,12 +4,13 @@ import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
-import { eq } from 'drizzle-orm'
-import { teams } from '@/db/schema'
+import { and, eq } from 'drizzle-orm'
+import { teams, athleteProfiles } from '@/db/schema'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerEvidenceSource } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH6EconomicAuthorizationBoundary } from '@/lib/authorization/h6-economic-authorization'
 import { createH6PolicyAction } from '@/lib/memberships/h6-policy-action'
+import { createH6TermsAndMaterializationActions } from '@/lib/memberships/h6-terms-materialization-actions'
 import { createMembershipServerActionRuntime } from '@/lib/memberships/billing-server-action-runtime'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
@@ -34,7 +35,7 @@ const economicPolicyBoundary = createH6EconomicAuthorizationBoundary({
   resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
   loadMemberships: (userId, teamId) => createH4aNextServerEvidenceSource().loadMemberships(userId, teamId),
   resolveResourceTeam: async (resourceId, teamId) => {
-    if (resourceId !== '__active_team_policy__') return null
+    if (resourceId !== '__active_team_policy__' && resourceId !== '__active_team_economy__') return null
     const active = db.select({ id: teams.id, isDeleted: teams.isDeleted }).from(teams).where(eq(teams.id, teamId)).get()
     return active && !active.isDeleted ? active.id : null
   },
@@ -63,12 +64,38 @@ export async function configureTeamEconomicPolicyAction(input: {
   return configureAuthorizedPolicy(input)
 }
 
+const authorizedTermsAndMaterialization = createH6TermsAndMaterializationActions({
+  authenticate: async () => {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+  },
+  authorize: (access, request) => economicPolicyBoundary.authorize(access, request),
+  ownsAthlete: async (teamId, athleteId) => {
+    const row = db.select({ id: athleteProfiles.id }).from(athleteProfiles).where(and(
+      eq(athleteProfiles.id, athleteId),
+      eq(athleteProfiles.teamId, teamId),
+      eq(athleteProfiles.isDeleted, false),
+    )).get()
+    return Boolean(row)
+  },
+  initializeTerms: (teamId, athleteId, effectiveFrom) =>
+    runtime.applyInitialAthleteBillingTerms({ teamId, athleteId, effectiveFrom }),
+  changeTerms: (teamId, athleteId, input) =>
+    runtime.changeAthleteBillingTerms({ teamId, athleteId, ...input }),
+  materialize: (teamId, input) => runtime.materializeTeamMonthlyCharges({ teamId, ...input }),
+  revalidate: revalidatePath,
+  now: () => new Date().toISOString(),
+})
+
 export async function applyInitialAthleteBillingTermsAction(input: {
   athleteId: string
   effectiveFrom: string
   locale: 'es' | 'en'
 }) {
-  return handlers.applyInitialAthleteBillingTerms(input)
+  return authorizedTermsAndMaterialization.applyInitial(input)
 }
 
 export async function changeAthleteBillingTermsAction(input: {
@@ -78,7 +105,7 @@ export async function changeAthleteBillingTermsAction(input: {
   currency: string
   locale: 'es' | 'en'
 }) {
-  return handlers.changeAthleteBillingTerms(input)
+  return authorizedTermsAndMaterialization.change(input)
 }
 
 
@@ -123,7 +150,7 @@ export async function materializeTeamMonthlyChargesAction(input: {
   month: number
   locale: 'es' | 'en'
 }) {
-  return handlers.materializeTeamMonthlyCharges(input)
+  return authorizedTermsAndMaterialization.materialize(input)
 }
 
 
