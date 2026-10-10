@@ -186,7 +186,11 @@ export function useWorkoutCard({
         reason: null,
         replacement: data,
       })
-      if (!result.success) return false
+      if (!result.success) {
+        if (result.error === 'blocked_for_prior_debt') return 'blocked_for_prior_debt' as const
+        if (result.error === 'economic_evidence_unavailable') return 'economic_evidence_unavailable' as const
+        return false
+      }
       setCaptureState({
         sessionId,
         captured: true,
@@ -198,7 +202,11 @@ export function useWorkoutCard({
     }
 
     const result = await createManualRealizedTrainingAction(data)
-    if (!result.success) return false
+    if (!result.success) {
+        if (result.error === 'blocked_for_prior_debt') return 'blocked_for_prior_debt' as const
+        if (result.error === 'economic_evidence_unavailable') return 'economic_evidence_unavailable' as const
+        return false
+      }
     setCaptureState({
       sessionId,
       captured: true,
