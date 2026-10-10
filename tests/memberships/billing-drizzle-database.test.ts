@@ -80,6 +80,7 @@ test('Drizzle billing database replaces the current global due-date exception wi
     month: 10,
     dueDate: '2026-10-10',
     reason: 'Primer ajuste',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -116,6 +117,7 @@ test('Drizzle billing database replaces the current global due-date exception wi
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Segundo ajuste',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -136,6 +138,7 @@ test('Drizzle billing database treats an identical current global due-date excep
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Feriado',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -158,6 +161,7 @@ test('Drizzle billing database treats an identical current global due-date excep
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Feriado',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -176,6 +180,7 @@ test('Drizzle billing database replaces a current global due-date exception insi
     month: 10,
     dueDate: '2026-10-10',
     reason: 'Primer ajuste',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -219,6 +224,7 @@ test('Drizzle billing database replaces a current global due-date exception insi
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Segundo ajuste',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -281,6 +287,7 @@ test('Drizzle billing database can atomically persist a global exception and cha
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Vencimiento excepcional',
+      createdByUserId: null,
       isCurrent: true,
     },
     [{
@@ -310,6 +317,7 @@ test('atomic global exception replacement preserves revision history when a curr
     month: 10,
     dueDate: '2026-10-10',
     reason: 'Primer ajuste',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -350,6 +358,7 @@ test('atomic global exception replacement preserves revision history when a curr
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Segundo ajuste',
+      createdByUserId: null,
       isCurrent: true,
     },
     [],
@@ -372,6 +381,7 @@ test('atomic global exception retry does not duplicate the revision and still co
     month: 10,
     dueDate: '2026-10-15',
     reason: 'Vencimiento excepcional',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -412,6 +422,7 @@ test('atomic global exception retry does not duplicate the revision and still co
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Vencimiento excepcional',
+      createdByUserId: null,
       isCurrent: true,
     },
     [{
@@ -506,6 +517,7 @@ test('atomic global exception application rejects charge projections outside the
         month: 10,
         dueDate: '2026-10-15',
         reason: 'Vencimiento excepcional',
+        createdByUserId: null,
         isCurrent: true,
       },
       [{
@@ -536,6 +548,7 @@ test('Drizzle billing database replaces the current monthly charge reduction app
     month: 10,
     reductionAmountMinor: 250_000,
     reason: 'Beca inicial',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -573,6 +586,7 @@ test('Drizzle billing database replaces the current monthly charge reduction app
     month: 10,
     reductionAmountMinor: 500_000,
     reason: 'Beca ampliada',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -593,6 +607,7 @@ test('Drizzle billing database treats the same monthly charge reduction decision
     month: 10,
     reductionAmountMinor: 500_000,
     reason: 'Beca deportiva',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -611,6 +626,7 @@ test('Drizzle billing database treats the same monthly charge reduction decision
     month: 10,
     reductionAmountMinor: 500_000,
     reason: 'Beca deportiva',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -657,6 +673,7 @@ test('atomic monthly charge reduction persists the revision and projected amount
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     },
     {
@@ -699,6 +716,7 @@ test('atomic monthly charge reduction rejects a charge projection outside the re
         month: 10,
         reductionAmountMinor: 500_000,
         reason: 'Beca deportiva',
+        createdByUserId: null,
         isCurrent: true,
       },
       {
@@ -727,6 +745,7 @@ test('reduction revision history reconstructs economic identity from the linked 
       monthlyChargeId: 'charge-a',
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
       isDeleted: false,
       createdAt: '2026-09-26T12:00:00.000Z',
@@ -760,6 +779,7 @@ test('Drizzle billing database replaces the current monthly charge extension app
     month: 10,
     extendedDueDate: '2026-10-20',
     reason: 'Prórroga inicial',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -793,6 +813,7 @@ test('Drizzle billing database replaces the current monthly charge extension app
     month: 10,
     extendedDueDate: '2026-10-25',
     reason: 'Prórroga corregida',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -813,6 +834,7 @@ test('Drizzle billing database treats the same monthly charge extension decision
     month: 10,
     extendedDueDate: '2026-10-25',
     reason: 'Prórroga individual',
+    createdByUserId: null,
     isCurrent: true,
   }]
 
@@ -831,6 +853,7 @@ test('Drizzle billing database treats the same monthly charge extension decision
     month: 10,
     extendedDueDate: '2026-10-25',
     reason: 'Prórroga individual',
+    createdByUserId: null,
     isCurrent: true,
   })
 
@@ -873,6 +896,7 @@ test('atomic monthly charge extension persists the revision and effective due da
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     },
     {
@@ -915,6 +939,7 @@ test('atomic monthly charge extension rejects a projection outside the requested
         month: 10,
         extendedDueDate: '2026-10-25',
         reason: 'Prórroga individual',
+        createdByUserId: null,
         isCurrent: true,
       },
       {
@@ -1019,6 +1044,7 @@ test('KAN-479 SQLite H2 atomic transaction executes Drizzle writes before return
       month: 11,
       dueDate: '2026-11-12',
       reason: 'Una vez',
+      createdByUserId: null,
       isCurrent: true,
     },
     [],
