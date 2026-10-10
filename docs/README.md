@@ -40,7 +40,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-609/H6 merged checkpoint**, with details in [`handoffs/kan-609.md`](handoffs/kan-609.md) and the contract in [`architecture/h6-economic-authorization-athlete-debt-guard.md`](architecture/h6-economic-authorization-athlete-debt-guard.md). Historical H1–H4B handoffs are not current execution authority; Jira and the verified remote `dev` HEAD determine actual integration state. Completed Epic 5 evolution remains in [`history/epic-5.md`](history/epic-5.md).
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-725 Harness v2 merged checkpoint**, with full workflow/closure evidence in [`handoffs/kan-725.md`](handoffs/kan-725.md) and the operational model in [`agent-harness.md`](agent-harness.md). KAN-609/H6 remains the previous product-domain baseline and is preserved in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine actual integration state.
 
 ## Verification runner
 
@@ -67,7 +67,7 @@ KAN-505, KAN-506, KAN-507 and KAN-508 are completed pre-auth baselines. KAN-538,
 
 KAN-581 adds a post-Epic read-only Athlete Home economic disclosure over H4/H5. Home uses a server-side Buenos Aires civil cutoff, preserves team/athlete isolation, prioritizes H5 prior-month overdue debt, distinguishes normal/warning/danger/neutral without treating missing data as settled, resets the MobileShell presentation when leaving Home, and adds no access guard before KAN-298. Interactive acceptance covered ES/EN, light/dark, 360/390 px, 200% zoom, keyboard/focus/screen-reader behavior, Home/Profile navigation and BottomNavigationBar clearance. The notification bell remains deliberately outside KAN-581; a notification center requires its own event/persistence/read-state/permissions/UX contract.
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution checkpoint is [`handoffs/current.md`](handoffs/current.md), which records the integrated KAN-609/H6 PR #48 baseline and its post-merge documentation reconciliation. The completed H1–H4B handoffs and KAN-473 handoff are historical navigation only; consult current `dev` and Jira for actual status.
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution checkpoint is [`handoffs/current.md`](handoffs/current.md), which records the integrated KAN-725 Harness v2 PR #49 baseline and its post-merge documentation reconciliation. The completed H1–H4B handoffs and KAN-473 handoff are historical navigation only; consult current `dev` and Jira for actual status.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
