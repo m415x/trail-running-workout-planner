@@ -334,26 +334,16 @@ export function createBillingPersistenceAdapter(
         projectedCharges.push(projected)
       }
 
-      if (h2Port.applyGlobalDueDateExceptionAtomically) {
-        await h2Port.applyGlobalDueDateExceptionAtomically(
-          input.teamId,
-          input.year,
-          input.month,
-          validatedRevision,
-          projectedCharges,
-        )
-        return
+      if (!h2Port.applyGlobalDueDateExceptionAtomically) {
+        throw new Error('Billing persistence does not support atomic global due-date exceptions')
       }
-
-      await h2Port.replaceCurrentGlobalDueDateException(
+      await h2Port.applyGlobalDueDateExceptionAtomically(
         input.teamId,
         input.year,
         input.month,
         validatedRevision,
+        projectedCharges,
       )
-      for (const charge of projectedCharges) {
-        await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
-      }
     },
 
     async applyMonthlyChargeReduction(input: {
