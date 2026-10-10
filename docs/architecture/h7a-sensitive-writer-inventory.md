@@ -86,6 +86,22 @@ Baseline: `dev` at `51d9fae2e862d7450eaf0e11ccb58112f0aa3e1a`; H7A work branch `
 - **T3** remains limited to verified organizational writes and their current historical model; grant lifecycle read helpers are not evidence of live mutation functionality. No inferred author backfill or second authorization mechanism.
 - Classification boundary: these files and their direct sinks are identified; an unrestricted repository-wide exhaustive code traversal has not been demonstrated by focused document-presence tests. T1 closure must make this limitation explicit rather than asserting completeness without evidence.
 
+## Full app/actions exported-mutation survey (KAN-726)
+
+The repo tree at commit `18f91a9de21027cfbe436f8c8990110c83cf7d3a` contains **23** TypeScript modules under `app/actions`. The automated scanner identifies exported functions whose names begin with the configured mutation verbs, including operations outside the approved H7A-sensitive domains. These newly discovered entrypoints are classified here as **adjacent inventory, not automatically H7A scope**:
+
+- `app/actions/competition-calendar-actions.ts`: `createCompetitionAction`, `updateCompetitionAction`, `createCompetitionFromCatalogAction` — competition calendar writes; no T3–T7 authorship implementation assigned solely by discovery.
+- `app/actions/load-strategy-actions.ts`: `createGroupPlanWithLoadStrategy` — planning strategy writer; review H7A applicability separately.
+- `app/actions/race-registration-actions.ts`: `registerAthleteForRaceCourseAction`, `registerAthletesForRaceCourse`, `updateRaceRegistrationLifecycleAction`, `updateRaceParticipationAction`, `registerAthleteForRaceCourseFormAction`, `updateRaceRegistrationLifecycleFormAction`, `updateRaceParticipationFormAction` — event registration lifecycle; some are wrappers and must not be counted as seven independent persisted sinks.
+- `app/actions/planning-actions.ts`: `updateMicrocycleVolume`, `updateMicrocycleElevation`, `updateMicrocycleDates`, `updateMicrocycleType`, `updateMicrocycleNotes` — planning microcycle mutation; outside the predefined H7A T3–T7 target without an explicit scope decision.
+- `app/actions/realized-training-actions.ts`: `createManualRealizedTrainingAction`, `correctManualRealizedTrainingAction` — training history writes; H6 access/authorization is implemented separately from H7A authorship, and must not silently expand the story.
+- `app/actions/session-actions.ts`: `createSession`, `updateSession` — session editing; identify domain ownership before any independent H7A scope change.
+- `app/actions/training-goal-actions.ts`: `createTrainingGoal` — goal writer, adjacent domain.
+- `app/actions/session-generation-preferences-actions.ts`: `updateSessionGenerationPreferences` — settings writer, adjacent domain.
+- `app/actions/workout-template-actions.ts`: `createWorkoutTemplate`, `updateWorkoutTemplate`, `setWorkoutTemplateArchiveStatus` — template mutations, adjacent domain.
+
+Previously covered `athlete-actions.ts`, `group-actions.ts`, `planning-cohort-actions.ts`, `membership-actions.ts`, and `field-performance-test-actions.ts` remain classified above. Modules with no matches to this export-name heuristic are **not** evidence of no writes: anonymous exports, arrow functions, re-exports, internal functions, and non-`app/actions` routes or repositories can still write. This scan supplies code-derived discovery, **not exhaustive whole-repository proof**. No modification to authorization, persistence or H7A scope is authorized by this list alone.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
