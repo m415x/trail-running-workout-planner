@@ -70,7 +70,9 @@ describe('KAN-664 authorized Athlete to Sporting Group movement', () => {
   })
 
   it('derives changedByUserId from authenticated H2 access and never from client input', () => {
-    assert.match(assignmentAction, /changedByUserId:\s*access\.userId/)
+    assert.match(assignmentAction, /resolveAuthorizedH7aWriterContext\(access, groupAuthorization\)/)
+    assert.match(assignmentAction, /if \(!writerContext\)/)
+    assert.match(assignmentAction, /changedByUserId:\s*writerContext\.authorship\.effectiveActorUserId/)
     assert.doesNotMatch(assignmentAction, /changedByUserId:\s*null/)
     assert.doesNotMatch(assignmentAction, /formData\.get\(['"]changedByUserId['"]\)/)
   })
