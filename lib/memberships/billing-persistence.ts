@@ -127,6 +127,7 @@ export function createBillingPersistenceAdapter(
       athleteId: string
       monthlyChargeId: string
       revisionId: string
+      createdByUserId?: string | null
       paymentId: string
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
@@ -171,6 +172,7 @@ export function createBillingPersistenceAdapter(
       const revision = applyPaymentRevision({
         revisions: [],
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: input.amountMinor,
@@ -195,6 +197,7 @@ export function createBillingPersistenceAdapter(
       monthlyChargeId: string
       paymentId: string
       revisionId: string
+      createdByUserId?: string | null
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
       paidAt: string
@@ -224,6 +227,7 @@ export function createBillingPersistenceAdapter(
       const correctedStream = applyPaymentRevision({
         revisions: paymentStream,
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: input.amountMinor,
@@ -250,6 +254,7 @@ export function createBillingPersistenceAdapter(
       monthlyChargeId: string
       paymentId: string
       revisionId: string
+      createdByUserId?: string | null
     }): Promise<PersistedPaymentRevision> {
       if (!(await port.athleteBelongsToTeam(input.teamId, input.athleteId))) {
         throw new Error('Athlete does not belong to the requested team')
@@ -271,6 +276,7 @@ export function createBillingPersistenceAdapter(
       const voidedStream = applyPaymentRevision({
         revisions: paymentStream,
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: current.amountMinor,
