@@ -48,9 +48,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Agent harness
 
-- [`agent-harness.md`](agent-harness.md) — `harness-eval-v1` context/tool discipline, behavioral evaluation and completed KAN-281/KAN-282 experiment record. `AGENTS.md` remains the operational authority.
-
-Do not modify the published harness as incidental feature/epic bootstrap work. Any v2 change must be an explicit workflow decision based on the recorded experiment conclusions.
+- [`agent-harness.md`](agent-harness.md) — Harness v2 current operational workflow plus the preserved historical `harness-eval-v1` evaluation record. `AGENTS.md` remains the normative operational authority.
 
 ## Current baseline
 
@@ -68,7 +66,7 @@ KAN-505, KAN-506, KAN-507 and KAN-508 are completed pre-auth baselines. KAN-538,
 
 KAN-581 adds a post-Epic read-only Athlete Home economic disclosure over H4/H5. Home uses a server-side Buenos Aires civil cutoff, preserves team/athlete isolation, prioritizes H5 prior-month overdue debt, distinguishes normal/warning/danger/neutral without treating missing data as settled, resets the MobileShell presentation when leaving Home, and adds no access guard before KAN-298. Interactive acceptance covered ES/EN, light/dark, 360/390 px, 200% zoom, keyboard/focus/screen-reader behavior, Home/Profile navigation and BottomNavigationBar clearance. The notification bell remains deliberately outside KAN-581; a notification center requires its own event/persistence/read-state/permissions/UX contract.
 
-Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution checkpoint is [`handoffs/current.md`](handoffs/current.md), following KAN-608 PR #47 merge; post-merge verification and a fresh baseline review are still separate steps. The completed H1–H4B handoffs and KAN-473 handoff are historical navigation only; consult current `dev` and Jira for actual status.
+Epic 5 is consolidated in [`history/epic-5.md`](history/epic-5.md). Its durable current contract is [`architecture/memberships.md`](architecture/memberships.md). The current execution checkpoint is [`handoffs/current.md`](handoffs/current.md), which records the integrated KAN-609/H6 PR #48 baseline and its post-merge documentation reconciliation. The completed H1–H4B handoffs and KAN-473 handoff are historical navigation only; consult current `dev` and Jira for actual status.
 
 Before starting the next story or phase, follow the fresh-chat bootstrap contract in `AGENTS.md`: current `dev` → this index → most recent relevant handoff → only relevant durable domain docs → focused code/tests → complete Jira issue/dependencies. Apply [`agent-harness.md`](agent-harness.md) as the workflow-discipline companion without treating historical chat context as project authority.
 
@@ -112,8 +110,7 @@ For new work, read `AGENTS.md`, this index, the current epic/story handoff when 
 ## Athlete H5B / KAN-608 merged baseline
 
 - [`architecture/h5b-athlete-stats-physiology-self.md`](architecture/h5b-athlete-stats-physiology-self.md) — H5B authenticated SELF Stats, 1000 m reference, Profile disclosure and explicit unknown/denied/error semantics.
-- [`handoffs/kan-609.md`](handoffs/kan-609.md) — completed H6 gate, acceptance, PR #48 merge SHA and approved no-mutation evidence.
-- [`handoffs/current.md`](handoffs/current.md) — current KAN-609/H6 integrated baseline and KAN-724 auth/routing follow-up.
+- KAN-608 is a completed historical baseline. The current operational handoff has advanced to KAN-609/H6 below; consult Jira and the merged PR #47 when historical H5B integration evidence is needed.
 
 ## Athlete H6 / KAN-609 merged baseline
 
