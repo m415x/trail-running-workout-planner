@@ -109,6 +109,13 @@ Previously covered `athlete-actions.ts`, `group-actions.ts`, `planning-cohort-ac
 - `app/actions/auth-actions.ts`: `loginAction`, `logoutAction`, and `completePasswordRecoveryAction` mutate authentication/session or credential state through auth services. They are identity lifecycle boundaries, not a trusted H7A source of author IDs from client payload. H2 server authentication remains the authoritative actor resolver for sensitive writes. This inventory classification does not require recording login/logout in a new H7A audit table.
 - The earlier `create|update|...` exported-function regex missed `select`, `persist`, `login`, `logout`, and `complete` prefixes. A naming heuristic is discovery assistance, not proof that no other internal or indirect writers exist.
 
+## Indirect synchronous billing services and transactional writers
+
+- `lib/memberships/billing-sqlite-coach-actions.ts` provides `configureTeamEconomicPolicySynchronously`, `applyInitialAthleteBillingTermsSynchronously`, and `changeAthleteBillingTermsSynchronously`. Each is a concrete synchronous T4 operation using `createSqliteBillingTransaction` to group persistence; these entrypoints are not evidence that an H2 actor is already stored, and their transaction boundaries must be checked when introducing provenance.
+- `lib/memberships/athlete-billing-terms-service.ts` provides billing terms application/service orchestration (including synchronous service). This is an indirect terms writer contract feeding T4; identify the persisted revision it drives before changing its signature.
+- `lib/memberships/billing-coach-service.ts` provides the policy/terms coach service and its synchronous variant. It orchestrates repository updates, not an independent authorization source; H6 guards at active server boundary must still provide the verified actor.
+- These service-level paths are distinct from the outer `billing-coach-actions.ts` functions and `billing-drizzle-write-repository.ts` SQL sinks. T4 needs a single trusted actor chain through whichever live runtime route invokes them, preserving policy/terms revision atomicity. T1 classifies them without implementing new audit columns or expanding economic authorization.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
