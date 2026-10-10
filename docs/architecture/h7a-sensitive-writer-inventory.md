@@ -47,6 +47,16 @@ Baseline: `dev` at `51d9fae2e862d7450eaf0e11ccb58112f0aa3e1a`; H7A work branch `
 - Athlete path receives `userId` from server-side current-athlete context at the calling action. The Coach application input historically allowed `coachUserId` to populate `recordedByUserId`; KAN-726 removes this client-origin author propagation, but **does not yet persist verified Coach authorship**.
 - `db/schema.ts`: field evidence has `recordedBy` (role/provenance dimension) and `recordedByUserId` (actor identity); these must never be conflated. Official evidence requires TestEvent consistency; corrections preserve prior observations and append replacements. **T7 gap**: H2 provenance on Coach writes, TestEvent and review/correction, without expanding H4C authorization.
 
+
+## Indirect runtime writers and legacy context (KAN-726)
+
+- `lib/memberships/billing-server-action-runtime.ts`: concrete economic server runtime; `registerManualPayment`, `correctManualPayment` and `voidManualPayment` delegate to durable payment revision operations. The H6 adapter may now carry actor to its callback, but runtime parameter types and durable revisions still require explicit H7A wiring in T6. Do not mistake an authorized Team ID for recorder identity.
+- `lib/memberships/membership-action-handlers.ts`: legacy intermediary with `registerManualPayment`, `correctManualPayment` and `voidManualPayment`. Inspect all live callers before changing its contract; the presence of a handler does not prove it is the authoritative H6 protected entrypoint.
+- `app/actions/membership-actions.ts`: `CURRENT_TEAM_ID = 'team_1'` remains a legacy context for `createMembershipActionHandlers`. It is neither authenticated actor nor H3 Team authorization and cannot be reused as H7A authority. Current H6 protected entrypoints instead resolve the active Team server-side. Auditing any still-exposed handler entrypoints remains necessary.
+- `lib/athletes/group-assignment.ts`: `assignAthleteToGroupSynchronously` uses a transaction to update athlete/group assignments and insert `groupHistoryRecords`, assigning `changedByUserId` from the caller-provided trusted H4A boundary. It also closes prior cohort membership with `endedByUserId`. This is reusable historical and transactional infrastructure; its server action must keep deriving the actor from H2 and never from FormData.
+- `db/schema.ts`: `paymentRevisions` and `groupHistoryRecords` are existing historical data stores. Reuse their factual history; first determine whether authorship columns and atomic writes are sufficient, rather than automatically introducing an additional audit table.
+- T1 classification: named indirect runtime sinks identified, **but repository-level transitive writer completeness and historical author persistence are not yet demonstrated**. Follow-up bounded work stays with T1 discovery and, for confirmed writers, the previously approved T3–T7 cuts.
+
 ## Shared invariants and classification
 
 - H7A: `authenticatedActorUserId` and `effectiveActorUserId` are conceptually distinct but **equal**; never accept either from FormData/DTO/client payload. No impersonation.
