@@ -69,7 +69,9 @@
       "save": "Save",
       "durationHours": "Hours",
       "durationMinutes": "Minutes",
-      "durationSeconds": "Seconds"
+      "durationSeconds": "Seconds",
+      "blockedForPriorDebt": "You cannot log or correct this workout because a charge from a previous month is overdue. Your entries are preserved. Please settle it in Membership.",
+      "economicEvidenceUnavailable": "We could not temporarily verify your economic status. Nothing was saved, and your entries are preserved. Please try again later."
     },
     "home": {
       "greeting": "Hi, {name}",
