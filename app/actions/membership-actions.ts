@@ -83,10 +83,10 @@ const authorizedTermsAndMaterialization = createH6TermsAndMaterializationActions
     )).get()
     return Boolean(row)
   },
-  initializeTerms: (teamId, athleteId, effectiveFrom) =>
-    runtime.applyInitialAthleteBillingTerms({ teamId, athleteId, effectiveFrom }),
-  changeTerms: (teamId, athleteId, input) =>
-    runtime.changeAthleteBillingTerms({ teamId, athleteId, ...input }),
+  initializeTerms: (teamId, athleteId, effectiveFrom, authorship) =>
+    runtime.applyInitialAthleteBillingTerms({ teamId, athleteId, effectiveFrom, authorship }),
+  changeTerms: (teamId, athleteId, input, authorship) =>
+    runtime.changeAthleteBillingTerms({ teamId, athleteId, ...input, authorship }),
   materialize: (teamId, input) => runtime.materializeTeamMonthlyCharges({ teamId, ...input }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),
