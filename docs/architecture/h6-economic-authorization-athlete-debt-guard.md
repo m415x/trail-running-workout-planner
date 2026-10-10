@@ -36,7 +36,7 @@ H2 actor -> active Team/TeamMembership -> `workout_log.self.manage` SELF capabil
 | `createManualRealizedTrainingAction` | `createManualRealizedTrainingRecord` | `workoutLogs`, `workoutLogEvidence` | Yes |
 | `correctManualRealizedTrainingAction` | `correctManualRealizedTrainingRecord` | `workoutLogs`, `workoutLogEvidence`, `workoutLogCorrections` | Yes |
 
-For `blocked` and `unavailable`, **no mutation** means no write transaction, INSERT/UPDATE/DELETE, new revision or evidence sidecar, derived event/reconciliation, or post-write `revalidatePath`. Tests must assert zero persistence calls and unchanged durable snapshots. Client `athleteId`, `teamId`, `sessionId` and `workoutLogId` are never authority to select SELF subject.
+For `blocked` and `unavailable`, **no mutation** means no write transaction, INSERT/UPDATE/DELETE, new revision or evidence sidecar, derived event/reconciliation, or post-write `revalidatePath`. For H6/T10, tests must establish that both SELF boundaries return DENY before any mutating dependency is invoked. KAN-721 verifies zero session-resolution and persistence invocations for both `blocked` and `unavailable` on creation and correction; this is the approved sufficient evidence for no mutation at this boundary, subject to review confirming that no earlier step has persistent side effects. SQLite before/after snapshots are supplementary integration assurance, not a T10 closure prerequisite. Client `athleteId`, `teamId`, `sessionId` and `workoutLogId` are never authority to select SELF subject.
 
 Existing SELF reads Home Athlete, Plan, Stats, Profile and Membership, together with authentication and recovery, remain available under their original guards. Admin Athlete/Groups, Planning/Cohorts/Sessions/Adjustments, competitions/race administration, training goals, templates, Team selection and Coach evidence operations are outside Athlete H6. `getCurrentAthleteTrack1000mEvidenceAction` remains out of scope pending H4C/H7A; generic `createTrack1000mEvidenceAction`/`correctTrack1000mEvidenceAction` and Coach actions are also excluded.
 
@@ -56,3 +56,13 @@ Existing SELF reads Home Athlete, Plan, Stats, Profile and Membership, together 
 | T10 KAN-723 | `tests/authorization/kan-723-h6-closure-regression.test.ts` | Closure contract plus full gates, walkthrough, Jira/PR/merge |
 
 Each micro-sprint produces focused RED/GREEN evidence bound to recoverable SHA. Full `pn verify --db` 6/6 and interactive ES/EN acceptance belong to T10 absent a technical reason to run earlier. The T1 RED was operator-reported against `3107ed0d3a8b8fa3b5481b1d40c22abbba0cf093`; no GREEN is claimed yet.
+
+## KAN-723/T10 acceptance and handoff (2026-10-10)
+
+- Operator-verified `pn verify --db` PASS 6/6 at `34bedaaf00d5cabb7c992f09e95ce9223e656c5e`: Tests, TypeScript, ESLint, Build, i18n and SQLite.
+- Focused GREEN: KAN-720, KAN-721, KAN-723 UI refusal/reason localization; ES/EN form inputs survive denied saves.
+- Interactive PASS: overdue prior-month charge blocks creation; settlement permits creation/correction; payment reversal restores denial of both; future-effective charge extension unblocks both; Athlete reads continue; blocked message checked in ES/EN.
+- `unavailable` is proven by controlled tests and does not require corrupting real billing state for interactive testing.
+- The final diff review must confirm neither SELF boundary invokes persistence, revalidation or other durable side effects before H6 DENY.
+- Authentication and navigation follow-up is KAN-724, deliberately outside PR #48.
+- Post-merge verification remains distinct and is not claimed by premerge evidence.
