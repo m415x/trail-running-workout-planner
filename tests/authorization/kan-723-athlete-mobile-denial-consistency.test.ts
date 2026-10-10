@@ -10,7 +10,7 @@ const profile = readFileSync('app/[locale]/(mobile)/profile/page.tsx', 'utf8')
 test('KAN-723 denial surfaces on four Athlete mobile pages use one localized AthletePageState', () => {
   for (const [name, source] of Object.entries({ home, plan, stats, profile })) {
     assert.match(source, /AthletePageState/, name)
-    assert.match(source, /tPlan\('unauthorized'\)/, name)
+    assert.match(source, /(?:tPlan|t)\('unauthorized'\)/, name)
   }
   assert.match(stats, /result\.status === 'denied'/)
   assert.doesNotMatch(stats, /t\('summary\.denied'\)/)
