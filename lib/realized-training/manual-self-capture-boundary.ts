@@ -19,6 +19,7 @@ export function createManualSelfCaptureBoundary<TRecord>(deps: {
     sessionId: string,
     at: string,
   ): Promise<EffectiveSessionResolution>
+  evaluateEconomicAccess(subject: { teamId: string; athleteProfileId: string }): Promise<{ status: 'allowed' | 'blocked' | 'unavailable' }>
   persist(input: ManualRealizedTrainingClientInput & { athleteId: string }): TRecord
 }) {
   return {
@@ -38,6 +39,11 @@ export function createManualSelfCaptureBoundary<TRecord>(deps: {
         })
         if (self.status !== 'resolved' || self.userId !== access.userId) {
           return { success: false, error: 'Acceso no autorizado' }
+        }
+
+        const economic = await deps.evaluateEconomicAccess({ teamId: self.teamId, athleteProfileId: self.athleteProfileId })
+        if (economic.status !== 'allowed') {
+          return { success: false, error: economic.status === 'blocked' ? 'blocked_for_prior_debt' : 'economic_evidence_unavailable' }
         }
 
         if (input.sessionId === null) {
