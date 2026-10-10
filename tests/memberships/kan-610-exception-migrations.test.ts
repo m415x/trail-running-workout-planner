@@ -18,3 +18,15 @@ test('KAN-730 exception author migrations are registered for SQLite and Supabase
     assert.ok(journal.includes(tag), 'migration must be registered')
   }
 })
+
+test('KAN-730 migration snapshots include nullable author columns for all three exception tables', () => {
+  for (const [root, tag] of [['drizzle/sqlite', '0022'], ['drizzle/supabase', '0035']]) {
+    const path = root + '/meta/' + tag + '_snapshot.json'
+    assert.ok(existsSync(path), path + ' must exist')
+    const snapshot = readFileSync(path, 'utf8')
+    for (const table of ['global_monthly_due_date_exceptions', 'monthly_charge_reductions', 'monthly_charge_extensions']) {
+      assert.ok(snapshot.includes(table), table + ' must be represented in ' + path)
+    }
+    assert.ok(snapshot.includes('created_by_user_id'), 'snapshot must include author column')
+  }
+})
