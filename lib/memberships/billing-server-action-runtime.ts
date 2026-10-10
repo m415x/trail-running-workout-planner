@@ -21,6 +21,7 @@ type RuntimeDatabase =
 
 type CurrentGlobalExceptionRow = {
   id: string
+  createdByUserId: string | null
   teamId: string
   year: number
   month: number
