@@ -6,6 +6,7 @@ import { athleteGroups, athleteProfiles } from '@/db/schema'
 import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
 import type { H4aActiveTeamAuthorizationRequest } from '@/lib/authorization/h4a-active-team-authorization'
 import { assignAthleteToGroupSynchronously } from '@/lib/athletes/group-assignment'
+import { resolveAuthorizedH7aWriterContext } from '@/lib/authorization/h7a-trusted-authorship'
 
 export interface AthleteGroupFormState {
   error?: string
@@ -125,18 +126,23 @@ export function createAthleteGroupAssignmentAction<
         return { error: 'No autorizado' }
       }
 
+      const writerContext = resolveAuthorizedH7aWriterContext(access, groupAuthorization)
+      if (!writerContext) {
+        return { error: 'No autorizado' }
+      }
+
       assignAthleteToGroupSynchronously({
         db: dependencies.db,
         createId: dependencies.createId,
         now: dependencies.now,
         input: {
-          teamId: groupAuthorization.teamId,
+          teamId: writerContext.teamId,
           athleteId: data.athleteId,
           newGroupId: data.newGroupId,
           effectiveDate: data.effectiveDate,
           today: dependencies.today(),
           reason: data.reason || null,
-          changedByUserId: access.userId,
+          changedByUserId: writerContext.authorship.effectiveActorUserId,
         },
       })
     } catch (error) {
