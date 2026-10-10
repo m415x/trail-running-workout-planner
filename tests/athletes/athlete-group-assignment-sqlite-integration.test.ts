@@ -535,3 +535,41 @@ describe('assignAthleteToGroup Server Action boundary', () => {
     }
   })
 })
+
+it('KAN-737 SQLite DENY does not mutate athlete, cohort or group history', async () => {
+  const fixture = createDatabase()
+  try {
+    fixture.insertMembership({ id: 'open-deny', startDate: '2026-06-01' })
+    const action = createAthleteGroupAssignmentAction({
+      db: fixture.db,
+      requireAccess: async () => ({ status: 'authenticated' as const, userId: 'user-athlete' }),
+      authorize: async () => ({ allowed: false as const }),
+      createId: () => 'history-denied',
+      now: () => '2026-09-28T15:00:00.000Z',
+      today: () => '2026-09-28',
+      revalidatePath: () => { throw new Error('DENY must not revalidate') },
+      redirect: () => { throw new Error('DENY must not redirect') },
+    })
+    const formData = new FormData()
+    formData.set('athleteId', 'athlete-1')
+    formData.set('newGroupId', 'group-new')
+    formData.set('effectiveDate', '2026-09-20')
+    formData.set('locale', 'es')
+    formData.set('changedByUserId', 'spoofed-user')
+    const result = await action({}, formData)
+    assert.equal(result.error, 'No autorizado')
+    assert.equal(
+      fixture.db.select({ groupId: athleteProfiles.groupId }).from(athleteProfiles).get()?.groupId,
+      'group-old',
+    )
+    assert.equal(
+      fixture.db.select({ endDate: planningCohortMemberships.endDate })
+        .from(planningCohortMemberships)
+        .where(eq(planningCohortMemberships.id, 'open-deny')).get()?.endDate,
+      null,
+    )
+    assert.equal(fixture.db.select().from(groupHistoryRecords).all().length, 0)
+  } finally {
+    fixture.sqlite.close()
+  }
+})
