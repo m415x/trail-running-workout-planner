@@ -20,6 +20,7 @@ import {
   createTrack1000mEvidence,
   reviewCoachTrack1000mEvidence,
   readAthleteTrack1000mEvolution,
+  readAuthorizedFieldPerformanceTestAuditHistory,
   resolveAthleteRunningReference,
   type CorrectTrack1000mEvidenceInput,
   type CreateAthleteTrack1000mEvidenceInput,
@@ -282,6 +283,13 @@ export async function reviewCoachTrack1000mEvidenceAction(
   })
 }
 
+
+export async function getCoachTrack1000mAuditHistoryAction(athleteId: string) {
+  return readAuthorizedFieldPerformanceTestAuditHistory(athleteId, {
+    resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+    listAllByAthlete: repository.listAllByAthlete,
+  })
+}
 
 export async function getCoachTrack1000mHistoryAction(athleteId: string, effectiveDate: string) {
   const [evolution, reference] = await Promise.all([
