@@ -12,7 +12,10 @@ test('Drizzle replaces the current Payment revision atomically inside one transa
     update: () => ({
       set: (values: Record<string, unknown>) => ({
         where: () => ({
-          run: () => operations.push({ kind: 'update', values }),
+          run: () => {
+            operations.push({ kind: 'update', values })
+            return { changes: 1 }
+          },
         }),
       }),
     }),
