@@ -372,7 +372,7 @@ export const fieldPerformanceTestEvents = sqliteTable(
     groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'restrict' }),
     scheduledAt: text('scheduled_at').notNull(),
     protocol: text('protocol').$type<'1000m_track'>().notNull(),
-    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('field_performance_test_events_team_group_date_idx').on(table.teamId, table.groupId, table.scheduledAt),
