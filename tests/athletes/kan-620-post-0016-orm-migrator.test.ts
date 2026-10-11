@@ -37,7 +37,7 @@ test('KAN-620 ORM migrator advances canonical 0016 state through current SQLite 
         sqlite.prepare('SELECT COUNT(*) AS count FROM __drizzle_migrations').get() as { count: number }
       ).count
 
-      assert.equal(migrationCount, 23)
+      assert.equal(migrationCount, 24)
       assert.deepEqual(sqlite.pragma('foreign_key_check'), [])
     } finally {
       sqlite.close()
