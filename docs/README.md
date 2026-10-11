@@ -44,7 +44,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-610/H7A** baseline, with full SHA-scoped closure evidence in [`handoffs/kan-610.md`](handoffs/kan-610.md) and the [H7A architecture](architecture/platform/h7a-authorship-audit.md). The prior KAN-725 Harness v2 integration remains documented in [`handoffs/kan-725.md`](handoffs/kan-725.md); KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine the actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-739** ESLint zero-warning / Harness v2 workflow baseline, with SHA-scoped evidence in [`handoffs/kan-739.md`](handoffs/kan-739.md). The previous product-domain **KAN-610/H7A** baseline is preserved in [`handoffs/kan-610.md`](handoffs/kan-610.md) and the [H7A architecture](architecture/platform/h7a-authorship-audit.md). KAN-725 and KAN-609 handoffs remain historical. Jira and remote `dev` determine actual integration state.
 
 ## Verification runner
 
