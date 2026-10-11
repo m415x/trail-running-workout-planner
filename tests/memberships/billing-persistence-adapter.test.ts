@@ -140,6 +140,9 @@ test('global due-date exception service updates an already materialized charge b
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -181,6 +184,7 @@ test('global due-date exception service updates an already materialized charge b
       month: 10,
       dueDate: '2026-10-10',
       reason: 'Vencimiento excepcional',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -229,6 +233,7 @@ test('materialization applies the current global due-date exception to future ch
             month: 10,
             dueDate: '2026-10-15',
             reason: 'Vencimiento excepcional',
+            createdByUserId: null,
             isCurrent: true,
           }]
         : [],
@@ -263,6 +268,9 @@ test('global due-date exception preserves a later effective due date from an exi
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -293,6 +301,7 @@ test('global due-date exception preserves a later effective due date from an exi
         month: 10,
         extendedDueDate: '2026-10-25',
         reason: 'Prórroga individual vigente',
+        createdByUserId: null,
         isCurrent: true,
       }]
     },
@@ -316,6 +325,7 @@ test('global due-date exception preserves a later effective due date from an exi
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Nuevo vencimiento global',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -388,6 +398,7 @@ test('global due-date exception application uses the atomic persistence boundary
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Vencimiento excepcional',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -435,6 +446,7 @@ test('global due-date exception rejects a blank audit reason before persistence'
         month: 10,
         dueDate: '2026-10-15',
         reason: '   ',
+        createdByUserId: null,
         isCurrent: true,
       },
     }),
@@ -485,6 +497,7 @@ test('monthly charge reduction derives amount due without mutating the base amou
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -535,6 +548,7 @@ test('monthly charge reduction supports a total reduction without producing a ne
       month: 10,
       reductionAmountMinor: 2_500_000,
       reason: 'Beca total',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -569,6 +583,7 @@ test('withdrawing a monthly charge reduction restores amount due to the immutabl
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeReduction: async () => {},
@@ -593,6 +608,7 @@ test('withdrawing a monthly charge reduction restores amount due to the immutabl
       month: 10,
       reductionAmountMinor: 0,
       reason: 'Finaliza la beca',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -639,6 +655,7 @@ test('monthly charge reduction rejects an amount above the immutable base before
         month: 10,
         reductionAmountMinor: 2_500_001,
         reason: 'Importe inválido',
+        createdByUserId: null,
         isCurrent: true,
       },
     }),
@@ -677,6 +694,7 @@ test('monthly charge reduction uses persisted current history when correcting an
         month: 10,
         reductionAmountMinor: 500_000,
         reason: 'Beca inicial',
+        createdByUserId: null,
         isCurrent: true,
       }]
     },
@@ -702,6 +720,7 @@ test('monthly charge reduction uses persisted current history when correcting an
       month: 10,
       reductionAmountMinor: 750_000,
       reason: 'Corrección de beca',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -737,6 +756,7 @@ test('monthly charge reduction semantic retry does not create a new atomic write
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeReduction: async () => {},
@@ -756,6 +776,7 @@ test('monthly charge reduction semantic retry does not create a new atomic write
       month: 10,
       reductionAmountMinor: 500_000,
       reason: 'Beca deportiva',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -805,6 +826,7 @@ test('monthly charge extension projects effective due date without mutating base
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -851,6 +873,7 @@ test('monthly charge extension rejects a date that does not move beyond the curr
         month: 10,
         extendedDueDate: '2026-10-10',
         reason: 'Prórroga inválida',
+        createdByUserId: null,
         isCurrent: true,
       },
     }),
@@ -886,6 +909,7 @@ test('withdrawing a monthly charge extension restores effective due date to the 
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeExtension: async () => {},
@@ -910,6 +934,7 @@ test('withdrawing a monthly charge extension restores effective due date to the 
       month: 10,
       extendedDueDate: null,
       reason: 'Finaliza la prórroga',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -945,6 +970,7 @@ test('monthly charge extension correction may move earlier than the previous ext
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga inicial',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeExtension: async () => {},
@@ -969,6 +995,7 @@ test('monthly charge extension correction may move earlier than the previous ext
       month: 10,
       extendedDueDate: '2026-10-20',
       reason: 'Corrección de prórroga',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -1002,6 +1029,7 @@ test('monthly charge extension semantic retry does not create a new atomic write
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeExtension: async () => {},
@@ -1021,6 +1049,7 @@ test('monthly charge extension semantic retry does not create a new atomic write
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -1039,6 +1068,9 @@ test('a later global due-date exception keeps a later current individual extensi
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1067,6 +1099,7 @@ test('a later global due-date exception keeps a later current individual extensi
       month: 10,
       extendedDueDate: '2026-10-25',
       reason: 'Prórroga individual',
+      createdByUserId: null,
       isCurrent: true,
     }],
     updateMonthlyChargeDueDates: async (_teamId: string, charge: { effectiveDueDate: string }) => {
@@ -1086,6 +1119,7 @@ test('a later global due-date exception keeps a later current individual extensi
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Vencimiento global posterior',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -1104,6 +1138,9 @@ test('a global due-date exception can shadow a current extension without withdra
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1134,6 +1171,7 @@ test('a global due-date exception can shadow a current extension without withdra
         month: 10,
         extendedDueDate: '2026-10-25',
         reason: 'Prórroga individual',
+        createdByUserId: null,
         isCurrent: true,
       }]
     },
@@ -1154,6 +1192,7 @@ test('a global due-date exception can shadow a current extension without withdra
       month: 10,
       dueDate: '2026-10-28',
       reason: 'Vencimiento global extraordinario',
+      createdByUserId: null,
       isCurrent: true,
     },
   })
@@ -1174,6 +1213,9 @@ test('a current extension re-emerges when a later global due-date correction mov
     insertMonthlyCharges: async () => {},
     listGlobalDueDateExceptionRevisions: async () => [],
     replaceCurrentGlobalDueDateException: async () => {},
+    applyGlobalDueDateExceptionAtomically: async (teamId: string, _year: number, _month: number, _revision: unknown, charges: Array<{ baseDueDate: string; effectiveDueDate: string; amountDueMinor: number }>) => {
+      for (const charge of charges) await port.updateMonthlyChargeDueDates(teamId, charge)
+    },
     listTeamMonthlyCharges: async () => [{
       id: 'charge-a',
       athleteId: 'athlete-a',
@@ -1204,6 +1246,7 @@ test('a current extension re-emerges when a later global due-date correction mov
         month: 10,
         extendedDueDate: '2026-10-25',
         reason: 'Prórroga individual',
+        createdByUserId: null,
         isCurrent: true,
       }]
     },
@@ -1228,6 +1271,7 @@ test('a current extension re-emerges when a later global due-date correction mov
       month: 10,
       dueDate: '2026-10-20',
       reason: 'Corrección del vencimiento global',
+      createdByUserId: null,
       isCurrent: true,
     },
   })

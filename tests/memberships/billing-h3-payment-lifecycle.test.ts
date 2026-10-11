@@ -164,6 +164,7 @@ test('H2 reduction is rejected when it would lower amount due below effective H3
         month: 10,
         reductionAmountMinor: 1_800_000,
         reason: 'Beca parcial',
+        createdByUserId: null,
         isCurrent: true,
       },
     }),

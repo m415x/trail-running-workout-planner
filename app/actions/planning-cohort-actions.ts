@@ -13,6 +13,7 @@ import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { resolveTrustedH7aAuthorship } from '@/lib/authorization/h7a-trusted-authorship'
 import { competitionEntries } from '@/db/competition-entry-schema'
 import {
   athleteGroups,
@@ -648,6 +649,8 @@ export async function assignAthleteToPlanningCohort(
     if (!scopedCohort) return { error: 'Cohorte no encontrada', values }
     const authorized = await planningContext.authorizeGroup(scopedCohort.groupId, scopedCohort.teamId)
     if (!authorized) return { error: 'No autorizado', values }
+    const authorship = resolveTrustedH7aAuthorship(planningContext.access)
+    if (!authorship) return { error: 'No autorizado', values }
 
     db.transaction((tx) => {
       const cohort = tx.query.planningCohorts.findFirst({
@@ -691,7 +694,7 @@ export async function assignAthleteToPlanningCohort(
         athleteProfileId: athlete.id,
         startDate: data.startDate,
         endDate: null,
-        assignedByUserId: planningContext.access.userId,
+        assignedByUserId: authorship.effectiveActorUserId,
         assignmentReason: data.reason || null,
         endedByUserId: null,
         endReason: null,
@@ -758,6 +761,8 @@ export async function closePlanningCohortMembership(
     if (!scopedCohort) return { error: 'Cohorte no encontrada', values }
     const authorized = await planningContext.authorizeGroup(scopedCohort.groupId, scopedCohort.teamId)
     if (!authorized) return { error: 'No autorizado', values }
+    const authorship = resolveTrustedH7aAuthorship(planningContext.access)
+    if (!authorship) return { error: 'No autorizado', values }
 
     db.transaction((tx) => {
       const cohort = tx.query.planningCohorts.findFirst({
@@ -785,7 +790,7 @@ export async function closePlanningCohortMembership(
 
       tx.update(planningCohortMemberships).set({
         endDate: data.endDate,
-        endedByUserId: planningContext.access.userId,
+        endedByUserId: authorship.effectiveActorUserId,
         endReason: data.reason || null,
         updatedAt: new Date().toISOString(),
       }).where(and(

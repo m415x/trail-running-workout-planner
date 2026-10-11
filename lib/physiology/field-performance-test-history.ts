@@ -16,6 +16,7 @@ export interface FieldPerformanceTestRow {
   executionContext?: FieldPerformanceTestExecutionContext
   recordedBy?: FieldPerformanceTestRecordedBy
   recordedByUserId?: string | null
+  reviewedByUserId?: string | null
   reviewStatus?: FieldPerformanceTestReviewStatus
    distanceM: 1000
   elapsedTimeSec: number
@@ -91,4 +92,22 @@ export function listEligibleFieldPerformanceTestHistory(
       // explicitly through review eligibility.
       (row.reviewStatus ?? 'accepted') === 'accepted',
   )
+}
+
+/**
+ * Returns the complete retained audit trail for an athlete, including
+ * invalidated evidence. Legacy null actor identities remain unknown.
+ * Authorization and team scoping are enforced by the caller's boundary.
+ */
+export function listFieldPerformanceTestAuditHistory(
+  rows: readonly FieldPerformanceTestRow[],
+  athleteId: string,
+): FieldPerformanceTestRow[] {
+  return rows
+    .filter(row => row.athleteId === athleteId)
+    .toSorted((left, right) =>
+      left.performedAt.localeCompare(right.performedAt) ||
+      left.createdAt.localeCompare(right.createdAt) ||
+      left.id.localeCompare(right.id),
+    )
 }

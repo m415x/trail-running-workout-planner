@@ -57,6 +57,7 @@ export function createAthleteBillingTermsService(
       teamId: string
       athleteId: string
       termsId: string
+      createdByUserId?: string | null
       effectiveFrom: string
     }) {
       await assertAthleteScope(repository, input.teamId, input.athleteId)
@@ -74,6 +75,7 @@ export function createAthleteBillingTermsService(
       const policy = effectivePolicyAt(policies, input.effectiveFrom)
       const terms = applyAthleteBillingTerms({
         id: input.termsId,
+        createdByUserId: input.createdByUserId ?? null,
         athleteId: input.athleteId,
         policy,
         effectiveFrom: input.effectiveFrom,
@@ -87,6 +89,7 @@ export function createAthleteBillingTermsService(
       teamId: string
       athleteId: string
       termsId: string
+      createdByUserId?: string | null
       effectiveFrom: string
       monthlyAmountMinor: number
       currency: string
@@ -110,6 +113,7 @@ export function createAthleteBillingTermsService(
       const { current, replacement } = changeAthleteBillingTerms({
         current: openTerms[0]!,
         replacementId: input.termsId,
+        createdByUserId: input.createdByUserId ?? null,
         effectiveFrom: input.effectiveFrom,
         monthlyAmountMinor: input.monthlyAmountMinor,
         currency: input.currency,
@@ -154,6 +158,7 @@ export function createSynchronousAthleteBillingTermsService(
       teamId: string
       athleteId: string
       termsId: string
+      createdByUserId?: string | null
       effectiveFrom: string
     }) {
       assertSynchronousAthleteScope(repository, input.teamId, input.athleteId)
@@ -171,6 +176,7 @@ export function createSynchronousAthleteBillingTermsService(
       const policy = effectivePolicyAt(policies, input.effectiveFrom)
       const terms = applyAthleteBillingTerms({
         id: input.termsId,
+        createdByUserId: input.createdByUserId ?? null,
         athleteId: input.athleteId,
         policy,
         effectiveFrom: input.effectiveFrom,
@@ -184,6 +190,7 @@ export function createSynchronousAthleteBillingTermsService(
       teamId: string
       athleteId: string
       termsId: string
+      createdByUserId?: string | null
       effectiveFrom: string
       monthlyAmountMinor: number
       currency: string
@@ -207,6 +214,7 @@ export function createSynchronousAthleteBillingTermsService(
       const { current, replacement } = changeAthleteBillingTerms({
         current: openTerms[0]!,
         replacementId: input.termsId,
+        createdByUserId: input.createdByUserId ?? null,
         effectiveFrom: input.effectiveFrom,
         monthlyAmountMinor: input.monthlyAmountMinor,
         currency: input.currency,

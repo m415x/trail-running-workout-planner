@@ -52,7 +52,7 @@ const configureAuthorizedPolicy = createH6PolicyAction({
     })
   },
   authorize: (access, request) => economicPolicyBoundary.authorize(access, request),
-  configure: (teamId, input) => runtime.configureTeamEconomicPolicy({ ...input, teamId }),
+  configure: (teamId, input, authorship) => runtime.configureTeamEconomicPolicy({ ...input, teamId, authorship }),
   revalidate: () => revalidatePath('/dashboard/membership'),
   now: () => new Date().toISOString(),
 })
@@ -83,10 +83,10 @@ const authorizedTermsAndMaterialization = createH6TermsAndMaterializationActions
     )).get()
     return Boolean(row)
   },
-  initializeTerms: (teamId, athleteId, effectiveFrom) =>
-    runtime.applyInitialAthleteBillingTerms({ teamId, athleteId, effectiveFrom }),
-  changeTerms: (teamId, athleteId, input) =>
-    runtime.changeAthleteBillingTerms({ teamId, athleteId, ...input }),
+  initializeTerms: (teamId, athleteId, effectiveFrom, authorship) =>
+    runtime.applyInitialAthleteBillingTerms({ teamId, athleteId, effectiveFrom, authorship }),
+  changeTerms: (teamId, athleteId, input, authorship) =>
+    runtime.changeAthleteBillingTerms({ teamId, athleteId, ...input, authorship }),
   materialize: (teamId, input) => runtime.materializeTeamMonthlyCharges({ teamId, ...input }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),
@@ -134,8 +134,8 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
       )).get()
     return Boolean(row)
   },
-  globalDueDate: (teamId, input) => runtime.applyGlobalDueDateException({ ...input, teamId }),
-  reduce: (teamId, input) => runtime.applyMonthlyChargeReduction({
+  globalDueDate: (teamId, input, authorship) => runtime.applyGlobalDueDateException({ ...input, teamId, authorship }),
+  reduce: (teamId, input, authorship) => runtime.applyMonthlyChargeReduction({
     teamId,
     athleteId: input.athleteId,
     monthlyChargeId: input.monthlyChargeId,
@@ -143,8 +143,9 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
     month: input.month,
     reductionAmountMinor: input.reductionAmountMinor,
     reason: input.reason,
+    authorship,
   }),
-  extend: (teamId, input) => runtime.applyMonthlyChargeExtension({
+  extend: (teamId, input, authorship) => runtime.applyMonthlyChargeExtension({
     teamId,
     athleteId: input.athleteId,
     monthlyChargeId: input.monthlyChargeId,
@@ -152,6 +153,7 @@ const authorizedEconomicExceptions = createH6EconomicExceptionActions({
     month: input.month,
     extendedDueDate: input.extendedDueDate,
     reason: input.reason,
+    authorship,
   }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),
@@ -239,18 +241,21 @@ const authorizedPayments = createH6PaymentActions({
       )).get()
     return Boolean(row)
   },
-  register: (teamId, input) => runtime.registerManualPayment({
+  register: (teamId, input, authorship) => runtime.registerManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     amountMinor: input.amountMinor, paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+    authorship: authorship,
   }),
-  correct: (teamId, input) => runtime.correctManualPayment({
+  correct: (teamId, input, authorship) => runtime.correctManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     paymentId: input.paymentId, amountMinor: input.amountMinor,
     paymentMethod: input.paymentMethod, paidAt: input.paidAt,
+    authorship: authorship,
   }),
-  voidPayment: (teamId, input) => runtime.voidManualPayment({
+  voidPayment: (teamId, input, authorship) => runtime.voidManualPayment({
     teamId, athleteId: input.athleteId, monthlyChargeId: input.monthlyChargeId,
     paymentId: input.paymentId,
+    authorship: authorship,
   }),
   revalidate: revalidatePath,
   now: () => new Date().toISOString(),

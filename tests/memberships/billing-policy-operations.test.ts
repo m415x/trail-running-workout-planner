@@ -65,6 +65,7 @@ test('prospective team policy replacement closes the current policy and creates 
   assert.equal(result.current.effectiveUntil, '2026-11-01')
   assert.deepEqual(result.replacement, {
     id: 'policy-b',
+    createdByUserId: null,
     teamId: 'team-a',
     defaultMonthlyAmountMinor: 3_000_000,
     currency: 'ARS',

@@ -38,6 +38,7 @@ type DrizzleQuery = {
 function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeReductionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     monthlyChargeId: String(row.monthlyChargeId),
     athleteId: String(row.athleteId),
     year: Number(row.year),
@@ -51,6 +52,7 @@ function mapMonthlyChargeReduction(row: QueryResult): PersistedMonthlyChargeRedu
 function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExtensionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     monthlyChargeId: String(row.monthlyChargeId),
     athleteId: String(row.athleteId),
     year: Number(row.year),
@@ -64,6 +66,7 @@ function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExte
 function mapPaymentRevision(row: QueryResult): PersistedPaymentRevision {
   return {
     revisionId: String(row.id ?? row.revisionId),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     paymentId: String(row.paymentId),
     monthlyChargeId: String(row.monthlyChargeId),
     amountMinor: Number(row.amountMinor),
@@ -77,6 +80,7 @@ function mapPaymentRevision(row: QueryResult): PersistedPaymentRevision {
 function mapGlobalDueDateException(row: QueryResult): GlobalDueDateExceptionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     teamId: String(row.teamId),
     year: Number(row.year),
     month: Number(row.month),
@@ -287,6 +291,7 @@ export function createDrizzleBillingDatabase(
       const now = new Date().toISOString()
       executeMutation(client.insert(paymentRevisions).values([{
         id: revision.revisionId,
+        createdByUserId: revision.createdByUserId ?? null,
         paymentId: revision.paymentId,
         monthlyChargeId: revision.monthlyChargeId,
         amountMinor: revision.amountMinor,
@@ -316,12 +321,20 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
 
-        executeMutation(tx.update(paymentRevisions)
+        const demotion = tx.update(paymentRevisions)
           .set({ isCurrent: false, updatedAt: now })
-          .where(eq(paymentRevisions.id, previous.revisionId)))
+          .where(and(
+            eq(paymentRevisions.id, previous.revisionId),
+            eq(paymentRevisions.isCurrent, true),
+          ))
+        if (!demotion.run) throw new Error('Payment revision update must report affected rows')
+        const result = demotion.run() as { changes?: number; affectedRows?: number } | undefined
+        const changes = result?.changes ?? result?.affectedRows
+        if (changes !== 1) throw new Error('Payment revision is no longer current')
 
         executeMutation(tx.insert(paymentRevisions).values([{
           id: replacement.revisionId,
+          createdByUserId: replacement.createdByUserId ?? null,
           paymentId: replacement.paymentId,
           monthlyChargeId: replacement.monthlyChargeId,
           amountMinor: replacement.amountMinor,
@@ -569,6 +582,7 @@ export function createDrizzleBillingDatabase(
         if (!isRetry) {
           executeMutation(tx.insert(monthlyChargeReductions).values([{
             id: revision.id,
+            createdByUserId: revision.createdByUserId,
             monthlyChargeId,
             reductionAmountMinor: revision.reductionAmountMinor,
             reason: revision.reason,
@@ -659,6 +673,7 @@ export function createDrizzleBillingDatabase(
 
         executeMutation(tx.insert(monthlyChargeReductions).values([{
           id: revision.id,
+          createdByUserId: revision.createdByUserId,
           monthlyChargeId: revision.monthlyChargeId,
           reductionAmountMinor: revision.reductionAmountMinor,
           reason: revision.reason,
@@ -713,6 +728,7 @@ export function createDrizzleBillingDatabase(
         if (!isRetry) {
           executeMutation(tx.insert(monthlyChargeExtensions).values([{
             id: revision.id,
+            createdByUserId: revision.createdByUserId,
             monthlyChargeId,
             extendedDueDate: revision.extendedDueDate,
             reason: revision.reason,
@@ -803,6 +819,7 @@ export function createDrizzleBillingDatabase(
 
         executeMutation(tx.insert(monthlyChargeExtensions).values([{
           id: revision.id,
+          createdByUserId: revision.createdByUserId,
           monthlyChargeId: revision.monthlyChargeId,
           extendedDueDate: revision.extendedDueDate,
           reason: revision.reason,

@@ -254,6 +254,7 @@ test('effective due date is max(baseDueDate, current extendedDueDate) without in
       month: 10,
       dueDate: '2026-10-25',
       reason: 'Excepción global posterior',
+      createdByUserId: null,
       isCurrent: true,
     },
     reductionRevisions: [],
@@ -273,6 +274,7 @@ test('effective due date is max(baseDueDate, current extendedDueDate) without in
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Corrección de excepción global',
+      createdByUserId: null,
       isCurrent: true,
     },
     reductionRevisions: [],
@@ -320,6 +322,7 @@ test('a global exception changes base due date for an existing charge but never 
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Vencimiento excepcional',
+      createdByUserId: null,
       isCurrent: true,
     },
     reductionRevisions: [],
@@ -349,6 +352,7 @@ test('the first reached month cannot become due before economic activation after
       month: 10,
       dueDate: '2026-10-10',
       reason: 'Excepción global',
+      createdByUserId: null,
       isCurrent: true,
     },
     reductionRevisions: [],
@@ -489,6 +493,7 @@ test('projection rejects more than one current revision for the same H2 fact', (
       month: charge.month,
       reductionAmountMinor: 500_000,
       reason: 'Primera',
+      createdByUserId: null,
       isCurrent: true,
     },
     {
@@ -498,6 +503,7 @@ test('projection rejects more than one current revision for the same H2 fact', (
       month: charge.month,
       reductionAmountMinor: 750_000,
       reason: 'Segunda',
+      createdByUserId: null,
       isCurrent: true,
     },
   ]
@@ -538,6 +544,7 @@ test('reduction, global due-date exception, and extension compose without crossi
       month: 10,
       dueDate: '2026-10-15',
       reason: 'Excepción global',
+      createdByUserId: null,
       isCurrent: true,
     },
     reductionRevisions: reductions,
@@ -560,6 +567,7 @@ test('projection rejects more than one current extension revision for the same c
       month: charge.month,
       extendedDueDate: '2026-10-20',
       reason: 'Primera prórroga',
+      createdByUserId: null,
       isCurrent: true,
     },
     {
@@ -569,6 +577,7 @@ test('projection rejects more than one current extension revision for the same c
       month: charge.month,
       extendedDueDate: '2026-10-25',
       reason: 'Segunda prórroga',
+      createdByUserId: null,
       isCurrent: true,
     },
   ]
@@ -595,6 +604,7 @@ test('projection rejects a global due-date exception from a different charge per
         month: 11,
         dueDate: '2026-11-15',
         reason: 'Excepción de otro período',
+        createdByUserId: null,
         isCurrent: true,
       },
       reductionRevisions: [],
@@ -641,6 +651,7 @@ test('projection rejects reduction and extension revisions belonging to another 
     month: 11,
     reductionAmountMinor: 500_000,
     reason: 'Otra cuota',
+    createdByUserId: null,
     isCurrent: true,
   }
   const foreignExtension: MonthlyChargeExtensionRevision = {
@@ -650,6 +661,7 @@ test('projection rejects reduction and extension revisions belonging to another 
     month: charge.month,
     extendedDueDate: '2026-10-20',
     reason: 'Otro atleta',
+    createdByUserId: null,
     isCurrent: true,
   }
 
@@ -795,6 +807,7 @@ test('global due-date projection requires the current revision rather than a sup
         month: 10,
         dueDate: '2026-10-15',
         reason: 'Revisión histórica',
+        createdByUserId: null,
         isCurrent: false,
       },
       reductionRevisions: [],

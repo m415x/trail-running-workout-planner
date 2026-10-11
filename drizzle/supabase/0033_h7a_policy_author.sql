@@ -1,0 +1,2 @@
+ALTER TABLE "team_economic_policies" ADD COLUMN "created_by_user_id" text;--> statement-breakpoint
+ALTER TABLE "team_economic_policies" ADD CONSTRAINT "team_economic_policies_created_by_user_id_users_id_fk" FOREIGN KEY ("created_by_user_id") REFERENCES "public"."users"("id") ON DELETE restrict ON UPDATE no action;

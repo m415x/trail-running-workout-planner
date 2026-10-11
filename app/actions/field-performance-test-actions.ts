@@ -20,6 +20,7 @@ import {
   createTrack1000mEvidence,
   reviewCoachTrack1000mEvidence,
   readAthleteTrack1000mEvolution,
+  readAuthorizedFieldPerformanceTestAuditHistory,
   resolveAthleteRunningReference,
   type CorrectTrack1000mEvidenceInput,
   type CreateAthleteTrack1000mEvidenceInput,
@@ -47,12 +48,31 @@ const dependencies = {
 }
 
 export async function createTrack1000mEvidenceAction(input: Track1000mEvaluationInput) {
-  return createTrack1000mEvidence(input, dependencies)
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return createTrack1000mEvidence({ ...input, recordedByUserId: access.userId }, dependencies)
 }
 
 export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEvidenceInput) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return correctTrack1000mEvidence(input, {
     ...dependencies,
+    recordedByUserId: access.userId,
     getById: repository.getById,
     replace: repository.replace,
   })
@@ -167,6 +187,16 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
 export async function createCoachTrack1000mEvidenceAction(
   input: Omit<CreateCoachTrack1000mEvidenceInput, 'performedAt'>,
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+  const recordedByUserId = access.userId
+
   const testEvent = await resolveEligibleTestEvent(input.testEventId, input.athleteId)
   if (!testEvent) {
     return { success: false as const, error: 'test_event_not_found' as const }
@@ -182,6 +212,7 @@ export async function createCoachTrack1000mEvidenceAction(
     performedAt,
   }, {
     ...dependencies,
+    recordedByUserId: recordedByUserId,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
     findActiveOfficialByAthleteAndTestEvent: repository.findActiveOfficialByAthleteAndTestEvent,
@@ -234,14 +265,31 @@ export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string)
 export async function reviewCoachTrack1000mEvidenceAction(
   input: ReviewCoachTrack1000mEvidenceInput,
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return reviewCoachTrack1000mEvidence(input, {
     resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
     getById: repository.getById,
+    reviewedByUserId: access.userId,
     review: repository.review,
     now: dependencies.now,
   })
 }
 
+
+export async function getCoachTrack1000mAuditHistoryAction(athleteId: string) {
+  return readAuthorizedFieldPerformanceTestAuditHistory(athleteId, {
+    resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+    listAllByAthlete: repository.listAllByAthlete,
+  })
+}
 
 export async function getCoachTrack1000mHistoryAction(athleteId: string, effectiveDate: string) {
   const [evolution, reference] = await Promise.all([

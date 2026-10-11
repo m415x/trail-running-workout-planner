@@ -19,6 +19,7 @@ type SyncDrizzlePolicyQueryClient = {
 function mapGlobalException(row: QueryResult): GlobalDueDateExceptionRevision {
   return {
     id: String(row.id),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     teamId: String(row.teamId),
     year: Number(row.year),
     month: Number(row.month),

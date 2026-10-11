@@ -372,7 +372,7 @@ export const fieldPerformanceTestEvents = sqliteTable(
     groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'restrict' }),
     scheduledAt: text('scheduled_at').notNull(),
     protocol: text('protocol').$type<'1000m_track'>().notNull(),
-    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('field_performance_test_events_team_group_date_idx').on(table.teamId, table.groupId, table.scheduledAt),
@@ -396,6 +396,7 @@ export const fieldPerformanceTests = sqliteTable(
     executionContext: text('execution_context').$type<'official' | 'self_directed'>(),
     recordedBy: text('recorded_by').$type<'coach' | 'athlete'>(),
     recordedByUserId: text('recorded_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    reviewedByUserId: text('reviewed_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     reviewStatus: text('review_status').$type<'accepted' | 'pending_review' | 'rejected'>(),
      distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: real('elapsed_time_sec').notNull(),
@@ -805,6 +806,7 @@ export const teamEconomicPolicies = sqliteTable(
     ordinaryDueDay: integer('ordinary_due_day').notNull(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('team_economic_policies_team_dates_idx').on(table.teamId, table.effectiveFrom, table.effectiveUntil),
@@ -823,6 +825,7 @@ export const athleteBillingTerms = sqliteTable(
     currency: text('currency').notNull(),
     effectiveFrom: text('effective_from').notNull(),
     effectiveUntil: text('effective_until'),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('athlete_billing_terms_athlete_dates_idx').on(table.athleteId, table.effectiveFrom, table.effectiveUntil),
@@ -862,6 +865,7 @@ export const globalMonthlyDueDateExceptions = sqliteTable(
     month: integer('month').notNull(),
     dueDate: text('due_date').notNull(),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -880,6 +884,7 @@ export const monthlyChargeReductions = sqliteTable(
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     reductionAmountMinor: integer('reduction_amount_minor').notNull(),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -898,6 +903,7 @@ export const monthlyChargeExtensions = sqliteTable(
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     extendedDueDate: text('extended_due_date'),
     reason: text('reason').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     isCurrent: integer('is_current', { mode: 'boolean' }).notNull().default(true),
   },
   (table) => [
@@ -913,6 +919,7 @@ export const paymentRevisions = sqliteTable(
   {
     ...baseColumns,
     paymentId: text('payment_id').notNull(),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     monthlyChargeId: text('monthly_charge_id').notNull().references(() => monthlyCharges.id, { onDelete: 'restrict' }),
     amountMinor: integer('amount_minor').notNull(),
     paymentMethod: text('payment_method', { enum: ['cash', 'bank_transfer'] }).notNull(),

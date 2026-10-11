@@ -644,7 +644,7 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
  */
 export function normalizeSqliteSchemaSql(sql: string | null): string | null {
   if (sql === null) return null
-  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),]|[^\s(),]+/g) ?? []
+  const tokens = sql.match(/'(?:''|[^'])*'|"(?:""|[^"])*"|`(?:``|[^`])*`|\[[^\]]+\]|[(),.]|[^\s(),.]+/g) ?? []
   const quoteIdentifier = (value: string) => '`' + value.replaceAll('`', '``') + '`'
   const canonical = tokens.map(token => {
     if (token.startsWith('"') && token.endsWith('"')) {
@@ -653,6 +653,7 @@ export function normalizeSqliteSchemaSql(sql: string | null): string | null {
     if (token.startsWith('[') && token.endsWith(']')) {
       return quoteIdentifier(token.slice(1, -1))
     }
+    if (/^(restrict|cascade|set|no|action)$/i.test(token)) return token.toLowerCase()
     return token
   })
 
@@ -684,7 +685,15 @@ export function normalizeSqliteSchemaSql(sql: string | null): string | null {
       if (closing !== -1) {
         return [
           ...canonical.slice(0, opening + 1),
-          ...declarations.map(declaration => declaration.join(' ')).sort(),
+          ...declarations.map(declaration => {
+            const text = declaration.join(' ')
+            // Only remove the current table's optional qualifier inside CHECK.
+            // Preserve the CHECK itself and its compared literal.
+            if (!text.includes('CHECK')) return text
+            const tableName = canonical[opening - 1]
+            if (!tableName) return text
+            return text.replaceAll(tableName + ' . ', '').replaceAll(tableName + ' .', '').replaceAll(tableName + '.', '')
+          }).sort(),
           ...canonical.slice(closing),
         ].join(' ')
       }
@@ -708,13 +717,13 @@ function readNormalizedSchema(sqlitePath: string): string[] {
       .map(row => {
         // SQLite appends columns and can rewrite inline foreign keys on ALTER.
         // Compare the affected table by its actual columns and foreign keys.
-        if (row.type === 'table' && row.name === 'field_performance_tests') {
-          const columns = (sqlite.pragma('table_xinfo(field_performance_tests)') as Array<{
+        if (row.type === 'table' && ['field_performance_tests', 'team_economic_policies', 'athlete_billing_terms', 'global_monthly_due_date_exceptions', 'monthly_charge_extensions', 'monthly_charge_reductions', 'payment_revisions'].includes(row.name)) {
+          const columns = (sqlite.pragma(`table_xinfo(${row.name})`) as Array<{
             name: string; type: string; notnull: number; dflt_value: string | null; pk: number; hidden: number
           }>).map(({ name, type, notnull, dflt_value, pk, hidden }) =>
             ({ name, type: type.toUpperCase(), notnull, dflt_value, pk, hidden }),
           ).sort((a, b) => a.name.localeCompare(b.name))
-          const foreignKeys = (sqlite.pragma('foreign_key_list(field_performance_tests)') as Array<{
+          const foreignKeys = (sqlite.pragma(`foreign_key_list(${row.name})`) as Array<{
             table: string; from: string; to: string; on_update: string; on_delete: string; match: string; seq: number
           }>).map(({ table, from, to, on_update, on_delete, match, seq }) =>
             ({ table, from, to, on_update, on_delete, match, seq }),

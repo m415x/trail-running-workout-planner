@@ -21,6 +21,7 @@ type RuntimeDatabase =
 
 type CurrentGlobalExceptionRow = {
   id: string
+  createdByUserId: string | null
   teamId: string
   year: number
   month: number
@@ -45,6 +46,7 @@ type JoinMonthBillingClient = RuntimeDatabase & {
 }
 
 type ConfigureTeamEconomicPolicyInput = {
+  authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
   teamId: string
   effectiveFrom: string
   defaultMonthlyAmountMinor: number
@@ -227,6 +229,7 @@ export function createMembershipServerActionRuntime({
       month: number
       dueDate: string
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyGlobalDueDateExceptionAction(input, h2Dependencies)
     },
@@ -239,6 +242,7 @@ export function createMembershipServerActionRuntime({
       month: number
       reductionAmountMinor: number
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyMonthlyChargeReductionAction(input, h2Dependencies)
     },
@@ -251,6 +255,7 @@ export function createMembershipServerActionRuntime({
       month: number
       extendedDueDate: string | null
       reason: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       return applyMonthlyChargeExtensionAction(input, h2Dependencies)
     },
@@ -259,6 +264,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
       paidAt: string
@@ -268,6 +274,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).registerManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
           paymentId: createId(),
         })
@@ -282,6 +289,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       paymentId: string
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
@@ -292,6 +300,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).correctManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
         })
         return { success: true }
@@ -305,6 +314,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       monthlyChargeId: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       paymentId: string
     }): Promise<BillingActionResult> {
       try {
@@ -312,6 +322,7 @@ export function createMembershipServerActionRuntime({
           createSqliteBillingPersistencePort(createDrizzleBillingDatabase(db)),
         ).voidManualPayment({
           ...input,
+          createdByUserId: input.authorship?.effectiveActorUserId ?? null,
           revisionId: createId(),
         })
         return { success: true }
@@ -325,6 +336,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       effectiveFrom: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
     }): Promise<BillingActionResult> {
       if (!input.teamId || !input.athleteId || !/^\d{4}-\d{2}-\d{2}$/.test(input.effectiveFrom)) {
         return { success: false, error: 'Invalid athlete billing terms input' }
@@ -334,6 +346,7 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().applyInitialTerms({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
@@ -348,6 +361,7 @@ export function createMembershipServerActionRuntime({
       teamId: string
       athleteId: string
       effectiveFrom: string
+      authorship?: import('@/lib/authorization/h7a-trusted-authorship').TrustedH7aAuthorship
       monthlyAmountMinor: number
       currency: string
     }): Promise<BillingActionResult> {
@@ -366,6 +380,7 @@ export function createMembershipServerActionRuntime({
         transaction(() => {
           athleteTermsService().changeTerms({
             ...input,
+            createdByUserId: input.authorship?.effectiveActorUserId ?? null,
             termsId: createId(),
           })
         })
@@ -390,6 +405,9 @@ export function createMembershipServerActionRuntime({
 
           service.configureTeamEconomicPolicy({
             ...input,
+            ...(input.authorship
+              ? { createdByUserId: input.authorship.effectiveActorUserId }
+              : { createdByUserId: null }),
             policyId: createId(),
           })
         })

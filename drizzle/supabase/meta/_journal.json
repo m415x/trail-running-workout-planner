@@ -232,6 +232,48 @@
       "when": 1791383907592,
       "tag": "0032_nice_fantastic_four",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791643001000,
+      "tag": "0033_h7a_policy_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791643003000,
+      "tag": "0034_h7a_terms_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1791643005000,
+      "tag": "0035_h7a_exception_authors",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1791643007000,
+      "tag": "0036_h7a_payment_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791643009000,
+      "tag": "0037_h7a_field_review_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791643011000,
+      "tag": "0038_h7a_test_event_author_retention",
+      "breakpoints": true
     }
   ]
 }

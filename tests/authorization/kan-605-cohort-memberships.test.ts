@@ -33,7 +33,7 @@ describe('KAN-672 H4B dated Planning Cohort membership RED', () => {
     assert.match(body, /authorizeGroup\(scopedCohort\.groupId,\s*scopedCohort\.teamId\)/)
     assert.match(body, /validatePlanningCohortMembership\(/)
     assert.doesNotMatch(body, /assignedByUserId:\s*null/)
-    assert.match(body, /assignedByUserId:\s*planningContext\.access\.userId/)
+    assert.match(body, /assignedByUserId:\s*authorship\.effectiveActorUserId/)
   })
 
   it('closure validates persisted membership identity and preserves append-only history', () => {
@@ -41,7 +41,7 @@ describe('KAN-672 H4B dated Planning Cohort membership RED', () => {
     assert.match(body, /planningCohortMemberships\.planningCohortId/)
     assert.match(body, /validatePlanningCohortMembershipClosure\(/)
     assert.doesNotMatch(body, /endedByUserId:\s*null/)
-    assert.match(body, /endedByUserId:\s*planningContext\.access\.userId/)
+    assert.match(body, /endedByUserId:\s*authorship\.effectiveActorUserId/)
     assert.doesNotMatch(body, /tx\.delete\(/)
   })
 })

@@ -8,6 +8,7 @@ function createPort(paymentAmountMinor: number) {
     athleteBelongsToTeam: async () => true,
     listBillingTerms: async () => [{
       id: 'terms-1',
+      createdByUserId: null,
       athleteId: 'athlete-1',
       monthlyAmountMinor: 2_500_000,
       currency: 'ARS',
@@ -53,6 +54,7 @@ function createPort(paymentAmountMinor: number) {
       month: 8,
       extendedDueDate: '2026-08-20',
       reason: 'Individual extension',
+      createdByUserId: null,
       isCurrent: true,
     }],
     replaceCurrentMonthlyChargeExtension: async () => {

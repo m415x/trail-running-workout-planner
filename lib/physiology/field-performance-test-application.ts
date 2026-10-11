@@ -1,3 +1,4 @@
+import { listFieldPerformanceTestAuditHistory } from '@/lib/physiology/field-performance-test-history'
 import type { Track1000mEvaluationInput } from '@/lib/physiology/field-performance-test'
 import { projectTrack1000mEvolution, type Track1000mEvolution } from '@/lib/analytics/training/track-1000m-evolution'
 import { createTrack1000mEvaluation } from '@/lib/physiology/field-performance-test'
@@ -131,6 +132,7 @@ interface CoachFieldPerformanceCreateDependencies {
   insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
   newId(): string
   now(): string
+  recordedByUserId?: string
 }
 
 export async function createCoachTrack1000mEvidence(
@@ -155,7 +157,9 @@ export async function createCoachTrack1000mEvidence(
       testEventId: testEvent.id,
       executionContext: 'official',
       recordedBy: 'coach',
-      recordedByUserId: input.coachUserId ?? undefined,
+      recordedByUserId: dependencies.recordedByUserId,
+      // H7A: client-supplied coachUserId is never recorder authority.
+      // The later T7 server boundary will supply verified H2 authorship.
     },
     {
       resolveOwnedAthlete: async id => id === athlete.id ? athlete : null,
@@ -178,6 +182,7 @@ interface FieldPerformanceCorrectionDependencies {
   replace(id: string, replacement: InsertFieldPerformanceTest, updatedAt: string): FieldPerformanceTestRow
   newId(): string
   now(): string
+  recordedByUserId?: string
 }
 
 export type CorrectTrack1000mEvidenceResult =
@@ -210,6 +215,7 @@ export async function correctTrack1000mEvidence(
     const replacement = {
       id: dependencies.newId(),
       ...evaluation,
+      recordedByUserId: dependencies.recordedByUserId,
       // A correction made through the Coach boundary is authoritative even
       // when the original observation was self-directed.
       reviewStatus: 'accepted' as const,
@@ -242,7 +248,9 @@ interface CoachFieldPerformanceReviewDependencies {
     id: string,
     reviewStatus: 'accepted' | 'rejected',
     updatedAt: string,
+    reviewedByUserId?: string,
   ): FieldPerformanceTestRow
+  reviewedByUserId?: string
   now(): string
 }
 
@@ -265,7 +273,7 @@ export async function reviewCoachTrack1000mEvidence(
   try {
     return {
       success: true,
-      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now()),
+      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now(), dependencies.reviewedByUserId),
     }
   } catch (error) {
     return {
@@ -359,6 +367,29 @@ export async function readAthleteTrack1000mEvolution(
         athlete.id,
         '9999-12-31',
       ),
+      athlete.id,
+    ),
+  }
+}
+
+/**
+ * Read retained evidence only after the caller's ownership/authorization
+ * resolver has approved the athlete. This does not grant H2/H3 capabilities.
+ */
+export async function readAuthorizedFieldPerformanceTestAuditHistory(
+  athleteId: string,
+  dependencies: {
+    resolveOwnedAthlete(id: string): Promise<{ id: string } | null>
+    listAllByAthlete(id: string): FieldPerformanceTestRow[]
+  },
+): Promise<{ success: true; data: FieldPerformanceTestRow[] } | { success: false; error: 'athlete_not_found' }> {
+  const athlete = await dependencies.resolveOwnedAthlete(athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  return {
+    success: true,
+    data: listFieldPerformanceTestAuditHistory(
+      dependencies.listAllByAthlete(athlete.id),
       athlete.id,
     ),
   }

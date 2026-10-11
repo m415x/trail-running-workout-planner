@@ -1,0 +1,1 @@
+ALTER TABLE "field_performance_tests" ADD COLUMN "reviewed_by_user_id" text REFERENCES "users"("id") ON DELETE RESTRICT;

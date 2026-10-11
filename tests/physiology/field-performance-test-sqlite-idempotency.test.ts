@@ -20,6 +20,7 @@ describe('official 1000m SQLite idempotency', () => {
         execution_context TEXT,
         recorded_by TEXT,
         recorded_by_user_id TEXT,
+        reviewed_by_user_id TEXT,
         review_status TEXT,
         distance_m INTEGER NOT NULL,
         elapsed_time_sec REAL NOT NULL,

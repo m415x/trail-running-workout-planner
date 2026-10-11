@@ -127,6 +127,7 @@ export function createBillingPersistenceAdapter(
       athleteId: string
       monthlyChargeId: string
       revisionId: string
+      createdByUserId?: string | null
       paymentId: string
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
@@ -171,6 +172,7 @@ export function createBillingPersistenceAdapter(
       const revision = applyPaymentRevision({
         revisions: [],
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: input.amountMinor,
@@ -195,6 +197,7 @@ export function createBillingPersistenceAdapter(
       monthlyChargeId: string
       paymentId: string
       revisionId: string
+      createdByUserId?: string | null
       amountMinor: number
       paymentMethod: 'cash' | 'bank_transfer'
       paidAt: string
@@ -224,6 +227,7 @@ export function createBillingPersistenceAdapter(
       const correctedStream = applyPaymentRevision({
         revisions: paymentStream,
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: input.amountMinor,
@@ -250,6 +254,7 @@ export function createBillingPersistenceAdapter(
       monthlyChargeId: string
       paymentId: string
       revisionId: string
+      createdByUserId?: string | null
     }): Promise<PersistedPaymentRevision> {
       if (!(await port.athleteBelongsToTeam(input.teamId, input.athleteId))) {
         throw new Error('Athlete does not belong to the requested team')
@@ -271,6 +276,7 @@ export function createBillingPersistenceAdapter(
       const voidedStream = applyPaymentRevision({
         revisions: paymentStream,
         revisionId: input.revisionId,
+        createdByUserId: input.createdByUserId,
         paymentId: input.paymentId,
         monthlyChargeId: input.monthlyChargeId,
         amountMinor: current.amountMinor,
@@ -298,6 +304,7 @@ export function createBillingPersistenceAdapter(
         month: input.revision.month,
         dueDate: input.revision.dueDate,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions[0]
 
@@ -333,26 +340,16 @@ export function createBillingPersistenceAdapter(
         projectedCharges.push(projected)
       }
 
-      if (h2Port.applyGlobalDueDateExceptionAtomically) {
-        await h2Port.applyGlobalDueDateExceptionAtomically(
-          input.teamId,
-          input.year,
-          input.month,
-          validatedRevision,
-          projectedCharges,
-        )
-        return
+      if (!h2Port.applyGlobalDueDateExceptionAtomically) {
+        throw new Error('Billing persistence does not support atomic global due-date exceptions')
       }
-
-      await h2Port.replaceCurrentGlobalDueDateException(
+      await h2Port.applyGlobalDueDateExceptionAtomically(
         input.teamId,
         input.year,
         input.month,
         validatedRevision,
+        projectedCharges,
       )
-      for (const charge of projectedCharges) {
-        await h2Port.updateMonthlyChargeDueDates(input.teamId, charge)
-      }
     },
 
     async applyMonthlyChargeReduction(input: {
@@ -381,6 +378,7 @@ export function createBillingPersistenceAdapter(
         id: input.revision.id,
         reductionAmountMinor: input.revision.reductionAmountMinor,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
       if (!validatedRevision) throw new Error('Current monthly charge reduction revision not found')
@@ -443,6 +441,7 @@ export function createBillingPersistenceAdapter(
         id: input.revision.id,
         extendedDueDate: input.revision.extendedDueDate,
         reason: input.revision.reason,
+        createdByUserId: input.revision.createdByUserId,
       })
       const validatedRevision = validatedRevisions.find((revision) => revision.isCurrent)
       if (!validatedRevision) throw new Error('Current monthly charge extension revision not found')

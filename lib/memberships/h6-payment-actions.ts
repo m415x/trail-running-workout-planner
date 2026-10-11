@@ -1,4 +1,5 @@
 import type { RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
+import { resolveAuthorizedH7aWriterContext } from '@/lib/authorization/h7a-trusted-authorship'
 
 type Locale = 'es' | 'en'
 type PaymentBase = { athleteId: string; monthlyChargeId: string; locale: Locale }
@@ -6,33 +7,35 @@ type Register = PaymentBase & { amountMinor: number; paymentMethod: 'cash' | 'ba
 type Correct = Register & { paymentId: string }
 type Void = PaymentBase & { paymentId: string }
 type Result = { success: true } | { success: false; error: string }
+type TrustedAuthorship = Readonly<{ authenticatedActorUserId: string; effectiveActorUserId: string }>
 
 export function createH6PaymentActions(deps: {
   authenticate(): Promise<RequireAuthenticatedActionResult>
   authorize(access: RequireAuthenticatedActionResult, request: { at: string; capability: 'economy.manage'; resourceId: string }): Promise<{ allowed: boolean; teamId?: string }>
   ownsCharge(teamId: string, athleteId: string, chargeId: string): Promise<boolean>
   ownsPayment(teamId: string, athleteId: string, chargeId: string, paymentId: string): Promise<boolean>
-  register(teamId: string, input: Register): Promise<Result>
-  correct(teamId: string, input: Correct): Promise<Result>
-  voidPayment(teamId: string, input: Void): Promise<Result>
+  register(teamId: string, input: Register, authorship: TrustedAuthorship): Promise<Result>
+  correct(teamId: string, input: Correct, authorship: TrustedAuthorship): Promise<Result>
+  voidPayment(teamId: string, input: Void, authorship: TrustedAuthorship): Promise<Result>
   revalidate(path: string): void
   now(): string
 }) {
   const deny = (): Result => ({ success: false, error: 'Acceso no autorizado' })
-  async function checkedTeam(input: PaymentBase, paymentId?: string): Promise<string | null> {
+  async function checkedTeam(input: PaymentBase, paymentId?: string): Promise<{ teamId: string; authorship: TrustedAuthorship } | null> {
     const actor = await deps.authenticate()
     if (actor.status !== 'authenticated') return null
     const decision = await deps.authorize(actor, { at: deps.now(), capability: 'economy.manage', resourceId: '__active_team_economy__' })
-    if (!decision.allowed || !decision.teamId) return null
-    if (!await deps.ownsCharge(decision.teamId, input.athleteId, input.monthlyChargeId)) return null
-    if (paymentId && !await deps.ownsPayment(decision.teamId, input.athleteId, input.monthlyChargeId, paymentId)) return null
-    return decision.teamId
+    const context = resolveAuthorizedH7aWriterContext(actor, decision)
+    if (!context) return null
+    if (!await deps.ownsCharge(context.teamId, input.athleteId, input.monthlyChargeId)) return null
+    if (paymentId && !await deps.ownsPayment(context.teamId, input.athleteId, input.monthlyChargeId, paymentId)) return null
+    return context
   }
-  async function execute<T extends PaymentBase>(input: T, write: (teamId: string, data: T) => Promise<Result>, paymentId?: string): Promise<Result> {
+  async function execute<T extends PaymentBase>(input: T, write: (teamId: string, data: T, authorship: TrustedAuthorship) => Promise<Result>, paymentId?: string): Promise<Result> {
     try {
-      const team = await checkedTeam(input, paymentId)
-      if (!team) return deny()
-      const result = await write(team, input)
+      const context = await checkedTeam(input, paymentId)
+      if (!context) return deny()
+      const result = await write(context.teamId, input, context.authorship)
       if (result.success) deps.revalidate((input.locale === 'en' ? '/en' : '') + '/dashboard/athletes/' + input.athleteId)
       return result
     } catch { return deny() }

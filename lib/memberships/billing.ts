@@ -1,6 +1,7 @@
 export type CurrencyCode = string
 
 export type TeamEconomicPolicy = {
+  createdByUserId?: string | null
   id: string
   teamId: string
   defaultMonthlyAmountMinor: number
@@ -11,6 +12,7 @@ export type TeamEconomicPolicy = {
 }
 
 export type AthleteBillingTerms = {
+  createdByUserId?: string | null
   id: string
   athleteId: string
   monthlyAmountMinor: number
@@ -65,6 +67,7 @@ function formatDate(year: number, month: number, day: number): string {
 }
 
 export function createTeamEconomicPolicy(input: {
+  createdByUserId?: string | null
   id: string
   teamId: string
   defaultMonthlyAmountMinor: number
@@ -93,6 +96,7 @@ export function createTeamEconomicPolicy(input: {
 }
 
 export function replaceTeamEconomicPolicy(input: {
+  createdByUserId?: string | null
   current: TeamEconomicPolicy
   replacementId: string
   effectiveFrom: string
@@ -115,6 +119,7 @@ export function replaceTeamEconomicPolicy(input: {
 
   const replacement = createTeamEconomicPolicy({
     id: input.replacementId,
+    createdByUserId: input.createdByUserId ?? null,
     teamId: input.current.teamId,
     defaultMonthlyAmountMinor: input.defaultMonthlyAmountMinor,
     currency: input.currency,
@@ -135,6 +140,7 @@ export function applyAthleteBillingTerms(input: {
   id: string
   athleteId: string
   policy: TeamEconomicPolicy
+  createdByUserId?: string | null
   effectiveFrom: string
   effectiveUntil?: string | null
 }): AthleteBillingTerms {
@@ -143,6 +149,7 @@ export function applyAthleteBillingTerms(input: {
 
 export function changeAthleteBillingTerms(input: {
   current: AthleteBillingTerms
+  createdByUserId?: string | null
   replacementId: string
   effectiveFrom: string
   monthlyAmountMinor: number
@@ -158,6 +165,7 @@ export function createAthleteBillingTerms(input: {
   id: string
   athleteId: string
   policy: TeamEconomicPolicy
+  createdByUserId?: string | null
   effectiveFrom: string
   effectiveUntil?: string | null
 }): AthleteBillingTerms {
@@ -172,6 +180,7 @@ export function createAthleteBillingTerms(input: {
 
   return {
     id: input.id,
+    createdByUserId: input.createdByUserId ?? null,
     athleteId: input.athleteId,
     monthlyAmountMinor: input.policy.defaultMonthlyAmountMinor,
     currency: input.policy.currency,
@@ -182,6 +191,7 @@ export function createAthleteBillingTerms(input: {
 
 export function replaceAthleteBillingTerms(input: {
   current: AthleteBillingTerms
+  createdByUserId?: string | null
   replacementId: string
   effectiveFrom: string
   monthlyAmountMinor: number
@@ -207,6 +217,7 @@ export function replaceAthleteBillingTerms(input: {
     },
     replacement: {
       id: input.replacementId,
+      createdByUserId: input.createdByUserId ?? null,
       athleteId: input.current.athleteId,
       monthlyAmountMinor: input.monthlyAmountMinor,
       currency: input.currency,
@@ -420,6 +431,7 @@ export async function getAthleteBillingSnapshot(input: {
 
 export type GlobalDueDateExceptionRevision = {
   id: string
+  createdByUserId: string | null
   teamId: string
   year: number
   month: number
@@ -430,6 +442,7 @@ export type GlobalDueDateExceptionRevision = {
 
 export type MonthlyChargeReductionRevision = {
   id: string
+  createdByUserId: string | null
   athleteId: string
   year: number
   month: number
@@ -440,6 +453,7 @@ export type MonthlyChargeReductionRevision = {
 
 export type MonthlyChargeExtensionRevision = {
   id: string
+  createdByUserId: string | null
   athleteId: string
   year: number
   month: number
@@ -466,6 +480,7 @@ function sameChargeRevision(
 export function applyGlobalDueDateException(input: {
   revisions: GlobalDueDateExceptionRevision[]
   id: string
+  createdByUserId?: string | null
   teamId: string
   year: number
   month: number
@@ -513,6 +528,7 @@ export function applyGlobalDueDateException(input: {
       year: input.year,
       month: input.month,
       dueDate: input.dueDate,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
@@ -522,6 +538,7 @@ export function applyGlobalDueDateException(input: {
 export function applyMonthlyChargeReduction(input: {
   revisions: MonthlyChargeReductionRevision[]
   id: string
+  createdByUserId?: string | null
   charge: MonthlyChargeCandidate
   reductionAmountMinor: number
   reason: string
@@ -557,6 +574,7 @@ export function applyMonthlyChargeReduction(input: {
       year: input.charge.year,
       month: input.charge.month,
       reductionAmountMinor: input.reductionAmountMinor,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
@@ -566,6 +584,7 @@ export function applyMonthlyChargeReduction(input: {
 export function applyMonthlyChargeExtension(input: {
   revisions: MonthlyChargeExtensionRevision[]
   id: string
+  createdByUserId?: string | null
   charge: MonthlyChargeCandidate
   extendedDueDate: string | null
   reason: string
@@ -597,6 +616,7 @@ export function applyMonthlyChargeExtension(input: {
       year: input.charge.year,
       month: input.charge.month,
       extendedDueDate: input.extendedDueDate,
+      createdByUserId: input.createdByUserId ?? null,
       reason,
       isCurrent: true,
     },
@@ -683,6 +703,7 @@ export type PaymentRevision = {
   paidAt: string
   voided: boolean
   isCurrent: boolean
+  createdByUserId?: string | null
 }
 
 /**
@@ -697,6 +718,7 @@ export function applyPaymentRevision(input: {
   paymentMethod: PaymentMethod
   paidAt: string
   voided: boolean
+  createdByUserId?: string | null
 }): PaymentRevision[] {
   if (!Number.isSafeInteger(input.amountMinor) || input.amountMinor <= 0) {
     throw new Error('Payment amount must be a positive integer in minor units')
@@ -717,6 +739,7 @@ export function applyPaymentRevision(input: {
       revision.isCurrent ? { ...revision, isCurrent: false } : revision,
     ),
     {
+      createdByUserId: input.createdByUserId ?? null,
       revisionId: input.revisionId,
       paymentId: input.paymentId,
       monthlyChargeId: input.monthlyChargeId,

@@ -141,6 +141,48 @@
       "when": 1791383905710,
       "tag": "0019_known_mandroid",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1791643000000,
+      "tag": "0020_h7a_policy_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1791643002000,
+      "tag": "0021_h7a_terms_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1791643004000,
+      "tag": "0022_h7a_exception_authors",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1791643006000,
+      "tag": "0023_h7a_payment_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1791643008000,
+      "tag": "0024_h7a_field_review_author",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1791643010000,
+      "tag": "0025_h7a_test_event_author_retention",
+      "breakpoints": true
     }
   ]
 }

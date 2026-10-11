@@ -11,12 +11,13 @@ export type InsertFieldPerformanceTest = Omit<FieldPerformanceTestRow, 'isDelete
 
 export interface SqliteFieldPerformanceTestRepository {
   insert(evaluation: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  listAllByAthlete(athleteId: string): FieldPerformanceTestRow[]
   listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
   listActiveByAthleteThroughDate(athleteId: string, effectiveDate: string): FieldPerformanceTestRow[]
   findActiveOfficialByAthleteAndTestEvent(athleteId: string, testEventId: string): FieldPerformanceTestRow | undefined
   getById(id: string): FieldPerformanceTestRow | undefined
   invalidate(id: string, updatedAt: string): void
-  review(id: string, reviewStatus: Exclude<FieldPerformanceTestReviewStatus, 'pending_review'>, updatedAt: string): FieldPerformanceTestRow
+  review(id: string, reviewStatus: Exclude<FieldPerformanceTestReviewStatus, 'pending_review'>, updatedAt: string, reviewedByUserId?: string): FieldPerformanceTestRow
   replace(id: string, replacement: InsertFieldPerformanceTest, updatedAt: string): FieldPerformanceTestRow
 }
 
@@ -33,6 +34,13 @@ export function createSqliteFieldPerformanceTestRepository(
         .get()
 
       return inserted as FieldPerformanceTestRow
+    },
+
+    listAllByAthlete(athleteId) {
+      return db.select().from(fieldPerformanceTests)
+        .where(eq(fieldPerformanceTests.athleteId, athleteId))
+        .orderBy(asc(fieldPerformanceTests.performedAt), asc(fieldPerformanceTests.createdAt), asc(fieldPerformanceTests.id))
+        .all() as FieldPerformanceTestRow[]
     },
 
     listActiveByAthlete(athleteId) {
@@ -102,10 +110,10 @@ export function createSqliteFieldPerformanceTestRepository(
         .run()
     },
 
-    review(id, reviewStatus, updatedAt) {
+    review(id, reviewStatus, updatedAt, reviewedByUserId) {
       const reviewed = db
         .update(fieldPerformanceTests)
-        .set({ reviewStatus, updatedAt })
+        .set({ reviewStatus, reviewedByUserId, updatedAt })
         .where(
           and(
             eq(fieldPerformanceTests.id, id),

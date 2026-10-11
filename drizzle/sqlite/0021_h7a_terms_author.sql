@@ -1,0 +1,1 @@
+ALTER TABLE `athlete_billing_terms` ADD `created_by_user_id` text REFERENCES users(id) ON DELETE restrict;
