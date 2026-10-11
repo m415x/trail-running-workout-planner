@@ -167,6 +167,16 @@ export async function getCurrentAthleteTrack1000mEvidenceAction(
 export async function createCoachTrack1000mEvidenceAction(
   input: Omit<CreateCoachTrack1000mEvidenceInput, 'performedAt'>,
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+  const recordedByUserId = access.userId
+
   const testEvent = await resolveEligibleTestEvent(input.testEventId, input.athleteId)
   if (!testEvent) {
     return { success: false as const, error: 'test_event_not_found' as const }
