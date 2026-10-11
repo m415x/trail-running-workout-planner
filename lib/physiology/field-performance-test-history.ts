@@ -16,6 +16,7 @@ export interface FieldPerformanceTestRow {
   executionContext?: FieldPerformanceTestExecutionContext
   recordedBy?: FieldPerformanceTestRecordedBy
   recordedByUserId?: string | null
+  reviewedByUserId?: string | null
   reviewStatus?: FieldPerformanceTestReviewStatus
    distanceM: 1000
   elapsedTimeSec: number
