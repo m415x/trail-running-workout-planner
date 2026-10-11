@@ -686,14 +686,12 @@ export function normalizeSqliteSchemaSql(sql: string | null): string | null {
           ...canonical.slice(0, opening + 1),
           ...declarations.map(declaration => {
             const text = declaration.join(' ')
-            // SQLite may qualify local CHECK references in fresh DDL but leave
-            // them unqualified after a table rebuild. Normalize only the
-            // current table's qualifier inside CHECK, preserving the constraint.
-            if (!/\\bCHECK\\s*\\(/i.test(text)) return text
+            // Only remove the current table's optional qualifier inside CHECK.
+            // Preserve the CHECK itself and its compared literal.
+            if (!text.includes('CHECK')) return text
             const tableName = canonical[opening - 1]
             if (!tableName) return text
-            const escaped = tableName.replace(/[.*+?^$\\{\\}()|[\\]\\\\]/g, '\\\\...declarations.map(declaration => declaration.join(' ')).sort(),')
-            return text.replace(new RegExp(escaped + '\\\\s*\\\\.\\\\s*(?=`)', 'g'), '')
+            return text.replaceAll(tableName + ' . ', '').replaceAll(tableName + ' .', '').replaceAll(tableName + '.', '')
           }).sort(),
           ...canonical.slice(closing),
         ].join(' ')
