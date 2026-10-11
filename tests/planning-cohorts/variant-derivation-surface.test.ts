@@ -31,7 +31,10 @@ describe('KAN-518 planning subgroup variant derivation surface', () => {
     assert.match(actions, /planningCohortId/)
     assert.match(actions, /sourceGroupTrainingPlanId/)
     assert.match(actions, /cohort\.groupId/)
-    assert.match(actions, /CURRENT_TEAM_ID/)
+    assert.match(actions, /createActiveTeamNextServerContext/)
+    assert.match(actions, /planningContext\.teamId/)
+    assert.match(actions, /planningContext\.authorizeGroup\(cohort\.groupId, cohort\.teamId\)/)
+    assert.match(actions, /plan\.group\.teamId === planningContext\.teamId/)
     assert.match(actions, /competitionEntries/)
   })
 
