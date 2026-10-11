@@ -38,9 +38,13 @@ Completed epics are consolidated here. History explains evolution and prior deci
 - [`history/epic-4.md`](history/epic-4.md) — canonical 1000 m evidence, RunningReference, execution guidance, factual evolution, lifecycle and safe Coach/Athlete integration.
 - [`history/epic-5.md`](history/epic-5.md) — temporal membership economics, exceptions, payments, derived account state and Coach/Athlete debt experience.
 
+## H7A — Authorship and audit
+
+- [`architecture/platform/h7a-authorship-audit.md`](architecture/platform/h7a-authorship-audit.md) — KAN-610 actor provenance, retained audit and limits of current H4A-based read authorization.
+
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-725 Harness v2 merged checkpoint**, with full workflow/closure evidence in [`handoffs/kan-725.md`](handoffs/kan-725.md) and the operational model in [`agent-harness.md`](agent-harness.md). KAN-609/H6 merged checkpoint remains the previous product-domain baseline and is preserved in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/kan-610.md`](handoffs/kan-610.md) records the **KAN-610/H7A pre-integration T9 checkpoint**; `handoffs/current.md` still describes the last verified merged operational baseline and must be updated after H7A merges. [`handoffs/current.md`](handoffs/current.md) records the completed **KAN-725 Harness v2 merged checkpoint**, with full workflow/closure evidence in [`handoffs/kan-725.md`](handoffs/kan-725.md) and the operational model in [`agent-harness.md`](agent-harness.md). KAN-609/H6 merged checkpoint remains the previous product-domain baseline and is preserved in [`handoffs/kan-609.md`](handoffs/kan-609.md). Jira and the verified remote `dev` HEAD determine actual integration state.
 
 ## Verification runner
 
