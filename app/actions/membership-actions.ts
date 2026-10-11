@@ -18,19 +18,10 @@ import { createExternalIdentityLookup } from '@/lib/auth/external-identity-looku
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
-import { createMembershipActionHandlers } from '@/lib/memberships/membership-action-handlers'
-
-const CURRENT_TEAM_ID = 'team_1'
 
 const runtime = createMembershipServerActionRuntime({
   db,
   createId: randomUUID,
-})
-
-const handlers = createMembershipActionHandlers({
-  teamId: CURRENT_TEAM_ID,
-  runtime,
-  revalidatePath,
 })
 
 const economicPolicyBoundary = createH6EconomicAuthorizationBoundary({

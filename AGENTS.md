@@ -75,6 +75,15 @@ These rules override generic coding-agent habits for this repository.
 
 ### Continuous approved execution
 
+**Normative operator-mediated RED/GREEN loop after approved decomposition**
+
+- Once subtasks and acceptance criteria are approved, immediately activate the first approved Jira subtask (`En curso`) and remotely materialize and commit/push its failing test. Do not ask the human how to proceed or seek another routine approval. The next expected assistant action is to activate T1 and materialize its RED test.
+- Give the human only the canonical Git Bash command `pn tdd:red <test-file> [...]` for the RED phase, then await reported RED evidence. Do not implement ahead of that RED confirmation.
+- After RED confirmation, implement and commit/push the minimum GREEN remotely. Give the human `pn tdd <test-file> [...]` and await GREEN evidence. Record the exact recoverable commit/SHA and evidence, then complete that Jira subtask and activate the next approved subtask without asking for permission.
+- Repeat Jira Tn `En curso` → remote RED commit → human `pn tdd:red` → confirmed RED → remote implementation commit → human `pn tdd` → confirmed GREEN → checkpoint/evidence/Jira done → next Tn. Do not claim a gate result without execution evidence.
+- Remote editing, Jira, commit/push, PR review, merge, and pre/post-merge documentation reconciliation are the agent's responsibilities. The human operates only the canonical local RED/GREEN/full gates and acceptance walkthroughs. Never request a separate `git pull` before either focused runner or `pn tsc` after `pn tdd`.
+- Interrupt this continuous execution only for a material product/security choice, an unexpected failure invalidating the decomposition, a nontrivial integration conflict, an external blocker, or a change in scope.
+
 - Approval of a story/task decomposition authorizes continuous RED → GREEN → recoverable checkpoint → next approved cut. Do not ask for routine confirmation between those steps.
 - Approval of the final story-closure task authorizes the routine closure sequence: documentation reconciliation → PR creation/update → PR review and required checks → merge to `dev` → post-merge reconciliation → Jira closure evidence. Do not ask the human to approve documentation edits, PR review, readiness, merge, or routine post-merge bookkeeping separately.
 - Stop and request a human decision only for a material product/security decision, unexpected in-scope defect that invalidates the approved decomposition, required check/gate failure that cannot be classified mechanically, non-trivial merge/integration conflict, external blocker, or scope change.

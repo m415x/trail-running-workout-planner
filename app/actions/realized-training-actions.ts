@@ -14,7 +14,6 @@ import {
 import { workoutLogEvidence } from '@/db/readiness-schema'
 import { getAthleteById } from '@/app/actions/athlete-actions'
 import { getAthletePlanningResolutionOnDate } from '@/app/actions/planning-cohort-actions'
-import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'

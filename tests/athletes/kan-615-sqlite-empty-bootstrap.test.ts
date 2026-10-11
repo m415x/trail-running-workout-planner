@@ -8,8 +8,6 @@ import { join, resolve } from 'node:path'
 import test from 'node:test'
 import Database from 'better-sqlite3'
 
-import { migrateKan615Historical0015 } from './kan-615-historical-0015'
-import { seedKan615PreservationData } from './kan-615-preservation-seed'
 
 const require = createRequire(import.meta.url)
 const tsxCli = require.resolve('tsx/cli')

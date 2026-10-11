@@ -103,6 +103,25 @@ Do not expand this prompt with durable workflow rules, current SHAs, branch name
 
 ### Focused TDD workflow
 
+The following is the **normative operator-mediated execution protocol**, not an optional illustration. Once subtasks and their acceptance criteria are approved, the agent starts T1 immediately; it must **not** ask the human “how to proceed” after an approved decomposition. The next expected assistant action is to set Jira T1 to `En curso` and materialize/commit/push its RED test.
+
+```text
+decomposition approved
+→ Jira T1 En curso
+→ remote RED test commit/push
+→ HUMAN (Git Bash): pn tdd:red <test-file> [...]
+→ RED confirmed against recoverable SHA
+→ remote implementation commit/push
+→ HUMAN (Git Bash): pn tdd <test-file> [...]
+→ GREEN confirmed against recoverable SHA
+→ checkpoint + evidence + Jira T1 done
+→ Jira T2 En curso
+→ remote RED test commit/push
+→ ... until approved closure
+```
+
+The human runs only local canonical RED/GREEN/gates or requested manual acceptance. The agent owns all remote file edits, Jira transitions/evidence, recoverable commits/pushes, PR review/checks/merge, and pre/post-merge documentation reconciliation, unless a material blocker makes an action unavailable. Do not request `git pull` separately before `pn tdd:red`/`pn tdd`, or `pn tsc` after `pn tdd`. Record results against the actual tested SHA/tree; GREEN is not presumed from a commit alone. Advance to the next approved task automatically, with no routine intermediate confirmation. Pause only on a material product/security decision, an unexpected failure invalidating decomposition, a nontrivial integration conflict, an external blocker, or scope change.
+
 After the story/task decomposition or TDD cycle has been approved, execution is continuous: advance RED → GREEN → next independently meaningful RED without requesting routine intermediate confirmation. Stop only for an unexpected result, a material source-of-truth discrepancy, a real product/security decision, a blocker that changes the approved scope, or evidence that the decomposition itself is no longer valid.
 
 The default hybrid loop is:

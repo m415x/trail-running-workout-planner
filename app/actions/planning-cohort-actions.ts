@@ -38,7 +38,6 @@ import {
   PlanningVariantPersistenceError,
 } from '@/lib/planning-cohorts/variant-persistence'
 
-const CURRENT_TEAM_ID = 'team_1'
 const locales = ['es', 'en'] as const
 
 type SupportedLocale = (typeof locales)[number]

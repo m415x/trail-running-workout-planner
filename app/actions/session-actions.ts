@@ -170,6 +170,8 @@ async function authorizeSessionRead(sessionId: string, planningAccess: NonNullab
 }
 
 export async function getSessionsByTeam(_teamId?: string) {
+  // Kept for existing callers; authorization derives team scope from the active session.
+  void _teamId
   const planningAccess = await planningReadAccess()
   if (!planningAccess) return []
   const rows = await db.query.sessions.findMany({
