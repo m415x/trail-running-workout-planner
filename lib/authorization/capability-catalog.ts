@@ -10,6 +10,7 @@ export const TEAM_MEMBERSHIP_PRESETS = [
 export type CapabilityKey =
   | 'athlete.admin.manage'
   | 'sporting_group.admin.manage'
+  | 'competition.manage'
   | 'planning.manage'
   | 'planning.self.read'
   | 'stats.self.read'
@@ -41,6 +42,12 @@ export const CAPABILITY_CATALOG = [
   {
     key: 'sporting_group.admin.manage',
     basePresets: ['assistant', 'coach', 'admin'],
+    delegable: false,
+    structural: false,
+  },
+  {
+    key: 'competition.manage',
+    basePresets: ['coach'],
     delegable: false,
     structural: false,
   },
