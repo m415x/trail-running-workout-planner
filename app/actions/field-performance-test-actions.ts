@@ -255,9 +255,19 @@ export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string)
 export async function reviewCoachTrack1000mEvidenceAction(
   input: ReviewCoachTrack1000mEvidenceInput,
 ) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return reviewCoachTrack1000mEvidence(input, {
     resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
     getById: repository.getById,
+    reviewedByUserId: access.userId,
     review: repository.review,
     now: dependencies.now,
   })
