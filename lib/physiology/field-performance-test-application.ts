@@ -131,6 +131,7 @@ interface CoachFieldPerformanceCreateDependencies {
   insert(evidence: InsertFieldPerformanceTest): FieldPerformanceTestRow
   newId(): string
   now(): string
+  recordedByUserId?: string
 }
 
 export async function createCoachTrack1000mEvidence(
@@ -155,6 +156,7 @@ export async function createCoachTrack1000mEvidence(
       testEventId: testEvent.id,
       executionContext: 'official',
       recordedBy: 'coach',
+      recordedByUserId: dependencies.recordedByUserId ?? null,
       // H7A: client-supplied coachUserId is never recorder authority.
       // The later T7 server boundary will supply verified H2 authorship.
     },
