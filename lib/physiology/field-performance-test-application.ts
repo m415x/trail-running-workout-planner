@@ -247,6 +247,7 @@ interface CoachFieldPerformanceReviewDependencies {
     id: string,
     reviewStatus: 'accepted' | 'rejected',
     updatedAt: string,
+    reviewedByUserId?: string,
   ): FieldPerformanceTestRow
   reviewedByUserId?: string
   now(): string
@@ -271,7 +272,7 @@ export async function reviewCoachTrack1000mEvidence(
   try {
     return {
       success: true,
-      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now()),
+      data: dependencies.review(input.evidenceId, input.reviewStatus, dependencies.now(), dependencies.reviewedByUserId),
     }
   } catch (error) {
     return {
