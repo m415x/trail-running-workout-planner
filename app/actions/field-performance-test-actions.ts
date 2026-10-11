@@ -47,7 +47,16 @@ const dependencies = {
 }
 
 export async function createTrack1000mEvidenceAction(input: Track1000mEvaluationInput) {
-  return createTrack1000mEvidence(input, dependencies)
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return createTrack1000mEvidence({ ...input, recordedByUserId: access.userId }, dependencies)
 }
 
 export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEvidenceInput) {
