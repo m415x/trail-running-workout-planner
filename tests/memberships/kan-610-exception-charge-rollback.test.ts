@@ -31,7 +31,8 @@ for (const kind of ['reduction', 'extension'] as const) {
           return sqlite.transaction(() => callback({
             update() {
               return {
-                set(values: Record<string, unknown>) {
+                set(_values: Record<string, unknown>) {
+                  void _values
                   return {
                     where() {
                       return {
