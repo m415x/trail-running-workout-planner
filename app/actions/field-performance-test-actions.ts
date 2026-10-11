@@ -10,6 +10,7 @@ import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH5bSelfNextServerContext } from '@/lib/authorization/h5b-self-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { db } from '@/db'
 import { and, eq } from 'drizzle-orm'
 import { athleteProfiles, fieldPerformanceTestEvents } from '@/db/schema'
@@ -197,6 +198,28 @@ export async function createCoachTrack1000mEvidenceAction(
   }
   const recordedByUserId = access.userId
 
+  // A persisted AthleteProfile supplies resource identity, never authority.
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   const testEvent = await resolveEligibleTestEvent(input.testEventId, input.athleteId)
   if (!testEvent) {
     return { success: false as const, error: 'test_event_not_found' as const }
@@ -212,6 +235,7 @@ export async function createCoachTrack1000mEvidenceAction(
     performedAt,
   }, {
     ...dependencies,
+    resolveOwnedAthlete: async (athleteId: string) => athleteId === athlete.id ? { id: athlete.id } : null,
     recordedByUserId: recordedByUserId,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
