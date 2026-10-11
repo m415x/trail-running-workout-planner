@@ -51,8 +51,18 @@ export async function createTrack1000mEvidenceAction(input: Track1000mEvaluation
 }
 
 export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEvidenceInput) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return correctTrack1000mEvidence(input, {
     ...dependencies,
+    recordedByUserId: access.userId,
     getById: repository.getById,
     replace: repository.replace,
   })
