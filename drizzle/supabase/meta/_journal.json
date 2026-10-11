@@ -267,6 +267,13 @@
       "when": 1791643009000,
       "tag": "0037_h7a_field_review_author",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1791643011000,
+      "tag": "0038_h7a_test_event_author_retention",
+      "breakpoints": true
     }
   ]
 }
