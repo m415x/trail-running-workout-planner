@@ -192,6 +192,7 @@ export async function createCoachTrack1000mEvidenceAction(
     performedAt,
   }, {
     ...dependencies,
+    recordedByUserId: recordedByUserId,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
     findActiveOfficialByAthleteAndTestEvent: repository.findActiveOfficialByAthleteAndTestEvent,
