@@ -1,22 +1,20 @@
-# Current operational handoff — KAN-725 Harness v2 merged baseline (2026-10-10)
+# Current operational handoff — KAN-610/H7A merged baseline (2026-10-11)
 
 ## Verified integration
-- KAN-725 — Harness v2 workflow hardening: integrated into `dev`.
-- [PR #49](https://github.com/m415x/trail-running-workout-planner/pull/49) merged to `dev` by merge commit `b9e3e432f55fc5e1d8437ceeb4a29f197ae46e52`; remote `dev` was verified at that exact merge SHA immediately after integration.
-- Final functional/tooling candidate `1f78ed9fbb7f0a34f8acb3eb6468443195d80e42`: operator `pn verify --db` **PASS 6/6**, total 241186 ms. This gate belongs only to that pre-merge candidate SHA.
-- PR head `286cc2134165b927b797f4211bfea7ecab25cd63` is documentation-only after the final executable gate and records its evidence. No post-merge 6/6 gate is claimed.
-- Full workflow contract and closure evidence: [KAN-725 handoff](kan-725.md) and [Harness v2](../agent-harness.md).
+- KAN-610/H7A trusted authorship and retained audit integrated into `dev` by [PR #50](https://github.com/m415x/trail-running-workout-planner/pull/50).
+- PR feature HEAD and full gate candidate: `dd5702de5942365e410e529b17d02a6431d360fc`.
+- Operator `pn verify --db`: **PASS 6/6** (Tests 85245ms, TypeScript 9892ms, ESLint 21979ms, Build 22634ms, i18n 392ms, SQLite 44777ms; total **184919ms**).
+- GitHub merge commit `62aef99bff4b0ae6a022107b397bef41f046db5c`; remote `dev` independently verified at exactly that SHA immediately after merge.
+- Vercel status success; no GitHub Actions runs observed through the commit-associated PR-run lookup. No postmerge 6/6 gate is claimed on merge/documentation SHAs.
+- [H7A story handoff](kan-610.md), [architecture](../architecture/platform/h7a-authorship-audit.md) and live Jira KAN-610/KAN-734 document the scope and exclusions.
 
 ## Durable workflow baseline
-- `pn test` is full-suite only and rejects positional test paths; focused RED/GREEN evidence uses `pn tdd:red` / `pn tdd`.
-- `pn tdd:red` and `pn tdd` already perform `git pull --ff-only -q`; `pn tdd` also performs the canonical typecheck.
-- Approved decomposition authorizes continuous RED → GREEN execution. The approved closure task authorizes routine documentation → PR → review/checks → merge → post-merge reconciliation → Jira without repeated approval prompts.
-- A story is **fresh-chat-safe** only after integrated `dev`, Jira and durable documentation agree.
-- `pn docs:handoff:check` structurally validates the current/story handoff publication and documentation index. Semantic review remains required.
+- Read `AGENTS.md`, `docs/agent-harness.md`, `docs/README.md`, relevant architecture and live Jira first.
+- Focused tests use `pn tdd:red` / `pn tdd`, which sync automatically; `pn tdd` includes TypeScript. Full closure gate is `pn verify --db`.
+- Gate evidence belongs only to its exact candidate SHA; later documentation-only commits and merge SHAs are not retroactively verified.
+- Fresh-chat-safe closure requires the integrated remote `dev`, current/story handoffs and Jira to agree.
 
-## Next work / exclusions
-- KAN-725 changes workflow/tooling only; it does not modify product-domain behavior or authorization semantics.
-- KAN-724 remains the independent authentication/routing follow-up discovered during KAN-609 acceptance.
-- KAN-606/H4C remains deferred pending H7A/KAN-610.
-- Fresh chats must start from remote `dev`, this handoff, `AGENTS.md`, `docs/README.md`, Harness v2, relevant durable domain docs and current Jira state.
-- This documentation reconciliation is post-merge and documentation-only. It does not inherit or create executable gate evidence.
+## Next work and exclusions
+- KAN-606/H4C remains a separate Coach-specific 1000m/competition capability authorization contract; H7A attribution does not grant capability or replace H4A/H5.
+- Remote Supabase execution was not demonstrated by the static PostgreSQL migrations. Historical NULL authors are unknown, never inferred.
+- Prior Harness v2 integration KAN-725 is preserved in [KAN-725 handoff](kan-725.md), rather than being the current story.
