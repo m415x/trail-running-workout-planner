@@ -11,6 +11,7 @@ export type InsertFieldPerformanceTest = Omit<FieldPerformanceTestRow, 'isDelete
 
 export interface SqliteFieldPerformanceTestRepository {
   insert(evaluation: InsertFieldPerformanceTest): FieldPerformanceTestRow
+  listAllByAthlete(athleteId: string): FieldPerformanceTestRow[]
   listActiveByAthlete(athleteId: string): FieldPerformanceTestRow[]
   listActiveByAthleteThroughDate(athleteId: string, effectiveDate: string): FieldPerformanceTestRow[]
   findActiveOfficialByAthleteAndTestEvent(athleteId: string, testEventId: string): FieldPerformanceTestRow | undefined
@@ -33,6 +34,13 @@ export function createSqliteFieldPerformanceTestRepository(
         .get()
 
       return inserted as FieldPerformanceTestRow
+    },
+
+    listAllByAthlete(athleteId) {
+      return db.select().from(fieldPerformanceTests)
+        .where(eq(fieldPerformanceTests.athleteId, athleteId))
+        .orderBy(asc(fieldPerformanceTests.performedAt), asc(fieldPerformanceTests.createdAt), asc(fieldPerformanceTests.id))
+        .all() as FieldPerformanceTestRow[]
     },
 
     listActiveByAthlete(athleteId) {
