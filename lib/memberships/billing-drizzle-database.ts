@@ -66,6 +66,7 @@ function mapMonthlyChargeExtension(row: QueryResult): PersistedMonthlyChargeExte
 function mapPaymentRevision(row: QueryResult): PersistedPaymentRevision {
   return {
     revisionId: String(row.id ?? row.revisionId),
+    createdByUserId: row.createdByUserId == null ? null : String(row.createdByUserId),
     paymentId: String(row.paymentId),
     monthlyChargeId: String(row.monthlyChargeId),
     amountMinor: Number(row.amountMinor),
@@ -290,6 +291,7 @@ export function createDrizzleBillingDatabase(
       const now = new Date().toISOString()
       executeMutation(client.insert(paymentRevisions).values([{
         id: revision.revisionId,
+        createdByUserId: revision.createdByUserId ?? null,
         paymentId: revision.paymentId,
         monthlyChargeId: revision.monthlyChargeId,
         amountMinor: revision.amountMinor,
@@ -325,7 +327,8 @@ export function createDrizzleBillingDatabase(
 
         executeMutation(tx.insert(paymentRevisions).values([{
           id: replacement.revisionId,
-          paymentId: replacement.paymentId,
+          createdByUserId: replacement.createdByUserId ?? null,
+        paymentId: replacement.paymentId,
           monthlyChargeId: replacement.monthlyChargeId,
           amountMinor: replacement.amountMinor,
           paymentMethod: replacement.paymentMethod,
