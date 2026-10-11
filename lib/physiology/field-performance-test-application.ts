@@ -248,6 +248,7 @@ interface CoachFieldPerformanceReviewDependencies {
     reviewStatus: 'accepted' | 'rejected',
     updatedAt: string,
   ): FieldPerformanceTestRow
+  reviewedByUserId?: string
   now(): string
 }
 
