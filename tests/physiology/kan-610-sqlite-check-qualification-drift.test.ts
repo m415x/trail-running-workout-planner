@@ -16,3 +16,10 @@ test('KAN-732 drift canonicalizes SQLite double-quoted identifiers after dot qua
   assert.equal(normalizeSqliteSchemaSql(fresh), normalizeSqliteSchemaSql(upgraded))
   assert.notEqual(normalizeSqliteSchemaSql(fresh), normalizeSqliteSchemaSql(upgraded.replace("'1000m_track'", "'other'")))
 })
+
+test('KAN-732 drift canonicalizes FK action keyword case without hiding action differences', () => {
+  const fresh = "CREATE TABLE `field_performance_test_events` (`created_by_user_id` text, FOREIGN KEY (`created_by_user_id`) REFERENCES `users` (`id`) ON UPDATE no action ON DELETE restrict)"
+  const upgraded = fresh.replace('ON DELETE restrict', 'ON DELETE RESTRICT')
+  assert.equal(normalizeSqliteSchemaSql(fresh), normalizeSqliteSchemaSql(upgraded))
+  assert.notEqual(normalizeSqliteSchemaSql(fresh), normalizeSqliteSchemaSql(fresh.replace('ON DELETE restrict', 'ON DELETE cascade')))
+})
