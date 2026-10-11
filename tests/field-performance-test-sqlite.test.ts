@@ -26,6 +26,7 @@ function createRepository() {
       execution_context TEXT CHECK (execution_context IN ('official', 'self_directed')),
       recorded_by TEXT CHECK (recorded_by IN ('coach', 'athlete')),
       recorded_by_user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
+      reviewed_by_user_id TEXT REFERENCES users(id) ON DELETE RESTRICT,
       review_status TEXT CHECK (review_status IN ('accepted', 'pending_review', 'rejected')),
        notes TEXT
     );
