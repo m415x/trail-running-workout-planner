@@ -40,6 +40,10 @@ Key competition documents:
 
 - [`h6-economic-authorization-athlete-debt-guard.md`](h6-economic-authorization-athlete-debt-guard.md) — completed KAN-609/H6 economic action authorization, reversible prior-month overdue guard, protected SELF writes and DENY/no-mutation acceptance.
 
+### H7A — Author provenance and retained audit
+
+- [`platform/h7a-authorship-audit.md`](platform/h7a-authorship-audit.md) — KAN-610/H7A server actor provenance, immutable retained audit, legacy unknowns and authorization boundaries; KAN-606/H4C remains independent.
+
 ### Platform
 
 `platform/` owns cross-cutting platform/infrastructure contracts.
