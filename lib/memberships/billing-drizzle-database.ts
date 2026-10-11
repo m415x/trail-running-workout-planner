@@ -328,7 +328,7 @@ export function createDrizzleBillingDatabase(
         executeMutation(tx.insert(paymentRevisions).values([{
           id: replacement.revisionId,
           createdByUserId: replacement.createdByUserId ?? null,
-        paymentId: replacement.paymentId,
+          paymentId: replacement.paymentId,
           monthlyChargeId: replacement.monthlyChargeId,
           amountMinor: replacement.amountMinor,
           paymentMethod: replacement.paymentMethod,
