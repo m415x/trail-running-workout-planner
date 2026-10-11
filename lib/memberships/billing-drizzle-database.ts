@@ -321,9 +321,16 @@ export function createDrizzleBillingDatabase(
       await client.transaction((tx) => {
         if (!tx.update) throw new Error('Drizzle transaction does not support updates')
 
-        executeMutation(tx.update(paymentRevisions)
+        const demotion = tx.update(paymentRevisions)
           .set({ isCurrent: false, updatedAt: now })
-          .where(eq(paymentRevisions.id, previous.revisionId)))
+          .where(and(
+            eq(paymentRevisions.id, previous.revisionId),
+            eq(paymentRevisions.isCurrent, true),
+          ))
+        if (!demotion.run) throw new Error('Payment revision update must report affected rows')
+        const result = demotion.run() as { changes?: number; affectedRows?: number } | undefined
+        const changes = result?.changes ?? result?.affectedRows
+        if (changes !== 1) throw new Error('Payment revision is no longer current')
 
         executeMutation(tx.insert(paymentRevisions).values([{
           id: replacement.revisionId,
