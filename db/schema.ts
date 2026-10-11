@@ -396,6 +396,7 @@ export const fieldPerformanceTests = sqliteTable(
     executionContext: text('execution_context').$type<'official' | 'self_directed'>(),
     recordedBy: text('recorded_by').$type<'coach' | 'athlete'>(),
     recordedByUserId: text('recorded_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    reviewedByUserId: text('reviewed_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
     reviewStatus: text('review_status').$type<'accepted' | 'pending_review' | 'rejected'>(),
      distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: real('elapsed_time_sec').notNull(),
