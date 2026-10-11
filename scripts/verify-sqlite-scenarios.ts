@@ -653,7 +653,7 @@ export function normalizeSqliteSchemaSql(sql: string | null): string | null {
     if (token.startsWith('[') && token.endsWith(']')) {
       return quoteIdentifier(token.slice(1, -1))
     }
-    if (/^(restrict|cascade|set|null|no|action)$/i.test(token)) return token.toLowerCase()
+    if (/^(restrict|cascade|set|no|action)$/i.test(token)) return token.toLowerCase()
     return token
   })
 
