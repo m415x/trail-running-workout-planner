@@ -1,0 +1,1 @@
+ALTER TABLE "payment_revisions" ADD COLUMN "created_by_user_id" text REFERENCES "users"("id") ON DELETE RESTRICT;
