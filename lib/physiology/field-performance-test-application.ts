@@ -1,3 +1,4 @@
+import { listFieldPerformanceTestAuditHistory } from '@/lib/physiology/field-performance-test-history'
 import type { Track1000mEvaluationInput } from '@/lib/physiology/field-performance-test'
 import { projectTrack1000mEvolution, type Track1000mEvolution } from '@/lib/analytics/training/track-1000m-evolution'
 import { createTrack1000mEvaluation } from '@/lib/physiology/field-performance-test'
@@ -366,6 +367,29 @@ export async function readAthleteTrack1000mEvolution(
         athlete.id,
         '9999-12-31',
       ),
+      athlete.id,
+    ),
+  }
+}
+
+/**
+ * Read retained evidence only after the caller's ownership/authorization
+ * resolver has approved the athlete. This does not grant H2/H3 capabilities.
+ */
+export async function readAuthorizedFieldPerformanceTestAuditHistory(
+  athleteId: string,
+  dependencies: {
+    resolveOwnedAthlete(id: string): Promise<{ id: string } | null>
+    listAllByAthlete(id: string): FieldPerformanceTestRow[]
+  },
+): Promise<{ success: true; data: FieldPerformanceTestRow[] } | { success: false; error: 'athlete_not_found' }> {
+  const athlete = await dependencies.resolveOwnedAthlete(athleteId)
+  if (!athlete) return { success: false, error: 'athlete_not_found' }
+
+  return {
+    success: true,
+    data: listFieldPerformanceTestAuditHistory(
+      dependencies.listAllByAthlete(athlete.id),
       athlete.id,
     ),
   }
