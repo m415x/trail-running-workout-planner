@@ -12,7 +12,7 @@ test('KAN-731 nullable payment author migrations exist and are journaled for bot
     const migration = readFileSync(root + '/' + tag + '.sql', 'utf8')
     assert.match(migration, /payment_revisions/i)
     assert.match(migration, /created_by_user_id/i)
-    assert.match(migration, /REFERENCES\s+users\s*\(\s*id\s*\)/i)
+    assert.match(migration, /REFERENCES\s+["`]?users["`]?\s*\(\s*["`]?id["`]?\s*\)/i)
     assert.match(migration, /ON DELETE\s+restrict/i)
   }
 })
