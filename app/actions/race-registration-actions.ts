@@ -303,12 +303,44 @@ export async function updateRaceParticipationAction(formData: FormData) {
   const participationStatus = parseRaceParticipationStatus(formData.get('participationStatus'))
   if (!locale || !registrationId || !participationStatus) return { ok: false as const, reason: 'invalid_input' as const }
 
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+
+  const stored = getRaceRegistration(registrationId)
+  if (!stored) return { ok: false as const, reason: 'not_found' as const }
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, stored.athleteProfileId),
+      eq(athleteProfiles.teamId, stored.teamId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) return { ok: false as const, reason: 'not_authorized' as const }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'competition.manage',
+    resource: { teamId: stored.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== stored.teamId) {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+
   const actualDistanceKm = nullableNumber(formData.get('actualDistanceKm'))
   const elapsedTimeSeconds = nullableNumber(formData.get('elapsedTimeSeconds'))
 
   const result = await updateRaceParticipation(
     {
-      teamId: CURRENT_TEAM_ID,
+      teamId: authorization.teamId,
       registrationId,
       participationStatus,
       actualDistanceKm,
