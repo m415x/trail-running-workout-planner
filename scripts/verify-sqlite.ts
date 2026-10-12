@@ -30,6 +30,28 @@ try {
     (sqlite.prepare('PRAGMA table_info(field_performance_tests)').all() as { name: string }[])
       .map(row => row.name),
   )
+  if (!fieldPerformanceColumns.has('reviewed_by_user_id')) {
+    throw new Error(
+      'SQLite schema is inconsistent: field_performance_tests.reviewed_by_user_id is missing',
+    )
+  }
+
+  const reviewedByUserForeignKey = (sqlite.pragma('foreign_key_list(field_performance_tests)') as Array<{
+    table: string
+    from: string
+    to: string
+    on_delete: string
+  }>).find(foreignKey => foreignKey.from === 'reviewed_by_user_id')
+  if (
+    reviewedByUserForeignKey?.table !== 'users'
+    || reviewedByUserForeignKey.to !== 'id'
+    || reviewedByUserForeignKey.on_delete.toUpperCase() !== 'RESTRICT'
+  ) {
+    throw new Error(
+      'SQLite schema is inconsistent: field_performance_tests.reviewed_by_user_id must reference users(id) ON DELETE RESTRICT',
+    )
+  }
+
   if (!fieldPerformanceColumns.has('recorded_by_user_id')) {
     throw new Error(
       'SQLite schema is inconsistent: field_performance_tests.recorded_by_user_id is missing',
