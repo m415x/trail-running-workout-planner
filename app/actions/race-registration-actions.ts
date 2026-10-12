@@ -358,17 +358,29 @@ export async function updateRaceParticipationAction(formData: FormData) {
 
 /** Form-compatible adapters discard mutation result objects after server-side handling. */
 export async function registerAthleteForRaceCourseFormAction(formData: FormData): Promise<void> {
-  await registerAthleteForRaceCourseAction(formData)
+  const result = await registerAthleteForRaceCourseAction(formData)
+  if (!result.ok) {
+    throw new Error('not_authorized_or_invalid_registration')
+  }
 }
 
 export async function changeRaceRegistrationCourseFormAction(formData: FormData): Promise<void> {
-  await changeRaceRegistrationCourseAction(formData)
+  const result = await changeRaceRegistrationCourseAction(formData)
+  if (!result.ok) {
+    throw new Error('not_authorized_or_invalid_registration')
+  }
 }
 
 export async function updateRaceRegistrationLifecycleFormAction(formData: FormData): Promise<void> {
-  await updateRaceRegistrationLifecycleAction(formData)
+  const result = await updateRaceRegistrationLifecycleAction(formData)
+  if (!result.ok) {
+    throw new Error('not_authorized_or_invalid_registration')
+  }
 }
 
 export async function updateRaceParticipationFormAction(formData: FormData): Promise<void> {
-  await updateRaceParticipationAction(formData)
+  const result = await updateRaceParticipationAction(formData)
+  if (!result.ok) {
+    throw new Error('not_authorized_or_invalid_registration')
+  }
 }
