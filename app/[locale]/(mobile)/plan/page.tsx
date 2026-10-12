@@ -67,6 +67,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     })),
   })
   if (overview.status === 'error') return <AthletePageState message={t('loadError')} />
+  const maxKnownDistance = Math.max(0, ...overview.weeks.map(week => week.distance.status === 'complete' ? week.distance.value : 0))
   const days = buildWeek(monday, regionalContext.presentationLocale)
   const today = civilToday
   // next-intl Link supplies the locale prefix; preserve selected query via the
@@ -104,7 +105,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
               <p className='font-semibold'>{formatWeekRange(week.monday, formatISODate(new Date(Date.parse(`${shiftAthletePlanWeek(week.monday, 1)}T00:00:00Z`) - 86400000)), regionalContext.presentationLocale)}</p>
               <p>{language === 'es' ? 'Distancia prevista' : 'Planned distance'}: {week.distance.status === 'complete' ? `${week.distance.value} km` : week.distance.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
               <p>{language === 'es' ? 'Desnivel previsto' : 'Planned ascent'}: {week.elevationGain.status === 'complete' ? `${week.elevationGain.value} m D+` : week.elevationGain.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
-              {week.distance.status === 'complete' && <div aria-hidden='true' className='h-1.5 rounded-full bg-primary/20'><div className='h-full max-w-full rounded-full bg-primary' style={{ width: `${Math.min(100, week.distance.value * 2)}%` }} /></div>}
+              {week.distance.status === 'complete' && <div aria-hidden='true' className='h-1.5 rounded-full bg-primary/20'><div className='h-full max-w-full rounded-full bg-primary' style={{ width: `${maxKnownDistance > 0 ? (week.distance.value / maxKnownDistance) * 100 : 0}%` }} /></div>}
             </li>
           ))}
         </ol>
