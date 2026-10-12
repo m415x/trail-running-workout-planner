@@ -27,6 +27,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-cohorts/athlete-session-adjustment-persistence'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
+import { createIntegratedAthleteSelfPeriodRead } from '@/lib/athlete-planning/integrated-self-period-read'
 
 function formatISODate(date: Date) {
   const year = date.getFullYear()
@@ -442,6 +443,284 @@ export async function getCurrentAthletePlanningWeek(
     console.error('Error fetching athlete planning week:', error)
     return { success: false, status: 'error' as const }
   }
+}
+
+
+/**
+ * KAN-645/I1: request-scoped SELF planning period reader.
+ * Candidate source is team-wide, not an arbitrary original-date window:
+ * adjustments may move valid sessions across any civil-week boundary.
+ */
+export async function getCurrentAthletePlanningPeriod(startDate: string, endDate: string) {
+  const reader = createIntegratedAthleteSelfPeriodRead({
+    resolveSelf: async () => {
+      const supabase = await createSupabaseServerClient()
+      const lookup = createExternalIdentityLookup()
+      const access = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+      })
+      if (access.status !== 'authenticated') return { status: 'denied' as const }
+      const self = await createH5aSelfNextServerContext().resolve(access, {
+        at: new Date().toISOString(), capability: 'planning.self.read',
+      })
+      return self.status === 'resolved'
+        ? { status: 'resolved' as const, subject: { userId: self.userId, teamId: self.teamId, athleteProfileId: self.athleteProfileId } }
+        : { status: 'denied' as const }
+    },
+    loadPlanningEvidence: async (scope) => {
+      const athlete = await db.query.athleteProfiles.findFirst({
+        where: and(eq(athleteProfiles.id, scope.athleteProfileId), eq(athleteProfiles.teamId, scope.teamId),
+          eq(athleteProfiles.userId, scope.userId), eq(athleteProfiles.isActive, true),
+          eq(athleteProfiles.isDeleted, false)),
+        with: { group: true },
+      })
+      if (!athlete) return { status: 'conflict' as const, reason: 'self-profile-unavailable' }
+    const weekSessions = await db.query.sessions.findMany({
+      where: and(
+        eq(sessions.teamId, athlete.teamId),
+        eq(sessions.isDeleted, false),
+      ),
+      orderBy: asc(sessions.date),
+      with: {
+        location: true,
+        sessionPrescriptions: {
+          where: eq(groupSessionPrescriptions.isDeleted, false),
+        },
+      },
+    })
+
+    const groupChanges = await db.select().from(groupHistoryRecords)
+      .where(and(
+        eq(groupHistoryRecords.athleteId, athlete.id),
+        eq(groupHistoryRecords.isDeleted, false),
+      ))
+
+    const memberships = await db.query.planningCohortMemberships.findMany({
+      where: and(
+        eq(planningCohortMemberships.athleteProfileId, athlete.id),
+        eq(planningCohortMemberships.isDeleted, false),
+      ),
+      with: {
+        planningCohort: {
+          with: {
+            planningVariant: {
+              with: {
+                macrocycles: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    const relevantGroupIds = [...new Set([
+      athlete.groupId,
+      ...groupChanges.flatMap((change) => [change.previousGroupId, change.newGroupId]),
+    ].filter((groupId): groupId is string => groupId !== null))]
+
+    const basePlans = relevantGroupIds.length === 0
+      ? []
+      : await db.query.groupTrainingPlans.findMany({
+          where: and(
+            inArray(groupTrainingPlans.groupId, relevantGroupIds),
+            eq(groupTrainingPlans.isDeleted, false),
+          ),
+          with: { macrocycles: true },
+        })
+
+    const prescriptionMicrocycleIds = [...new Set(
+      weekSessions.flatMap((session) => (
+        session.sessionPrescriptions.map((prescription) => prescription.microcycleId)
+      )),
+    )]
+    const prescriptionLineages = prescriptionMicrocycleIds.length === 0
+      ? []
+      : await db.select({
+        microcycleId: microcycles.id,
+        groupTrainingPlanId: groupTrainingPlans.id,
+      })
+        .from(microcycles)
+        .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
+        .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
+        .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+        .where(inArray(microcycles.id, prescriptionMicrocycleIds))
+    const groupTrainingPlanIdByMicrocycle = new Map(
+      prescriptionLineages.map(({ microcycleId, groupTrainingPlanId }) => (
+        [microcycleId, groupTrainingPlanId]
+      )),
+    )
+
+    const weeklyPrescriptionIds = [...new Set(
+      weekSessions.flatMap((session) => (
+        session.sessionPrescriptions.map((prescription) => prescription.id)
+      )),
+    )]
+    const athleteAdjustments = weeklyPrescriptionIds.length === 0
+      ? []
+      : await db.select()
+        .from(athleteSessionAdjustments)
+        .where(and(
+          eq(athleteSessionAdjustments.athleteId, athlete.id),
+          inArray(athleteSessionAdjustments.sourcePrescriptionId, weeklyPrescriptionIds),
+          eq(athleteSessionAdjustments.isDeleted, false),
+        ))
+    const adjustmentIds = athleteAdjustments.map((adjustment) => adjustment.id)
+    const currentAdjustmentRevisions = adjustmentIds.length === 0
+      ? []
+      : await db.select()
+        .from(athleteSessionAdjustmentRevisions)
+        .where(and(
+          inArray(athleteSessionAdjustmentRevisions.adjustmentId, adjustmentIds),
+          eq(athleteSessionAdjustmentRevisions.isCurrent, true),
+          eq(athleteSessionAdjustmentRevisions.isDeleted, false),
+        ))
+    const adjustmentBySourcePrescriptionId = new Map(
+      athleteAdjustments.map((adjustment) => [adjustment.sourcePrescriptionId, adjustment]),
+    )
+    const revisionsByAdjustmentId = new Map<string, typeof currentAdjustmentRevisions>()
+    for (const revision of currentAdjustmentRevisions) {
+      const revisions = revisionsByAdjustmentId.get(revision.adjustmentId) ?? []
+      revisions.push(revision)
+      revisionsByAdjustmentId.set(revision.adjustmentId, revisions)
+    }
+
+    let conflictReason: string | null = null
+    const resolvedSessions = weekSessions.flatMap((session) => {
+      const planning = resolveAthletePlanningOnDate({
+        athleteTeamId: athlete.teamId,
+        currentGroupId: athlete.groupId,
+        groupChanges,
+        memberships: memberships.map((membership) => ({
+          id: membership.id,
+          startDate: membership.startDate,
+          endDate: membership.endDate,
+          isDeleted: membership.isDeleted,
+          cohort: {
+            id: membership.planningCohort.id,
+            teamId: membership.planningCohort.teamId,
+            groupId: membership.planningCohort.groupId,
+            status: membership.planningCohort.status,
+            isDeleted: membership.planningCohort.isDeleted,
+            planningVariant: membership.planningCohort.planningVariant
+              ? {
+                  id: membership.planningCohort.planningVariant.id,
+                  groupId: membership.planningCohort.planningVariant.groupId,
+                  planningCohortId: membership.planningCohort.planningVariant.planningCohortId,
+                  status: membership.planningCohort.planningVariant.status,
+                  isDeleted: membership.planningCohort.planningVariant.isDeleted,
+                  macrocycles: membership.planningCohort.planningVariant.macrocycles,
+                }
+              : null,
+          },
+        })),
+        basePlans: basePlans.map((plan) => ({
+          id: plan.id,
+          groupId: plan.groupId,
+          planningCohortId: plan.planningCohortId,
+          status: plan.status,
+          isDeleted: plan.isDeleted,
+          macrocycles: plan.macrocycles,
+        })),
+        date: session.date,
+      })
+      const prescriptionResolution = resolveAthleteSessionPrescription({
+        planning,
+        prescriptions: session.sessionPrescriptions.flatMap((prescription) => {
+          const groupTrainingPlanId = groupTrainingPlanIdByMicrocycle.get(prescription.microcycleId)
+          return groupTrainingPlanId
+            ? [{
+                id: prescription.id,
+                groupId: prescription.groupId,
+                microcycleId: prescription.microcycleId,
+                groupTrainingPlanId,
+              }]
+            : []
+        }),
+      })
+
+      if (planning.status === 'conflict') { conflictReason = planning.reason; return [] }
+      if (prescriptionResolution.status === 'conflict') { conflictReason = prescriptionResolution.reason; return [] }
+      if (prescriptionResolution.status !== 'resolved') { if (planning.status === 'resolved') conflictReason = 'missing-effective-prescription'; return [] }
+
+      const sourcePrescription = session.sessionPrescriptions.find(
+        ({ id }) => id === prescriptionResolution.prescriptionId,
+      )
+      if (!sourcePrescription) { conflictReason = 'missing-source-prescription'; return [] }
+
+      const adjustment = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? null
+      const currentRevisions = adjustment
+        ? revisionsByAdjustmentId.get(adjustment.id) ?? []
+        : []
+      const plannedSession = resolveAthletePlanningSession({
+        athleteId: athlete.id,
+        session: {
+          id: session.id,
+          date: session.date,
+          workoutId: session.workoutId,
+          type: session.type,
+        },
+        prescription: {
+          id: sourcePrescription.id,
+          distanceKm: sourcePrescription.distanceKm,
+          durationMin: sourcePrescription.durationMin,
+          elevationGain: sourcePrescription.elevationGain,
+          intensityMethod: sourcePrescription.intensityMethod,
+          zone: sourcePrescription.zone,
+          referencePercentage: sourcePrescription.referencePercentage,
+          notes: sourcePrescription.notes,
+        },
+        adjustment: adjustment
+          ? {
+              id: adjustment.id,
+              teamId: adjustment.teamId,
+              athleteId: adjustment.athleteId,
+              sourcePrescriptionId: adjustment.sourcePrescriptionId,
+            }
+          : null,
+        revisions: currentRevisions.map(currentRevision => ({
+          id: currentRevision.id,
+          adjustmentId: currentRevision.adjustmentId,
+          state: currentRevision.state,
+          payload: currentRevision.payload as PersistedAthleteSessionAdjustmentRevision['payload'],
+          reason: currentRevision.reason,
+          changedByUserId: currentRevision.changedByUserId,
+          isCurrent: currentRevision.isCurrent,
+        })),
+      })
+
+      if (plannedSession.status === 'omitted') return []
+      if (plannedSession.status !== 'resolved') { conflictReason = 'invalid-athlete-adjustment'; return [] }
+
+      return [{
+        ...session,
+        date: plannedSession.session.date,
+        workoutId: plannedSession.session.workoutId,
+        type: plannedSession.session.type,
+        sessionPrescriptions: [{
+          ...sourcePrescription,
+          distanceKm: plannedSession.prescription.distanceKm,
+          durationMin: plannedSession.prescription.durationMin,
+          elevationGain: plannedSession.prescription.elevationGain,
+          intensityMethod: plannedSession.prescription.intensityMethod,
+          zone: plannedSession.prescription.zone,
+          referencePercentage: plannedSession.prescription.referencePercentage,
+          notes: plannedSession.prescription.notes,
+        }],
+      }]
+    })
+
+    if (conflictReason !== null) return { status: 'conflict' as const, reason: conflictReason as string }
+    const effective = resolvedSessions.filter(session => session.date >= scope.startDate && session.date <= scope.endDate)
+    const unique = new Set<string>()
+    for (const session of effective) {
+      if (unique.has(session.id)) return { status: 'conflict' as const, reason: 'duplicate-effective-session' }
+      unique.add(session.id)
+    }
+    return effective.length ? { status: 'loaded' as const, sessions: effective } : { status: 'empty' as const }
+
+    },
+  })
+  return reader({ startDate, endDate })
 }
 
 export async function getAthleteShoes() {
