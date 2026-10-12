@@ -32,6 +32,18 @@
       "selectedWeek": "Selected week"
     },
     "unauthorized": "Access not authorized",
-    "loading": "Loading week…"
+    "loading": "Loading week…",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "plannedOverview": "Planned overview",
+    "incompleteMetric": "Incomplete data",
+    "unknownMetric": "Unknown",
+    "invalidWeek": "Invalid week: select a valid Monday.",
+    "resolutionConflict": "Conflicting effective planning data. Contact your coach.",
+    "competitionMilestones": "Competition milestones",
+    "noUpcomingRegistrations": "No upcoming registrations",
+    "registrationMilestone": "Registration",
+    "plannedDistance": "Planned distance",
+    "plannedAscent": "Planned ascent"
   }
 }
