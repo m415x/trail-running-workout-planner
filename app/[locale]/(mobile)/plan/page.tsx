@@ -31,7 +31,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
   const civilToday = getCurrentISODateInTimeZone(regionalContext.timeZone)
   const weekValue = typeof query.week === 'string' ? query.week : Array.isArray(query.week) ? 'invalid' : null
   const selected = resolveSelectedAthletePlanWeek(weekValue, civilToday)
-  if (selected.status === 'invalid') return <AthletePageState message={t('loadError')} />
+  if (selected.status === 'invalid') return <AthletePageState message={t('invalidWeek')} />
 
   const monday = selected.monday
   const followingMonday = shiftAthletePlanWeek(monday, 1)
@@ -41,7 +41,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
   const result = await getCurrentAthletePlanningPeriod(overviewMondays[0], overviewEnd)
 
   if (result.status === 'denied') return <AthletePageState message={t('unauthorized')} />
-  if (result.status === 'conflict') return <AthletePageState message={t('loadError')} />
+  if (result.status === 'conflict') return <AthletePageState message={t('resolutionConflict')} />
   if (result.status === 'error') return <AthletePageState message={t('loadError')} />
 
   const effective = selectEffectiveAthletePlanWeek({
@@ -87,7 +87,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     : selectedHref
 
   return (
-    <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
+    <div className='mx-auto w-full min-w-0 max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
           <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{t('currentWeek')}</h1></div>
@@ -96,21 +96,21 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
         <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(monday, sunday, regionalContext.presentationLocale)}</p>
       </header>
 
-      <nav aria-label='Week navigation' className='flex flex-wrap items-center gap-3 text-sm'>
-        <Link href={previousHref} className='rounded-lg border px-3 py-2'>← {language === 'es' ? 'Anterior' : 'Previous'}</Link>
+      <nav aria-label={t('calendar.selectedWeek')} className='flex flex-wrap items-center gap-3 text-sm'>
+        <Link href={previousHref} className='rounded-lg border px-3 py-2'>← {t('previousWeek')}</Link>
         <Link href={currentHref} className='rounded-lg border px-3 py-2'>{t('today')}</Link>
-        <Link href={nextHref} className='rounded-lg border px-3 py-2'>{language === 'es' ? 'Siguiente' : 'Next'} →</Link>
+        <Link href={nextHref} className='rounded-lg border px-3 py-2'>{t('nextWeek')} →</Link>
       </nav>
 
       <section aria-label={language === 'es' ? 'Panorama multisemana planificado' : 'Planned multiweek overview'} className='space-y-3 rounded-2xl border bg-card p-4'>
-        <h2 className='font-heading text-lg font-bold'>{language === 'es' ? 'Panorama de planificación' : 'Planning overview'}</h2>
+        <h2 className='font-heading text-lg font-bold'>{t('plannedOverview')}</h2>
         <p className='text-sm text-muted-foreground'>{formatWeekRange(overview.period.startDate, overview.period.endDate, regionalContext.presentationLocale)}</p>
         <ol className='grid gap-3 sm:grid-cols-3' aria-label={language === 'es' ? 'Resumen textual de semanas planificadas' : 'Text summary of planned weeks'}>
           {overview.weeks.map((week) => (
-            <li key={week.monday} className='space-y-1 rounded-xl bg-muted/40 p-3 text-sm'>
+            <li key={week.monday} className='min-w-0 space-y-1 break-words rounded-xl bg-muted/40 p-3 text-sm'>
               <p className='font-semibold'>{formatWeekRange(week.monday, formatISODate(new Date(Date.parse(`${shiftAthletePlanWeek(week.monday, 1)}T00:00:00Z`) - 86400000)), regionalContext.presentationLocale)}</p>
-              <p>{language === 'es' ? 'Distancia prevista' : 'Planned distance'}: {week.distance.status === 'complete' ? `${week.distance.value} km` : week.distance.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
-              <p>{language === 'es' ? 'Desnivel previsto' : 'Planned ascent'}: {week.elevationGain.status === 'complete' ? `${week.elevationGain.value} m D+` : week.elevationGain.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
+              <p>{t('plannedDistance')}: {week.distance.status === 'complete' ? `${week.distance.value} km` : week.distance.status === 'incomplete' ? t('incompleteMetric') : t('unknownMetric')}</p>
+              <p>{t('plannedAscent')}: {week.elevationGain.status === 'complete' ? `${week.elevationGain.value} m D+` : week.elevationGain.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
               {week.distance.status === 'complete' && <div aria-hidden='true' className='h-1.5 rounded-full bg-primary/20'><div className='h-full max-w-full rounded-full bg-primary' style={{ width: `${maxKnownDistance > 0 ? (week.distance.value / maxKnownDistance) * 100 : 0}%` }} /></div>}
             </li>
           ))}
@@ -122,12 +122,12 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
         {milestoneResult.status === 'denied' && <p role='alert' className='text-sm text-muted-foreground'>{t('unauthorized')}</p>}
         {milestoneResult.status === 'error' && <p role='alert' className='text-sm text-muted-foreground'>{t('loadError')}</p>}
         {milestoneResult.status === 'loaded' && (milestoneResult.milestones.length === 0
-          ? <p className='text-sm text-muted-foreground'>{language === 'es' ? 'Sin inscripciones próximas' : 'No upcoming registrations'}</p>
+          ? <p className='text-sm text-muted-foreground'>{t('noUpcomingRegistrations')}</p>
           : <ol className='space-y-2'>{milestoneResult.milestones.map((registration) => (
             <li key={registration.registrationId} className='rounded-xl bg-muted/40 p-3 text-sm'>
               <p className='font-semibold'>{registration.eventName}</p>
               <p className='text-muted-foreground'>{registration.editionDate} · {registration.editionLabel} · {registration.courseLabel}</p>
-              <p className='text-xs text-muted-foreground'>{language === 'es' ? 'Inscripción' : 'Registration'}</p>
+              <p className='text-xs text-muted-foreground'>{t('registrationMilestone')}</p>
             </li>
           ))}</ol>)}
       </section>
