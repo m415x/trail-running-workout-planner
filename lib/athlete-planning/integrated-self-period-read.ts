@@ -1,4 +1,4 @@
-import { createAthleteSelfPeriodRead, type AthleteSelfPeriod, type AthleteSelfPeriodSubject, type AthleteSelfPeriodAuthority } from './self-period-read'
+import type { AthleteSelfPeriod, AthleteSelfPeriodSubject, AthleteSelfPeriodAuthority } from './self-period-read'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
@@ -18,10 +18,6 @@ export function createIntegratedAthleteSelfPeriodRead<T>(dependencies: {
   resolveSelf: () => Promise<AthleteSelfPeriodAuthority>
   loadPlanningEvidence: (scope: AthleteSelfPeriod & AthleteSelfPeriodSubject) => Promise<IntegratedPeriodResult<T>>
 }) {
-  const read = createAthleteSelfPeriodRead({
-    resolveSelf: dependencies.resolveSelf,
-    loadEffectivePeriod: dependencies.loadPlanningEvidence,
-  })
   return async (period: AthleteSelfPeriod) => {
     // Explicitly preserve conflict as a separate diagnostic outcome for the
     // integrating consumer; generic retrieval failure remains error.
