@@ -9,7 +9,7 @@ type JournalEntry = { idx: number; tag: string; when: number }
 
 export function inspectH7aMigrationGuard(db: Database.Database): string[] {
   const failures: string[] = []
-  const journal = JSON.parse(readFileSync(resolve('drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
+  const journal = JSON.parse(readFileSync(resolve(import.meta.dirname, '../drizzle/sqlite/meta/_journal.json'), 'utf8')) as {
     entries: JournalEntry[]
   }
   const entries = journal.entries.filter(entry => /^002[0-5]_h7a_/.test(entry.tag))
@@ -29,7 +29,7 @@ export function inspectH7aMigrationGuard(db: Database.Database): string[] {
       continue
     }
     if (applied.length === 1) {
-      const sql = readFileSync(resolve('drizzle/sqlite', `${entry.tag}.sql`), 'utf8')
+      const sql = readFileSync(resolve(import.meta.dirname, '../drizzle/sqlite', `${entry.tag}.sql`), 'utf8')
       const canonicalHash = createHash('sha256').update(sql).digest('hex')
       if (applied[0].hash !== canonicalHash) {
         failures.push(`H7A ${entry.tag.slice(0, 4)} canonical hash mismatch`)
