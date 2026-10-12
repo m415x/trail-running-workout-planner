@@ -797,23 +797,40 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
   }
 }
 
-export function runRerunScenario(projectRoot = process.cwd()): void {
+export function readCanonicalMigrationMetadata(path: string): unknown[] {
+  const db = new Database(path, { readonly: true, fileMustExist: true })
+  try {
+    return db.prepare('SELECT id, hash, created_at FROM __drizzle_migrations ORDER BY id').all()
+  } finally {
+    db.close()
+  }
+}
+
+function runRerunScenario(projectRoot = process.cwd()): void {
   const workspace = createScenarioWorkspace('rerun')
   try {
     createRepresentativeLegacyDatabase(workspace, projectRoot)
 
     const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
     const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const verifyH7aScript = resolve(projectRoot, 'scripts/verify-h7a-sqlite.ts')
     const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
 
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
     const schemaAfterFirstUpgrade = readNormalizedSchema(workspace.sqlitePath)
+    const metadataAfterFirstUpgrade = readCanonicalMigrationMetadata(workspace.sqlitePath)
 
     // A database already at canonical HEAD must remain a safe no-op target.
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
     const schemaAfterSecondUpgrade = readNormalizedSchema(workspace.sqlitePath)
+    const metadataAfterSecondUpgrade = readCanonicalMigrationMetadata(workspace.sqlitePath)
+    if (JSON.stringify(metadataAfterFirstUpgrade) !== JSON.stringify(metadataAfterSecondUpgrade)) {
+      throw new Error('SQLite migration metadata changed after rerunning the supported upgrade at HEAD')
+    }
 
     if (
       schemaAfterFirstUpgrade.length !== schemaAfterSecondUpgrade.length ||
