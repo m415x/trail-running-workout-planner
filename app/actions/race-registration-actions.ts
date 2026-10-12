@@ -38,7 +38,6 @@ import type {
   RaceRegistrationStatus,
 } from '@/types/training/race-registration.types'
 
-const CURRENT_TEAM_ID = 'team_1'
 const dependencies = buildRaceRegistrationActionDependencies({
   getRaceCourse,
   getRaceEdition,
