@@ -89,6 +89,10 @@ export function runEmptyBootstrapScenario(projectRoot = process.cwd()): void {
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     assertScenarioDatabaseExists(workspace)
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    // Validate the fresh physical H7A 0020–0025 schema and exact applied hashes
+    // before disposable cleanup; never rely on journal metadata alone.
+    const verifyH7aScript = resolve(projectRoot, 'scripts/verify-h7a-sqlite.ts')
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
   } finally {
     removeScenarioWorkspace(workspace)
   }
