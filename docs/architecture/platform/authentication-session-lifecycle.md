@@ -114,3 +114,16 @@ KAN-602 does not implement:
 - PostgreSQL application authorization or KAN-566/C14;
 - post-auth product flows assigned to KAN-472;
 - generic auth-provider portability.
+
+## Effective Team audience routing (KAN-724 candidate)
+
+KAN-724 extends application navigation, not the H2 identity or H3 capability grant model:
+
+- After authenticated EPT identity resolution, a current, validated active Team plus a unique effective TeamMembership preset select the shell destination. Athlete resolves to localized Home; Assistant, Coach and Admin resolve to localized Dashboard.
+- A safe login `returnTo` is honored only within the actor's current shell audience. A syntactically safe but cross-audience path is not an authority grant.
+- The protected Dashboard and mobile Athlete layouts re-evaluate audience server-side before rendering the shell. Direct URLs cannot bypass these layout decisions, and resource reads/writes retain their original H2/H3/H4/H5 authorization guards.
+- If multiple valid TeamMemberships exist without a validated selection, the result is `selection_required`: do not choose a Team implicitly. Missing, revoked or ambiguous evidence remains fail-closed. A limited unavailable-access surface provides localized logout; implementing a new full Team selector is not part of this story.
+- Existing linked EPT sessions visiting Login resolve their authorized destination without another credential submission; unresolved audiences must not enter a redirect loop.
+- Successful logout terminates Supabase session, clears active-Team context and returns a success outcome. The client then navigates immediately to localized Login. A failed logout does not claim completion or perform the successful navigation.
+
+This section is a pre-merge KAN-724 candidate contract until its PR is merged and the integrated `dev` baseline is reconciled. It does not assert an updated PostgreSQL RLS or invitation/bootstrap policy.
