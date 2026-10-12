@@ -92,7 +92,7 @@ export function auditH7aPhysicalSchema(db: Database.Database): string[] {
       "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?",
     ).get(table) as { sql?: string } | undefined)?.sql ?? ''
     if (!/CHECK\s*\(\s*["'`]?protocol["'`]?\s*=\s*'1000m_track'\s*\)/i.test(sql)) {
-      failures.push('H7A 0025 missing protocol CHECK')
+      failures.push('H7A 0025 missing protocol CHECK; actual sqlite_schema SQL: ' + sql)
     }
     const indexes = db.pragma(`index_list("${table}")`) as Index[]
     const index = indexes.find(value => value.name === 'field_performance_test_events_team_group_date_idx')
