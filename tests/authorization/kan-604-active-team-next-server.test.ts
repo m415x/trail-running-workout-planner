@@ -47,8 +47,8 @@ describe('KAN-660 Next.js active-Team context wiring', () => {
       'active-Team context must clear only after successful Supabase sign-out',
     )
     assert.ok(
-      logout.indexOf('redirect(') > logout.indexOf('context.clear()'),
-      'logout must clear active-Team context before redirecting',
+      logout.indexOf("return { status: 'signed_out' }") > logout.indexOf('context.clear()'),
+      'logout must clear active-Team context before signaling success',
     )
   })
 })

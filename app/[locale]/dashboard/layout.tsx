@@ -1,6 +1,9 @@
 import { redirect } from 'next/navigation'
 
 import { DashboardShell } from './DashboardShell'
+import { AudienceAccessUnavailable } from '@/components/auth/AudienceAccessUnavailable'
+import { resolveCoachShellAudience } from '@/lib/auth/coach-shell-audience'
+import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
@@ -35,6 +38,11 @@ export default async function DashboardLayout({
   if (access.status === 'redirect') {
     redirect(access.location)
   }
+
+  const audience = await resolveNextServerAudience(access.userId)
+  const decision = resolveCoachShellAudience(audience, locale)
+  if (decision.status === 'redirect') redirect(decision.location)
+  if (decision.status === 'deny') return <AudienceAccessUnavailable locale={locale} />
 
   const projectNavigation = createCoachNavigationNextServerProjection()
   const visibleDestinations = await projectNavigation({ status: 'authenticated', userId: access.userId })

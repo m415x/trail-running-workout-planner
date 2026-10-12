@@ -16,15 +16,17 @@ import { AppSidebar } from '@/components/dashboard/app-sidebar'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
 import { useLocale, useTranslations } from 'next-intl'
 import { logoutAction } from '@/app/actions/auth-actions'
+import { completeLogoutNavigation } from '@/lib/auth/logout-navigation'
 import { createCoachNavigationResumeRefresh } from '@/lib/authorization/coach-navigation-resume-refresh'
 import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export function DashboardShell({ children, visibleDestinations }: {
   children: React.ReactNode
   visibleDestinations: readonly string[]
 }) {
   const router = useRouter()
+  const [logoutFailed, setLogoutFailed] = useState(false)
   useEffect(() => {
     const resume = createCoachNavigationResumeRefresh(() => router.refresh())
     const onVisibilityChange = () => resume.onVisibilityChange(document.visibilityState === 'visible')
@@ -72,9 +74,10 @@ export function DashboardShell({ children, visibleDestinations }: {
                     <DropdownMenuItem>{t('profile')}</DropdownMenuItem>
                     <DropdownMenuItem>{t('settings')}</DropdownMenuItem>
                     <DropdownMenuSeparator />
+                    {logoutFailed && <p role='alert' className='px-2 text-sm text-destructive'>{logoutLocale === 'es' ? 'No se pudo cerrar la sesión.' : 'Could not sign out.'}</p>}
                     <DropdownMenuItem
                       className='text-red-600 focus:text-red-600'
-                      onClick={() => void logoutAction(logoutLocale)}
+                      onClick={() => { setLogoutFailed(false); void completeLogoutNavigation({ locale: logoutLocale, signOut: () => logoutAction(logoutLocale), replace: (path) => router.replace(path), refresh: () => router.refresh() }).then((result) => { if (result === 'invalid') setLogoutFailed(true) }) }}
                     >
                       {t('signOut')}
                     </DropdownMenuItem>

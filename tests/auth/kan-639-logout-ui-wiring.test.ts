@@ -21,6 +21,8 @@ test('KAN-639 keeps the existing localized sign-out label', () => {
 })
 
 test('KAN-642 Coach sign-out uses the Base UI Menu.Item click contract', () => {
-  assert.match(source, /onClick=\{\(\)\s*=>\s*void\s+logoutAction\(logoutLocale\)\}/)
+  assert.match(source, /onClick=\{\(\)\s*=>/)
+  assert.match(source, /completeLogoutNavigation\(/)
+  assert.match(source, /signOut:\s*\(\)\s*=>\s*logoutAction\(logoutLocale\)/)
   assert.doesNotMatch(source, /onSelect=/)
 })
