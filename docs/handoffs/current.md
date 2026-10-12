@@ -1,4 +1,12 @@
-# Current operational handoff — KAN-724 audience session routing merged baseline (2026-10-12)
+# Current operational handoff — KAN-772 H7A SQLite drift audit merged baseline (2026-10-12)
+
+## Latest merged correction
+- [KAN-772](kan-772.md) merged via [PR #54](https://github.com/m415x/trail-running-workout-planner/pull/54), merge `70994015c9cd11b107b7bda134c5b23e3d9ce213`. Canonical fresh SQLite and all nine disposable lifecycle scenarios passed; physical H7A 0020–0025 drift and metadata checks now fail closed.
+- Operator pre-merge `pn verify --db` PASS 6/6, `pn docs:handoff:check` PASS. Vercel was rate-limited, not a product test failure; no Vercel deployment success is claimed.
+- Developer `sqlite.db` still carries drift and was not deleted. Its explicit regeneration requires separate authorization. KAN-766 remains blocked and the `/plan` conflict requires independent verification.
+- Previous integrated functional routing baseline: KAN-724, details below.
+
+## Prior functional baseline — KAN-724 audience session routing (2026-10-12)
 
 ## Verified integration
 - KAN-724/T1–T8 merged to `dev` in [PR #53](https://github.com/m415x/trail-running-workout-planner/pull/53), merge SHA `b3c04e8d295b6d43fa0c02bc39e3af188bd32c89`; feature HEAD `13131c1e8d4ef6f32c55697e49d1bfa331c73eb1`.
