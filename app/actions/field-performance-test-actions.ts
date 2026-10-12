@@ -376,8 +376,13 @@ export async function reviewCoachTrack1000mEvidenceAction(
 
 
 export async function getCoachTrack1000mAuditHistoryAction(athleteId: string) {
-  return readAuthorizedFieldPerformanceTestAuditHistory(athleteId, {
-    resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return readAuthorizedFieldPerformanceTestAuditHistory(athlete.id, {
+    resolveOwnedAthlete: async (id: string) => id === athlete.id ? { id: athlete.id } : null,
     listAllByAthlete: repository.listAllByAthlete,
   })
 }
