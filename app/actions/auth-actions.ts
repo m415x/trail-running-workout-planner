@@ -5,6 +5,8 @@ import { redirect } from 'next/navigation'
 
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { authenticateEptLogin } from '@/lib/auth/login-flow'
+import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
+import { resolveAudienceLoginDestination } from '@/lib/auth/audience-login-routing'
 import { requestPasswordRecovery } from '@/lib/auth/password-recovery-request'
 import { completePasswordRecovery } from '@/lib/auth/password-recovery-update'
 import type { SupportedAuthLocale } from '@/lib/auth/safe-return-path'
@@ -47,7 +49,17 @@ export async function loginAction(
   })
 
   if (result.status === 'authenticated') {
-    redirect(result.returnTo)
+    const audience = await resolveNextServerAudience(result.userId)
+    const destination = resolveAudienceLoginDestination({
+      audience: audience.status,
+      locale,
+      returnTo: result.returnTo,
+    })
+    if (destination) redirect(destination)
+    // The session remains valid, but no Team/preset destination was resolved.
+    // Login is the non-privileged fallback; the existing-session page renders
+    // the fail-closed state and an accessible sign-out control.
+    redirect(`/${locale}/login`)
   }
 
   if (result.status === 'invalid_credentials') {
