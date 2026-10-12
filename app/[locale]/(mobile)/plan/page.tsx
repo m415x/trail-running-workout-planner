@@ -44,7 +44,6 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
   })
   if (effective.status === 'error') return <AthletePageState message={t('loadError')} />
   const days = buildWeek(monday, regionalContext.presentationLocale)
-  const sessions = effective.sessions
   const today = civilToday
   // next-intl Link supplies the locale prefix; preserve selected query via the
   // shared navigation contract using the locale-neutral route pathname.
