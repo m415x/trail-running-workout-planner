@@ -40,6 +40,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## H7A — Authorship and audit
 
+- [`handoffs/kan-772.md`](handoffs/kan-772.md) — KAN-772 pre-merge SQLite H7A 0020–0025 physical-drift detection, clean disposable bootstrap and supported lifecycle idempotence evidence; **not yet integrated**.
+
 - [`architecture/platform/h7a-authorship-audit.md`](architecture/platform/h7a-authorship-audit.md) — KAN-610 actor provenance, retained audit and limits of current H4A-based read authorization.
 
 ## Handoffs

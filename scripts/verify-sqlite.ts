@@ -1,4 +1,6 @@
 import Database from 'better-sqlite3'
+import { auditH7aPhysicalSchema } from './h7a-physical-schema'
+import { inspectH7aMigrationGuard } from './h7a-metadata-drift-guard'
 
 const sqlite = new Database(process.env.SQLITE_SCENARIO_MODE === '1' ? (process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()) : 'sqlite.db', { fileMustExist: true })
 try {
@@ -183,6 +185,11 @@ try {
     throw new Error(
       'SQLite schema is inconsistent: monthly_charges.billing_terms_id must reference athlete_billing_terms(id) ON DELETE RESTRICT',
     )
+  }
+
+  const h7aFailures = [...auditH7aPhysicalSchema(sqlite), ...inspectH7aMigrationGuard(sqlite)]
+  if (h7aFailures.length > 0) {
+    throw new Error('SQLite H7A physical/metadata drift: ' + [...new Set(h7aFailures)].join('; '))
   }
 
   const foreignKeyErrors = sqlite.pragma('foreign_key_check') as unknown[]
