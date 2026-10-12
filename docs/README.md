@@ -115,7 +115,7 @@ For new work, read `AGENTS.md`, this index, the current epic/story handoff when 
 ## Athlete H5B / KAN-608 merged baseline
 
 - [`architecture/h5b-athlete-stats-physiology-self.md`](architecture/h5b-athlete-stats-physiology-self.md) — H5B authenticated SELF Stats, 1000 m reference, Profile disclosure and explicit unknown/denied/error semantics.
-- KAN-608 is a completed historical baseline. The current operational handoff has advanced to KAN-609/H6 below; consult Jira and the merged PR #47 when historical H5B integration evidence is needed.
+- KAN-608 is a completed historical baseline. KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as completed historical integration evidence; the latest integrated H7A baseline and the operational handoff are indexed above. Consult Jira and merged PR #47 for historical H5B evidence.
 
 ## Athlete H6 / KAN-609 merged baseline
 
