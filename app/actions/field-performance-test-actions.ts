@@ -272,10 +272,34 @@ export async function createCoachTrack1000mEvidenceAction(
   return result
 }
 
+async function resolveAuthorizedCoachPhysiologyAthlete(athleteId: string, capability: 'physiology.read') {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
+    columns: { id: true, teamId: true, groupId: true },
+  })
+  if (!athlete) return null
+
+  const decision = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability,
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!decision.allowed || !('teamId' in decision) || decision.teamId !== athlete.teamId) return null
+  return athlete
+}
+
 export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
-  const athlete = await getAthleteById(athleteId)
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
   if (!athlete) {
-    return { success: false as const, error: 'athlete_not_found' as const }
+    return { success: false as const, error: 'not_authorized' as const }
   }
 
   const groupId = athlete.groupId
@@ -292,9 +316,9 @@ export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
 }
 
 export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string) {
-  const athlete = await getAthleteById(athleteId)
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
   if (!athlete) {
-    return { success: false as const, error: 'athlete_not_found' as const }
+    return { success: false as const, error: 'not_authorized' as const }
   }
 
   const data = repository
@@ -359,13 +383,18 @@ export async function getCoachTrack1000mAuditHistoryAction(athleteId: string) {
 }
 
 export async function getCoachTrack1000mHistoryAction(athleteId: string, effectiveDate: string) {
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+  const authorizedAthlete = async (id: string) => id === athlete.id ? { id: athlete.id } : null
   const [evolution, reference] = await Promise.all([
     readAthleteTrack1000mEvolution({ athleteId }, {
-      resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+      resolveOwnedAthlete: authorizedAthlete,
       listActiveByAthlete: repository.listActiveByAthlete,
     }),
     resolveAthleteRunningReference({ athleteId, effectiveDate }, {
-      resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+      resolveOwnedAthlete: authorizedAthlete,
       listActiveByAthleteThroughDate: repository.listActiveByAthleteThroughDate,
     }),
   ])
