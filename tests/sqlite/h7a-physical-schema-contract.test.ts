@@ -17,6 +17,8 @@ function fixture(options: { omitTermsAuthor?: boolean; eventDelete?: 'RESTRICT' 
   const db = new Database(':memory:')
   db.pragma('foreign_keys = ON')
   db.exec('CREATE TABLE users (id TEXT PRIMARY KEY)')
+  db.exec('CREATE TABLE teams (id TEXT PRIMARY KEY)')
+  db.exec('CREATE TABLE athlete_groups (id TEXT PRIMARY KEY)')
   for (const table of economicTables) {
     const author = table === 'athlete_billing_terms' && options.omitTermsAuthor
       ? ''
@@ -27,7 +29,7 @@ function fixture(options: { omitTermsAuthor?: boolean; eventDelete?: 'RESTRICT' 
   db.exec(`CREATE TABLE field_performance_test_events (
     id TEXT PRIMARY KEY NOT NULL, is_deleted INTEGER DEFAULT false NOT NULL,
     created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
-    team_id TEXT NOT NULL, group_id TEXT NOT NULL, scheduled_at TEXT NOT NULL,
+    team_id TEXT NOT NULL REFERENCES teams(id) ON DELETE CASCADE,\n    group_id TEXT NOT NULL REFERENCES athlete_groups(id) ON DELETE RESTRICT,\n    scheduled_at TEXT NOT NULL,
     protocol TEXT NOT NULL, created_by_user_id TEXT REFERENCES users(id) ON DELETE ${options.eventDelete ?? 'RESTRICT'},
     CONSTRAINT field_performance_test_events_protocol_check CHECK (protocol = '1000m_track')
   )`)
