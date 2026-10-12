@@ -8,7 +8,8 @@ export function resolveAudienceDestination(input: { access: Access; team: Active
   if (input.access.status !== 'authenticated' || !input.access.userId) return { status: 'deny' }
   if (input.team.status === 'selection_required') return { status: 'selection_required' }
   if (input.team.status !== 'resolved') return { status: 'deny' }
-  const matching = input.memberships.filter(row => row.userId === input.access.userId && row.teamId === input.team.teamId && row.isActive && !row.isDeleted && row.effectiveFrom <= input.at && (row.effectiveUntil === null || row.effectiveUntil > input.at))
+  const teamId = input.team.teamId
+  const matching = input.memberships.filter(row => row.userId === input.access.userId && row.teamId === teamId && row.isActive && !row.isDeleted && row.effectiveFrom <= input.at && (row.effectiveUntil === null || row.effectiveUntil > input.at))
   if (matching.length !== 1) return { status: 'deny' }
   const preset = matching[0]!.preset
   if (preset === 'athlete') return { status: 'athlete', teamId: input.team.teamId }
