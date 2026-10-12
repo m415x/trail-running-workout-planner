@@ -11,6 +11,7 @@ import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import {
   getRaceCourse,
   getRaceEdition,
@@ -144,8 +145,32 @@ export async function registerAthleteForRaceCourseAction(formData: FormData) {
 }
 
 export async function registerAthletesForRaceCourse(formData: FormData) {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    throw new Error('not_authorized')
+  }
+
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  if (activeTeam.status !== 'resolved') {
+    throw new Error('not_authorized')
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'competition.manage',
+    resource: { teamId: activeTeam.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== activeTeam.teamId) {
+    throw new Error('not_authorized')
+  }
+
   return executeRaceRegistrationServerAction(formData, {
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorization.teamId,
     runBulkRegistration: (input) => runBulkRaceRegistrationAction(input, dependencies),
     revalidatePath,
   })
