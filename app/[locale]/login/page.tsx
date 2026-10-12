@@ -1,4 +1,11 @@
 import { getTranslations } from 'next-intl/server'
+import { redirect } from 'next/navigation'
+import { AudienceAccessUnavailable } from '@/components/auth/AudienceAccessUnavailable'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { resolveExistingSessionLogin } from '@/lib/auth/existing-session-login'
+import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 
 import { LoginForm } from './LoginForm'
 
@@ -13,6 +20,15 @@ export default async function LoginPage({
   const { returnTo: rawReturnTo, recovery } = await searchParams
   const locale = rawLocale === 'en' ? 'en' : 'es'
   const returnTo = typeof rawReturnTo === 'string' ? rawReturnTo : ''
+  const supabase = await createSupabaseServerClient()
+  const session = await readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+  const audience = session.status === 'authenticated'
+    ? await resolveNextServerAudience(session.userId)
+    : { status: 'deny' as const }
+  const decision = resolveExistingSessionLogin({ session, audience, locale, returnTo })
+  if (decision.status === 'redirect') redirect(decision.location)
+  if (decision.status === 'access_unavailable') return <AudienceAccessUnavailable locale={locale} />
+
   const t = await getTranslations({ locale, namespace: 'Login' })
 
   return (
