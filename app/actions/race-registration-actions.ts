@@ -22,6 +22,7 @@ import {
   createRaceRegistration,
   findRaceRegistrationInEdition,
   getRaceRegistrationForTeam,
+  getRaceRegistration,
   updateRaceRegistration,
 } from '@/lib/competitions/race-registration-repository'
 import { executeRaceRegistrationServerAction } from '@/lib/competitions/race-registration-server-action-execution'
@@ -182,8 +183,41 @@ export async function changeRaceRegistrationCourseAction(formData: FormData) {
   const raceCourseId = String(formData.get('raceCourseId') ?? '')
   if (!locale || !registrationId || !raceCourseId) return { ok: false as const, reason: 'invalid_input' as const }
 
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+
+  // Resolve the resource's Team from persistence; submitted ids are locators only.
+  const stored = getRaceRegistration(registrationId)
+  if (!stored) return { ok: false as const, reason: 'not_found' as const }
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, stored.athleteProfileId),
+      eq(athleteProfiles.teamId, stored.teamId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) return { ok: false as const, reason: 'not_authorized' as const }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'competition.manage',
+    resource: { teamId: stored.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== stored.teamId) {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+
   const registration = getRaceRegistrationForTeam({
-    teamId: CURRENT_TEAM_ID,
+    teamId: authorization.teamId,
     registrationId,
   })
   if (!registration) return { ok: false as const, reason: 'not_found' as const }
