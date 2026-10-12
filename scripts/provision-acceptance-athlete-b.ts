@@ -78,7 +78,7 @@ try {
         .run(linkId,userId,subject,now,now)
       sqlite.prepare('INSERT INTO team_memberships(id,user_id,team_id,preset,effective_from,is_active,created_at,updated_at) VALUES (?,?,?,?,?,1,?,?)')
         .run(membershipId,userId,teamId,'athlete',now,now,now)
-      sqlite.prepare('INSERT INTO athlete_profiles(id,user_id,team_id,group_id,dni,first_name,last_name,contact_email,created_at,updated_at) VALUES (?,?,?,NULL,?,?,?,?,?)')
+      sqlite.prepare('INSERT INTO athlete_profiles(id,user_id,team_id,group_id,dni,first_name,last_name,contact_email,created_at,updated_at) VALUES (?,?,?,NULL,?,?,?,?,?,?)')
         .run(profileId,userId,teamId,'ACCEPT-H4B-ATHLETE-B','Acceptance','Athlete B',email,now,now)
     }).immediate()
     console.log('Acceptance Athlete B provisioned atomically; group_id null')
