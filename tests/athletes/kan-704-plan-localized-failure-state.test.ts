@@ -22,7 +22,7 @@ test('KAN-704 T8.2 week action returns stable unauthorized/error codes rather th
 })
 
 test('KAN-704 T8.2 Plan uses next-intl keys for DENY and unexpected failures, not action messages', () => {
-  assert.match(planSource, /result\.status\s*===\s*['"]unauthorized['"]/)
+  assert.match(planSource, /result\.status\s*===\s*['"]denied['"]/)
   assert.match(planSource, /t\(['"]unauthorized['"]\)/)
   assert.match(planSource, /t\(['"]loadError['"]\)/)
   assert.doesNotMatch(planSource, /result\.error\s*\?\?/)
