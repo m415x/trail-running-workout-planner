@@ -26,7 +26,7 @@ test('KAN-725 harness v2 is the current operational workflow and v1 is historica
   assert.doesNotMatch(harness, /do not change v1 yet/i)
 })
 
-test('KAN-725 documentation index tracks the latest integrated H7A baseline without stale KAN-608 current wording', async () => {
+test('KAN-725 documentation index tracks latest integrated H4C baseline without stale KAN-608 current wording', async () => {
   const index = await read('docs/README.md')
 
   assert.match(index, /latest integrated \*\*KAN-610\/H7A\*\* baseline/)
