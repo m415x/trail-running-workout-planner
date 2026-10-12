@@ -6,6 +6,8 @@ import { Link } from '@/i18n/routing'
 import { getCurrentAthletePlanningPeriod } from '@/app/actions/dashboard-actions'
 import { resolveSelectedAthletePlanWeek, shiftAthletePlanWeek, athletePlanWeekHref } from '@/lib/athlete-planning/plan-week-navigation'
 import { selectEffectiveAthletePlanWeek } from '@/lib/athlete-planning/plan-week-detail'
+import { projectAthletePlannedWeeklyVolume } from '@/lib/athlete-planning/planned-weekly-volume'
+import { buildAthletePlanOverview } from '@/lib/athlete-planning/plan-overview'
 import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 import { AthleteSessionCard } from '@/features/athlete-planning/components/AthleteSessionCard'
 import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
@@ -32,7 +34,9 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
   const monday = selected.monday
   const followingMonday = shiftAthletePlanWeek(monday, 1)
   const sunday = formatISODate(new Date(Date.parse(`${followingMonday}T00:00:00Z`) - 86400000))
-  const result = await getCurrentAthletePlanningPeriod(monday, sunday)
+  const overviewMondays = [shiftAthletePlanWeek(monday, -1), monday, followingMonday]
+  const overviewEnd = formatISODate(new Date(Date.parse(`${shiftAthletePlanWeek(followingMonday, 1)}T00:00:00Z`) - 86400000))
+  const result = await getCurrentAthletePlanningPeriod(overviewMondays[0], overviewEnd)
 
   if (result.status === 'denied') return <AthletePageState message={t('unauthorized')} />
   if (result.status === 'conflict') return <AthletePageState message={t('loadError')} />
@@ -43,6 +47,26 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     effectiveSessions: result.status === 'loaded' ? result.sessions : [],
   })
   if (effective.status === 'error') return <AthletePageState message={t('loadError')} />
+  const weeklyVolumes = overviewMondays.map((weekMonday) => {
+    const volume = projectAthletePlannedWeeklyVolume(weekMonday, (result.status === 'loaded' ? result.sessions : []).map((session) => ({
+      id: session.id,
+      date: session.date,
+      distanceKm: session.sessionPrescriptions[0]?.distanceKm ?? null,
+      elevationGain: session.sessionPrescriptions[0]?.elevationGain ?? null,
+    })))
+    return { monday: weekMonday, volume }
+  })
+  if (weeklyVolumes.some((week) => week.volume.status === 'error')) return <AthletePageState message={t('loadError')} />
+  const overview = buildAthletePlanOverview({
+    selectedMonday: monday,
+    effectivePeriods: [], // An authoritative period projection is not yet available; use the dated window.
+    weeks: weeklyVolumes.map(({ monday: weekMonday, volume }) => ({
+      monday: weekMonday,
+      distance: volume.status === 'error' ? { status: 'unknown' as const, value: null } : volume.distance,
+      elevationGain: volume.status === 'error' ? { status: 'unknown' as const, value: null } : volume.elevationGain,
+    })),
+  })
+  if (overview.status === 'error') return <AthletePageState message={t('loadError')} />
   const days = buildWeek(monday, regionalContext.presentationLocale)
   const today = civilToday
   // next-intl Link supplies the locale prefix; preserve selected query via the
@@ -70,6 +94,21 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
         <Link href={currentHref} className='rounded-lg border px-3 py-2'>{t('today')}</Link>
         <Link href={nextHref} className='rounded-lg border px-3 py-2'>{language === 'es' ? 'Siguiente' : 'Next'} →</Link>
       </nav>
+
+      <section aria-label={language === 'es' ? 'Panorama multisemana planificado' : 'Planned multiweek overview'} className='space-y-3 rounded-2xl border bg-card p-4'>
+        <h2 className='font-heading text-lg font-bold'>{language === 'es' ? 'Panorama de planificación' : 'Planning overview'}</h2>
+        <p className='text-sm text-muted-foreground'>{formatWeekRange(overview.period.startDate, overview.period.endDate, regionalContext.presentationLocale)}</p>
+        <ol className='grid gap-3 sm:grid-cols-3' aria-label={language === 'es' ? 'Resumen textual de semanas planificadas' : 'Text summary of planned weeks'}>
+          {overview.weeks.map((week) => (
+            <li key={week.monday} className='space-y-1 rounded-xl bg-muted/40 p-3 text-sm'>
+              <p className='font-semibold'>{formatWeekRange(week.monday, formatISODate(new Date(Date.parse(`${shiftAthletePlanWeek(week.monday, 1)}T00:00:00Z`) - 86400000)), regionalContext.presentationLocale)}</p>
+              <p>{language === 'es' ? 'Distancia prevista' : 'Planned distance'}: {week.distance.status === 'complete' ? `${week.distance.value} km` : week.distance.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
+              <p>{language === 'es' ? 'Desnivel previsto' : 'Planned ascent'}: {week.elevationGain.status === 'complete' ? `${week.elevationGain.value} m D+` : week.elevationGain.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
+              {week.distance.status === 'complete' && <div aria-hidden='true' className='h-1.5 rounded-full bg-primary/20'><div className='h-full max-w-full rounded-full bg-primary' style={{ width: `${Math.min(100, week.distance.value * 2)}%` }} /></div>}
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
 
