@@ -44,7 +44,7 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-606/H4C** Coach competition and official field-evidence authorization baseline, with SHA-scoped evidence in [`handoffs/kan-606.md`](handoffs/kan-606.md). Earlier KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-724** effective audience/session routing baseline (PR #53, merge `b3c04e8d`) with SHA-scoped evidence in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
 
 KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
 
@@ -54,9 +54,9 @@ KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as histor
 - [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable `competition.manage` TEAM-only and `field_evidence_1000m.manage` Coach enforcement contracts.
 
 
-## KAN-724 — Effective audience routing (pre-merge)
+## KAN-724 — Effective audience routing (merged)
 
-- [`handoffs/kan-724.md`](handoffs/kan-724.md) — KAN-724/T1–T8 H2 + validated active Team + effective H3 preset routing, localized login/logout, cross-shell redirects, fail-closed multi-Team selection and SHA-scoped candidate evidence. This remains a story candidate and does **not** replace the latest integrated KAN-606/H4C handoff before merge.
+- [`handoffs/kan-724.md`](handoffs/kan-724.md) — KAN-724/T1–T8 H2 + validated active Team + effective H3 preset routing, localized login/logout, cross-shell redirects, fail-closed multi-Team selection and SHA-scoped candidate evidence. Merged in PR #53 to `dev` (`b3c04e8d`); now the latest integrated operational handoff. KAN-757 canonical SQLite reviewer recovery and KAN-758 opt-in multi-Team acceptance fixture are part of the merged evidence; the base seed and H2 identity model remain unchanged.
 - [`architecture/platform/authentication-session-lifecycle.md`](architecture/platform/authentication-session-lifecycle.md) — the underlying H2 session boundary remains authoritative; H3 capabilities and resource-level guards are unchanged.
 
 ## Verification runner
