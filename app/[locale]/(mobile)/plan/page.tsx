@@ -3,50 +3,82 @@ import { CalendarDays, Flag } from 'lucide-react'
 
 import { Link } from '@/i18n/routing'
 
-import { getCurrentAthletePlanningWeek } from '@/app/actions/dashboard-actions'
+import { getCurrentAthletePlanningPeriod } from '@/app/actions/dashboard-actions'
+import { resolveSelectedAthletePlanWeek, shiftAthletePlanWeek, athletePlanWeekHref } from '@/lib/athlete-planning/plan-week-navigation'
+import { selectEffectiveAthletePlanWeek } from '@/lib/athlete-planning/plan-week-detail'
+import { getCurrentISODateInTimeZone } from '@/lib/date-time/current-calendar-date'
 import { AthleteSessionCard } from '@/features/athlete-planning/components/AthleteSessionCard'
 import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { cn } from '@/lib/utils'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
 import { Badge } from '@ui/badge'
-import { Card, CardContent } from '@ui/card'
 
 interface PlanPageProps {
   params: Promise<{ locale: string }>
+  searchParams: Promise<{ week?: string | string[] }>
 }
 
-export default async function PlanPage({ params }: PlanPageProps) {
+export default async function PlanPage({ params, searchParams }: PlanPageProps) {
   const { locale } = await params
   const language = locale === 'en' ? 'en' : 'es'
   const t = await getTranslations({ locale, namespace: 'AthletePlan' })
   const regionalContext = resolveApplicationRegionalContext({ language })
-  const result = await getCurrentAthletePlanningWeek()
+  const query = await searchParams
+  const civilToday = getCurrentISODateInTimeZone(regionalContext.timeZone)
+  const weekValue = typeof query.week === 'string' ? query.week : Array.isArray(query.week) ? 'invalid' : null
+  const selected = resolveSelectedAthletePlanWeek(weekValue, civilToday)
+  if (selected.status === 'invalid') return <AthletePageState message={t('loadError')} />
 
-  if (!result.success || !result.data) {
-    return <AthletePageState message={result.status === 'unauthorized' ? t('unauthorized') : t('loadError')} />
-  }
+  const monday = selected.monday
+  const followingMonday = shiftAthletePlanWeek(monday, 1)
+  const sunday = formatISODate(new Date(Date.parse(`${followingMonday}T00:00:00Z`) - 86400000))
+  const result = await getCurrentAthletePlanningPeriod(monday, sunday)
 
-  const { athlete, today, startDate, endDate, sessions } = result.data
-  const days = buildWeek(startDate, regionalContext.presentationLocale)
-  const groupCode = athlete.group ? `${athlete.group.categoryCode}${athlete.group.levelCode}` : null
+  if (result.status === 'denied') return <AthletePageState message={t('unauthorized')} />
+  if (result.status === 'conflict') return <AthletePageState message={t('loadError')} />
+  if (result.status === 'error') return <AthletePageState message={t('loadError')} />
+
+  const effective = selectEffectiveAthletePlanWeek({
+    monday,
+    effectiveSessions: result.status === 'loaded' ? result.sessions : [],
+  })
+  if (effective.status === 'error') return <AthletePageState message={t('loadError')} />
+  const days = buildWeek(monday, regionalContext.presentationLocale)
+  const sessions = effective.sessions
+  const today = civilToday
+  // next-intl Link supplies the locale prefix; preserve selected query via the
+  // shared navigation contract using the locale-neutral route pathname.
+  const selectedHref = athletePlanWeekHref('/plan?week=' + monday, monday)
+  const previousHref = athletePlanWeekHref(selectedHref, shiftAthletePlanWeek(monday, -1))
+  const nextHref = athletePlanWeekHref(selectedHref, shiftAthletePlanWeek(monday, 1))
+  const currentMonday = resolveSelectedAthletePlanWeek(null, today)
+  const currentHref = currentMonday.status === 'resolved'
+    ? athletePlanWeekHref(selectedHref, currentMonday.monday)
+    : selectedHref
 
   return (
     <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
           <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{t('currentWeek')}</h1></div>
-          {groupCode && <Badge variant='secondary' className='shrink-0'>{t('group', { group: groupCode })}</Badge>}
+
         </div>
-        <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(startDate, endDate, regionalContext.presentationLocale)}</p>
+        <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(monday, sunday, regionalContext.presentationLocale)}</p>
       </header>
+
+      <nav aria-label='Week navigation' className='flex flex-wrap items-center gap-3 text-sm'>
+        <Link href={previousHref} className='rounded-lg border px-3 py-2'>← {language === 'es' ? 'Anterior' : 'Previous'}</Link>
+        <Link href={currentHref} className='rounded-lg border px-3 py-2'>{t('today')}</Link>
+        <Link href={nextHref} className='rounded-lg border px-3 py-2'>{language === 'es' ? 'Siguiente' : 'Next'} →</Link>
+      </nav>
 
       <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
 
-      {!groupCode && <Card><CardContent className='py-6 text-center text-sm text-muted-foreground'>{t('noGroup')}</CardContent></Card>}
+
 
       <div className='space-y-3'>
         {days.map((day) => {
-          const daySessions = sessions.filter((session) => session.date === day.date)
+          const daySessions = effective.days.find((entry) => entry.date === day.date)?.sessions ?? []
           const isToday = day.date === today
 
           return (
