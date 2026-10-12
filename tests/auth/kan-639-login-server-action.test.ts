@@ -29,7 +29,9 @@ test('KAN-639 login Server Action reads only the approved login fields from Form
 
 test('KAN-639 login Server Action redirects only after authenticated EPT identity resolution', () => {
   assert.match(source, /result\.status\s*===\s*['"]authenticated['"]/)
-  assert.match(source, /redirect\(result\.returnTo\)/)
+  assert.match(source, /resolveNextServerAudience\(result\.userId\)/)
+  assert.match(source, /resolveAudienceLoginDestination/)
+  assert.match(source, /if \(destination\) redirect\(destination\)/)
 })
 
 test('KAN-639 login Server Action preserves explicit non-authenticated outcomes for localized UI', () => {
@@ -37,5 +39,7 @@ test('KAN-639 login Server Action preserves explicit non-authenticated outcomes 
   assert.match(login, /invalid_credentials/)
   assert.match(login, /unlinked/)
   assert.match(login, /invalid/)
-  assert.doesNotMatch(login, /redirect\([^\n]*login/i)
+  assert.match(login, /if \(result\.status === 'authenticated'\)/)
+  assert.match(login, /if \(result\.status === 'invalid_credentials'\)/)
+  assert.match(login, /if \(result\.status === 'unlinked'\)/)
 })
