@@ -5,7 +5,7 @@ import Database from 'better-sqlite3'
 const args = process.argv.slice(2)
 const index = args.indexOf('--database')
 const apply = args.includes('--apply')
-if (index < 0 || !args[index + 1] || args.some((arg, i) => arg.startsWith('--') && arg !== '--database' && arg !== '--apply')) {
+if (index < 0 || !args[index + 1] || args.some(arg => arg.startsWith('--') && arg !== '--database' && arg !== '--apply')) {
   throw new Error('Usage: pn db:seed:acceptance:multiteam --database <copy.sqlite> [--apply]')
 }
 if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
