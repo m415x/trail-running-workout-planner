@@ -29,7 +29,7 @@ export interface CapabilityDefinition {
   basePresets: readonly TeamMembershipPreset[]
   delegable: boolean
   structural: boolean
-  requiredScope?: 'self'
+  requiredScope?: 'self' | 'team'
 }
 
 export const CAPABILITY_CATALOG = [
@@ -50,6 +50,7 @@ export const CAPABILITY_CATALOG = [
     basePresets: ['coach'],
     delegable: false,
     structural: false,
+    requiredScope: 'team',
   },
   {
     key: 'planning.manage',
