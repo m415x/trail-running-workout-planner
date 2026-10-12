@@ -1,18 +1,23 @@
-# Current operational handoff — KAN-606/H4C merged baseline (2026-10-11)
+# Current operational handoff — KAN-724 audience session routing merged baseline (2026-10-12)
 
 ## Verified integration
-- KAN-606/H4C Coach competition and official 1000 m authorization merged in [PR #52](https://github.com/m415x/trail-running-workout-planner/pull/52) to `dev`, merge SHA `8f27f6ec02dd4642806298f87930d429472e3494`; feature HEAD `6202575781bd355eb78edc1b1364d3fcfd411c11`.
-- [KAN-606 handoff](kan-606.md) and [H3/H4C architecture](../architecture/platform/authorization-capabilities-scopes.md) describe capabilities, authority, scope exclusions and RED/GREEN history.
-- Operator reported `pn verify --db` PASS on implementation candidate `bdd88d22593ec4596017ae13726b620f160d6aff`; `pn docs:handoff:check` PASS on pre-merge documentation candidate. These are SHA-scoped reports, not fresh post-merge full-gate evidence.
-- PR head Vercel status was success, with no GitHub Actions runs associated at review time. Merge succeeded; no later deployment claims.
-- Prior KAN-739 Harness v2/ESLint and KAN-610/H7A remain completed historical baselines in [KAN-739](kan-739.md) and [KAN-610](kan-610.md).
+- KAN-724/T1–T8 merged to `dev` in [PR #53](https://github.com/m415x/trail-running-workout-planner/pull/53), merge SHA `b3c04e8d295b6d43fa0c02bc39e3af188bd32c89`; feature HEAD `13131c1e8d4ef6f32c55697e49d1bfa331c73eb1`.
+- [KAN-724 story handoff](kan-724.md) and [authentication-session lifecycle](../architecture/platform/authentication-session-lifecycle.md) explain the authoritative H2 EPT user, validated active Team and effective H3 TeamMembership preset. Navigation is not resource authorization.
+- Operator confirmed `pn verify --db` PASS 6/6 on feature HEAD `13131c1e`: Tests 81063ms, TypeScript 9551ms, ESLint 21259ms, Build 19642ms, i18n 390ms, SQLite 43913ms; total 175818ms. This is pre-merge verification, not a fresh post-merge gate.
+- PR #53 displayed two successful GitHub checks, no base-branch conflicts and enabled merge. Vercel preview comments had no unresolved feedback. No GitHub Actions runs were returned by the commit-workflow lookup; do not invent CI coverage or a production deployment.
 
-## Normative execution
-- Read `AGENTS.md`, `docs/agent-harness.md`, this current handoff, relevant architecture and Jira.
-- H2 authenticated EPT actor + effective H3 TEAM capability + persisted ownership authorize Coach competition/field-evidence boundaries; active-Team context alone is not authority.
-- `pn tdd:red <test-file>` / `pn tdd <test-file>` are the focused RED/GREEN contract; `pn verify --db` is the full local gate. `pn lint` is zero-warning strict.
+## Functional acceptance
+- Operator confirmed localized ES/EN login, existing session, logout, Athlete and Coach shell landing, direct-URL cross-audience routing and fail-closed unresolved access.
+- KAN-758 opt-in multi-Team acceptance fixture reused one EPT User and one Supabase ExternalIdentityLink: `team_1` ATHLETE/Home and `team_2` COACH/Dashboard. None selected → fail-closed; invalid selected Team → fail-closed; revoked COACH membership with `team_2` cookie → fail-closed; restored membership and SQLite verification reported PASS.
+- Acceptance seed was applied first to isolated SQLite with idempotent rerun and 8/8 invariant checks; separately backed-up local SQLite then received explicit opt-in provisioning. It is **not** a production/base seed and creates **no** second Supabase identity or Coach-team AthleteProfile.
+- KAN-757 inherited H7A reviewer-column SQLite drift was corrected by fail-closed canonical 0024 recovery, first on a validation copy, then in local SQLite; physical schema, FK and Athlete Home checks PASS. Historic migration metadata was preserved, not rewritten.
+- One aggregate KAN-615 test failure did not reproduce in isolated TAP (4/4 PASS); subsequent full six-gate verification PASS. No KAN-615 migration repair was made.
 
-## Completed post-merge closure
-- Operator confirmed `pn docs:handoff:check` PASS on reconciled `dev` documentation HEAD `7e76f2f85e94193e9ac45b2d60f3203337db9e47`; Jira KAN-748/T9 and parent KAN-606 are both Finalizada. Evidence is recorded in KAN-748 comments 12598–12599.
-- Post-merge documentation commits were `5cb76aff` (`current.md`), `d0452b3a` (`kan-606.md`) and `7e76f2f85e94193e9ac45b2d60f3203337db9e47` (`docs/README.md`). These are distinct from PR #52 merge SHA and the pre-merge functional gate candidate; no post-merge `pn verify --db` or deployment claim is made.
-- Next independent discovery candidate: KAN-724, subject to fresh source/code/Jira refinement; no implementation is implied.
+## Normative workflow and unresolved scope
+- Read `AGENTS.md`, `docs/agent-harness.md`, this handoff, story handoff and relevant Jira.
+- Focused tests: `pn tdd:red <test-file>` and `pn tdd <test-file>`; full local gate: `pn verify --db`; handoff consistency: `pn docs:handoff:check`.
+- No interactive Team-selection UI was delivered by KAN-724; manually set acceptance cookie simulated persisted selection. Server-side selection action and authorization remain distinct boundaries; direct route redirect is not resource-level authority.
+- Previous merged baseline: [KAN-606/H4C](kan-606.md), PR #52 merge `8f27f6ec02dd4642806298f87930d429472e3494`.
+
+## Post-merge closure status
+- PR merge is confirmed. This post-merge documentation update has its own SHA and requires operator confirmation of `pn docs:handoff:check` on updated `dev` before Jira KAN-756/KAN-724 closure. Do not treat the feature gate as covering the later documentation commit.
