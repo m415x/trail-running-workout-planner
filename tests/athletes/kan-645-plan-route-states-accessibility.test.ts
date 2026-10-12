@@ -4,8 +4,8 @@ import test from 'node:test'
 
 const page = readFileSync('app/[locale]/(mobile)/plan/page.tsx', 'utf8')
 const loading = readFileSync('app/[locale]/(mobile)/plan/loading.tsx', 'utf8')
-const es = JSON.parse(readFileSync('messages/es.json', 'utf8'))
-const en = JSON.parse(readFileSync('messages/en.json', 'utf8'))
+const es = JSON.parse(readFileSync('messages/es/athletes/plan.json', 'utf8'))
+const en = JSON.parse(readFileSync('messages/en/athletes/plan.json', 'utf8'))
 
 test('KAN-645/I5 Plan route has localized accessible week controls and explicit state labels', () => {
   for (const lang of [es, en]) {
