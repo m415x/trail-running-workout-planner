@@ -11,7 +11,10 @@ const repository = readFileSync(
 describe('race participation server action contract', () => {
   it('keeps team scope server-owned and delegates explicit participation facts', () => {
     assert.match(actions, /export async function updateRaceParticipationAction/)
-    assert.match(actions, /CURRENT_TEAM_ID/)
+    assert.doesNotMatch(actions, /CURRENT_TEAM_ID/)
+    assert.match(actions, /const stored = getRaceRegistration\(registrationId\)/)
+    assert.match(actions, /capability: 'competition\.manage'/)
+    assert.match(actions, /teamId: authorization\.teamId/)
     assert.match(actions, /updateRaceParticipation\(/)
     assert.match(actions, /registrationId/)
     assert.match(actions, /participationStatus/)
