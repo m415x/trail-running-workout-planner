@@ -53,6 +53,12 @@ KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as histor
 - [`handoffs/kan-606.md`](handoffs/kan-606.md) — KAN-606/H4C merged baseline (PR #52, merge `8f27f6ec`), scope exclusions, focal RED/GREEN and SHA-scoped operator-reported `pn verify --db` PASS. Post-merge documentation verification is tracked separately.
 - [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable `competition.manage` TEAM-only and `field_evidence_1000m.manage` Coach enforcement contracts.
 
+
+## KAN-724 — Effective audience routing (pre-merge)
+
+- [`handoffs/kan-724.md`](handoffs/kan-724.md) — KAN-724/T1–T8 H2 + validated active Team + effective H3 preset routing, localized login/logout, cross-shell redirects, fail-closed multi-Team selection and SHA-scoped candidate evidence. This remains a story candidate and does **not** replace the latest integrated KAN-606/H4C handoff before merge.
+- [`architecture/platform/authentication-session-lifecycle.md`](architecture/platform/authentication-session-lifecycle.md) — the underlying H2 session boundary remains authoritative; H3 capabilities and resource-level guards are unchanged.
+
 ## Verification runner
 
 - [`architecture/platform/verification-runner.md`](architecture/platform/verification-runner.md) — KAN-568 `pn verify` contract, compact and verbose output, optional SQLite scenario gate, nonzero exit status and excluded remote Supabase operations.
