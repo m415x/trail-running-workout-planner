@@ -32,6 +32,18 @@
       "selectedWeek": "Semana seleccionada"
     },
     "unauthorized": "Acceso no autorizado",
-    "loading": "Cargando semana…"
+    "loading": "Cargando semana…",
+    "previousWeek": "Semana anterior",
+    "nextWeek": "Semana siguiente",
+    "plannedOverview": "Panorama planificado",
+    "incompleteMetric": "Datos incompletos",
+    "unknownMetric": "Sin datos",
+    "invalidWeek": "Semana inválida: seleccioná un lunes válido.",
+    "resolutionConflict": "Conflicto en la planificación efectiva. Contactá con tu entrenador.",
+    "competitionMilestones": "Hitos competitivos",
+    "noUpcomingRegistrations": "Sin inscripciones próximas",
+    "registrationMilestone": "Inscripción",
+    "plannedDistance": "Distancia prevista",
+    "plannedAscent": "Desnivel previsto"
   }
 }
