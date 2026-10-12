@@ -3,6 +3,7 @@ import { migrateCompetitionEntriesSqlite } from '@/db/migrations/competition-ent
 import { migrateMacrocycleTargetRaceDateSqlite } from '@/db/migrations/macrocycle-target-race-date-sqlite'
 import { migratePlanningCohortsSqlite } from '@/db/migrations/planning-cohorts-sqlite'
 import { migrateRealizedTrainingTimingSqlite } from '@/db/migrations/realized-training-timing-sqlite'
+import { inspectH7aMigrationGuard } from './h7a-metadata-drift-guard'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { copyFileSync, existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
@@ -379,6 +380,19 @@ function reconcileVersionedHeadMetadata(): boolean {
 }
 
 const state = classifyExistingSqlite()
+
+if (state === 'versioned') {
+  // Reject registered H7A physical/hash drift before any metadata reconciliation.
+  const preflight = new Database(sqlitePath, { fileMustExist: true, readonly: true })
+  try {
+    const violations = inspectH7aMigrationGuard(preflight)
+    if (violations.length > 0) throw new Error(
+      'H7A migration drift: ' + violations.join('; '),
+    )
+  } finally {
+    preflight.close()
+  }
+}
 
 if (state === "versioned") {
   const sqlite = new Database(sqlitePath, { fileMustExist: true })
