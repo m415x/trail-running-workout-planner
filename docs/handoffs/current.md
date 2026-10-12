@@ -12,6 +12,7 @@
 - H2 authenticated EPT actor + effective H3 TEAM capability + persisted ownership authorize Coach competition/field-evidence boundaries; active-Team context alone is not authority.
 - `pn tdd:red <test-file>` / `pn tdd <test-file>` are the focused RED/GREEN contract; `pn verify --db` is the full local gate. `pn lint` is zero-warning strict.
 
-## Pending closure checks
-- Re-run `pn docs:handoff:check` after this post-merge reconciliation.
-- Jira KAN-748/T9 and parent KAN-606 finalization follow the confirmed post-merge handoff check. No additional product scope is implied.
+## Completed post-merge closure
+- Operator confirmed `pn docs:handoff:check` PASS on reconciled `dev` documentation HEAD `7e76f2f85e94193e9ac45b2d60f3203337db9e47`; Jira KAN-748/T9 and parent KAN-606 are both Finalizada. Evidence is recorded in KAN-748 comments 12598–12599.
+- Post-merge documentation commits were `5cb76aff` (`current.md`), `d0452b3a` (`kan-606.md`) and `7e76f2f85e94193e9ac45b2d60f3203337db9e47` (`docs/README.md`). These are distinct from PR #52 merge SHA and the pre-merge functional gate candidate; no post-merge `pn verify --db` or deployment claim is made.
+- Next independent discovery candidate: KAN-724, subject to fresh source/code/Jira refinement; no implementation is implied.
