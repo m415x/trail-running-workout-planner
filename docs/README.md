@@ -44,13 +44,13 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-739** ESLint zero-warning / Harness v2 workflow baseline, with SHA-scoped evidence in [`handoffs/kan-739.md`](handoffs/kan-739.md). The latest integrated **KAN-610/H7A** baseline in the product-authorization domain is preserved in [`handoffs/kan-610.md`](handoffs/kan-610.md) and the [H7A architecture](architecture/platform/h7a-authorship-audit.md). KAN-725 and KAN-609 handoffs remain historical. Jira and remote `dev` determine actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-606/H4C** Coach competition and official field-evidence authorization baseline, with SHA-scoped evidence in [`handoffs/kan-606.md`](handoffs/kan-606.md). Earlier KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
 
 KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
 
-## H4C — Coach competition and official field-evidence authorization (pre-merge)
+## H4C — Coach competition and official field-evidence authorization (merged)
 
-- [`handoffs/kan-606.md`](handoffs/kan-606.md) — KAN-606/H4C story candidate, scope exclusions, focal RED/GREEN and operator-reported `pn verify --db` PASS; PR/merge/post-merge reconciliation remain pending. Do not treat as integrated `dev`.
+- [`handoffs/kan-606.md`](handoffs/kan-606.md) — KAN-606/H4C merged baseline (PR #52, merge `8f27f6ec`), scope exclusions, focal RED/GREEN and SHA-scoped operator-reported `pn verify --db` PASS. Post-merge documentation verification is tracked separately.
 - [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable `competition.manage` TEAM-only and `field_evidence_1000m.manage` Coach enforcement contracts.
 
 ## Verification runner
