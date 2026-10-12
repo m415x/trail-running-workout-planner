@@ -9,7 +9,8 @@ const form = readFileSync('features/race-registration/components/AthleteRaceRegi
 describe('KAN-366 Coach athlete-first registration management', () => {
   it('creates an effective registration for the current athlete from an explicit edition and course', () => {
     assert.match(actions, /registerAthleteForRaceCourseAction/)
-    assert.match(actions, /CURRENT_TEAM_ID/)
+    assert.match(actions, /capability: 'competition\.manage'/)
+    assert.match(actions, /resource: \{ teamId: athlete\.teamId \}/)
     assert.match(actions, /athleteProfileId/)
     assert.match(actions, /raceCourseId/)
     assert.match(actions, /findRaceRegistrationInEdition/)
