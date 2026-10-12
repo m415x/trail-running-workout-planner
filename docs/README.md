@@ -48,6 +48,11 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
 
+## H4C — Coach competition and official field-evidence authorization (pre-merge)
+
+- [`handoffs/kan-606.md`](handoffs/kan-606.md) — KAN-606/H4C story candidate, scope exclusions, focal RED/GREEN and operator-reported `pn verify --db` PASS; PR/merge/post-merge reconciliation remain pending. Do not treat as integrated `dev`.
+- [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable `competition.manage` TEAM-only and `field_evidence_1000m.manage` Coach enforcement contracts.
+
 ## Verification runner
 
 - [`architecture/platform/verification-runner.md`](architecture/platform/verification-runner.md) — KAN-568 `pn verify` contract, compact and verbose output, optional SQLite scenario gate, nonzero exit status and excluded remote Supabase operations.
