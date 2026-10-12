@@ -20,11 +20,14 @@ function execute(script: string, database: string) {
 
 function rebuildWithoutReviewerForeignKey(sqlite: Database.Database, includeColumn: boolean) {
   const original = sqlite.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'field_performance_tests'").get() as { sql: string }
-  // Replace just the reviewer's inline column/FK contract in the schema of a disposable test database.
-  const column = /,?\\s*["`]?reviewed_by_user_id["`]?\\s+text\\s+REFERENCES\\s+["`]?users["`]?\\s*\\(["`]?id["`]?\\)\\s+ON\\s+DELETE\\s+RESTRICT/i
-  assert.match(original.sql, column, 'fixture must start with canonical H7A reviewer FK')
-  const replacement = includeColumn ? ', reviewed_by_user_id TEXT' : ''
-  const rebuilt = original.sql.replace(column, replacement).replace(/CREATE TABLE\\s+["`]?field_performance_tests["`]?/i, 'CREATE TABLE __kan757_field_performance_tests')
+  const lines = original.sql.split('\n')
+  assert.ok(lines.some(line => line.includes('FOREIGN KEY (`reviewed_by_user_id`) REFERENCES `users`(`id`)')), 'fixture must start with canonical reviewer FK')
+  const revisedLines = lines.filter(line => !line.includes('FOREIGN KEY (`reviewed_by_user_id`)'))
+    .filter(line => includeColumn || !line.includes('`reviewed_by_user_id` text'))
+  const rebuilt = revisedLines.join('\n')
+    .replace(/CREATE TABLE [`"]field_performance_tests[`"]/, 'CREATE TABLE __kan757_field_performance_tests')
+    .replaceAll('"field_performance_tests".', '')
+    .replace(/,\s*\)/g, '\n)')
   const columns = sqlite.pragma('table_info(field_performance_tests)') as Array<{ name: string }>
   const retained = columns.map(({ name }) => name).filter(name => includeColumn || name !== 'reviewed_by_user_id')
   const quoted = retained.map(name => '"' + name + '"').join(', ')
