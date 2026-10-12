@@ -20,4 +20,6 @@
 - Previous merged baseline: [KAN-606/H4C](kan-606.md), PR #52 merge `8f27f6ec02dd4642806298f87930d429472e3494`.
 
 ## Post-merge closure status
-- PR merge is confirmed. This post-merge documentation update has its own SHA and requires operator confirmation of `pn docs:handoff:check` on updated `dev` before Jira KAN-756/KAN-724 closure. Do not treat the feature gate as covering the later documentation commit.
+- PR #53 merge SHA: `b3c04e8d295b6d43fa0c02bc39e3af188bd32c89`; subsequent documentation/index HEAD before this reconciliation: `d05a76e0daa3f4a6acd358f72cc3c3c1a77f17bb`. These are distinct from the verified pre-merge feature HEAD `13131c1e8d4ef6f32c55697e49d1bfa331c73eb1`.
+- The operator previously confirmed the post-merge `pn docs:handoff:check` PASS; Jira KAN-756 and KAN-724 are both `Finalizada` (verified 2026-10-12). They must not be reopened for this wording reconciliation.
+- This correction is documentation-only. Its new `dev` HEAD requires its own `pn docs:handoff:check` confirmation; that check covers handoff consistency only. No post-merge `pn verify --db` or transfer of the pre-merge functional gate is claimed.
