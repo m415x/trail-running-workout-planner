@@ -166,3 +166,12 @@ H3 does not implement:
 - impersonation;
 - a generic permission editor;
 - a new actor-to-athlete assignment domain.
+
+## KAN-606/H4C — Coach competition and field-evidence boundaries
+
+- `competition.manage` is assigned only to the COACH base preset, is nondelegable and declares required scope `TEAM`. An explicit conflicting requested scope denies, including `SELF`, `SPORTING_GROUP` and reserved `ASSIGNED_ATHLETES`.
+- An H2-authenticated actor, exactly one active effective TeamMembership, H3 authorization and matching persisted ownership are all required. Active Team is context, not authority. Cross-Team and missing/deleted athletes deny; the server resolves Team from AthleteProfile or stored RaceRegistration rather than trusting FormData or a fixed Team constant.
+- `field_evidence_1000m.manage` is required for Coach official 1000 m create/correct/review and the legacy creation writer; the server derives recorded/reviewed actor from H2. Coach read-only evidence and retained audit require `physiology.read`, authorized before repository access.
+- RaceRegistration individual/bulk registration, course and lifecycle updates, participation and factual results use `competition.manage`. Domain eligibility and append-only/provenance requirements remain independently applicable; denied writes must not be treated as successful form submissions.
+- RaceEvent/Edition/Course catalog management and TestEvent lifecycle are outside H4C. The reserved `ASSIGNED_ATHLETES` scope is not activated, and no capability is inferred from `training.coordinate`, `planning.manage`, or `athlete.admin.manage`.
+- Integration status and SHA-scoped gate evidence are tracked in [KAN-606 pre-merge handoff](../../handoffs/kan-606.md). Documentation before PR merge must not be described as merged `dev`.
