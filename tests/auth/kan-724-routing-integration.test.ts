@@ -49,3 +49,10 @@ test('KAN-724/T7 effective audience respects preset changes without stale redire
 test('KAN-724/T7 duplicate effective memberships do not silently choose a preset', () => {
   assert.deepEqual(classify([make('team-a', 'athlete'), make('team-a', 'coach')], 'team-a'), { status: 'deny' })
 })
+
+test('KAN-724/T7 real login action resolves audience before choosing post-login destination', async () => {
+  const { readFile } = await import('node:fs/promises')
+  const action = await readFile('app/actions/auth-actions.ts', 'utf8')
+  assert.match(action, /resolveNextServerAudience\(result\.userId\)/)
+  assert.match(action, /resolveAudienceLoginDestination/)
+})
