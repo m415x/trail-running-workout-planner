@@ -91,7 +91,7 @@ export function auditH7aPhysicalSchema(db: Database.Database): string[] {
     const sql = (db.prepare(
       "SELECT sql FROM sqlite_schema WHERE type = 'table' AND name = ?",
     ).get(table) as { sql?: string } | undefined)?.sql ?? ''
-    if (!/CHECK\s*\(\s*["'`]?protocol["'`]?\s*=\s*'1000m_track'\s*\)/i.test(sql)) {
+    if (!/CHECK\s*\(\s*(?:(?:["\x60]?field_performance_test_events["\x60]?)\s*\.\s*)?["\x60]?protocol["\x60]?\s*=\s*'1000m_track'\s*\)/i.test(sql)) {
       failures.push('H7A 0025 missing protocol CHECK; actual sqlite_schema SQL: ' + sql)
     }
     const indexes = db.pragma(`index_list("${table}")`) as Index[]
