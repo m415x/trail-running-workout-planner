@@ -6,6 +6,11 @@ import { revalidatePath } from 'next/cache'
 
 import { db } from '@/db'
 import { athleteProfiles } from '@/db/schema'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import {
   getRaceCourse,
   getRaceEdition,
@@ -93,19 +98,36 @@ export async function registerAthleteForRaceCourseAction(formData: FormData) {
   }
 
   const athlete = await db.query.athleteProfiles.findFirst({
-    columns: { id: true },
+    columns: { id: true, teamId: true },
     where: and(
       eq(athleteProfiles.id, athleteProfileId),
-      eq(athleteProfiles.teamId, CURRENT_TEAM_ID),
       eq(athleteProfiles.isDeleted, false),
     ),
   })
   if (!athlete) return { ok: false as const, reason: 'athlete_not_found' as const }
 
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'competition.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { ok: false as const, reason: 'not_authorized' as const }
+  }
+
   try {
     const result = await runBulkRaceRegistrationAction(
       {
-        teamId: CURRENT_TEAM_ID,
+        teamId: athlete.teamId,
         raceCourseId,
         submittedAthleteProfileIds: [athleteProfileId],
       },
