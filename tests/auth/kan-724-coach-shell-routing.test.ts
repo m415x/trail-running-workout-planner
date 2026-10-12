@@ -27,5 +27,5 @@ test('KAN-724/T3 Dashboard layout wires its guard before rendering the shell', a
   const { readFile } = await import('node:fs/promises')
   const layout = await readFile('app/[locale]/dashboard/layout.tsx', 'utf8')
   assert.match(layout, /resolveCoachShellAudience/)
-  assert.match(layout, /createActiveTeamNextServerContext|create.*Audience.*NextServer/)
+  assert.match(layout, /resolveNextServerAudience\(access\.userId\)/)
 })
