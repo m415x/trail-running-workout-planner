@@ -4,6 +4,8 @@ import { CalendarDays, Flag } from 'lucide-react'
 import { Link } from '@/i18n/routing'
 
 import { getCurrentAthletePlanningPeriod } from '@/app/actions/dashboard-actions'
+import { getCurrentAthleteRaceRegistrationsAction } from '@/app/actions/athlete-stats-actions'
+import { readAthletePlanCompetitionMilestones } from '@/lib/athlete-planning/plan-competition-context'
 import { resolveSelectedAthletePlanWeek, shiftAthletePlanWeek, athletePlanWeekHref } from '@/lib/athlete-planning/plan-week-navigation'
 import { selectEffectiveAthletePlanWeek } from '@/lib/athlete-planning/plan-week-detail'
 import { projectAthletePlannedWeeklyVolume } from '@/lib/athlete-planning/planned-weekly-volume'
@@ -67,6 +69,10 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     })),
   })
   if (overview.status === 'error') return <AthletePageState message={t('loadError')} />
+  const milestoneResult = await readAthletePlanCompetitionMilestones({
+    readSelfRegistrations: () => getCurrentAthleteRaceRegistrationsAction({ today: civilToday }),
+    explicitPlanGoalRegistrationIds: [], // No authenticated explicit planning-goal relation is available here.
+  })
   const maxKnownDistance = Math.max(0, ...overview.weeks.map(week => week.distance.status === 'complete' ? week.distance.value : 0))
   const days = buildWeek(monday, regionalContext.presentationLocale)
   const today = civilToday
@@ -109,6 +115,21 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className='space-y-3 rounded-2xl border bg-card p-4' aria-label={language === 'es' ? 'Hitos competitivos' : 'Competition milestones'}>
+        <h2 className='font-heading text-lg font-bold'>{t('competitions')}</h2>
+        {milestoneResult.status === 'denied' && <p role='alert' className='text-sm text-muted-foreground'>{t('unauthorized')}</p>}
+        {milestoneResult.status === 'error' && <p role='alert' className='text-sm text-muted-foreground'>{t('loadError')}</p>}
+        {milestoneResult.status === 'loaded' && (milestoneResult.milestones.length === 0
+          ? <p className='text-sm text-muted-foreground'>{language === 'es' ? 'Sin inscripciones próximas' : 'No upcoming registrations'}</p>
+          : <ol className='space-y-2'>{milestoneResult.milestones.map((registration) => (
+            <li key={registration.registrationId} className='rounded-xl bg-muted/40 p-3 text-sm'>
+              <p className='font-semibold'>{registration.eventName}</p>
+              <p className='text-muted-foreground'>{registration.editionDate} · {registration.editionLabel} · {registration.courseLabel}</p>
+              <p className='text-xs text-muted-foreground'>{language === 'es' ? 'Inscripción' : 'Registration'}</p>
+            </li>
+          ))}</ol>)}
       </section>
 
       <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
