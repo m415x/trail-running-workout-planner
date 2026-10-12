@@ -54,7 +54,7 @@ test('KAN-781 preflight and dry run cannot write', () => {
   const db = fixture()
   try {
     assert.equal(provisionAcceptanceAthleteB({ db, actor, apply: false }), 'absent')
-    assert.equal(db.prepare('SELECT count(*) AS n FROM users').get()?.n, 0)
+    assert.equal((db.prepare('SELECT count(*) AS n FROM users').get() as { n: number }).n, 0)
   } finally { db.close() }
 })
 
@@ -63,7 +63,7 @@ test('KAN-781 incompatible partial identity is fail-closed and never repaired', 
   try {
     db.prepare('INSERT INTO users(id,email) VALUES (?,?)').run(actor.userId, 'existing@example.invalid')
     assert.throws(() => provisionAcceptanceAthleteB({ db, actor, apply: true }), /incompatible/i)
-    assert.equal(db.prepare('SELECT count(*) AS n FROM team_memberships').get()?.n, 0)
-    assert.equal(db.prepare('SELECT count(*) AS n FROM users').get()?.n, 1)
+    assert.equal((db.prepare('SELECT count(*) AS n FROM team_memberships').get() as { n: number }).n, 0)
+    assert.equal((db.prepare('SELECT count(*) AS n FROM users').get() as { n: number }).n, 1)
   } finally { db.close() }
 })
