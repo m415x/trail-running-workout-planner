@@ -26,7 +26,10 @@ export function provisionAcceptanceAthleteB(input: {
   const { db, actor, apply } = input
   if (!actor.subject.trim() || !actor.userId.trim() || !actor.profileId.trim()
     || !actor.linkId.trim() || !actor.membershipId.trim()
-    || actor.userId !== 'accept_athlete_b'\n    || actor.profileId !== 'accept_profile_athlete_b'\n    || actor.linkId !== 'accept_link_athlete_b'\n    || actor.membershipId !== 'accept_membership_athlete_b') {
+    || actor.userId !== 'accept_athlete_b'
+    || actor.profileId !== 'accept_profile_athlete_b'
+    || actor.linkId !== 'accept_link_athlete_b'
+    || actor.membershipId !== 'accept_membership_athlete_b') {
     throw new Error('incompatible acceptance identity')
   }
 
