@@ -1,6 +1,7 @@
 import type Database from 'better-sqlite3'
 import { readFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
+import { resolve } from 'node:path'
 import { auditH7aPhysicalSchema } from './h7a-physical-schema'
 
 export type H7aState =
@@ -34,7 +35,7 @@ export function classifyH7aSqliteState(db: Database.Database): H7aState {
     if (applied.length > 1) { problems.push(`002${i} duplicated migration record`); continue }
     if (applied.length === 0) continue
     present.push(i)
-    const canonical = createHash('sha256').update(readFileSync(`drizzle/sqlite/${e.tag}.sql`)).digest('hex')
+    const canonical = createHash('sha256').update(readFileSync(resolve(import.meta.dirname, '../drizzle/sqlite', `${e.tag}.sql`))).digest('hex')
     if (applied[0].hash !== canonical) problems.push(`002${i} canonical migration hash mismatch`)
   }
   if (problems.length) return { status: 'incompatible', reasons: problems }
