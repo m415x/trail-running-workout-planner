@@ -68,3 +68,12 @@ test('KAN-773/S1 rejects 0025 SET NULL instead of canonical RESTRICT and a missi
     db.close()
   }
 })
+
+test('KAN-773/S1 rejects a missing protocol CHECK rather than silently accepting any event table', () => {
+  const db = fixture()
+  try {
+    db.exec('ALTER TABLE field_performance_test_events RENAME TO __event_checked')
+    db.exec('CREATE TABLE field_performance_test_events (id TEXT PRIMARY KEY, protocol TEXT NOT NULL, created_by_user_id TEXT REFERENCES users(id) ON DELETE RESTRICT)')
+    assert.match(auditH7aPhysicalSchema(db).join('\\n'), /missing protocol CHECK/)
+  } finally { db.close() }
+})
