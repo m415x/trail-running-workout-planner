@@ -14,7 +14,9 @@ describe('race registration Next.js action adapter', () => {
   })
 
   it('uses server-owned team context and real SQLite repositories', () => {
-    assert.match(source, /CURRENT_TEAM_ID\s*=\s*['"]team_1['"]/)
+    assert.doesNotMatch(source, /CURRENT_TEAM_ID\s*=/)
+    assert.match(source, /createActiveTeamNextServerContext/)
+    assert.match(source, /capability: 'competition\.manage'/)
     assert.match(source, /getRaceCourse/)
     assert.match(source, /getRaceEdition/)
     assert.match(source, /getRaceEvent/)

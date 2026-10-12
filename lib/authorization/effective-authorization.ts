@@ -103,6 +103,11 @@ function hasGrantCapability(
 export function authorizeEffectiveCapability(
   input: EffectiveAuthorizationInput,
 ): EffectiveAuthorizationDecision {
+  const declaredScope = getCapabilityDefinition(input.capability).requiredScope
+  if (declaredScope && input.requiredScope && input.requiredScope !== declaredScope) {
+    return { allowed: false }
+  }
+
   if (input.resource.teamId !== input.teamId) {
     return { allowed: false }
   }

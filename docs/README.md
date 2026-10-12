@@ -46,6 +46,13 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 `docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-739** ESLint zero-warning / Harness v2 workflow baseline, with SHA-scoped evidence in [`handoffs/kan-739.md`](handoffs/kan-739.md). The latest integrated **KAN-610/H7A** baseline in the product-authorization domain is preserved in [`handoffs/kan-610.md`](handoffs/kan-610.md) and the [H7A architecture](architecture/platform/h7a-authorship-audit.md). KAN-725 and KAN-609 handoffs remain historical. Jira and remote `dev` determine actual integration state.
 
+KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
+
+## H4C — Coach competition and official field-evidence authorization (pre-merge)
+
+- [`handoffs/kan-606.md`](handoffs/kan-606.md) — KAN-606/H4C story candidate, scope exclusions, focal RED/GREEN and operator-reported `pn verify --db` PASS; PR/merge/post-merge reconciliation remain pending. Do not treat as integrated `dev`.
+- [`architecture/platform/authorization-capabilities-scopes.md`](architecture/platform/authorization-capabilities-scopes.md) — durable `competition.manage` TEAM-only and `field_evidence_1000m.manage` Coach enforcement contracts.
+
 ## Verification runner
 
 - [`architecture/platform/verification-runner.md`](architecture/platform/verification-runner.md) — KAN-568 `pn verify` contract, compact and verbose output, optional SQLite scenario gate, nonzero exit status and excluded remote Supabase operations.
@@ -115,7 +122,7 @@ For new work, read `AGENTS.md`, this index, the current epic/story handoff when 
 ## Athlete H5B / KAN-608 merged baseline
 
 - [`architecture/h5b-athlete-stats-physiology-self.md`](architecture/h5b-athlete-stats-physiology-self.md) — H5B authenticated SELF Stats, 1000 m reference, Profile disclosure and explicit unknown/denied/error semantics.
-- KAN-608 is a completed historical baseline. The current operational handoff has advanced to KAN-609/H6 below; consult Jira and the merged PR #47 when historical H5B integration evidence is needed.
+- KAN-608 is a completed historical baseline. Current operational authority has advanced beyond H5B; consult Jira and merged PR #47 for historical H5B integration evidence.
 
 ## Athlete H6 / KAN-609 merged baseline
 

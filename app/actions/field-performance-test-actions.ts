@@ -10,6 +10,7 @@ import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createH5bSelfNextServerContext } from '@/lib/authorization/h5b-self-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { db } from '@/db'
 import { and, eq } from 'drizzle-orm'
 import { athleteProfiles, fieldPerformanceTestEvents } from '@/db/schema'
@@ -57,7 +58,34 @@ export async function createTrack1000mEvidenceAction(input: Track1000mEvaluation
     return { success: false as const, error: 'not_authorized' as const }
   }
 
-  return createTrack1000mEvidence({ ...input, recordedByUserId: access.userId }, dependencies)
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return createTrack1000mEvidence(
+    { ...input, recordedByUserId: access.userId },
+    {
+      ...dependencies,
+      resolveOwnedAthlete: async (id: string) => id === athlete.id ? { id: athlete.id } : null,
+    },
+  )
 }
 
 export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEvidenceInput) {
@@ -70,8 +98,30 @@ export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEv
     return { success: false as const, error: 'not_authorized' as const }
   }
 
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return correctTrack1000mEvidence(input, {
     ...dependencies,
+    resolveOwnedAthlete: async (athleteId: string) => athleteId === athlete.id ? { id: athlete.id } : null,
     recordedByUserId: access.userId,
     getById: repository.getById,
     replace: repository.replace,
@@ -197,6 +247,28 @@ export async function createCoachTrack1000mEvidenceAction(
   }
   const recordedByUserId = access.userId
 
+  // A persisted AthleteProfile supplies resource identity, never authority.
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   const testEvent = await resolveEligibleTestEvent(input.testEventId, input.athleteId)
   if (!testEvent) {
     return { success: false as const, error: 'test_event_not_found' as const }
@@ -212,6 +284,7 @@ export async function createCoachTrack1000mEvidenceAction(
     performedAt,
   }, {
     ...dependencies,
+    resolveOwnedAthlete: async (athleteId: string) => athleteId === athlete.id ? { id: athlete.id } : null,
     recordedByUserId: recordedByUserId,
     resolveEligibleTestEvent: async (testEventId, athleteId) =>
       resolveEligibleTestEvent(testEventId, athleteId),
@@ -226,10 +299,34 @@ export async function createCoachTrack1000mEvidenceAction(
   return result
 }
 
+async function resolveAuthorizedCoachPhysiologyAthlete(athleteId: string, capability: 'physiology.read') {
+  const supabase = await createSupabaseServerClient()
+  const lookup = createExternalIdentityLookup()
+  const access = await requireAuthenticatedEptAction({
+    readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+  })
+  if (access.status !== 'authenticated') return null
+
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(eq(athleteProfiles.id, athleteId), eq(athleteProfiles.isDeleted, false)),
+    columns: { id: true, teamId: true, groupId: true },
+  })
+  if (!athlete) return null
+
+  const decision = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability,
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!decision.allowed || !('teamId' in decision) || decision.teamId !== athlete.teamId) return null
+  return athlete
+}
+
 export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
-  const athlete = await getAthleteById(athleteId)
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
   if (!athlete) {
-    return { success: false as const, error: 'athlete_not_found' as const }
+    return { success: false as const, error: 'not_authorized' as const }
   }
 
   const groupId = athlete.groupId
@@ -246,9 +343,9 @@ export async function getCoachTrack1000mTestEventsAction(athleteId: string) {
 }
 
 export async function getCoachPendingTrack1000mEvidenceAction(athleteId: string) {
-  const athlete = await getAthleteById(athleteId)
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
   if (!athlete) {
-    return { success: false as const, error: 'athlete_not_found' as const }
+    return { success: false as const, error: 'not_authorized' as const }
   }
 
   const data = repository
@@ -274,8 +371,29 @@ export async function reviewCoachTrack1000mEvidenceAction(
     return { success: false as const, error: 'not_authorized' as const }
   }
 
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
   return reviewCoachTrack1000mEvidence(input, {
-    resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+    resolveOwnedAthlete: async (athleteId: string) => athleteId === athlete.id ? { id: athlete.id } : null,
     getById: repository.getById,
     reviewedByUserId: access.userId,
     review: repository.review,
@@ -285,20 +403,30 @@ export async function reviewCoachTrack1000mEvidenceAction(
 
 
 export async function getCoachTrack1000mAuditHistoryAction(athleteId: string) {
-  return readAuthorizedFieldPerformanceTestAuditHistory(athleteId, {
-    resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return readAuthorizedFieldPerformanceTestAuditHistory(athlete.id, {
+    resolveOwnedAthlete: async (id: string) => id === athlete.id ? { id: athlete.id } : null,
     listAllByAthlete: repository.listAllByAthlete,
   })
 }
 
 export async function getCoachTrack1000mHistoryAction(athleteId: string, effectiveDate: string) {
+  const athlete = await resolveAuthorizedCoachPhysiologyAthlete(athleteId, 'physiology.read')
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+  const authorizedAthlete = async (id: string) => id === athlete.id ? { id: athlete.id } : null
   const [evolution, reference] = await Promise.all([
     readAthleteTrack1000mEvolution({ athleteId }, {
-      resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+      resolveOwnedAthlete: authorizedAthlete,
       listActiveByAthlete: repository.listActiveByAthlete,
     }),
     resolveAthleteRunningReference({ athleteId, effectiveDate }, {
-      resolveOwnedAthlete: dependencies.resolveOwnedAthlete,
+      resolveOwnedAthlete: authorizedAthlete,
       listActiveByAthleteThroughDate: repository.listActiveByAthleteThroughDate,
     }),
   ])
