@@ -58,7 +58,34 @@ export async function createTrack1000mEvidenceAction(input: Track1000mEvaluation
     return { success: false as const, error: 'not_authorized' as const }
   }
 
-  return createTrack1000mEvidence({ ...input, recordedByUserId: access.userId }, dependencies)
+  const athlete = await db.query.athleteProfiles.findFirst({
+    where: and(
+      eq(athleteProfiles.id, input.athleteId),
+      eq(athleteProfiles.isDeleted, false),
+    ),
+    columns: { id: true, teamId: true },
+  })
+  if (!athlete) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  const authorization = await createH4aNextServerAuthorizationBoundary().authorize(access, {
+    capability: 'field_evidence_1000m.manage',
+    resource: { teamId: athlete.teamId },
+    at: new Date().toISOString(),
+    requiredScope: 'team',
+  })
+  if (!authorization.allowed || !('teamId' in authorization) || authorization.teamId !== athlete.teamId) {
+    return { success: false as const, error: 'not_authorized' as const }
+  }
+
+  return createTrack1000mEvidence(
+    { ...input, recordedByUserId: access.userId },
+    {
+      ...dependencies,
+      resolveOwnedAthlete: async (id: string) => id === athlete.id ? { id: athlete.id } : null,
+    },
+  )
 }
 
 export async function correctTrack1000mEvidenceAction(input: CorrectTrack1000mEvidenceInput) {
