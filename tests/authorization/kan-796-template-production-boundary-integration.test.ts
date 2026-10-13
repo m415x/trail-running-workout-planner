@@ -4,6 +4,7 @@ import { test } from 'node:test'
 
 const actionSource = readFileSync('app/actions/workout-template-actions.ts', 'utf8')
 const isolatedBoundary = readFileSync('lib/workout-templates/authorized-workout-template-operations.ts', 'utf8')
+const composition = readFileSync('lib/workout-templates/workout-template-action-composition.ts', 'utf8')
 const navigation = readFileSync('lib/authorization/coach-navigation-policy.ts', 'utf8')
 
 /**
@@ -15,8 +16,9 @@ const navigation = readFileSync('lib/authorization/coach-navigation-policy.ts', 
 test('KAN-796 production and disposable SQLite operations use one fail-closed Team authority core', () => {
   assert.match(isolatedBoundary, /export async function resolveAuthorizedWorkoutTemplateTeam\(/)
   assert.match(isolatedBoundary, /const authorizedTeam = \(\) => resolveAuthorizedWorkoutTemplateTeam\(deps\)/)
-  assert.match(actionSource, /import \{ resolveAuthorizedWorkoutTemplateTeam \} from '@\/lib\/workout-templates\/authorized-workout-template-operations'/)
-  assert.match(actionSource, /const teamId = await resolveAuthorizedWorkoutTemplateTeam\(\{/)
+  assert.match(actionSource, /createWorkoutTemplateActionComposition/)
+  assert.match(composition, /resolveAuthorizedWorkoutTemplateTeam\(freshAuthorization\(\)\)/)
+  assert.match(composition, /requireAuthenticatedEptAction\(/)
   assert.match(actionSource, /createH4aNextServerAuthorizationBoundary\(\)\.authorize\(access,/)
 })
 
