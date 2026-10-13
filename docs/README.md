@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Architecture
 
+- [`architecture/platform/acceptance-athlete-b-provisioning.md`](architecture/platform/acceptance-athlete-b-provisioning.md) — KAN-778 local acceptance Athlete B provisioning, idempotence, identity safeguards and evidence limits.
+
 Domain and technical contracts that current implementation should preserve unless a story explicitly changes them.
 
 - [`architecture/README.md`](architecture/README.md) — architecture index.
