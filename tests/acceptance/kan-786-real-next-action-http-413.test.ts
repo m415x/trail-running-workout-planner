@@ -59,7 +59,7 @@ test('KAN-786 real Next Server Action transport rejects 53-week generation expla
     form.set('locale', 'es')
     form.set('proposal', JSON.stringify({ events: [], pad: 'p'.repeat(202900) }))
     form.set('generationExplanations', JSON.stringify({ pad: 'e'.repeat(1574450) }))
-    const response = await fetch(origin + '/dashboard/planning/kan-786-probe', {
+    const response = await fetch(origin + '/en/dashboard/planning/kan-786-probe', {
       method: 'POST',
       redirect: 'manual',
       headers: { 'Next-Action': 'kan-786-unknown-action' },
