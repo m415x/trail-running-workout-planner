@@ -18,7 +18,7 @@ const require = createRequire(import.meta.url)
  * by the 1 MiB transport gate before action dispatch/auth/mutations.
  * This reproduces the HTTP boundary; it does not prove authenticated persistence.
  */
-test('KAN-786 real Next Server Action transport rejects 53-week generation explanations before writes', { timeout: 120_000 }, async () => {
+test('KAN-786 real Next Server Action transport rejects 53-week generation explanations before writes', { timeout: 150_000 }, async () => {
   const root = resolve('.')
   const developerDb = new Database(join(root, 'sqlite.db'), { readonly: true, fileMustExist: true })
   const temp = await mkdtemp(join(tmpdir(), 'kan-786-http-'))
@@ -43,16 +43,16 @@ test('KAN-786 real Next Server Action transport rejects 53-week generation expla
     server.stdout?.on('data', chunk => { logs = (logs + String(chunk)).slice(-4000) })
     server.stderr?.on('data', chunk => { logs = (logs + String(chunk)).slice(-4000) })
     const origin = `http://127.0.0.1:${port}`
+    // Next startup readiness is signalled by the server itself. Do not GET a
+    // protected dynamic planning route: its auth/compilation may hang even
+    // after Next has finished bootstrapping, especially on Windows.
     let ready = false
-    for (let attempt = 0; attempt < 90; attempt++) {
+    for (let attempt = 0; attempt < 120; attempt++) {
       if (server.exitCode !== null) throw new Error(`Next exited before ready: ${logs}`)
-      try {
-        const response = await fetch(origin + '/dashboard/planning/kan-786-probe', { signal: AbortSignal.timeout(1500) })
-        if (response.status) { ready = true; break }
-      } catch { /* startup */ }
-      await new Promise(done => setTimeout(done, 500))
+      if (/Ready in \d+ms/.test(logs)) { ready = true; break }
+      await new Promise(done => setTimeout(done, 250))
     }
-    assert.ok(ready, `Next failed to start: ${logs}`)
+    assert.ok(ready, `Next startup signal not observed: ${logs}`)
 
     const form = new FormData()
     form.set('planId', 'kan-786-probe')
