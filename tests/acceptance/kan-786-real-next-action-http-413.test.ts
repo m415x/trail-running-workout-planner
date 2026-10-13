@@ -61,10 +61,12 @@ test('KAN-786 real Next Server Action transport rejects 53-week generation expla
     form.set('generationExplanations', JSON.stringify({ pad: 'e'.repeat(1574450) }))
     const response = await fetch(origin + '/dashboard/planning/kan-786-probe', {
       method: 'POST',
+      redirect: 'manual',
       headers: { 'Next-Action': 'kan-786-unknown-action' },
       body: form,
       signal: AbortSignal.timeout(20000),
     })
+    assert.ok(![301, 302, 303, 307, 308].includes(response.status), `Request redirected before Server Action parsing: HTTP ${response.status}, location=${response.headers.get('location') ?? '(none)'}`)
     const after = createHash('sha256').update(await readFile(database)).digest('hex')
     assert.equal(after, before, '413 must not mutate isolated SQLite')
     assert.equal(response.status, 413, `expected Next transport rejection: ${response.status}`)
