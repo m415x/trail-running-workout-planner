@@ -22,23 +22,27 @@ export interface AuthorizedWorkoutTemplateOperationsDeps {
 type Denied = { status: 'denied' }
 type Allowed = { status: 'allowed' }
 
+/** Shared fail-closed Team authority used by SQLite adapter and Next Server Actions. */
+export async function resolveAuthorizedWorkoutTemplateTeam(
+  deps: Pick<AuthorizedWorkoutTemplateOperationsDeps, 'authenticate' | 'resolveActiveTeam' | 'authorize'>,
+): Promise<string | null> {
+  const access = await deps.authenticate()
+  if (access.status !== 'authenticated') return null
+  const teamId = await deps.resolveActiveTeam()
+  if (!teamId) return null
+  const decision = await deps.authorize(access, teamId)
+  if (!decision.allowed || decision.teamId !== teamId) return null
+  return teamId
+}
+
 /**
  * KAN-794: isolated, dependency-injected Team-owned repository boundary.
- * Not a Server Action and not wired into production until KAN-795/T3.
+ * Repository operations used by isolated SQLite tests; the fail-closed authorization\n * core is also used by production Server Actions.
  */
 export function createAuthorizedWorkoutTemplateOperations(
   deps: AuthorizedWorkoutTemplateOperationsDeps,
 ) {
-  async function authorizedTeam(): Promise<string | null> {
-    const access = await deps.authenticate()
-    if (access.status !== 'authenticated') return null
-
-    const teamId = await deps.resolveActiveTeam()
-    if (!teamId) return null
-    const decision = await deps.authorize(access, teamId)
-    if (!decision.allowed || decision.teamId !== teamId) return null
-    return teamId
-  }
+  const authorizedTeam = () => resolveAuthorizedWorkoutTemplateTeam(deps)
 
   async function ownsTemplate(teamId: string, templateId: string) {
     return deps.database.select({ id: workouts.id }).from(workouts).where(and(
