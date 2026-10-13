@@ -35,21 +35,19 @@ import type {
 } from '@/types'
 
 async function authorizeWorkoutTemplateAccess(): Promise<{ teamId: string } | null> {
+  let authenticatedUserId: string | null = null
   const teamId = await resolveAuthorizedWorkoutTemplateTeam({
     authenticate: async () => {
       const supabase = await createSupabaseServerClient()
-      return requireAuthenticatedEptAction({
+      const access = await requireAuthenticatedEptAction({
         readAccess: () => readEptSessionAccessState(supabase.auth, createExternalIdentityLookup()),
       })
+      authenticatedUserId = access.status === 'authenticated' ? access.userId : null
+      return access
     },
     resolveActiveTeam: async () => {
-      // The H4A boundary re-resolves the same active Team; a change is denied.
-      const access = await createSupabaseServerClient()
-      const identity = await requireAuthenticatedEptAction({
-        readAccess: () => readEptSessionAccessState(access.auth, createExternalIdentityLookup()),
-      })
-      if (identity.status !== 'authenticated') return null
-      const activeTeam = await createActiveTeamNextServerContext().resolve(identity.userId)
+      if (!authenticatedUserId) return null
+      const activeTeam = await createActiveTeamNextServerContext().resolve(authenticatedUserId)
       return activeTeam.status === 'resolved' ? activeTeam.teamId : null
     },
     authorize: (access, expectedTeamId) => createH4aNextServerAuthorizationBoundary().authorize(access, {
