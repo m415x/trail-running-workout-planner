@@ -66,7 +66,7 @@ function composition() {
   return createWorkoutTemplateActionComposition({
     database,
     readAccess: async () => actor
-      ? { status: 'authenticated' as const, userId: actor }
+      ? { status: 'authenticated' as const, provider: 'supabase', subject: `test-subject-${actor}`, userId: actor }
       : { status: 'anonymous' as const },
     resolveActiveTeam: async userId => {
       resolutionLog.push(`${userId}:${selectedTeam}`)
