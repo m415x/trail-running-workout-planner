@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { createHash } from 'node:crypto'
@@ -18,7 +18,7 @@ const require = createRequire(import.meta.url)
  * by the 1 MiB transport gate before action dispatch/auth/mutations.
  * This reproduces the HTTP boundary; it does not prove authenticated persistence.
  */
-test('KAN-786 real Next Server Action transport rejects 53-week generation explanations before writes', { timeout: 120_000 }, async (t) => {
+test('KAN-786 real Next Server Action transport rejects 53-week generation explanations before writes', { timeout: 120_000 }, async () => {
   const root = resolve('.')
   const developerDb = new Database(join(root, 'sqlite.db'), { readonly: true, fileMustExist: true })
   const temp = await mkdtemp(join(tmpdir(), 'kan-786-http-'))
