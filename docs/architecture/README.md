@@ -46,6 +46,8 @@ Key competition documents:
 
 ### Platform
 
+- `platform/acceptance-athlete-b-provisioning.md` — KAN-778 local acceptance Athlete B identity and provisioning contract, operational verification and KAN-766 acceptance separation.
+
 `platform/` owns cross-cutting platform/infrastructure contracts.
 
 - `platform/ui-design-system.md` — KAN-507 Brand/UI foundations, authority hierarchy, primitive/pattern ownership and KAN-507 ↔ KAN-508 boundary.
