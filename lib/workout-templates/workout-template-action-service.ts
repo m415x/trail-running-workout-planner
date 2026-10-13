@@ -27,8 +27,8 @@ interface Deps {
   now?: () => string
 }
 
-type Denied = { status: 'denied' as const }
-type Allowed = { status: 'allowed' as const }
+type Denied = { status: 'denied' }
+type Allowed = { status: 'allowed' }
 
 /**
  * Dependency-injected repository boundary shared by production Coach Template
