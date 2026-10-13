@@ -91,12 +91,17 @@ test('KAN-786 real Next Server Action transport rejects 53-week generation expla
     assert.ok(![301, 302, 303, 307, 308].includes(response.status), `Request redirected before Server Action parsing: HTTP ${response.status}, location=${response.headers.get('location') ?? '(none)'}`)
     const after = createHash('sha256').update(await readFile(database)).digest('hex')
     assert.equal(after, before, '413 must not mutate isolated SQLite')
-    assert.equal(response.status, 413, `expected Next transport rejection: ${response.status}`)
+    const transportLimitObserved = /Body exceeded 1 MB limit|statusCode:\\s*413|body size limit/i.test(logs)
+    assert.ok(transportLimitObserved,
+      `No evidence of Next 1 MiB rejection; HTTP ${response.status}, small preflight HTTP ${preflight.status}; serverLogs=\\n${logs}`)
+    assert.ok([413, 500].includes(response.status),
+      `Unexpected HTTP status for Next body-limit rejection: ${response.status}; serverLogs=\\n${logs}`)
+    console.log(`KAN-786 transport 1 MiB rejection reproduced; outward HTTP ${response.status}; SQLite unchanged`)
 
     // RED: the intended confirmation contract must no longer ship this body.
     // Subsequent T3b replaces this oversized baseline request with an actual
     // authorized compact submission and read-after-write equivalence checks.
-    assert.ok(response.status !== 413, 'Large Coach confirmation is blocked by 1 MiB Server Action transport')
+    assert.fail('RED: the current Coach confirmation still exceeds the Next Server Action body limit')
   } finally {
     if (server && server.exitCode === null) server.kill()
     await rm(temp, { recursive: true, force: true })
