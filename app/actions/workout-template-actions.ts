@@ -14,13 +14,10 @@ import { createActiveTeamNextServerContext } from '@/lib/authorization/active-te
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { trainingLocations, workouts } from '@/db/schema'
 import {
-  createWorkoutTemplateRecord,
-  duplicateWorkoutTemplateRecord,
-  setWorkoutTemplateArchiveStatusRecord,
-  updateWorkoutTemplateRecord,
   type WorkoutTemplatePersistenceValues,
 } from '@/lib/workout-templates/workout-template-persistence'
 import { matchesWorkoutTemplateSearch, normalizeWorkoutTemplateTags } from '@/lib/workout-templates/workout-template-search'
+import { createWorkoutTemplateActionService } from '@/lib/workout-templates/workout-template-action-service'
 import { resolveAuthorizedWorkoutTemplateTeam } from '@/lib/workout-templates/authorized-workout-template-operations'
 import { validateWorkoutTemplateDefaults, type WorkoutTemplateDefaultField } from '@/lib/workout-templates/workout-template-validator'
 import type {
@@ -58,6 +55,32 @@ async function authorizeWorkoutTemplateAccess(): Promise<{ teamId: string } | nu
     }),
   })
   return teamId ? { teamId } : null
+}
+
+function productionTemplateService() {
+  let authenticatedUserId: string | null = null
+  return createWorkoutTemplateActionService({
+    database: db,
+    authenticate: async () => {
+      const supabase = await createSupabaseServerClient()
+      const access = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, createExternalIdentityLookup()),
+      })
+      authenticatedUserId = access.status === 'authenticated' ? access.userId : null
+      return access
+    },
+    resolveActiveTeam: async () => {
+      if (!authenticatedUserId) return null
+      const resolved = await createActiveTeamNextServerContext().resolve(authenticatedUserId)
+      return resolved.status === 'resolved' ? resolved.teamId : null
+    },
+    authorize: (access, teamId) => createH4aNextServerAuthorizationBoundary().authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId },
+      requiredScope: 'team',
+      at: new Date().toISOString(),
+    }),
+  })
 }
 
 export interface WorkoutTemplateFormState {
@@ -271,10 +294,11 @@ export async function createWorkoutTemplate(
   }
 
   try {
-    createWorkoutTemplateRecord({
-      id: randomUUID(),
-      values: persistenceValues(draft, authorized.teamId),
-    })
+    const created = await productionTemplateService().create(
+      randomUUID(),
+      persistenceValues(draft, authorized.teamId),
+    )
+    if (created.status !== 'allowed') return { error: 'No autorizado' }
   } catch (error) {
     console.error('Error creating workout template:', error)
     return {
@@ -318,11 +342,11 @@ export async function updateWorkoutTemplate(
     const template = await getWorkoutTemplateById(templateId)
     if (!template) return { error: 'Plantilla no encontrada.' }
 
-    updateWorkoutTemplateRecord({
-      id: templateId,
-      teamId: authorized.teamId,
-      values: persistenceValues(draft, authorized.teamId),
-    })
+    const updated = await productionTemplateService().update(
+      templateId,
+      persistenceValues(draft, authorized.teamId),
+    )
+    if (updated.status !== 'allowed') return { error: 'Plantilla no encontrada.' }
   } catch (error) {
     console.error('Error updating workout template:', error)
     return {
@@ -346,13 +370,12 @@ export async function duplicateWorkoutTemplate(formData: FormData) {
   if (!templateId) redirect(templatesPath(locale))
 
   const duplicateId = randomUUID()
-  const duplicated = duplicateWorkoutTemplateRecord({
-    sourceId: templateId,
+  const duplicated = await productionTemplateService().duplicate(
+    templateId,
     duplicateId,
-    teamId: authorized.teamId,
-    titlePrefix: locale === 'es' ? 'Copia de' : 'Copy of',
-  })
-  if (!duplicated) redirect(templatesPath(locale))
+    locale === 'es' ? 'Copia de' : 'Copy of',
+  )
+  if (duplicated.status !== 'allowed') redirect(templatesPath(locale))
 
   revalidatePath(templatesPath(locale))
   redirect(templateEditPath(locale, duplicateId))
@@ -367,12 +390,8 @@ export async function setWorkoutTemplateArchiveStatus(formData: FormData) {
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   if (!templateId) return
 
-  const changed = setWorkoutTemplateArchiveStatusRecord({
-    id: templateId,
-    teamId: authorized.teamId,
-    archived: shouldArchive,
-  })
-  if (!changed) return
+  const changed = await productionTemplateService().archive(templateId, shouldArchive)
+  if (changed.status !== 'allowed') return
 
   revalidatePath(templatesPath(locale))
   revalidatePath(`${locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`}/new`)
