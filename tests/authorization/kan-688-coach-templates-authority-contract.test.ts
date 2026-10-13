@@ -4,6 +4,7 @@ import { resolve } from 'node:path'
 import { test } from 'node:test'
 
 const actions = readFileSync(resolve('app/actions/workout-template-actions.ts'), 'utf8')
+const composition = readFileSync(resolve('lib/workout-templates/workout-template-action-composition.ts'), 'utf8')
 const navigation = readFileSync(resolve('lib/authorization/coach-navigation-policy.ts'), 'utf8')
 const catalog = readFileSync(resolve('lib/authorization/capability-catalog.ts'), 'utf8')
 
@@ -28,13 +29,13 @@ test('KAN-688/T1 existing H3 capability is selected without inventing a template
 test('KAN-688/T1 all seven template entry points have a server-owned H2/H3/H4A authority boundary', () => {
   assert.doesNotMatch(actions, /CURRENT_TEAM_ID\s*=\s*'team_1'/,
     'The fixed fixture Team cannot authorize any template operation')
-  assert.match(actions, /requireAuthenticatedEptAction|requireAuthenticatedPlanningReadAccess/,
+  assert.match(composition, /requireAuthenticatedEptAction|requireAuthenticatedPlanningReadAccess/,
     'H2 must be resolved in the server action, not in a route visibility check')
   assert.match(actions, /createActiveTeamNextServerContext|createH4aActiveTeamAuthorizationBoundary/,
     'H3 active Team must be resolved server-side')
   assert.match(actions, /createH4aNextServerAuthorizationBoundary/,
     'H4A effective capability must be enforced server-side')
-  assert.match(actions, /capability:\s*'planning\.manage'/,
+  assert.match(composition, /capability:\s*'planning\.manage'/,
     'Use existing non-delegable planning capability, without inventing another authority')
   for (const operation of operations) {
     assert.match(actions, new RegExp(`export async function ${operation}\\s*\\(`),
