@@ -83,7 +83,7 @@ function templateEditPath(locale: string, templateId: string) {
   return `${templatesPath(locale)}/${templateId}/edit`
 }
 
-function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
+function draftFromFormData(formData: FormData, teamId: string): WorkoutTemplateDraft {
   const intensityMethod = optionalText(formData, 'intensityMethod') as IntensityMethod | null
   let intensity: TrainingIntensity | null = null
 
@@ -108,7 +108,7 @@ function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
   const hasStructure = Object.values(structure).some(Boolean)
 
   return {
-    teamId: '',
+    teamId,
     category: formData.get('category')?.toString() as WorkoutTemplateCategory,
     tags: (formData.get('tags')?.toString() ?? '').split(',').map((tag) => tag.trim()).filter(Boolean),
     sessionDefaults: {
@@ -247,7 +247,7 @@ export async function createWorkoutTemplate(
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   const authorized = await authorizeWorkoutTemplateAccess()
   if (!authorized) return { error: 'No autorizado' }
-  const draft = draftFromFormData(formData)
+  const draft = draftFromFormData(formData, authorized.teamId)
   const validation = validateWorkoutTemplateDefaults(draft)
 
   if (!validation.isValid) {
@@ -289,7 +289,7 @@ export async function updateWorkoutTemplate(
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   const authorized = await authorizeWorkoutTemplateAccess()
   if (!authorized) return { error: 'No autorizado' }
-  const draft = draftFromFormData(formData)
+  const draft = draftFromFormData(formData, authorized.teamId)
   const validation = validateWorkoutTemplateDefaults(draft)
 
   if (!templateId) return { error: 'No se pudo identificar la plantilla.' }
