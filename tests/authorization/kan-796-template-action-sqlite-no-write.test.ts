@@ -117,3 +117,43 @@ test('KAN-796 action service is used by the real Server Action module', () => {
   assert.match(product, /createWorkoutTemplateActionService/,
     'SQLite-tested action service must be invoked by production, not left as unused test-only code')
 })
+
+test('KAN-796 Team B successful update, duplicate, archive and reactivation never mutate Team A', async () => {
+  const action = service()
+  const originalA = sqlite.prepare('SELECT * FROM workouts WHERE id = ?').get('a')
+  assert.deepEqual(await action.update('b', { ...values('team-a'), title: 'Updated B' }), { status: 'allowed' })
+  assert.deepEqual(await action.duplicate('b', 'copy-b'), { status: 'allowed' })
+  assert.deepEqual(await action.archive('b', true), { status: 'allowed' })
+  let archived = sqlite.prepare('SELECT team_id, archived_at FROM workouts WHERE id = ?').get('b') as {
+    team_id: string; archived_at: string | null
+  }
+  assert.equal(archived.team_id, 'team-b')
+  assert.ok(archived.archived_at)
+  assert.deepEqual(await action.archive('b', false), { status: 'allowed' })
+  archived = sqlite.prepare('SELECT team_id, archived_at FROM workouts WHERE id = ?').get('b') as {
+    team_id: string; archived_at: string | null
+  }
+  assert.equal(archived.archived_at, null)
+  assert.deepEqual(sqlite.prepare('SELECT * FROM workouts WHERE id = ?').get('a'), originalA,
+    'Successful Team B operations must not alter Team A')
+  const copied = sqlite.prepare('SELECT team_id, title FROM workouts WHERE id = ?').get('copy-b') as {
+    team_id: string; title: string
+  }
+  assert.equal(copied.team_id, 'team-b')
+  assert.match(copied.title, /Updated B/)
+  const updated = sqlite.prepare('SELECT team_id, title FROM workouts WHERE id = ?').get('b') as {
+    team_id: string; title: string
+  }
+  assert.deepEqual(updated, { team_id: 'team-b', title: 'Updated B' })
+})
+
+test('KAN-796 vanished or foreign template cannot be updated, duplicated or archived by an authorized actor', async () => {
+  const action = service()
+  const before = snapshot()
+  for (const id of ['missing', 'a']) {
+    assert.deepEqual(await action.update(id, values('team-b')), { status: 'denied' })
+    assert.deepEqual(await action.duplicate(id, `copy-${id}`), { status: 'denied' })
+    assert.deepEqual(await action.archive(id, true), { status: 'denied' })
+  }
+  assert.deepEqual(snapshot(), before)
+})
