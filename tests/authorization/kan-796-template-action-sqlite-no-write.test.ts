@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { beforeEach, afterEach, test } from 'node:test'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
@@ -109,4 +110,10 @@ test('KAN-796 permitted Team switch scopes list and write ownership to actual ac
   assert.deepEqual(await action.create('new-a', values('team-b')), { status: 'allowed' })
   const inserted = sqlite.prepare('SELECT team_id FROM workouts WHERE id = ?').get('new-a') as { team_id: string }
   assert.equal(inserted.team_id, 'team-a', 'Client-supplied teamId must not replace active Team ownership')
+})
+
+test('KAN-796 action service is used by the real Server Action module', () => {
+  const product = readFileSync('app/actions/workout-template-actions.ts', 'utf8')
+  assert.match(product, /createWorkoutTemplateActionService/,
+    'SQLite-tested action service must be invoked by production, not left as unused test-only code')
 })
