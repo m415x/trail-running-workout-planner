@@ -1,10 +1,4 @@
-// KAN-786 isolated Next application. Keep the default Server Actions body limit.
-// Next 16 otherwise infers the parent pnpm workspace root, importing production proxy.ts.
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const fixtureRoot = dirname(fileURLToPath(import.meta.url))
-export default {
-  devIndicators: false,
-  turbopack: { root: fixtureRoot },
-}
+// KAN-786 integration-only Next application; default Server Action body limit.
+// Invoked with next dev --webpack so that pnpm workspace/Turbopack root
+// discovery cannot include the main application's proxy or route graph.
+export default { devIndicators: false }
