@@ -22,9 +22,9 @@ const sqlitePath = scenarioMode
     : 'sqlite.db'
 
 // An isolated scenario must never reuse the repository's development sqlite.db.
-// Resolving both paths also rejects relative aliases such as ./sqlite.db.
+// The server and verification CLI execute from repository root; using cwd avoids\n// import.meta.dirname being undefined in Next/Turbopack module evaluation.\n// Resolving both paths also rejects relative aliases such as ./sqlite.db.
 if (isolatedMode) {
-  const developmentPath = resolve(import.meta.dirname, '../sqlite.db')
+  const developmentPath = resolve('sqlite.db')
   const normalized = (path: string) => process.platform === 'win32' ? path.toLowerCase() : path
   if (normalized(sqlitePath) === normalized(developmentPath)) {
     throw new Error('SQLITE_DATABASE_PATH cannot target the development sqlite.db in scenario mode')
