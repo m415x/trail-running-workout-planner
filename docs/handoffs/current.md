@@ -1,3 +1,14 @@
+# Current operational handoff — KAN-778 Athlete B provisioning merged (2026-10-13)
+
+## Latest integrated delivery
+
+- [KAN-778](kan-778.md) local Acceptance Athlete B provisioning merged through [PR #55](https://github.com/m415x/trail-running-workout-planner/pull/55), merge SHA `59e7b3ac1fd573b0d3be45ddf8acc600ce36d720`, candidate gate SHA `b0546f717d0c9221f28d603c93b7a687d13cefce`.
+- Operator `pn verify --db` PASS 6/6; dry-run, atomic apply and no-write rerun on disposable and local SQLite; FK/integrity pass; Supabase Athlete B login and `/plan` manual PASS. Not a fresh post-merge `dev` gate.
+- Platform contract [here](../architecture/platform/acceptance-athlete-b-provisioning.md). Subject UUID stays out of repository evidence. KAN-766/T8 remains OPEN pending full Coach → Athlete multieweek acceptance and G1 draft/active lifecycle.
+- Previous KAN-772 SQLite drift baseline and earlier KAN-724 routing evidence preserved below.
+
+---
+
 # Current operational handoff — KAN-772 H7A SQLite drift audit merged baseline (2026-10-12)
 
 ## Latest merged correction
