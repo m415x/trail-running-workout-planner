@@ -5,6 +5,7 @@ import { test } from 'node:test'
 const actions = readFileSync('app/actions/workout-template-actions.ts', 'utf8')
 const planningPreview = readFileSync('app/[locale]/dashboard/planning/[planId]/page.tsx', 'utf8')
 const navigation = readFileSync('lib/authorization/coach-navigation-policy.ts', 'utf8')
+const service = readFileSync('lib/workout-templates/workout-template-action-service.ts', 'utf8')
 
 function operationBody(name: string): string {
   const start = actions.indexOf(`export async function ${name}(`)
@@ -37,8 +38,10 @@ test('KAN-795 client-provided Team cannot select catalog authority or reassign w
   assert.doesNotMatch(list, /teamId:\s*string\s*=/,
     'Server Action must not expose a Team selector for a client-controlled caller')
   assert.match(actions, /eq\(workouts\.teamId,\s*teamId\)/)
-  assert.match(actions, /teamId:\s*authorized\.teamId/,
-    'Writes must use trusted authorization result to own the template')
+  assert.match(actions, /persistenceValues\(draft, authorized\.teamId\)/,
+    'The form must pass the server-authorized Team to the service')
+  assert.match(service, /values:\s*\{\s*\.\.\.values,\s*teamId\s*\}/,
+    'Persistence must replace any submitted Team with the server-authorized Team')
   assert.match(planningPreview, /getWorkoutTemplates\(\{ archive: 'active' \}\)/,
     'Planning preview must use its own authorized server context; no client Team override')
 })
