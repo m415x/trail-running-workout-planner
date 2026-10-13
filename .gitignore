@@ -53,11 +53,20 @@ public/sw.js
 public/workbox-*.js
 public/sweetalert2.js
 
-# sqlite
+# sqlite local/test artifacts
 sqlite.db
+sqlite.*.db
+*.db-wal
+*.db-shm
+
+# local verification/debug artifacts
+*.log
 
 # MapLibre generated worker assets
 public/maplibre/
 
 # zip files
 *.zip
+
+# local disposable artifacts
+/.tmp/
