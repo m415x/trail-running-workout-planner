@@ -74,9 +74,9 @@ test('KAN-786 native Next Server Action rejects representative annual body befor
   let server: ChildProcess | undefined
   let logs = ''
   try {
-    server = spawn(process.execPath, [next, 'dev', '--hostname', '127.0.0.1', '--port', String(port)], {
-      // Next 16 resolves proxy.ts and the app root from its working directory.
-      // Running from the repository root accidentally compiles production proxy.ts.
+    server = spawn(process.execPath, [next, 'dev', '--webpack', '--hostname', '127.0.0.1', '--port', String(port)], {
+      // Run the fixture with Webpack to avoid Turbopack's pnpm-root inference.
+      // No production proxy or routes are loaded.
       cwd: fixtureDir,
       env: { ...process.env, CI: '1', KAN786_SQLITE_PATH: databasePath },
       windowsHide: true,
@@ -90,7 +90,7 @@ test('KAN-786 native Next Server Action rejects representative annual body befor
       if (server.exitCode !== null) throw new Error(`Next exited early: ${logs}`)
       try {
         page = await fetch(origin, { signal: AbortSignal.timeout(5000) })
-        if (page.ok) break
+        if (page.ok || page.status === 500) break
       } catch { /* server booting */ }
       await new Promise(done => setTimeout(done, 300))
     }
