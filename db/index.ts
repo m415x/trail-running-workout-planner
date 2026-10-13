@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as coreSchema from '@/db/schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
@@ -22,9 +22,15 @@ const sqlitePath = scenarioMode
     : 'sqlite.db'
 
 // An isolated scenario must never reuse the repository's development sqlite.db.
-// Resolving both paths also rejects relative aliases such as ./sqlite.db.
+// The server and verification CLI execute from repository root; using cwd avoids\n// import.meta.dirname being undefined in Next/Turbopack module evaluation.\n// Resolving both paths also rejects relative aliases such as ./sqlite.db.
 if (isolatedMode) {
-  const developmentPath = resolve(import.meta.dirname, '../sqlite.db')
+  // The SQLite verifier deliberately executes from a disposable cwd whose
+  // database is also named sqlite.db. Its TSX_TSCONFIG_PATH points to the
+  // repository root; compare against that root rather than the disposable cwd.
+  const projectRoot = scenarioMode && process.env.TSX_TSCONFIG_PATH
+    ? dirname(resolve(process.env.TSX_TSCONFIG_PATH))
+    : process.cwd()
+  const developmentPath = resolve(projectRoot, 'sqlite.db')
   const normalized = (path: string) => process.platform === 'win32' ? path.toLowerCase() : path
   if (normalized(sqlitePath) === normalized(developmentPath)) {
     throw new Error('SQLITE_DATABASE_PATH cannot target the development sqlite.db in scenario mode')
