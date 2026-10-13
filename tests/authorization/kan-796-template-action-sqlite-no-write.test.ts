@@ -114,8 +114,11 @@ test('KAN-796 permitted Team switch scopes list and write ownership to actual ac
 
 test('KAN-796 action service is used by the real Server Action module', () => {
   const product = readFileSync('app/actions/workout-template-actions.ts', 'utf8')
-  assert.match(product, /createWorkoutTemplateActionService/,
-    'SQLite-tested action service must be invoked by production, not left as unused test-only code')
+  const composition = readFileSync('lib/workout-templates/workout-template-action-composition.ts', 'utf8')
+  assert.match(product, /createWorkoutTemplateActionComposition/,
+    'Server Actions must construct the shared real composition')
+  assert.match(composition, /createWorkoutTemplateActionService/,
+    'The shared production composition must invoke the SQLite-tested action service')
 })
 
 test('KAN-796 Team B successful update, duplicate, archive and reactivation never mutate Team A', async () => {
