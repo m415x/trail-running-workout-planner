@@ -21,6 +21,7 @@ import {
   type WorkoutTemplatePersistenceValues,
 } from '@/lib/workout-templates/workout-template-persistence'
 import { matchesWorkoutTemplateSearch, normalizeWorkoutTemplateTags } from '@/lib/workout-templates/workout-template-search'
+import { resolveAuthorizedWorkoutTemplateTeam } from '@/lib/workout-templates/authorized-workout-template-operations'
 import { validateWorkoutTemplateDefaults, type WorkoutTemplateDefaultField } from '@/lib/workout-templates/workout-template-validator'
 import type {
   IntensityMethod,
@@ -34,21 +35,31 @@ import type {
 } from '@/types'
 
 async function authorizeWorkoutTemplateAccess(): Promise<{ teamId: string } | null> {
-  const supabase = await createSupabaseServerClient()
-  const access = await requireAuthenticatedEptAction({
-    readAccess: () => readEptSessionAccessState(supabase.auth, createExternalIdentityLookup()),
+  const teamId = await resolveAuthorizedWorkoutTemplateTeam({
+    authenticate: async () => {
+      const supabase = await createSupabaseServerClient()
+      return requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, createExternalIdentityLookup()),
+      })
+    },
+    resolveActiveTeam: async () => {
+      // The H4A boundary re-resolves the same active Team; a change is denied.
+      const access = await createSupabaseServerClient()
+      const identity = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(access.auth, createExternalIdentityLookup()),
+      })
+      if (identity.status !== 'authenticated') return null
+      const activeTeam = await createActiveTeamNextServerContext().resolve(identity.userId)
+      return activeTeam.status === 'resolved' ? activeTeam.teamId : null
+    },
+    authorize: (access, expectedTeamId) => createH4aNextServerAuthorizationBoundary().authorize(access, {
+      capability: 'planning.manage',
+      resource: { teamId: expectedTeamId },
+      at: new Date().toISOString(),
+      requiredScope: 'team',
+    }),
   })
-  if (access.status !== 'authenticated') return null
-  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
-  if (activeTeam.status !== 'resolved') return null
-  const decision = await createH4aNextServerAuthorizationBoundary().authorize(access, {
-    capability: 'planning.manage',
-    resource: { teamId: activeTeam.teamId },
-    at: new Date().toISOString(),
-    requiredScope: 'team',
-  })
-  return decision.allowed && 'teamId' in decision && decision.teamId === activeTeam.teamId
-    ? { teamId: activeTeam.teamId } : null
+  return teamId ? { teamId } : null
 }
 
 export interface WorkoutTemplateFormState {
