@@ -79,7 +79,7 @@ function composition() {
         onDate: at,
       })
     },
-    authorize: (access, request) => h4a.authorize(access, request),
+    authorize: (access, request) => h4a.authorize(access, { ...request, teamId: request.resource.teamId }),
     now: () => at,
   })
 }
