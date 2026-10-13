@@ -61,6 +61,7 @@ function services() {
   })
   return createAuthorizedWorkoutTemplateOperations({
     database,
+    resolveActiveTeam: async () => activeTeam,
     authenticate: async () => authenticated
       ? { status: 'authenticated' as const, userId: 'coach-794' }
       : { status: 'forbidden' as const, reason: 'unlinked' as const },
