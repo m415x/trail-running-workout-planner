@@ -74,8 +74,10 @@ test('KAN-786 native Next Server Action rejects representative annual body befor
   let server: ChildProcess | undefined
   let logs = ''
   try {
-    server = spawn(process.execPath, [next, 'dev', fixtureDir, '--hostname', '127.0.0.1', '--port', String(port)], {
-      cwd: resolve('.'),
+    server = spawn(process.execPath, [next, 'dev', '--hostname', '127.0.0.1', '--port', String(port)], {
+      // Next 16 resolves proxy.ts and the app root from its working directory.
+      // Running from the repository root accidentally compiles production proxy.ts.
+      cwd: fixtureDir,
       env: { ...process.env, CI: '1', KAN786_SQLITE_PATH: databasePath },
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
