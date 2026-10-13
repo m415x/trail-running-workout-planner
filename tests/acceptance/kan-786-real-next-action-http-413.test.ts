@@ -104,7 +104,7 @@ test('KAN-786 native Next Server Action rejects representative annual body befor
       form.set(actionName, '')
       form.set('proposal', proposal)
       form.set('generationExplanations', generationExplanations)
-      return fetch(origin, { method: 'POST', body: form, redirect: 'manual', signal: AbortSignal.timeout(45000) })
+      return fetch(origin, { method: 'POST', body: form, redirect: 'follow', signal: AbortSignal.timeout(45000) })
     }
 
     // Positive control: same route, registered action, serialization, and SQLite writer.
