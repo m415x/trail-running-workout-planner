@@ -20,7 +20,7 @@ export interface AuthorizedWorkoutTemplateOperationsDeps {
 }
 
 type Denied = { status: 'denied' }
-type Allowed<T> = { status: 'allowed' } & T
+type Allowed = { status: 'allowed' }
 
 /**
  * KAN-794: isolated, dependency-injected Team-owned repository boundary.
@@ -49,7 +49,7 @@ export function createAuthorizedWorkoutTemplateOperations(
   }
 
   return {
-    async list(): Promise<Denied | Allowed<{ templates: Array<{ id: string }> }>> {
+    async list(): Promise<Denied | (Allowed & { templates: Array<{ id: string }> })> {
       const teamId = await authorizedTeam()
       if (!teamId) return { status: 'denied' }
       const templates = deps.database.select({ id: workouts.id })
@@ -60,7 +60,7 @@ export function createAuthorizedWorkoutTemplateOperations(
       return { status: 'allowed', templates }
     },
 
-    async archive(templateId: string, archived: boolean): Promise<Denied | Allowed<{}>> {
+    async archive(templateId: string, archived: boolean): Promise<Denied | Allowed> {
       const teamId = await authorizedTeam()
       if (!teamId || !(await ownsTemplate(teamId, templateId))) return { status: 'denied' }
       const changed = setWorkoutTemplateArchiveStatusRecord({
@@ -69,7 +69,7 @@ export function createAuthorizedWorkoutTemplateOperations(
       return changed ? { status: 'allowed' } : { status: 'denied' }
     },
 
-    async duplicate(sourceId: string, duplicateId: string): Promise<Denied | Allowed<{}>> {
+    async duplicate(sourceId: string, duplicateId: string): Promise<Denied | Allowed> {
       const teamId = await authorizedTeam()
       if (!teamId || !(await ownsTemplate(teamId, sourceId))) return { status: 'denied' }
       const copied = duplicateWorkoutTemplateRecord({
