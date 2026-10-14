@@ -94,7 +94,7 @@ interface OperationsDependencies {
   readonly sqlite: Database.Database
   readonly authorize: (request: SnapshotRequest) => Promise<ReviewSnapshotScopeResult>
   readonly generate: (scope: AuthorizedReviewSnapshotScope) => Promise<SnapshotGeneratedData>
-  /** Current server-owned source evidence, re-read only after fresh authority. Required by the production adapter. */
+  /** Transitional optional typing for legacy fixtures; CREATE rejects absent readers at runtime. */
   readonly readCurrentSourceManifest?: (scope: AuthorizedReviewSnapshotScope) => Promise<unknown>
   readonly now: () => string
   readonly createId?: () => string
@@ -127,6 +127,12 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
       const scope = await authorizedScope({ groupTrainingPlanId: request.groupTrainingPlanId })
       if (!scope) return { kind: 'denied' }
 
+      // Fail closed even when a legacy caller omitted the freshness dependency.
+      // Type-level requiredness follows once all isolated fixtures supply it.
+      if (!deps.readCurrentSourceManifest) {
+        throw new Error('generation_stale: source freshness reader unavailable')
+      }
+
       const generated = await deps.generate(scope)
       const generatedMicrocycleIds = assertGeneratedProposalCounts(generated, scope)
 
@@ -145,16 +151,13 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
         return { kind: 'denied' }
       }
 
-      // Integration boundary for a fresh server-owned read-set. Legacy isolated
-      // T5.2/T5.3 fixtures omit this dependency; the eventual production adapter
-      // MUST supply it and prove that it queries current authorized SQL sources.
-      if (deps.readCurrentSourceManifest) {
-        const currentSourceManifest = await deps.readCurrentSourceManifest(refreshedScope)
-        if (evaluateReviewSnapshotSourceFreshness(
-          generated.sourceManifest, currentSourceManifest,
-        ).kind !== 'current') {
-          throw new Error('generation_stale: source facts changed during generation')
-        }
+      // Re-read after fresh authorization. The caller must still prove this
+      // dependency obtains current, trusted SQL generation facts.
+      const currentSourceManifest = await deps.readCurrentSourceManifest(refreshedScope)
+      if (evaluateReviewSnapshotSourceFreshness(
+        generated.sourceManifest, currentSourceManifest,
+      ).kind !== 'current') {
+        throw new Error('generation_stale: source facts changed during generation')
       }
 
       // A matching Sporting Group is insufficient: Base and Variant have
