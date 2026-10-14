@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto'
+import type Database from 'better-sqlite3'
 import { and, eq, inArray } from 'drizzle-orm'
 
-import { db } from '@/db'
+import { db, sqliteConnection } from '@/db'
 import {
   groupSessionPrescriptions, groupTrainingPlans, athleteGroups,
   macrocycles, mesocycles, microcycles, sessions,
@@ -13,7 +14,12 @@ import type { GenerationExplanation } from './generation-explanation'
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
+type WriterDatabase = Pick<typeof db, 'select' | 'insert' | 'update'>
+
 interface WriteInput {
+  readonly database: typeof db
+  /** Required only when sharing the raw SQLite CAS transaction. */
+  readonly sqlite?: Database.Database
   readonly planId: string
   readonly teamId: string
   readonly userId: string
@@ -33,7 +39,13 @@ interface WriteInput {
  */
 export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): number {
   const { planId, teamId, userId, proposal, generationExplanations, authorizedGroupIds, now } = input
-  const run = (tx: Parameters<Parameters<typeof db.transaction>[0]>[0]): number => {
+  const database = input.database
+  if (input.withinExistingTransaction && (
+    database !== db || input.sqlite !== sqliteConnection || !sqliteConnection.inTransaction
+  )) {
+    throw new Error('reconciliation_conflict: SQLite transaction connection mismatch')
+  }
+  const run = (tx: WriterDatabase): number => {
     const plan = tx.select({
       id: groupTrainingPlans.id,
       groupId: groupTrainingPlans.groupId,
@@ -281,7 +293,7 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
   }
 
   return input.withinExistingTransaction
-    ? run(db as unknown as Parameters<Parameters<typeof db.transaction>[0]>[0])
+    ? run(db as unknown as WriterDatabase)
     : db.transaction(run)
 }
 
@@ -313,7 +325,7 @@ function sessionAuditValue(value: {
 }
 
 function insertPrescriptionAudit(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
+  tx: WriterDatabase,
   values: {
     id: string
     planId: string
