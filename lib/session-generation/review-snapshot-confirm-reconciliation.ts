@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto'
-
 import { db, sqliteConnection } from '@/db'
 import { parseGenerationExplanationSnapshots } from './generation-explanation-persistence'
 import { reconcileAndPersistGeneratedSessionsSqlite } from './review-snapshot-reconciliation-writer'
@@ -10,8 +8,6 @@ interface ReconciliationPersistDependencies {
   /** H2/H3/H4A authorization for every potentially affected Sporting Group. */
   readonly authorizedGroupIds: ReadonlySet<string>
   readonly now: () => string
-  /** Optional server-generated durable result identity, useful for isolated tests. */
-  readonly createResultReference?: () => string
 }
 
 function parseStoredProposal(value: unknown): SharedSessionGenerationResult {
@@ -58,10 +54,9 @@ export function createReviewSnapshotReconciliationPersist(
       now: dependencies.now(),
     })
 
-    const resultReference = dependencies.createResultReference?.() ?? randomUUID()
-    if (!resultReference.trim()) {
-      throw new Error('reconciliation_conflict: invalid resultReference')
-    }
+    // The authorized Plan is the durable identity for this reconciliation.
+    // The CAS row records it for repeat confirmations; no orphan opaque UUID.
+    const resultReference = snapshot.groupTrainingPlanId
     return resultReference
   }
 }
