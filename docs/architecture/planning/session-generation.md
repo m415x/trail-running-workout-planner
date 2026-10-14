@@ -220,10 +220,11 @@ Server Action payload; the intent is to address the HTTP 413 review submission.
   `sessionCount` at 500 and `microcycleCount` at 60. It also currently caps
   aggregate `proposal.events[].prescriptions` at 500, stages per explanation
   at nine, and aggregate facts per explanation stage at 256. **The numeric
-  prescription and fact limits are provisional capacity guards**, not
-  empirically approved product thresholds. T5 must derive counts from
-  server-owned proposal data and enforce complete schema/causal validation;
-  caller-provided metadata is not authoritative.
+  prescription and fact limits are approved for the measured representative
+  53-week Base/Variant per-Plan capacity scenarios, **not a universal product
+  maximum proven for all possible Coach proposals**. T5 must derive counts
+  from server-owned proposal data and enforce complete schema/causal
+  validation; caller-provided metadata is not authoritative.
 
 ### Acceptance evidence and remaining gate
 
@@ -236,17 +237,48 @@ and a subsequent `pn verify --db` PASS at feature checkpoint
 `90655bbfe84d429a5760aafd444fd5ee7e2088a5`.
 The last SQLite purge isolation tests also returned GREEN.
 
-The motivating 53-week/239-session review had measured proposal 202,945 B,
-explanations 1,574,495 B, and multipart estimate 1,778,414 B (over the
-1,048,576 B Server Action limit). These measurements **do not establish** its
-aggregate prescription count or peak facts per explanation stage. Before
-claiming the provisional limits adequate, obtain server-side counts from that
-representative proposal, without adding personal payload data to the repository,
-and record approval or adjust the bounds via a separate RED→GREEN checkpoint.
+The motivating historical 53-week/239-session Coach review measured proposal
+202,945 B, explanations 1,574,495 B, and multipart estimate 1,778,414 B.
+Its original input configuration was not recovered, and that evidence does not
+establish historical prescription or causal fact cardinality.
 
-Do not mark T4 completed, or start KAN-790/T5, solely on the existence of these
-primitives or the synthetic envelope-limit tests.
+The **pure-input deterministic production-generator** instrument
+`scripts/measure-kan-789-annual-snapshot.ts` instead measures a reproducible
+representative scenario (not the original Coach review):
+- Annual Base-only: 53 microcycles, 212 events/prescriptions/explanations,
+  9 stages each, maximum 17 causal facts per stage including warning facts;
+  envelope 1,492,651 B at checkpoint
+  `42410c841ff3729f22ae8816029ca11b65d34c9d` (Jira 12874).
+- Base/Variant aggregate: 53 calendar weeks, **106 distinct microcycles**
+  across two independently generated Plans, 212 events carrying 424
+  prescriptions and 424 explanations, combined envelope 2,954,355 B.
+  This is a **diagnostic consolidation**, not a persistable SQL snapshot
+  (Jira 12882).
+- Canonical one-Plan snapshots at checkpoint
+  `b826929695a93be3c2e3c7fdc57ad62b1840b204`:
+  Base has 53 distinct microcycles, 212 events/prescriptions/explanations,
+  1,492,759 B envelope (SHA256
+  `e57a2d4a7efc36a3562c7b5b06d0afac524f9f768d9eddba08f5fbe14872bb20`);
+  Variant has 53 distinct microcycles, 212 events/prescriptions/explanations,
+  1,527,378 B envelope (SHA256
+  `2620f5d28243c1e4d26c58a4507e6525c1f7de4e4bbac63215fd1d8114dbd6fb`).
+  Both preserve 9 stages, maximum 17 causal facts/stage, and pass all
+  Plan-scoped 4 MiB/500 sessions/500 prescriptions/60 microcycles/9 stages/
+  256 facts bounds (Jira 12886). No limit increase is justified.
 
+The operator subsequently confirmed **`pn verify --db` PASS 6/6** on that
+same feature HEAD: Tests, TypeScript, ESLint, Build, i18n, and SQLite.
+The earlier six disposable PostgreSQL integration tests were GREEN on
+the previously documented code baseline; no PostgreSQL run on the final
+documentation HEAD is claimed. T4 validates SQL primitives and capacity,
+**not** product integration.
+
+Remaining T5/T6 obligations: enforce Plan/Team/Group/Cohort membership and
+embedded payload ownership; derive microcycle/session counts server-side;
+H2/H3/H4A authorization, source freshness, sibling Base/Variant event
+reconciliation, concurrent writes, audit and CAS consume in the same
+transaction. The synthetic generator probe is not evidence of successful
+Coach HTTP persistence or historical 239-session acceptance.
 
 ### KAN-789/T4 — Base/Variant unit and reconciliation risks
 
