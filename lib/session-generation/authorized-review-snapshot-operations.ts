@@ -63,6 +63,22 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
       if (!scope) return { kind: 'denied' }
 
       const generated = await deps.generate(scope)
+
+      // Generation may take long enough for the actor's H2 session, active H3
+      // Team or H4A capability to change. Resolve fresh server authority and
+      // reject any ownership drift before allocating durable review evidence.
+      const refreshedScope = await authorizedScope({
+        groupTrainingPlanId: request.groupTrainingPlanId,
+      })
+      if (!refreshedScope ||
+        refreshedScope.userId !== scope.userId ||
+        refreshedScope.teamId !== scope.teamId ||
+        refreshedScope.groupTrainingPlanId !== scope.groupTrainingPlanId ||
+        refreshedScope.groupId !== scope.groupId ||
+        refreshedScope.planningCohortId !== scope.planningCohortId) {
+        return { kind: 'denied' }
+      }
+
       // Callers must not use client-provided IDs as authorization. The explicit
       // ID here supports isolated tests; the production caller must omit it.
       const snapshotId = request.snapshotId ?? (deps.createId?.() ?? randomUUID())
