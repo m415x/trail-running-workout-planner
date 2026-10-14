@@ -43,6 +43,8 @@ function fixture(generated: {
       ...generated, generationExplanations: {}, sourceManifest: { revision: 'v1' },
       schemaVersion: '1', generatorVersion: '1',
     }),
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ revision: 'v1' }),
     now: () => at,
     createId: () => 'review-server',
   })
