@@ -50,6 +50,8 @@ function fixture() {
         generatorVersion: '1', sessionCount: 0, microcycleCount: 0,
       }
     },
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ revision: 'v1' }),
     now: () => at,
     createId: () => 'server-review',
   })
