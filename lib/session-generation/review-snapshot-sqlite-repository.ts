@@ -238,3 +238,24 @@ export function consumeReviewSnapshotSqlite(
 
   return consume.immediate()
 }
+
+/**
+ * Explicit, owner-scoped invalidation of an unconsumed review snapshot.
+ * Consumed evidence and its durable result reference are never modified.
+ * An expired snapshot is unavailable rather than eligible for invalidation.
+ */
+export function invalidateReviewSnapshotSqlite(
+  database: Database.Database,
+  scope: SnapshotScope,
+  nowIso: string,
+): boolean {
+  const now = validTime(nowIso)
+  const result = database.prepare(`
+    UPDATE session_generation_review_snapshots
+    SET status = 'invalidated'
+    WHERE id = ? AND user_id = ? AND team_id = ? AND group_training_plan_id = ?
+      AND status = 'active' AND expires_at > ?
+      AND consumed_at IS NULL AND result_reference IS NULL
+  `).run(scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId, now)
+  return result.changes === 1
+}
