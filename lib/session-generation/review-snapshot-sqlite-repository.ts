@@ -28,6 +28,8 @@ interface SnapshotCreation extends SnapshotScope {
   readonly sourceManifest: unknown
   readonly sessionCount: number
   readonly microcycleCount: number
+  /** Explicit caller-selected oldest active snapshot; never inferred from quota. */
+  readonly replaceSnapshotId?: string
 }
 
 interface SnapshotRow {
@@ -117,6 +119,33 @@ export function createReviewSnapshotSqlite(
       WHERE user_id = ? AND team_id = ? AND group_training_plan_id = ?
         AND status = 'active' AND expires_at <= ?
     `).run(input.userId, input.teamId, input.groupTrainingPlanId, now)
+
+    if (input.replaceSnapshotId !== undefined) {
+      if (typeof input.replaceSnapshotId !== 'string' || input.replaceSnapshotId.length === 0) {
+        throw new Error('Snapshot replacement requires an explicit valid ID')
+      }
+      const oldest = database.prepare(`
+        SELECT id FROM session_generation_review_snapshots
+        WHERE user_id = ? AND team_id = ? AND group_training_plan_id = ?
+          AND status = 'active' AND expires_at > ?
+          AND consumed_at IS NULL AND result_reference IS NULL
+        ORDER BY created_at ASC, id ASC LIMIT 1
+      `).get(input.userId, input.teamId, input.groupTrainingPlanId, now) as { id: string } | undefined
+
+      if (!oldest || oldest.id !== input.replaceSnapshotId) {
+        throw new Error('Snapshot replacement must target oldest active review in owner scope')
+      }
+      const replaced = database.prepare(`
+        UPDATE session_generation_review_snapshots
+        SET status = 'invalidated'
+        WHERE id = ? AND user_id = ? AND team_id = ? AND group_training_plan_id = ?
+          AND status = 'active' AND expires_at > ?
+          AND consumed_at IS NULL AND result_reference IS NULL
+      `).run(input.replaceSnapshotId, input.userId, input.teamId, input.groupTrainingPlanId, now)
+      if (replaced.changes !== 1) {
+        throw new Error('Snapshot replacement failed to invalidate oldest active review')
+      }
+    }
 
     const count = database.prepare(`
       SELECT count(*) AS count
