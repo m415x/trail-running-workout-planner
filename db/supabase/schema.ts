@@ -886,6 +886,7 @@ export const monthlyChargeReductions = pgTable(
     reductionAmountMinor: integer('reduction_amount_minor').notNull(),
     reason: text('reason').notNull(),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('monthly_charge_reductions_amount_check', sql`${table.reductionAmountMinor} >= 0`),
