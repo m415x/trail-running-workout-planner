@@ -197,6 +197,9 @@ function measure(): void {
 
   const eventCounts = proposal.events.map(event => event.prescriptions.length)
   const prescriptions = eventCounts.reduce((sum, count) => sum + count, 0)
+  if (mode === 'base-variant' && !eventCounts.some(count => count > 1)) {
+    throw new Error('Base/Variant scenario did not actually share any generated events')
+  }
   const explanationValues = Object.values(explanations)
   const stageCounts = explanationValues.map(explanation => explanation.stages.length)
   const individualExplanationBytes = explanationValues.map(bytes)
@@ -250,7 +253,7 @@ function measure(): void {
       kind: 'representative-deterministic-pure-generation',
       historicalAcceptance: false,
       gitSha: revision,
-      scenarioVersion: SCENARIO.scenarioVersion,
+      scenarioVersion: sourceManifest.scenarioVersion,
       inputSha256: sourceManifest.inputSha256,
       proposalSha256: sha256(JSON.stringify(proposal)),
       explanationSha256: sha256(JSON.stringify(explanations)),
