@@ -6,7 +6,7 @@ import { buildReviewGenerationInputManifest } from '@/lib/session-generation/rev
 const source = {
   groupTrainingPlanId: 'plan-base',
   generationInputs: [
-    { context: { microcycleId: 'micro-1', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 6 }] },
+    { context: { microcycleId: 'micro-1', groupTrainingPlanId: 'plan-base', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 6 }] },
   ],
 }
 
@@ -14,7 +14,7 @@ test('KAN-790 T5.3 identical server-resolved generation inputs produce determini
   const a = buildReviewGenerationInputManifest(source)
   const b = buildReviewGenerationInputManifest({
     generationInputs: [{ templates: [{ load: 6, id: 'template-a' }],
-      context: { frequency: 4, teamId: 'team-a', microcycleId: 'micro-1' } }],
+      context: { frequency: 4, teamId: 'team-a', groupTrainingPlanId: 'plan-base', microcycleId: 'micro-1' } }],
     groupTrainingPlanId: 'plan-base',
   })
   assert.deepEqual(a, b)
@@ -26,10 +26,14 @@ test('KAN-790 T5.3 identical server-resolved generation inputs produce determini
 
 test('KAN-790 T5.3 changed Plan identity, microcycle input or template facts changes source manifest', () => {
   const baseline = buildReviewGenerationInputManifest(source)
+  assert.throws(
+    () => buildReviewGenerationInputManifest({ ...source, groupTrainingPlanId: 'plan-variant' }),
+    /plan|scope|source|manifest/i,
+    'Cross-Plan inputs cannot yield an authoritative manifest',
+  )
   for (const change of [
-    { ...source, groupTrainingPlanId: 'plan-variant' },
-    { ...source, generationInputs: [{ context: { microcycleId: 'micro-2', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 6 }] }] },
-    { ...source, generationInputs: [{ context: { microcycleId: 'micro-1', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 7 }] }] },
+    { ...source, generationInputs: [{ context: { microcycleId: 'micro-2', groupTrainingPlanId: 'plan-base', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 6 }] }] },
+    { ...source, generationInputs: [{ context: { microcycleId: 'micro-1', groupTrainingPlanId: 'plan-base', teamId: 'team-a', frequency: 4 }, templates: [{ id: 'template-a', load: 7 }] }] },
   ]) {
     assert.notDeepEqual(buildReviewGenerationInputManifest(change), baseline)
   }
