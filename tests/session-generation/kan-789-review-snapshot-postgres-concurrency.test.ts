@@ -20,7 +20,7 @@ const prefix = 'kan789-pg-concurrency'
 const now = '2026-10-13T12:00:00.000Z'
 const owner = {
   userId: 'kan789-h7a-user',
-  teamId: 'kan789-h7a-team',
+  teamId: prefix + '-team',
   groupTrainingPlanId: prefix + '-plan',
 }
 const input = (id: string) => ({
@@ -46,6 +46,8 @@ test('KAN-789 independent PG sessions serialize quota and single consumption', {
     }))
     assert.equal(new Set(distinctSessions).size, 3, 'Tests must use distinct PG sessions')
 
+    await setup`INSERT INTO teams (id, name, created_at, updated_at)
+      VALUES (${prefix + '-team'}, 'KAN-789 PostgreSQL disposable fixture', ${now}, ${now})`
     await setup`INSERT INTO athlete_groups
       (id, team_id, category_code, level_code, created_at, updated_at)
       VALUES (${prefix + '-group'}, ${owner.teamId}, 'trail', 'beginner', ${now}, ${now})`
@@ -94,6 +96,7 @@ test('KAN-789 independent PG sessions serialize quota and single consumption', {
         WHERE group_training_plan_id = ${owner.groupTrainingPlanId}`
       await setup`DELETE FROM group_training_plans WHERE id = ${owner.groupTrainingPlanId}`
       await setup`DELETE FROM athlete_groups WHERE id = ${prefix + '-group'}`
+      await setup`DELETE FROM teams WHERE id = ${prefix + '-team'}`
     } finally {
       await setup.end()
     }
