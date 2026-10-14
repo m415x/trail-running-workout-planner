@@ -6,7 +6,7 @@ import {
 } from '@/lib/session-generation/authorized-generation-source-snapshot'
 
 const base = {
-  plan: { status: 'allowed' as const, value: { id: 'base-a', teamId: 'team-a', planningCohortId: null, microcycles: [{ id: 'm1', loadKm: 42, intensity: 'Z2' }] } },
+  plan: { status: 'allowed' as const, value: { id: 'base-a', teamId: 'team-a', planningCohortId: null as string | null, microcycles: [{ id: 'm1', loadKm: 42, intensity: 'Z2' }] } },
   preferences: { status: 'allowed' as const, value: { frequency: 3, pattern: ['mon', 'wed', 'sat'] } },
   templates: { status: 'allowed' as const, value: [{ id: 't1', teamId: 'team-a', archived: false, distanceKm: 12 }] },
   competitions: { status: 'allowed' as const, value: [] as Array<{ id: string; date: string; distanceKm: number }> },
