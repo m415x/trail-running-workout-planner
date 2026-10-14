@@ -27,7 +27,7 @@ interface SnapshotGeneratedData {
  * caller, even when the generator is server-side. Full planning ownership and
  * source-manifest verification are separate T5.3 boundaries.
  */
-function assertGeneratedProposalCounts(generated: SnapshotGeneratedData): void {
+function assertGeneratedProposalCounts(generated: SnapshotGeneratedData, scope: AuthorizedReviewSnapshotScope): void {
   const proposal = generated.proposal
   if (proposal === null || typeof proposal !== 'object' ||
     !('events' in proposal) || !Array.isArray(proposal.events)) {
@@ -35,6 +35,7 @@ function assertGeneratedProposalCounts(generated: SnapshotGeneratedData): void {
   }
 
   const microcycleIds = new Set<string>()
+  const generationKeys = new Set<string>()
   for (const event of proposal.events) {
     if (event === null || typeof event !== 'object' ||
       !('prescriptions' in event) || !Array.isArray(event.prescriptions)) {
@@ -49,6 +50,18 @@ function assertGeneratedProposalCounts(generated: SnapshotGeneratedData): void {
         !item.prescription.microcycleId.trim()) {
         throw new Error('Snapshot proposal microcycle identity is invalid')
       }
+      if (!('groupId' in item.prescription) ||
+        item.prescription.groupId !== scope.groupId) {
+        throw new Error('Snapshot prescription Sporting Group ownership differs from authorized planning scope')
+      }
+      if (!('generationKey' in item) ||
+        typeof item.generationKey !== 'string' || !item.generationKey.trim()) {
+        throw new Error('Snapshot prescription generationKey identity is invalid')
+      }
+      if (generationKeys.has(item.generationKey)) {
+        throw new Error('Snapshot duplicate generationKey prescription identity')
+      }
+      generationKeys.add(item.generationKey)
       microcycleIds.add(item.prescription.microcycleId)
     }
   }
@@ -101,7 +114,7 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
       if (!scope) return { kind: 'denied' }
 
       const generated = await deps.generate(scope)
-      assertGeneratedProposalCounts(generated)
+      assertGeneratedProposalCounts(generated, scope)
 
       // Generation may take long enough for the actor's H2 session, active H3
       // Team or H4A capability to change. Resolve fresh server authority and
