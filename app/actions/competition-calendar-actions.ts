@@ -7,6 +7,12 @@ import { getRaceCourseSelectionContext, linkCompetitionEntryToRaceCourse } from 
 import { selectRaceCourseForCompetition } from '@/lib/race-catalog/competition-entry-selection'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createAuthorizedCompetitionCalendarReader } from '@/lib/periodization/authorized-competition-calendar-reader'
 import { groupTrainingPlans } from '@/db/schema'
 import {
   changeCompetitionStatus,
@@ -115,22 +121,36 @@ function revalidateCompetitionCalendar(locale: SupportedLocale, planId: string) 
   revalidatePath(`/${locale}/dashboard/planning/${planId}`)
 }
 
+function requireAuthorizedCompetitionCalendarPlan() {
+  return createAuthorizedCompetitionCalendarReader({
+    database: db,
+    readAccess: async () => {
+      const supabase = await createSupabaseServerClient()
+      return readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+  })
+}
+
 /**
- * Returns the visible competition calendar only for plans owned by the current
- * team, enriched with the current H8 distance advisory from the owning group.
- * Compatibility remains derived at read time and is never persisted.
+ * Team/Plan-scoped read: DENY remains explicit and cannot be represented as
+ * an authorized calendar with zero competitions.
  */
 export async function getCompetitionCalendarAction(
   input: CompetitionCalendarActionContext,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntryWithDistanceCompatibility[]>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  const authorized = await requireAuthorizedCompetitionCalendarPlan().read(input.planId)
+  if (authorized.status === 'denied') return forbiddenResult()
+
+  const plan = getAccessiblePlan(input.planId)
+  if (!plan || plan.group.isDeleted) return forbiddenResult()
 
   return {
     ok: true,
     value: withCompetitionDistanceCompatibility(
       plan.group.categoryCode,
-      getCompetitionCalendar(input.planId),
+      authorized.competitions,
     ),
     sameDateCompetitionIds: [],
   }

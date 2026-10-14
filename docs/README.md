@@ -48,6 +48,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
+- [`handoffs/kan-792.md`](handoffs/kan-792.md) — KAN-792 authorized Competition Calendar Plan/Team reader pre-merge contract and explicit KAN-798 security blocker for five mutation entry points; **not yet current integrated baseline**.
+
 - [`handoffs/kan-688.md`](handoffs/kan-688.md) — KAN-688 Coach Templates H2/H3/H4A merged baseline, PR #57, SHA-scoped isolated SQLite and action composition evidence.
 
 - [`handoffs/kan-778.md`](handoffs/kan-778.md) — KAN-778 integrated provisioning of Supabase Athlete B in local SQLite, operator acceptance evidence, no-write rerun and KAN-766/T8 remaining boundary.
