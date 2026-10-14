@@ -19,6 +19,22 @@ import { SESSION_GENERATION_SNAPSHOT_LIMITS } from '@/lib/session-generation/rev
 import type { SessionGenerationInput, SessionGenerationResult } from '@/types/training/session-generation.types'
 import type { WorkoutTemplate } from '@/types/training/workout-template.types'
 
+const mode = process.argv.includes('--scenario=base-variant') ? 'base-variant' : 'base'
+if (process.argv.some(arg => arg.startsWith('--scenario=') && arg !== '--scenario=base-variant' && arg !== '--scenario=base')) {
+  throw new Error('Unknown capacity scenario (supported: base, base-variant)')
+}
+
+const VARIANT = Object.freeze({
+  planId: 'capacity-fixture-variant-plan',
+  planningCohortId: 'capacity-fixture-cohort',
+  sourceGroupTrainingPlanId: 'capacity-fixture-plan',
+  teamId: 'capacity-fixture-team',
+  groupId: 'capacity-fixture-group',
+  // Same calendar, session identities and templates; independent scope and load.
+  weeklyVolumeFactor: 0.9,
+  weeklyElevationFactor: 0.85,
+})
+
 const SCENARIO = {
   scenarioVersion: 'kan-789-annual-pure-v1',
   startDate: '2026-01-05',
@@ -100,25 +116,82 @@ function weeklyInput(weekIndex: number): SessionGenerationInput {
   }
 }
 
+function variantWeeklyInput(base: SessionGenerationInput): SessionGenerationInput {
+  if (base.context.groupTrainingPlanId !== VARIANT.sourceGroupTrainingPlanId ||
+      base.context.teamId !== VARIANT.teamId || base.context.groupId !== VARIANT.groupId) {
+    throw new Error('Invalid Base/Variant derivation hierarchy')
+  }
+  return {
+    ...base,
+    context: {
+      ...base.context,
+      groupTrainingPlanId: VARIANT.planId,
+      microcycleId: base.context.microcycleId.replace('capacity-week-', 'capacity-variant-week-'),
+      load: {
+        ...base.context.load,
+        targetVolumeKm: base.context.load.targetVolumeKm * VARIANT.weeklyVolumeFactor,
+        targetElevationGain: base.context.load.targetElevationGain === null ? null :
+          base.context.load.targetElevationGain * VARIANT.weeklyElevationFactor,
+      },
+    },
+  }
+}
+
 function measure(): void {
-  const runs: Array<{ input: SessionGenerationInput; result: SessionGenerationResult }> = []
-  const byWeek: Array<{ week: number; startDate: string; proposals: number; warnings: number }> = []
+  const runs: Array<{ input: SessionGenerationInput; result: SessionGenerationResult; scope: 'base' | 'variant' }> = []
+  const byWeek: Array<{ week: number; startDate: string; proposals: number; warnings: number;
+    baseProposals?: number; variantProposals?: number }> = []
   for (let index = 0; index < SCENARIO.microcycles; index++) {
     const input = weeklyInput(index)
     const result = generateWeeklySessionProposals(input)
-    runs.push({ input, result })
+    runs.push({ input, result, scope: 'base' })
+    let variantResult: SessionGenerationResult | undefined
+    if (mode === 'base-variant') {
+      const variantInput = variantWeeklyInput(input)
+      variantResult = generateWeeklySessionProposals(variantInput)
+      runs.push({ input: variantInput, result: variantResult, scope: 'variant' })
+    }
     byWeek.push({ week: index + 1, startDate: input.context.startDate,
-      proposals: result.proposals.length, warnings: result.warnings.length })
+      proposals: result.proposals.length + (variantResult?.proposals.length ?? 0),
+      warnings: result.warnings.length + (variantResult?.warnings.length ?? 0),
+      ...(variantResult ? { baseProposals: result.proposals.length,
+        variantProposals: variantResult.proposals.length } : {}),
+    })
   }
 
   const proposal = groupSharedSessionEvents(runs.map(({ result }) => result))
   const explanations: Record<string, ReturnType<typeof buildGenerationExplanation>> = {}
-  for (const { input, result } of runs) {
+  for (const { input, result, scope } of runs) {
     for (const item of result.proposals) {
+      if (explanations[item.generationKey]) throw new Error('Duplicate generationKey across scopes')
       explanations[item.generationKey] = buildGenerationExplanation({
         input, result, sharedGeneration: proposal,
-        generationKey: item.generationKey, planningCohortId: SCENARIO.planningCohortId,
+        generationKey: item.generationKey,
+        planningCohortId: scope === 'variant' ? VARIANT.planningCohortId : null,
       })
+      const actualScope = explanations[item.generationKey].planningScope
+      if (actualScope.kind !== scope ||
+          actualScope.groupTrainingPlanId !== input.context.groupTrainingPlanId ||
+          actualScope.microcycleId !== item.prescription.microcycleId ||
+          actualScope.groupId !== input.context.groupId ||
+          actualScope.planningCohortId !== (scope === 'variant' ? VARIANT.planningCohortId : null)) {
+        throw new Error('Generation explanation planningScope did not match its prescription')
+      }
+    }
+  }
+  if (explanations && Object.keys(explanations).length !==
+      proposal.events.reduce((sum, event) => sum + event.prescriptions.length, 0)) {
+    throw new Error('Missing explanation for a consolidated prescription')
+  }
+  const generationKeys = new Set(Object.keys(explanations))
+  for (const event of proposal.events) {
+    const identities = new Set<string>()
+    for (const prescription of event.prescriptions) {
+      if (!generationKeys.has(prescription.generationKey) ||
+          identities.has(prescription.prescription.microcycleId)) {
+        throw new Error('Duplicate planning scope or missing explanation in shared event')
+      }
+      identities.add(prescription.prescription.microcycleId)
     }
   }
 
@@ -152,6 +225,8 @@ function measure(): void {
 
   const inputManifest = {
     scenario: SCENARIO,
+    mode,
+    variant: mode === 'base-variant' ? VARIANT : null,
     pattern: DEFAULT_WEEKLY_TRAINING_PATTERN,
     templates,
     generatorPipeline: [
@@ -162,7 +237,7 @@ function measure(): void {
     approvedStageOrder: GENERATION_EXPLANATION_STAGE_ORDER,
   }
   const sourceManifest = {
-    scenarioVersion: SCENARIO.scenarioVersion,
+    scenarioVersion: mode === 'base-variant' ? 'kan-789-annual-base-variant-pure-v1' : SCENARIO.scenarioVersion,
     inputSha256: sha256(JSON.stringify(inputManifest)),
     generatedFromPureInputs: true,
     originalCoachPreviewRecovered: false,
@@ -185,6 +260,12 @@ function measure(): void {
     },
     cardinality: {
       weeks: byWeek.length,
+      scopeCount: mode === 'base-variant' ? 2 : 1,
+      planningScopeCount: runs.length,
+      independentGenerationRuns: runs.length,
+      sharedEventsWithMultiplePrescriptions: eventCounts.filter(count => count > 1).length,
+      basePrescriptions: runs.filter(run => run.scope === 'base').reduce((count, run) => count + run.result.proposals.length, 0),
+      variantPrescriptions: runs.filter(run => run.scope === 'variant').reduce((count, run) => count + run.result.proposals.length, 0),
       weekly: byWeek,
       sharedEvents: proposal.events.length,
       prescriptions,
@@ -217,7 +298,7 @@ function measure(): void {
       explanationStages: Math.max(...stageCounts) <= thresholds.maxExplanationStages,
       factsPerStage: maximumFactsPerStage <= thresholds.maxFactsPerExplanationStage,
     },
-    caveat: 'A 53-week deterministic case is not the original Coach 239-session preview. Never treat its capacities as historical equivalence.',
+    caveat: 'Representative synthetic Base/Variant derivation (no persisted hierarchy), not the original Coach 239-session preview; never claim historical equivalence.',
   }
   console.log(JSON.stringify(measured, null, 2))
 }
