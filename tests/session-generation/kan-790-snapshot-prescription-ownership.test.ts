@@ -47,6 +47,8 @@ function fixture(events: Event[]) {
       sessionCount: events.length,
       microcycleCount: new Set(events.flatMap(e => e.prescriptions.map(p => p.prescription.microcycleId))).size,
     }),
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ revision: 'v1' }),
     now: () => now,
     createId: () => 'server-review',
   })
