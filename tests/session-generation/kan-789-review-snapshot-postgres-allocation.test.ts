@@ -18,7 +18,7 @@ if (url) {
 
 const now = '2026-10-13T12:00:00.000Z'
 const marker = 'kan789-pg-lifecycle'
-const scope = { userId: 'kan789-h7a-user', teamId: 'kan789-h7a-team',
+const scope = { userId: 'kan789-h7a-user', teamId: marker + '-team',
   groupTrainingPlanId: marker + '-plan' }
 
 test('KAN-789 PostgreSQL allocation has scoped reads, 30-minute TTL and atomic quota', { skip: !url }, async () => {
@@ -26,6 +26,8 @@ test('KAN-789 PostgreSQL allocation has scoped reads, 30-minute TTL and atomic q
   try {
     const identity = await sql<{ database: string }[]>`SELECT current_database() AS database`
     assert.equal(identity[0]?.database, 'kan789_acceptance')
+    await sql`INSERT INTO teams (id, name, created_at, updated_at)
+      VALUES (${marker + '-team'}, 'KAN-789 PostgreSQL disposable fixture', ${now}, ${now})`
     await sql`INSERT INTO athlete_groups (id, team_id, category_code, level_code, created_at, updated_at)
       VALUES (${marker + '-group'}, ${scope.teamId}, 'trail', 'beginner', ${now}, ${now})`
     await sql`INSERT INTO group_training_plans (id, group_id, title, created_at, updated_at)
@@ -64,6 +66,7 @@ test('KAN-789 PostgreSQL allocation has scoped reads, 30-minute TTL and atomic q
     await sql`DELETE FROM session_generation_review_snapshots WHERE group_training_plan_id = ${scope.groupTrainingPlanId}`
     await sql`DELETE FROM group_training_plans WHERE id = ${scope.groupTrainingPlanId}`
     await sql`DELETE FROM athlete_groups WHERE id = ${marker + '-group'}`
+      await sql`DELETE FROM teams WHERE id = ${marker + '-team'}`
     await sql.end()
   }
 })
