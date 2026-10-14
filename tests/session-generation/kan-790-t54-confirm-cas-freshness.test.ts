@@ -45,10 +45,6 @@ function fixture() {
   return db
 }
 
-const ownedScope = {
-  ...scope, userId: 'coach', planningCohortId: null,
-}
-
 const ownedScope = { ...scope, userId: 'coach', planningCohortId: null }
 
 async function createdFixture() {
