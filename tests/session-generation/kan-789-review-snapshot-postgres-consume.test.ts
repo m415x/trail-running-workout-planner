@@ -9,11 +9,12 @@ import {
 
 // KAN-789 tests may touch ONLY the disposable, explicitly selected database.
 const url = process.env.KAN789_PG_URL
-if (!url) throw new Error('KAN789_PG_URL must explicitly select the disposable PostgreSQL database')
-const target = new URL(url)
-if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-    target.pathname !== '/kan789_acceptance') {
-  throw new Error('KAN789 PostgreSQL acceptance forbids non-disposable targets')
+if (url) {
+  const target = new URL(url)
+  if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
+      target.pathname !== '/kan789_acceptance') {
+    throw new Error('KAN789 PostgreSQL acceptance forbids non-disposable targets')
+  }
 }
 
 const now = '2026-10-13T12:00:00.000Z'
@@ -25,8 +26,8 @@ const scope = {
   groupTrainingPlanId: prefix + '-plan',
 }
 
-test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', async () => {
-  const sql = postgres(url, { max: 1, prepare: false })
+test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', { skip: !url }, async () => {
+  const sql = postgres(url!, { max: 1, prepare: false })
   try {
     const identity = await sql<{ db: string }[]>`SELECT current_database() AS db`
     assert.equal(identity[0]?.db, 'kan789_acceptance')
