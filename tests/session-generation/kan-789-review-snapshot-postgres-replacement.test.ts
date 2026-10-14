@@ -67,7 +67,7 @@ test('KAN-789 PostgreSQL explicitly replaces only oldest scoped active snapshot'
       SELECT id, status FROM session_generation_review_snapshots
       WHERE group_training_plan_id = ${owner.groupTrainingPlanId}
       ORDER BY id`
-    assert.deepEqual(before, [
+    assert.deepEqual(before.map(({ id, status }) => ({ id, status })), [
       { id: scope('first').id, status: 'active' },
       { id: scope('second').id, status: 'active' },
     ])
@@ -81,7 +81,7 @@ test('KAN-789 PostgreSQL explicitly replaces only oldest scoped active snapshot'
       SELECT id, status FROM session_generation_review_snapshots
       WHERE group_training_plan_id = ${owner.groupTrainingPlanId}
       ORDER BY id`
-    assert.deepEqual(after, [
+    assert.deepEqual(after.map(({ id, status }) => ({ id, status })), [
       { id: scope('first').id, status: 'invalidated' },
       { id: scope('second').id, status: 'active' },
       { id: scope('third').id, status: 'active' },
