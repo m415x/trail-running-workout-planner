@@ -21,7 +21,7 @@ import {
   sessions,
   sessionGenerationModificationRecords,
 } from '@/db/schema'
-import { reconcileSessionGeneration } from '@/lib/session-generation/session-regeneration'
+import { reconcileAndPersistGeneratedSessionsSqlite } from '@/lib/session-generation/review-snapshot-reconciliation-writer'
 import {
   parseGenerationExplanationSnapshots,
   resolveGenerationExplanationSnapshot,
@@ -163,180 +163,11 @@ export async function persistGeneratedSessions(
       return { error: 'No autorizado' }
     }
 
-    const reconciliation = reconcileSessionGeneration({
-      proposal,
-      existingEvents: persistedEvents.map((event) => ({
-        id: event.id,
-        provenance: event.generationOwnership === 'manual'
-          ? { ownership: 'manual', sharedEventKey: null }
-          : { ownership: event.generationOwnership, sharedEventKey: event.sharedEventKey! },
-      })),
-      existingPrescriptions: persistedPrescriptions.map((prescription) => ({
-        id: prescription.id,
-        sessionId: prescription.sessionId,
-        provenance: prescription.generationOwnership === 'manual'
-          ? { ownership: 'manual', generationKey: null }
-          : { ownership: prescription.generationOwnership, generationKey: prescription.generationKey! },
-      })),
-    })
-
-    const eventIdByKey = new Map(
-      persistedEvents.flatMap((event) => event.sharedEventKey ? [[event.sharedEventKey, event.id]] : []),
-    )
-    const eventKeyByGenerationKey = new Map<string, string>()
-    for (const event of proposal.events) {
-      for (const prescription of event.prescriptions) {
-        eventKeyByGenerationKey.set(prescription.generationKey, event.sharedEventKey)
-      }
-    }
-    const now = new Date().toISOString()
-
-    db.transaction((tx) => {
-      for (const operation of reconciliation.events) {
-        const values = operation.proposal.session
-        const id = operation.existingId ?? randomUUID()
-        const previousEvent = operation.existingId
-          ? persistedEvents.find((event) => event.id === operation.existingId) ?? null
-          : null
-        eventIdByKey.set(operation.proposal.sharedEventKey, id)
-        if (operation.action === 'create') {
-          tx.insert(sessions).values({
-            id, teamId: generationAccess.teamId, workoutId: values.sourceTemplateId,
-            date: values.date, title: values.title, type: values.type,
-            locationKey: values.locationKey, trackPath: values.trackPath,
-            structure: values.structure, notes: values.notes,
-            generationOwnership: 'generated', sharedEventKey: operation.proposal.sharedEventKey,
-            createdAt: now, updatedAt: now,
-          }).run()
-        } else {
-          tx.update(sessions).set({
-            workoutId: values.sourceTemplateId, date: values.date, title: values.title,
-            type: values.type, locationKey: values.locationKey, trackPath: values.trackPath,
-            structure: values.structure, notes: values.notes, isDeleted: false, updatedAt: now,
-          }).where(eq(sessions.id, id)).run()
-        }
-        const previousAuditValue = previousEvent ? sessionAuditValue(previousEvent) : null
-        const nextAuditValue = sessionAuditValue(values)
-        if (operation.action === 'create' || !sameAuditValue(previousAuditValue, nextAuditValue)) {
-          tx.insert(sessionGenerationModificationRecords).values({
-            id: randomUUID(), groupTrainingPlanId: planId, sessionId: id,
-            action: operation.action === 'create' ? 'generated_created' : 'generated_updated',
-            ownership: 'generated', generationKey: operation.proposal.sharedEventKey,
-            previousValue: previousAuditValue ? serializeAuditValue(previousAuditValue) : null,
-            newValue: serializeAuditValue(nextAuditValue), changedByUserId: generationAccess.userId,
-            createdAt: now, updatedAt: now,
-          }).run()
-        }
-      }
-
-      for (const operation of reconciliation.prescriptions) {
-        const values = operation.proposal.prescription
-        const expectedScope: GenerationExplanation['planningScope'] =
-          plan.planningCohortId === null
-            ? {
-                kind: 'base',
-                groupTrainingPlanId: planId,
-                groupId: plan.groupId,
-                planningCohortId: null,
-                microcycleId: values.microcycleId,
-              }
-            : {
-                kind: 'variant',
-                groupTrainingPlanId: planId,
-                groupId: plan.groupId,
-                planningCohortId: plan.planningCohortId,
-                microcycleId: values.microcycleId,
-              }
-        const generationExplanation = resolveGenerationExplanationSnapshot({
-          snapshots: generationExplanations,
-          generationKey: operation.proposal.generationKey,
-          expectedScope,
-        })
-        const eventKey = eventKeyByGenerationKey.get(operation.proposal.generationKey)
-        const sessionId = eventKey ? eventIdByKey.get(eventKey) : undefined
-        if (!sessionId) throw new Error('No se pudo resolver el evento de una prescripción.')
-        const record = {
-          sessionId, groupId: values.groupId, microcycleId: values.microcycleId,
-          distanceKm: values.distanceKm, durationMin: values.durationMin,
-          elevationGain: values.elevationGain, intensityMethod: values.intensityMethod,
-          zone: values.zone, referencePercentage: values.referencePercentage, notes: values.notes,
-          generationOwnership: 'generated' as const,
-          generationKey: operation.proposal.generationKey,
-          isDeleted: false, updatedAt: now,
-        }
-        if (operation.action === 'create') {
-          const samePlanningScopePrescription = tx.select().from(groupSessionPrescriptions)
-            .where(and(
-              eq(groupSessionPrescriptions.sessionId, sessionId),
-              eq(groupSessionPrescriptions.microcycleId, values.microcycleId),
-            )).get()
-          if (!samePlanningScopePrescription) {
-            const prescriptionId = randomUUID()
-            tx.insert(groupSessionPrescriptions).values({
-              id: prescriptionId, ...record, createdAt: now,
-            }).run()
-            insertPrescriptionAudit(tx, {
-              id: prescriptionId, planId, sessionId, generationKey: operation.proposal.generationKey,
-              action: 'generated_created', previousValue: null, newValue: values,
-              generationExplanation, now, changedByUserId: generationAccess.userId,
-            })
-          } else if (samePlanningScopePrescription.generationOwnership === 'generated') {
-            tx.update(groupSessionPrescriptions).set(record)
-              .where(eq(groupSessionPrescriptions.id, samePlanningScopePrescription.id)).run()
-            insertPrescriptionAudit(tx, {
-              id: samePlanningScopePrescription.id, planId, sessionId,
-              generationKey: operation.proposal.generationKey, action: 'generated_updated',
-              previousValue: samePlanningScopePrescription, newValue: values,
-              generationExplanation, now, changedByUserId: generationAccess.userId,
-            })
-          }
-        } else {
-          const previousPrescription = persistedPrescriptions.find(
-            (item) => item.id === operation.existingId,
-          )
-          tx.update(groupSessionPrescriptions).set(record)
-            .where(eq(groupSessionPrescriptions.id, operation.existingId!)).run()
-          insertPrescriptionAudit(tx, {
-            id: operation.existingId!, planId, sessionId,
-            generationKey: operation.proposal.generationKey, action: 'generated_updated',
-            previousValue: previousPrescription ?? null, newValue: values,
-            generationExplanation, now, changedByUserId: generationAccess.userId,
-          })
-        }
-      }
-
-      if (reconciliation.obsoletePrescriptionIds.length > 0) {
-        tx.update(groupSessionPrescriptions).set({ isDeleted: true, updatedAt: now })
-          .where(inArray(groupSessionPrescriptions.id, reconciliation.obsoletePrescriptionIds)).run()
-        for (const id of reconciliation.obsoletePrescriptionIds) {
-          const previous = persistedPrescriptions.find((item) => item.id === id)
-          if (previous) insertPrescriptionAudit(tx, {
-            id, planId, sessionId: previous.sessionId,
-            generationKey: previous.generationKey ?? '', action: 'generated_removed',
-            previousValue: previous, newValue: null, now, changedByUserId: generationAccess.userId,
-          })
-        }
-      }
-      for (const eventId of reconciliation.obsoleteEventIds) {
-        const active = tx.select({ id: groupSessionPrescriptions.id })
-          .from(groupSessionPrescriptions)
-          .where(and(
-            eq(groupSessionPrescriptions.sessionId, eventId),
-            eq(groupSessionPrescriptions.isDeleted, false),
-          )).get()
-        if (!active) {
-          tx.update(sessions).set({ isDeleted: true, updatedAt: now })
-            .where(eq(sessions.id, eventId)).run()
-          const previous = persistedEvents.find((event) => event.id === eventId)
-          tx.insert(sessionGenerationModificationRecords).values({
-            id: randomUUID(), groupTrainingPlanId: planId, sessionId: eventId,
-            action: 'generated_removed', ownership: 'generated',
-            generationKey: previous?.sharedEventKey ?? null,
-            previousValue: previous ? serializeAuditValue(previous) : null,
-            newValue: null, changedByUserId: generationAccess.userId, createdAt: now, updatedAt: now,
-          }).run()
-        }
-      }
+    const protectedCount = reconcileAndPersistGeneratedSessionsSqlite({
+      planId, teamId: generationAccess.teamId, userId: generationAccess.userId,
+      proposal, generationExplanations,
+      authorizedGroupIds: new Set(allGroups),
+      now: new Date().toISOString(),
     })
 
     const basePath = locale === 'es' ? '/dashboard' : `/${locale}/dashboard`
@@ -344,7 +175,6 @@ export async function persistGeneratedSessions(
     revalidatePath(`${basePath}/sessions`)
     revalidatePath(locale === 'es' ? '/plan' : `/${locale}/plan`)
 
-    const protectedCount = reconciliation.preservedRecords.length
     return {
       success: protectedCount > 0
         ? `Propuesta guardada. Se preservaron ${protectedCount} modificaciones manuales.`
