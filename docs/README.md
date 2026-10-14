@@ -48,6 +48,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
+- [`handoffs/kan-688.md`](handoffs/kan-688.md) — KAN-688 Coach Templates H2/H3/H4A pre-merge candidate, PR #57, isolated SQLite and action composition evidence. **Not yet the integrated dev baseline**; current pointer remains unchanged until merge.
+
 - [`handoffs/kan-778.md`](handoffs/kan-778.md) — KAN-778 integrated provisioning of Supabase Athlete B in local SQLite, operator acceptance evidence, no-write rerun and KAN-766/T8 remaining boundary.
 
 `docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-778** acceptance Athlete B baseline (PR #55, merge `59e7b3ac`) with SHA-scoped evidence in [`handoffs/kan-778.md`](handoffs/kan-778.md). Earlier KAN-724 routing evidence is retained in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
