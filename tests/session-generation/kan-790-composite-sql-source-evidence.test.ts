@@ -89,8 +89,9 @@ test('KAN-790 T5.3 composite SQL evidence fails closed outside Plan Team and Gro
 test('KAN-790 T5.3 composite SQL evidence does not write durable source records', () => {
   const db = fixture()
   try {
-    const before = db.totalChanges
+    const countChanges = () => (db.prepare('SELECT total_changes() AS count').get() as { count: number }).count
+    const before = countChanges()
     assert.ok(readReviewSnapshotSqlSourceEvidence(db, scope))
-    assert.equal(db.totalChanges, before)
+    assert.equal(countChanges(), before)
   } finally { db.close() }
 })
