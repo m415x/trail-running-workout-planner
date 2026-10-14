@@ -298,14 +298,19 @@ export function invalidateReviewSnapshotSqlite(
 export function purgeReviewSnapshotsSqlite(
   database: Database.Database,
   cutoffIso: string,
+  scope: Pick<SnapshotScope, 'userId' | 'teamId' | 'groupTrainingPlanId'>,
 ): number {
   const cutoff = validTime(cutoffIso)
+  if (!scope?.userId || !scope.teamId || !scope.groupTrainingPlanId) {
+    throw new Error('Snapshot purge requires explicit owner/team/plan scope')
+  }
   const deleted = database.prepare(`
     DELETE FROM session_generation_review_snapshots
-    WHERE status IN ('expired', 'invalidated')
+    WHERE user_id = ? AND team_id = ? AND group_training_plan_id = ?
+      AND status IN ('expired', 'invalidated')
       AND expires_at <= ?
       AND consumed_at IS NULL
       AND result_reference IS NULL
-  `).run(cutoff)
+  `).run(scope.userId, scope.teamId, scope.groupTrainingPlanId, cutoff)
   return deleted.changes
 }
