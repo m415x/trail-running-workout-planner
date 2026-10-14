@@ -1,3 +1,16 @@
+# Current operational handoff — KAN-792 Coach Competition Calendar reader merged (2026-10-13)
+
+## Latest integrated delivery
+
+- [KAN-792](kan-792.md) merged to `dev` via [PR #58](https://github.com/m415x/trail-running-workout-planner/pull/58). PR head `a0297e6a8ec5640b38e1359d52b1ef7f8a488ef6`; merge SHA `7d11c885f827f62448f49c9fbed0dddbe81963cf`.
+- Read-only Competition Calendar boundary now requires H2 EPT authentication, valid H3 active Team, H4A `planning.manage` and real Plan→Group Team ownership. Base/Variant calendars remain Plan-scoped, and the preview distinguishes DENY from authorized empty rather than treating failure as an empty list.
+- Operator `pn verify --db` PASS **6/6** on PR head `a0297e6a8ec5640b38e1359d52b1ef7f8a488ef6` (Tests 82817ms, TypeScript 10012ms, ESLint 27730ms, Build 21443ms, i18n 293ms, SQLite 44183ms). This is pre-merge gate evidence, **not** a new full gate on merged or documentation-only SHAs.
+- Operator `pn docs:handoff:check` PASS was reported on earlier pre-merge HEAD `0cdb9bd3e927452bdb50a6a8bbb2e3ccfa5b9761`. Post-merge documentation HEAD must pass a new handoff check. GitHub showed Vercel success and no GitHub Actions workflows for the PR commit; do not invent remote CI.
+- **Security blocker [KAN-798](https://trail-running-workout-planning.atlassian.net/browse/KAN-798), High:** five legacy Competition Calendar mutation Server Actions lack verified H2/H3/H4A enforcement. None is accredited for acceptance or release; do not use as trusted walkthrough actions. No HTTP exploit has been proven. `competition.manage` TEAM is the established writer capability. Global race catalog, existing Base/Variant lifecycle and audit remain independently governed.
+- KAN-787/T3a may resume **after final handoff reconciliation** against the current integrated `dev` baseline to evaluate authorized read sources, exact reconstruction/equivalence, staleness and concurrency. KAN-784 transport/persist/reconciliation stays unchanged pending alternative A/B decision. Prior integrated KAN-688 baseline follows below.
+
+---
+
 # Current operational handoff — KAN-688 Coach Templates authority merged (2026-10-13)
 
 ## Latest integrated delivery
