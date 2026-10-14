@@ -5,6 +5,7 @@ import { test } from 'node:test'
 const action = readFileSync('app/actions/competition-calendar-actions.ts', 'utf8')
 const preview = readFileSync('app/[locale]/dashboard/planning/[planId]/page.tsx', 'utf8')
 const raceCatalog = readFileSync('lib/race-catalog/catalog-repository.ts', 'utf8')
+const reader = readFileSync('lib/periodization/authorized-competition-calendar-reader.ts', 'utf8')
 
 function actionBody(name: string): string {
   const start = action.indexOf(`export async function ${name}(`)
@@ -14,12 +15,14 @@ function actionBody(name: string): string {
 }
 
 test('KAN-792/T1 calendar reader must never derive plan authority from the fixed fixture Team', () => {
-  assert.doesNotMatch(action, /CURRENT_TEAM_ID\s*=\s*'team_1'/)
-  assert.doesNotMatch(action, /plan\.group\.teamId\s*!==\s*CURRENT_TEAM_ID/)
-  assert.match(action, /requireAuthenticatedEptAction/)
+  assert.doesNotMatch(reader, /CURRENT_TEAM_ID\s*=\s*'team_1'/)
+  assert.doesNotMatch(actionBody('getCompetitionCalendarAction'), /CURRENT_TEAM_ID|requireAccessiblePlan\(/)
+  assert.match(action, /CURRENT_TEAM_ID\s*=\s*'team_1'/,
+    'Legacy writer scope remains frozen until separately authorized')
+  assert.match(reader, /requireAuthenticatedEptAction/)
   assert.match(action, /createActiveTeamNextServerContext/)
   assert.match(action, /createH4aNextServerAuthorizationBoundary/)
-  assert.match(action, /capability:\s*'planning\.manage'/)
+  assert.match(reader, /capability:\s*'planning\.manage'/)
   assert.match(actionBody('getCompetitionCalendarAction'), /requireAuthorizedCompetitionCalendarPlan\(/,
     'The real calendar reader must use a request-scoped H2/H3/H4A Plan resource boundary')
 })
@@ -39,7 +42,7 @@ test('KAN-792/T1 freeze writer and catalog exclusions pending their independent 
   ]) {
     assert.ok(actionBody(writer).length > 0, `Preserve existing ${writer} entry point`)
   }
-  assert.match(actionBody('getCompetitionCalendarAction'), /getCompetitionCalendar\(input\.planId\)/,
+  assert.match(reader, /getCompetitionCalendar\(planId, deps\.database\)/,
     'Calendar remains Plan-owned; no global entry listing')
   assert.match(raceCatalog, /raceCourse|raceEvent|raceEdition/,
     'Global race catalog stays a distinct read boundary')
