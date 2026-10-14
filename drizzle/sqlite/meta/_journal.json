@@ -183,13 +183,6 @@
       "when": 1791643010000,
       "tag": "0025_h7a_test_event_author_retention",
       "breakpoints": true
-    },
-    {
-      "idx": 26,
-      "version": "6",
-      "when": 1791930000026,
-      "tag": "0026_session_generation_review_snapshots",
-      "breakpoints": true
     }
   ]
 }
