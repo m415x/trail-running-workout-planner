@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { resolveAuthorizedReviewSnapshotScope } from '@/lib/session-generation/authorized-review-snapshot-scope'
+import {
+  resolveAuthorizedReviewSnapshotScope,
+  type ReviewPlanAuthority,
+} from '@/lib/session-generation/authorized-review-snapshot-scope'
 
 const planId = 'plan-base'
 const actor = 'user-coach'
 const team = 'team-alpha'
-const base = { id: planId, groupId: 'group-alpha', teamId: team, planningCohortId: null }
+const base: ReviewPlanAuthority = { id: planId, groupId: 'group-alpha', teamId: team, planningCohortId: null }
 const variant = { ...base, id: 'plan-variant', planningCohortId: 'cohort-alpha' }
 
 type FixtureOptions = {
