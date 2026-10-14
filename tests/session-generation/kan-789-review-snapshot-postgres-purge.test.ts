@@ -72,17 +72,17 @@ test('KAN-789 PostgreSQL maintenance purge is bounded, idempotent and preserves 
     const before = await rows()
     assert.equal(before.length, 4)
 
-    await assert.rejects(purgeReviewSnapshotsPostgres(sql, 'invalid-date'), /snapshot.*time|canonical/i)
+    await assert.rejects(purgeReviewSnapshotsPostgres(sql, 'invalid-date', owner), /snapshot.*time|canonical/i)
     assert.deepEqual(await rows(), before)
-    assert.equal(await purgeReviewSnapshotsPostgres(sql, start), 0)
+    assert.equal(await purgeReviewSnapshotsPostgres(sql, start, owner), 0)
     assert.deepEqual(await rows(), before)
 
-    assert.equal(await purgeReviewSnapshotsPostgres(sql, cutoff), 2)
+    assert.equal(await purgeReviewSnapshotsPostgres(sql, cutoff, owner), 2)
     assert.deepEqual(await rows(), [
       { id: prefix + '-active', status: 'active', result_reference: null },
       { id: prefix + '-consumed', status: 'consumed', result_reference: 'result-1' },
     ])
-    assert.equal(await purgeReviewSnapshotsPostgres(sql, cutoff), 0)
+    assert.equal(await purgeReviewSnapshotsPostgres(sql, cutoff, owner), 0)
   } finally {
     try {
       await sql`DELETE FROM session_generation_review_snapshots
