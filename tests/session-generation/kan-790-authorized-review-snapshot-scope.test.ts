@@ -24,10 +24,10 @@ function fixture(overrides: FixtureOptions = {}) {
   const calls: string[] = []
   const dependencies = {
     authenticate: async () => { calls.push('authenticate'); return overrides.authenticatedUserId === undefined ? actor : overrides.authenticatedUserId },
-    resolveActiveTeam: async (_userId: string) => { calls.push('activeTeam'); return overrides.activeTeamId === undefined ? team : overrides.activeTeamId },
-    readPlan: async (_planId: string) => { calls.push('readPlan'); return overrides.plan === undefined ? base : overrides.plan },
-    authorizePlanning: async (_userId: string, _teamId: string, _groupId: string) => { calls.push('authorize'); return overrides.planningAllowed ?? true },
-    readSnapshot: async (_id: string) => { calls.push('readSnapshot'); return overrides.snapshot ?? null },
+    resolveActiveTeam: async () => { calls.push('activeTeam'); return overrides.activeTeamId === undefined ? team : overrides.activeTeamId },
+    readPlan: async () => { calls.push('readPlan'); return overrides.plan === undefined ? base : overrides.plan },
+    authorizePlanning: async () => { calls.push('authorize'); return overrides.planningAllowed ?? true },
+    readSnapshot: async () => { calls.push('readSnapshot'); return overrides.snapshot ?? null },
   }
   return { dependencies, calls }
 }
