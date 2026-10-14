@@ -22,6 +22,8 @@ function fixture() {
     db.prepare(`INSERT INTO ${table} (id) VALUES (?)`).run(id)
   }
 
+  db.exec(readFileSync('drizzle/sqlite/0026_session_generation_review_snapshots.sql', 'utf8'))
+
   // Fixture bypasses allocation quota only after creation, by moving each
   // prior record out of ACTIVE; purge behavior is tested separately.
   for (const [id, status] of [
