@@ -22,11 +22,13 @@ test('KAN-790 T5.4 reconciliation read-set and writes live in the same synchrono
   const writer = readFileSync(root + '/lib/session-generation/review-snapshot-reconciliation-writer.ts', 'utf8')
   assert.match(writer, /\.transaction\s*\(/)
   assert.match(writer, /reconcileSessionGeneration\s*\(/)
-  const transaction = writer.slice(writer.indexOf('.transaction('))
-  assert.match(transaction, /reconcileSessionGeneration\s*\(/)
-  assert.match(transaction, /groupSessionPrescriptions/)
-  assert.match(transaction, /sessionGenerationModificationRecords/)
-  assert.doesNotMatch(transaction, /\bawait\b/)
+  const body = writer.slice(writer.indexOf('const run ='), writer.indexOf('return input.withinExistingTransaction'))
+  assert.match(writer, /db[.]transaction[(]run[)]/)
+  assert.match(body, /tx[.]select/)
+  assert.match(body, /reconcileSessionGeneration/)
+  assert.match(body, /groupSessionPrescriptions/)
+  assert.match(body, /sessionGenerationModificationRecords/)
+  assert.ok(!body.includes('await '))
 })
 
 test('KAN-790 T5.4 legacy client proposal parsing never becomes authority in snapshot confirm', () => {
