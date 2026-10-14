@@ -16,7 +16,7 @@ function fixture() {
     CREATE TABLE macrocycles (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE mesocycles (id TEXT PRIMARY KEY, macrocycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
     CREATE TABLE microcycles (id TEXT PRIMARY KEY, mesocycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
-    CREATE TABLE microcycle_intensity_targets (id TEXT PRIMARY KEY, microcycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0, intense_sessions_target INTEGER NOT NULL, predominant_zone TEXT NOT NULL);
+    CREATE TABLE microcycle_intensity_targets (id TEXT PRIMARY KEY, microcycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0, intense_sessions_target INTEGER NOT NULL, predominant_zone TEXT NOT NULL, emphasis TEXT NOT NULL, reference_percentage_target REAL, minimum_recovery_days_between_intense_sessions INTEGER NOT NULL);
     INSERT INTO athlete_groups VALUES ('group-a','team-a',0),('group-b','team-b',0);
     INSERT INTO group_training_plans VALUES ('plan-a','group-a',0),('plan-b','group-b',0);
     INSERT INTO load_strategies VALUES ('load-a','plan-a',0,100,30),('load-b','plan-b',0,80,20);
@@ -24,7 +24,7 @@ function fixture() {
     INSERT INTO macrocycles VALUES ('macro-a','plan-a',0),('macro-b','plan-b',0);
     INSERT INTO mesocycles VALUES ('meso-a','macro-a',0),('meso-b','macro-b',0);
     INSERT INTO microcycles VALUES ('micro-a','meso-a',0),('micro-b','meso-b',0);
-    INSERT INTO microcycle_intensity_targets VALUES ('target-a','micro-a',0,2,'Z2'),('target-b','micro-b',0,3,'Z3');
+    INSERT INTO microcycle_intensity_targets VALUES ('target-a','micro-a',0,2,'Z2','aerobic',NULL,2),('target-b','micro-b',0,3,'Z3','threshold',90,2);
   `)
   return db
 }
