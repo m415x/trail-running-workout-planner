@@ -25,6 +25,9 @@ interface IntensityTargetRow {
   readonly microcycleId: string
   readonly intenseSessionsTarget: number
   readonly predominantZone: string
+  readonly emphasis: string
+  readonly referencePercentageTarget: number | null
+  readonly minimumRecoveryDaysBetweenIntenseSessions: number
 }
 
 export interface ReviewPlanStrategyFacts extends ReviewPlanStrategyScope {
@@ -70,7 +73,10 @@ export function readReviewPlanStrategyFactsSqlite(
   const intensityTargets = sqlite.prepare(`
     SELECT mi.id AS microcycleId,
            t.intense_sessions_target AS intenseSessionsTarget,
-           t.predominant_zone AS predominantZone
+           t.predominant_zone AS predominantZone,
+           t.emphasis AS emphasis,
+           t.reference_percentage_target AS referencePercentageTarget,
+           t.minimum_recovery_days_between_intense_sessions AS minimumRecoveryDaysBetweenIntenseSessions
     FROM microcycle_intensity_targets AS t
     INNER JOIN microcycles AS mi ON mi.id = t.microcycle_id AND mi.is_deleted = 0
     INNER JOIN mesocycles AS me ON me.id = mi.mesocycle_id AND me.is_deleted = 0
