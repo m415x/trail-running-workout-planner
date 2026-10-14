@@ -57,6 +57,9 @@ function setup() {
         capability: 'planning.manage',
         resource: { teamId, sportingGroupId: groupId }, at,
       })
+      if (userId === 'coach' && teamId === 'a' && preset === 'coach' && memberActive) {
+        assert.equal(decision.allowed, true, 'Fixture diagnostic: H4A planning.manage must authorize active Coach Team a')
+      }
       return decision.allowed
     },
     now: () => at,
@@ -75,6 +78,16 @@ test('KAN-790 T5.1 real SQLite scope authorizes Base and Variant and preserves r
   const f = setup()
   try {
     const before = f.state()
+    const planRow = f.sqlite.prepare(`
+      SELECT p.id, p.group_id AS groupId, g.team_id AS teamId,
+        p.planning_cohort_id AS planningCohortId
+      FROM group_training_plans p
+      JOIN athlete_groups g ON g.id = p.group_id
+      WHERE p.id = 'base-a' AND p.is_deleted = 0 AND g.is_deleted = 0
+    `).get()
+    assert.deepEqual(planRow, {
+      id: 'base-a', groupId: 'group-a', teamId: 'a', planningCohortId: null,
+    }, 'Fixture diagnostic: Plan JOIN must expose canonical scope')
     assert.equal((await f.service.resolve({ groupTrainingPlanId: 'base-a' })).kind, 'authorized')
     assert.equal((await f.service.resolve({ groupTrainingPlanId: 'variant-a', snapshotId: 'review-a' })).kind, 'authorized')
     assert.deepEqual(f.state(), before)
