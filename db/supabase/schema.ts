@@ -928,6 +928,7 @@ export const paymentRevisions = pgTable(
     paidAt: text('paid_at').notNull(),
     voided: boolean('voided').notNull().default(false),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('payment_revisions_amount_positive_check', sql`${table.amountMinor} > 0`),
