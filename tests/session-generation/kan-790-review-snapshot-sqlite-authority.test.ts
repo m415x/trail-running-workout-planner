@@ -54,6 +54,7 @@ function setup() {
     resolveActiveTeam: async () => activeTeam,
     authorizePlanning: async (userId, teamId, groupId) => {
       const decision = await h4a.authorize({ status: 'authenticated', userId }, {
+        teamId,
         capability: 'planning.manage',
         resource: { teamId, sportingGroupId: groupId }, at,
       })
