@@ -76,7 +76,9 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
     getWorkoutTemplates({ archive: 'active' }),
     getCompetitionCalendarAction({ planId, locale: locale === 'en' ? 'en' : 'es' }),
   ])
-  const competitions = competitionCalendarResult.ok ? competitionCalendarResult.value : []
+  // A denied calendar is not an empty calendar: do not build generation evidence from DENY.
+  if (!competitionCalendarResult.ok) notFound()
+  const competitions = competitionCalendarResult.value
   const competitionContextResult = deriveCompetitionContext(competitions)
   const primaryCompetitionId = competitionContextResult.valid
     ? competitionContextResult.context.primaryCompetition?.id ?? null
