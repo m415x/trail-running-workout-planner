@@ -243,3 +243,28 @@ export async function consumeReviewSnapshotPostgres(
     return { kind: 'consumed', resultReference }
   })
 }
+
+/**
+ * Explicit scoped invalidation of one active, non-expired PG review snapshot.
+ * Atomic UPDATE races safely with consume's row lock; consumed evidence and
+ * durable result references remain immutable.
+ */
+export async function invalidateReviewSnapshotPostgres(
+  client: PostgresClient,
+  scope: SnapshotScope,
+  nowIso: string,
+): Promise<boolean> {
+  const now = canonicalTime(nowIso)
+  const updated = await client<{ id: string }[]>`
+    UPDATE session_generation_review_snapshots
+    SET status = 'invalidated'
+    WHERE id = ${scope.id}
+      AND user_id = ${scope.userId}
+      AND team_id = ${scope.teamId}
+      AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      AND status = 'active' AND expires_at > ${now}
+      AND consumed_at IS NULL AND result_reference IS NULL
+    RETURNING id
+  `
+  return updated.length === 1
+}
