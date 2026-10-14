@@ -48,6 +48,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
+- [`handoffs/kan-784.md`](handoffs/kan-784.md) — **WIP only**, KAN-789/T4 Finalizada, next KAN-790/T5 not started; SHA-scoped gates, per-Plan SQL snapshot capacity, Jira decisions, branch divergence and fresh-chat bootstrap. This is **not** the current integrated `dev` handoff.
+
 - [`handoffs/kan-792.md`](handoffs/kan-792.md) — KAN-792 merged Competition Calendar Plan/Team reader (PR #58) and explicit KAN-798 High security blocker for five mutation entry points.
 
 - [`handoffs/kan-688.md`](handoffs/kan-688.md) — KAN-688 Coach Templates H2/H3/H4A merged baseline, PR #57, SHA-scoped isolated SQLite and action composition evidence.
