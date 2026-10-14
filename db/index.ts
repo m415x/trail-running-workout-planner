@@ -9,6 +9,7 @@ import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
+import * as sessionGenerationReviewSnapshotSchema from '@/db/session-generation-review-snapshot-schema'
 
 // The isolated SQLite scenario contract is shared with the canonical upgrade verifier.
 // Never fall back to the developer DB when scenario mode is explicitly enabled.
@@ -49,5 +50,6 @@ export const db = drizzle(sqlite, {
     ...readinessSchema,
     ...raceCatalogSchema,
     ...raceRegistrationSchema,
+    ...sessionGenerationReviewSnapshotSchema,
   },
 })
