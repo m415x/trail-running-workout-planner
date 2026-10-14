@@ -21,6 +21,44 @@ interface SnapshotGeneratedData {
   readonly microcycleCount: number
 }
 
+/**
+ * Cross-check counts against the actual generated Plan-scoped event payload.
+ * The SQL repository's capacity guard must not trust metadata supplied by a
+ * caller, even when the generator is server-side. Full planning ownership and
+ * source-manifest verification are separate T5.3 boundaries.
+ */
+function assertGeneratedProposalCounts(generated: SnapshotGeneratedData): void {
+  const proposal = generated.proposal
+  if (proposal === null || typeof proposal !== 'object' ||
+    !('events' in proposal) || !Array.isArray(proposal.events)) {
+    throw new Error('Snapshot proposal events structure is invalid')
+  }
+
+  const microcycleIds = new Set<string>()
+  for (const event of proposal.events) {
+    if (event === null || typeof event !== 'object' ||
+      !('prescriptions' in event) || !Array.isArray(event.prescriptions)) {
+      throw new Error('Snapshot proposal prescriptions structure is invalid')
+    }
+    for (const item of event.prescriptions) {
+      if (item === null || typeof item !== 'object' ||
+        !('prescription' in item) || item.prescription === null ||
+        typeof item.prescription !== 'object' ||
+        !('microcycleId' in item.prescription) ||
+        typeof item.prescription.microcycleId !== 'string' ||
+        !item.prescription.microcycleId.trim()) {
+        throw new Error('Snapshot proposal microcycle identity is invalid')
+      }
+      microcycleIds.add(item.prescription.microcycleId)
+    }
+  }
+
+  if (generated.sessionCount !== proposal.events.length ||
+    generated.microcycleCount !== microcycleIds.size) {
+    throw new Error('Snapshot proposal count metadata differs from generated events and microcycles')
+  }
+}
+
 interface SnapshotRequest {
   readonly groupTrainingPlanId: string
   /** Test/server-provided identity only; product Server Actions must generate an opaque ID server-side. */
@@ -63,6 +101,7 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
       if (!scope) return { kind: 'denied' }
 
       const generated = await deps.generate(scope)
+      assertGeneratedProposalCounts(generated)
 
       // Generation may take long enough for the actor's H2 session, active H3
       // Team or H4A capability to change. Resolve fresh server authority and
