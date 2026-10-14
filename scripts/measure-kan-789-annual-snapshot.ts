@@ -1,0 +1,225 @@
+/**
+ * KAN-789/T4: deterministic capacity measurement using the production generator.
+ * Pure inputs only: no SQLite connection, sessions, persistence or private data.
+ * Representative scenario, NOT a recovery of the historical 239-session Coach review.
+ *
+ * Run: pn exec tsx scripts/measure-kan-789-annual-snapshot.ts
+ */
+import { createHash } from 'node:crypto'
+import { execFileSync } from 'node:child_process'
+
+import { DEFAULT_WEEKLY_TRAINING_PATTERN } from '@/lib/session-generation/default-weekly-pattern'
+import {
+  buildGenerationExplanation,
+  GENERATION_EXPLANATION_STAGE_ORDER,
+} from '@/lib/session-generation/generation-explanation'
+import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
+import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
+import { SESSION_GENERATION_SNAPSHOT_LIMITS } from '@/lib/session-generation/review-snapshot-limits'
+import type { SessionGenerationInput, SessionGenerationResult } from '@/types/training/session-generation.types'
+import type { WorkoutTemplate } from '@/types/training/workout-template.types'
+
+const SCENARIO = {
+  scenarioVersion: 'kan-789-annual-pure-v1',
+  startDate: '2026-01-05',
+  microcycles: 53,
+  weeksPerPhase: 13,
+  teamId: 'capacity-fixture-team',
+  groupId: 'capacity-fixture-group',
+  planId: 'capacity-fixture-plan',
+  planningCohortId: null,
+  // Intentional actual-generator 4/week baseline. Do not manufacture 239.
+  fixedSessionsPerWeek: 4,
+  initialWeeklyVolumeKm: 32,
+  volumeIncrementKmPerWeek: 0.4,
+  maxWeeklyVolumeKm: 65,
+  targetWeeklyElevationGain: 700,
+  // Explicit no-race baseline: competition is a separate capacity scenario.
+  competition: null,
+} as const
+
+function sha256(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+function bytes(value: unknown): number {
+  return Buffer.byteLength(JSON.stringify(value), 'utf8')
+}
+function isoDate(start: string, days: number): string {
+  const date = new Date(start + 'T00:00:00.000Z')
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+function template(id: string, category: WorkoutTemplate['category'], type: WorkoutTemplate['sessionDefaults']['type']): WorkoutTemplate {
+  return {
+    id, teamId: SCENARIO.teamId, category, tags: [], archivedAt: null,
+    createdAt: SCENARIO.startDate, updatedAt: SCENARIO.startDate, isDeleted: false,
+    sessionDefaults: { title: 'Capacity ' + id, type, locationKey: null,
+      trackPath: null, structure: { mainBlock: 'Deterministic capacity exercise' }, notes: null },
+    prescriptionDefaults: { distanceKm: null, durationMin: null,
+      elevationGain: null, intensity: null, notes: null },
+  }
+}
+const templates: WorkoutTemplate[] = [
+  template('capacity-mountain', 'mountain', 'Trail'),
+  template('capacity-quality', 'quality', 'PAM'),
+  template('capacity-endurance', 'endurance', 'Long'),
+  template('capacity-recovery', 'recovery', 'Base'),
+]
+
+function weeklyInput(weekIndex: number): SessionGenerationInput {
+  const period: SessionGenerationInput['context']['period'] =
+    weekIndex < 13 ? 'general_preparatory' : weekIndex < 39 ? 'specific_preparatory' : 'competitive'
+  const microcycleType: SessionGenerationInput['context']['microcycleType'] =
+    weekIndex % 4 === 3 ? 'recovery' : 'development'
+  return {
+    context: {
+      teamId: SCENARIO.teamId,
+      groupTrainingPlanId: SCENARIO.planId,
+      groupId: SCENARIO.groupId,
+      microcycleId: 'capacity-week-' + String(weekIndex + 1).padStart(2, '0'),
+      period, microcycleType,
+      startDate: isoDate(SCENARIO.startDate, 7 * weekIndex),
+      endDate: isoDate(SCENARIO.startDate, 7 * weekIndex + 6),
+      load: {
+        targetVolumeKm: Math.min(SCENARIO.maxWeeklyVolumeKm,
+          SCENARIO.initialWeeklyVolumeKm + SCENARIO.volumeIncrementKmPerWeek * weekIndex),
+        targetElevationGain: SCENARIO.targetWeeklyElevationGain,
+        maximumWeeklyVolumeKm: SCENARIO.maxWeeklyVolumeKm,
+      },
+      intensity: {
+        defaultMethod: 'reference_percentage', emphasis: 'vo2max',
+        intenseSessionsTarget: 1, predominantZone: 'Z2',
+        referencePercentageTarget: 95,
+        minimumRecoveryDaysBetweenIntenseSessions: 2,
+      },
+      competition: SCENARIO.competition,
+      frequency: { mode: 'fixed', sessionsPerWeek: SCENARIO.fixedSessionsPerWeek },
+      pattern: DEFAULT_WEEKLY_TRAINING_PATTERN,
+    },
+    templates,
+  }
+}
+
+function measure(): void {
+  const runs: Array<{ input: SessionGenerationInput; result: SessionGenerationResult }> = []
+  const byWeek: Array<{ week: number; startDate: string; proposals: number; warnings: number }> = []
+  for (let index = 0; index < SCENARIO.microcycles; index++) {
+    const input = weeklyInput(index)
+    const result = generateWeeklySessionProposals(input)
+    runs.push({ input, result })
+    byWeek.push({ week: index + 1, startDate: input.context.startDate,
+      proposals: result.proposals.length, warnings: result.warnings.length })
+  }
+
+  const proposal = groupSharedSessionEvents(runs.map(({ result }) => result))
+  const explanations: Record<string, ReturnType<typeof buildGenerationExplanation>> = {}
+  for (const { input, result } of runs) {
+    for (const item of result.proposals) {
+      explanations[item.generationKey] = buildGenerationExplanation({
+        input, result, sharedGeneration: proposal,
+        generationKey: item.generationKey, planningCohortId: SCENARIO.planningCohortId,
+      })
+    }
+  }
+
+  const eventCounts = proposal.events.map(event => event.prescriptions.length)
+  const prescriptions = eventCounts.reduce((sum, count) => sum + count, 0)
+  const explanationValues = Object.values(explanations)
+  const stageCounts = explanationValues.map(explanation => explanation.stages.length)
+  const individualExplanationBytes = explanationValues.map(bytes)
+  const factTotalsByStage: Record<string, { count: number; maxFacts: number; warnings: number; warningFacts: number }> = {}
+  let maximumFactsPerStage = 0
+  let maximumWarningsPerStage = 0
+  let warningsTotal = 0
+  let warningFactsTotal = 0
+  for (const explanation of explanationValues) {
+    for (const stage of explanation.stages) {
+      const warningFacts = stage.warnings.reduce((sum, warning) => sum + warning.facts.length, 0)
+      const facts = stage.inputs.length + stage.constraints.length + stage.decision.length +
+        stage.consequence.length + warningFacts
+      const stats = factTotalsByStage[stage.stage] ?? { count: 0, maxFacts: 0, warnings: 0, warningFacts: 0 }
+      stats.count++
+      stats.maxFacts = Math.max(stats.maxFacts, facts)
+      stats.warnings += stage.warnings.length
+      stats.warningFacts += warningFacts
+      factTotalsByStage[stage.stage] = stats
+      maximumFactsPerStage = Math.max(maximumFactsPerStage, facts)
+      maximumWarningsPerStage = Math.max(maximumWarningsPerStage, stage.warnings.length)
+      warningsTotal += stage.warnings.length
+      warningFactsTotal += warningFacts
+    }
+  }
+
+  const inputManifest = {
+    scenario: SCENARIO,
+    pattern: DEFAULT_WEEKLY_TRAINING_PATTERN,
+    templates,
+    generatorPipeline: [
+      'generateWeeklySessionProposals',
+      'groupSharedSessionEvents',
+      'buildGenerationExplanation',
+    ],
+    approvedStageOrder: GENERATION_EXPLANATION_STAGE_ORDER,
+  }
+  const sourceManifest = {
+    scenarioVersion: SCENARIO.scenarioVersion,
+    inputSha256: sha256(JSON.stringify(inputManifest)),
+    generatedFromPureInputs: true,
+    originalCoachPreviewRecovered: false,
+  }
+  const envelope = { proposal, generationExplanations: explanations, sourceManifest }
+  const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
+  const thresholds = SESSION_GENERATION_SNAPSHOT_LIMITS
+  const measured = {
+    provenance: {
+      kind: 'representative-deterministic-pure-generation',
+      historicalAcceptance: false,
+      gitSha: revision,
+      scenarioVersion: SCENARIO.scenarioVersion,
+      inputSha256: sourceManifest.inputSha256,
+      proposalSha256: sha256(JSON.stringify(proposal)),
+      explanationSha256: sha256(JSON.stringify(explanations)),
+      envelopeSha256: sha256(JSON.stringify(envelope)),
+      node: process.version,
+      expectedPackageManager: 'pnpm@12.4.1',
+    },
+    cardinality: {
+      weeks: byWeek.length,
+      weekly: byWeek,
+      sharedEvents: proposal.events.length,
+      prescriptions,
+      prescriptionsPerEvent: { min: Math.min(...eventCounts), max: Math.max(...eventCounts) },
+      generatedProposals: byWeek.reduce((total, week) => total + week.proposals, 0),
+      explanationCount: explanationValues.length,
+      stagesPerExplanation: { min: Math.min(...stageCounts), max: Math.max(...stageCounts) },
+      maximumFactsPerStage, maximumWarningsPerStage, warningsTotal, warningFactsTotal,
+      perStage: factTotalsByStage,
+      proposalWarnings: proposal.warnings.length,
+    },
+    utf8Bytes: {
+      proposal: bytes(proposal), explanations: bytes(explanations),
+      sourceManifest: bytes(sourceManifest), envelope: bytes(envelope),
+      maximumIndividualExplanation: Math.max(...individualExplanationBytes),
+    },
+    limits: {
+      maxBytes: thresholds.maxBytes,
+      maxSessions: thresholds.maxSessions,
+      maxPrescriptions: thresholds.maxPrescriptions,
+      maxMicrocycles: thresholds.maxMicrocycles,
+      maxFactsPerExplanationStage: thresholds.maxFactsPerExplanationStage,
+      maxExplanationStages: thresholds.maxExplanationStages,
+    },
+    againstLimits: {
+      bytes: bytes(envelope) <= thresholds.maxBytes,
+      sessions: proposal.events.length <= thresholds.maxSessions,
+      prescriptions: prescriptions <= thresholds.maxPrescriptions,
+      microcycles: byWeek.length <= thresholds.maxMicrocycles,
+      explanationStages: Math.max(...stageCounts) <= thresholds.maxExplanationStages,
+      factsPerStage: maximumFactsPerStage <= thresholds.maxFactsPerExplanationStage,
+    },
+    caveat: 'A 53-week deterministic case is not the original Coach 239-session preview. Never treat its capacities as historical equivalence.',
+  }
+  console.log(JSON.stringify(measured, null, 2))
+}
+
+measure()
