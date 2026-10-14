@@ -5,6 +5,7 @@ import type {
   AuthorizedReviewSnapshotScope,
   ReviewSnapshotScopeResult,
 } from '@/lib/session-generation/authorized-review-snapshot-scope'
+import { validateGeneratedMicrocycleLineageSqlite } from '@/lib/session-generation/review-snapshot-microcycle-lineage-sqlite'
 import {
   createReviewSnapshotSqlite,
   getActiveReviewSnapshotSqlite,
@@ -27,7 +28,7 @@ interface SnapshotGeneratedData {
  * caller, even when the generator is server-side. Full planning ownership and
  * source-manifest verification are separate T5.3 boundaries.
  */
-function assertGeneratedProposalCounts(generated: SnapshotGeneratedData, scope: AuthorizedReviewSnapshotScope): void {
+function assertGeneratedProposalCounts(generated: SnapshotGeneratedData, scope: AuthorizedReviewSnapshotScope): readonly string[] {
   const proposal = generated.proposal
   if (proposal === null || typeof proposal !== 'object' ||
     !('events' in proposal) || !Array.isArray(proposal.events)) {
@@ -70,6 +71,7 @@ function assertGeneratedProposalCounts(generated: SnapshotGeneratedData, scope: 
     generated.microcycleCount !== microcycleIds.size) {
     throw new Error('Snapshot proposal count metadata differs from generated events and microcycles')
   }
+  return [...microcycleIds]
 }
 
 interface SnapshotRequest {
@@ -114,7 +116,7 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
       if (!scope) return { kind: 'denied' }
 
       const generated = await deps.generate(scope)
-      assertGeneratedProposalCounts(generated, scope)
+      const generatedMicrocycleIds = assertGeneratedProposalCounts(generated, scope)
 
       // Generation may take long enough for the actor's H2 session, active H3
       // Team or H4A capability to change. Resolve fresh server authority and
@@ -129,6 +131,16 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
         refreshedScope.groupId !== scope.groupId ||
         refreshedScope.planningCohortId !== scope.planningCohortId) {
         return { kind: 'denied' }
+      }
+
+      // A matching Sporting Group is insufficient: Base and Variant have
+      // independent persisted microcycle ancestry. Never allocate a snapshot
+      // whose prescriptions refer to another Plan or deleted planning records.
+      if (!validateGeneratedMicrocycleLineageSqlite(deps.sqlite, {
+        groupTrainingPlanId: refreshedScope.groupTrainingPlanId,
+        microcycleIds: generatedMicrocycleIds,
+      })) {
+        throw new Error('Snapshot microcycle lineage does not belong to authorized Plan')
       }
 
       // Callers must not use client-provided IDs as authorization. The explicit
