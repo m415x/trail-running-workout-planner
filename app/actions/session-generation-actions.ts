@@ -164,6 +164,7 @@ export async function persistGeneratedSessions(
     }
 
     const protectedCount = reconcileAndPersistGeneratedSessionsSqlite({
+      database: db,
       planId, teamId: generationAccess.teamId, userId: generationAccess.userId,
       proposal, generationExplanations,
       authorizedGroupIds: new Set(allGroups),
