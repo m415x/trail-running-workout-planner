@@ -10,6 +10,7 @@ import {
 
 const start = '2026-10-13T12:00:00.000Z'
 const cutoff = '2026-10-13T13:00:00.000Z'
+const owner = { userId: 'u1', teamId: 't1', groupTrainingPlanId: 'p1' }
 
 function fixture() {
   const db = new Database(':memory:')
@@ -67,13 +68,13 @@ function rows(db: Database.Database) {
 test('KAN-789 purge is explicit, cutoff-bounded and preserves consumed references forever', () => {
   const db = fixture()
   try {
-    const removed = purgeReviewSnapshotsSqlite(db, cutoff)
+    const removed = purgeReviewSnapshotsSqlite(db, cutoff, owner)
     assert.equal(removed, 2)
     assert.deepEqual(rows(db), [
       { id: 'active', status: 'active', consumed_at: null, result_reference: null },
       { id: 'consumed', status: 'consumed', consumed_at: start, result_reference: 'result-1' },
     ])
-    assert.equal(purgeReviewSnapshotsSqlite(db, cutoff), 0, 'Purge rerun must be idempotent')
+    assert.equal(purgeReviewSnapshotsSqlite(db, cutoff, owner), 0, 'Purge rerun must be idempotent')
   } finally {
     db.close()
   }
@@ -83,7 +84,7 @@ test('KAN-789 purge rejects invalid cutoff without deleting any evidence', () =>
   const db = fixture()
   try {
     const before = rows(db)
-    assert.throws(() => purgeReviewSnapshotsSqlite(db, 'not-a-date'), /snapshot.*time|canonical/i)
+    assert.throws(() => purgeReviewSnapshotsSqlite(db, 'not-a-date', owner), /snapshot.*time|canonical/i)
     assert.deepEqual(rows(db), before)
   } finally {
     db.close()
@@ -93,7 +94,7 @@ test('KAN-789 purge rejects invalid cutoff without deleting any evidence', () =>
 test('KAN-789 purge cannot delete entries whose expiry is later than retention cutoff', () => {
   const db = fixture()
   try {
-    assert.equal(purgeReviewSnapshotsSqlite(db, start), 0)
+    assert.equal(purgeReviewSnapshotsSqlite(db, start, owner), 0)
     assert.equal(rows(db).length, 4)
   } finally {
     db.close()
