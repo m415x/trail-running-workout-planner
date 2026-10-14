@@ -43,7 +43,7 @@ test('KAN-789 allocates exactly two active snapshots per owner/team/plan and fai
     assert.equal(b.status, 'active')
     assert.equal(a.expiresAt, '2026-10-13T12:30:00.000Z')
     assert.throws(() => createReviewSnapshotSqlite(db, input('c'), now), /snapshot.*(quota|active|limit)/i)
-    assert.equal(db.prepare('SELECT COUNT(*) AS count FROM session_generation_review_snapshots').get()?.count, 2)
+    assert.equal((db.prepare('SELECT COUNT(*) AS count FROM session_generation_review_snapshots').get() as { count: number }).count, 2)
     assert.equal(getActiveReviewSnapshotSqlite(db, { id: 'a', userId: 'u1', teamId: 't1', groupTrainingPlanId: 'p1' }, now)?.id, 'a')
     assert.equal(getActiveReviewSnapshotSqlite(db, { id: 'a', userId: 'u2', teamId: 't1', groupTrainingPlanId: 'p1' }, now), null)
   } finally { db.close() }
@@ -58,7 +58,7 @@ test('KAN-789 expiry permits new allocation and expired review cannot be retriev
     assert.equal(getActiveReviewSnapshotSqlite(db, { id: 'a', userId: 'u1', teamId: 't1', groupTrainingPlanId: 'p1' }, future), null)
     const c = createReviewSnapshotSqlite(db, input('c'), future)
     assert.equal(c.id, 'c')
-    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM session_generation_review_snapshots WHERE status = 'active'").get()?.count, 1)
-    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM session_generation_review_snapshots WHERE status = 'expired'").get()?.count, 2)
+    assert.equal((db.prepare("SELECT COUNT(*) AS count FROM session_generation_review_snapshots WHERE status = 'active'").get() as { count: number }).count, 1)
+    assert.equal((db.prepare("SELECT COUNT(*) AS count FROM session_generation_review_snapshots WHERE status = 'expired'").get() as { count: number }).count, 2)
   } finally { db.close() }
 })
