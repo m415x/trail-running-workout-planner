@@ -1,3 +1,16 @@
+# Current operational handoff — KAN-688 Coach Templates authority merged (2026-10-13)
+
+## Latest integrated delivery
+
+- [KAN-688](kan-688.md) Coach Templates server-owned H2/H3/H4A authority merged to `dev` via [PR #57](https://github.com/m415x/trail-running-workout-planner/pull/57); PR head `0d4944115ad1eb6bbe49772b0f0d53c0fd2d0833`, merge SHA `02923d0facb66d8db6335d6348a4919158d19bf2`.
+- Seven template Server Actions share real H2 authenticated actor, H3 active Team and H4A `planning.manage` checks. SQLite scope/isolation/no-write DENY and fresh Team/user resolution are covered. KAN-682 Templates navigation remains hidden.
+- Operator pre-merge isolated-branch `pn verify --db` **PASS 6/6** on candidate `9f92d11ec3e3ef440831b06f5ba15fed64a4bd69`; operator pre-merge `pn docs:handoff:check` **PASS** on `0d4944115ad1eb6bbe49772b0f0d53c0fd2d0833`. These are not execution evidence for merge or post-merge documentation commits.
+- Vercel status was `success`; no GitHub Actions workflow runs were returned and no reviewer submission observed for PR #57. Do not describe GitHub Actions as GREEN.
+- KAN-787 preview authority and KAN-792 Competition Calendar Team scope are separate pending work; no KAN-787 RED tests, no KAN-786 HTTP fixture, and no KAN-784 implementation from the mixed branch were merged in PR #57.
+- Post-merge documentation SHA(s) differ from the integration SHA. A new `pn docs:handoff:check` is needed on their final `dev` HEAD; a post-merge full `pn verify --db` has not been reported. Jira KAN-797/T5 and KAN-688 reconcile after the documentation check.
+
+---
+
 # Current operational handoff — KAN-778 Athlete B provisioning merged (2026-10-13)
 
 ## Latest integrated delivery
