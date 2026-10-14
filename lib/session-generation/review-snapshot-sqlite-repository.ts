@@ -288,3 +288,24 @@ export function invalidateReviewSnapshotSqlite(
   `).run(scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId, now)
   return result.changes === 1
 }
+
+/**
+ * Maintenance-only purge. Never invoke from review GET: logical expiry is
+ * enforced separately and consumed results remain durable evidence.
+ * Only terminal, non-consumed snapshots at/before the explicit retention
+ * cutoff are eligible for physical removal.
+ */
+export function purgeReviewSnapshotsSqlite(
+  database: Database.Database,
+  cutoffIso: string,
+): number {
+  const cutoff = validTime(cutoffIso)
+  const deleted = database.prepare(`
+    DELETE FROM session_generation_review_snapshots
+    WHERE status IN ('expired', 'invalidated')
+      AND expires_at <= ?
+      AND consumed_at IS NULL
+      AND result_reference IS NULL
+  `).run(cutoff)
+  return deleted.changes
+}
