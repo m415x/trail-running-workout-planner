@@ -48,13 +48,13 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
-- [`handoffs/kan-792.md`](handoffs/kan-792.md) — KAN-792 authorized Competition Calendar Plan/Team reader pre-merge contract and explicit KAN-798 security blocker for five mutation entry points; **not yet current integrated baseline**.
+- [`handoffs/kan-792.md`](handoffs/kan-792.md) — KAN-792 merged Competition Calendar Plan/Team reader (PR #58) and explicit KAN-798 High security blocker for five mutation entry points.
 
 - [`handoffs/kan-688.md`](handoffs/kan-688.md) — KAN-688 Coach Templates H2/H3/H4A merged baseline, PR #57, SHA-scoped isolated SQLite and action composition evidence.
 
 - [`handoffs/kan-778.md`](handoffs/kan-778.md) — KAN-778 integrated provisioning of Supabase Athlete B in local SQLite, operator acceptance evidence, no-write rerun and KAN-766/T8 remaining boundary.
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-688** Coach Templates authority baseline (PR #57, merge `02923d0facb66d8db6335d6348a4919158d19bf2`), with the preceding **KAN-778** acceptance Athlete B baseline (PR #55, merge `59e7b3ac`) with SHA-scoped evidence in [`handoffs/kan-778.md`](handoffs/kan-778.md). Earlier KAN-724 routing evidence is retained in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-792** Competition Calendar authorized reader baseline (PR #58, merge `7d11c885f827f62448f49c9fbed0dddbe81963cf`) and the independent KAN-798 writer security blocker, following **KAN-688** Coach Templates authority (PR #57, merge `02923d0facb66d8db6335d6348a4919158d19bf2`), with the preceding **KAN-778** acceptance Athlete B baseline (PR #55, merge `59e7b3ac`) with SHA-scoped evidence in [`handoffs/kan-778.md`](handoffs/kan-778.md). Earlier KAN-724 routing evidence is retained in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
 
 KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
 
