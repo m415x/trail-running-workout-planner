@@ -293,8 +293,8 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
   }
 
   return input.withinExistingTransaction
-    ? run(db as unknown as WriterDatabase)
-    : db.transaction(run)
+    ? run(input.database)
+    : database.transaction(run)
 }
 
 function serializeAuditValue(value: unknown): string {
