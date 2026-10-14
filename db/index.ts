@@ -37,10 +37,10 @@ if (isolatedMode) {
     throw new Error('SQLITE_DATABASE_PATH cannot target the development sqlite.db in scenario mode')
   }
 }
-const sqlite = new Database(sqlitePath, { fileMustExist: isolatedMode && sqlitePath !== ':memory:' })
+export const sqliteConnection = new Database(sqlitePath, { fileMustExist: isolatedMode && sqlitePath !== ':memory:' })
 
 // Instancia de Drizzle con autocompletado, tipos y relaciones de todos los módulos del esquema
-export const db = drizzle(sqlite, {
+export const db = drizzle(sqliteConnection, {
   schema: {
     ...coreSchema,
     ...loadStrategySchema,
