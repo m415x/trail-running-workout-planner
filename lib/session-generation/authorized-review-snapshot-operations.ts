@@ -37,11 +37,20 @@ function assertGeneratedProposalCounts(generated: SnapshotGeneratedData, scope: 
 
   const microcycleIds = new Set<string>()
   const generationKeys = new Set<string>()
+  const sharedEventKeys = new Set<string>()
   for (const event of proposal.events) {
     if (event === null || typeof event !== 'object' ||
       !('prescriptions' in event) || !Array.isArray(event.prescriptions)) {
       throw new Error('Snapshot proposal prescriptions structure is invalid')
     }
+    if (!('sharedEventKey' in event) ||
+      typeof event.sharedEventKey !== 'string' || !event.sharedEventKey.trim()) {
+      throw new Error('Snapshot sharedEventKey event identity is invalid')
+    }
+    if (sharedEventKeys.has(event.sharedEventKey)) {
+      throw new Error('Snapshot duplicate sharedEventKey event identity')
+    }
+    sharedEventKeys.add(event.sharedEventKey)
     for (const item of event.prescriptions) {
       if (item === null || typeof item !== 'object' ||
         !('prescription' in item) || item.prescription === null ||
