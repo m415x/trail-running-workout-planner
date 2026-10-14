@@ -46,6 +46,8 @@ function fixture(planId: 'base' | 'variant', microcycleId: string) {
       generationExplanations: {}, sourceManifest: { revision: 'v1' },
       sessionCount: 1, microcycleCount: 1, schemaVersion: '1', generatorVersion: '1',
     }),
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ revision: 'v1' }),
     now: () => NOW,
     createId: () => 'review-' + planId,
   })
