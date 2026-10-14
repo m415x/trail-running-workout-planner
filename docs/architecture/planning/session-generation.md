@@ -186,3 +186,63 @@ The UI localizes stable fact/warning codes into human ES/EN labels and
 operational messages while preserving the underlying structured snapshot.
 Unknown presentation codes fall back to a readable label rather than exposing
 raw implementation syntax as the primary Coach explanation.
+
+
+## KAN-789/T4 — Temporary SQL review snapshots (implementation baseline)
+
+T4 provides **server-only repository primitives**, not production CREATE/GET/confirm
+routes. The opaque snapshot ID is a lookup key, **never authorization**. The
+H2/H3/H4A identity and Coach permissions, Team/Plan/Base–Variant authority,
+source-manifest freshness, reconciliation validation and final one-transaction
+generation persistence remain T5/T6 work. Do not send snapshot JSON in a
+Server Action payload; the intent is to address the HTTP 413 review submission.
+
+- SQLite: `db/session-generation-review-snapshot-schema.ts`,
+  `drizzle/sqlite/0026_session_generation_review_snapshots.sql`,
+  `lib/session-generation/review-snapshot-sqlite-repository.ts`.
+- PostgreSQL: `db/supabase/session-generation-review-snapshot-schema.ts`,
+  `drizzle/supabase/0039_session_generation_review_snapshots.sql`,
+  `lib/session-generation/review-snapshot-postgres-repository.ts`.
+  PostgreSQL snapshot relation has RLS enabled **without policies**; this is
+  not proof of authorization for a privileged server database connection.
+- Repository lifecycle: create, read ACTIVE without mutation, consume with
+  callback using the **same transaction**, invalidate ACTIVE, explicit oldest
+  ACTIVE replacement (caller supplies `replaceSnapshotId`), and **separate**
+  terminal-state purge. Neither GET nor rendering creates or purges snapshots.
+- Create enforces a 30-minute TTL and at most two ACTIVE reviews per
+  `userId/teamId/groupTrainingPlanId`. SQLite uses an IMMEDIATE transaction;
+  PostgreSQL serializes allocation with an advisory transaction lock by scope.
+  Consumed snapshots and nonempty result references are not replaceable or
+  purgeable. Purge requires an **explicit user/team/plan scope** in both engines,
+  a canonical ISO retention cutoff, terminal `expired`/`invalidated`
+  status and absent consumption evidence.
+- The envelope validator caps serialized UTF-8 payload at 4 MiB,
+  `sessionCount` at 500 and `microcycleCount` at 60. It also currently caps
+  aggregate `proposal.events[].prescriptions` at 500, stages per explanation
+  at nine, and aggregate facts per explanation stage at 256. **The numeric
+  prescription and fact limits are provisional capacity guards**, not
+  empirically approved product thresholds. T5 must derive counts from
+  server-owned proposal data and enforce complete schema/causal validation;
+  caller-provided metadata is not authoritative.
+
+### Acceptance evidence and remaining gate
+
+KAN-789/T4 focal SQLite tests cover lifecycle, replacement, expiry and
+scope-limited purge. PostgreSQL tests run only with the explicitly guarded
+**disposable** `KAN789_PG_URL` target; missing env means **SKIP**, not proof
+of PostgreSQL behavior. The operator confirmed a joint GREEN of six PostgreSQL
+tests (allocation, consumption, invalidation, concurrency, replacement, purge)
+and a subsequent `pn verify --db` PASS at feature checkpoint
+`90655bbfe84d429a5760aafd444fd5ee7e2088a5`.
+The last SQLite purge isolation tests also returned GREEN.
+
+The motivating 53-week/239-session review had measured proposal 202,945 B,
+explanations 1,574,495 B, and multipart estimate 1,778,414 B (over the
+1,048,576 B Server Action limit). These measurements **do not establish** its
+aggregate prescription count or peak facts per explanation stage. Before
+claiming the provisional limits adequate, obtain server-side counts from that
+representative proposal, without adding personal payload data to the repository,
+and record approval or adjust the bounds via a separate RED→GREEN checkpoint.
+
+Do not mark T4 completed, or start KAN-790/T5, solely on the existence of these
+primitives or the synthetic envelope-limit tests.
