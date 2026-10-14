@@ -52,6 +52,8 @@ function fixture() {
         microcycleCount: 0,
       }
     },
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ generatorVersion: 'v1' }),
     now: () => now,
   })
   const snapshotState = () => sqlite.prepare(
