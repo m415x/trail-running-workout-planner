@@ -21,6 +21,16 @@ function fixture() {
   for (const [table,id] of [
     ['users','coach'],['teams','team-a'],['group_training_plans','plan-a'],['athlete_groups','group-a'],
   ]) sqlite.prepare(`INSERT INTO ${table} (id) VALUES (?)`).run(id)
+  // Positive CREATE fixtures must use real persisted Plan→macro→meso→micro ancestry.
+  sqlite.exec(`
+    ALTER TABLE group_training_plans ADD COLUMN is_deleted INTEGER NOT NULL DEFAULT 0;
+    CREATE TABLE macrocycles (id TEXT PRIMARY KEY NOT NULL, group_training_plan_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE mesocycles (id TEXT PRIMARY KEY NOT NULL, macrocycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE microcycles (id TEXT PRIMARY KEY NOT NULL, mesocycle_id TEXT NOT NULL, is_deleted INTEGER NOT NULL DEFAULT 0);
+    INSERT INTO macrocycles VALUES ('macro-a','plan-a',0);
+    INSERT INTO mesocycles VALUES ('meso-a','macro-a',0);
+  `)
+
   sqlite.exec(readFileSync('drizzle/sqlite/0026_session_generation_review_snapshots.sql', 'utf8'))
   let allowed = true
   let scope: AuthorizedReviewSnapshotScope = owner
