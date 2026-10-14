@@ -130,3 +130,40 @@ test('KAN-792 Team A to B, actor switch, revocation and absent planning.manage a
     'coach-a:team-b', 'coach-b:team-b', 'coach-b:team-b', 'coach-b:team-b',
   ], 'Invalid H2 must stop before H3; every authenticated invocation re-resolves Team')
 })
+
+test('KAN-792/T4 authorized empty is distinct from DENY and neither case writes SQLite', async () => {
+  const action = reader()
+  const before = state()
+  assert.deepEqual(await action.read('empty-a'), { status: 'allowed', competitions: [] })
+  assert.deepEqual(await action.read('empty-b'), { status: 'denied' })
+  assert.deepEqual(await action.read('missing-plan'), { status: 'denied' })
+  revoked = true
+  assert.deepEqual(await action.read('empty-a'), { status: 'denied' })
+  assert.deepEqual(state(), before)
+})
+
+test('KAN-792/T4 removed Plan, group and entry are not disclosed across Base/Variant', async () => {
+  const action = reader()
+  const before = state()
+  sqlite.prepare("UPDATE group_training_plans SET is_deleted=1 WHERE id='base-a'").run()
+  assert.deepEqual(await action.read('base-a'), { status: 'denied' })
+  const variant = await action.read('variant-a')
+  assert.equal(variant.status, 'allowed')
+  if (variant.status === 'allowed') assert.deepEqual(variant.competitions.map(c => c.id), ['entry-variant-a'])
+  sqlite.prepare("UPDATE competition_entries SET is_deleted=1 WHERE id='entry-variant-a'").run()
+  assert.deepEqual(await action.read('variant-a'), { status: 'allowed', competitions: [] })
+  sqlite.prepare("UPDATE athlete_groups SET is_deleted=1 WHERE id='group-a'").run()
+  assert.deepEqual(await action.read('variant-a'), { status: 'denied' })
+  assert.equal(state().length, before.length, 'Read path never deletes or inserts competition rows')
+})
+
+test('KAN-792/T4 Team switch and membership revocation preserve prior Team competition records', async () => {
+  const action = reader()
+  const before = state()
+  activeTeam = 'team-b'
+  assert.equal((await action.read('variant-b')).status, 'allowed')
+  assert.deepEqual(await action.read('variant-a'), { status: 'denied' })
+  revoked = true
+  assert.deepEqual(await action.read('variant-b'), { status: 'denied' })
+  assert.deepEqual(state(), before, 'DENY must not mutate either Team')
+})
