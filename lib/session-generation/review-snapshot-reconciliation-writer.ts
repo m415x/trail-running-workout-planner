@@ -85,7 +85,7 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
     // A shared session can belong to other plans. Check every current group,
     // including prescriptions outside the source plan, before reconciliation.
     const affectedSessionIds = [...new Set(persistedEvents.map((event) => event.id))]
-    const allCurrentPrescriptions = affectedSessionIds.length === 0 ? [] : await tx.select({
+    const allCurrentPrescriptions = affectedSessionIds.length === 0 ? [] : tx.select({
       groupId: groupSessionPrescriptions.groupId,
     }).from(groupSessionPrescriptions)
       .where(and(
