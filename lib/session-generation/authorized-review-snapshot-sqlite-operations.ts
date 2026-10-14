@@ -5,6 +5,8 @@ import {
   readReviewSnapshotEffectiveManifestSqlite,
 } from './review-snapshot-effective-manifest-sqlite'
 
+import { generateReviewSnapshotFromEffectiveSqlite } from './review-snapshot-generate-sqlite'
+
 type BaseDependencies = Parameters<typeof createAuthorizedReviewSnapshotOperations>[0]
 
 /**
@@ -30,5 +32,19 @@ export function createSqliteBackedAuthorizedReviewSnapshotOperations(
         teamId: scope.teamId,
         groupId: scope.groupId,
       }),
+  })
+}
+
+export function createTrustedSqliteReviewSnapshotOperations(
+  dependencies: Omit<BaseDependencies, 'generate' | 'readCurrentSourceManifest'>,
+): ReturnType<typeof createAuthorizedReviewSnapshotOperations> {
+  return createSqliteBackedAuthorizedReviewSnapshotOperations({
+    ...dependencies,
+    generate: async scope => generateReviewSnapshotFromEffectiveSqlite(dependencies.sqlite, {
+      groupTrainingPlanId: scope.groupTrainingPlanId,
+      teamId: scope.teamId,
+      groupId: scope.groupId,
+      planningCohortId: scope.planningCohortId,
+    }),
   })
 }
