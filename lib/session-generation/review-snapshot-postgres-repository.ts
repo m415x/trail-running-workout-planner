@@ -305,3 +305,24 @@ export async function invalidateReviewSnapshotPostgres(
   `
   return updated.length === 1
 }
+
+/**
+ * Explicit maintenance-only purge, independent from review GET and confirmation.
+ * Consumed results and any recorded consumption evidence are never deleted.
+ * The caller chooses the retention cutoff; this adapter does not schedule jobs.
+ */
+export async function purgeReviewSnapshotsPostgres(
+  client: PostgresClient,
+  cutoffIso: string,
+): Promise<number> {
+  const cutoff = canonicalTime(cutoffIso)
+  const rows = await client<{ id: string }[]>`
+    DELETE FROM session_generation_review_snapshots
+    WHERE status IN ('expired', 'invalidated')
+      AND expires_at <= ${cutoff}
+      AND consumed_at IS NULL
+      AND result_reference IS NULL
+    RETURNING id
+  `
+  return rows.length
+}
