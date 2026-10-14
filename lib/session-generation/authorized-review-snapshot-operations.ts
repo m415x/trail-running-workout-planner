@@ -6,6 +6,7 @@ import type {
   ReviewSnapshotScopeResult,
 } from '@/lib/session-generation/authorized-review-snapshot-scope'
 import { validateGeneratedMicrocycleLineageSqlite } from '@/lib/session-generation/review-snapshot-microcycle-lineage-sqlite'
+import { evaluateReviewSnapshotSourceFreshness } from '@/lib/session-generation/review-snapshot-source-freshness'
 import {
   createReviewSnapshotSqlite,
   getActiveReviewSnapshotSqlite,
@@ -93,6 +94,8 @@ interface OperationsDependencies {
   readonly sqlite: Database.Database
   readonly authorize: (request: SnapshotRequest) => Promise<ReviewSnapshotScopeResult>
   readonly generate: (scope: AuthorizedReviewSnapshotScope) => Promise<SnapshotGeneratedData>
+  /** Current server-owned source evidence, re-read only after fresh authority. Required by the production adapter. */
+  readonly readCurrentSourceManifest?: (scope: AuthorizedReviewSnapshotScope) => Promise<unknown>
   readonly now: () => string
   readonly createId?: () => string
 }
@@ -140,6 +143,18 @@ export function createAuthorizedReviewSnapshotOperations(deps: OperationsDepende
         refreshedScope.groupId !== scope.groupId ||
         refreshedScope.planningCohortId !== scope.planningCohortId) {
         return { kind: 'denied' }
+      }
+
+      // Integration boundary for a fresh server-owned read-set. Legacy isolated
+      // T5.2/T5.3 fixtures omit this dependency; the eventual production adapter
+      // MUST supply it and prove that it queries current authorized SQL sources.
+      if (deps.readCurrentSourceManifest) {
+        const currentSourceManifest = await deps.readCurrentSourceManifest(refreshedScope)
+        if (evaluateReviewSnapshotSourceFreshness(
+          generated.sourceManifest, currentSourceManifest,
+        ).kind !== 'current') {
+          throw new Error('generation_stale: source facts changed during generation')
+        }
       }
 
       // A matching Sporting Group is insufficient: Base and Variant have
