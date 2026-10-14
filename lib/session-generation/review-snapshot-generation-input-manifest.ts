@@ -58,14 +58,28 @@ export function buildReviewGenerationInputManifest(input: unknown): ReviewGenera
     throw new Error('Invalid or empty generation source manifest input')
   }
 
-  // All entries are complete server-resolved generation inputs; rejecting
-  // partial values prevents accidental fingerprints of missing source facts.
+  // Every input must belong to the single authorized Plan. A valid digest
+  // cannot make mixed-Plan or repeated microcycle inputs authoritative.
+  const seenMicrocycleIds = new Set<string>()
   for (const entry of input.generationInputs) {
     if (entry === null || Array.isArray(entry) || typeof entry !== 'object' ||
       !('context' in entry) || entry.context === null ||
       typeof entry.context !== 'object' || Array.isArray(entry.context)) {
       throw new Error('Invalid generation source input: missing generation context')
     }
+    const context = entry.context
+    if (!('groupTrainingPlanId' in context) ||
+      context.groupTrainingPlanId !== input.groupTrainingPlanId) {
+      throw new Error('Generation source input Plan scope mismatch')
+    }
+    if (!('microcycleId' in context) ||
+      typeof context.microcycleId !== 'string' || !context.microcycleId.trim()) {
+      throw new Error('Invalid generation source microcycle identity')
+    }
+    if (seenMicrocycleIds.has(context.microcycleId)) {
+      throw new Error('Duplicate generation source microcycle identity')
+    }
+    seenMicrocycleIds.add(context.microcycleId)
   }
 
   const canonical = canonicalJson(input.generationInputs)
