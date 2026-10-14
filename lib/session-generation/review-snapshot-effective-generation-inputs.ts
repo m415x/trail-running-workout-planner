@@ -9,7 +9,8 @@ import { projectReviewSqlGenerationPreferences } from './review-snapshot-effecti
 import { projectReviewSqlWorkoutTemplates } from './review-snapshot-effective-templates'
 import type { ReviewSnapshotSqlSourceEvidence } from './review-snapshot-sql-source-evidence'
 
-const PERIODS = new Set<string>(['base', 'build', 'peak', 'taper', 'transition', 'competitive', 'preparatory', 'specific'])
+const PERIODS = new Set<string>(['general_preparatory', 'specific_preparatory', 'competitive', 'transition'])
+const MICROCYCLE_TYPES = new Set<string>(['base', 'development', 'shock', 'deload', 'tapering', 'race'])
 const EMPHASES = new Set<string>(['recovery', 'aerobic', 'tempo', 'threshold', 'vo2max', 'race_specific'])
 const ZONES = new Set<string>(['Z1', 'Z2', 'Z3', 'Z4', 'Z5'])
 
@@ -63,6 +64,7 @@ export function projectReviewSqlGenerationInputs(
       // Match Coach preview: unready weeks are not submitted for generation.
       if (microcycle.targetVolumeKm === null || !intensityTarget) return []
       if (!PERIODS.has(microcycle.period) ||
+        !MICROCYCLE_TYPES.has(microcycle.type) ||
         !EMPHASES.has(intensityTarget.emphasis) ||
         !ZONES.has(intensityTarget.predominantZone)) {
         throw new Error('Invalid generation period or intensity target')
