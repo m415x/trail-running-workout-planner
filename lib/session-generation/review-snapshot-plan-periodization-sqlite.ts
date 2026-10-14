@@ -14,6 +14,10 @@ export interface ReviewPlanPeriodizationScope {
 export interface ReviewPeriodizationMicrocycleFacts {
   readonly id: string
   readonly macrocycleId: string
+  readonly macrocycleEndDate: string
+  readonly macrocycleTargetRaceName: string | null
+  readonly macrocycleTargetRaceDistanceKm: number | null
+  readonly macrocycleTargetRaceElevationGain: number | null
   readonly mesocycleId: string
   readonly period: string
   readonly weekNumber: number
@@ -32,6 +36,10 @@ export interface ReviewPlanPeriodizationFacts extends ReviewPlanPeriodizationSco
 interface PeriodizationRow {
   microcycleId: string
   macrocycleId: string
+  macrocycleEndDate: string
+  macrocycleTargetRaceName: string | null
+  macrocycleTargetRaceDistanceKm: number | null
+  macrocycleTargetRaceElevationGain: number | null
   mesocycleId: string
   period: string
   weekNumber: number
@@ -69,6 +77,10 @@ export function readReviewPlanPeriodizationFactsSqlite(
     SELECT
       mi.id AS microcycleId,
       ma.id AS macrocycleId,
+      ma.end_date AS macrocycleEndDate,
+      ma.target_race_name AS macrocycleTargetRaceName,
+      ma.target_race_distance_km AS macrocycleTargetRaceDistanceKm,
+      ma.target_race_elevation_gain AS macrocycleTargetRaceElevationGain,
       me.id AS mesocycleId,
       me.period AS period,
       mi.week_number AS weekNumber,
@@ -96,6 +108,10 @@ export function readReviewPlanPeriodizationFactsSqlite(
     microcycles: rows.map(row => ({
       id: row.microcycleId,
       macrocycleId: row.macrocycleId,
+      macrocycleEndDate: row.macrocycleEndDate,
+      macrocycleTargetRaceName: row.macrocycleTargetRaceName,
+      macrocycleTargetRaceDistanceKm: row.macrocycleTargetRaceDistanceKm,
+      macrocycleTargetRaceElevationGain: row.macrocycleTargetRaceElevationGain,
       mesocycleId: row.mesocycleId,
       period: row.period,
       weekNumber: row.weekNumber,
