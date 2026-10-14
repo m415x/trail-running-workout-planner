@@ -9,6 +9,9 @@ export const SESSION_GENERATION_SNAPSHOT_LIMITS = Object.freeze({
   maxBytes: 4 * 1024 * 1024,
   maxSessions: 500,
   maxMicrocycles: 60,
+  maxPrescriptions: 500,
+  maxExplanationStages: 9,
+  maxFactsPerExplanationStage: 256,
 })
 
 type SnapshotEnvelope = {
@@ -52,6 +55,65 @@ function assertSerializable(value: unknown): string {
   return serialized
 }
 
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+}
+
+/** Capacity checks only: full proposal/scope semantics belong to the T5 boundary. */
+function assertBoundedComplexity(envelope: SnapshotEnvelope): void {
+  const proposal = envelope.proposal
+  if (isObject(proposal) && Array.isArray(proposal.events)) {
+    let prescriptions = 0
+    for (const event of proposal.events) {
+      if (!isObject(event) || !Array.isArray(event.prescriptions)) {
+        throw new Error('Snapshot prescriptions structure is invalid')
+      }
+      prescriptions += event.prescriptions.length
+      if (prescriptions > SESSION_GENERATION_SNAPSHOT_LIMITS.maxPrescriptions) {
+        throw new Error('Snapshot prescriptions complexity limit exceeded')
+      }
+    }
+  }
+
+  const explanations = envelope.generationExplanations
+  if (isObject(explanations)) {
+    for (const explanation of Object.values(explanations)) {
+      if (!isObject(explanation) || !('stages' in explanation)) continue
+      if (!Array.isArray(explanation.stages)) {
+        throw new Error('Snapshot explanation stages structure is invalid')
+      }
+      if (explanation.stages.length > SESSION_GENERATION_SNAPSHOT_LIMITS.maxExplanationStages) {
+        throw new Error('Snapshot explanation stages limit exceeded')
+      }
+      for (const stage of explanation.stages) {
+        if (!isObject(stage)) throw new Error('Snapshot explanation stage is invalid')
+        let facts = 0
+        for (const key of ['inputs', 'constraints', 'decision', 'consequence']) {
+          const value = stage[key]
+          if (value !== undefined && !Array.isArray(value)) {
+            throw new Error('Snapshot explanation facts structure is invalid')
+          }
+          facts += Array.isArray(value) ? value.length : 0
+        }
+        if (stage.warnings !== undefined) {
+          if (!Array.isArray(stage.warnings)) {
+            throw new Error('Snapshot explanation warnings structure is invalid')
+          }
+          for (const warning of stage.warnings) {
+            if (!isObject(warning) || !Array.isArray(warning.facts)) {
+              throw new Error('Snapshot explanation warning facts structure is invalid')
+            }
+            facts += warning.facts.length
+          }
+        }
+        if (facts > SESSION_GENERATION_SNAPSHOT_LIMITS.maxFactsPerExplanationStage) {
+          throw new Error('Snapshot explanation facts complexity limit exceeded')
+        }
+      }
+    }
+  }
+}
+
 /** Validate before allocating an authorized snapshot, never accept client counts as authority. */
 export function validateSessionGenerationSnapshotEnvelope(envelope: SnapshotEnvelope): number {
   const { sessionCount, microcycleCount } = envelope
@@ -63,6 +125,8 @@ export function validateSessionGenerationSnapshotEnvelope(envelope: SnapshotEnve
     microcycleCount > SESSION_GENERATION_SNAPSHOT_LIMITS.maxMicrocycles) {
     throw new Error('Snapshot microcycles limit exceeded or invalid')
   }
+
+  assertBoundedComplexity(envelope)
 
   const json = assertSerializable({
     proposal: envelope.proposal,
