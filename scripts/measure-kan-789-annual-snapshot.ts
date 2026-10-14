@@ -70,7 +70,7 @@ function weeklyInput(weekIndex: number): SessionGenerationInput {
   const period: SessionGenerationInput['context']['period'] =
     weekIndex < 13 ? 'general_preparatory' : weekIndex < 39 ? 'specific_preparatory' : 'competitive'
   const microcycleType: SessionGenerationInput['context']['microcycleType'] =
-    weekIndex % 4 === 3 ? 'recovery' : 'development'
+    weekIndex % 4 === 3 ? 'deload' : 'development'
   return {
     context: {
       teamId: SCENARIO.teamId,
