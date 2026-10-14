@@ -151,3 +151,95 @@ export async function getActiveReviewSnapshotPostgres(
   `
   return rows[0] ?? null
 }
+
+export type ConsumeReviewSnapshotPostgresResult =
+  | { readonly kind: 'consumed'; readonly resultReference: string }
+  | { readonly kind: 'already_consumed'; readonly resultReference: string }
+  | { readonly kind: 'unavailable' }
+
+/**
+ * Atomically persists the result and consumes an active snapshot.
+ *
+ * The callback MUST write using the supplied transaction client. The caller
+ * must enforce authenticated H2/H3/H4A ownership and validate source freshness
+ * within the appropriate transaction boundary; scoped SQL alone is not auth.
+ */
+export async function consumeReviewSnapshotPostgres(
+  client: PostgresClient,
+  scope: SnapshotScope,
+  nowIso: string,
+  persist: (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string>,
+): Promise<ConsumeReviewSnapshotPostgresResult> {
+  const now = canonicalTime(nowIso)
+
+  return client.begin(async (tx): Promise<ConsumeReviewSnapshotPostgresResult> => {
+    // Row lock serializes concurrent attempts for this particular review ID.
+    const rows = await tx<SnapshotRow[]>`
+      SELECT
+        id, user_id AS "userId", team_id AS "teamId",
+        group_training_plan_id AS "groupTrainingPlanId",
+        group_id AS "groupId", planning_cohort_id AS "planningCohortId",
+        schema_version AS "schemaVersion", generator_version AS "generatorVersion",
+        proposal, generation_explanations AS "generationExplanations",
+        source_manifest AS "sourceManifest",
+        created_at AS "createdAt", expires_at AS "expiresAt",
+        status, consumed_at AS "consumedAt", result_reference AS "resultReference"
+      FROM session_generation_review_snapshots
+      WHERE id = ${scope.id}
+        AND user_id = ${scope.userId}
+        AND team_id = ${scope.teamId}
+        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      FOR UPDATE
+    `
+    const row = rows[0]
+    if (!row) return { kind: 'unavailable' }
+
+    if (row.status === 'consumed') {
+      if (!row.resultReference || !row.consumedAt) {
+        throw new Error('Snapshot consumed without durable result reference')
+      }
+      return { kind: 'already_consumed', resultReference: row.resultReference }
+    }
+
+    if (row.status !== 'active' || new Date(row.expiresAt).getTime() <= Date.parse(now)) {
+      return { kind: 'unavailable' }
+    }
+
+    const claimed = await tx<{ id: string }[]>`
+      UPDATE session_generation_review_snapshots
+      SET status = 'consumed', consumed_at = ${now}
+      WHERE id = ${scope.id}
+        AND user_id = ${scope.userId}
+        AND team_id = ${scope.teamId}
+        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+        AND status = 'active' AND expires_at > ${now}
+        AND consumed_at IS NULL AND result_reference IS NULL
+      RETURNING id
+    `
+    if (claimed.length !== 1) return { kind: 'unavailable' }
+
+    // Any exception (including an invalid result) rolls back the claim and all
+    // writes made through tx by persist.
+    const resultReference = await persist(tx, row)
+    if (typeof resultReference !== 'string' || resultReference.trim().length === 0) {
+      throw new Error('Snapshot persist must return a durable result reference')
+    }
+
+    const completed = await tx<{ id: string }[]>`
+      UPDATE session_generation_review_snapshots
+      SET result_reference = ${resultReference}
+      WHERE id = ${scope.id}
+        AND user_id = ${scope.userId}
+        AND team_id = ${scope.teamId}
+        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+        AND status = 'consumed' AND consumed_at = ${now}
+        AND result_reference IS NULL
+      RETURNING id
+    `
+    if (completed.length !== 1) {
+      throw new Error('Snapshot consumption result could not be recorded')
+    }
+
+    return { kind: 'consumed', resultReference }
+  })
+}
