@@ -246,3 +246,47 @@ and record approval or adjust the bounds via a separate RED→GREEN checkpoint.
 
 Do not mark T4 completed, or start KAN-790/T5, solely on the existence of these
 primitives or the synthetic envelope-limit tests.
+
+
+### KAN-789/T4 — Base/Variant unit and reconciliation risks
+
+The canonical SQL review snapshot unit is **one `groupTrainingPlanId`**.
+Both SQLite and PostgreSQL schemas have a single non-null Plan FK plus
+`teamId`, `groupId` and nullable `planningCohortId`. Repository allocation,
+lookup, invalidation, consumption and purge use scoped User/Team/Plan
+identities. The schema itself does not prove that the declared Group/Cohort
+belongs to that Plan, and repositories do not validate that every embedded
+prescription, `generationKey`, explanation and `sourceManifest` belongs to
+the same Plan. Those are fail-closed T5 authorization/source-validation
+requirements, not accomplished T4 assurances.
+
+A Base and a derived Variant may independently generate same
+`sharedEventKey` but distinct `generationKey` and microcycle lineage.
+They are **two snapshots**, not one combined SQL snapshot. The combined
+Base/Variant output of the capacity probe is **diagnostic-only**.
+Use `node --import tsx scripts/measure-kan-789-annual-snapshot.ts --scenario=base-variant`
+to report both Plan-scoped envelopes and the aggregate separately.
+`calendarWeeks=53` is not the same as `distinctMicrocycleIds=106`
+across the aggregate; each Plan-scoped envelope should contain 53
+distinct microcycle IDs and be assessed individually against the 60 cap.
+Any requirement to save/confirm multiple Plans as one indivisible transaction
+is a **new product contract** and must stop for explicit architectural approval.
+
+#### KAN-790/T5 and KAN-791/T6 verification matrix
+
+| Scenario | Required acceptance (not yet implemented/proved) |
+| --- | --- |
+| Base then Variant confirmation, same `sharedEventKey` | Reuse one existing Session event, insert second Plan-scoped prescription by distinct `microcycleId`; no duplicate Session |
+| Variant then Base confirmation | Same result independent of order, preserving each Plan's `generationKey` and historical explanation |
+| Regenerate Base after Variant exists | Scope obsolete-prescription detection to Base lineage; never delete/update Variant prescription or shared event still referenced by Variant |
+| Regenerate Variant after Base exists | Symmetric isolation; independently preserve Base prescription and audit |
+| Two confirmations concurrently | Serialize/race-proof same `sharedEventKey` creation, uniqueness, reconciliation read-set and full transaction; no duplicate/orphaned records |
+| `generated_modified` or `manual` session/prescription | Fail on protected collision or preserve ownership; never overwrite Coach changes in sibling scope |
+| Stale source, changed calendar/template/microcycle or revoked permission | Revalidate H2/H3/H4A, Team/Plan/Base–Variant relationship, generation input versions before any durable mutation |
+| Conflict, rollback, retry and consumed snapshot | Atomic Session + both relevant prescription consequences + audit per confirmation, CAS consume with result reference, deterministic retry and no partial writes |
+
+Current `reconcileSessionGeneration` is **pure** and assumes that
+`existingEvents` and `existingPrescriptions` have already been correctly
+scoped. It cannot by itself guarantee safe concurrent database writes or
+protection of sibling shared events. These guarantees require T5/T6
+repository read/write boundary and integration tests.
