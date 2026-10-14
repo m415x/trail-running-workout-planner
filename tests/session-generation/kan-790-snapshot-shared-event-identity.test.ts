@@ -42,6 +42,8 @@ function setup(keys: string[]) {
       schemaVersion: '1', generatorVersion: '1', sessionCount: keys.length,
       microcycleCount: keys.length ? 1 : 0,
     }),
+    // Isolated fixture source read: production must re-read real authorized SQL facts.
+    readCurrentSourceManifest: async () => ({ revision: 'v1' }),
     now: () => '2026-10-14T15:00:00.000Z',
     createId: () => 'review',
   })
