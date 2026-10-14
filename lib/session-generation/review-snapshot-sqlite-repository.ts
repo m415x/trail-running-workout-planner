@@ -167,3 +167,74 @@ export function getActiveReviewSnapshotSqlite(
   `).get(scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId, now) as SnapshotRow | undefined
   return row ? record(row) : null
 }
+
+export type ConsumeReviewSnapshotSqliteResult =
+  | { readonly kind: 'consumed'; readonly resultReference: string }
+  | { readonly kind: 'already_consumed'; readonly resultReference: string }
+  | { readonly kind: 'unavailable' }
+
+/**
+ * Atomically claim an ACTIVE, non-expired snapshot and persist its result.
+ * The persist callback MUST use this same SQLite connection, synchronously.
+ * H2/H3/H4A authorization, current source validation and reconciliation must
+ * already be performed by the calling boundary before any durable writes.
+ */
+export function consumeReviewSnapshotSqlite(
+  database: Database.Database,
+  scope: SnapshotScope,
+  nowIso: string,
+  persist: (snapshot: ReviewSnapshotRecord) => string,
+): ConsumeReviewSnapshotSqliteResult {
+  const now = validTime(nowIso)
+  const consume = database.transaction((): ConsumeReviewSnapshotSqliteResult => {
+    const row = database.prepare(`
+      SELECT *
+      FROM session_generation_review_snapshots
+      WHERE id = ? AND user_id = ? AND team_id = ? AND group_training_plan_id = ?
+      LIMIT 1
+    `).get(scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId) as SnapshotRow | undefined
+
+    if (!row) return { kind: 'unavailable' }
+
+    if (row.status === 'consumed') {
+      if (!row.result_reference || !row.consumed_at) {
+        throw new Error('Snapshot consumed without durable result reference')
+      }
+      return { kind: 'already_consumed', resultReference: row.result_reference }
+    }
+
+    if (row.status !== 'active' || row.expires_at <= now) {
+      return { kind: 'unavailable' }
+    }
+
+    const changed = database.prepare(`
+      UPDATE session_generation_review_snapshots
+      SET status = 'consumed', consumed_at = ?
+      WHERE id = ? AND user_id = ? AND team_id = ? AND group_training_plan_id = ?
+        AND status = 'active' AND expires_at > ?
+        AND consumed_at IS NULL AND result_reference IS NULL
+    `).run(now, scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId, now)
+
+    if (changed.changes !== 1) return { kind: 'unavailable' }
+
+    const resultReference = persist(record(row))
+    if (typeof resultReference !== 'string' || resultReference.trim().length === 0) {
+      throw new Error('Snapshot persist must return a durable result reference')
+    }
+
+    const completed = database.prepare(`
+      UPDATE session_generation_review_snapshots
+      SET result_reference = ?
+      WHERE id = ? AND user_id = ? AND team_id = ? AND group_training_plan_id = ?
+        AND status = 'consumed' AND consumed_at = ? AND result_reference IS NULL
+    `).run(resultReference, scope.id, scope.userId, scope.teamId, scope.groupTrainingPlanId, now)
+
+    if (completed.changes !== 1) {
+      throw new Error('Snapshot consumption result could not be recorded')
+    }
+
+    return { kind: 'consumed', resultReference }
+  })
+
+  return consume.immediate()
+}
