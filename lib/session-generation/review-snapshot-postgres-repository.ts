@@ -314,11 +314,18 @@ export async function invalidateReviewSnapshotPostgres(
 export async function purgeReviewSnapshotsPostgres(
   client: PostgresClient,
   cutoffIso: string,
+  scope: Pick<SnapshotScope, 'userId' | 'teamId' | 'groupTrainingPlanId'>,
 ): Promise<number> {
   const cutoff = canonicalTime(cutoffIso)
+  if (!scope?.userId || !scope.teamId || !scope.groupTrainingPlanId) {
+    throw new Error('Snapshot purge requires explicit owner/team/plan scope')
+  }
   const rows = await client<{ id: string }[]>`
     DELETE FROM session_generation_review_snapshots
-    WHERE status IN ('expired', 'invalidated')
+    WHERE user_id = ${scope.userId}
+      AND team_id = ${scope.teamId}
+      AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      AND status IN ('expired', 'invalidated')
       AND expires_at <= ${cutoff}
       AND consumed_at IS NULL
       AND result_reference IS NULL
