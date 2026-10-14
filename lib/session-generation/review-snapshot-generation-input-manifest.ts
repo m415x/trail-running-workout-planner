@@ -61,6 +61,8 @@ export function buildReviewGenerationInputManifest(input: unknown): ReviewGenera
   // Every input must belong to the single authorized Plan. A valid digest
   // cannot make mixed-Plan or repeated microcycle inputs authoritative.
   const seenMicrocycleIds = new Set<string>()
+  let sourceTeamId: string | null = null
+  let sourceGroupId: string | null = null
   for (const entry of input.generationInputs) {
     if (entry === null || Array.isArray(entry) || typeof entry !== 'object' ||
       !('context' in entry) || entry.context === null ||
@@ -72,6 +74,19 @@ export function buildReviewGenerationInputManifest(input: unknown): ReviewGenera
       context.groupTrainingPlanId !== input.groupTrainingPlanId) {
       throw new Error('Generation source input Plan scope mismatch')
     }
+    if (!('teamId' in context) || typeof context.teamId !== 'string' ||
+      !context.teamId.trim() || !('groupId' in context) ||
+      typeof context.groupId !== 'string' || !context.groupId.trim()) {
+      throw new Error('Invalid generation source Team or Sporting Group identity')
+    }
+    if (sourceTeamId !== null && sourceTeamId !== context.teamId) {
+      throw new Error('Generation source Team scope mismatch')
+    }
+    if (sourceGroupId !== null && sourceGroupId !== context.groupId) {
+      throw new Error('Generation source Sporting Group scope mismatch')
+    }
+    sourceTeamId = context.teamId
+    sourceGroupId = context.groupId
     if (!('microcycleId' in context) ||
       typeof context.microcycleId !== 'string' || !context.microcycleId.trim()) {
       throw new Error('Invalid generation source microcycle identity')
