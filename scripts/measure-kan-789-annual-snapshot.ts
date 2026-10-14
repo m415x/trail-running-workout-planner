@@ -245,6 +245,115 @@ function measure(): void {
     generatedFromPureInputs: true,
     originalCoachPreviewRecovered: false,
   }
+
+  // A SQL review snapshot is scoped to exactly one groupTrainingPlanId.
+  // The combined envelope above is diagnostic only: it must not be used as
+  // a persisted multi-plan snapshot or passed to the per-plan capacity gate.
+  const planSnapshots = (['base', 'variant'] as const)
+    .filter(scope => scope === 'base' || mode === 'base-variant')
+    .map(scope => {
+      const selectedRuns = runs.filter(run => run.scope === scope)
+      const planId = scope === 'base' ? SCENARIO.planId : VARIANT.planId
+      const cohortId = scope === 'base' ? null : VARIANT.planningCohortId
+      if (selectedRuns.length !== SCENARIO.microcycles ||
+          selectedRuns.some(run => run.input.context.groupTrainingPlanId !== planId)) {
+        throw new Error('Snapshot contains mismatched Plan lineage')
+      }
+      const distinctMicrocycleIds = new Set(
+        selectedRuns.map(run => run.input.context.microcycleId),
+      )
+      if (distinctMicrocycleIds.size !== selectedRuns.length) {
+        throw new Error('Duplicate microcycle identity within Plan')
+      }
+
+      const planProposal = groupSharedSessionEvents(selectedRuns.map(run => run.result))
+      const planExplanations: Record<string, ReturnType<typeof buildGenerationExplanation>> = {}
+      for (const run of selectedRuns) {
+        for (const item of run.result.proposals) {
+          if (planExplanations[item.generationKey]) {
+            throw new Error('Duplicate Plan-scoped generationKey')
+          }
+          const explanation = buildGenerationExplanation({
+            input: run.input, result: run.result, sharedGeneration: planProposal,
+            generationKey: item.generationKey, planningCohortId: cohortId,
+          })
+          if (explanation.planningScope.groupTrainingPlanId !== planId ||
+              explanation.planningScope.microcycleId !== item.prescription.microcycleId ||
+              explanation.planningScope.planningCohortId !== cohortId ||
+              explanation.planningScope.kind !== scope) {
+            throw new Error('Explanation leaked across Plan/Variant scope')
+          }
+          planExplanations[item.generationKey] = explanation
+        }
+      }
+      const planPrescriptions = planProposal.events.flatMap(event => event.prescriptions)
+      if (planPrescriptions.length !== Object.keys(planExplanations).length ||
+          planPrescriptions.some(item =>
+            !planExplanations[item.generationKey] ||
+            !distinctMicrocycleIds.has(item.prescription.microcycleId))) {
+        throw new Error('Plan snapshot prescription/explanation mismatch')
+      }
+      const perStageFactCounts = Object.values(planExplanations).flatMap(explanation =>
+        explanation.stages.map(stage => stage.inputs.length + stage.constraints.length +
+          stage.decision.length + stage.consequence.length +
+          stage.warnings.reduce((n, warning) => n + warning.facts.length, 0)),
+      )
+      const stages = Object.values(planExplanations).map(e => e.stages.length)
+      const planSourceManifest = {
+        ...sourceManifest,
+        groupTrainingPlanId: planId,
+        planningCohortId: cohortId,
+        distinctMicrocycles: distinctMicrocycleIds.size,
+      }
+      const planEnvelope = {
+        proposal: planProposal,
+        generationExplanations: planExplanations,
+        sourceManifest: planSourceManifest,
+      }
+      return {
+        scope,
+        groupTrainingPlanId: planId,
+        groupId: SCENARIO.groupId,
+        planningCohortId: cohortId,
+        sourceGroupTrainingPlanId: scope === 'variant' ? VARIANT.sourceGroupTrainingPlanId : null,
+        calendarWeeks: SCENARIO.microcycles,
+        distinctMicrocycleIds: distinctMicrocycleIds.size,
+        sharedEvents: planProposal.events.length,
+        prescriptions: planPrescriptions.length,
+        explanationCount: Object.keys(planExplanations).length,
+        maxStagesPerExplanation: Math.max(...stages),
+        maxFactsPerStage: Math.max(...perStageFactCounts),
+        explanationWarnings: Object.values(planExplanations).reduce(
+          (sum, explanation) => sum + explanation.stages.reduce(
+            (n, stage) => n + stage.warnings.length, 0), 0),
+        utf8Bytes: {
+          proposal: bytes(planProposal),
+          explanations: bytes(planExplanations),
+          sourceManifest: bytes(planSourceManifest),
+          envelope: bytes(planEnvelope),
+        },
+        sha256: {
+          proposal: sha256(JSON.stringify(planProposal)),
+          explanations: sha256(JSON.stringify(planExplanations)),
+          envelope: sha256(JSON.stringify(planEnvelope)),
+        },
+        againstLimits: {
+          sessions: planProposal.events.length <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxSessions,
+          prescriptions: planPrescriptions.length <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxPrescriptions,
+          microcycles: distinctMicrocycleIds.size <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxMicrocycles,
+          bytes: bytes(planEnvelope) <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxBytes,
+          stages: Math.max(...stages) <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxExplanationStages,
+          factsPerStage: Math.max(...perStageFactCounts) <= SESSION_GENERATION_SNAPSHOT_LIMITS.maxFactsPerExplanationStage,
+        },
+      }
+    })
+
+  const aggregatedDistinctMicrocycleIds = new Set(
+    runs.map(run => run.input.context.microcycleId),
+  ).size
+  const allPerPlanGatesPass = planSnapshots.every(snapshot =>
+    Object.values(snapshot.againstLimits).every(Boolean),
+  )
   const envelope = { proposal, generationExplanations: explanations, sourceManifest }
   const revision = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim()
   const thresholds = SESSION_GENERATION_SNAPSHOT_LIMITS
@@ -261,10 +370,20 @@ function measure(): void {
       node: process.version,
       expectedPackageManager: 'pnpm@12.4.1',
     },
+    snapshotUnit: 'one-groupTrainingPlanId',
+    planSnapshots,
+    allPerPlanGatesPass,
+    diagnosticAggregate: {
+      calendarWeeks: byWeek.length,
+      distinctMicrocycleIds: aggregatedDistinctMicrocycleIds,
+      containsMultiplePlans: mode === 'base-variant',
+      isPersistableSinglePlanSnapshot: false,
+    },
     cardinality: {
       weeks: byWeek.length,
       scopeCount: mode === 'base-variant' ? 2 : 1,
       planningScopeCount: runs.length,
+      distinctMicrocycleIds: aggregatedDistinctMicrocycleIds,
       independentGenerationRuns: runs.length,
       sharedEventsWithMultiplePrescriptions: eventCounts.filter(count => count > 1).length,
       basePrescriptions: runs.filter(run => run.scope === 'base').reduce((count, run) => count + run.result.proposals.length, 0),
@@ -297,11 +416,11 @@ function measure(): void {
       bytes: bytes(envelope) <= thresholds.maxBytes,
       sessions: proposal.events.length <= thresholds.maxSessions,
       prescriptions: prescriptions <= thresholds.maxPrescriptions,
-      microcycles: byWeek.length <= thresholds.maxMicrocycles,
+      microcycles: mode === 'base' ? aggregatedDistinctMicrocycleIds <= thresholds.maxMicrocycles : null,
       explanationStages: Math.max(...stageCounts) <= thresholds.maxExplanationStages,
       factsPerStage: maximumFactsPerStage <= thresholds.maxFactsPerExplanationStage,
     },
-    caveat: 'Representative synthetic Base/Variant derivation (no persisted hierarchy), not the original Coach 239-session preview; never claim historical equivalence.',
+    caveat: 'The combined Base/Variant payload is consolidation diagnostics, not a valid single-plan SQL snapshot; evaluate planSnapshots[].againstLimits. No persisted derivation or historical Coach equivalence.',
   }
   console.log(JSON.stringify(measured, null, 2))
 }
