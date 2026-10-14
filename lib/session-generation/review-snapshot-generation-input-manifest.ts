@@ -12,11 +12,6 @@ export interface ReviewGenerationInputManifest {
   readonly generationInputSha256: string
 }
 
-interface ManifestInput {
-  readonly groupTrainingPlanId: string
-  readonly generationInputs: readonly unknown[]
-}
-
 function canonicalJson(value: unknown): string {
   const ancestors = new Set<object>()
 
@@ -50,9 +45,14 @@ function canonicalJson(value: unknown): string {
   return serialize(value)
 }
 
-export function buildReviewGenerationInputManifest(input: ManifestInput): ReviewGenerationInputManifest {
-  if (!input || typeof input.groupTrainingPlanId !== 'string' ||
+export function buildReviewGenerationInputManifest(input: unknown): ReviewGenerationInputManifest {
+  // This is a validation boundary: invalid callers must be rejectable at
+  // runtime, including in negative tests, rather than excluded by TypeScript.
+  if (input === null || Array.isArray(input) || typeof input !== 'object' ||
+    !('groupTrainingPlanId' in input) ||
+    typeof input.groupTrainingPlanId !== 'string' ||
     !input.groupTrainingPlanId.trim() ||
+    !('generationInputs' in input) ||
     !Array.isArray(input.generationInputs) ||
     input.generationInputs.length === 0) {
     throw new Error('Invalid or empty generation source manifest input')
