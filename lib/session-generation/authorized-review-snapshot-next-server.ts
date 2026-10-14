@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, gt } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { groupTrainingPlans, athleteGroups } from '@/db/schema'
@@ -77,6 +77,7 @@ export async function authorizeReviewSnapshotNextServer(
     },
 
     readSnapshot: async (id) => {
+      const now = new Date().toISOString()
       const row = await db.select({
         id: sessionGenerationReviewSnapshots.id,
         userId: sessionGenerationReviewSnapshots.userId,
@@ -88,6 +89,7 @@ export async function authorizeReviewSnapshotNextServer(
         .where(and(
           eq(sessionGenerationReviewSnapshots.id, id),
           eq(sessionGenerationReviewSnapshots.status, 'active'),
+          gt(sessionGenerationReviewSnapshots.expiresAt, now),
         )).get()
       return row ?? null
     },
