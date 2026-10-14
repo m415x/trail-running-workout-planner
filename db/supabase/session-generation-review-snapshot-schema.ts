@@ -37,4 +37,4 @@ export const sessionGenerationReviewSnapshots = pgTable(
     check('session_generation_review_snapshots_status_check',
       sql`${table.status} in ('active', 'consumed', 'expired', 'invalidated')`),
   ],
-)
+).enableRLS()
