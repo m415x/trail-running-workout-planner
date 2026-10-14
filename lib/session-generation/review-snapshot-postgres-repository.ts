@@ -24,6 +24,8 @@ interface SnapshotCreation extends SnapshotScope {
   readonly sourceManifest: unknown
   readonly sessionCount: number
   readonly microcycleCount: number
+  /** Explicit oldest ACTIVE review selected by caller; authorization is upstream. */
+  readonly replaceSnapshotId?: string
 }
 
 interface SnapshotRow {
@@ -81,6 +83,41 @@ export async function createReviewSnapshotPostgres(
         AND group_training_plan_id = ${input.groupTrainingPlanId}
         AND status = 'active' AND expires_at <= ${now}
     `
+
+    if (input.replaceSnapshotId !== undefined) {
+      if (typeof input.replaceSnapshotId !== 'string' || !input.replaceSnapshotId) {
+        throw new Error('Snapshot replacement requires an explicit valid ID')
+      }
+
+      // The same advisory lock covers allocation and replacement for this scope.
+      const oldest = await tx<{ id: string }[]>`
+        SELECT id FROM session_generation_review_snapshots
+        WHERE user_id = ${input.userId}
+          AND team_id = ${input.teamId}
+          AND group_training_plan_id = ${input.groupTrainingPlanId}
+          AND status = 'active' AND expires_at > ${now}
+          AND consumed_at IS NULL AND result_reference IS NULL
+        ORDER BY created_at ASC, id ASC
+        LIMIT 1 FOR UPDATE
+      `
+      if (oldest[0]?.id !== input.replaceSnapshotId) {
+        throw new Error('Snapshot replacement must target oldest active review in owner scope')
+      }
+      const replaced = await tx<{ id: string }[]>`
+        UPDATE session_generation_review_snapshots
+        SET status = 'invalidated'
+        WHERE id = ${input.replaceSnapshotId}
+          AND user_id = ${input.userId}
+          AND team_id = ${input.teamId}
+          AND group_training_plan_id = ${input.groupTrainingPlanId}
+          AND status = 'active' AND expires_at > ${now}
+          AND consumed_at IS NULL AND result_reference IS NULL
+        RETURNING id
+      `
+      if (replaced.length !== 1) {
+        throw new Error('Snapshot replacement failed to invalidate oldest active review')
+      }
+    }
 
     const counts = await tx<{ active: number }[]>`
       SELECT count(*)::integer AS active FROM session_generation_review_snapshots
