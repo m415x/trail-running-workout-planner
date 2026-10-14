@@ -866,6 +866,7 @@ export const globalMonthlyDueDateExceptions = pgTable(
     dueDate: text('due_date').notNull(),
     reason: text('reason').notNull(),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('global_monthly_due_date_exceptions_month_check', sql`${table.month} between 1 and 12`),
