@@ -199,6 +199,18 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
        created_at,updated_at)
       VALUES (${id+'-sibling-micro'},${id+'-sibling-meso'},1,'base',
         '2027-01-04','2027-01-10',42,${now},${now})`
+    await sql`INSERT INTO load_strategies
+      (id,group_training_plan_id,goal_type,initial_weekly_volume_km,
+       maximum_weekly_volume_km,sessions_per_week,maximum_weekly_increase_percentage,
+       deload_percentage,field_sources,created_at,updated_at)
+      VALUES (${id+'-sibling-load'},${siblingPlanId},'finish',30,60,4,10,30,
+        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
+    await sql`INSERT INTO intensity_strategies
+      (id,group_training_plan_id,goal_type,default_method,
+       maximum_intense_sessions_per_week,minimum_recovery_days_between_intense_sessions,
+       field_sources,created_at,updated_at)
+      VALUES (${id+'-sibling-intensity'},${siblingPlanId},'finish','hr_zone',2,2,
+        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
     const siblingScope={...scope,groupTrainingPlanId:siblingPlanId}
     const siblingManifest=await sql.begin(async tx=>{
       await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
@@ -272,6 +284,8 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-shared'}`
       await sql`DELETE FROM competition_entries WHERE id = ${id+'-race'}`
       await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-target'}`
+      await sql`DELETE FROM intensity_strategies WHERE id = ${id+'-sibling-intensity'}`
+      await sql`DELETE FROM load_strategies WHERE id = ${id+'-sibling-load'}`
       await sql`DELETE FROM intensity_strategies WHERE id = ${id+'-intensity'}`
       await sql`DELETE FROM load_strategies WHERE id = ${id+'-load'}`
       await sql`DELETE FROM microcycles WHERE id = ${id+'-micro'}`
