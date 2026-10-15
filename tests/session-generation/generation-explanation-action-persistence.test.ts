@@ -3,20 +3,15 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { test } from 'node:test'
 
-const source = fs.readFileSync(
+const actionSource = fs.readFileSync(
   path.join(process.cwd(), 'app', 'actions', 'session-generation-actions.ts'),
   'utf8',
 )
+const source = fs.readFileSync(path.join(process.cwd(), 'lib', 'session-generation', 'review-snapshot-reconciliation-writer.ts'), 'utf8')
 
 test('generation explanations travel separately from the planning proposal', () => {
-  assert.match(
-    source,
-    /formData\.get\('generationExplanations'\)/,
-  )
-  assert.match(
-    source,
-    /parseGenerationExplanationSnapshots/,
-  )
+  assert.match(actionSource, /formData\.get\('generationExplanations'\)/)
+  assert.match(actionSource, /parseGenerationExplanationSnapshots/)
 
   const reconciliationStart = source.indexOf('const reconciliation = reconcileSessionGeneration')
   assert.notEqual(reconciliationStart, -1)
