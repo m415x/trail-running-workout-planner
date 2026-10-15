@@ -20,6 +20,7 @@ if (url) {
 
 const prefix = 'kan790-pg1-serial'
 const now = '2026-10-14T21:30:00.000Z'
+const userId = prefix + '-user'
 const teamId = prefix + '-team'
 const groupId = prefix + '-group'
 const plans = [prefix + '-plan-a', prefix + '-plan-b'] as const
@@ -39,6 +40,10 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
       (await client<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`)[0].pid))
     assert.equal(new Set(pids).size, 2, 'must use distinct PostgreSQL connections')
 
+    await setup`INSERT INTO users
+      (id, user_name, email, first_name, last_name, created_at, updated_at)
+      VALUES (${userId}, ${prefix + '-user'}, ${prefix + '@example.invalid'},
+        'PG-1', 'Disposable', ${now}, ${now})`
     await setup`INSERT INTO teams (id,name,created_at,updated_at)
       VALUES (${teamId},'PG-1 disposable',${now},${now})`
     await setup`INSERT INTO athlete_groups (id,team_id,category_code,level_code,created_at,updated_at)
@@ -53,7 +58,7 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
 
     for (let i = 0; i < snapshots.length; i++) {
       await createReviewSnapshotPostgres(setup, {
-        id: snapshots[i], userId: 'kan789-h7a-user',
+        id: snapshots[i], userId,
         teamId, groupTrainingPlanId: plans[i], groupId,
         planningCohortId: null, schemaVersion: '1', generatorVersion: '1',
         proposal: { events: [{ sharedEventKey: sharedKey, prescriptions: [] }] },
@@ -71,7 +76,7 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
     const attempts = [0, 0]
     const confirm = (i: number) => consumeReviewSnapshotPostgres(
       clients[i], {
-        id: snapshots[i], userId: 'kan789-h7a-user',
+        id: snapshots[i], userId,
         teamId, groupTrainingPlanId: plans[i],
       }, now, async tx => {
         attempts[i]++
@@ -103,7 +108,7 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
     assert.ok(rows.every(row => row.status === 'consumed' && row.result_reference !== null))
     for (let i = 0; i < 2; i++) {
       assert.deepEqual(await consumeReviewSnapshotPostgres(clients[i], {
-        id: snapshots[i], userId: 'kan789-h7a-user',
+        id: snapshots[i], userId,
         teamId, groupTrainingPlanId: plans[i],
       }, now, async () => { throw new Error('idempotent retry must not write') }),
       { kind: 'already_consumed', resultReference: plans[i] })
@@ -116,6 +121,7 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
       await setup`DELETE FROM group_training_plans WHERE id IN ${setup(plans)}`
       await setup`DELETE FROM athlete_groups WHERE id = ${groupId}`
       await setup`DELETE FROM teams WHERE id = ${teamId}`
+      await setup`DELETE FROM users WHERE id = ${userId}`
     } finally {
       await setup.end()
     }
