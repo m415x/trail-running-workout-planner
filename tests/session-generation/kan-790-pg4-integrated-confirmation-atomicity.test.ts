@@ -211,6 +211,12 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
        field_sources,created_at,updated_at)
       VALUES (${id+'-sibling-intensity'},${siblingPlanId},'finish','hr_zone',2,2,
         (${JSON.stringify({})}::text)::jsonb,${now},${now})`
+    await sql`INSERT INTO microcycle_intensity_targets
+      (id,microcycle_id,emphasis,intense_sessions_target,predominant_zone,
+       minimum_recovery_days_between_intense_sessions,field_sources,
+       created_at,updated_at)
+      VALUES (${id+'-sibling-target'},${id+'-sibling-micro'},'aerobic',1,'Z2',2,
+        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
     const siblingScope={...scope,groupTrainingPlanId:siblingPlanId}
     const siblingManifest=await sql.begin(async tx=>{
       await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
@@ -283,6 +289,7 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
         WHERE generation_key=${id+'-generation'}`
       await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-shared'}`
       await sql`DELETE FROM competition_entries WHERE id = ${id+'-race'}`
+      await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-sibling-target'}`
       await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-target'}`
       await sql`DELETE FROM intensity_strategies WHERE id = ${id+'-sibling-intensity'}`
       await sql`DELETE FROM load_strategies WHERE id = ${id+'-sibling-load'}`
