@@ -1,14 +1,14 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
+import type { ProfileSelfHeader } from '@/lib/athletes/profile-self-read'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
 import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/components/AthleteTabContent'
 import { GearTabContent } from '@profile/components/GearTabContent'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: CurrentAthleteData['athleteProfile'] }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader }) {
   const t = useTranslations('AthleteProfile')
 
   return (
