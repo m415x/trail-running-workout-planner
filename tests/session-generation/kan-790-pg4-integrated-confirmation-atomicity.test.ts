@@ -5,7 +5,6 @@ import postgres from 'postgres'
 import { readReviewSnapshotEffectiveManifestPostgres } from '@/lib/session-generation/review-snapshot-effective-manifest-postgres'
 import { createAuthorizedReviewSnapshotPostgresConfirmationOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-confirmation'
 import * as reconciliationWriter from '@/lib/session-generation/review-snapshot-reconciliation-writer-postgres'
-import type postgres from 'postgres'
 import type { SnapshotRow } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audit and rollback', async () => {
@@ -70,16 +69,34 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       return readReviewSnapshotEffectiveManifestPostgres(tx,scope)
     })
     assert.equal(baseline?.generationInputCount,1)
+    const proposal={
+      events:[{
+        sharedEventKey:id+'-shared',
+        session:{date:'2027-01-05',title:'PG4 integrated',
+          type:'Trail',sourceTemplateId:null,locationKey:null,
+          trackPath:null,structure:null,notes:null},
+        prescriptions:[{
+          generationKey:id+'-generation',slotKey:'tuesday-base',
+          role:'base',warnings:[],
+          prescription:{groupId:scope.groupId,microcycleId:id+'-micro',
+            distanceKm:10,durationMin:null,elevationGain:null,
+            intensityMethod:'hr_zone',zone:'Z2',
+            referencePercentage:null,notes:null},
+        }],
+        warnings:[],
+      }],
+      warnings:[],
+    }
     await sql`INSERT INTO session_generation_review_snapshots
       (id,user_id,team_id,group_training_plan_id,group_id,
        schema_version,generator_version,proposal,generation_explanations,
        source_manifest,created_at,expires_at,status)
       VALUES (${id+'-snapshot'},${id+'-user'},${scope.teamId},
         ${scope.groupTrainingPlanId},${scope.groupId},'1','1',
-        ${JSON.stringify({events:[{
-          sharedEventKey:id+'-shared',
-          session:{date:'2027-01-05',title:'PG4 integrated',
-            type:'Trail',sou    // Explicit functional RED: the concrete PG writer adapter is not yet exposed.
+        ${JSON.stringify(proposal)}::jsonb,${JSON.stringify({})}::jsonb,
+        ${JSON.stringify(baseline)}::jsonb,${now},
+        '2026-10-15T21:30:00.000Z','active')`
+    // Explicit functional RED: the concrete PG writer adapter is not yet exposed.
     // PG-3's generic persist callback alone does not prove real reconciliation.
     const factory = (reconciliationWriter as unknown as {
       createReviewSnapshotPostgresReconciliationPersist?: (dependencies: {
@@ -139,17 +156,6 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       {kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
     assert.deepEqual(await counts(),[1,1,2],
       'idempotent replay must not append audit or duplicate durable rows')
-mation/,
-    )
-    assert.equal(authorizationCalls,2)
-    assert.equal(writes,0)
-    const state=await sql<{status:string;consumed_at:string|null;result_reference:string|null}[]>`
-      SELECT status,consumed_at,result_reference
-      FROM session_generation_review_snapshots WHERE id=${id+'-snapshot'}`
-    assert.deepEqual(state[0],{status:'active',consumed_at:null,result_reference:null})
-    assert.equal((await sql<{target:number}[]>`
-      SELECT target_volume_km AS target FROM microcycles WHERE id=${id+'-micro'}`)[0]?.target,48,
-      'external source mutation must survive failed snapshot consumption')
   } finally {
     try {
       await sql`DELETE FROM session_generation_review_snapshots WHERE id = ${id+'-snapshot'}`
