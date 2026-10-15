@@ -281,6 +281,13 @@
       "when": 1791944060958,
       "tag": "0039_session_generation_review_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791944060959,
+      "tag": "0040_session_generation_preferences",
+      "breakpoints": true
     }
   ]
 }
