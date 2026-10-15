@@ -2,7 +2,8 @@ import { randomUUID } from 'node:crypto'
 import type postgres from 'postgres'
 
 import type { GenerationExplanation } from './generation-explanation'
-import { resolveGenerationExplanationSnapshot } from './generation-explanation-persistence'
+import { parseGenerationExplanationSnapshots, resolveGenerationExplanationSnapshot } from './generation-explanation-persistence'
+import type { SnapshotRow } from './review-snapshot-postgres-repository'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 import { isWorkoutType } from '@/types/training/workout.types'
 
@@ -551,4 +552,42 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     `
   }
   return preservedCount
+}
+
+/**
+ * Compose the SQL-owned review snapshot with the real PostgreSQL reconciliation
+ * writer. This callback is invoked ONLY from the authorized confirmation CAS,
+ * using its existing SERIALIZABLE transaction handle. It does not create an
+ * independent transaction, trust a browser-provided proposal, or consume a
+ * snapshot separately from the Session/prescription/audit writes.
+ *
+ * The authorized set is supplied by the trusted caller; the writer rechecks
+ * every affected existing and proposed Group against it under this transaction.
+ */
+export function createReviewSnapshotPostgresReconciliationPersist(
+  dependencies: {
+    readonly authorizedGroupIds: ReadonlySet<string>
+    readonly now: () => string
+  },
+): (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string> {
+  return async (tx, snapshot) => {
+    const stored: unknown = snapshot.proposal
+    if (!stored || typeof stored !== 'object' || Array.isArray(stored) ||
+      !('events' in stored) || !Array.isArray(stored.events)) {
+      throw new Error('reconciliation_conflict: invalid stored snapshot proposal')
+    }
+    const generationExplanations = parseGenerationExplanationSnapshots(
+      JSON.stringify(snapshot.generationExplanations),
+    )
+    await reconcileAndPersistGeneratedSessionsPostgres(tx, {
+      planId: snapshot.groupTrainingPlanId,
+      teamId: snapshot.teamId,
+      userId: snapshot.userId,
+      proposal: stored as SharedSessionGenerationResult,
+      generationExplanations,
+      authorizedGroupIds: dependencies.authorizedGroupIds,
+      now: dependencies.now(),
+    })
+    return snapshot.groupTrainingPlanId
+  }
 }
