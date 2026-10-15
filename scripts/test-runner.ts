@@ -186,11 +186,35 @@ export function createTestBatchInvocation(testFiles: string[]): {
   }
 }
 
+function isSharedPostgresAcceptanceTest(path: string): boolean {
+  const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
+  return /^kan-790-pg[0-9]+-.*\.test\.ts$/.test(filename)
+}
+
 export function prepareTestRunBatches(
   testFiles: string[],
   maxArgumentLength = 8_000,
 ): ReturnType<typeof createTestBatchInvocation>[] {
-  return planTestFileBatches(testFiles, maxArgumentLength).map(createTestBatchInvocation)
+  // Node's default test concurrency launches multiple fixture files against
+  // one kan789_acceptance PostgreSQL database. Run that lane sequentially;
+  // leave unrelated tests at their existing concurrency and batch behavior.
+  const independent = testFiles.filter(path => !isSharedPostgresAcceptanceTest(path))
+  const postgresShared = testFiles.filter(isSharedPostgresAcceptanceTest)
+  const normal = planTestFileBatches(independent, maxArgumentLength)
+    .map(createTestBatchInvocation)
+  const pg = planTestFileBatches(postgresShared, maxArgumentLength)
+    .map(files => {
+      const invocation = createTestBatchInvocation(files)
+      return {
+        ...invocation,
+        args: [
+          ...invocation.args.slice(0, 3),
+          '--test-concurrency=1',
+          ...invocation.args.slice(3),
+        ],
+      }
+    })
+  return [...normal, ...pg]
 }
 
 export function combineTestBatchResults(outputs: string[]): {
