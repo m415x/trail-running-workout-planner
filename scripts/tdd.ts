@@ -76,7 +76,15 @@ function main(): void {
   }
 
   const tsxCli = require.resolve('tsx/cli')
-  const focused = run(process.execPath, [tsxCli, '--test', ...tests], verbose)
+  // PG-4 exercises SERIALIZABLE writers against one shared disposable
+  // PostgreSQL database. Running multiple PG-4 files in parallel can produce
+  // SQLSTATE 40001 between otherwise independent rollback fixtures.
+  // Keep the real database, transaction isolation, and assertions intact.
+  const pg4Files = tests.filter(path =>
+    /(?:^|[/\\\\])kan-790-pg4-[^/\\\\]+\\.test\\.ts$/.test(path),
+  )
+  const testOptions = pg4Files.length > 1 ? ['--test-concurrency=1'] : []
+  const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
   if (redOnly) {
     console.log(focused.ok ? 'GREEN' : 'RED')
