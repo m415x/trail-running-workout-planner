@@ -14,10 +14,13 @@ import type { GenerationExplanation } from './generation-explanation'
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
-type WriterDatabase = Pick<BetterSQLite3Database, 'select' | 'insert' | 'update'>
+// The writer accepts both schema-bound production Drizzle and isolated SQLite test adapters.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SharedDrizzleDatabase = BetterSQLite3Database<any>
+type WriterDatabase = Pick<SharedDrizzleDatabase, 'select' | 'insert' | 'update'>
 
 interface WriteInput {
-  readonly database: BetterSQLite3Database
+  readonly database: SharedDrizzleDatabase
   /** Required only when sharing the raw SQLite CAS transaction. */
   readonly sqlite?: Database.Database
   readonly planId: string
