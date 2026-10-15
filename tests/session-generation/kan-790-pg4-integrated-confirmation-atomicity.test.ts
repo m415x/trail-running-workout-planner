@@ -178,11 +178,95 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       {kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
     assert.deepEqual(await counts(),[1,1,2],
       'idempotent replay must not append audit or duplicate durable rows')
+
+    // PG-4 RED: a second Plan with separate microcycle identity must be able to
+    // consume its own snapshot onto the same shared Session, without replacing
+    // or deleting the first Plan's prescription and audit evidence.
+    const siblingPlanId=id+'-sibling-plan'
+    await sql`INSERT INTO group_training_plans
+      (id,group_id,title,created_at,updated_at)
+      VALUES (${siblingPlanId},${scope.groupId},'Sibling Plan',${now},${now})`
+    await sql`INSERT INTO macrocycles
+      (id,title,group_training_plan_id,start_date,end_date,created_at,updated_at)
+      VALUES (${id+'-sibling-macro'},'Sibling Macro',${siblingPlanId},
+        '2027-01-01','2027-03-31',${now},${now})`
+    await sql`INSERT INTO mesocycles
+      (id,macrocycle_id,title,number,period,objective,created_at,updated_at)
+      VALUES (${id+'-sibling-meso'},${id+'-sibling-macro'},'Sibling Meso',
+        1,'general_preparatory','base',${now},${now})`
+    await sql`INSERT INTO microcycles
+      (id,mesocycle_id,week_number,type,start_date,end_date,target_volume_km,
+       created_at,updated_at)
+      VALUES (${id+'-sibling-micro'},${id+'-sibling-meso'},1,'base',
+        '2027-01-04','2027-01-10',42,${now},${now})`
+    const siblingScope={...scope,groupTrainingPlanId:siblingPlanId}
+    const siblingManifest=await sql.begin(async tx=>{
+      await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+      return readReviewSnapshotEffectiveManifestPostgres(tx,siblingScope)
+    })
+    assert.equal(siblingManifest?.generationInputCount,1)
+    const siblingProposal={
+      ...proposal,
+      events:proposal.events.map(event=>({
+        ...event,
+        prescriptions:event.prescriptions.map(item=>({
+          ...item,generationKey:id+'-sibling-generation',
+          prescription:{...item.prescription,microcycleId:id+'-sibling-micro'},
+        })),
+      })),
+    }
+    await sql`INSERT INTO session_generation_review_snapshots
+      (id,user_id,team_id,group_training_plan_id,group_id,
+       schema_version,generator_version,proposal,generation_explanations,
+       source_manifest,created_at,expires_at,status)
+      VALUES (${id+'-sibling-snapshot'},${id+'-user'},${scope.teamId},
+        ${siblingPlanId},${scope.groupId},'1','1',
+        (${JSON.stringify(siblingProposal)}::text)::jsonb,
+        (${JSON.stringify({})}::text)::jsonb,
+        (${JSON.stringify(siblingManifest)}::text)::jsonb,${now},
+        '2026-10-15T21:30:00.000Z','active')`
+    const siblingOperations=createAuthorizedReviewSnapshotPostgresConfirmationOperations({
+      client:sql,
+      authorize:async tx=>{
+        const isolation=await tx<{value:string}[]>`
+          SELECT current_setting('transaction_isolation') AS value`
+        assert.equal(isolation[0]?.value,'serializable')
+        return {kind:'authorized' as const,scope:{
+          ...siblingScope,userId:id+'-user',planningCohortId:null,
+        }}
+      },
+      now:()=>now,
+      persist,
+    })
+    const siblingRequest={groupTrainingPlanId:siblingPlanId,
+      snapshotId:id+'-sibling-snapshot'}
+    assert.deepEqual(await siblingOperations.confirm(siblingRequest),
+      {kind:'consumed',resultReference:siblingPlanId})
+    const sharedCount=await sql<{n:number}[]>`
+      SELECT count(*)::integer AS n FROM sessions
+      WHERE shared_event_key=${id+'-shared'}`
+    const prescriptionCount=await sql<{n:number}[]>`
+      SELECT count(*)::integer AS n FROM group_session_prescriptions
+      WHERE generation_key IN (${id+'-generation'},${id+'-sibling-generation'})
+        AND is_deleted=false`
+    assert.equal(sharedCount[0]?.n,1,
+      'both Plan snapshots must reuse a single durable shared Session')
+    assert.equal(prescriptionCount[0]?.n,2,
+      'each Plan must retain its own microcycle prescription')
+    assert.deepEqual(await siblingOperations.confirm(siblingRequest),
+      {kind:'already_consumed',resultReference:siblingPlanId})
+
   } finally {
     try {
+      await sql`DELETE FROM session_generation_review_snapshots
+        WHERE id = ${id+'-sibling-snapshot'}`
       await sql`DELETE FROM session_generation_review_snapshots WHERE id = ${id+'-snapshot'}`
       await sql`DELETE FROM session_generation_modification_records
+        WHERE group_training_plan_id=${id+'-sibling-plan'}`
+      await sql`DELETE FROM session_generation_modification_records
         WHERE group_training_plan_id=${scope.groupTrainingPlanId}`
+      await sql`DELETE FROM group_session_prescriptions
+        WHERE generation_key=${id+'-sibling-generation'}`
       await sql`DELETE FROM group_session_prescriptions
         WHERE generation_key=${id+'-generation'}`
       await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-shared'}`
@@ -192,7 +276,11 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       await sql`DELETE FROM load_strategies WHERE id = ${id+'-load'}`
       await sql`DELETE FROM microcycles WHERE id = ${id+'-micro'}`
       await sql`DELETE FROM mesocycles WHERE id = ${id+'-meso'}`
+      await sql`DELETE FROM microcycles WHERE id = ${id+'-sibling-micro'}`
+      await sql`DELETE FROM mesocycles WHERE id = ${id+'-sibling-meso'}`
+      await sql`DELETE FROM macrocycles WHERE id = ${id+'-sibling-macro'}`
       await sql`DELETE FROM macrocycles WHERE id = ${id+'-macro'}`
+      await sql`DELETE FROM group_training_plans WHERE id = ${id+'-sibling-plan'}`
       await sql`DELETE FROM group_training_plans WHERE id = ${scope.groupTrainingPlanId}`
       await sql`DELETE FROM athlete_groups WHERE id = ${scope.groupId}`
       await sql`DELETE FROM teams WHERE id = ${scope.teamId}`
