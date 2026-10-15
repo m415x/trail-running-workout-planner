@@ -18,7 +18,7 @@ if (url) {
 
 const prefix = 'kan789-pg-purge'
 const owner = {
-  userId: 'kan789-h7a-user',
+  userId: prefix + '-user',
   teamId: prefix + '-team',
   groupTrainingPlanId: prefix + '-plan',
 }
@@ -31,6 +31,9 @@ test('KAN-789 PostgreSQL maintenance purge is bounded, idempotent and preserves 
     const identity = await sql<{ db: string }[]>`SELECT current_database() AS db`
     assert.equal(identity[0]?.db, 'kan789_acceptance')
 
+    await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
+      VALUES (${owner.userId},${owner.userId},${prefix + '@example.invalid'},
+        'KAN789','Fixture',${start},${start})`
     await sql`INSERT INTO teams (id, name, created_at, updated_at)
       VALUES (${owner.teamId}, 'KAN-789 purge disposable', ${start}, ${start})`
     await sql`INSERT INTO athlete_groups (id, team_id, category_code, level_code, created_at, updated_at)
@@ -90,6 +93,7 @@ test('KAN-789 PostgreSQL maintenance purge is bounded, idempotent and preserves 
       await sql`DELETE FROM group_training_plans WHERE id = ${owner.groupTrainingPlanId}`
       await sql`DELETE FROM athlete_groups WHERE id = ${prefix + '-group'}`
       await sql`DELETE FROM teams WHERE id = ${owner.teamId}`
+      await sql`DELETE FROM users WHERE id = ${owner.userId}`
     } finally {
       await sql.end()
     }
