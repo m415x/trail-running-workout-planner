@@ -3,8 +3,7 @@ import test from 'node:test'
 import postgres from 'postgres'
 
 import { readReviewSnapshotEffectiveManifestPostgres } from '@/lib/session-generation/review-snapshot-effective-manifest-postgres'
-import { createAuthorizedReviewSnapshotPostgresConfirmationOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-confirmation'
-import * as reconciliationWriter from '@/lib/session-generation/review-snapshot-reconciliation-writer-postgres'
+import { createAuthorizedReviewSnapshotPostgresTransactionOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-transaction'
 
 test('KAN-790 PG-4 rejects PostgreSQL confirmation without current TeamMembership', async () => {
   const url = process.env.KAN789_PG_URL
@@ -95,19 +94,12 @@ test('KAN-790 PG-4 rejects PostgreSQL confirmation without current TeamMembershi
         (${JSON.stringify(proposal)}::text)::jsonb,(${JSON.stringify({})}::text)::jsonb,
         (${JSON.stringify(baseline)}::text)::jsonb,${now},
         '2026-10-15T21:30:00.000Z','active')`
-    // Adversarial identity-only callback models an already-authenticated H2
-    // user; it is NOT authorization proof. No active TeamMembership exists in
-    // PostgreSQL. The production confirmation boundary must independently
-    // deny based on current transaction-local H3/H4A evidence.
-    const persist=reconciliationWriter.createReviewSnapshotPostgresReconciliationPersist({
-      authorizedGroupIds:new Set([scope.groupId]),now:()=>now,
-    })
-    const operations=createAuthorizedReviewSnapshotPostgresConfirmationOperations({
-      client:sql,
-      authorize:async () => ({kind:'authorized' as const,scope:{
-        ...scope,userId:id+'-user',planningCohortId:null,
-      }}),
-      now:()=>now,persist,
+    // H2 identity is the only injected trust root; H3/H4A and the entire
+    // affected-group audience are resolved by the real PostgreSQL boundary.
+    // No TeamMembership exists: this must deny before CAS.
+    const operations=createAuthorizedReviewSnapshotPostgresTransactionOperations({
+      client:sql,authenticatedUserId:async()=>id+'-user',
+      selectedTeamId:async()=>scope.teamId,now:()=>now,
     })
     const request={groupTrainingPlanId:scope.groupTrainingPlanId,
       snapshotId:id+'-snapshot'}
