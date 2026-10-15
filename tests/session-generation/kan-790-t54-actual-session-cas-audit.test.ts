@@ -138,3 +138,41 @@ test('KAN-790 T5.4 audit failure rolls back CAS and all Session Prescription wri
     assert.deepEqual(status, { status: 'active', consumed_at: null, result_reference: null })
   } finally { sqlite.close() }
 })
+
+test('KAN-790 T5.4 shared event introduced in another Team denies CONFIRM without consuming CAS or changing records', async () => {
+  const { sqlite, confirm } = await setup()
+  try {
+    const row = sqlite.prepare('SELECT proposal FROM session_generation_review_snapshots WHERE id = ?')
+      .get(request.snapshotId) as { proposal: string }
+    const proposal = JSON.parse(row.proposal) as { events: Array<{ sharedEventKey: string }> }
+    assert.ok(proposal.events.length > 0)
+    const sharedEventKey = proposal.events[0].sharedEventKey
+    sqlite.prepare(`
+      INSERT INTO sessions (id, team_id, date, title, type, shared_event_key, generation_ownership, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run('occupied-session', 'team-a', '2027-01-05', 'Existing protected shared event',
+      'Trail', sharedEventKey, 'generated', '2026-10-14T15:00:00.000Z', '2026-10-14T15:00:00.000Z')
+    sqlite.prepare(`
+      INSERT INTO group_session_prescriptions
+        (id, session_id, group_id, microcycle_id, generation_ownership, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run('foreign-prescription', 'occupied-session', 'group-b', 'week-a',
+      'manual', '2026-10-14T15:00:00.000Z', '2026-10-14T15:00:00.000Z')
+
+    const original = counts(sqlite)
+    assert.deepEqual(original, { sessions: 1, prescriptions: 1, audit: 0 })
+    await assert.rejects(
+      () => confirm.confirm(request),
+      /reconciliation_conflict: affected group authorization changed/,
+    )
+    assert.deepEqual(counts(sqlite), original)
+    assert.equal((sqlite.prepare('SELECT is_deleted AS value FROM sessions WHERE id = ?')
+      .get('occupied-session') as { value: number }).value, 0)
+    assert.equal((sqlite.prepare('SELECT is_deleted AS value FROM group_session_prescriptions WHERE id = ?')
+      .get('foreign-prescription') as { value: number }).value, 0)
+    const status = sqlite.prepare(
+      'SELECT status, consumed_at, result_reference FROM session_generation_review_snapshots WHERE id = ?',
+    ).get(request.snapshotId) as { status: string; consumed_at: string | null; result_reference: string | null }
+    assert.deepEqual(status, { status: 'active', consumed_at: null, result_reference: null })
+  } finally { sqlite.close() }
+})
