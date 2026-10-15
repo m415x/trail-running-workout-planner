@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type Database from 'better-sqlite3'
 import { and, eq, inArray } from 'drizzle-orm'
 
-import { db, sqliteConnection } from '@/db'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import {
   groupSessionPrescriptions, groupTrainingPlans, athleteGroups,
   macrocycles, mesocycles, microcycles, sessions,
@@ -14,10 +14,10 @@ import type { GenerationExplanation } from './generation-explanation'
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
-type WriterDatabase = Pick<typeof db, 'select' | 'insert' | 'update'>
+type WriterDatabase = Pick<BetterSQLite3Database, 'select' | 'insert' | 'update'>
 
 interface WriteInput {
-  readonly database: typeof db
+  readonly database: BetterSQLite3Database
   /** Required only when sharing the raw SQLite CAS transaction. */
   readonly sqlite?: Database.Database
   readonly planId: string
@@ -41,7 +41,7 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
   const { planId, teamId, userId, proposal, generationExplanations, authorizedGroupIds, now } = input
   const database = input.database
   if (input.withinExistingTransaction && (
-    database !== db || input.sqlite !== sqliteConnection || !sqliteConnection.inTransaction
+    !input.sqlite?.inTransaction
   )) {
     throw new Error('reconciliation_conflict: SQLite transaction connection mismatch')
   }
