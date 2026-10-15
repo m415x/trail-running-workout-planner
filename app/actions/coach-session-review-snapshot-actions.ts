@@ -1,0 +1,63 @@
+'use server'
+
+import { cookies } from 'next/headers'
+import { revalidatePath } from 'next/cache'
+
+import { supabaseClient } from '@/db/supabase'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { ACTIVE_TEAM_COOKIE_NAME } from '@/lib/authorization/active-team-selection'
+import { createAuthorizedReviewSnapshotPostgresSessionOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-session'
+
+function operations(auth: Awaited<ReturnType<typeof createSupabaseServerClient>>['auth']) {
+  return createAuthorizedReviewSnapshotPostgresSessionOperations({
+    client: supabaseClient,
+    auth,
+    readPersistedTeamId: async () => {
+      const store = await cookies()
+      return store.get(ACTIVE_TEAM_COOKIE_NAME)?.value?.trim() || null
+    },
+    now: () => new Date().toISOString(),
+  })
+}
+
+/** Explicit Coach CREATE. The client may name only the Plan, never actors or payload. */
+export async function createCoachSessionReviewSnapshot(formData: FormData) {
+  const planId = formData.get('planId')
+  if (typeof planId !== 'string' || !planId.trim()) {
+    return {kind: 'denied' as const}
+  }
+  const supabase = await createSupabaseServerClient()
+  return operations(supabase.auth).create({groupTrainingPlanId:planId})
+}
+
+/** Read-only review; GET never generates, consumes, or refreshes a review. */
+export async function readCoachSessionReviewSnapshot(input: {
+  readonly planId: string
+  readonly snapshotId: string
+}) {
+  const supabase = await createSupabaseServerClient()
+  return operations(supabase.auth).get({
+    groupTrainingPlanId:input.planId,
+    snapshotId:input.snapshotId,
+  })
+}
+
+/** Confirm by opaque server-issued ID, never accepting a proposal or explanations. */
+export async function confirmCoachSessionReviewSnapshot(formData: FormData) {
+  const planId=formData.get('planId')
+  const snapshotId=formData.get('snapshotId')
+  if(typeof planId!=='string'||!planId.trim() ||
+    typeof snapshotId!=='string'||!snapshotId.trim()) {
+    return {kind:'denied' as const}
+  }
+  const supabase=await createSupabaseServerClient()
+  const result=await operations(supabase.auth).confirm({
+    groupTrainingPlanId:planId,snapshotId,
+  })
+  if(result.kind==='consumed'||result.kind==='already_consumed'){
+    revalidatePath('/dashboard/planning/'+planId)
+    revalidatePath('/dashboard/sessions')
+    revalidatePath('/plan')
+  }
+  return result
+}
