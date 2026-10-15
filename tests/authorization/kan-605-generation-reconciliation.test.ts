@@ -5,7 +5,7 @@ import { describe, it } from 'node:test'
 const source = readFileSync('app/actions/session-generation-actions.ts', 'utf8')
 const writer = readFileSync('lib/session-generation/review-snapshot-reconciliation-writer.ts', 'utf8')
 const begin = source.indexOf('export async function persistGeneratedSessions(')
-const end = source.indexOf('function serializeAuditValue(', begin)
+const end = source.indexOf('function parseProposal(', begin)
 assert.ok(begin >= 0 && end > begin)
 const action = source.slice(begin, end)
 
