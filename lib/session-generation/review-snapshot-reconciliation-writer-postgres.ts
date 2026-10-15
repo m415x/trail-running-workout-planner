@@ -22,8 +22,9 @@ interface PostgresReconciliationInput {
  *
  * Reads authoritative Plan, microcycle ancestry, previous protected records
  * and their complete current Group audience on the caller-owned transaction.
- * Protected-key collisions and unsupported multi-plan shared changes remain
- * fail closed. This is not the production-complete reconciliation writer.
+ * Shared Session retirement preserves other Plans' live prescriptions;
+ * other multi-plan reconciliation and protected-key collisions remain
+ * fail closed. This is not the production-complete writer.
  */
 export async function reconcileAndPersistGeneratedSessionsPostgres(
   tx: postgres.TransactionSql,
@@ -264,10 +265,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     if (audience.some(row => !authorizedGroupIds.has(row.groupId))) {
       throw new Error('reconciliation_conflict: affected group authorization changed')
     }
-    // Preserve shared Sessions until the full cross-plan lifecycle is implemented.
-    if (audience.some(row => !obsoleteGenerated.some(old => old.id === row.id))) {
-      throw new Error('reconciliation_conflict: PostgreSQL shared obsolete writer not yet implemented')
-    }
+    // The complete audience is authorized. Retire only this Plan's generated
+    // prescriptions; leave the shared Session active for any other live group.
+    // Never mutate or audit a surviving group's prescription here.
     obsoleteSessions.set(sessionId, session)
   }
 
@@ -465,7 +465,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       WHERE session_id = ${sessionId} AND is_deleted = false
     `
     if (remaining[0]?.n !== 0) {
-      throw new Error('reconciliation_conflict: obsolete Session still referenced')
+      // Another Plan still owns a live prescription in this shared Session.
+      // Its event cannot be retired or audited as removed by this Plan.
+      continue
     }
     await tx`
       UPDATE sessions SET is_deleted = true,updated_at = ${input.now}
