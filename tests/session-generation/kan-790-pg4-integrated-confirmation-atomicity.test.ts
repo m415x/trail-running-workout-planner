@@ -94,7 +94,7 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
        source_manifest,created_at,expires_at,status)
       VALUES (${id+'-snapshot'},${id+'-user'},${scope.teamId},
         ${scope.groupTrainingPlanId},${scope.groupId},'1','1',
-        (${JSON.stringify(proposal)}::text)::jsonb,${JSON.stringify({})}::jsonb,
+        (${JSON.stringify(proposal)}::text)::jsonb,(${JSON.stringify({})}::text)::jsonb,
         (${JSON.stringify(baseline)}::text)::jsonb,${now},
         '2026-10-15T21:30:00.000Z','active')`
     // Diagnose generation freshness independently before exercising CAS/writer:
@@ -102,6 +102,11 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
     const stored=await sql<{source_manifest:unknown}[]>`
       SELECT source_manifest FROM session_generation_review_snapshots
       WHERE id=${id+'-snapshot'}`
+    const storedExplanations=await sql<{generation_explanations:unknown}[]>`
+      SELECT generation_explanations FROM session_generation_review_snapshots
+      WHERE id=${id+'-snapshot'}`
+    assert.deepEqual(storedExplanations[0]?.generation_explanations, {},
+      'SQL JSONB must preserve the generation explanations as an object')
     const reread=await sql.begin(async tx=>{
       await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
       return readReviewSnapshotEffectiveManifestPostgres(tx,scope)
