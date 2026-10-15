@@ -20,12 +20,10 @@ interface PostgresReconciliationInput {
 /**
  * PG-4/T5.4 limited CREATE-only writer slice.
  *
- * Reads authoritative Plan, microcycle ancestry and proposed audience from
- * the caller-owned SERIALIZABLE TransactionSql. It must NOT be used as a
- * successful persistence callback until Session, prescription and audit
- * reconciliation are implemented and verified together.
- *
- * Never silently consume a review when the writer is incomplete.
+ * Reads authoritative Plan, microcycle ancestry, previous protected records
+ * and their complete current Group audience on the caller-owned transaction.
+ * Existing generated records and matching shared keys remain unsupported and
+ * fail closed. This is not the production-complete reconciliation writer.
  */
 export async function reconcileAndPersistGeneratedSessionsPostgres(
   tx: postgres.TransactionSql,
@@ -88,23 +86,62 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     }
   }
 
-  // CREATE-only slice. Existing planning prescriptions or matching event keys
-  // require full reconciliation of manual/modified ownership, all affected
-  // Groups and the shared Session read-set. Do not silently append duplicates.
+  // Every previous active prescription in this Plan participates in the
+  // reconciliation read-set. Only protected rows can coexist with this
+  // CREATE-only slice; generated rows require the still-pending replacement
+  // and obsolete-record lifecycle. Never silently skip those mutations.
   if (proposal.events.length === 0) {
     throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
   }
-  const preexisting = await tx<{ n: number }[]>`
-    SELECT count(*)::integer AS n
+  const preexisting = await tx<{
+    id: string
+    sessionId: string
+    groupId: string
+    ownership: string
+    sessionOwnership: string
+    sessionTeamId: string
+  }[]>`
+    SELECT gp.id, gp.session_id AS "sessionId",
+      gp.group_id AS "groupId",
+      gp.generation_ownership AS ownership,
+      s.generation_ownership AS "sessionOwnership",
+      s.team_id AS "sessionTeamId"
     FROM group_session_prescriptions AS gp
+    INNER JOIN sessions AS s ON s.id = gp.session_id
     INNER JOIN microcycles AS mi ON mi.id = gp.microcycle_id
     INNER JOIN mesocycles AS me ON me.id = mi.mesocycle_id
     INNER JOIN macrocycles AS ma ON ma.id = me.macrocycle_id
     WHERE ma.group_training_plan_id = ${planId}
+      AND gp.is_deleted = false
   `
-  if (preexisting[0]?.n !== 0) {
-    throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+  const protectedSessionIds = new Set<string>()
+  for (const row of preexisting) {
+    if (row.sessionTeamId !== teamId) {
+      throw new Error('reconciliation_conflict: event Team ownership changed')
+    }
+    if (!authorizedGroupIds.has(row.groupId)) {
+      throw new Error('reconciliation_conflict: affected group authorization changed')
+    }
+    if (!['manual', 'generated_modified'].includes(row.ownership) ||
+      !['manual', 'generated_modified'].includes(row.sessionOwnership)) {
+      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+    }
+    protectedSessionIds.add(row.sessionId)
   }
+  // A protected shared Session may also have live prescriptions under other
+  // plans. Re-read that complete audience before accepting the new write set.
+  if (protectedSessionIds.size > 0) {
+    const otherAudience = await tx<{ groupId: string }[]>`
+      SELECT DISTINCT group_id AS "groupId"
+      FROM group_session_prescriptions
+      WHERE session_id IN ${tx([...protectedSessionIds])}
+        AND is_deleted = false
+    `
+    if (!otherAudience.every(row => authorizedGroupIds.has(row.groupId))) {
+      throw new Error('reconciliation_conflict: affected group authorization changed')
+    }
+  }
+  const preservedCount = preexisting.length + protectedSessionIds.size
   const seenEvents = new Set<string>()
   const seenPrescriptions = new Set<string>()
   for (const event of proposal.events) {
@@ -216,5 +253,5 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       `
     }
   }
-  return 0
+  return preservedCount
 }
