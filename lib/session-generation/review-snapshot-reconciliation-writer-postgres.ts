@@ -6,6 +6,25 @@ import { resolveGenerationExplanationSnapshot } from './generation-explanation-p
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 import { isWorkoutType } from '@/types/training/workout.types'
 
+
+// PostgreSQL numeric columns may deserialize as strings. Compare the domain
+// values after normalizing nullable fields, not the transport representation.
+function canonicalAuditValue(value: Record<string, unknown>): string {
+  const normalize = (key: string, raw: unknown): unknown => {
+    if (raw === undefined) return null
+    if (raw === null) return null
+    if (['distanceKm', 'durationMin', 'elevationGain', 'referencePercentage']
+      .includes(key) && (typeof raw === 'number' || typeof raw === 'string')) {
+      const numeric = Number(raw)
+      return Number.isFinite(numeric) ? numeric : raw
+    }
+    return raw
+  }
+  return JSON.stringify(Object.fromEntries(
+    Object.entries(value).map(([key, raw]) => [key, normalize(key, raw)]),
+  ))
+}
+
 interface PostgresReconciliationInput {
   readonly planId: string
   readonly teamId: string
@@ -272,7 +291,21 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     const previousEvent = byEventKey.get(event.sharedEventKey)
     const sessionId = previousEvent?.id ?? randomUUID()
     const values = event.session
-    if (previousEvent) {
+    const sessionAudit = {
+      sourceTemplateId: values.sourceTemplateId,
+      date: values.date, title: values.title, type: values.type,
+      locationKey: values.locationKey, trackPath: values.trackPath,
+      structure: values.structure, notes: values.notes,
+    }
+    const previousSessionAudit = previousEvent ? {
+      sourceTemplateId: previousEvent.workoutId, date: previousEvent.date,
+      title: previousEvent.title, type: previousEvent.type,
+      locationKey: previousEvent.locationKey, trackPath: previousEvent.trackPath,
+      structure: previousEvent.structure, notes: previousEvent.notes,
+    } : null
+    const eventChanged = previousSessionAudit === null ||
+      canonicalAuditValue(previousSessionAudit) !== canonicalAuditValue(sessionAudit)
+    if (previousEvent && eventChanged) {
       await tx`
         UPDATE sessions SET workout_id = ${values.sourceTemplateId},
           date = ${values.date}, title = ${values.title}, type = ${values.type},
@@ -282,7 +315,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         WHERE id = ${sessionId} AND team_id = ${teamId}
           AND generation_ownership = 'generated'
       `
-    } else {
+    } else if (!previousEvent) {
     await tx`
       INSERT INTO sessions (
         id, team_id, workout_id, date, title, type, location_key,
@@ -298,18 +331,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       )
     `
     }
-    const sessionAudit = {
-      sourceTemplateId: values.sourceTemplateId,
-      date: values.date, title: values.title, type: values.type,
-      locationKey: values.locationKey, trackPath: values.trackPath,
-      structure: values.structure, notes: values.notes,
-    }
-    const previousSessionAudit = previousEvent ? {
-      sourceTemplateId: previousEvent.workoutId, date: previousEvent.date,
-      title: previousEvent.title, type: previousEvent.type,
-      locationKey: previousEvent.locationKey, trackPath: previousEvent.trackPath,
-      structure: previousEvent.structure, notes: previousEvent.notes,
-    } : null
+    if (eventChanged) {
     await tx`
       INSERT INTO session_generation_modification_records (
         id, group_training_plan_id, session_id, action, ownership,
@@ -323,6 +345,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         ${JSON.stringify(sessionAudit)}, ${input.userId}, ${input.now}, ${input.now}
       )
     `
+    }
     for (const item of event.prescriptions) {
       const existingPrescription = generatedByKey.get(item.generationKey)
       if (existingPrescription && existingPrescription.sessionId !== sessionId) {
@@ -365,7 +388,17 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           zone, reference_percentage AS "referencePercentage", notes
         FROM group_session_prescriptions WHERE id = ${prescriptionId}
       ` : []
-      if (existingPrescription) {
+      const prescriptionAudit = {
+        groupId: data.groupId, microcycleId: data.microcycleId,
+        distanceKm: data.distanceKm ?? null, durationMin: data.durationMin ?? null,
+        elevationGain: data.elevationGain ?? null, intensityMethod: data.intensityMethod,
+        zone: data.zone, referencePercentage: data.referencePercentage ?? null,
+        notes: data.notes,
+      }
+      const prescriptionChanged = !existingPrescription ||
+        !priorPrescription[0] ||
+        canonicalAuditValue(priorPrescription[0]) !== canonicalAuditValue(prescriptionAudit)
+      if (existingPrescription && prescriptionChanged) {
         await tx`
           UPDATE group_session_prescriptions
           SET group_id = ${data.groupId}, microcycle_id = ${data.microcycleId},
@@ -378,7 +411,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           WHERE id = ${prescriptionId} AND session_id = ${sessionId}
             AND generation_ownership = 'generated'
         `
-      } else {
+      } else if (!existingPrescription) {
       await tx`
         INSERT INTO group_session_prescriptions (
           id, session_id, group_id, microcycle_id, distance_km,
@@ -394,13 +427,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         )
       `
       }
-      const prescriptionAudit = {
-        groupId: data.groupId, microcycleId: data.microcycleId,
-        distanceKm: data.distanceKm, durationMin: data.durationMin,
-        elevationGain: data.elevationGain, intensityMethod: data.intensityMethod,
-        zone: data.zone, referencePercentage: data.referencePercentage,
-        notes: data.notes,
-      }
+      if (prescriptionChanged) {
       await tx`
         INSERT INTO session_generation_modification_records (
           id, group_training_plan_id, session_id, prescription_id,
@@ -415,7 +442,8 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           ${JSON.stringify(prescriptionAudit)}, ${input.userId},
           ${input.now}, ${input.now}
         )
-      `
+      `      }
+
     }
   }
   // Obsolete generated prescriptions and their now-unreferenced Sessions
