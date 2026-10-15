@@ -80,9 +80,10 @@ function main(): void {
   // PostgreSQL database. Running multiple PG-4 files in parallel can produce
   // SQLSTATE 40001 between otherwise independent rollback fixtures.
   // Keep the real database, transaction isolation, and assertions intact.
-  const pg4Files = tests.filter(path =>
-    /(?:^|[/\\\\])kan-790-pg4-[^/\\\\]+\\.test\\.ts$/.test(path),
-  )
+  const pg4Files = tests.filter(path => {
+    const filename = path.replaceAll('\\\\', '/').split('/').pop() ?? ''
+    return filename.startsWith('kan-790-pg4-') && filename.endsWith('.test.ts')
+  })
   const testOptions = pg4Files.length > 1 ? ['--test-concurrency=1'] : []
   const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
