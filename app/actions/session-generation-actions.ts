@@ -14,5 +14,7 @@ export async function persistGeneratedSessions(
   _previousState: PersistGeneratedSessionsState,
   _formData: FormData,
 ): Promise<PersistGeneratedSessionsState> {
+  void _previousState
+  void _formData
   return { error: 'La persistencia anterior ya no está disponible. Creá una revisión autorizada.' }
 }
