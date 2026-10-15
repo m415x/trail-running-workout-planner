@@ -131,7 +131,9 @@ test('KAN-790 PG-4 converges Variant then Base independently', async () => {
     const persist = factory!({
       authorizedGroupIds:new Set([scope.groupId]),now:()=>now,
     })
-    let failAfterWriting = true
+    // Setup only: establish the first Plan's real persisted Session using
+    // its own authorized PostgreSQL confirmation. Atomic rollback is exercised
+    // exclusively by the dedicated integrated-confirmation test.
     const operations=createAuthorizedReviewSnapshotPostgresConfirmationOperations({
       client:sql,
       authorize:async tx=>{
@@ -143,41 +145,12 @@ test('KAN-790 PG-4 converges Variant then Base independently', async () => {
         }}
       },
       now:()=>now,
-      persist:async (tx,snapshot)=>{
-        const result=await persist(tx,snapshot)
-        if(failAfterWriting) throw new Error('pg4-integrated-injected-rollback')
-        return result
-      },
+      persist,
     })
-    const request={groupTrainingPlanId:scope.groupTrainingPlanId,
-      snapshotId:id+'-snapshot'}
-    await assert.rejects(operations.confirm(request),
-      /pg4-integrated-injected-rollback/)
-    const counts=async()=>{
-      const [sessions,prescriptions,audits]=await Promise.all([
-        sql<{n:number}[]>`SELECT count(*)::integer AS n FROM sessions
-          WHERE shared_event_key=${id+'-shared'}`,
-        sql<{n:number}[]>`SELECT count(*)::integer AS n FROM group_session_prescriptions
-          WHERE generation_key=${id+'-generation'}`,
-        sql<{n:number}[]>`SELECT count(*)::integer AS n FROM session_generation_modification_records
-          WHERE group_training_plan_id=${scope.groupTrainingPlanId}`,
-      ])
-      return [sessions[0]?.n,prescriptions[0]?.n,audits[0]?.n]
-    }
-    assert.deepEqual(await counts(),[0,0,0],
-      'aborted CAS must also roll back real Session, prescription and audit')
-    assert.deepEqual((await sql<{status:string;result_reference:string|null}[]>`
-      SELECT status,result_reference FROM session_generation_review_snapshots
-      WHERE id=${id+'-snapshot'}`)[0],
-      {status:'active',result_reference:null})
-    failAfterWriting=false
-    assert.deepEqual(await operations.confirm(request),
-      {kind:'consumed',resultReference:scope.groupTrainingPlanId})
-    assert.deepEqual(await counts(),[1,1,2])
-    assert.deepEqual(await operations.confirm(request),
-      {kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
-    assert.deepEqual(await counts(),[1,1,2],
-      'idempotent replay must not append audit or duplicate durable rows')
+    assert.deepEqual(await operations.confirm({
+      groupTrainingPlanId:scope.groupTrainingPlanId,
+      snapshotId:id+'-snapshot',
+    }),{kind:'consumed',resultReference:scope.groupTrainingPlanId})
 
     // PG-4 RED: a second Plan with separate microcycle identity must be able to
     // consume its own snapshot onto the same shared Session, without replacing
