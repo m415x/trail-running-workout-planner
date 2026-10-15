@@ -16,7 +16,7 @@ import type { SharedSessionGenerationResult } from '@/types/training/session-gen
 
 // The writer accepts both schema-bound production Drizzle and isolated SQLite test adapters.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SharedDrizzleDatabase = BetterSQLite3Database<any>
+type SharedDrizzleDatabase = BetterSQLite3Database<any> & { readonly $client: Database.Database }
 type WriterDatabase = Pick<SharedDrizzleDatabase, 'select' | 'insert' | 'update'>
 
 interface WriteInput {
@@ -44,7 +44,7 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
   const { planId, teamId, userId, proposal, generationExplanations, authorizedGroupIds, now } = input
   const database = input.database
   if (input.withinExistingTransaction && (
-    !input.sqlite?.inTransaction
+    !input.sqlite?.inTransaction || database.$client !== input.sqlite
   )) {
     throw new Error('reconciliation_conflict: SQLite transaction connection mismatch')
   }
