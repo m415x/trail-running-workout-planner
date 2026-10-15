@@ -208,3 +208,84 @@ test('KAN-790 T5.4 persisted Base explanation forged as Variant denies all write
     assert.deepEqual(state, { status: 'active', consumed_at: null, result_reference: null })
   } finally { sqlite.close() }
 })
+
+test('KAN-790 T5.4 legitimate Variant confirms scoped explanations and preserves Base records', async () => {
+  const sqlite = fixture()
+  try {
+    sqlite.exec(`
+      INSERT INTO planning_cohorts (id) VALUES ('cohort-variant');
+      INSERT INTO group_training_plans VALUES ('plan-variant','group-a','cohort-variant',0);
+      INSERT INTO macrocycles VALUES ('macro-variant','plan-variant',0,'2027-01-01','2027-12-31',NULL,NULL,NULL);
+      INSERT INTO mesocycles VALUES ('meso-variant','macro-variant',0,'general_preparatory');
+      INSERT INTO microcycles VALUES ('week-variant','meso-variant',0,1,'base','2027-01-11','2027-01-17',40,700,300);
+      INSERT INTO load_strategies VALUES ('load-variant','plan-variant',0,100,30);
+      INSERT INTO intensity_strategies VALUES ('int-variant','plan-variant',0,'hr_zone',2);
+      INSERT INTO microcycle_intensity_targets VALUES ('target-variant','week-variant',0,2,'Z2','aerobic',NULL,2);
+      INSERT INTO session_generation_preferences VALUES ('prefs-variant','plan-variant',0,'auto',NULL,'[{"weekday":"monday","role":"base"},{"weekday":"wednesday","role":"quality"},{"weekday":"saturday","role":"long"}]');
+      INSERT INTO sessions
+        (id, team_id, date, title, type, generation_ownership, shared_event_key, created_at, updated_at)
+      VALUES ('base-protected','team-a','2027-01-05','Base manual sentinel','Trail','manual',NULL,'2026-10-14T15:00:00.000Z','2026-10-14T15:00:00.000Z');
+      INSERT INTO group_session_prescriptions
+        (id, session_id, group_id, microcycle_id, generation_ownership, created_at, updated_at)
+      VALUES ('base-prescription','base-protected','group-a','week-a','manual','2026-10-14T15:00:00.000Z','2026-10-14T15:00:00.000Z');
+    `)
+    const variantScope = {
+      userId: 'coach', teamId: 'team-a', groupTrainingPlanId: 'plan-variant',
+      groupId: 'group-a', planningCohortId: 'cohort-variant',
+    }
+    const authorizeVariant = async () => ({ kind: 'authorized' as const, scope: variantScope })
+    const variantRequest = { groupTrainingPlanId: 'plan-variant', snapshotId: 'snapshot-variant' }
+    const ops = createTrustedSqliteReviewSnapshotOperations({
+      sqlite, authorize: authorizeVariant, now: () => '2026-10-14T15:00:00.000Z',
+      createId: () => variantRequest.snapshotId,
+    })
+    assert.deepEqual(await ops.create({ groupTrainingPlanId: 'plan-variant' }),
+      { kind: 'created', snapshotId: variantRequest.snapshotId })
+
+    const stored = sqlite.prepare(
+      'SELECT generation_explanations FROM session_generation_review_snapshots WHERE id = ?',
+    ).get(variantRequest.snapshotId) as { generation_explanations: string }
+    const explanations = JSON.parse(stored.generation_explanations) as Record<string, {
+      planningScope: { kind: string; groupTrainingPlanId: string; planningCohortId: string | null; microcycleId: string }
+    }>
+    assert.ok(Object.keys(explanations).length > 0)
+    assert.ok(Object.values(explanations).every(e =>
+      e.planningScope.kind === 'variant' &&
+      e.planningScope.groupTrainingPlanId === 'plan-variant' &&
+      e.planningScope.planningCohortId === 'cohort-variant' &&
+      e.planningScope.microcycleId === 'week-variant'))
+
+    const persist = createReviewSnapshotReconciliationPersist({
+      database: drizzle(sqlite, { schema }), sqlite,
+      authorizedGroupIds: new Set(['group-a']),
+      now: () => '2026-10-14T15:01:00.000Z',
+    })
+    const confirm = createAuthorizedReviewSnapshotConfirmationOperations({
+      sqlite, authorize: authorizeVariant, persist,
+      now: () => '2026-10-14T15:01:00.000Z',
+    })
+    assert.deepEqual(await confirm.confirm(variantRequest),
+      { kind: 'consumed', resultReference: 'plan-variant' })
+    const variantAudit = sqlite.prepare(
+      "SELECT generation_explanation FROM session_generation_modification_records WHERE group_training_plan_id = 'plan-variant' AND prescription_id IS NOT NULL",
+    ).all() as Array<{ generation_explanation: string | null }>
+    assert.ok(variantAudit.length > 0)
+    assert.ok(variantAudit.every(row => {
+      const parsed = JSON.parse(row.generation_explanation ?? 'null') as {
+        planningScope?: { kind: string; planningCohortId: string | null }
+      } | null
+      return parsed?.planningScope?.kind === 'variant' &&
+        parsed.planningScope.planningCohortId === 'cohort-variant'
+    }))
+    const base = sqlite.prepare(
+      'SELECT title, is_deleted FROM sessions WHERE id = ?',
+    ).get('base-protected') as { title: string; is_deleted: number }
+    assert.deepEqual(base, { title: 'Base manual sentinel', is_deleted: 0 })
+    assert.equal((sqlite.prepare(
+      'SELECT COUNT(*) AS n FROM group_session_prescriptions WHERE id = ? AND is_deleted = 0',
+    ).get('base-prescription') as { n: number }).n, 1)
+    assert.equal((sqlite.prepare(
+      "SELECT COUNT(*) AS n FROM session_generation_modification_records WHERE group_training_plan_id = 'plan-a'",
+    ).get() as { n: number }).n, 0)
+  } finally { sqlite.close() }
+})
