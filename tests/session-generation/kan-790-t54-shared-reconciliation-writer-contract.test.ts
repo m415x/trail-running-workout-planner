@@ -23,7 +23,7 @@ test('KAN-790 T5.4 reconciliation read-set and writes live in the same synchrono
   assert.match(writer, /\.transaction\s*\(/)
   assert.match(writer, /reconcileSessionGeneration\s*\(/)
   const body = writer.slice(writer.indexOf('const run ='), writer.indexOf('return input.withinExistingTransaction'))
-  assert.match(writer, /db[.]transaction[(]run[)]/)
+  assert.match(writer, /database[.]transaction[(]run[)]/)
   assert.match(body, /tx[.]select/)
   assert.match(body, /reconcileSessionGeneration/)
   assert.match(body, /groupSessionPrescriptions/)
