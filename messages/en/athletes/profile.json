@@ -44,7 +44,9 @@
       "sos": "SOS Contact",
       "bloodType": "Blood Type",
       "insurance": "Medical Insurance / Federation",
-      "accountPreferences": "Account Preferences"
+      "accountPreferences": "Account Preferences",
+      "theme": "Appearance",
+      "changeTheme": "Change appearance"
     }
   }
 }
