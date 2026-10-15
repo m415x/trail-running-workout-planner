@@ -65,14 +65,21 @@ export async function createReviewSnapshotPostgres(
   input: SnapshotCreation,
   nowIso: string,
 ): Promise<SnapshotRow> {
+  return client.begin(tx => createReviewSnapshotPostgresInTransaction(tx,input,nowIso))
+}
+
+/** Allocate within the caller's current SERIALIZABLE transaction. */
+export async function createReviewSnapshotPostgresInTransaction(
+  tx: postgres.TransactionSql,
+  input: SnapshotCreation,
+  nowIso: string,
+): Promise<SnapshotRow> {
   const now = canonicalTime(nowIso)
   validateSessionGenerationSnapshotEnvelope(input)
   const expiresAt = new Date(
     Date.parse(now) + SESSION_GENERATION_SNAPSHOT_LIMITS.ttlMinutes * 60_000,
   ).toISOString()
   const lockKey = JSON.stringify([input.userId, input.teamId, input.groupTrainingPlanId])
-
-  return client.begin(async (tx) => {
     // Serialize concurrent quota checks across independent PG connections.
     await tx`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`
 
@@ -158,7 +165,6 @@ export async function createReviewSnapshotPostgres(
     `
     if (!rows[0]) throw new Error('Snapshot insert failed')
     return rows[0]
-  })
 }
 
 /** Read-only GET; the caller must independently establish H2/H3/H4A authority. */
