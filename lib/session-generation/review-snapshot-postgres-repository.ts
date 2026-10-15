@@ -141,9 +141,9 @@ export async function createReviewSnapshotPostgres(
         ${input.groupTrainingPlanId}, ${input.groupId},
         ${input.planningCohortId}, ${input.schemaVersion},
         ${input.generatorVersion},
-        ${JSON.stringify(input.proposal)}::jsonb,
-        ${JSON.stringify(input.generationExplanations)}::jsonb,
-        ${JSON.stringify(input.sourceManifest)}::jsonb,
+        (${JSON.stringify(input.proposal)}::text)::jsonb,
+        (${JSON.stringify(input.generationExplanations)}::text)::jsonb,
+        (${JSON.stringify(input.sourceManifest)}::text)::jsonb,
         ${now}, ${expiresAt}, 'active'
       )
       RETURNING
