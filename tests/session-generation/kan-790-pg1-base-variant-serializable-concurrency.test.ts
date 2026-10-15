@@ -24,7 +24,7 @@ const userId = prefix + '-user'
 const teamId = prefix + '-team'
 const groupId = prefix + '-group'
 const plans = [prefix + '-base', prefix + '-variant'] as const
-const cohortId = prefix + '-cohort
+const cohortId = prefix + '-cohort'
 const snapshots = [prefix + '-snapshot-a', prefix + '-snapshot-b'] as const
 const sharedKey = prefix + '-shared-event'
 
