@@ -1,7 +1,12 @@
+import { randomUUID } from 'node:crypto'
 import type postgres from 'postgres'
 
 import { authorizeEffectiveCapability } from '@/lib/authorization/effective-authorization'
 import { createAuthorizedReviewSnapshotPostgresConfirmationOperations } from './authorized-review-snapshot-postgres-confirmation'
+import { generateReviewSnapshotFromEffectivePostgres } from './review-snapshot-generate-postgres'
+import { readReviewSnapshotEffectiveManifestPostgres } from './review-snapshot-effective-manifest-postgres'
+import { evaluateReviewSnapshotSourceFreshness } from './review-snapshot-source-freshness'
+import { createReviewSnapshotPostgresInTransaction, getActiveReviewSnapshotPostgres } from './review-snapshot-postgres-repository'
 import { createReviewSnapshotPostgresReconciliationPersist } from './review-snapshot-reconciliation-writer-postgres'
 import type { ReviewSnapshotScopeResult } from './authorized-review-snapshot-scope'
 
@@ -85,7 +90,7 @@ async function readAffectedGroupIds(
 export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
   dependencies: Dependencies,
 ) {
-  const check=async (tx:Transaction,request:Request): Promise<{
+  const check=async (tx:Transaction,request:Request & {createMode?:boolean;proposal?:unknown}): Promise<{
     decision:ReviewSnapshotScopeResult; affected:Set<string>|null
   }>=>{
     const denied={decision:{kind:'denied' as const},affected:null}
@@ -109,16 +114,20 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
       WHERE p.id=${request.groupTrainingPlanId} AND p.is_deleted=false
         AND g.is_deleted=false AND g.is_active=true AND g.team_id=${teamId}`
     if (plan.length!==1) return denied
-    const snapshot=await tx<{userId:string;teamId:string;groupId:string;
-      planningCohortId:string|null;proposal:unknown}[]>`
-      SELECT user_id AS "userId",team_id AS "teamId",group_id AS "groupId",
-        planning_cohort_id AS "planningCohortId",proposal
-      FROM session_generation_review_snapshots
-      WHERE id=${request.snapshotId} AND group_training_plan_id=${request.groupTrainingPlanId}`
-    const row=snapshot[0]
-    if (!row || row.userId!==userId || row.teamId!==teamId ||
-      row.groupId!==plan[0].groupId ||
-      row.planningCohortId!==plan[0].planningCohortId) return denied
+    let proposal:unknown=request.proposal
+    if(!request.createMode) {
+      const snapshot=await tx<{userId:string;teamId:string;groupId:string;
+        planningCohortId:string|null;proposal:unknown}[]>`
+        SELECT user_id AS "userId",team_id AS "teamId",group_id AS "groupId",
+          planning_cohort_id AS "planningCohortId",proposal
+        FROM session_generation_review_snapshots
+        WHERE id=${request.snapshotId} AND group_training_plan_id=${request.groupTrainingPlanId}`
+      const row=snapshot[0]
+      if(!row || row.userId!==userId || row.teamId!==teamId ||
+        row.groupId!==plan[0].groupId ||
+        row.planningCohortId!==plan[0].planningCohortId) return denied
+      proposal=row.proposal
+    }
     const cohortId=plan[0].planningCohortId
     if (cohortId!==null) {
       const cohorts=await tx<{id:string}[]>`
@@ -127,7 +136,9 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
           AND status='active' AND is_deleted=false`
       if (cohorts.length!==1) return denied
     }
-    const affected=await readAffectedGroupIds(tx,request.groupTrainingPlanId,teamId,row.proposal)
+    const affected=proposal===undefined && request.createMode
+      ? new Set([plan[0].groupId])
+      : await readAffectedGroupIds(tx,request.groupTrainingPlanId,teamId,proposal)
     if (!affected || affected.size===0) return denied
     const validGroups=await tx<{id:string}[]>`
       SELECT id FROM athlete_groups
@@ -148,7 +159,7 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
   }
   // Tx-local state: never reuse a decision from a different retry/connection.
   const byTransaction=new WeakMap<Transaction,Set<string>>()
-  return createAuthorizedReviewSnapshotPostgresConfirmationOperations({
+  const confirmation=createAuthorizedReviewSnapshotPostgresConfirmationOperations({
     client:dependencies.client,now:dependencies.now,
     authorize:async (tx,request)=>{
       const result=await check(tx,request)
@@ -166,4 +177,61 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
       return persist(tx,snapshot)
     },
   })
+  return {
+    ...confirmation,
+    async create(request:{readonly groupTrainingPlanId:string}) {
+      if (!request.groupTrainingPlanId?.trim()) return {kind:'denied' as const}
+      return dependencies.client.begin(async tx=>{
+        await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+        const first=await check(tx,{groupTrainingPlanId:request.groupTrainingPlanId,
+          snapshotId:'',createMode:true})
+        if(first.decision.kind!=='authorized') return {kind:'denied' as const}
+        const scope=first.decision.scope
+        const generated=await generateReviewSnapshotFromEffectivePostgres(tx,scope)
+        const second=await check(tx,{groupTrainingPlanId:request.groupTrainingPlanId,
+          snapshotId:'',createMode:true,proposal:generated.proposal})
+        if(second.decision.kind!=='authorized' ||
+          JSON.stringify(second.decision.scope)!==JSON.stringify(scope)) {
+          return {kind:'denied' as const}
+        }
+        const current=await readReviewSnapshotEffectiveManifestPostgres(tx,scope)
+        if(evaluateReviewSnapshotSourceFreshness(generated.sourceManifest,current).kind!=='current') {
+          throw new Error('generation_stale: source facts changed during CREATE')
+        }
+        const ids=[...new Set(generated.proposal.events.flatMap(event=>
+          event.prescriptions.map(item=>item.prescription.microcycleId)))]
+        const lineage=ids.length ? await tx<{id:string}[]>`
+          SELECT mi.id FROM microcycles mi
+          JOIN mesocycles me ON me.id=mi.mesocycle_id
+          JOIN macrocycles ma ON ma.id=me.macrocycle_id
+          WHERE mi.id IN ${tx(ids)} AND ma.group_training_plan_id=${scope.groupTrainingPlanId}
+            AND mi.is_deleted=false AND me.is_deleted=false AND ma.is_deleted=false
+        ` : []
+        if(lineage.length!==ids.length || generated.sessionCount!==generated.proposal.events.length ||
+          generated.microcycleCount!==ids.length) {
+          throw new Error('Snapshot generation scope or derived counts invalid')
+        }
+        const row=await createReviewSnapshotPostgresInTransaction(tx,{
+          ...scope,id:randomUUID(),...generated,
+        },dependencies.now())
+        return {kind:'created' as const,snapshotId:row.id}
+      })
+    },
+    async get(request:Request) {
+      if(!request.groupTrainingPlanId?.trim() || !request.snapshotId?.trim())
+        return {kind:'unavailable' as const}
+      return dependencies.client.begin(async tx=>{
+        await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+        const decision=await check(tx,request)
+        if(decision.decision.kind!=='authorized') return {kind:'denied' as const}
+        const scope=decision.decision.scope
+        const snapshot=await getActiveReviewSnapshotPostgres(tx as unknown as Client,{
+          id:request.snapshotId,userId:scope.userId,teamId:scope.teamId,
+          groupTrainingPlanId:scope.groupTrainingPlanId,
+        },dependencies.now())
+        return snapshot ? {kind:'available' as const,snapshot} : {kind:'unavailable' as const}
+      })
+    },
+  }
+
 }
