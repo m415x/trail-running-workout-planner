@@ -450,6 +450,34 @@ export const groupTrainingPlans = pgTable(
   ],
 )
 
+/**
+ * KAN-790/T5.4 PG-2 — SQLite-equivalent optional per-Plan generation facts.
+ * Pattern remains serialized JSON text; absent rows resolve to domain defaults
+ * only after a successful authorized SQL read.
+ */
+export const sessionGenerationPreferences = pgTable(
+  'session_generation_preferences',
+  {
+    id: text('id').primaryKey(),
+    groupTrainingPlanId: text('group_training_plan_id')
+      .notNull()
+      .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+    frequencyMode: text('frequency_mode').$type<'auto' | 'fixed'>().notNull(),
+    fixedSessionsPerWeek: integer('fixed_sessions_per_week'),
+    weeklyPattern: text('weekly_pattern').notNull(),
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    createdAt: text('created_at').notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at').notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [
+    uniqueIndex('session_generation_preferences_group_training_plan_unique').on(
+      table.groupTrainingPlanId,
+    ),
+  ],
+)
+
 export const loadStrategies = pgTable(
   'load_strategies',
   {
