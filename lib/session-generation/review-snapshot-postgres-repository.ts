@@ -28,7 +28,7 @@ interface SnapshotCreation extends SnapshotScope {
   readonly replaceSnapshotId?: string
 }
 
-interface SnapshotRow {
+export interface SnapshotRow {
   id: string
   userId: string
   teamId: string
@@ -206,6 +206,7 @@ export type ConsumeReviewSnapshotPostgresResult =
   | { readonly kind: 'consumed'; readonly resultReference: string }
   | { readonly kind: 'already_consumed'; readonly resultReference: string }
   | { readonly kind: 'unavailable' }
+  | { readonly kind: 'denied' }
 
 /**
  * Atomically persists the result and consumes an active snapshot.
@@ -216,7 +217,7 @@ export type ConsumeReviewSnapshotPostgresResult =
  */
 export async function consumeReviewSnapshotPostgres(
   client: PostgresClient,
-  scope: SnapshotScope,
+  scope: SnapshotScope | ((tx: postgres.TransactionSql) => Promise<SnapshotScope | null>),
   nowIso: string,
   persist: (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string>,
 ): Promise<ConsumeReviewSnapshotPostgresResult> {
@@ -229,6 +230,10 @@ export async function consumeReviewSnapshotPostgres(
       return await client.begin(async (tx): Promise<ConsumeReviewSnapshotPostgresResult> => {
         // Must be the first SQL statement issued in this transaction.
         await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+        // Re-evaluate trusted H2/H3/H4A scope within EVERY fresh retry,
+        // before selecting or claiming a review. A denial never mutates CAS.
+        const attemptScope = typeof scope === 'function' ? await scope(tx) : scope
+        if (attemptScope === null) return { kind: 'denied' }
     // Row lock serializes concurrent attempts for this particular review ID.
     const rows = await tx<SnapshotRow[]>`
       SELECT
@@ -241,10 +246,10 @@ export async function consumeReviewSnapshotPostgres(
         created_at AS "createdAt", expires_at AS "expiresAt",
         status, consumed_at AS "consumedAt", result_reference AS "resultReference"
       FROM session_generation_review_snapshots
-      WHERE id = ${scope.id}
-        AND user_id = ${scope.userId}
-        AND team_id = ${scope.teamId}
-        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      WHERE id = ${attemptScope.id}
+        AND user_id = ${attemptScope.userId}
+        AND team_id = ${attemptScope.teamId}
+        AND group_training_plan_id = ${attemptScope.groupTrainingPlanId}
       FOR UPDATE
     `
     const row = rows[0]
@@ -264,10 +269,10 @@ export async function consumeReviewSnapshotPostgres(
     const claimed = await tx<{ id: string }[]>`
       UPDATE session_generation_review_snapshots
       SET status = 'consumed', consumed_at = ${now}
-      WHERE id = ${scope.id}
-        AND user_id = ${scope.userId}
-        AND team_id = ${scope.teamId}
-        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      WHERE id = ${attemptScope.id}
+        AND user_id = ${attemptScope.userId}
+        AND team_id = ${attemptScope.teamId}
+        AND group_training_plan_id = ${attemptScope.groupTrainingPlanId}
         AND status = 'active' AND expires_at > ${now}
         AND consumed_at IS NULL AND result_reference IS NULL
       RETURNING id
@@ -284,10 +289,10 @@ export async function consumeReviewSnapshotPostgres(
     const completed = await tx<{ id: string }[]>`
       UPDATE session_generation_review_snapshots
       SET result_reference = ${resultReference}
-      WHERE id = ${scope.id}
-        AND user_id = ${scope.userId}
-        AND team_id = ${scope.teamId}
-        AND group_training_plan_id = ${scope.groupTrainingPlanId}
+      WHERE id = ${attemptScope.id}
+        AND user_id = ${attemptScope.userId}
+        AND team_id = ${attemptScope.teamId}
+        AND group_training_plan_id = ${attemptScope.groupTrainingPlanId}
         AND status = 'consumed' AND consumed_at = ${now}
         AND result_reference IS NULL
       RETURNING id
