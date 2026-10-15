@@ -131,7 +131,7 @@ test('KAN-790 PG-1 real 23505 shared-event constraint is classified as conflict,
     assert.equal(attempts, 1, '23505 must not be blindly retried')
     const rows = await sql<{ id: string }[]>`
       SELECT id FROM sessions WHERE shared_event_key = ${sharedEventKey}`
-    assert.deepEqual(rows, [{ id: prefix + '-existing' }])
+    assert.deepEqual(Array.from(rows), [{ id: prefix + '-existing' }])
     const state = await sql<{ status: string; result_reference: string | null }[]>`
       SELECT status, result_reference FROM session_generation_review_snapshots WHERE id = ${scope.id}`
     assert.deepEqual(state[0], { status: 'active', result_reference: null })
