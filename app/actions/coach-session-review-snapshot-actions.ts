@@ -4,14 +4,14 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
-import { supabaseClient } from '@/db/supabase'
+import postgres from 'postgres'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { ACTIVE_TEAM_COOKIE_NAME } from '@/lib/authorization/active-team-selection'
 import { createAuthorizedReviewSnapshotPostgresSessionOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-session'
 
 function operations(auth: Awaited<ReturnType<typeof createSupabaseServerClient>>['auth']) {
   return createAuthorizedReviewSnapshotPostgresSessionOperations({
-    client: supabaseClient,
+    client: postgres(process.env.SUPABASE_DATABASE_URL ?? 'postgres://invalid:invalid@127.0.0.1:1/disabled', { prepare: false, max: 1 }),
     auth,
     readPersistedTeamId: async () => {
       const store = await cookies()
