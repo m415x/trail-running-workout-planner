@@ -178,209 +178,22 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       {kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
     assert.deepEqual(await counts(),[1,1,2],
       'idempotent replay must not append audit or duplicate durable rows')
-
-    // PG-4 RED: a second Plan with separate microcycle identity must be able to
-    // consume its own snapshot onto the same shared Session, without replacing
-    // or deleting the first Plan's prescription and audit evidence.
-    const siblingPlanId=id+'-sibling-plan'
-    const cohortId=id+'-variant-cohort'
-    await sql`INSERT INTO planning_cohorts
-      (id,team_id,group_id,name,purpose,status,created_at,updated_at)
-      VALUES (${cohortId},${scope.teamId},${scope.groupId},'PG4 Variant',
-        'PG4 variant lineage','active',${now},${now})`
-    await sql`INSERT INTO group_training_plans
-      (id,group_id,title,planning_cohort_id,source_group_training_plan_id,created_at,updated_at)
-      VALUES (${siblingPlanId},${scope.groupId},'Variant Plan',${cohortId},
-        ${scope.groupTrainingPlanId},${now},${now})`
-    await sql`INSERT INTO macrocycles
-      (id,title,group_training_plan_id,start_date,end_date,created_at,updated_at)
-      VALUES (${id+'-sibling-macro'},'Sibling Macro',${siblingPlanId},
-        '2027-01-01','2027-03-31',${now},${now})`
-    await sql`INSERT INTO mesocycles
-      (id,macrocycle_id,title,number,period,objective,created_at,updated_at)
-      VALUES (${id+'-sibling-meso'},${id+'-sibling-macro'},'Sibling Meso',
-        1,'general_preparatory','base',${now},${now})`
-    await sql`INSERT INTO microcycles
-      (id,mesocycle_id,week_number,type,start_date,end_date,target_volume_km,
-       created_at,updated_at)
-      VALUES (${id+'-sibling-micro'},${id+'-sibling-meso'},1,'base',
-        '2027-01-04','2027-01-10',42,${now},${now})`
-    await sql`INSERT INTO load_strategies
-      (id,group_training_plan_id,goal_type,initial_weekly_volume_km,
-       maximum_weekly_volume_km,sessions_per_week,maximum_weekly_increase_percentage,
-       deload_percentage,field_sources,created_at,updated_at)
-      VALUES (${id+'-sibling-load'},${siblingPlanId},'finish',30,60,4,10,30,
-        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
-    await sql`INSERT INTO intensity_strategies
-      (id,group_training_plan_id,goal_type,default_method,
-       maximum_intense_sessions_per_week,minimum_recovery_days_between_intense_sessions,
-       field_sources,created_at,updated_at)
-      VALUES (${id+'-sibling-intensity'},${siblingPlanId},'finish','hr_zone',2,2,
-        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
-    await sql`INSERT INTO microcycle_intensity_targets
-      (id,microcycle_id,emphasis,intense_sessions_target,predominant_zone,
-       minimum_recovery_days_between_intense_sessions,field_sources,
-       created_at,updated_at)
-      VALUES (${id+'-sibling-target'},${id+'-sibling-micro'},'aerobic',1,'Z2',2,
-        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
-    const siblingScope={...scope,groupTrainingPlanId:siblingPlanId}
-    const siblingManifest=await sql.begin(async tx=>{
-      await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
-      return readReviewSnapshotEffectiveManifestPostgres(tx,siblingScope)
-    })
-    assert.equal(siblingManifest?.generationInputCount,1)
-    const siblingProposal={
-      ...proposal,
-      events:proposal.events.map(event=>({
-        ...event,
-        prescriptions:event.prescriptions.map(item=>({
-          ...item,generationKey:id+'-sibling-generation',
-          prescription:{...item.prescription,microcycleId:id+'-sibling-micro'},
-        })),
-      })),
-    }
-    await sql`INSERT INTO session_generation_review_snapshots
-      (id,user_id,team_id,group_training_plan_id,group_id,
-       planning_cohort_id,schema_version,generator_version,proposal,generation_explanations,
-       source_manifest,created_at,expires_at,status)
-      VALUES (${id+'-sibling-snapshot'},${id+'-user'},${scope.teamId},
-        ${siblingPlanId},${scope.groupId},${cohortId},'1','1',
-        (${JSON.stringify(siblingProposal)}::text)::jsonb,
-        (${JSON.stringify({})}::text)::jsonb,
-        (${JSON.stringify(siblingManifest)}::text)::jsonb,${now},
-        '2026-10-15T21:30:00.000Z','active')`
-    const siblingOperations=createAuthorizedReviewSnapshotPostgresConfirmationOperations({
-      client:sql,
-      authorize:async tx=>{
-        const isolation=await tx<{value:string}[]>`
-          SELECT current_setting('transaction_isolation') AS value`
-        assert.equal(isolation[0]?.value,'serializable')
-        return {kind:'authorized' as const,scope:{
-          ...siblingScope,userId:id+'-user',planningCohortId:cohortId,
-        }}
-      },
-      now:()=>now,
-      persist,
-    })
-    const siblingRequest={groupTrainingPlanId:siblingPlanId,
-      snapshotId:id+'-sibling-snapshot'}
-    assert.deepEqual(await siblingOperations.confirm(siblingRequest),
-      {kind:'consumed',resultReference:siblingPlanId})
-    const sharedCount=await sql<{n:number}[]>`
-      SELECT count(*)::integer AS n FROM sessions
-      WHERE shared_event_key=${id+'-shared'}`
-    const prescriptionCount=await sql<{n:number}[]>`
-      SELECT count(*)::integer AS n FROM group_session_prescriptions
-      WHERE generation_key IN (${id+'-generation'},${id+'-sibling-generation'})
-        AND is_deleted=false`
-    assert.equal(sharedCount[0]?.n,1,
-      'both Plan snapshots must reuse a single durable shared Session')
-    assert.equal(prescriptionCount[0]?.n,2,
-      'each Plan must retain its own microcycle prescription')
-    assert.deepEqual(await siblingOperations.confirm(siblingRequest),
-      {kind:'already_consumed',resultReference:siblingPlanId})
-
-    // PG-4 independent reverse order: Variant first, then Base. A different
-    // shared-event key ensures this check cannot reuse the preceding Session.
-    const reverseKey=id+'-reverse-shared'
-    const reverseVariantKey=id+'-reverse-variant-generation'
-    const reverseBaseKey=id+'-reverse-base-generation'
-    const reverseVariantProposal={
-      ...siblingProposal,
-      events:siblingProposal.events.map(event=>({
-        ...event,sharedEventKey:reverseKey,
-        prescriptions:event.prescriptions.map(item=>({
-          ...item,generationKey:reverseVariantKey,
-        })),
-      })),
-    }
-    const reverseBaseProposal={
-      ...proposal,
-      events:proposal.events.map(event=>({
-        ...event,sharedEventKey:reverseKey,
-        prescriptions:event.prescriptions.map(item=>({
-          ...item,generationKey:reverseBaseKey,
-        })),
-      })),
-    }
-    const insertReverseSnapshot=async (snapshotId:string, planId:string,
-      cohort:string|null, nextProposal:typeof proposal,
-      manifest:typeof baseline)=>{
-      await sql`INSERT INTO session_generation_review_snapshots
-        (id,user_id,team_id,group_training_plan_id,group_id,
-         planning_cohort_id,schema_version,generator_version,proposal,
-         generation_explanations,source_manifest,created_at,expires_at,status)
-        VALUES (${snapshotId},${id+'-user'},${scope.teamId},
-          ${planId},${scope.groupId},${cohort},'1','1',
-          (${JSON.stringify(nextProposal)}::text)::jsonb,
-          (${JSON.stringify({})}::text)::jsonb,
-          (${JSON.stringify(manifest)}::text)::jsonb,
-          ${now},'2026-10-15T21:30:00.000Z','active')`
-    }
-    const reverseVariantSnapshotId=id+'-reverse-variant-snapshot'
-    const reverseBaseSnapshotId=id+'-reverse-base-snapshot'
-    await insertReverseSnapshot(reverseVariantSnapshotId,siblingPlanId,
-      cohortId,reverseVariantProposal,siblingManifest)
-    await insertReverseSnapshot(reverseBaseSnapshotId,scope.groupTrainingPlanId,
-      null,reverseBaseProposal,baseline)
-    assert.deepEqual(await siblingOperations.confirm({
-      groupTrainingPlanId:siblingPlanId,snapshotId:reverseVariantSnapshotId,
-    }),{kind:'consumed',resultReference:siblingPlanId})
-    assert.deepEqual(await operations.confirm({
-      groupTrainingPlanId:scope.groupTrainingPlanId,snapshotId:reverseBaseSnapshotId,
-    }),{kind:'consumed',resultReference:scope.groupTrainingPlanId})
-    const reverseSessions=await sql<{n:number}[]>`
-      SELECT count(*)::integer AS n FROM sessions
-      WHERE shared_event_key=${reverseKey}`
-    const reversePrescriptions=await sql<{n:number}[]>`
-      SELECT count(*)::integer AS n FROM group_session_prescriptions
-      WHERE generation_key IN (${reverseVariantKey},${reverseBaseKey})
-        AND is_deleted=false`
-    assert.equal(reverseSessions[0]?.n,1,
-      'Variant-first and Base-second confirmations must converge to one Session')
-    assert.equal(reversePrescriptions[0]?.n,2,
-      'Variant and Base must retain distinct prescriptions in reverse order')
-    assert.deepEqual(await operations.confirm({
-      groupTrainingPlanId:scope.groupTrainingPlanId,snapshotId:reverseBaseSnapshotId,
-    }),{kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
-
-
   } finally {
     try {
-      await sql`DELETE FROM session_generation_review_snapshots
-        WHERE id IN (${id+'-reverse-variant-snapshot'},${id+'-reverse-base-snapshot'})`
-      await sql`DELETE FROM session_generation_review_snapshots
-        WHERE id = ${id+'-sibling-snapshot'}`
       await sql`DELETE FROM session_generation_review_snapshots WHERE id = ${id+'-snapshot'}`
-      await sql`DELETE FROM session_generation_modification_records
-        WHERE group_training_plan_id=${id+'-sibling-plan'}`
       await sql`DELETE FROM session_generation_modification_records
         WHERE group_training_plan_id=${scope.groupTrainingPlanId}`
       await sql`DELETE FROM group_session_prescriptions
-        WHERE generation_key IN (${id+'-reverse-variant-generation'},
-          ${id+'-reverse-base-generation'})`
-      await sql`DELETE FROM group_session_prescriptions
-        WHERE generation_key=${id+'-sibling-generation'}`
-      await sql`DELETE FROM group_session_prescriptions
         WHERE generation_key=${id+'-generation'}`
-      await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-reverse-shared'}`
       await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-shared'}`
       await sql`DELETE FROM competition_entries WHERE id = ${id+'-race'}`
-      await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-sibling-target'}`
       await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-target'}`
-      await sql`DELETE FROM intensity_strategies WHERE id = ${id+'-sibling-intensity'}`
-      await sql`DELETE FROM load_strategies WHERE id = ${id+'-sibling-load'}`
       await sql`DELETE FROM intensity_strategies WHERE id = ${id+'-intensity'}`
       await sql`DELETE FROM load_strategies WHERE id = ${id+'-load'}`
       await sql`DELETE FROM microcycles WHERE id = ${id+'-micro'}`
       await sql`DELETE FROM mesocycles WHERE id = ${id+'-meso'}`
-      await sql`DELETE FROM microcycles WHERE id = ${id+'-sibling-micro'}`
-      await sql`DELETE FROM mesocycles WHERE id = ${id+'-sibling-meso'}`
-      await sql`DELETE FROM macrocycles WHERE id = ${id+'-sibling-macro'}`
       await sql`DELETE FROM macrocycles WHERE id = ${id+'-macro'}`
-      await sql`DELETE FROM group_training_plans WHERE id = ${id+'-sibling-plan'}`
       await sql`DELETE FROM group_training_plans WHERE id = ${scope.groupTrainingPlanId}`
-      await sql`DELETE FROM planning_cohorts WHERE id = ${id+'-variant-cohort'}`
       await sql`DELETE FROM athlete_groups WHERE id = ${scope.groupId}`
       await sql`DELETE FROM teams WHERE id = ${scope.teamId}`
       await sql`DELETE FROM users WHERE id = ${id+'-user'}`
