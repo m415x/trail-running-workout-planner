@@ -12,6 +12,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { authorizeReviewSnapshotNextServer } from './authorized-review-snapshot-next-server'
+import { authorizeReviewSnapshotAffectedGroupSet } from './authorized-review-snapshot-affected-group-set'
 import { getActiveReviewSnapshotSqlite } from './review-snapshot-sqlite-repository'
 
 interface Request {
@@ -116,29 +117,50 @@ export async function authorizeReviewSnapshotAffectedGroupsNextServer(
     ...resultingGroupIds,
   ])
 
-  const supabase = await createSupabaseServerClient()
-  const access = await requireAuthenticatedEptAction({
-    readAccess: () => readEptSessionAccessState(
-      supabase.auth, createExternalIdentityLookup(),
-    ),
-  })
-  if (access.status !== 'authenticated' || access.userId !== snapshot.userId) return null
-  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
-  if (activeTeam.status !== 'resolved' || activeTeam.teamId !== snapshot.teamId) return null
   const authorization = createH4aNextServerAuthorizationBoundary()
-
-  for (const groupId of allGroupIds) {
-    const group = db.select({ id: athleteGroups.id, teamId: athleteGroups.teamId })
-      .from(athleteGroups)
-      .where(and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)))
-      .get()
-    if (!group || group.teamId !== snapshot.teamId) return null
-    const allowed = await authorization.authorize(access, {
-      capability: 'planning.manage',
-      resource: { teamId: group.teamId, sportingGroupId: group.id },
-      at: new Date().toISOString(),
-    })
-    if (!allowed.allowed || !('teamId' in allowed) || allowed.teamId !== snapshot.teamId) return null
-  }
-  return allGroupIds
+  return authorizeReviewSnapshotAffectedGroupSet({
+    ownerUserId: snapshot.userId,
+    ownerTeamId: snapshot.teamId,
+    groupIds: [...allGroupIds],
+    resolveActor: async () => {
+      const supabase = await createSupabaseServerClient()
+      const access = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(
+          supabase.auth, createExternalIdentityLookup(),
+        ),
+      })
+      if (access.status !== 'authenticated') return null
+      const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+      if (activeTeam.status !== 'resolved') return null
+      return { userId: access.userId, teamId: activeTeam.teamId }
+    },
+    readGroup: async groupId => {
+      const group = db.select({ id: athleteGroups.id, teamId: athleteGroups.teamId })
+        .from(athleteGroups)
+        .where(and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)))
+        .get()
+      return group ?? null
+    },
+    authorizeGroup: async (_actor, groupId) => {
+      // Re-resolve authenticated H2 evidence for the concrete H4A decision.
+      const supabase = await createSupabaseServerClient()
+      const access = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(
+          supabase.auth, createExternalIdentityLookup(),
+        ),
+      })
+      if (access.status !== 'authenticated' || access.userId !== snapshot.userId) return false
+      const group = db.select({ id: athleteGroups.id, teamId: athleteGroups.teamId })
+        .from(athleteGroups)
+        .where(and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)))
+        .get()
+      if (!group || group.teamId !== snapshot.teamId) return false
+      const allowed = await authorization.authorize(access, {
+        capability: 'planning.manage',
+        resource: { teamId: group.teamId, sportingGroupId: group.id },
+        at: new Date().toISOString(),
+      })
+      return allowed.allowed && 'teamId' in allowed && allowed.teamId === snapshot.teamId
+    },
+  })
 }
