@@ -35,7 +35,6 @@ interface SessionGenerationPreviewProps {
   isAvailable: boolean
   planId: string
   locale: string
-  proposal: SharedSessionGenerationResult
   generationExplanations: Record<string, GenerationExplanation>
   reviewedSnapshot?: SnapshotRow | null
 }
@@ -47,7 +46,6 @@ export function SessionGenerationPreview({
   isAvailable,
   planId,
   locale,
-  proposal,
   generationExplanations,
   reviewedSnapshot,
 }: SessionGenerationPreviewProps) {
