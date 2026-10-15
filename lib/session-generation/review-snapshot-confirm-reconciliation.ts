@@ -5,8 +5,12 @@ import { reconcileAndPersistGeneratedSessionsSqlite } from './review-snapshot-re
 import type { ReviewSnapshotRecord } from './review-snapshot-sqlite-repository'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
+// Support both the application schema and disposable schema-free test databases.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SharedDrizzleDatabase = BetterSQLite3Database<any>
+
 interface ReconciliationPersistDependencies {
-  readonly database: BetterSQLite3Database
+  readonly database: SharedDrizzleDatabase
   readonly sqlite: Database.Database
   /** H2/H3/H4A authorization for every potentially affected Sporting Group. */
   readonly authorizedGroupIds: ReadonlySet<string>
