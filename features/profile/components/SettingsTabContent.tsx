@@ -1,17 +1,18 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
+import { ThemeToggleButton } from '@/components/ui/custom/buttons'
 
 /**
- * No account-preference writer or athlete-safe medical disclosure is approved yet.
- * Preserve Settings as a non-fictitious, localized surface while T7 integrates
- * existing locale/theme/logout/recovery contracts.
+ * Reuse the existing theme controller without introducing account settings
+ * persistence. Other settings are deferred to T7; no medical mock data.
  */
 export function SettingsTabContent() {
-  const t = useTranslations('AthleteProfile.tabs')
+  const t = useTranslations('AthleteProfile.settings')
   return (
-    <div className='space-y-3 mt-2'>
-      <h2 className='text-sm font-semibold text-foreground'>{t('settings')}</h2>
+    <div className='mt-2 flex items-center justify-between rounded-2xl border border-border p-4'>
+      <span className='text-sm font-medium text-foreground'>{t('theme')}</span>
+      <ThemeToggleButton aria-label={t('changeTheme')} />
     </div>
   )
 }
