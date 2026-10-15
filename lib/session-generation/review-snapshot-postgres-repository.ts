@@ -300,9 +300,17 @@ export async function consumeReviewSnapshotPostgres(
       })
     } catch (error) {
       if (!retryableTransactionFailure(error)) {
-        // Uniqueness SQLSTATE 23505 is deliberately NOT treated as success:
-        // a later reconciliation adapter must classify the named constraint
-        // before deciding whether a fresh-read retry is recoverable.
+        // Known shared-event key collisions require a fresh reconciliation
+        // decision by the caller. Never count an unrelated 23505 as success
+        // or blindly retry it with stale state.
+        if (postgresSqlState(error) === '23505' &&
+          error && typeof error === 'object' && 'constraint_name' in error &&
+          error.constraint_name === 'sessions_shared_event_key_unique') {
+          throw new Error(
+            'reconciliation_conflict: sessions_shared_event_key_unique',
+            { cause: error },
+          )
+        }
         throw error
       }
       if (attempt === MAX_CONFIRM_ATTEMPTS) {
