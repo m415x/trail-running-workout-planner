@@ -19,10 +19,10 @@ test('KAN-790 T5.4 CONFIRM has one server-owned snapshot-to-reconciliation adapt
 })
 
 test('KAN-790 T5.4 adapter proves canonical connection and shares active CAS transaction', () => {
-  assert.match(source, /sqliteConnection/)
+  assert.match(source, /dependencies[.]sqlite[.]inTransaction/)
   assert.match(source, /withinExistingTransaction:\s*true/)
-  assert.match(source, /sqlite:\s*sqliteConnection/)
-  assert.match(source, /database:\s*db/)
+  assert.match(source, /sqlite:\s*dependencies[.]sqlite/)
+  assert.match(source, /database:\s*dependencies[.]database/)
   assert.match(source, /authorizedGroupIds/)
   assert.match(source, /resultReference/)
 })
