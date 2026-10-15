@@ -280,8 +280,75 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
     assert.deepEqual(await siblingOperations.confirm(siblingRequest),
       {kind:'already_consumed',resultReference:siblingPlanId})
 
+    // PG-4 independent reverse order: Variant first, then Base. A different
+    // shared-event key ensures this check cannot reuse the preceding Session.
+    const reverseKey=id+'-reverse-shared'
+    const reverseVariantKey=id+'-reverse-variant-generation'
+    const reverseBaseKey=id+'-reverse-base-generation'
+    const reverseVariantProposal={
+      ...siblingProposal,
+      events:siblingProposal.events.map(event=>({
+        ...event,sharedEventKey:reverseKey,
+        prescriptions:event.prescriptions.map(item=>({
+          ...item,generationKey:reverseVariantKey,
+        })),
+      })),
+    }
+    const reverseBaseProposal={
+      ...proposal,
+      events:proposal.events.map(event=>({
+        ...event,sharedEventKey:reverseKey,
+        prescriptions:event.prescriptions.map(item=>({
+          ...item,generationKey:reverseBaseKey,
+        })),
+      })),
+    }
+    const insertReverseSnapshot=async (snapshotId:string, planId:string,
+      cohort:string|null, nextProposal:typeof proposal,
+      manifest:typeof baseline)=>{
+      await sql`INSERT INTO session_generation_review_snapshots
+        (id,user_id,team_id,group_training_plan_id,group_id,
+         planning_cohort_id,schema_version,generator_version,proposal,
+         generation_explanations,source_manifest,created_at,expires_at,status)
+        VALUES (${snapshotId},${id+'-user'},${scope.teamId},
+          ${planId},${scope.groupId},${cohort},'1','1',
+          (${JSON.stringify(nextProposal)}::text)::jsonb,
+          (${JSON.stringify({})}::text)::jsonb,
+          (${JSON.stringify(manifest)}::text)::jsonb,
+          ${now},'2026-10-15T21:30:00.000Z','active')`
+    }
+    const reverseVariantSnapshotId=id+'-reverse-variant-snapshot'
+    const reverseBaseSnapshotId=id+'-reverse-base-snapshot'
+    await insertReverseSnapshot(reverseVariantSnapshotId,siblingPlanId,
+      cohortId,reverseVariantProposal,siblingManifest)
+    await insertReverseSnapshot(reverseBaseSnapshotId,scope.groupTrainingPlanId,
+      null,reverseBaseProposal,baseline)
+    assert.deepEqual(await siblingOperations.confirm({
+      groupTrainingPlanId:siblingPlanId,snapshotId:reverseVariantSnapshotId,
+    }),{kind:'consumed',resultReference:siblingPlanId})
+    assert.deepEqual(await operations.confirm({
+      groupTrainingPlanId:scope.groupTrainingPlanId,snapshotId:reverseBaseSnapshotId,
+    }),{kind:'consumed',resultReference:scope.groupTrainingPlanId})
+    const reverseSessions=await sql<{n:number}[]>`
+      SELECT count(*)::integer AS n FROM sessions
+      WHERE shared_event_key=${reverseKey}`
+    const reversePrescriptions=await sql<{n:number}[]>`
+      SELECT count(*)::integer AS n FROM group_session_prescriptions
+      WHERE generation_key IN (${reverseVariantKey},${reverseBaseKey})
+        AND is_deleted=false`
+    assert.equal(reverseSessions[0]?.n,1,
+      'Variant-first and Base-second confirmations must converge to one Session')
+    assert.equal(reversePrescriptions[0]?.n,2,
+      'Variant and Base must retain distinct prescriptions in reverse order')
+    assert.deepEqual(await operations.confirm({
+      groupTrainingPlanId:scope.groupTrainingPlanId,snapshotId:reverseBaseSnapshotId,
+    }),{kind:'already_consumed',resultReference:scope.groupTrainingPlanId})
+
+
   } finally {
     try {
+      await sql`DELETE FROM session_generation_review_snapshots
+        WHERE id IN (${id+'-reverse-variant-snapshot'},${id+'-reverse-base-snapshot'})`
       await sql`DELETE FROM session_generation_review_snapshots
         WHERE id = ${id+'-sibling-snapshot'}`
       await sql`DELETE FROM session_generation_review_snapshots WHERE id = ${id+'-snapshot'}`
@@ -290,9 +357,13 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       await sql`DELETE FROM session_generation_modification_records
         WHERE group_training_plan_id=${scope.groupTrainingPlanId}`
       await sql`DELETE FROM group_session_prescriptions
+        WHERE generation_key IN (${id+'-reverse-variant-generation'},
+          ${id+'-reverse-base-generation'})`
+      await sql`DELETE FROM group_session_prescriptions
         WHERE generation_key=${id+'-sibling-generation'}`
       await sql`DELETE FROM group_session_prescriptions
         WHERE generation_key=${id+'-generation'}`
+      await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-reverse-shared'}`
       await sql`DELETE FROM sessions WHERE shared_event_key=${id+'-shared'}`
       await sql`DELETE FROM competition_entries WHERE id = ${id+'-race'}`
       await sql`DELETE FROM microcycle_intensity_targets WHERE id = ${id+'-sibling-target'}`
