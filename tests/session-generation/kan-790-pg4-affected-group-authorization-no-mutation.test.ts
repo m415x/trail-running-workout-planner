@@ -26,7 +26,7 @@ test('KAN-790 PG-4 rejects an unapproved affected Group before Session or audit 
     for(const group of [groupId,foreignGroupId]) {
       await sql`INSERT INTO athlete_groups
         (id,team_id,category_code,level_code,created_at,updated_at)
-        VALUES(${group},${teamId},'trail','beginner',${now},${now})`
+        VALUES(${group},${teamId},'trail',${group === groupId ? 'beginner' : 'intermediate'},${now},${now})`
     }
     await sql`INSERT INTO group_training_plans(id,group_id,title,created_at,updated_at)
       VALUES(${planId},${groupId},'PG4',${now},${now})`
