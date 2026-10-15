@@ -8,7 +8,6 @@ import { createAuthorizedReviewSnapshotConfirmationOperations } from '@/lib/sess
 import { createReviewSnapshotReconciliationPersist } from '@/lib/session-generation/review-snapshot-confirm-reconciliation'
 
 import { createTrustedSqliteReviewSnapshotOperations } from '@/lib/session-generation/authorized-review-snapshot-sqlite-operations'
-import { readReviewSnapshotEffectiveManifestSqlite } from '@/lib/session-generation/review-snapshot-effective-manifest-sqlite'
 
 const scope = { groupTrainingPlanId: 'plan-a', teamId: 'team-a', groupId: 'group-a' }
 
