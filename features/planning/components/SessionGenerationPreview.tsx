@@ -1,10 +1,11 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { AlertTriangle, CalendarClock, MapPin, Mountain, Route } from 'lucide-react'
 
-import { persistGeneratedSessions } from '@/app/actions/session-generation-actions'
+import { createCoachSessionReviewSnapshot, confirmCoachSessionReviewSnapshot } from '@/app/actions/coach-session-review-snapshot-actions'
+import type { SnapshotRow } from '@/lib/session-generation/review-snapshot-postgres-repository'
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { resolveApplicationRegionalContext } from '@/lib/regionalization/application-regional-context'
@@ -36,6 +37,7 @@ interface SessionGenerationPreviewProps {
   locale: string
   proposal: SharedSessionGenerationResult
   generationExplanations: Record<string, GenerationExplanation>
+  reviewedSnapshot?: SnapshotRow | null
 }
 
 /** Displays generated, non-persisted sessions grouped by source microcycle. */
@@ -47,13 +49,32 @@ export function SessionGenerationPreview({
   locale,
   proposal,
   generationExplanations,
+  reviewedSnapshot,
 }: SessionGenerationPreviewProps) {
   const language = locale === 'en' ? 'en' : 'es'
   const t = useTranslations('CoachPlanning')
   const workoutTypeT = useTranslations('Workouts')
   const regionalContext = resolveApplicationRegionalContext({ language })
-  const [state, formAction, isPending] = useActionState(persistGeneratedSessions, {})
-  const sessionCount = weeks.reduce((total, week) => total + week.events.length, 0)
+  const [feedback, setFeedback] = useState<string | null>(null)
+  const [isPending, startTransition] = useTransition()
+  // A review is authoritative only if a current H2/H3/H4A GET returned it.
+  // Never use the page-rendered preview as the CONFIRM source.
+  const reviewedProposal = reviewedSnapshot?.proposal as SharedSessionGenerationResult | undefined
+  const reviewEvents = reviewedProposal && Array.isArray(reviewedProposal.events)
+    ? reviewedProposal.events : null
+  const reviewedExplanations = reviewedSnapshot?.generationExplanations as
+    Record<string, GenerationExplanation> | undefined
+  const displayedWeeks = reviewedSnapshot && reviewEvents
+    ? weeks.map(week => ({
+        ...week,
+        events: reviewEvents.filter(event => event.prescriptions.some(
+          item => item.prescription.microcycleId === week.microcycleId,
+        )),
+      }))
+    : weeks
+  const displayedExplanations = reviewedSnapshot ? (reviewedExplanations ?? {}) : generationExplanations
+  const sessionCount = reviewedSnapshot && reviewEvents
+    ? reviewEvents.length : weeks.reduce((total, week) => total + week.events.length, 0)
   const formatWarning = (warning: string) => {
     const parsed = parseMissingTemplateWarning(warning)
     if (!parsed) return warning
@@ -76,7 +97,7 @@ export function SessionGenerationPreview({
             </CardDescription>
           </div>
           <div className='flex flex-wrap gap-2'>
-            <Badge variant='secondary'>{state.success ? t('sessionPreview.saved') : t('sessionPreview.notSaved')}</Badge>
+            <Badge variant='secondary'>{t('sessionPreview.notSaved')}</Badge>
             {isAvailable && <Badge variant='outline'>{t('sessionPreview.sessions', { count: sessionCount })}</Badge>}
           </div>
         </div>
@@ -86,11 +107,11 @@ export function SessionGenerationPreview({
           <p className='text-sm text-muted-foreground'>
             {t('sessionPreview.ready')}
           </p>
-        ) : weeks.length === 0 ? (
+        ) : displayedWeeks.length === 0 ? (
           <p className='text-sm text-muted-foreground'>{t('sessionPreview.empty')}</p>
         ) : (
           <div className='space-y-3'>
-            {weeks.map((week, index) => (
+            {displayedWeeks.map((week, index) => (
               <details
                 key={week.microcycleId}
                 className='group rounded-lg border bg-card open:bg-muted/20'
@@ -129,7 +150,7 @@ export function SessionGenerationPreview({
                         </div>
 
                         {prescriptions.map(({ generationKey, prescription }) => {
-                          const generationExplanation = generationExplanations[generationKey]
+                          const generationExplanation = displayedExplanations[generationKey]
 
                           return (
                             <div key={generationKey} className='space-y-2 text-sm'>
@@ -203,24 +224,38 @@ export function SessionGenerationPreview({
           </div>
         )}
         {isAvailable && sessionCount > 0 && (
-          <form action={formAction} className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'>
+          <form
+            action={formData => {
+              setFeedback(null)
+              startTransition(async () => {
+                try {
+                  const result = reviewedSnapshot
+                    ? await confirmCoachSessionReviewSnapshot(formData)
+                    : await createCoachSessionReviewSnapshot(formData)
+                  if (result.kind === 'denied') setFeedback('No autorizado')
+                  else if (result.kind === 'unavailable') setFeedback('La revisión ya no está disponible.')
+                } catch {
+                  setFeedback('No se pudo completar la operación.')
+                }
+              })
+            }}
+            className='flex flex-wrap items-center justify-between gap-3 border-t pt-4'
+          >
             <input type='hidden' name='planId' value={planId} />
             <input type='hidden' name='locale' value={locale} />
-            <input type='hidden' name='proposal' value={JSON.stringify(proposal)} />
-            <input
-              type='hidden'
-              name='generationExplanations'
-              value={JSON.stringify(generationExplanations)}
-            />
+            {reviewedSnapshot && <input type='hidden' name='snapshotId' value={reviewedSnapshot.id} />}
             <div className='text-sm'>
-              {state.error && <p className='text-destructive'>{state.error}</p>}
-              {state.success && <p className='text-emerald-600'>{state.success}</p>}
-              {!state.error && !state.success && (
-                <p className='text-muted-foreground'>{t('sessionPreview.saveHelp')}</p>
+              {feedback && <p className='text-destructive'>{feedback}</p>}
+              {!feedback && (
+                <p className='text-muted-foreground'>
+                  {reviewedSnapshot
+                    ? 'Confirmar la revisión autorizada y guardar las sesiones.'
+                    : 'Crear una revisión autorizada antes de confirmar las sesiones.'}
+                </p>
               )}
             </div>
             <Button type='submit' disabled={isPending}>
-              {isPending ? t('saving') : t('saveSessions')}
+              {isPending ? t('saving') : reviewedSnapshot ? t('saveSessions') : 'Crear revisión'}
             </Button>
           </form>
         )}
