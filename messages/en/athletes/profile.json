@@ -46,7 +46,10 @@
       "insurance": "Medical Insurance / Federation",
       "accountPreferences": "Account Preferences",
       "theme": "Appearance",
-      "changeTheme": "Change appearance"
+      "changeTheme": "Change appearance",
+      "passwordRecovery": "Reset password",
+      "signOut": "Sign out",
+      "signOutError": "Unable to sign out. Please try again."
     }
   }
 }
