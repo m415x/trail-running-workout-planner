@@ -189,6 +189,19 @@ export async function getActiveReviewSnapshotPostgres(
   return rows[0] ?? null
 }
 
+/** PostgreSQL serialization/deadlock retries; three total fresh transactions. */
+const MAX_CONFIRM_ATTEMPTS = 3
+
+function postgresSqlState(error: unknown): string | null {
+  if (!error || typeof error !== 'object' || !('code' in error)) return null
+  return typeof error.code === 'string' ? error.code : null
+}
+
+function retryableTransactionFailure(error: unknown): boolean {
+  const code = postgresSqlState(error)
+  return code === '40001' || code === '40P01'
+}
+
 export type ConsumeReviewSnapshotPostgresResult =
   | { readonly kind: 'consumed'; readonly resultReference: string }
   | { readonly kind: 'already_consumed'; readonly resultReference: string }
@@ -209,7 +222,13 @@ export async function consumeReviewSnapshotPostgres(
 ): Promise<ConsumeReviewSnapshotPostgresResult> {
   const now = canonicalTime(nowIso)
 
-  return client.begin(async (tx): Promise<ConsumeReviewSnapshotPostgresResult> => {
+  for (let attempt = 1; attempt <= MAX_CONFIRM_ATTEMPTS; attempt++) {
+    try {
+      // A new begin() and new SQL snapshot for EVERY retry. Do not reuse
+      // decisions, rows or a transaction handle from a failed attempt.
+      return await client.begin(async (tx): Promise<ConsumeReviewSnapshotPostgresResult> => {
+        // Must be the first SQL statement issued in this transaction.
+        await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
     // Row lock serializes concurrent attempts for this particular review ID.
     const rows = await tx<SnapshotRow[]>`
       SELECT
@@ -278,7 +297,22 @@ export async function consumeReviewSnapshotPostgres(
     }
 
     return { kind: 'consumed', resultReference }
-  })
+      })
+    } catch (error) {
+      if (!retryableTransactionFailure(error)) {
+        // Uniqueness SQLSTATE 23505 is deliberately NOT treated as success:
+        // a later reconciliation adapter must classify the named constraint
+        // before deciding whether a fresh-read retry is recoverable.
+        throw error
+      }
+      if (attempt === MAX_CONFIRM_ATTEMPTS) {
+        throw new Error('reconciliation_conflict: PostgreSQL serializable retry budget exhausted', {
+          cause: error,
+        })
+      }
+    }
+  }
+  throw new Error('reconciliation_conflict: PostgreSQL confirmation exhausted')
 }
 
 /**
