@@ -16,7 +16,13 @@ test('KAN-790 T5.4 production legacy Action and SQL CONFIRM share one reconcilia
   const pgWriter = readFileSync(root + '/lib/session-generation/review-snapshot-reconciliation-writer-postgres.ts', 'utf8')
   assert.match(pgAction, /createAuthorizedReviewSnapshotPostgresSessionOperations/)
   assert.match(pgConfirmation, /dependencies\.persist\(tx, snapshot\)/)
-  assert.match(pgWriter, /reconcileSessionGeneration/)
+  // PostgreSQL reconciliation is a transactional SQL implementation, not a
+  // direct invocation of the SQLite/domain reconciliation function.
+  assert.match(pgWriter, /export async function reconcileAndPersistGeneratedSessionsPostgres/)
+  assert.match(pgWriter, /authorizedGroupIds\.has/)
+  assert.match(pgWriter, /generation_ownership/)
+  assert.match(pgWriter, /group_session_prescriptions/)
+  assert.match(pgWriter, /session_generation_modification_records/)
   assert.match(writer, /reconcileSessionGeneration\s*\(/)
   assert.match(writer, /sessionGenerationModificationRecords/)
   assert.match(writer, /groupSessionPrescriptions/)
