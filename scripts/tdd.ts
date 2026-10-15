@@ -84,7 +84,16 @@ function main(): void {
     const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
     return filename.startsWith('kan-790-pg4-') && filename.endsWith('.test.ts')
   })
-  const testOptions = pg4Files.length > 1 ? ['--test-concurrency=1'] : []
+  // A wildcard may reach this script as one literal argument (not expanded
+  // by Git Bash or pnpm). tsx expands it later into several concurrent files.
+  const pg4Glob = tests.some(path => {
+    const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
+    return filename.startsWith('kan-790-pg4-') &&
+      (filename.includes('*') || filename.includes('?') || filename.includes('['))
+  })
+  const testOptions = pg4Files.length > 1 || pg4Glob
+    ? ['--test-concurrency=1']
+    : []
   const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
   if (redOnly) {
