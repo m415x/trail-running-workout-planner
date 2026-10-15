@@ -190,6 +190,19 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       seenPrescriptions.add(prescription.generationKey)
     }
   }
+  // A newly attached prescription must not reuse a generation key already
+  // claimed outside this Plan, even if the target Session is authorized.
+  const freshKeys = [...seenPrescriptions].filter(key => !generatedByKey.has(key))
+  if (freshKeys.length > 0) {
+    const claimed = await tx<{generationKey:string}[]>`
+      SELECT generation_key AS "generationKey"
+      FROM group_session_prescriptions
+      WHERE generation_key IN ${tx(freshKeys)}
+    `
+    if (claimed.length > 0) {
+      throw new Error('reconciliation_conflict: generation key already claimed')
+    }
+  }
   const keys = [...seenEvents]
   const existingSessions = keys.length === 0 ? [] : await tx<{
     id: string
@@ -371,9 +384,6 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       const existingPrescription = generatedByKey.get(item.generationKey)
       if (existingPrescription && existingPrescription.sessionId !== sessionId) {
         throw new Error('reconciliation_conflict: prescription belongs to another Session')
-      }
-      if (previousEvent && !existingPrescription) {
-        throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
       }
       const prescriptionId = existingPrescription?.id ?? randomUUID()
       const data = item.prescription
