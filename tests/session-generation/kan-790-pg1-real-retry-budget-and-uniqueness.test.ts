@@ -105,7 +105,7 @@ test('KAN-790 PG-1 real 40P01 opens a new transaction and commits only the last 
     assert.deepEqual(result, { kind: 'consumed', resultReference: scope.groupTrainingPlanId })
     assert.equal(attempts, 3)
     const logs = await sql<{ attempt: number }[]>`SELECT attempt FROM kan790_pg1_attempt_log`
-    assert.deepEqual(logs, [{ attempt: 3 }])
+    assert.deepEqual(Array.from(logs), [{ attempt: 3 }])
   })
 })
 
