@@ -1,4 +1,4 @@
-import { getCurrentAthlete } from '@/app/actions/dashboard-actions'
+import { readCurrentAthleteProfile } from '@/lib/athletes/profile-self-read'
 import { getTranslations } from 'next-intl/server'
 import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
 import { getCurrentAthleteTrack1000mPerformanceAction } from '@/app/actions/field-performance-test-actions'
@@ -13,17 +13,17 @@ import { createSqliteBillingPersistencePort } from '@/lib/memberships/billing-sq
 
 export default async function ProfilePage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const athleteResult = await getCurrentAthlete()
+  const athleteResult = await readCurrentAthleteProfile()
   const tPlan = await getTranslations({ locale, namespace: 'AthletePlan' })
 
-  if (athleteResult.forbidden) {
+  if (athleteResult.status === 'denied') {
     return <AthletePageState message={tPlan('unauthorized')} />
   }
-  if (!athleteResult.success || !athleteResult.data?.athleteProfile) {
+  if (athleteResult.status !== 'loaded') {
     return <AthletePageState message={tPlan('loadError')} />
   }
 
-  const athleteProfile = athleteResult.data.athleteProfile
+  const athleteProfile = athleteResult.athleteProfile
   const today = getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)
   const performanceResult = await getCurrentAthleteTrack1000mPerformanceAction(today)
   const performance = performanceResult.success ? performanceResult.data : null
