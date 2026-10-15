@@ -3,6 +3,7 @@ import test from 'node:test'
 import postgres from 'postgres'
 
 import { readReviewSnapshotEffectiveManifestPostgres } from '@/lib/session-generation/review-snapshot-effective-manifest-postgres'
+import { evaluateReviewSnapshotSourceFreshness } from '@/lib/session-generation/review-snapshot-source-freshness'
 import { createAuthorizedReviewSnapshotPostgresConfirmationOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-confirmation'
 import * as reconciliationWriter from '@/lib/session-generation/review-snapshot-reconciliation-writer-postgres'
 import type { SnapshotRow } from '@/lib/session-generation/review-snapshot-postgres-repository'
@@ -96,6 +97,22 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
         ${JSON.stringify(proposal)}::jsonb,${JSON.stringify({})}::jsonb,
         ${JSON.stringify(baseline)}::jsonb,${now},
         '2026-10-15T21:30:00.000Z','active')`
+    // Diagnose generation freshness independently before exercising CAS/writer:
+    // SQL snapshot serialization and current PG source projection must match.
+    const stored=await sql<{source_manifest:unknown}[]>`
+      SELECT source_manifest FROM session_generation_review_snapshots
+      WHERE id=${id+'-snapshot'}`
+    const reread=await sql.begin(async tx=>{
+      await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+      return readReviewSnapshotEffectiveManifestPostgres(tx,scope)
+    })
+    assert.deepEqual(stored[0]?.source_manifest,baseline,
+      'SQL JSONB must preserve the generation manifest')
+    assert.deepEqual(reread,baseline,
+      'Unchanged PostgreSQL generation sources must recreate the same manifest')
+    assert.deepEqual(evaluateReviewSnapshotSourceFreshness(stored[0]?.source_manifest,reread),
+      {kind:'current'},
+      'Snapshot and current SQL facts must agree before confirmation')
     // Explicit functional RED: the concrete PG writer adapter is not yet exposed.
     // PG-3's generic persist callback alone does not prove real reconciliation.
     const factory = (reconciliationWriter as unknown as {
