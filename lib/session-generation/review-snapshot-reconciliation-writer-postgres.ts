@@ -188,7 +188,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           created_at, updated_at
         ) VALUES (
           ${prescriptionId}, ${sessionId}, ${data.groupId}, ${data.microcycleId},
-          ${data.distanceKm}, ${data.durationMin}, ${data.elevationGain},
+          ${data.distanceKm ?? null}, ${data.durationMin ?? null}, ${data.elevationGain ?? null},
           ${data.intensityMethod}, ${data.zone},
           ${data.referencePercentage}, ${data.notes}, 'generated',
           ${item.generationKey}, ${input.now}, ${input.now}
