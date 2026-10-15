@@ -176,3 +176,35 @@ test('KAN-790 T5.4 shared event introduced in another Team denies CONFIRM withou
     assert.deepEqual(status, { status: 'active', consumed_at: null, result_reference: null })
   } finally { sqlite.close() }
 })
+
+test('KAN-790 T5.4 persisted Base explanation forged as Variant denies all writes and snapshot consumption', async () => {
+  const { sqlite, confirm } = await setup()
+  try {
+    const row = sqlite.prepare(
+      'SELECT generation_explanations FROM session_generation_review_snapshots WHERE id = ?',
+    ).get(request.snapshotId) as { generation_explanations: string }
+    const explanations = JSON.parse(row.generation_explanations) as Record<string, {
+      planningScope: { kind: string; planningCohortId: string | null }
+    }>
+    const keys = Object.keys(explanations)
+    assert.ok(keys.length > 0, 'generator must have created historical explanation evidence')
+    const first = explanations[keys[0]]
+    assert.equal(first.planningScope.kind, 'base')
+    assert.equal(first.planningScope.planningCohortId, null)
+    first.planningScope.kind = 'variant'
+    first.planningScope.planningCohortId = 'other-cohort'
+    sqlite.prepare(
+      'UPDATE session_generation_review_snapshots SET generation_explanations = ? WHERE id = ?',
+    ).run(JSON.stringify(explanations), request.snapshotId)
+
+    await assert.rejects(
+      () => confirm.confirm(request),
+      /generation explanation planning scope does not match generation key/i,
+    )
+    assert.deepEqual(counts(sqlite), { sessions: 0, prescriptions: 0, audit: 0 })
+    const state = sqlite.prepare(
+      'SELECT status, consumed_at, result_reference FROM session_generation_review_snapshots WHERE id = ?',
+    ).get(request.snapshotId) as { status: string; consumed_at: string | null; result_reference: string | null }
+    assert.deepEqual(state, { status: 'active', consumed_at: null, result_reference: null })
+  } finally { sqlite.close() }
+})
