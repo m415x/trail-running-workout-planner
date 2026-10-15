@@ -1,10 +1,13 @@
-import { db, sqliteConnection } from '@/db'
+import type Database from 'better-sqlite3'
+import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3'
 import { parseGenerationExplanationSnapshots } from './generation-explanation-persistence'
 import { reconcileAndPersistGeneratedSessionsSqlite } from './review-snapshot-reconciliation-writer'
 import type { ReviewSnapshotRecord } from './review-snapshot-sqlite-repository'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
 
 interface ReconciliationPersistDependencies {
+  readonly database: BetterSQLite3Database
+  readonly sqlite: Database.Database
   /** H2/H3/H4A authorization for every potentially affected Sporting Group. */
   readonly authorizedGroupIds: ReadonlySet<string>
   readonly now: () => string
@@ -32,7 +35,7 @@ export function createReviewSnapshotReconciliationPersist(
   dependencies: ReconciliationPersistDependencies,
 ): (snapshot: ReviewSnapshotRecord) => string {
   return snapshot => {
-    if (!sqliteConnection.inTransaction) {
+    if (!dependencies.sqlite.inTransaction) {
       throw new Error('reconciliation_conflict: confirmation transaction missing')
     }
 
@@ -42,8 +45,8 @@ export function createReviewSnapshotReconciliationPersist(
     )
 
     reconcileAndPersistGeneratedSessionsSqlite({
-      database: db,
-      sqlite: sqliteConnection,
+      database: dependencies.database,
+      sqlite: dependencies.sqlite,
       withinExistingTransaction: true,
       planId: snapshot.groupTrainingPlanId,
       teamId: snapshot.teamId,
