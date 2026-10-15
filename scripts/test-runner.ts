@@ -188,7 +188,7 @@ export function createTestBatchInvocation(testFiles: string[]): {
 
 function isSharedPostgresAcceptanceTest(path: string): boolean {
   const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
-  return /^kan-790-pg[0-9]+-.*\.test\.ts$/.test(filename)
+  return /^(?:kan-790-pg[0-9]+-|kan-790-t55-.*pg-).*\.test\.ts$/.test(filename)
 }
 
 export function prepareTestRunBatches(
