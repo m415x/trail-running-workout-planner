@@ -113,13 +113,11 @@ test('KAN-790 PG-4 rebuilds authorization after PostgreSQL SQLSTATE 40001 retry'
           await competing`UPDATE team_memberships SET is_active=false
             WHERE id=${id+'-membership'}`
           revoked=true
-          await assert.rejects(competing.unsafe(
-            "DO $ BEGIN RAISE EXCEPTION 'test retry boundary' USING ERRCODE = '40001'; END $",
-          ),(error:unknown)=>Boolean(error && typeof error==='object' &&
-            'code' in error && error.code==='40001'))
-          const failure=new Error('PostgreSQL 40001 retry boundary')
-          Object.assign(failure,{code:'40001'})
-          throw failure
+          // A genuine PostgreSQL SQLSTATE reaches the retry loop. This
+          // exercises retry handling, not an organic SSI conflict graph.
+          await competing.unsafe(
+            "DO $$ BEGIN RAISE EXCEPTION 'test retry boundary' USING ERRCODE = '40001'; END $$",
+          )
         }
         return id+'-user'
       },
