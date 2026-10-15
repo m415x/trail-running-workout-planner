@@ -44,7 +44,7 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
        maximum_weekly_volume_km,sessions_per_week,maximum_weekly_increase_percentage,
        deload_percentage,field_sources,created_at,updated_at)
       VALUES (${id+'-load'},${scope.groupTrainingPlanId},'finish',30,60,4,10,30,
-        ${JSON.stringify({})}::jsonb,${now},${now})`
+        (${JSON.stringify({})}::text)::jsonb,${now},${now})`
     await sql`INSERT INTO intensity_strategies
       (id,group_training_plan_id,goal_type,default_method,
        maximum_intense_sessions_per_week,minimum_recovery_days_between_intense_sessions,
@@ -94,8 +94,8 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
        source_manifest,created_at,expires_at,status)
       VALUES (${id+'-snapshot'},${id+'-user'},${scope.teamId},
         ${scope.groupTrainingPlanId},${scope.groupId},'1','1',
-        ${JSON.stringify(proposal)}::jsonb,${JSON.stringify({})}::jsonb,
-        ${JSON.stringify(baseline)}::jsonb,${now},
+        (${JSON.stringify(proposal)}::text)::jsonb,${JSON.stringify({})}::jsonb,
+        (${JSON.stringify(baseline)}::text)::jsonb,${now},
         '2026-10-15T21:30:00.000Z','active')`
     // Diagnose generation freshness independently before exercising CAS/writer:
     // SQL snapshot serialization and current PG source projection must match.
