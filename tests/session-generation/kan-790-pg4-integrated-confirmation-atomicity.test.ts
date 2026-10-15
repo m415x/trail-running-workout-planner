@@ -183,9 +183,15 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
     // consume its own snapshot onto the same shared Session, without replacing
     // or deleting the first Plan's prescription and audit evidence.
     const siblingPlanId=id+'-sibling-plan'
+    const cohortId=id+'-variant-cohort'
+    await sql`INSERT INTO planning_cohorts
+      (id,team_id,group_id,name,purpose,status,created_at,updated_at)
+      VALUES (${cohortId},${scope.teamId},${scope.groupId},'PG4 Variant',
+        'PG4 variant lineage','active',${now},${now})`
     await sql`INSERT INTO group_training_plans
-      (id,group_id,title,created_at,updated_at)
-      VALUES (${siblingPlanId},${scope.groupId},'Sibling Plan',${now},${now})`
+      (id,group_id,title,planning_cohort_id,source_group_training_plan_id,created_at,updated_at)
+      VALUES (${siblingPlanId},${scope.groupId},'Variant Plan',${cohortId},
+        ${scope.groupTrainingPlanId},${now},${now})`
     await sql`INSERT INTO macrocycles
       (id,title,group_training_plan_id,start_date,end_date,created_at,updated_at)
       VALUES (${id+'-sibling-macro'},'Sibling Macro',${siblingPlanId},
@@ -235,10 +241,10 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
     }
     await sql`INSERT INTO session_generation_review_snapshots
       (id,user_id,team_id,group_training_plan_id,group_id,
-       schema_version,generator_version,proposal,generation_explanations,
+       planning_cohort_id,schema_version,generator_version,proposal,generation_explanations,
        source_manifest,created_at,expires_at,status)
       VALUES (${id+'-sibling-snapshot'},${id+'-user'},${scope.teamId},
-        ${siblingPlanId},${scope.groupId},'1','1',
+        ${siblingPlanId},${scope.groupId},${cohortId},'1','1',
         (${JSON.stringify(siblingProposal)}::text)::jsonb,
         (${JSON.stringify({})}::text)::jsonb,
         (${JSON.stringify(siblingManifest)}::text)::jsonb,${now},
@@ -250,7 +256,7 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
           SELECT current_setting('transaction_isolation') AS value`
         assert.equal(isolation[0]?.value,'serializable')
         return {kind:'authorized' as const,scope:{
-          ...siblingScope,userId:id+'-user',planningCohortId:null,
+          ...siblingScope,userId:id+'-user',planningCohortId:cohortId,
         }}
       },
       now:()=>now,
@@ -303,6 +309,7 @@ test('KAN-790 PG-4 composes authorized CAS, freshness, Session prescription audi
       await sql`DELETE FROM macrocycles WHERE id = ${id+'-macro'}`
       await sql`DELETE FROM group_training_plans WHERE id = ${id+'-sibling-plan'}`
       await sql`DELETE FROM group_training_plans WHERE id = ${scope.groupTrainingPlanId}`
+      await sql`DELETE FROM planning_cohorts WHERE id = ${id+'-variant-cohort'}`
       await sql`DELETE FROM athlete_groups WHERE id = ${scope.groupId}`
       await sql`DELETE FROM teams WHERE id = ${scope.teamId}`
       await sql`DELETE FROM users WHERE id = ${id+'-user'}`
