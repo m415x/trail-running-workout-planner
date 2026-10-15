@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import postgres from 'postgres'
+import { SESSION_GENERATION_SNAPSHOT_LIMITS } from '@/lib/session-generation/review-snapshot-limits'
 
 import { readReviewSnapshotEffectiveManifestPostgres } from '@/lib/session-generation/review-snapshot-effective-manifest-postgres'
 import { createAuthorizedReviewSnapshotPostgresSessionOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-session'
@@ -90,7 +91,7 @@ test('KAN-790 T5.5 CREATE enforces active snapshot quota and preserves existing 
     // The following attempt must fail atomically, without expiring or replacing
     // any existing active review.
     const createdIds:string[]=[]
-    for(let i=0;i<3;i++){
+    for(let i=0;i<SESSION_GENERATION_SNAPSHOT_LIMITS.maxActivePerOwnerPlan;i++){
       const created=await operations.create({groupTrainingPlanId:scope.groupTrainingPlanId})
       assert.equal(created.kind,'created')
       if(created.kind!=='created')throw Error('Unexpected CREATE denial')
