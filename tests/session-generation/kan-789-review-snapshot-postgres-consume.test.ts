@@ -21,7 +21,7 @@ const now = '2026-10-13T12:00:00.000Z'
 const prefix = 'kan789-pg-consume'
 const scope = {
   id: prefix + '-snapshot',
-  userId: 'kan789-h7a-user',
+  userId: prefix + '-user',
   teamId: prefix + '-team',
   groupTrainingPlanId: prefix + '-plan',
 }
@@ -32,6 +32,9 @@ test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', { ski
     const identity = await sql<{ db: string }[]>`SELECT current_database() AS db`
     assert.equal(identity[0]?.db, 'kan789_acceptance')
 
+    await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
+      VALUES (${scope.userId},${scope.userId},${prefix + '@example.invalid'},
+        'KAN789','Fixture',${now},${now})`
     await sql`INSERT INTO teams (id, name, created_at, updated_at)
       VALUES (${prefix + '-team'}, 'KAN-789 PostgreSQL disposable fixture', ${now}, ${now})`
     await sql`INSERT INTO athlete_groups
@@ -106,6 +109,7 @@ test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', { ski
     await sql`DELETE FROM group_training_plans WHERE id = ${scope.groupTrainingPlanId}`
     await sql`DELETE FROM athlete_groups WHERE id = ${prefix + '-group'}`
       await sql`DELETE FROM teams WHERE id = ${prefix + '-team'}`
+      await sql`DELETE FROM users WHERE id = ${scope.userId}`
     await sql.end()
   }
 })
