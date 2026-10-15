@@ -234,9 +234,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       throw new Error('reconciliation_conflict: protected shared event collision')
     }
     const related = [...generatedByKey.values()].filter(p => p.sessionId === row.id)
-    if (related.length === 0) {
-      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
-    }
+    // A distinct Plan may attach its own prescription to a generated shared
+    // Session. Existing prescriptions remain outside this Plan's write set.
+    // Authorization and ownership checks below cover the complete audience.
     const audience = await tx<{
       id: string
       groupId: string
@@ -255,6 +255,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     // transaction, including prescriptions owned by other Plans.
     if (audience.some(p => !authorizedGroupIds.has(p.groupId))) {
       throw new Error('reconciliation_conflict: affected group authorization changed')
+    }
+    if (audience.length === 0) {
+      throw new Error('reconciliation_conflict: shared event has no active audience')
     }
     if (audience.some(p => p.teamId !== teamId || !p.groupActive)) {
       throw new Error('reconciliation_conflict: event Team ownership changed')
@@ -342,6 +345,12 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     } : null
     const eventChanged = previousSessionAudit === null ||
       canonicalAuditValue(previousSessionAudit) !== canonicalAuditValue(sessionAudit)
+    if (previousEvent && eventChanged &&
+      ![...generatedByKey.values()].some(row => row.sessionId === sessionId)) {
+      // Attaching a second Plan cannot rewrite a Session header owned by
+      // the existing Plan; reconciliation of the shared header is independent.
+      throw new Error('reconciliation_conflict: shared event header differs')
+    }
     if (previousEvent && eventChanged) {
       await tx`
         UPDATE sessions SET workout_id = ${values.sourceTemplateId},
