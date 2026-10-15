@@ -1,6 +1,5 @@
 'use server'
 
-import { randomUUID } from 'node:crypto'
 import { and, eq, inArray } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 
@@ -19,13 +18,9 @@ import {
   mesocycles,
   microcycles,
   sessions,
-  sessionGenerationModificationRecords,
 } from '@/db/schema'
 import { reconcileAndPersistGeneratedSessionsSqlite } from '@/lib/session-generation/review-snapshot-reconciliation-writer'
-import {
-  parseGenerationExplanationSnapshots,
-  resolveGenerationExplanationSnapshot,
-} from '@/lib/session-generation/generation-explanation-persistence'
+import { parseGenerationExplanationSnapshots } from '@/lib/session-generation/generation-explanation-persistence'
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
 import { isWorkoutType } from '@/types/training/workout.types'
 import type { SharedSessionGenerationResult } from '@/types/training/session-generation.types'
@@ -184,88 +179,6 @@ export async function persistGeneratedSessions(
   } catch (error) {
     console.error('Error persisting generated sessions:', error)
     return { error: error instanceof Error ? error.message : 'No se pudo guardar la propuesta.' }
-  }
-}
-
-function serializeAuditValue(value: unknown): string {
-  return JSON.stringify(value)
-}
-
-function sameAuditValue(previousValue: unknown, newValue: unknown): boolean {
-  return serializeAuditValue(previousValue) === serializeAuditValue(newValue)
-}
-
-function sessionAuditValue(value: {
-  workoutId?: string | null
-  sourceTemplateId?: string | null
-  date: string
-  title: string
-  type: string
-  locationKey: string | null
-  trackPath: string | null
-  structure: unknown
-  notes: string | null
-}) {
-  return {
-    sourceTemplateId: value.sourceTemplateId ?? value.workoutId ?? null,
-    date: value.date, title: value.title, type: value.type,
-    locationKey: value.locationKey, trackPath: value.trackPath,
-    structure: value.structure, notes: value.notes,
-  }
-}
-
-function insertPrescriptionAudit(
-  tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
-  values: {
-    id: string
-    planId: string
-    sessionId: string
-    generationKey: string
-    previousValue: unknown
-    newValue: unknown
-    now: string
-    changedByUserId: string
-  } & (
-    | {
-        action: 'generated_created' | 'generated_updated'
-        generationExplanation: GenerationExplanation | null
-      }
-    | {
-        action: 'generated_removed'
-      }
-  ),
-) {
-  const previousValue = values.previousValue === null
-    ? null
-    : prescriptionAuditValue(values.previousValue)
-  const newValue = values.newValue === null ? null : prescriptionAuditValue(values.newValue)
-  if (values.action === 'generated_updated' && sameAuditValue(previousValue, newValue)) return
-
-  tx.insert(sessionGenerationModificationRecords).values({
-    id: randomUUID(), groupTrainingPlanId: values.planId, sessionId: values.sessionId,
-    prescriptionId: values.id, action: values.action, ownership: 'generated',
-    generationKey: values.generationKey || null,
-    generationExplanation: values.action === 'generated_removed'
-      ? null
-      : values.generationExplanation,
-    previousValue: previousValue === null ? null : serializeAuditValue(previousValue),
-    newValue: newValue === null ? null : serializeAuditValue(newValue),
-    changedByUserId: values.changedByUserId, createdAt: values.now, updatedAt: values.now,
-  }).run()
-}
-
-function prescriptionAuditValue(value: unknown) {
-  const record = value as Record<string, unknown>
-  return {
-    groupId: record.groupId,
-    microcycleId: record.microcycleId,
-    distanceKm: record.distanceKm,
-    durationMin: record.durationMin,
-    elevationGain: record.elevationGain,
-    intensityMethod: record.intensityMethod,
-    zone: record.zone,
-    referencePercentage: record.referencePercentage,
-    notes: record.notes,
   }
 }
 
