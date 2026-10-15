@@ -52,8 +52,8 @@ test('KAN-790 PG-2 scoped Base Variant SQL read uses supplied serializable trans
       assert.equal(await readReviewSnapshotPlanScopePostgres(tx, {
         groupTrainingPlanId: id+'-variant', teamId: id+'-team', groupId: 'foreign-group',
       }), null)
-      const outside = await tx<{ level: string }[]>`SHOW transaction_isolation`
-      assert.equal(outside[0]?.level ?? outside[0]?.transaction_isolation, 'serializable')
+      const outside = await tx<{ transaction_isolation: string }[]>`SHOW transaction_isolation`
+      assert.equal(outside[0]?.transaction_isolation, 'serializable')
     })
   } finally {
     try {
