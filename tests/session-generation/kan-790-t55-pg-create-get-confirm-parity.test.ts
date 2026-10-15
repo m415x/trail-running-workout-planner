@@ -122,7 +122,7 @@ test('KAN-790 T5.5 CREATE GET CONFIRM preserve exact server-generated payload an
       JOIN macrocycles ma ON ma.id=me.macrocycle_id
       WHERE ma.group_training_plan_id=${scope.groupTrainingPlanId}
         AND gp.is_deleted=false`
-    const expected=rows[0]?.proposal.events.reduce((count,event)=>{
+    const expected=rows[0]?.proposal.events.reduce<number>((count,event)=>{
       const candidate=event as {prescriptions?:unknown[]}
       return count+(candidate.prescriptions?.length ?? 0)
     },0) ?? -1
