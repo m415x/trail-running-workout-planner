@@ -7,7 +7,7 @@ import type { SharedSessionGenerationResult } from '@/types/training/session-gen
 
 // Support both the application schema and disposable schema-free test databases.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SharedDrizzleDatabase = BetterSQLite3Database<any>
+type SharedDrizzleDatabase = BetterSQLite3Database<any> & { readonly $client: Database.Database }
 
 interface ReconciliationPersistDependencies {
   readonly database: SharedDrizzleDatabase
