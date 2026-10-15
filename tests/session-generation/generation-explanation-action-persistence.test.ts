@@ -9,15 +9,21 @@ const actionSource = fs.readFileSync(
 )
 const source = fs.readFileSync(path.join(process.cwd(), 'lib', 'session-generation', 'review-snapshot-reconciliation-writer.ts'), 'utf8')
 
-test('generation explanations travel separately from the planning proposal', () => {
-  assert.match(actionSource, /formData\.get\('generationExplanations'\)/)
-  assert.match(actionSource, /parseGenerationExplanationSnapshots/)
+test('generation explanations originate in the server-side snapshot, not multipart FormData', () => {
+  const generation = fs.readFileSync(
+    path.join(process.cwd(), 'lib', 'session-generation', 'review-snapshot-generate-postgres.ts'), 'utf8')
+  const pgAction = fs.readFileSync(
+    path.join(process.cwd(), 'app', 'actions', 'coach-session-review-snapshot-actions.ts'), 'utf8')
+  assert.match(generation, /buildGenerationExplanation/)
+  assert.match(generation, /generationExplanations/)
+  assert.match(pgAction, /createAuthorizedReviewSnapshotPostgresSessionOperations/)
+  assert.doesNotMatch(pgAction, /formData\.get\(['"]proposal['"]\)|formData\.get\(['"]generationExplanations['"]\)/)
+  assert.doesNotMatch(actionSource, /formData\.get\(['"]generationExplanations['"]\)/)
 
   const reconciliationStart = source.indexOf('const reconciliation = reconcileSessionGeneration')
   assert.notEqual(reconciliationStart, -1)
   const reconciliationEnd = source.indexOf('})', reconciliationStart)
   const reconciliationSource = source.slice(reconciliationStart, reconciliationEnd + 2)
-
   assert.doesNotMatch(reconciliationSource, /generationExplanation/)
   assert.doesNotMatch(reconciliationSource, /generationExplanations/)
 })
