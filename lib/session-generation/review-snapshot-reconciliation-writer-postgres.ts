@@ -274,7 +274,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
   }
 
   // Validate the complete audience before any INSERT, UPDATE or audit write.
-  // Obsolete Sessions shared with another Group are outside this focal slice.
+  // Account for every active prescription before deciding whether a Session survives.
   const obsoleteSessionIds = [...new Set(obsoleteGenerated.map(row => row.sessionId))]
   const obsoleteSessions = new Map<string, {
     id: string
@@ -304,10 +304,12 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         AND is_deleted = false
     `
     const session = sessions[0]
-    if (!session || session.ownership !== 'generated' ||
-      (session.sharedEventKey && seenEvents.has(session.sharedEventKey))) {
+    if (!session || session.ownership !== 'generated') {
       throw new Error('reconciliation_conflict: obsolete generated Session collision')
     }
+    // A Session can remain in the new proposal while only one of its
+    // generated prescriptions is obsolete. Retire the prescription, but
+    // preserve the Session while any active prescription still references it.
     const audience = await tx<{id: string; groupId: string}[]>`
       SELECT id,group_id AS "groupId" FROM group_session_prescriptions
       WHERE session_id = ${sessionId} AND is_deleted = false
