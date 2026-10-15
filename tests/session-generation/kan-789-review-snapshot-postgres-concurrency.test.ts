@@ -75,16 +75,37 @@ test('KAN-789 independent PG sessions serialize quota and single consumption', {
     assert.equal(existing.length, 2)
 
     const chosen = { ...owner, id: existing[0].id }
-    let durableCalls = 0
+    // SERIALIZABLE may invoke a callback again after rolling back a 40001
+    // attempt. Count committed database effects, not in-memory invocations.
+    let callbackAttempts = 0
+    const durableSessionId = prefix + '-committed-session'
     const attempts = await Promise.all(clients.map(client =>
-      consumeReviewSnapshotPostgres(client, chosen, now, async () => {
-        durableCalls += 1
+      consumeReviewSnapshotPostgres(client, chosen, now, async tx => {
+        callbackAttempts += 1
+        await tx`
+          INSERT INTO sessions (
+            id, team_id, date, title, type,
+            generation_ownership, shared_event_key, created_at, updated_at
+          ) VALUES (
+            ${durableSessionId}, ${owner.teamId}, '2027-01-05',
+            'KAN-789 committed consumption probe', 'Trail',
+            'generated', ${prefix + '-committed-key'}, ${now}, ${now}
+          )
+        `
         return 'shared-durable-result'
       }),
     ))
     assert.equal(attempts.filter(x => x.kind === 'consumed').length, 1)
     assert.equal(attempts.filter(x => x.kind === 'already_consumed').length, 2)
-    assert.equal(durableCalls, 1, 'Callback must run once for concurrent same-snapshot attempts')
+    assert.ok(callbackAttempts >= 1, 'at least one transactional attempt must persist')
+    const committed = await setup<{ count: number }[]>`
+      SELECT count(*)::integer AS count FROM sessions
+      WHERE id = ${durableSessionId}
+        AND team_id = ${owner.teamId}
+        AND shared_event_key = ${prefix + '-committed-key'}
+    `
+    assert.equal(committed[0]?.count, 1,
+      'exactly one durable Session write survives SERIALIZABLE retries')
     assert.ok(attempts.every(x => x.kind !== 'unavailable' &&
       x.resultReference === 'shared-durable-result'))
     const state = await setup<{ status: string; result_reference: string }[]>`
@@ -95,6 +116,9 @@ test('KAN-789 independent PG sessions serialize quota and single consumption', {
   } finally {
     await Promise.all(clients.map(c => c.end()))
     try {
+      await setup`DELETE FROM sessions
+        WHERE id = ${prefix + '-committed-session'}
+          AND team_id = ${owner.teamId}`
       await setup`DELETE FROM session_generation_review_snapshots
         WHERE group_training_plan_id = ${owner.groupTrainingPlanId}`
       await setup`DELETE FROM group_training_plans WHERE id = ${owner.groupTrainingPlanId}`
