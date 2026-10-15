@@ -7,7 +7,7 @@ import {
 } from '@/db/schema'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
-import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { requireAuthenticatedEptAction, type RequireAuthenticatedActionResult } from '@/lib/auth/require-authenticated-action'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
@@ -118,6 +118,7 @@ export async function authorizeReviewSnapshotAffectedGroupsNextServer(
   ])
 
   const authorization = createH4aNextServerAuthorizationBoundary()
+  let authenticatedAccess: RequireAuthenticatedActionResult | null = null
   return authorizeReviewSnapshotAffectedGroupSet({
     ownerUserId: snapshot.userId,
     ownerTeamId: snapshot.teamId,
@@ -130,6 +131,7 @@ export async function authorizeReviewSnapshotAffectedGroupsNextServer(
         ),
       })
       if (access.status !== 'authenticated') return null
+      authenticatedAccess = access
       const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
       if (activeTeam.status !== 'resolved') return null
       return { userId: access.userId, teamId: activeTeam.teamId }
@@ -141,15 +143,10 @@ export async function authorizeReviewSnapshotAffectedGroupsNextServer(
         .get()
       return group ?? null
     },
-    authorizeGroup: async (_actor, groupId) => {
-      // Re-resolve authenticated H2 evidence for the concrete H4A decision.
-      const supabase = await createSupabaseServerClient()
-      const access = await requireAuthenticatedEptAction({
-        readAccess: () => readEptSessionAccessState(
-          supabase.auth, createExternalIdentityLookup(),
-        ),
-      })
-      if (access.status !== 'authenticated' || access.userId !== snapshot.userId) return false
+    authorizeGroup: async (actor, groupId) => {
+      const access = authenticatedAccess
+      if (!access || access.status !== 'authenticated' ||
+        access.userId !== actor.userId || actor.teamId !== snapshot.teamId) return false
       const group = db.select({ id: athleteGroups.id, teamId: athleteGroups.teamId })
         .from(athleteGroups)
         .where(and(eq(athleteGroups.id, groupId), eq(athleteGroups.isDeleted, false)))
