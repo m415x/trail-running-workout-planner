@@ -206,6 +206,9 @@ export type ConsumeReviewSnapshotPostgresResult =
   | { readonly kind: 'consumed'; readonly resultReference: string }
   | { readonly kind: 'already_consumed'; readonly resultReference: string }
   | { readonly kind: 'unavailable' }
+
+export type AuthorizedConsumeReviewSnapshotPostgresResult =
+  | ConsumeReviewSnapshotPostgresResult
   | { readonly kind: 'denied' }
 
 /**
@@ -215,19 +218,31 @@ export type ConsumeReviewSnapshotPostgresResult =
  * must enforce authenticated H2/H3/H4A ownership and validate source freshness
  * within the appropriate transaction boundary; scoped SQL alone is not auth.
  */
+export function consumeReviewSnapshotPostgres(
+  client: PostgresClient,
+  scope: SnapshotScope,
+  nowIso: string,
+  persist: (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string>,
+): Promise<ConsumeReviewSnapshotPostgresResult>
+export function consumeReviewSnapshotPostgres(
+  client: PostgresClient,
+  scope: (tx: postgres.TransactionSql) => Promise<SnapshotScope | null>,
+  nowIso: string,
+  persist: (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string>,
+): Promise<AuthorizedConsumeReviewSnapshotPostgresResult>
 export async function consumeReviewSnapshotPostgres(
   client: PostgresClient,
   scope: SnapshotScope | ((tx: postgres.TransactionSql) => Promise<SnapshotScope | null>),
   nowIso: string,
   persist: (tx: postgres.TransactionSql, snapshot: SnapshotRow) => Promise<string>,
-): Promise<ConsumeReviewSnapshotPostgresResult> {
+): Promise<AuthorizedConsumeReviewSnapshotPostgresResult> {
   const now = canonicalTime(nowIso)
 
   for (let attempt = 1; attempt <= MAX_CONFIRM_ATTEMPTS; attempt++) {
     try {
       // A new begin() and new SQL snapshot for EVERY retry. Do not reuse
       // decisions, rows or a transaction handle from a failed attempt.
-      return await client.begin(async (tx): Promise<ConsumeReviewSnapshotPostgresResult> => {
+      return await client.begin(async (tx): Promise<AuthorizedConsumeReviewSnapshotPostgresResult> => {
         // Must be the first SQL statement issued in this transaction.
         await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
         // Re-evaluate trusted H2/H3/H4A scope within EVERY fresh retry,
