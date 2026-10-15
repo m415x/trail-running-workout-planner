@@ -2,6 +2,7 @@
 
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
+import { redirect } from 'next/navigation'
 
 import { supabaseClient } from '@/db/supabase'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
@@ -27,7 +28,11 @@ export async function createCoachSessionReviewSnapshot(formData: FormData) {
     return {kind: 'denied' as const}
   }
   const supabase = await createSupabaseServerClient()
-  return operations(supabase.auth).create({groupTrainingPlanId:planId})
+  const created=await operations(supabase.auth).create({groupTrainingPlanId:planId})
+  if(created.kind!=='created') return created
+  const locale=formData.get('locale')==='en'?'en':'es'
+  const base=locale==='en'?'/en/dashboard':'/dashboard'
+  redirect(`${base}/planning/${encodeURIComponent(planId)}?snapshotId=${encodeURIComponent(created.snapshotId)}`)
 }
 
 /** Read-only review; GET never generates, consumes, or refreshes a review. */
@@ -58,6 +63,11 @@ export async function confirmCoachSessionReviewSnapshot(formData: FormData) {
     revalidatePath('/dashboard/planning/'+planId)
     revalidatePath('/dashboard/sessions')
     revalidatePath('/plan')
+  }
+  if(result.kind==='consumed'||result.kind==='already_consumed') {
+    const locale=formData.get('locale')==='en'?'en':'es'
+    const base=locale==='en'?'/en/dashboard':'/dashboard'
+    redirect(`${base}/planning/${encodeURIComponent(planId)}`)
   }
   return result
 }
