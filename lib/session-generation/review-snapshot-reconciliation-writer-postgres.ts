@@ -223,13 +223,34 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     if (related.length === 0) {
       throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
     }
-    const audience = await tx<{groupId:string;id:string}[]>`
-      SELECT id,group_id AS "groupId" FROM group_session_prescriptions
-      WHERE session_id = ${row.id} AND is_deleted = false
+    const audience = await tx<{
+      id: string
+      groupId: string
+      teamId: string
+      groupActive: boolean
+      ownership: string
+    }[]>`
+      SELECT gp.id, gp.group_id AS "groupId", g.team_id AS "teamId",
+        (NOT g.is_deleted) AS "groupActive",
+        gp.generation_ownership AS ownership
+      FROM group_session_prescriptions AS gp
+      INNER JOIN athlete_groups AS g ON g.id = gp.group_id
+      WHERE gp.session_id = ${row.id} AND gp.is_deleted = false
     `
-    if (audience.some(p => !authorizedGroupIds.has(p.groupId)) ||
-      audience.some(p => !related.some(r => r.id === p.id))) {
-      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+    // Reauthorize the COMPLETE shared-Session audience in the same
+    // transaction, including prescriptions owned by other Plans.
+    if (audience.some(p => !authorizedGroupIds.has(p.groupId))) {
+      throw new Error('reconciliation_conflict: affected group authorization changed')
+    }
+    if (audience.some(p => p.teamId !== teamId || !p.groupActive)) {
+      throw new Error('reconciliation_conflict: event Team ownership changed')
+    }
+    // This slice can update the common generated Session only if other
+    // Plans' prescriptions remain generated and untouched. Never silently
+    // overwrite the shared header of an athlete/coach-protected prescription.
+    if (audience.some(p => !related.some(r => r.id === p.id) &&
+      p.ownership !== 'generated')) {
+      throw new Error('reconciliation_conflict: protected shared event collision')
     }
   }
   for (const row of generatedByKey.values()) {
