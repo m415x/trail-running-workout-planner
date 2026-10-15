@@ -12,9 +12,9 @@ type Request = { readonly groupTrainingPlanId: string; readonly snapshotId: stri
 interface Dependencies {
   readonly client: Client
   /** Only H2 identity is supplied here. Never accept actor identity from Request. */
-  readonly authenticatedUserId: () => Promise<string | null>
+  readonly authenticatedUserId: (tx: Transaction) => Promise<string | null>
   /** H3 selected Team is server-owned; membership is revalidated using tx. */
-  readonly selectedTeamId: (userId: string) => Promise<string | null>
+  readonly selectedTeamId: (userId: string, tx: Transaction) => Promise<string | null>
   readonly now: () => string
 }
 
@@ -89,9 +89,9 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
     decision:ReviewSnapshotScopeResult; affected:Set<string>|null
   }>=>{
     const denied={decision:{kind:'denied' as const},affected:null}
-    const userId=await dependencies.authenticatedUserId()
+    const userId=await dependencies.authenticatedUserId(tx)
     if (!userId?.trim()) return denied
-    const teamId=await dependencies.selectedTeamId(userId)
+    const teamId=await dependencies.selectedTeamId(userId,tx)
     if (!teamId?.trim()) return denied
     const now=dependencies.now()
     const membership=await tx<Membership[]>`
