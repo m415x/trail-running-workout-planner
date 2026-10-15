@@ -6,7 +6,7 @@ const writer = readFileSync('lib/session-generation/review-snapshot-reconciliati
 const confirmation = readFileSync('lib/session-generation/authorized-review-snapshot-confirmation.ts', 'utf8')
 
 test('KAN-790 T5.4 shared writer has explicit SQLite/Drizzle connection ownership', () => {
-  assert.match(writer, /database:\s*typeof db|database:\s*SQLiteDatabase/)
+  assert.match(writer, /database:\s*SharedDrizzleDatabase/)
   assert.doesNotMatch(writer, /run\(db as unknown as/)
   assert.match(writer, /input\.database|database\.transaction/)
 })
