@@ -24,35 +24,18 @@ const explanationViewSource = fs.readFileSync(
   'utf8',
 )
 
-test('Coach preview receives generation explanations separately from the proposal', () => {
-  assert.match(source, /GenerationExplanation/)
-  assert.match(
-    source,
-    /generationExplanations:\s*Record<string,\s*GenerationExplanation>/,
-  )
-  assert.match(
-    source,
-    /name='generationExplanations'\s+value=\{JSON\.stringify\(generationExplanations\)\}/,
-  )
-  assert.match(
-    source,
-    /name='proposal'\s+value=\{JSON\.stringify\(proposal\)\}/,
-  )
+test('Coach review gets explanations from the authorized server snapshot without uploading either payload', () => {
+  assert.match(source, /reviewedSnapshot/)
+  assert.match(source, /reviewedSnapshot\?\.generationExplanations/)
+  assert.match(source, /displayedExplanations/)
+  assert.match(source, /name='snapshotId'/)
+  assert.doesNotMatch(source, /name='generationExplanations'|name='proposal'/)
 })
 
-test('Coach preview exposes explanation per generated prescription, not as one global Session reason', () => {
-  assert.match(
-    source,
-    /generationExplanations\[generationKey\]/,
-  )
-  assert.match(
-    source,
-    /generationKey/,
-  )
-  assert.match(
-    source,
-    /<details[\s\S]*generationExplanation[\s\S]*<\/details>/,
-  )
+test('Coach review exposes per-prescription causal evidence from the durable review', () => {
+  assert.match(source, /displayedExplanations\[generationKey\]/)
+  assert.match(source, /generationKey/)
+  assert.match(source, /<details[\s\S]*generationExplanation[\s\S]*<\/details>/)
 })
 
 test('new explanation copy is consumed through CoachPlanning i18n', () => {
