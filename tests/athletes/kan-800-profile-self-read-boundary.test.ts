@@ -26,6 +26,6 @@ test('KAN-800 SELF boundary uses server-resolved profile and active Team, never 
 
 test('KAN-800 reader does not include raw physiology, medical or identity fields in client projection', () => {
   const boundary = readFileSync(boundaryPath, 'utf8')
-  assert.doesNotMatch(boundary, /columns:\s*\{[^}]*\b(?:dni|medical|physiology|contactEmail|emergencyPhone|birthday|userId):\s*true/s)
+  assert.doesNotMatch(boundary, /columns:\s*\{[^}]*\b(?:dni|medical|physiology|contactEmail|emergencyPhone|birthday|userId):\s*true/)
   assert.doesNotMatch(boundary, /\.select\(\)/)
 })
