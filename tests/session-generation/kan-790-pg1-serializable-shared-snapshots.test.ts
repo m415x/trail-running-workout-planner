@@ -22,11 +22,11 @@ const prefix = 'kan790-pg1-serial'
 const now = '2026-10-14T21:30:00.000Z'
 const teamId = prefix + '-team'
 const groupId = prefix + '-group'
-const plans = [prefix + '-base', prefix + '-variant'] as const
+const plans = [prefix + '-plan-a', prefix + '-plan-b'] as const
 const snapshots = [prefix + '-snapshot-a', prefix + '-snapshot-b'] as const
 const sharedKey = prefix + '-shared-event'
 
-test('KAN-790 PG-1 two distinct Base/Variant snapshots converge on one shared Session under SERIALIZABLE', { skip: !url }, async () => {
+test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session under SERIALIZABLE', { skip: !url, timeout: 30_000 }, async () => {
   const setup = postgres(url!, { max: 1, prepare: false })
   const clients = [
     postgres(url!, { max: 1, prepare: false }),
