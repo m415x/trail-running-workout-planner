@@ -18,12 +18,12 @@ interface PostgresReconciliationInput {
 }
 
 /**
- * PG-4/T5.4 limited create and in-place generated replacement slice.
+ * PG-4/T5.4 limited create, replacement and obsolete generated removal slice.
  *
  * Reads authoritative Plan, microcycle ancestry, previous protected records
  * and their complete current Group audience on the caller-owned transaction.
- * Obsolete-record deletion, protected-key collision and multi-plan shared
- * replacement remain unsupported and fail closed. This is not the complete writer.
+ * Protected-key collisions and unsupported multi-plan shared changes remain
+ * fail closed. This is not the production-complete reconciliation writer.
  */
 export async function reconcileAndPersistGeneratedSessionsPostgres(
   tx: postgres.TransactionSql,
@@ -87,9 +87,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
   }
 
   // Every previous active prescription in this Plan participates in the
-  // reconciliation read-set. Only protected rows can coexist with this
-  // CREATE-only slice; generated rows require the still-pending replacement
-  // and obsolete-record lifecycle. Never silently skip those mutations.
+  // reconciliation read-set; protected ownership never authorizes mutation.
   if (proposal.events.length === 0) {
     throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
   }
@@ -128,8 +126,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       throw new Error('reconciliation_conflict: affected group authorization changed')
     }
     if (row.ownership === 'generated' && row.sessionOwnership === 'generated') {
-      if (!row.generationKey || !proposalPrescriptionKeys.has(row.generationKey) ||
-        generatedByKey.has(row.generationKey)) {
+      if (!row.generationKey || generatedByKey.has(row.generationKey)) {
         throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
       }
       generatedByKey.set(row.generationKey, row)
@@ -159,6 +156,8 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     }
   }
   const preservedCount = preexisting.length - generatedByKey.size + protectedSessionIds.size
+  const obsoleteGenerated = [...generatedByKey.values()].filter(row =>
+    !proposalPrescriptionKeys.has(row.generationKey!))
   const seenEvents = new Set<string>()
   const seenPrescriptions = new Set<string>()
   for (const event of proposal.events) {
@@ -217,9 +216,59 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     }
   }
   for (const row of generatedByKey.values()) {
-    if (!existingSessions.some(event => event.id === row.sessionId)) {
+    if (proposalPrescriptionKeys.has(row.generationKey!) &&
+      !existingSessions.some(event => event.id === row.sessionId)) {
       throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
     }
+  }
+
+  // Validate the complete audience before any INSERT, UPDATE or audit write.
+  // Obsolete Sessions shared with another Group are outside this focal slice.
+  const obsoleteSessionIds = [...new Set(obsoleteGenerated.map(row => row.sessionId))]
+  const obsoleteSessions = new Map<string, {
+    id: string
+    title: string
+    date: string
+    type: string
+    ownership: string
+    sharedEventKey: string | null
+    workoutId: string | null
+    locationKey: string | null
+    trackPath: string | null
+    structure: unknown
+    notes: string | null
+  }>()
+  for (const sessionId of obsoleteSessionIds) {
+    const sessions = await tx<{
+      id: string; title: string; date: string; type: string
+      ownership: string; sharedEventKey: string | null
+      workoutId: string | null; locationKey: string | null
+      trackPath: string | null; structure: unknown; notes: string | null
+    }[]>`
+      SELECT id,title,date,type,generation_ownership AS ownership,
+        shared_event_key AS "sharedEventKey",workout_id AS "workoutId",
+        location_key AS "locationKey",track_path AS "trackPath",
+        structure,notes FROM sessions
+      WHERE id = ${sessionId} AND team_id = ${teamId}
+        AND is_deleted = false
+    `
+    const session = sessions[0]
+    if (!session || session.ownership !== 'generated' ||
+      (session.sharedEventKey && seenEvents.has(session.sharedEventKey))) {
+      throw new Error('reconciliation_conflict: obsolete generated Session collision')
+    }
+    const audience = await tx<{id: string; groupId: string}[]>`
+      SELECT id,group_id AS "groupId" FROM group_session_prescriptions
+      WHERE session_id = ${sessionId} AND is_deleted = false
+    `
+    if (audience.some(row => !authorizedGroupIds.has(row.groupId))) {
+      throw new Error('reconciliation_conflict: affected group authorization changed')
+    }
+    // Preserve shared Sessions until the full cross-plan lifecycle is implemented.
+    if (audience.some(row => !obsoleteGenerated.some(old => old.id === row.id))) {
+      throw new Error('reconciliation_conflict: PostgreSQL shared obsolete writer not yet implemented')
+    }
+    obsoleteSessions.set(sessionId, session)
   }
 
   for (const event of proposal.events) {
@@ -371,6 +420,75 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         )
       `
     }
+  }
+  // Obsolete generated prescriptions and their now-unreferenced Sessions
+  // are retired, never hard-deleted. Both removal audit records carry the
+  // previous values and belong to the same caller-owned transaction.
+  for (const old of obsoleteGenerated) {
+    const before = await tx<{
+      groupId: string; microcycleId: string; distanceKm: number | null
+      durationMin: number | null; elevationGain: number | null
+      intensityMethod: string | null; zone: string | null
+      referencePercentage: number | null; notes: string | null
+    }[]>`
+      SELECT group_id AS "groupId",microcycle_id AS "microcycleId",
+        distance_km AS "distanceKm",duration_min AS "durationMin",
+        elevation_gain AS "elevationGain",intensity_method AS "intensityMethod",
+        zone,reference_percentage AS "referencePercentage",notes
+      FROM group_session_prescriptions
+      WHERE id = ${old.id} AND generation_ownership = 'generated'
+        AND is_deleted = false
+    `
+    if (before.length !== 1) {
+      throw new Error('reconciliation_conflict: obsolete prescription changed')
+    }
+    await tx`
+      UPDATE group_session_prescriptions SET is_deleted = true, updated_at = ${input.now}
+      WHERE id = ${old.id} AND generation_ownership = 'generated'
+        AND is_deleted = false
+    `
+    await tx`
+      INSERT INTO session_generation_modification_records (
+        id,group_training_plan_id,session_id,prescription_id,
+        action,ownership,generation_key,previous_value,new_value,
+        changed_by_user_id,created_at,updated_at
+      ) VALUES (
+        ${randomUUID()},${planId},${old.sessionId},${old.id},
+        'generated_removed','generated',${old.generationKey},
+        ${JSON.stringify(before[0])},null,${input.userId},${input.now},${input.now}
+      )
+    `
+  }
+  for (const [sessionId, old] of obsoleteSessions) {
+    const remaining = await tx<{n: number}[]>`
+      SELECT count(*)::integer AS n FROM group_session_prescriptions
+      WHERE session_id = ${sessionId} AND is_deleted = false
+    `
+    if (remaining[0]?.n !== 0) {
+      throw new Error('reconciliation_conflict: obsolete Session still referenced')
+    }
+    await tx`
+      UPDATE sessions SET is_deleted = true,updated_at = ${input.now}
+      WHERE id = ${sessionId} AND generation_ownership = 'generated'
+        AND is_deleted = false
+    `
+    const before = {
+      sourceTemplateId: old.workoutId,
+      date: old.date,title: old.title,type: old.type,
+      locationKey: old.locationKey,trackPath: old.trackPath,
+      structure: old.structure,notes: old.notes,
+    }
+    await tx`
+      INSERT INTO session_generation_modification_records (
+        id,group_training_plan_id,session_id,action,ownership,
+        generation_key,previous_value,new_value,changed_by_user_id,
+        created_at,updated_at
+      ) VALUES (
+        ${randomUUID()},${planId},${sessionId},'generated_removed',
+        'generated',${old.sharedEventKey},${JSON.stringify(before)},null,
+        ${input.userId},${input.now},${input.now}
+      )
+    `
   }
   return preservedCount
 }
