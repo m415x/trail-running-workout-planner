@@ -18,12 +18,12 @@ interface PostgresReconciliationInput {
 }
 
 /**
- * PG-4/T5.4 limited CREATE-only writer slice.
+ * PG-4/T5.4 limited create and in-place generated replacement slice.
  *
  * Reads authoritative Plan, microcycle ancestry, previous protected records
  * and their complete current Group audience on the caller-owned transaction.
- * Existing generated records and matching shared keys remain unsupported and
- * fail closed. This is not the production-complete reconciliation writer.
+ * Obsolete-record deletion, protected-key collision and multi-plan shared
+ * replacement remain unsupported and fail closed. This is not the complete writer.
  */
 export async function reconcileAndPersistGeneratedSessionsPostgres(
   tx: postgres.TransactionSql,
@@ -100,12 +100,14 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     ownership: string
     sessionOwnership: string
     sessionTeamId: string
+    generationKey: string | null
   }[]>`
     SELECT gp.id, gp.session_id AS "sessionId",
       gp.group_id AS "groupId",
       gp.generation_ownership AS ownership,
       s.generation_ownership AS "sessionOwnership",
-      s.team_id AS "sessionTeamId"
+      s.team_id AS "sessionTeamId",
+      gp.generation_key AS "generationKey"
     FROM group_session_prescriptions AS gp
     INNER JOIN sessions AS s ON s.id = gp.session_id
     INNER JOIN microcycles AS mi ON mi.id = gp.microcycle_id
@@ -115,6 +117,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       AND gp.is_deleted = false
   `
   const protectedSessionIds = new Set<string>()
+  const proposalPrescriptionKeys = new Set(proposal.events.flatMap(event =>
+    event.prescriptions.map(item => item.generationKey)))
+  const generatedByKey = new Map<string, (typeof preexisting)[number]>()
   for (const row of preexisting) {
     if (row.sessionTeamId !== teamId) {
       throw new Error('reconciliation_conflict: event Team ownership changed')
@@ -122,11 +127,23 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     if (!authorizedGroupIds.has(row.groupId)) {
       throw new Error('reconciliation_conflict: affected group authorization changed')
     }
-    if (!['manual', 'generated_modified'].includes(row.ownership) ||
-      !['manual', 'generated_modified'].includes(row.sessionOwnership)) {
+    if (row.ownership === 'generated' && row.sessionOwnership === 'generated') {
+      if (!row.generationKey || !proposalPrescriptionKeys.has(row.generationKey) ||
+        generatedByKey.has(row.generationKey)) {
+        throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+      }
+      generatedByKey.set(row.generationKey, row)
+    } else if (
+      ['manual', 'generated_modified'].includes(row.ownership) &&
+      ['manual', 'generated_modified'].includes(row.sessionOwnership)
+    ) {
+      if (row.generationKey && proposalPrescriptionKeys.has(row.generationKey)) {
+        throw new Error('reconciliation_conflict: protected generation key collision')
+      }
+      protectedSessionIds.add(row.sessionId)
+    } else {
       throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
     }
-    protectedSessionIds.add(row.sessionId)
   }
   // A protected shared Session may also have live prescriptions under other
   // plans. Re-read that complete audience before accepting the new write set.
@@ -141,7 +158,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       throw new Error('reconciliation_conflict: affected group authorization changed')
     }
   }
-  const preservedCount = preexisting.length + protectedSessionIds.size
+  const preservedCount = preexisting.length - generatedByKey.size + protectedSessionIds.size
   const seenEvents = new Set<string>()
   const seenPrescriptions = new Set<string>()
   for (const event of proposal.events) {
@@ -158,16 +175,68 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     }
   }
   const keys = [...seenEvents]
-  const existingSessions = await tx<{ id: string }[]>`
-    SELECT id FROM sessions WHERE shared_event_key IN ${tx(keys)}
+  const existingSessions = await tx<{
+    id: string
+    sharedEventKey: string
+    teamId: string
+    ownership: string
+    date: string
+    title: string
+    type: string
+    workoutId: string | null
+    locationKey: string | null
+    trackPath: string | null
+    structure: unknown
+    notes: string | null
+  }[]>`
+    SELECT id, shared_event_key AS "sharedEventKey", team_id AS "teamId",
+      generation_ownership AS ownership, date, title, type,
+      workout_id AS "workoutId", location_key AS "locationKey",
+      track_path AS "trackPath", structure, notes
+    FROM sessions WHERE shared_event_key IN ${tx(keys)}
   `
-  if (existingSessions.length !== 0) {
-    throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+  const byEventKey = new Map(existingSessions.map(row => [row.sharedEventKey, row]))
+  for (const row of existingSessions) {
+    if (row.teamId !== teamId) {
+      throw new Error('reconciliation_conflict: event Team ownership changed')
+    }
+    if (row.ownership !== 'generated') {
+      throw new Error('reconciliation_conflict: protected shared event collision')
+    }
+    const related = [...generatedByKey.values()].filter(p => p.sessionId === row.id)
+    if (related.length === 0) {
+      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+    }
+    const audience = await tx<{groupId:string;id:string}[]>`
+      SELECT id,group_id AS "groupId" FROM group_session_prescriptions
+      WHERE session_id = ${row.id} AND is_deleted = false
+    `
+    if (audience.some(p => !authorizedGroupIds.has(p.groupId)) ||
+      audience.some(p => !related.some(r => r.id === p.id))) {
+      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+    }
+  }
+  for (const row of generatedByKey.values()) {
+    if (!existingSessions.some(event => event.id === row.sessionId)) {
+      throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+    }
   }
 
   for (const event of proposal.events) {
-    const sessionId = randomUUID()
+    const previousEvent = byEventKey.get(event.sharedEventKey)
+    const sessionId = previousEvent?.id ?? randomUUID()
     const values = event.session
+    if (previousEvent) {
+      await tx`
+        UPDATE sessions SET workout_id = ${values.sourceTemplateId},
+          date = ${values.date}, title = ${values.title}, type = ${values.type},
+          location_key = ${values.locationKey}, track_path = ${values.trackPath},
+          structure = ${values.structure === null ? null : JSON.stringify(values.structure)}::jsonb,
+          notes = ${values.notes}, is_deleted = false, updated_at = ${input.now}
+        WHERE id = ${sessionId} AND team_id = ${teamId}
+          AND generation_ownership = 'generated'
+      `
+    } else {
     await tx`
       INSERT INTO sessions (
         id, team_id, workout_id, date, title, type, location_key,
@@ -182,25 +251,41 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         ${input.now}, ${input.now}
       )
     `
+    }
     const sessionAudit = {
       sourceTemplateId: values.sourceTemplateId,
       date: values.date, title: values.title, type: values.type,
       locationKey: values.locationKey, trackPath: values.trackPath,
       structure: values.structure, notes: values.notes,
     }
+    const previousSessionAudit = previousEvent ? {
+      sourceTemplateId: previousEvent.workoutId, date: previousEvent.date,
+      title: previousEvent.title, type: previousEvent.type,
+      locationKey: previousEvent.locationKey, trackPath: previousEvent.trackPath,
+      structure: previousEvent.structure, notes: previousEvent.notes,
+    } : null
     await tx`
       INSERT INTO session_generation_modification_records (
         id, group_training_plan_id, session_id, action, ownership,
         generation_key, previous_value, new_value, changed_by_user_id,
         created_at, updated_at
       ) VALUES (
-        ${randomUUID()}, ${planId}, ${sessionId}, 'generated_created',
-        'generated', ${event.sharedEventKey}, null,
+        ${randomUUID()}, ${planId}, ${sessionId},
+        ${previousEvent ? 'generated_updated' : 'generated_created'},
+        'generated', ${event.sharedEventKey},
+        ${previousSessionAudit === null ? null : JSON.stringify(previousSessionAudit)},
         ${JSON.stringify(sessionAudit)}, ${input.userId}, ${input.now}, ${input.now}
       )
     `
     for (const item of event.prescriptions) {
-      const prescriptionId = randomUUID()
+      const existingPrescription = generatedByKey.get(item.generationKey)
+      if (existingPrescription && existingPrescription.sessionId !== sessionId) {
+        throw new Error('reconciliation_conflict: prescription belongs to another Session')
+      }
+      if (previousEvent && !existingPrescription) {
+        throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
+      }
+      const prescriptionId = existingPrescription?.id ?? randomUUID()
       const data = item.prescription
       const expectedScope: GenerationExplanation['planningScope'] =
         plan.planningCohortId === null
@@ -217,6 +302,37 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         generationKey: item.generationKey,
         expectedScope,
       })
+      const priorPrescription = existingPrescription ? await tx<{
+        groupId: string
+        microcycleId: string
+        distanceKm: number | null
+        durationMin: number | null
+        elevationGain: number | null
+        intensityMethod: string | null
+        zone: string | null
+        referencePercentage: number | null
+        notes: string | null
+      }[]>`
+        SELECT group_id AS "groupId", microcycle_id AS "microcycleId",
+          distance_km AS "distanceKm", duration_min AS "durationMin",
+          elevation_gain AS "elevationGain", intensity_method AS "intensityMethod",
+          zone, reference_percentage AS "referencePercentage", notes
+        FROM group_session_prescriptions WHERE id = ${prescriptionId}
+      ` : []
+      if (existingPrescription) {
+        await tx`
+          UPDATE group_session_prescriptions
+          SET group_id = ${data.groupId}, microcycle_id = ${data.microcycleId},
+            distance_km = ${data.distanceKm ?? null},
+            duration_min = ${data.durationMin ?? null},
+            elevation_gain = ${data.elevationGain ?? null},
+            intensity_method = ${data.intensityMethod}, zone = ${data.zone},
+            reference_percentage = ${data.referencePercentage}, notes = ${data.notes},
+            is_deleted = false, updated_at = ${input.now}
+          WHERE id = ${prescriptionId} AND session_id = ${sessionId}
+            AND generation_ownership = 'generated'
+        `
+      } else {
       await tx`
         INSERT INTO group_session_prescriptions (
           id, session_id, group_id, microcycle_id, distance_km,
@@ -231,6 +347,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           ${item.generationKey}, ${input.now}, ${input.now}
         )
       `
+      }
       const prescriptionAudit = {
         groupId: data.groupId, microcycleId: data.microcycleId,
         distanceKm: data.distanceKm, durationMin: data.durationMin,
@@ -245,9 +362,11 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
           previous_value, new_value, changed_by_user_id, created_at, updated_at
         ) VALUES (
           ${randomUUID()}, ${planId}, ${sessionId}, ${prescriptionId},
-          'generated_created', 'generated', ${item.generationKey},
+          ${existingPrescription ? 'generated_updated' : 'generated_created'},
+          'generated', ${item.generationKey},
           ${explanation === null ? null : JSON.stringify(explanation)}::jsonb,
-          null, ${JSON.stringify(prescriptionAudit)}, ${input.userId},
+          ${existingPrescription ? JSON.stringify(priorPrescription[0]) : null},
+          ${JSON.stringify(prescriptionAudit)}, ${input.userId},
           ${input.now}, ${input.now}
         )
       `
