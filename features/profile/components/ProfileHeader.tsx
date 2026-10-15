@@ -2,11 +2,11 @@
 
 import { Pencil } from 'lucide-react'
 import { useTranslations } from 'next-intl'
-import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
+import type { ProfileSelfHeader } from '@/lib/athletes/profile-self-read'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { CustomCard } from '@ui/custom/card-containers'
 
-export function ProfileHeader({ athlete }: { athlete: CurrentAthleteData['athleteProfile'] }) {
+export function ProfileHeader({ athlete }: { athlete: ProfileSelfHeader }) {
   const t = useTranslations('AthleteProfile.header')
   const fullName = [athlete.firstName, athlete.lastName].filter(Boolean).join(' ').trim()
   const displayName = athlete.nickName?.trim() || fullName || '—'
