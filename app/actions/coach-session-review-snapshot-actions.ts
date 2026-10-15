@@ -9,9 +9,19 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { ACTIVE_TEAM_COOKIE_NAME } from '@/lib/authorization/active-team-selection'
 import { createAuthorizedReviewSnapshotPostgresSessionOperations } from '@/lib/session-generation/authorized-review-snapshot-postgres-session'
 
+let pgClient: ReturnType<typeof postgres> | null = null
+
+function currentPostgresClient() {
+  if (pgClient) return pgClient
+  const url = process.env.SUPABASE_DATABASE_URL
+  if (!url) throw new Error('SUPABASE_DATABASE_URL no está configurada')
+  pgClient = postgres(url, { prepare: false, max: 1 })
+  return pgClient
+}
+
 function operations(auth: Awaited<ReturnType<typeof createSupabaseServerClient>>['auth']) {
   return createAuthorizedReviewSnapshotPostgresSessionOperations({
-    client: postgres(process.env.SUPABASE_DATABASE_URL ?? 'postgres://invalid:invalid@127.0.0.1:1/disabled', { prepare: false, max: 1 }),
+    client: currentPostgresClient(),
     auth,
     readPersistedTeamId: async () => {
       const store = await cookies()
