@@ -50,13 +50,15 @@ test('KAN-790 PG-2 preferences use actual PG transaction and distinguish missing
     )
     assert.equal((await sql`SELECT id FROM session_generation_preferences
       WHERE id = ${id+'-pref'}`).length, 0)
-    await sql.begin(async tx => {
+    // A PostgreSQL statement failure aborts its transaction. Assert against
+    // the enclosing begin() so postgres.js can ROLLBACK rather than attempting
+    // to COMMIT a transaction already invalidated by SQLSTATE 42P01.
+    await assert.rejects(sql.begin(async tx => {
       await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
       await tx`SET LOCAL search_path TO pg_catalog`
-      await assert.rejects(readReviewPlanGenerationPreferencesPostgres(tx, scope),
-        error => error !== null && typeof error === 'object' &&
-          'code' in error && error.code === '42P01')
-    })
+      await readReviewPlanGenerationPreferencesPostgres(tx, scope)
+    }), error => error !== null && typeof error === 'object' &&
+      'code' in error && error.code === '42P01')
   } finally {
     try {
       await sql`DELETE FROM session_generation_preferences WHERE id = ${id+'-pref'}`
