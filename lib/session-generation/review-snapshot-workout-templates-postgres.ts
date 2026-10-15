@@ -12,6 +12,20 @@ interface WorkoutRow extends Omit<ReviewWorkoutTemplateFacts, 'tags' | 'structur
 }
 
 /**
+ * The PostgreSQL wire client can supply JSONB as already decoded values or
+ * serialized JSON strings. Normalize only that transport distinction, while
+ * keeping malformed persisted data a hard error (never an empty catalogue).
+ */
+function decodeWorkoutJson(value: unknown, label: string): unknown {
+  if (typeof value !== 'string') return value
+  try {
+    return JSON.parse(value)
+  } catch {
+    throw new Error('Invalid workout template ' + label + ' JSON source')
+  }
+}
+
+/**
  * PG-2: reads the Team-owned active workout catalogue from the same
  * SERIALIZABLE TransactionSql as the enclosing confirmation.
  *
@@ -58,19 +72,21 @@ export async function readReviewWorkoutTemplateFactsPostgres(
   `
 
   const templates: ReviewWorkoutTemplateFacts[] = rows.map(row => {
-    // postgres.js decodes JSONB. Never parse it again as serialized SQLite text.
-    if (!Array.isArray(row.tags) ||
-      !row.tags.every(tag => typeof tag === 'string')) {
+    const tags = decodeWorkoutJson(row.tags, 'tags')
+    if (!Array.isArray(tags) || !tags.every(tag => typeof tag === 'string')) {
       throw new Error('Invalid workout template tags source')
     }
-    if (row.structure !== null &&
-      (typeof row.structure !== 'object' || Array.isArray(row.structure))) {
+    const structure = row.structure === null
+      ? null
+      : decodeWorkoutJson(row.structure, 'structure')
+    if (structure !== null &&
+      (typeof structure !== 'object' || Array.isArray(structure))) {
       throw new Error('Invalid workout template structure source')
     }
     return {
       id: row.id,
       category: row.category,
-      tags: [...row.tags] as string[],
+      tags: [...tags] as string[],
       title: row.title,
       type: row.type,
       distanceKm: row.distanceKm,
@@ -81,7 +97,7 @@ export async function readReviewWorkoutTemplateFactsPostgres(
       referencePercentage: row.referencePercentage,
       notes: row.notes,
       prescriptionNotes: row.prescriptionNotes,
-      structure: row.structure,
+      structure,
       trackPath: row.trackPath,
       locationKey: row.locationKey,
     }
