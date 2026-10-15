@@ -418,7 +418,6 @@ export default async function PlanningDetailPage({ params, searchParams }: Plann
         isAvailable={canGenerateSessions}
         planId={plan.id}
         locale={locale}
-        proposal={sharedPreview}
         generationExplanations={generationExplanations}
         reviewedSnapshot={reviewed?.kind === 'available' ? reviewed.snapshot : null}
       />
