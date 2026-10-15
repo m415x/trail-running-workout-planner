@@ -89,9 +89,6 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
 
   // Every previous active prescription in this Plan participates in the
   // reconciliation read-set; protected ownership never authorizes mutation.
-  if (proposal.events.length === 0) {
-    throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
-  }
   const preexisting = await tx<{
     id: string
     sessionId: string
@@ -175,7 +172,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     }
   }
   const keys = [...seenEvents]
-  const existingSessions = await tx<{
+  const existingSessions = keys.length === 0 ? [] : await tx<{
     id: string
     sharedEventKey: string
     teamId: string
