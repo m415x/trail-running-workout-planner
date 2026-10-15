@@ -81,7 +81,7 @@ function main(): void {
   // SQLSTATE 40001 between otherwise independent rollback fixtures.
   // Keep the real database, transaction isolation, and assertions intact.
   const pg4Files = tests.filter(path => {
-    const filename = path.replaceAll('\\\\', '/').split('/').pop() ?? ''
+    const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
     return filename.startsWith('kan-790-pg4-') && filename.endsWith('.test.ts')
   })
   const testOptions = pg4Files.length > 1 ? ['--test-concurrency=1'] : []
