@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import test from 'node:test'
+import {deriveReviewSnapshotWeeks} from '@/lib/session-generation/review-snapshot-presentation'
+import type {SharedSessionGenerationResult} from '@/types/training/session-generation.types'
+import type {GenerationExplanation} from '@/lib/session-generation/generation-explanation'
 
 test('KAN-791 T6-B review renderer derives week coverage from server-owned snapshot rather than SQLite weeks', () => {
   const path='features/planning/components/CoachPostgresSnapshotReview.tsx'
@@ -14,8 +17,7 @@ test('KAN-791 T6-B review renderer derives week coverage from server-owned snaps
   assert.doesNotMatch(code,/getGroupTrainingPlanById|@\/db|generationResults|generateWeeklySessionProposals/)
 })
 
-test('KAN-791 T6-B grouping must preserve every generationKey from 239 prescriptions', async () => {
-  const {deriveReviewSnapshotWeeks}=await import('@/lib/session-generation/review-snapshot-presentation')
+test('KAN-791 T6-B grouping must preserve every generationKey from 239 prescriptions', () => {
   const weeks=Array.from({length:53},(_,i)=>({
     id:'micro-'+i,weekNumber:i+1,type:'development' as const,
     startDate:'2027-01-04',endDate:'2027-01-10',
@@ -32,7 +34,8 @@ test('KAN-791 T6-B grouping must preserve every generationKey from 239 prescript
   })
   const explanations=Object.fromEntries(events.map((event,i)=>['generation-'+i,{stages:[]}]))
   const grouped=deriveReviewSnapshotWeeks({
-    microcycles:weeks,proposal:{events},generationExplanations:explanations,
+    microcycles:weeks,proposal:{events} as unknown as SharedSessionGenerationResult,
+    generationExplanations:explanations as Record<string,GenerationExplanation>,
   })
   assert.equal(grouped.length,53)
   assert.equal(grouped.reduce((sum,week)=>sum+week.events.length,0),239)
