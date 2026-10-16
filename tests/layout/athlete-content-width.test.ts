@@ -6,6 +6,8 @@ const home = readFileSync('features/workouts/HomeTab.tsx', 'utf8')
 const plan = readFileSync('app/[locale]/(mobile)/plan/page.tsx', 'utf8')
 const profile = readFileSync('features/profile/ProfileTab.tsx', 'utf8')
 const homeHeader = readFileSync('features/workouts/components/HomeHeader.tsx', 'utf8')
+const stats = readFileSync('app/[locale]/(mobile)/stats/page.tsx', 'utf8')
+const athleteTypography = readFileSync('features/athlete-typography/typography.css', 'utf8')
 const profileHeader = readFileSync('features/profile/components/ProfileHeader.tsx', 'utf8')
 
 test('KAN-563 aligns Athlete Home Plan and Profile with the Stats content width', () => {
@@ -30,7 +32,13 @@ test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats',
   assert.match(plan, /px-4[^'"]*py-6[^'"]*sm:px-6/)
   assert.match(profile, /px-4[^'"]*py-6[^'"]*sm:px-6/)
 
-  assert.match(homeHeader, /text-2xl[^'"]*sm:text-3xl/)
+  // Athlete Home/Stats now share scoped semantics while preserving the
+  // original KAN-563 1.5rem mobile and 1.875rem tablet+ visual hierarchy.
+  assert.match(homeHeader, /text-\[length:var\(--athlete-text-heading\)\]/)
+  assert.match(stats, /text-\[length:var\(--athlete-text-heading\)\]/)
+  assert.match(athleteTypography, /--athlete-text-heading:\s*1\.5rem;/)
+  assert.match(athleteTypography, /@media\s*\(min-width:\s*640px\)\s*\{\s*\.athlete-typography\s*\{[^}]*--athlete-text-heading:\s*1\.875rem;/)
+  assert.match(athleteTypography, /@media\s*\(min-width:\s*1024px\)\s*\{\s*\.athlete-typography\s*\{[^}]*--athlete-text-heading:\s*1\.875rem;/)
   assert.match(plan, /text-2xl[^'"]*sm:text-3xl/)
   assert.match(profileHeader, /text-2xl[^'"]*sm:text-3xl/)
 })
