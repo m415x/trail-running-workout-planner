@@ -4,6 +4,7 @@ import test from 'node:test'
 
 const navigation = readFileSync('components/layout/BottomNavigationBar.tsx', 'utf8')
 const globals = readFileSync('app/globals.css', 'utf8')
+const athleteTypography = readFileSync('features/athlete-typography/typography.css', 'utf8')
 
 test('KAN-572 Athlete bottom navigation uses scalable semantic captions and accessible targets', () => {
   assert.match(globals, /--text-ept-caption:\s*0\.75rem/)
@@ -11,9 +12,11 @@ test('KAN-572 Athlete bottom navigation uses scalable semantic captions and acce
 
   assert.match(
     navigation,
-    /text-\[length:var\(--text-ept-caption\)\]/,
-    'navigation captions must consume the KAN-507 rem-based semantic caption token',
+    /text-\[length:var\(--athlete-text-caption\)\]/,
+    'navigation captions must consume the scoped Athlete rem-based semantic caption token',
   )
+  assert.match(athleteTypography, /--athlete-text-caption:\s*0\.75rem;/)
+  assert.match(athleteTypography, /\.athlete-typography\s*\{/)
   assert.doesNotMatch(navigation, /text-\[9px\]/)
 
   assert.match(
