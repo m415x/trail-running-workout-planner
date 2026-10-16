@@ -56,10 +56,10 @@ async function main(){
         SELECT id,user_id AS "userId",subject,provider,is_deleted AS "isDeleted"
         FROM external_identity_links
         WHERE id=${LINK} OR (provider='supabase' AND subject=${subject}) OR user_id=${USER}`
-      const members=await tx<{id:string;userId:string;teamId:string;preset:string;isActive:boolean;isDeleted:boolean;effectiveUntil:string|null}[]>`
+      const members=await tx<{id:string;userId:string;teamId:string;preset:string;isActive:boolean;isDeleted:boolean;effectiveFrom:string;effectiveUntil:string|null}[]>`
         SELECT id,user_id AS "userId",team_id AS "teamId",preset,
           is_active AS "isActive",is_deleted AS "isDeleted",
-          effective_until AS "effectiveUntil" FROM team_memberships
+          effective_from AS "effectiveFrom",effective_until AS "effectiveUntil" FROM team_memberships
         WHERE id=${MEMBERSHIP} OR user_id=${USER}`
       const state=classifyKan791CoachIdentityState({
         ids:{userId:USER,linkId:LINK,membershipId:MEMBERSHIP,teamId:TEAM,email:EMAIL},
