@@ -6,7 +6,7 @@ test('KAN-790 T5.5 Coach preview confirms an opaque snapshot ID, not a client pr
   const preview=readFileSync(
     'features/planning/components/SessionGenerationPreview.tsx','utf8',
   )
-  const actions=readFileSync('app/actions/session-generation-actions.ts','utf8')
+  const actions=readFileSync('app/actions/coach-session-review-snapshot-actions.ts','utf8')
 
   // The real React/Next form is the integration target; the historical raw
   // multipart payload must no longer be an authority for CONFIRM.
