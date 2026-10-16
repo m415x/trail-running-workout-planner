@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { config } from 'dotenv'
 import postgres from 'postgres'
+import { classifyKan791CoachIdentityState } from '@/lib/auth/kan-791-provisioner-state'
 
 config({path:'.env.local'})
 
@@ -60,16 +61,12 @@ async function main(){
           is_active AS "isActive",is_deleted AS "isDeleted",
           effective_until AS "effectiveUntil" FROM team_memberships
         WHERE id=${MEMBERSHIP} OR user_id=${USER}`
-      const ownUser=users.length===1 && users[0]?.id===USER && users[0]?.email===EMAIL && !users[0]?.isDeleted
-      const ownLink=links.length===1 && links[0]?.id===LINK && links[0]?.userId===USER &&
-        links[0]?.subject===subject && links[0]?.provider==='supabase' && !links[0]?.isDeleted
-      const ownMember=members.length===1 && members[0]?.id===MEMBERSHIP &&
-        members[0]?.userId===USER && members[0]?.teamId===TEAM &&
-        members[0]?.preset==='coach' && members[0]?.isActive &&
-        !members[0]?.isDeleted && members[0]?.effectiveUntil===null
-      const empty=users.length===0 && links.length===0 && members.length===0
-      const complete=ownUser && ownLink && ownMember
-      if(!empty && !complete) throw new Error('Identity ownership collision or partial state: refusing operation')
+      const state=classifyKan791CoachIdentityState({
+        ids:{userId:USER,linkId:LINK,membershipId:MEMBERSHIP,teamId:TEAM,email:EMAIL},
+        subject,at:NOW(),users,links,memberships:members,
+      })
+      const empty=state==='absent'
+      const complete=state==='complete'
       // The subject is a user-supplied H2 fact; this script never creates Supabase Auth accounts.
       if(mode==='verify') return {mode,state:empty?'absent':'complete',teamId:TEAM,ownedIds:[USER,LINK,MEMBERSHIP]}
       if(mode==='apply'){
