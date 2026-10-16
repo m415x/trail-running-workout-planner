@@ -31,7 +31,7 @@ async function main(){
   })
   // Mutating provisioning is denied until Supabase proves the UID/email pair.
   // Verify remains offline/read-only and must not require login credentials.
-  const sql=mode==='apply'
+  const sql=mode==='apply' || mode==='cleanup'
     ? await authorizeKan791ApplyBeforeDatabase({email,subject},{
         verifyIdentity:verifyKan791SupabaseIdentity,
         openDatabase:()=>postgres(url,{max:1,prepare:false}),
