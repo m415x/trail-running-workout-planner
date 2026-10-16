@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { config } from 'dotenv'
 import postgres from 'postgres'
-import { classifyKan791CoachIdentityState } from '@/lib/auth/kan-791-provisioner-state'
+import { inspectKan791CoachIdentity, cleanupKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-lifecycle'
+import { applyKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-transaction'
 
 config({path:'.env.local'})
 
@@ -49,42 +50,21 @@ async function main(){
       const plans=await tx<{id:string}[]>`
         SELECT id FROM group_training_plans WHERE id=${'kan791-annual-pg-239-plan'} AND group_id=${GROUP}`
       assert.equal(plans.length,1,'Expected annual fixture Plan belongs to Team group')
-      const users=await tx<{id:string;email:string;isDeleted:boolean}[]>`
-        SELECT id,email,is_deleted AS "isDeleted" FROM users
-        WHERE id=${USER} OR email=${EMAIL}`
-      const links=await tx<{id:string;userId:string;subject:string;provider:string;isDeleted:boolean}[]>`
-        SELECT id,user_id AS "userId",subject,provider,is_deleted AS "isDeleted"
-        FROM external_identity_links
-        WHERE id=${LINK} OR (provider='supabase' AND subject=${subject}) OR user_id=${USER}`
-      const members=await tx<{id:string;userId:string;teamId:string;preset:string;isActive:boolean;isDeleted:boolean;effectiveFrom:string;effectiveUntil:string|null}[]>`
-        SELECT id,user_id AS "userId",team_id AS "teamId",preset,
-          is_active AS "isActive",is_deleted AS "isDeleted",
-          effective_from AS "effectiveFrom",effective_until AS "effectiveUntil" FROM team_memberships
-        WHERE id=${MEMBERSHIP} OR user_id=${USER}`
-      const state=classifyKan791CoachIdentityState({
+      const input={
         ids:{userId:USER,linkId:LINK,membershipId:MEMBERSHIP,teamId:TEAM,email:EMAIL},
-        subject,at:NOW(),users,links,memberships:members,
-      })
-      const empty=state==='absent'
-      const complete=state==='complete'
-      // The subject is a user-supplied H2 fact; this script never creates Supabase Auth accounts.
-      if(mode==='verify') return {mode,state:empty?'absent':'complete',teamId:TEAM,ownedIds:[USER,LINK,MEMBERSHIP]}
-      if(mode==='apply'){
-        if(complete) return {mode,state:'complete',mutated:false,teamId:TEAM}
-        const now=NOW()
-        await tx`INSERT INTO users(id,user_name,email,first_name,last_name,created_at,updated_at)
-          VALUES (${USER},${ID},${EMAIL},'KAN791','Acceptance',${now},${now})`
-        await tx`INSERT INTO external_identity_links(id,user_id,provider,subject,created_at,updated_at)
-          VALUES (${LINK},${USER},'supabase',${subject},${now},${now})`
-        await tx`INSERT INTO team_memberships(id,user_id,team_id,preset,effective_from,is_active,created_at,updated_at)
-          VALUES (${MEMBERSHIP},${USER},${TEAM},'coach',${now},true,${now},${now})`
-        return {mode,state:'complete',mutated:true,teamId:TEAM}
+        subject,at:NOW(),
       }
-      if(empty) return {mode,state:'absent',mutated:false,teamId:TEAM}
-      await tx`DELETE FROM team_memberships WHERE id=${MEMBERSHIP} AND user_id=${USER} AND team_id=${TEAM}`
-      await tx`DELETE FROM external_identity_links WHERE id=${LINK} AND user_id=${USER} AND subject=${subject}`
-      await tx`DELETE FROM users WHERE id=${USER} AND email=${EMAIL}`
-      return {mode,state:'absent',mutated:true,teamId:TEAM}
+      // Shared H1/H3 ownership checks for every CLI mode; no parallel SQL writers.
+      if(mode==='verify') {
+        const state=await inspectKan791CoachIdentity(tx,input)
+        return {mode,state,teamId:TEAM,ownedIds:[USER,LINK,MEMBERSHIP]}
+      }
+      if(mode==='apply') {
+        const result=await applyKan791CoachIdentity(tx,input)
+        return {mode,...result,teamId:TEAM}
+      }
+      const result=await cleanupKan791CoachIdentity(tx,input)
+      return {mode,...result,teamId:TEAM}
     })
     console.log(JSON.stringify(outcome))
   }finally{await sql.end()}
