@@ -127,6 +127,12 @@
       "minDays": "Seleccioná al menos 3 días habituales."
     },
     "sessionPreview": {
+    "reviewCreate": "Crear revisión",
+    "reviewCreateHelp": "Crear una revisión autorizada antes de confirmar las sesiones.",
+    "reviewConfirmHelp": "Confirmar la revisión autorizada y guardar las sesiones.",
+    "reviewDenied": "No autorizado",
+    "reviewUnavailable": "La revisión ya no está disponible.",
+    "reviewFailed": "No se pudo completar la operación.",
       "title": "Vista previa de sesiones",
       "description": "Propuesta calculada desde cada microciclo. Revisala antes de guardarla.",
       "saved": "Guardado",
