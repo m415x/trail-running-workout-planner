@@ -2,6 +2,19 @@ import assert from 'node:assert/strict'
 import {createClient} from '@supabase/supabase-js'
 import type {Kan791AcceptanceIdentity} from './kan-791-acceptance-identity'
 
+/** Fail closed on absent, mismatched or inconsistent Supabase identity evidence. */
+export function assertKan791VerifiedSupabaseIdentity(
+ expected:Kan791AcceptanceIdentity,
+ user:{id:string;email?:string|null}|null,
+ signedInSubject:string,
+):void {
+ if(!user || user.id.toLowerCase()!==expected.subject.toLowerCase() ||
+    user.id!==signedInSubject ||
+    user.email?.trim().toLowerCase()!==expected.email.trim().toLowerCase()) {
+  throw new Error('Dedicated Supabase identity mismatch or not verified')
+ }
+}
+
 /**
  * Proves operator-supplied EPT identity attributes via a real Supabase login and
  * authenticated getUser lookup. This does not authorize EPT Team membership.
@@ -25,11 +38,7 @@ export async function verifyKan791SupabaseIdentity(expected:Kan791AcceptanceIden
   const verified=await client.auth.getUser(result.data.session.access_token)
   const user=verified.data.user
   if(verified.error || !user) throw new Error('Dedicated Supabase identity not verified')
-  if(user.id.toLowerCase()!==expected.subject.toLowerCase() ||
-     user.email?.trim().toLowerCase()!==expected.email.trim().toLowerCase() ||
-     result.data.user?.id!==user.id) {
-    throw new Error('Dedicated Supabase identity mismatch')
-  }
+  assertKan791VerifiedSupabaseIdentity(expected,user,result.data.user?.id ?? '')
  } finally {
   // Supabase credentials are used only in this process; never persisted or printed.
   await client.auth.signOut().catch(()=>undefined)
