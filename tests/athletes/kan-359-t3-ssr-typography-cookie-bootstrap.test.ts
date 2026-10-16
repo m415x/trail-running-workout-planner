@@ -39,7 +39,7 @@ test('KAN-359/T3 browser update validates values and delegates only cookie seria
 test('KAN-359/T3 Athlete server layout reads the request cookie and supplies the same initial value to its shell', () => {
   const layout = readFileSync('app/[locale]/(mobile)/layout.tsx', 'utf8')
   assert.match(layout, /cookies\s*\(/)
-  assert.match(layout, new RegExp(ATHLETE_TYPOGRAPHY_COOKIE_NAME.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '|ATHLETE_TYPOGRAPHY_COOKIE_NAME'))
+  assert.ok(layout.includes(ATHLETE_TYPOGRAPHY_COOKIE_NAME) || layout.includes('ATHLETE_TYPOGRAPHY_COOKIE_NAME'))
   assert.match(layout, /resolveAthleteTypographyBootstrap/)
   assert.match(layout, /<MobileShell[^>]*initialTypographyPreference=/)
 })
@@ -49,5 +49,5 @@ test('KAN-359/T3 client shell must initialize from SSR prop without deferred sto
   assert.match(shell, /initialTypographyPreference/)
   assert.match(shell, /data-athlete-typography/)
   assert.doesNotMatch(shell, /localStorage|sessionStorage/)
-  assert.doesNotMatch(shell, /useEffect\s*\(\s*\(\)\s*=>\s*\{[^}]*document\.cookie/s)
+  assert.doesNotMatch(shell, /useEffect\s*\(\s*\(\)\s*=>\s*\{[^}]*document\.cookie/)
 })
