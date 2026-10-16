@@ -31,6 +31,13 @@ function operations(auth: Awaited<ReturnType<typeof createSupabaseServerClient>>
   })
 }
 
+/** Authorized read-only PostgreSQL identity for the dedicated Coach review route. */
+export async function getCoachPostgresReviewPlanContext(planId: string) {
+  if (!planId?.trim()) return {kind:'denied' as const}
+  const supabase=await createSupabaseServerClient()
+  return operations(supabase.auth).getPlanContext({groupTrainingPlanId:planId})
+}
+
 /** Explicit Coach CREATE. The client may name only the Plan, never actors or payload. */
 export async function createCoachSessionReviewSnapshot(formData: FormData) {
   const planId = formData.get('planId')
