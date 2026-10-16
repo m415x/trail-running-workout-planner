@@ -44,10 +44,18 @@ export function createPostgresH4aEvidenceSource(sql:Client):H4aAuthorizationEvid
         FROM authorization_grants WHERE beneficiary_user_id=${userId}
           AND team_id=${teamId} AND is_deleted=false
       `
-      return Array.from(rows,row=>({
-        ...row,capability:row.capability as CapabilityKey,
-        scope:row.scope as AuthorizationScope,
-      }))
+      return Array.from(rows,row=>{
+        // H4A grants require a bounded validity interval. Never invent an
+        // expiry for malformed PostgreSQL evidence or broaden a grant.
+        if(row.effectiveUntil===null) {
+          throw new Error('Invalid PostgreSQL authorization grant validity')
+        }
+        return {
+          ...row,effectiveUntil:row.effectiveUntil,
+          capability:row.capability as CapabilityKey,
+          scope:row.scope as AuthorizationScope,
+        }
+      })
     },
   }
 }
