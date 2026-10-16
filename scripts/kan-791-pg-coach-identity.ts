@@ -39,9 +39,13 @@ async function main(){
   const sql=postgres(url,{max:1,prepare:false})
   try{
     const outcome=await sql.begin(async tx=>{
-      // Lock the designated Team to serialize competing acceptance operations.
-      const teams=await tx<{id:string;name:string;isDeleted:boolean}[]>`
-        SELECT id,name,is_deleted AS "isDeleted" FROM teams WHERE id=${TEAM} FOR UPDATE`
+      if(mode==='verify') await tx`SET TRANSACTION READ ONLY`
+      // Mutating modes serialize on Team; read-only verify never acquires row locks.
+      const teams=mode==='verify'
+        ? await tx<{id:string;name:string;isDeleted:boolean}[]>`
+            SELECT id,name,is_deleted AS "isDeleted" FROM teams WHERE id=${TEAM}`
+        : await tx<{id:string;name:string;isDeleted:boolean}[]>`
+            SELECT id,name,is_deleted AS "isDeleted" FROM teams WHERE id=${TEAM} FOR UPDATE`
       assert.equal(teams.length,1,'Expected annual fixture Team')
       assert.equal(teams[0]?.isDeleted,false,'Annual fixture Team is deleted')
       const groups=await tx<{id:string;teamId:string}[]>`
