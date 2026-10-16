@@ -1,0 +1,33 @@
+/*
+ * KAN-359/T2: responsive semantic typography for the Athlete audience only.
+ *
+ * These values describe hierarchy and viewport composition, not accessibility
+ * preference. The existing html mobile 120% baseline remains untouched.
+ * No styles apply until an Athlete-owned surface opts into this scope.
+ * T3 will provide the independent preference mechanism; T4 will adopt tokens.
+ */
+.athlete-typography {
+  --athlete-text-display: 2.25rem;
+  --athlete-text-heading: 1.5rem;
+  --athlete-text-title: 1.125rem;
+  --athlete-text-body: 1rem;
+  --athlete-text-body-compact: 0.875rem;
+  --athlete-text-label: 0.875rem;
+  --athlete-text-caption: 0.75rem;
+  --athlete-text-data: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .athlete-typography {
+    --athlete-text-display: 2.5rem;
+    --athlete-text-heading: 1.625rem;
+    --athlete-text-title: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .athlete-typography {
+    --athlete-text-display: 2.75rem;
+    --athlete-text-heading: 1.75rem;
+  }
+}
