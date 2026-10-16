@@ -5,6 +5,7 @@ import { inspectKan791CoachIdentity, cleanupKan791CoachIdentity } from '@/lib/au
 import { applyKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-transaction'
 import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-identity'
 import { verifyKan791SupabaseIdentity } from '@/lib/auth/kan-791-supabase-identity-verification'
+import { authorizeKan791ApplyBeforeDatabase } from '@/lib/auth/kan-791-apply-preflight'
 
 config({path:'.env.local'})
 
@@ -39,8 +40,12 @@ async function main(){
   })
   // Mutating provisioning is denied until Supabase proves the UID/email pair.
   // Verify remains offline/read-only and must not require login credentials.
-  if(mode==='apply') await verifyKan791SupabaseIdentity({email,subject})
-  const sql=postgres(url,{max:1,prepare:false})
+  const sql=mode==='apply'
+    ? await authorizeKan791ApplyBeforeDatabase({email,subject},{
+        verifyIdentity:verifyKan791SupabaseIdentity,
+        openDatabase:()=>postgres(url,{max:1,prepare:false}),
+      })
+    : postgres(url,{max:1,prepare:false})
   try{
     const outcome=await sql.begin(async tx=>{
       if(mode==='verify') await tx`SET TRANSACTION READ ONLY`
