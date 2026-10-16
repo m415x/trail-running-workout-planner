@@ -1,8 +1,7 @@
-import type postgres from 'postgres'
+import type { TransactionSql } from 'postgres'
 import {classifyKan791CoachIdentityState,type Kan791IdentityIds} from './kan-791-provisioner-state'
 
-type Sql=ReturnType<typeof postgres>
-type Tx=Parameters<Parameters<Sql['begin']>[0]>[0]
+type Tx=TransactionSql<{}>
 
 export async function applyKan791CoachIdentity(
  tx:Tx,input:{ids:Kan791IdentityIds;subject:string;at:string},
