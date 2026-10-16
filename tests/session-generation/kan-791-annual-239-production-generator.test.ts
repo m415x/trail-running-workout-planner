@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import { DEFAULT_WEEKLY_TRAINING_PATTERN } from '@/lib/session-generation/default-weekly-pattern'
-import { buildGenerationExplanation } from '@/lib/session-generation/generation-explanation'
+import { buildGenerationExplanation, GENERATION_EXPLANATION_STAGE_ORDER } from '@/lib/session-generation/generation-explanation'
 import { generateWeeklySessionProposals } from '@/lib/session-generation/session-proposal-generator'
 import { groupSharedSessionEvents } from '@/lib/session-generation/shared-session-events'
 import type { SessionGenerationInput } from '@/types/training/session-generation.types'
@@ -88,5 +88,5 @@ test('KAN-791 representative 53 consecutive weeks yield exactly 239 genuine grou
   )
   assert.equal(explanations.length, 239)
   assert.ok(explanations.every(value => value.planningScope.kind === 'base'))
-  assert.ok(explanations.every(value => value.evidence.length > 0))
+  assert.ok(explanations.every(value => value.stages.length === GENERATION_EXPLANATION_STAGE_ORDER.length))
 })
