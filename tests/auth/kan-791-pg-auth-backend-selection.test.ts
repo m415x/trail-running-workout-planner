@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import test from 'node:test'
+import {resolveIdentityBackend} from '@/lib/auth/identity-backend-selection'
 
-test('KAN-791 T6-D identity backend is resolved only by server configuration, never client data',async()=>{
-  const {resolveIdentityBackend}=await import('@/lib/auth/identity-backend-selection')
+test('KAN-791 T6-D identity backend is resolved only by server configuration, never client data',()=>{
   assert.equal(resolveIdentityBackend(undefined),'sqlite')
   assert.equal(resolveIdentityBackend('sqlite'),'sqlite')
   assert.equal(resolveIdentityBackend('postgres'),'postgres')
