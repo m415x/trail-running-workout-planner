@@ -6,7 +6,7 @@ export interface Kan791AcceptanceIdentity {
 export function resolveKan791AcceptanceIdentity(input:Kan791AcceptanceIdentity):Kan791AcceptanceIdentity {
   const email=input.email.trim().toLowerCase()
   const subject=input.subject.trim().toLowerCase()
-  if(!/^kan791[a-z0-9+._-]*@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(email) ||
+  if(!/^(?:kan791[a-z0-9+._-]*|coach-kan-791)@[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(email) ||
     email.endsWith('@acceptance.invalid')) {
     throw new Error('Dedicated KAN-791 acceptance email required')
   }
