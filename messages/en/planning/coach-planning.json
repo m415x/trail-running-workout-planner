@@ -146,7 +146,7 @@
       "noZone": "No zone",
       "competitionNote": "Competition · excluded from taper training volume.",
       "review": "Review the proposal",
-      "saveHelp": "Save this proposal to publish it to the calendar.",
+      "saveHelp": "Confirm this authorized review to save the sessions to the calendar.",
       "missingTemplate": "No active template is compatible with the {role} role, the {period} period, and the {microcycleType} microcycle.",
       "periods": {
         "general_preparatory": "general preparation",
