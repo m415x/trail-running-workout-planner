@@ -127,6 +127,12 @@
       "minDays": "Select at least 3 usual training days."
     },
     "sessionPreview": {
+    "reviewCreate": "Create review",
+    "reviewCreateHelp": "Create an authorized review before confirming sessions.",
+    "reviewConfirmHelp": "Confirm the authorized review and save sessions.",
+    "reviewDenied": "Not authorized",
+    "reviewUnavailable": "The review is no longer available.",
+    "reviewFailed": "The operation could not be completed.",
       "title": "Session preview",
       "description": "A proposal generated from each microcycle. Review it before saving.",
       "saved": "Saved",
