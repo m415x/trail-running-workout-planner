@@ -4,6 +4,7 @@ import postgres from 'postgres'
 import { inspectKan791CoachIdentity, cleanupKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-lifecycle'
 import { applyKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-transaction'
 import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-identity'
+import { verifyKan791SupabaseIdentity } from '@/lib/auth/kan-791-supabase-identity-verification'
 
 config({path:'.env.local'})
 
@@ -36,6 +37,9 @@ async function main(){
     email:process.env.KAN791_AUTH_TEST_EMAIL ?? '',
     subject:process.env.KAN791_AUTH_SUBJECT ?? '',
   })
+  // Mutating provisioning is denied until Supabase proves the UID/email pair.
+  // Verify remains offline/read-only and must not require login credentials.
+  if(mode==='apply') await verifyKan791SupabaseIdentity({email,subject})
   const sql=postgres(url,{max:1,prepare:false})
   try{
     const outcome=await sql.begin(async tx=>{
