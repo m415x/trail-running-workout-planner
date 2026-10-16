@@ -38,6 +38,12 @@ export async function getCoachPostgresReviewPlanContext(planId: string) {
   return operations(supabase.auth).getPlanContext({groupTrainingPlanId:planId})
 }
 
+export async function getCoachPostgresReviewMicrocycles(planId:string) {
+  if(!planId?.trim()) return {kind:'denied' as const}
+  const supabase=await createSupabaseServerClient()
+  return operations(supabase.auth).getReviewMicrocycles({groupTrainingPlanId:planId})
+}
+
 /** Explicit Coach CREATE. The client may name only the Plan, never actors or payload. */
 export async function createCoachSessionReviewSnapshot(formData: FormData) {
   const planId = formData.get('planId')
