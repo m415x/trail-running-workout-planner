@@ -138,8 +138,29 @@ async function main() {
       await mkdir(folder,{recursive:true})
       const filename=resolve(folder,'cleanup-'+new Date().toISOString().replaceAll(':','-')+'.json')
       await writeFile(filename,JSON.stringify(diagnostics,null,2),'utf8')
-      assert.equal(exists.length,0,'Cleanup not yet enabled for existing fixture: diagnostic saved at '+filename)
-      process.stdout.write('EMPTY fixture: cleanup no-op; diagnostics '+filename+'\\n')
+      if(exists.length) {
+        await sql.begin(async tx=>{
+          await tx`DELETE FROM session_generation_review_snapshots WHERE group_training_plan_id=${scope.groupTrainingPlanId}`
+          await tx`DELETE FROM session_generation_modification_records WHERE group_training_plan_id=${scope.groupTrainingPlanId}`
+          await tx`DELETE FROM group_session_prescriptions WHERE microcycle_id IN (
+            SELECT mi.id FROM microcycles mi
+            JOIN mesocycles me ON me.id=mi.mesocycle_id
+            JOIN macrocycles ma ON ma.id=me.macrocycle_id
+            WHERE ma.group_training_plan_id=${scope.groupTrainingPlanId})`
+          await tx`DELETE FROM sessions WHERE team_id=${scope.teamId}`
+          await tx`DELETE FROM microcycle_intensity_targets WHERE id LIKE ${ID+'-micro-%-target'}`
+          await tx`DELETE FROM session_generation_preferences WHERE id=${ID+'-prefs'}`
+          await tx`DELETE FROM intensity_strategies WHERE id=${ID+'-intensity'}`
+          await tx`DELETE FROM load_strategies WHERE id=${ID+'-load'}`
+          await tx`DELETE FROM microcycles WHERE id LIKE ${ID+'-micro-%'}`
+          await tx`DELETE FROM mesocycles WHERE macrocycle_id=${ID+'-macro'}`
+          await tx`DELETE FROM macrocycles WHERE id=${ID+'-macro'}`
+          await tx`DELETE FROM group_training_plans WHERE id=${scope.groupTrainingPlanId}`
+          await tx`DELETE FROM athlete_groups WHERE id=${scope.groupId}`
+          await tx`DELETE FROM teams WHERE id=${scope.teamId}`
+        })
+      }
+      process.stdout.write('Cleanup complete; diagnostics '+filename+'\\n')
       return
     }
     assert.equal(exists.length===1 || mode==='setup',true,'Fixture must be setup before verify')
