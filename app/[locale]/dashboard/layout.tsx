@@ -4,7 +4,7 @@ import { DashboardShell } from './DashboardShell'
 import { AudienceAccessUnavailable } from '@/components/auth/AudienceAccessUnavailable'
 import { resolveCoachShellAudience } from '@/lib/auth/coach-shell-audience'
 import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
-import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { createNextServerIdentityEvidence } from '@/lib/auth/identity-backend-next-server'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
@@ -20,7 +20,7 @@ export default async function DashboardLayout({
   const { locale: rawLocale } = await params
   const locale = rawLocale === 'en' ? 'en' : 'es'
   const supabase = await createSupabaseServerClient()
-  const lookup = createExternalIdentityLookup()
+  const lookup = createNextServerIdentityEvidence().lookup
   const access = await requireAuthenticatedEptSession(
     {
       readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
