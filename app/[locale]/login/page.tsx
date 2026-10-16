@@ -1,7 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { redirect } from 'next/navigation'
 import { AudienceAccessUnavailable } from '@/components/auth/AudienceAccessUnavailable'
-import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { createNextServerIdentityEvidence } from '@/lib/auth/identity-backend-next-server'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { resolveExistingSessionLogin } from '@/lib/auth/existing-session-login'
 import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
@@ -21,7 +21,7 @@ export default async function LoginPage({
   const locale = rawLocale === 'en' ? 'en' : 'es'
   const returnTo = typeof rawReturnTo === 'string' ? rawReturnTo : ''
   const supabase = await createSupabaseServerClient()
-  const session = await readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+  const session = await readEptSessionAccessState(supabase.auth, createNextServerIdentityEvidence().lookup)
   const audience = session.status === 'authenticated'
     ? await resolveNextServerAudience(session.userId)
     : { status: 'deny' as const }
