@@ -23,7 +23,7 @@ export function createPostgresIdentityEvidence(client:Client) {
       `)
     },
     async loadMemberships(userId:string) {
-      return client<{
+      return Array.from(await client<{
         userId:string;teamId:string;preset:'athlete'|'assistant'|'coach'|'admin';
         effectiveFrom:string;effectiveUntil:string|null;isActive:boolean;isDeleted:boolean
       }[]>`
@@ -31,7 +31,7 @@ export function createPostgresIdentityEvidence(client:Client) {
           effective_from AS "effectiveFrom",effective_until AS "effectiveUntil",
           is_active AS "isActive",is_deleted AS "isDeleted"
         FROM team_memberships WHERE user_id=${userId}
-      `
+      `)
     },
   } satisfies ExternalIdentityLookup & {
     loadMemberships(userId:string):Promise<unknown>
