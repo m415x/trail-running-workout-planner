@@ -3,6 +3,7 @@ import { config } from 'dotenv'
 import postgres from 'postgres'
 import { inspectKan791CoachIdentity, cleanupKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-lifecycle'
 import { applyKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-transaction'
+import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-identity'
 
 config({path:'.env.local'})
 
@@ -12,7 +13,6 @@ const GROUP='kan791-annual-pg-239-group'
 const USER=ID+'-user'
 const LINK=ID+'-link'
 const MEMBERSHIP=ID+'-membership'
-const EMAIL='kan791-coach@acceptance.invalid'
 const NOW=()=>new Date().toISOString()
 
 type Mode='verify'|'apply'|'cleanup'
@@ -32,9 +32,10 @@ async function main(){
     assert.equal(p.port,target.port)
     assert.equal(p.pathname,target.pathname)
   }
-  const subject=process.env.KAN791_AUTH_SUBJECT?.trim()
-  assert.ok(subject && /^[a-f\d]{8}-(?:[a-f\d]{4}-){3}[a-f\d]{12}$/i.test(subject),
-    'KAN791_AUTH_SUBJECT must be an authentic Supabase UUID')
+  const {email,subject}=resolveKan791AcceptanceIdentity({
+    email:process.env.KAN791_AUTH_TEST_EMAIL ?? '',
+    subject:process.env.KAN791_AUTH_SUBJECT ?? '',
+  })
   const sql=postgres(url,{max:1,prepare:false})
   try{
     const outcome=await sql.begin(async tx=>{
@@ -51,7 +52,7 @@ async function main(){
         SELECT id FROM group_training_plans WHERE id=${'kan791-annual-pg-239-plan'} AND group_id=${GROUP}`
       assert.equal(plans.length,1,'Expected annual fixture Plan belongs to Team group')
       const input={
-        ids:{userId:USER,linkId:LINK,membershipId:MEMBERSHIP,teamId:TEAM,email:EMAIL},
+        ids:{userId:USER,linkId:LINK,membershipId:MEMBERSHIP,teamId:TEAM,email},
         subject,at:NOW(),
       }
       // Shared H1/H3 ownership checks for every CLI mode; no parallel SQL writers.
