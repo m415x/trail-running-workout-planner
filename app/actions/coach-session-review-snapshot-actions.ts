@@ -55,7 +55,7 @@ export async function createCoachSessionReviewSnapshot(formData: FormData) {
   if(created.kind!=='created') return created
   const locale=formData.get('locale')==='en'?'en':'es'
   const base=locale==='en'?'/en/dashboard':'/dashboard'
-  redirect(`${base}/planning/${encodeURIComponent(planId)}?snapshotId=${encodeURIComponent(created.snapshotId)}`)
+  redirect(`${base}/planning/${encodeURIComponent(planId)}/review?snapshotId=${encodeURIComponent(created.snapshotId)}`)
 }
 
 /** Read-only review; GET never generates, consumes, or refreshes a review. */
@@ -83,14 +83,14 @@ export async function confirmCoachSessionReviewSnapshot(formData: FormData) {
     groupTrainingPlanId:planId,snapshotId,
   })
   if(result.kind==='consumed'||result.kind==='already_consumed'){
-    revalidatePath('/dashboard/planning/'+planId)
+    revalidatePath('/dashboard/planning/'+planId+'/review')
     revalidatePath('/dashboard/sessions')
     revalidatePath('/plan')
   }
   if(result.kind==='consumed'||result.kind==='already_consumed') {
     const locale=formData.get('locale')==='en'?'en':'es'
     const base=locale==='en'?'/en/dashboard':'/dashboard'
-    redirect(`${base}/planning/${encodeURIComponent(planId)}`)
+    redirect(`${base}/planning/${encodeURIComponent(planId)}/review`)
   }
   return result
 }
