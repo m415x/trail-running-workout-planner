@@ -3,6 +3,7 @@ import type postgres from 'postgres'
 
 import { authorizeEffectiveCapability } from '@/lib/authorization/effective-authorization'
 import { createAuthorizedReviewSnapshotPostgresConfirmationOperations } from './authorized-review-snapshot-postgres-confirmation'
+import { readReviewPlanPeriodizationFactsPostgres } from './review-snapshot-plan-periodization-postgres'
 import { generateReviewSnapshotFromEffectivePostgres } from './review-snapshot-generate-postgres'
 import { readReviewSnapshotEffectiveManifestPostgres } from './review-snapshot-effective-manifest-postgres'
 import { evaluateReviewSnapshotSourceFreshness } from './review-snapshot-source-freshness'
@@ -179,7 +180,23 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
   })
   return {
     ...confirmation,
-    async getPlanContext(request:{readonly groupTrainingPlanId:string}) {
+    async getReviewMicrocycles(request:{readonly groupTrainingPlanId:string}) {
+      if (!request.groupTrainingPlanId?.trim()) return {kind:'denied' as const}
+      return dependencies.client.begin(async tx => {
+        await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+        const decision=await check(tx,{
+          groupTrainingPlanId:request.groupTrainingPlanId,snapshotId:'',createMode:true,
+        })
+        if(decision.decision.kind!=='authorized') return {kind:'denied' as const}
+        const facts=await readReviewPlanPeriodizationFactsPostgres(tx,decision.decision.scope)
+        if(!facts) return {kind:'denied' as const}
+        return {kind:'available' as const,microcycles:facts.microcycles.map(m=>({
+          id:m.id,weekNumber:m.weekNumber,type:m.type,
+          startDate:m.startDate,endDate:m.endDate,
+        }))}
+      })
+    },
+        async getPlanContext(request:{readonly groupTrainingPlanId:string}) {
       if (!request.groupTrainingPlanId?.trim()) return {kind:'denied' as const}
       return dependencies.client.begin(async tx => {
         await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
