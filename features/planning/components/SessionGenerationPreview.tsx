@@ -247,7 +247,7 @@ export function SessionGenerationPreview({
               {!feedback && (
                 <p className='text-muted-foreground'>
                   {reviewedSnapshot
-                    ? t('sessionPreview.reviewConfirmHelp')
+                    ? t('sessionPreview.saveHelp')
                     : t('sessionPreview.reviewCreateHelp')}
                 </p>
               )}
