@@ -63,7 +63,7 @@ export function HomeHeader({
 
         <div className='flex flex-col justify-center'>
           {/* Info del Atleta */}
-          <h1 className='font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl'>
+          <h1 className='font-heading text-[length:var(--athlete-text-heading)] font-bold leading-tight tracking-tight text-foreground'>
             {t('greeting', { name: displayName })}
           </h1>
 
