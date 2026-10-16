@@ -31,7 +31,7 @@ test('KAN-791 PostgreSQL H4A Coach evidence allows own Team and denies revoked o
         evidence.loadGrants(userId,scopeTeamId),
       ])
       return authorizeAuthenticatedCapability({status:'authenticated',userId},{
-        authenticatedUserId:userId,teamId:scopeTeamId,capability:'planning.manage',
+        teamId:scopeTeamId,capability:'planning.manage',
         resource:{teamId:scopeTeamId,sportingGroupId:groupId},at:now,
         memberships,athleteProfiles,grants,
       })
