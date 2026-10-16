@@ -146,7 +146,7 @@
       "noZone": "Sin zona",
       "competitionNote": "Competencia · no incluida en el volumen de entrenamiento del taper.",
       "review": "Revisá la propuesta",
-      "saveHelp": "Guardá esta propuesta para publicarla en el calendario.",
+      "saveHelp": "Confirmá esta revisión autorizada para guardar las sesiones en el calendario.",
       "missingTemplate": "No hay una plantilla activa compatible con el rol {role}, el período {period} y el microciclo {microcycleType}.",
       "periods": {
         "general_preparatory": "preparatorio general",
