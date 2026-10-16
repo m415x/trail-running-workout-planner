@@ -32,10 +32,15 @@ test('KAN-791 T6-B grouping must preserve every generationKey from 239 prescript
       }],
     }
   })
-  const explanations=Object.fromEntries(events.map((event,i)=>['generation-'+i,{stages:[]}]))
+  const explanations:Record<string,GenerationExplanation>=Object.fromEntries(events.map((event,i)=>{
+    const w=i<135?Math.floor(i/5):27+Math.floor((i-135)/4)
+    return ['generation-'+i,{planningScope:{kind:'base' as const,
+      groupTrainingPlanId:'kan791-plan',groupId:'kan791-group',
+      planningCohortId:null,microcycleId:'micro-'+w},stages:[]}]
+  }))
   const grouped=deriveReviewSnapshotWeeks({
     microcycles:weeks,proposal:{events} as unknown as SharedSessionGenerationResult,
-    generationExplanations:explanations as Record<string,GenerationExplanation>,
+    generationExplanations:explanations,
   })
   assert.equal(grouped.length,53)
   assert.equal(grouped.reduce((sum,week)=>sum+week.events.length,0),239)
