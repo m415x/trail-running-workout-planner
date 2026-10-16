@@ -6,8 +6,8 @@ import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-i
 test('KAN-791 preflight requires dedicated EPT email corresponding to configured Supabase test account',()=>{
  const subject='8c02361c-d027-4ef0-80e0-87d7ad4c3d3b'
  assert.deepEqual(resolveKan791AcceptanceIdentity({
-  email:' KAN791-Coach@testing.example ',subject,
- }),{email:'kan791-coach@testing.example',subject})
+  email:' Coach-KAN-791@testing.example ',subject,
+ }),{email:'coach-kan-791@testing.example',subject})
  for(const email of ['coach@test.com','kan791-coach@acceptance.invalid','someone@example.com','', 'kan791@test.com\nother']){
   assert.throws(()=>resolveKan791AcceptanceIdentity({email,subject}),/dedicated|email|identity/i)
  }
