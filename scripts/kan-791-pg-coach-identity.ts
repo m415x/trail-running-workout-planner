@@ -6,6 +6,7 @@ import { applyKan791CoachIdentity } from '@/lib/auth/kan-791-provisioner-transac
 import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-identity'
 import { verifyKan791SupabaseIdentity } from '@/lib/auth/kan-791-supabase-identity-verification'
 import { authorizeKan791ApplyBeforeDatabase } from '@/lib/auth/kan-791-apply-preflight'
+import { assertKan791LocalDatabaseTargets } from '@/lib/auth/kan-791-provisioner-targets'
 
 config({path:'.env.local'})
 
@@ -22,18 +23,8 @@ async function main(){
   const mode=process.argv[2] as Mode
   assert.ok(['verify','apply','cleanup'].includes(mode),'Usage: script verify|apply|cleanup')
   const url=process.env.KAN789_PG_URL
+  assertKan791LocalDatabaseTargets(url,process.env.SUPABASE_DATABASE_URL)
   assert.ok(url,'KAN789_PG_URL required')
-  const target=new URL(url)
-  assert.equal(target.hostname,'127.0.0.1')
-  assert.equal(target.port,'55439')
-  assert.equal(target.pathname,'/kan789_acceptance')
-  const other=process.env.SUPABASE_DATABASE_URL
-  if(other){
-    const p=new URL(other)
-    assert.equal(p.hostname,target.hostname)
-    assert.equal(p.port,target.port)
-    assert.equal(p.pathname,target.pathname)
-  }
   const {email,subject}=resolveKan791AcceptanceIdentity({
     email:process.env.KAN791_AUTH_TEST_EMAIL ?? '',
     subject:process.env.KAN791_AUTH_SUBJECT ?? '',
