@@ -7,7 +7,7 @@ test('KAN-791 T6-A Coach PostgreSQL review route has no SQLite authority or edit
   assert.ok(existsSync(route),'Dedicated Coach snapshot review route is required')
   const code=readFileSync(route,'utf8')
   assert.match(code,/getCoachPostgresReviewPlanContext/)
-  assert.match(code,/SessionGenerationPreview/)
+  assert.match(code,/getTranslations/)
   assert.doesNotMatch(code,/from ['"]@\/db['"]|getGroupTrainingPlanById|getSessionGenerationPreferencesForPlan|getWorkoutTemplates|getCompetitionCalendarAction/)
   assert.doesNotMatch(code,/Microcycle(?:Dates|Type|Notes|Elevation|Volume)Form|SessionGenerationPreferencesForm|LoadProgressionPreview|CatalogCompetitionForm/)
 })
