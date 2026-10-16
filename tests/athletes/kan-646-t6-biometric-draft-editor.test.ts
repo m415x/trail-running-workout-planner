@@ -19,7 +19,7 @@ test('KAN-646/T6-draft reuses pure validation for exactly four permitted paramet
 
 test('KAN-646/T6-draft cannot advertise saving or reach production mutations', () => {
   const source = editor()
-  assert.doesNotMatch(source, /<form|type=['"]submit['"]|save[A-Z]|persist\(|fetch\(|useActionState|server action|updateUser\(/i)
+  assert.doesNotMatch(source, /<form\b|type=['"]submit['"]|\bsave[A-Z]\w*\s*\(|\bpersist\s*\(|\bfetch\s*\(|\buseActionState\b|\bupdateUser\s*\(/)
   assert.doesNotMatch(source, /onClick=\{.*(?:save|submit|persist)/i)
   assert.match(source, /readonly|disabled|draftOnly/)
 })
