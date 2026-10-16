@@ -4,7 +4,7 @@ import { createExternalIdentityLookup } from './external-identity-lookup'
 import { createPostgresIdentityEvidence } from './postgres-identity-evidence'
 
 let client:ReturnType<typeof postgres>|null=null
-function postgresClient(){
+export function postgresIdentityClient(){
   if(client) return client
   const url=process.env.SUPABASE_DATABASE_URL?.trim()
   if(!url) throw new Error('PostgreSQL identity backend requires SUPABASE_DATABASE_URL')
@@ -17,6 +17,6 @@ export function createNextServerIdentityEvidence(){
   if(configuredIdentityBackend()==='sqlite'){
     return {backend:'sqlite' as const,lookup:createExternalIdentityLookup(),memberships:null}
   }
-  const evidence=createPostgresIdentityEvidence(postgresClient())
+  const evidence=createPostgresIdentityEvidence(postgresIdentityClient())
   return {backend:'postgres' as const,lookup:evidence,memberships:evidence}
 }
