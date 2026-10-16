@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
-import { getCoachPostgresReviewPlanContext, getCoachPostgresReviewMicrocycles, readCoachSessionReviewSnapshot } from '@/app/actions/coach-session-review-snapshot-actions'
+import { getCoachPostgresReviewPlanContext, getCoachPostgresReviewMicrocycles, readCoachSessionReviewSnapshot, createCoachSessionReviewSnapshot } from '@/app/actions/coach-session-review-snapshot-actions'
 import { CoachPostgresSnapshotReview } from '@/features/planning/components/CoachPostgresSnapshotReview'
 import type { ReviewWeekIdentity } from '@/lib/session-generation/review-snapshot-presentation'
 
@@ -33,6 +33,19 @@ export default async function CoachPostgresReviewPage({params,searchParams}:Revi
         <h2 className='text-lg font-medium'>{result.plan.title}</h2>
         <p>{t('detail.group',{code:result.plan.groupCategory+result.plan.groupLevel})}</p>
       </section>
+      {!snapshotId && (
+        <form action={async formData => {
+          'use server'
+          await createCoachSessionReviewSnapshot(formData)
+        }} className='flex flex-col items-start gap-3'>
+          <input type='hidden' name='planId' value={planId}/>
+          <input type='hidden' name='locale' value={locale}/>
+          <p className='text-sm text-muted-foreground'>{t('sessionPreview.reviewCreateHelp')}</p>
+          <button className='rounded-md border px-4 py-2' type='submit'>
+            {t('sessionPreview.reviewCreate')}
+          </button>
+        </form>
+      )}
       {review?.kind==='available' && microcycles?.kind==='available' && (
         <CoachPostgresSnapshotReview snapshot={review.snapshot}
           microcycles={microcycles.microcycles as ReviewWeekIdentity[]}
