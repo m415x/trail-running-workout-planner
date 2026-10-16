@@ -230,10 +230,10 @@ export function SessionGenerationPreview({
                   const result = reviewedSnapshot
                     ? await confirmCoachSessionReviewSnapshot(formData)
                     : await createCoachSessionReviewSnapshot(formData)
-                  if (result.kind === 'denied') setFeedback('No autorizado')
-                  else if (result.kind === 'unavailable') setFeedback('La revisión ya no está disponible.')
+                  if (result.kind === 'denied') setFeedback(t('sessionPreview.reviewDenied'))
+                  else if (result.kind === 'unavailable') setFeedback(t('sessionPreview.reviewUnavailable'))
                 } catch {
-                  setFeedback('No se pudo completar la operación.')
+                  setFeedback(t('sessionPreview.reviewFailed'))
                 }
               })
             }}
@@ -247,13 +247,13 @@ export function SessionGenerationPreview({
               {!feedback && (
                 <p className='text-muted-foreground'>
                   {reviewedSnapshot
-                    ? 'Confirmar la revisión autorizada y guardar las sesiones.'
-                    : 'Crear una revisión autorizada antes de confirmar las sesiones.'}
+                    ? t('sessionPreview.reviewConfirmHelp')
+                    : t('sessionPreview.reviewCreateHelp')}
                 </p>
               )}
             </div>
             <Button type='submit' disabled={isPending}>
-              {isPending ? t('saving') : reviewedSnapshot ? t('saveSessions') : 'Crear revisión'}
+              {isPending ? t('saving') : reviewedSnapshot ? t('saveSessions') : t('sessionPreview.reviewCreate')}
             </Button>
           </form>
         )}
