@@ -12,7 +12,7 @@ type Client=ReturnType<typeof postgres>
 export function createPostgresIdentityEvidence(client:Client) {
   return {
     async findByProviderSubject(provider:string,subject:string) {
-      return client<{
+      return Array.from(await client<{
         linkId:string;userId:string;linkIsDeleted:boolean;userIsDeleted:boolean
       }[]>`
         SELECT l.id AS "linkId",l.user_id AS "userId",
@@ -20,7 +20,7 @@ export function createPostgresIdentityEvidence(client:Client) {
         FROM external_identity_links l
         JOIN users u ON u.id=l.user_id
         WHERE l.provider=${provider} AND l.subject=${subject}
-      `
+      `)
     },
     async loadMemberships(userId:string) {
       return client<{
