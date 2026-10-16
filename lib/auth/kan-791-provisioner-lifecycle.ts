@@ -1,7 +1,7 @@
 import type { TransactionSql } from 'postgres'
 import {classifyKan791CoachIdentityState,type Kan791IdentityIds} from './kan-791-provisioner-state'
 
-type Tx=TransactionSql<{}>
+type Tx=TransactionSql
 export interface Kan791LifecycleInput {
  ids:Kan791IdentityIds;subject:string;at:string
 }
