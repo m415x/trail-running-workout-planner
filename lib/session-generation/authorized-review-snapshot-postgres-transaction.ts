@@ -179,6 +179,35 @@ export function createAuthorizedReviewSnapshotPostgresTransactionOperations(
   })
   return {
     ...confirmation,
+    async getPlanContext(request:{readonly groupTrainingPlanId:string}) {
+      if (!request.groupTrainingPlanId?.trim()) return {kind:'denied' as const}
+      return dependencies.client.begin(async tx => {
+        await tx`SET TRANSACTION ISOLATION LEVEL SERIALIZABLE`
+        const decision=await check(tx,{
+          groupTrainingPlanId:request.groupTrainingPlanId,snapshotId:'',createMode:true,
+        })
+        if (decision.decision.kind!=='authorized') return {kind:'denied' as const}
+        const scope=decision.decision.scope
+        const rows=await tx<{title:string;groupCategory:string;groupLevel:string;
+          groupId:string;planningCohortId:string|null}[]>`
+          SELECT p.title, g.category_code AS "groupCategory",
+            g.level_code AS "groupLevel",p.group_id AS "groupId",
+            p.planning_cohort_id AS "planningCohortId"
+          FROM group_training_plans p
+          JOIN athlete_groups g ON g.id=p.group_id AND g.is_deleted=false AND g.is_active=true
+          WHERE p.id=${scope.groupTrainingPlanId} AND p.is_deleted=false
+            AND g.team_id=${scope.teamId} AND p.group_id=${scope.groupId}
+          LIMIT 1
+        `
+        if (rows.length!==1 || rows[0].planningCohortId!==scope.planningCohortId)
+          return {kind:'denied' as const}
+        return {kind:'available' as const,plan:{
+          id:scope.groupTrainingPlanId,title:rows[0].title,
+          groupId:rows[0].groupId,groupCategory:rows[0].groupCategory,
+          groupLevel:rows[0].groupLevel,planningCohortId:scope.planningCohortId,
+        }}
+      })
+    },
     async create(request:{readonly groupTrainingPlanId:string}) {
       if (!request.groupTrainingPlanId?.trim()) return {kind:'denied' as const}
       return dependencies.client.begin(async tx=>{
