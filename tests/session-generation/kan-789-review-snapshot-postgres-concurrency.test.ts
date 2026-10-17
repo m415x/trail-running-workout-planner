@@ -8,10 +8,11 @@ import {
 } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required for disposable PostgreSQL test')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-      target.pathname !== '/kan789_acceptance') {
+      target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN789 concurrency test forbids non-disposable PostgreSQL targets')
   }
 }
@@ -33,13 +34,13 @@ const input = (id: string) => ({
   sessionCount: 1, microcycleCount: 1,
 })
 
-test('KAN-789 independent PG sessions serialize quota and single consumption', { skip: !url }, async () => {
+test('KAN-789 independent PG sessions serialize quota and single consumption', async () => {
   // Three distinct physical connections (not merely Promise.all on max:1).
   const setup = postgres(url!, { max: 1, prepare: false })
   const clients = Array.from({ length: 3 }, () => postgres(url!, { max: 1, prepare: false }))
   try {
     const identity = await setup<{ db: string }[]>`SELECT current_database() AS db`
-    assert.equal(identity[0]?.db, 'kan789_acceptance')
+    assert.equal(identity[0]?.db, 'kan791_regression_disposable')
     const distinctSessions = await Promise.all(clients.map(async client => {
       const result = await client<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`
       return result[0]?.pid
