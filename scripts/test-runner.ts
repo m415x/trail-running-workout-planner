@@ -36,6 +36,25 @@ export function isPostgresIntegrationSource(source: string): boolean {
     (/from 'postgres'/.test(source) && /signInWithPassword|\.begin\(|sql`|postgres\(url/.test(source))
 }
 
+export function isAnnualPostgresAcceptanceFile(path: string): boolean {
+  const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
+  return filename === 'kan-791-annual-239-postgres-effective-source.test.ts'
+}
+
+/** The preserved annual database may only be used by the audited read-only test. */
+export function assertSafeAnnualPostgresTarget(env: Record<string, string | undefined>): void {
+  const raw = env.KAN789_PG_URL
+  if (!raw) throw new Error('BLOCKED: KAN789_PG_URL required for annual read-only acceptance')
+  let target: URL
+  try { target = new URL(raw) } catch { throw new Error('BLOCKED: invalid annual PostgreSQL URL') }
+  if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+      target.hostname !== '127.0.0.1' || target.port !== '55439' ||
+      target.pathname !== '/kan791_acceptance_v2' || target.search || target.hash ||
+      !target.username || !target.password) {
+    throw new Error('BLOCKED: unauthorized annual PostgreSQL target')
+  }
+}
+
 export async function partitionTestFiles(files: string[]): Promise<{
   ordinary: string[]; postgres: string[]
 }> {
@@ -233,7 +252,7 @@ export function prepareTestRunBatches(
   maxArgumentLength = 8_000,
 ): ReturnType<typeof createTestBatchInvocation>[] {
   // Node's default test concurrency launches multiple fixture files against
-  // one kan789_acceptance PostgreSQL database. Run that lane sequentially;
+  // one disposable PostgreSQL database. Run that lane sequentially;
   // leave unrelated tests at their existing concurrency and batch behavior.
   const independent = testFiles.filter(path => !isSharedPostgresAcceptanceTest(path))
   const postgresShared = testFiles.filter(isSharedPostgresAcceptanceTest)
@@ -392,16 +411,23 @@ export function runTestFiles(testFiles: string[]): number {
 
 async function main(): Promise<void> {
   const pgMode = process.argv[2] === '--postgres'
-  validateTestRunnerArguments(pgMode ? process.argv.slice(3) : process.argv.slice(2))
+  const annualMode = process.argv[2] === '--postgres-annual'
+  validateTestRunnerArguments(pgMode || annualMode ? process.argv.slice(3) : process.argv.slice(2))
   const all = await discoverTestFiles(resolve(process.cwd(), 'tests'))
   const lanes = await partitionTestFiles(all)
-  const selected = pgMode ? lanes.postgres : lanes.ordinary
+  const annual = lanes.postgres.filter(isAnnualPostgresAcceptanceFile)
+  const mutable = lanes.postgres.filter(file => !isAnnualPostgresAcceptanceFile(file))
+  const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary
+  if (annualMode) {
+    assertSafeAnnualPostgresTarget(process.env)
+    if (annual.length !== 1) throw new Error('BLOCKED: expected exactly one audited annual read-only test')
+  }
   if (pgMode) {
     assertSafePostgresRegressionTarget(process.env)
     if (selected.length === 0) throw new Error('BLOCKED: no PostgreSQL integration tests found')
   }
-  console.log(`Discovered ${all.length} test files; selected ${selected.length} ${pgMode ? 'PostgreSQL integration' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
-  if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg separately (no PASS implied)')
+  console.log(`Discovered ${all.length} test files; selected ${selected.length} ${annualMode ? 'annual read-only' : pgMode ? 'disposable PostgreSQL regression' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
+  if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg and pn test:pg:annual separately (no PASS implied)')
   process.exitCode = runTestFiles(selected)
 }
 
