@@ -36,7 +36,7 @@ test('KAN-646/T5 SQLite CREATE persists exactly once and safely replays same can
     const first = repository.create(subject, input)
     assert.equal(first.status, 'created')
     assert.deepEqual(repository.create(subject, input), { status: 'replayed', id: 'id' in first ? first.id : null })
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get()?.n, 1)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as { n: number }).n, 1)
     const row = sqlite.prepare('SELECT team_id, athlete_profile_id, recorded_by_user_id, source, value_scaled FROM athlete_biometric_observations').get() as Record<string, unknown>
     assert.deepEqual(row, { team_id: 'team_1', athlete_profile_id: 'athlete_a', recorded_by_user_id: 'user_a', source: 'athlete_declared', value_scaled: 725 })
   } finally { sqlite.close() }
@@ -51,7 +51,7 @@ test('KAN-646/T5 SQLite same operation key with changed payload conflicts withou
     assert.deepEqual(repository.create(subject, { ...input, valueScaled: 730 }), { status: 'conflict' })
     const row = sqlite.prepare('SELECT value_scaled FROM athlete_biometric_observations').get() as { value_scaled: number }
     assert.equal(row.value_scaled, 725)
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get()?.n, 1)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as { n: number }).n, 1)
   } finally { sqlite.close() }
 })
 
@@ -61,6 +61,6 @@ test('KAN-646/T5 SQLite insert error rolls back the transaction', () => {
     sqlite.exec("CREATE TRIGGER reject_biometric BEFORE INSERT ON athlete_biometric_observations BEGIN SELECT RAISE(ABORT, 'forced rollback'); END;")
     const repository = createBiometricSelfSqliteRepository(sqlite)
     assert.throws(() => repository.create(subject, input), /forced rollback/)
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get()?.n, 0)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as { n: number }).n, 0)
   } finally { sqlite.close() }
 })
