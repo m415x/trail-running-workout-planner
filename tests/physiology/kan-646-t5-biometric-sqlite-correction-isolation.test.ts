@@ -19,7 +19,7 @@ test('KAN-646/T5 correction denies cross-Team, cross-athlete and different-kind 
       UNIQUE(team_id, athlete_profile_id, recorded_by_user_id, operation_key),
       UNIQUE(supersedes_observation_id)
     )`)
-    const repository = createBiometricSelfSqliteRepository(db)
+    const repository = createBiometricSelfSqliteRepository(db, { reauthorizeInTransaction: () => true })
     const original = repository.create(owner, initial)
     assert.equal(original.status, 'created')
     if (original.status !== 'created') return
