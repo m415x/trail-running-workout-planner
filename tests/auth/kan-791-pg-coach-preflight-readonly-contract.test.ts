@@ -20,6 +20,6 @@ test('KAN-791 CLI target is loopback acceptance PostgreSQL and not a remote Supa
  assert.match(code,/KAN789_PG_URL/)
  assert.match(guard,/127\.0\.0\.1/)
  assert.match(guard,/55439/)
- assert.match(guard,/kan789_acceptance/)
+ assert.match(guard,/kan791_acceptance_v2/)
  assert.match(guard,/assert\.ok\(acceptanceUrl && runtimeUrl/)
 })
