@@ -1,4 +1,5 @@
 import { check, index, integer, pgTable, text, uniqueIndex } from 'drizzle-orm/pg-core'
+import type { AnyPgColumn } from 'drizzle-orm/pg-core'
 import { sql } from 'drizzle-orm'
 import { athleteProfiles, teams, users } from './schema'
 
@@ -14,7 +15,7 @@ export const athleteBiometricObservations = pgTable('athlete_biometric_observati
   recordedAt: text('recorded_at').notNull(),
   recordedByUserId: text('recorded_by_user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
   source: text('source').notNull().default('athlete_declared'),
-  supersedesObservationId: text('supersedes_observation_id'),
+  supersedesObservationId: text('supersedes_observation_id').references((): AnyPgColumn => athleteBiometricObservations.id, { onDelete: 'restrict' }),
   operationKey: text('operation_key').notNull(),
   requestDigest: text('request_digest').notNull(),
   correctionReason: text('correction_reason'),
