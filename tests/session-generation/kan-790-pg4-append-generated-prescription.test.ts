@@ -10,7 +10,7 @@ test('KAN-790 PG-4 adds a new prescription to existing generated Session without
   const target = new URL(url)
   assert.equal(target.hostname,'127.0.0.1')
   assert.equal(target.port,'55439')
-  assert.equal(target.pathname,'/kan789_acceptance')
+  assert.equal(target.pathname,'/kan791_regression_disposable')
   const sql=postgres(url,{max:1,prepare:false})
   const id='kan790-pg4-append'
   const now='2026-10-14T21:30:00.000Z'
@@ -18,7 +18,7 @@ test('KAN-790 PG-4 adds a new prescription to existing generated Session without
   const planId=id+'-plan',userId=id+'-user'
   try {
     assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,
-      'kan789_acceptance')
+      'kan791_regression_disposable')
     await sql`INSERT INTO users(id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES(${userId},${userId},${id+'@example.invalid'},'PG4','Test',${now},${now})`
     await sql`INSERT INTO teams(id,name,created_at,updated_at)
