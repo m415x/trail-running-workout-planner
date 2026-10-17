@@ -8,12 +8,13 @@ import {
 } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 // Runs only against the already-established disposable KAN-789 target.
-// An absent URL is a SKIP, NEVER evidence of PostgreSQL GREEN.
+// An absent URL is a BLOCKED, NEVER evidence of PostgreSQL GREEN.
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-    target.pathname !== '/kan789_acceptance') {
+    target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN-790 PG-1 test forbids non-disposable PostgreSQL targets')
   }
 }
@@ -27,7 +28,7 @@ const plans = [prefix + '-plan-a', prefix + '-plan-b'] as const
 const snapshots = [prefix + '-snapshot-a', prefix + '-snapshot-b'] as const
 const sharedKey = prefix + '-shared-event'
 
-test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session under SERIALIZABLE', { skip: !url, timeout: 30_000 }, async () => {
+test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session under SERIALIZABLE', { timeout: 30_000 }, async () => {
   const setup = postgres(url!, { max: 1, prepare: false })
   const clients = [
     postgres(url!, { max: 1, prepare: false }),
@@ -35,7 +36,7 @@ test('KAN-790 PG-1 two distinct Plan snapshots converge on one shared Session un
   ]
   try {
     const database = await setup<{ name: string }[]>`SELECT current_database() AS name`
-    assert.equal(database[0]?.name, 'kan789_acceptance')
+    assert.equal(database[0]?.name, 'kan791_regression_disposable')
     const pids = await Promise.all(clients.map(async client =>
       (await client<{ pid: number }[]>`SELECT pg_backend_pid() AS pid`)[0].pid))
     assert.equal(new Set(pids).size, 2, 'must use distinct PostgreSQL connections')
