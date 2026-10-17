@@ -46,10 +46,14 @@ function digestCreate(subject: BiometricWriteSubject, input: BiometricValidatedC
  */
 export interface BiometricSqliteRepositoryOptions {
   /** Synchronous, transaction-local authority check; required at the public writer integration boundary. */
-  readonly reauthorizeInTransaction?: (subject: BiometricWriteSubject) => boolean
+  readonly reauthorizeInTransaction: (subject: BiometricWriteSubject) => boolean
 }
 
-export function createBiometricSelfSqliteRepository(connection: Database.Database, options: BiometricSqliteRepositoryOptions = {}) {
+export function createBiometricSelfSqliteRepository(connection: Database.Database, options?: BiometricSqliteRepositoryOptions) {
+  if (typeof options?.reauthorizeInTransaction !== 'function') {
+    throw new Error('Biometric SQLite repository requires transaction-local reauthorization')
+  }
+  const reauthorizeInTransaction = options.reauthorizeInTransaction
   return {
     correct(subject: BiometricWriteSubject, input: BiometricValidatedCorrection): BiometricSqliteCreateResult | { readonly status: 'denied' } {
       const requestDigest = createHash('sha256').update(JSON.stringify([
@@ -58,7 +62,7 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
         input.supersedesObservationId, input.correctionReason,
       ])).digest('hex')
       return connection.transaction(() => {
-        if (options.reauthorizeInTransaction && !options.reauthorizeInTransaction(subject)) {
+        if (!reauthorizeInTransaction(subject)) {
           return { status: 'denied' as const }
         }
         const existing = connection.prepare(
@@ -106,7 +110,7 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
     create(subject: BiometricWriteSubject, input: BiometricValidatedCreate): BiometricSqliteCreateResult | { readonly status: 'denied' } {
       const requestDigest = digestCreate(subject, input)
       return connection.transaction((): BiometricSqliteCreateResult | { readonly status: 'denied' } => {
-        if (options.reauthorizeInTransaction && !options.reauthorizeInTransaction(subject)) {
+        if (!reauthorizeInTransaction(subject)) {
           return { status: 'denied' }
         }
         const existing = connection.prepare(
