@@ -72,7 +72,7 @@ function main(): void {
   }
 
   if (tests.some(file => {
-    if (/[\\*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
     return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
   })) {
     assertSafePostgresRegressionTarget(process.env)
