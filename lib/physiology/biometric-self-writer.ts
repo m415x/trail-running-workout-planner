@@ -52,16 +52,18 @@ export function createBiometricSelfWriter<T>(deps: BiometricSelfWriterDeps<T>) {
         return { status: 'invalid' }
       }
 
-      return {
-        status: 'persisted',
-        result: await deps.persist(subject, {
-          kind: input.kind,
-          unit: input.unit,
-          observedOn: input.observedOn,
-          operationKey: input.operationKey,
-          valueScaled: validated.valueScaled,
-        }),
+      const result = await deps.persist(subject, {
+        kind: input.kind,
+        unit: input.unit,
+        observedOn: input.observedOn,
+        operationKey: input.operationKey,
+        valueScaled: validated.valueScaled,
+      })
+      if (result !== null && typeof result === 'object'
+        && 'status' in result && result.status === 'denied') {
+        return { status: 'denied' }
       }
+      return { status: 'persisted', result }
     },
   }
 }
