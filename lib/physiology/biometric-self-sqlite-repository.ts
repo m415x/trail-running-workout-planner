@@ -54,6 +54,19 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
     throw new Error('Biometric SQLite repository requires transaction-local reauthorization')
   }
   const reauthorizeInTransaction = options.reauthorizeInTransaction
+  function authorizedTeamTimeZone(teamId: string): string | null {
+    const team = connection.prepare(
+      'SELECT time_zone FROM teams WHERE id = ? AND is_deleted = 0',
+    ).get(teamId) as { time_zone: string | null } | undefined
+    const zone = team?.time_zone
+    if (!zone || zone !== zone.trim()) return null
+    try {
+      new Intl.DateTimeFormat('en-CA', { timeZone: zone }).format(new Date(0))
+      return zone
+    } catch {
+      return null
+    }
+  }
   return {
     correct(subject: BiometricWriteSubject, input: BiometricValidatedCorrection): BiometricSqliteCreateResult | { readonly status: 'denied' } {
       const requestDigest = createHash('sha256').update(JSON.stringify([
@@ -65,6 +78,8 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
         if (!reauthorizeInTransaction(subject)) {
           return { status: 'denied' as const }
         }
+        const observedTimeZone = authorizedTeamTimeZone(subject.teamId)
+        if (!observedTimeZone) return { status: 'denied' as const }
         const existing = connection.prepare(
           `SELECT id, request_digest FROM athlete_biometric_observations
            WHERE team_id = ? AND athlete_profile_id = ?
@@ -97,12 +112,13 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
           `INSERT INTO athlete_biometric_observations
              (id, team_id, athlete_profile_id, kind, value_scaled, unit,
               observed_on, recorded_at, recorded_by_user_id, source,
-              supersedes_observation_id, operation_key, request_digest, correction_reason)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'athlete_declared', ?, ?, ?, ?)`,
+              supersedes_observation_id, operation_key, request_digest, correction_reason, observed_time_zone)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'athlete_declared', ?, ?, ?, ?, ?)`,
         ).run(
           id, subject.teamId, subject.athleteProfileId, input.kind, input.valueScaled,
           input.unit, input.observedOn, new Date().toISOString(), subject.userId,
           input.supersedesObservationId, input.operationKey, requestDigest, input.correctionReason,
+          observedTimeZone,
         )
         return { status: 'created' as const, id }
       })()
@@ -113,6 +129,8 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
         if (!reauthorizeInTransaction(subject)) {
           return { status: 'denied' }
         }
+        const observedTimeZone = authorizedTeamTimeZone(subject.teamId)
+        if (!observedTimeZone) return { status: 'denied' as const }
         const existing = connection.prepare(
           `SELECT id, request_digest FROM athlete_biometric_observations
            WHERE team_id = ? AND athlete_profile_id = ?
@@ -133,12 +151,12 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
           `INSERT INTO athlete_biometric_observations
              (id, team_id, athlete_profile_id, kind, value_scaled, unit,
               observed_on, recorded_at, recorded_by_user_id, source,
-              supersedes_observation_id, operation_key, request_digest, correction_reason)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'athlete_declared', ?, ?, ?, NULL)`,
+              supersedes_observation_id, operation_key, request_digest, correction_reason, observed_time_zone)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'athlete_declared', ?, ?, ?, NULL, ?)`,
         ).run(
           id, subject.teamId, subject.athleteProfileId, input.kind, input.valueScaled,
           input.unit, input.observedOn, recordedAt, subject.userId,
-          supersedesObservationId, input.operationKey, requestDigest,
+          supersedesObservationId, input.operationKey, requestDigest, observedTimeZone,
         )
         return { status: 'created', id }
       })()
