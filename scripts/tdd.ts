@@ -3,6 +3,8 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
+import { assertSafePostgresRegressionTarget } from './test-runner'
+
 const require = createRequire(import.meta.url)
 
 export function tddTypecheckCommand(): { command: string; args: string[] } {
@@ -66,6 +68,10 @@ function main(): void {
   if (tests.length === 0) {
     process.stderr.write('Usage: pn tdd[:red] [--verbose] <test-file> [...test-files]\n')
     process.exit(2)
+  }
+
+  if (tests.some(file => /kan-(?:789-review-snapshot-postgres-|790-pg|790-t55-|791-)/.test(file))) {
+    assertSafePostgresRegressionTarget(process.env)
   }
 
   const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
