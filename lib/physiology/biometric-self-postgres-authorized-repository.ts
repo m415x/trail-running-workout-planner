@@ -67,6 +67,21 @@ export function createPersistedAuthorizedBiometricPostgresRepository(client: PgC
       }).allowed
       if (!allowed) return { status: 'denied' }
 
+      // Lock the authoritative Team row for the duration of this write.
+      // A concurrent administrative zone change cannot interleave between
+      // region resolution and the observation INSERT.
+      const teams = await tx<{ time_zone: string | null }[]>`
+        SELECT time_zone FROM teams
+        WHERE id=${subject.teamId} AND is_deleted=false FOR UPDATE`
+      if (teams.length !== 1) return { status: 'denied' }
+      const timeZone = teams[0]?.time_zone
+      if (!timeZone || timeZone !== timeZone.trim()) return { status: 'denied' }
+      try {
+        new Intl.DateTimeFormat('en-CA', { timeZone }).format(new Date(0))
+      } catch {
+        return { status: 'denied' }
+      }
+
       const existing = await tx<{ id: string; request_digest: string }[]>`
         SELECT id,request_digest FROM athlete_biometric_observations
         WHERE team_id=${subject.teamId} AND athlete_profile_id=${subject.athleteProfileId}
@@ -97,11 +112,11 @@ export function createPersistedAuthorizedBiometricPostgresRepository(client: PgC
         INSERT INTO athlete_biometric_observations
           (id,team_id,athlete_profile_id,kind,value_scaled,unit,observed_on,
            recorded_at,recorded_by_user_id,source,supersedes_observation_id,
-           operation_key,request_digest,correction_reason)
+           operation_key,request_digest,correction_reason,observed_time_zone)
         VALUES (${id},${subject.teamId},${subject.athleteProfileId},
           ${input.kind},${input.valueScaled},${input.unit},${input.observedOn},
           ${new Date().toISOString()},${subject.userId},'athlete_declared',
-          ${supersedes},${input.operationKey},${requestDigest},${reason})`
+          ${supersedes},${input.operationKey},${requestDigest},${reason},${timeZone})`
       return { status: 'created', id }
     })
   }
