@@ -18,9 +18,13 @@ test('KAN-791 T6-D login, existing-session and dashboard share selected backend 
   const audience=readFileSync('lib/auth/next-server-audience.ts','utf8')
   const team=readFileSync('lib/authorization/active-team-next-server.ts','utf8')
   const navigation=readFileSync('lib/authorization/h4a-next-server-authorization.ts','utf8')
-  for(const code of [login,page,dashboard,lookup,audience,team,navigation])
-    assert.match(code,/identity-backend|IdentityBackend|identityBackend/,
-      'Selected backend must propagate throughout all identity/session call sites')
+  for(const code of [login,page,dashboard]) {
+    assert.match(code,/createNextServerIdentityEvidence/)
+    assert.doesNotMatch(code,/createExternalIdentityLookup\(\)/)
+  }
+  for(const code of [lookup,audience,team,navigation])
+    assert.match(code,/identity-backend|IdentityBackend|identityBackend|createNextServerIdentityEvidence/,
+      'Selected backend must propagate through the identity boundary')
 })
 
 test('KAN-791 T6-D must preserve shared H2 and H3/H4A pure contracts',()=>{
