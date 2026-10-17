@@ -25,7 +25,7 @@ function connection():Sql {
   const target=new URL(url)
   assert.equal(target.hostname,'127.0.0.1')
   assert.equal(target.port,'55439')
-  assert.equal(target.pathname,'/kan789_acceptance')
+  assert.equal(target.pathname,'/kan791_acceptance_v2')
   const next=process.env.SUPABASE_DATABASE_URL
   if(next) {
     const targetNext=new URL(next)
@@ -67,7 +67,7 @@ async function main() {
   const sql=connection()
   try {
     assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,
-      'kan789_acceptance')
+      'kan791_acceptance_v2')
     const exists=await sql`SELECT id FROM group_training_plans WHERE id=${scope.groupTrainingPlanId}`
     if(mode==='setup' && exists.length===0) {
       // One atomic setup transaction. No half-seeded fixture on failure.
