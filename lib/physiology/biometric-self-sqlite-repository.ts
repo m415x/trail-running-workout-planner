@@ -103,7 +103,7 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
         return { status: 'created' as const, id }
       })()
     },
-    create(subject: BiometricWriteSubject, input: BiometricValidatedCreate): BiometricSqliteCreateResult {
+    create(subject: BiometricWriteSubject, input: BiometricValidatedCreate): BiometricSqliteCreateResult | { readonly status: 'denied' } {
       const requestDigest = digestCreate(subject, input)
       return connection.transaction((): BiometricSqliteCreateResult | { readonly status: 'denied' } => {
         if (options.reauthorizeInTransaction && !options.reauthorizeInTransaction(subject)) {
