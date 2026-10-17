@@ -9,10 +9,11 @@ import {
 
 // KAN-789 tests may touch ONLY the disposable, explicitly selected database.
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required for PG consume regression')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-      target.pathname !== '/kan789_acceptance') {
+      target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN789 PostgreSQL acceptance forbids non-disposable targets')
   }
 }
@@ -26,11 +27,11 @@ const scope = {
   groupTrainingPlanId: prefix + '-plan',
 }
 
-test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', { skip: !url }, async () => {
+test('KAN-789 PG consume is atomic, scoped, rollback-safe and idempotent', async () => {
   const sql = postgres(url!, { max: 1, prepare: false })
   try {
     const identity = await sql<{ db: string }[]>`SELECT current_database() AS db`
-    assert.equal(identity[0]?.db, 'kan789_acceptance')
+    assert.equal(identity[0]?.db, 'kan791_regression_disposable')
 
     await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${scope.userId},${scope.userId},${prefix + '@example.invalid'},
