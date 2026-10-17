@@ -5,48 +5,44 @@ import { createBiometricSelfWriter, type BiometricCreateInput, type BiometricCor
 import { createPersistedAuthorizedBiometricSqliteRepository } from './biometric-self-sqlite-authorized-repository'
 
 /**
- * Internal SQLite composition only; NOT a public Server Action.
- * H2/H3 request authority is resolved again on each call and the repository
- * independently rechecks persisted SELF membership/profile in its transaction.
- * This SQLite-only path must not be exposed before PostgreSQL parity.
+ * Internal-only SELF writer. Both date validation and transaction-local
+ * persistence use Team IANA authority from SQLite, never caller input.
+ * Request H2/H3 is resolved per operation; the repository reauthorizes
+ * persisted membership and profile inside the write transaction.
  */
-export async function createCurrentBiometricSqliteObservation(
-  input: BiometricCreateInput,
-  serverContext: { readonly timeZone: string },
-) {
-  // A trusted server composition must supply the authorized regional IANA zone.
-  const today = resolveBiometricCivilToday(new Date(), serverContext.timeZone)
+async function buildCurrentBiometricSqliteWriter() {
   const repository = createPersistedAuthorizedBiometricSqliteRepository(
     sqliteConnection,
     () => new Date().toISOString(),
   )
+  let today: string | null = null
   const writer = createBiometricSelfWriter({
-    authorize: () => resolveBiometricSelfAuthority('manage'),
-    today: () => today,
+    authorize: async () => {
+      const subject = await resolveBiometricSelfAuthority('manage')
+      if (subject.status !== 'resolved') return { status: 'denied' as const }
+      const team = sqliteConnection.prepare(
+        'SELECT time_zone FROM teams WHERE id = ? AND is_deleted = 0',
+      ).get(subject.teamId) as { time_zone: string | null } | undefined
+      const timeZone = team?.time_zone
+      if (!timeZone || timeZone !== timeZone.trim()) return { status: 'denied' as const }
+      try {
+        today = resolveBiometricCivilToday(new Date(), timeZone)
+      } catch {
+        return { status: 'denied' as const }
+      }
+      return subject
+    },
+    today: () => today ?? '',
     persist: async (subject, validated) => repository.create(subject, validated),
     correct: async (subject, validated) => repository.correct(subject, validated),
   })
-  return writer.create(input)
+  return writer
 }
 
-/**
- * Internal correction operation only. The subject is always derived from
- * authenticated SELF authority and rechecked inside the SQLite transaction.
- */
-export async function correctCurrentBiometricSqliteObservation(
-  input: BiometricCorrectionInput,
-  serverContext: { readonly timeZone: string },
-) {
-  const today = resolveBiometricCivilToday(new Date(), serverContext.timeZone)
-  const repository = createPersistedAuthorizedBiometricSqliteRepository(
-    sqliteConnection,
-    () => new Date().toISOString(),
-  )
-  const writer = createBiometricSelfWriter({
-    authorize: () => resolveBiometricSelfAuthority('manage'),
-    today: () => today,
-    persist: async (subject, validated) => repository.create(subject, validated),
-    correct: async (subject, validated) => repository.correct(subject, validated),
-  })
-  return writer.correct(input)
+export async function createCurrentBiometricSqliteObservation(input: BiometricCreateInput) {
+  return (await buildCurrentBiometricSqliteWriter()).create(input)
+}
+
+export async function correctCurrentBiometricSqliteObservation(input: BiometricCorrectionInput) {
+  return (await buildCurrentBiometricSqliteWriter()).correct(input)
 }
