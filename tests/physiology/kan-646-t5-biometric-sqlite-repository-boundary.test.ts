@@ -8,7 +8,7 @@ test('KAN-646/T5 SQLite repository uses a transaction and server-resolved SELF s
   assert.match(source, /transaction\(/)
   assert.match(source, /teamId/)
   assert.match(source, /athleteProfileId/)
-  assert.match(source, /recordedByUserId/)
+  assert.match(source, /recorded_by_user_id/)
   assert.match(source, /operationKey/)
   assert.match(source, /requestDigest/)
   assert.match(source, /supersedesObservationId/)
