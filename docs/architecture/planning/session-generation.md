@@ -186,3 +186,163 @@ The UI localizes stable fact/warning codes into human ES/EN labels and
 operational messages while preserving the underlying structured snapshot.
 Unknown presentation codes fall back to a readable label rather than exposing
 raw implementation syntax as the primary Coach explanation.
+
+
+## KAN-789/T4 — Temporary SQL review snapshots (implementation baseline)
+
+T4 provides **server-only repository primitives**, not production CREATE/GET/confirm
+routes. The opaque snapshot ID is a lookup key, **never authorization**. The
+H2/H3/H4A identity and Coach permissions, Team/Plan/Base–Variant authority,
+source-manifest freshness, reconciliation validation and final one-transaction
+generation persistence remain T5/T6 work. Do not send snapshot JSON in a
+Server Action payload; the intent is to address the HTTP 413 review submission.
+
+- SQLite: `db/session-generation-review-snapshot-schema.ts`,
+  `drizzle/sqlite/0026_session_generation_review_snapshots.sql`,
+  `lib/session-generation/review-snapshot-sqlite-repository.ts`.
+- PostgreSQL: `db/supabase/session-generation-review-snapshot-schema.ts`,
+  `drizzle/supabase/0039_session_generation_review_snapshots.sql`,
+  `lib/session-generation/review-snapshot-postgres-repository.ts`.
+  PostgreSQL snapshot relation has RLS enabled **without policies**; this is
+  not proof of authorization for a privileged server database connection.
+- Repository lifecycle: create, read ACTIVE without mutation, consume with
+  callback using the **same transaction**, invalidate ACTIVE, explicit oldest
+  ACTIVE replacement (caller supplies `replaceSnapshotId`), and **separate**
+  terminal-state purge. Neither GET nor rendering creates or purges snapshots.
+- Create enforces a 30-minute TTL and at most two ACTIVE reviews per
+  `userId/teamId/groupTrainingPlanId`. SQLite uses an IMMEDIATE transaction;
+  PostgreSQL serializes allocation with an advisory transaction lock by scope.
+  Consumed snapshots and nonempty result references are not replaceable or
+  purgeable. Purge requires an **explicit user/team/plan scope** in both engines,
+  a canonical ISO retention cutoff, terminal `expired`/`invalidated`
+  status and absent consumption evidence.
+- The envelope validator caps serialized UTF-8 payload at 4 MiB,
+  `sessionCount` at 500 and `microcycleCount` at 60. It also currently caps
+  aggregate `proposal.events[].prescriptions` at 500, stages per explanation
+  at nine, and aggregate facts per explanation stage at 256. **The numeric
+  prescription and fact limits are approved for the measured representative
+  53-week Base/Variant per-Plan capacity scenarios, **not a universal product
+  maximum proven for all possible Coach proposals**. T5 must derive counts
+  from server-owned proposal data and enforce complete schema/causal
+  validation; caller-provided metadata is not authoritative.
+
+### Acceptance evidence and remaining gate
+
+KAN-789/T4 focal SQLite tests cover lifecycle, replacement, expiry and
+scope-limited purge. PostgreSQL tests run only with the explicitly guarded
+**disposable** `KAN789_PG_URL` target; missing env means **SKIP**, not proof
+of PostgreSQL behavior. The operator confirmed a joint GREEN of six PostgreSQL
+tests (allocation, consumption, invalidation, concurrency, replacement, purge)
+and a subsequent `pn verify --db` PASS at feature checkpoint
+`90655bbfe84d429a5760aafd444fd5ee7e2088a5`.
+The last SQLite purge isolation tests also returned GREEN.
+
+The motivating historical 53-week/239-session Coach review measured proposal
+202,945 B, explanations 1,574,495 B, and multipart estimate 1,778,414 B.
+Its original input configuration was not recovered, and that evidence does not
+establish historical prescription or causal fact cardinality.
+
+The **pure-input deterministic production-generator** instrument
+`scripts/measure-kan-789-annual-snapshot.ts` instead measures a reproducible
+representative scenario (not the original Coach review):
+- Annual Base-only: 53 microcycles, 212 events/prescriptions/explanations,
+  9 stages each, maximum 17 causal facts per stage including warning facts;
+  envelope 1,492,651 B at checkpoint
+  `42410c841ff3729f22ae8816029ca11b65d34c9d` (Jira 12874).
+- Base/Variant aggregate: 53 calendar weeks, **106 distinct microcycles**
+  across two independently generated Plans, 212 events carrying 424
+  prescriptions and 424 explanations, combined envelope 2,954,355 B.
+  This is a **diagnostic consolidation**, not a persistable SQL snapshot
+  (Jira 12882).
+- Canonical one-Plan snapshots at checkpoint
+  `b826929695a93be3c2e3c7fdc57ad62b1840b204`:
+  Base has 53 distinct microcycles, 212 events/prescriptions/explanations,
+  1,492,759 B envelope (SHA256
+  `e57a2d4a7efc36a3562c7b5b06d0afac524f9f768d9eddba08f5fbe14872bb20`);
+  Variant has 53 distinct microcycles, 212 events/prescriptions/explanations,
+  1,527,378 B envelope (SHA256
+  `2620f5d28243c1e4d26c58a4507e6525c1f7de4e4bbac63215fd1d8114dbd6fb`).
+  Both preserve 9 stages, maximum 17 causal facts/stage, and pass all
+  Plan-scoped 4 MiB/500 sessions/500 prescriptions/60 microcycles/9 stages/
+  256 facts bounds (Jira 12886). No limit increase is justified.
+
+The operator subsequently confirmed **`pn verify --db` PASS 6/6** on that
+same feature HEAD: Tests, TypeScript, ESLint, Build, i18n, and SQLite.
+The earlier six disposable PostgreSQL integration tests were GREEN on
+the previously documented code baseline; no PostgreSQL run on the final
+documentation HEAD is claimed. T4 validates SQL primitives and capacity,
+**not** product integration.
+
+Remaining T5/T6 obligations: enforce Plan/Team/Group/Cohort membership and
+embedded payload ownership; derive microcycle/session counts server-side;
+H2/H3/H4A authorization, source freshness, sibling Base/Variant event
+reconciliation, concurrent writes, audit and CAS consume in the same
+transaction. The synthetic generator probe is not evidence of successful
+Coach HTTP persistence or historical 239-session acceptance.
+
+### KAN-789/T4 — Base/Variant unit and reconciliation risks
+
+The canonical SQL review snapshot unit is **one `groupTrainingPlanId`**.
+Both SQLite and PostgreSQL schemas have a single non-null Plan FK plus
+`teamId`, `groupId` and nullable `planningCohortId`. Repository allocation,
+lookup, invalidation, consumption and purge use scoped User/Team/Plan
+identities. The schema itself does not prove that the declared Group/Cohort
+belongs to that Plan, and repositories do not validate that every embedded
+prescription, `generationKey`, explanation and `sourceManifest` belongs to
+the same Plan. Those are fail-closed T5 authorization/source-validation
+requirements, not accomplished T4 assurances.
+
+A Base and a derived Variant may independently generate same
+`sharedEventKey` but distinct `generationKey` and microcycle lineage.
+They are **two snapshots**, not one combined SQL snapshot. The combined
+Base/Variant output of the capacity probe is **diagnostic-only**.
+Use `node --import tsx scripts/measure-kan-789-annual-snapshot.ts --scenario=base-variant`
+to report both Plan-scoped envelopes and the aggregate separately.
+`calendarWeeks=53` is not the same as `distinctMicrocycleIds=106`
+across the aggregate; each Plan-scoped envelope should contain 53
+distinct microcycle IDs and be assessed individually against the 60 cap.
+Any requirement to save/confirm multiple Plans as one indivisible transaction
+is a **new product contract** and must stop for explicit architectural approval.
+
+#### KAN-790/T5 and KAN-791/T6 verification matrix
+
+| Scenario | Required acceptance (not yet implemented/proved) |
+| --- | --- |
+| Base then Variant confirmation, same `sharedEventKey` | Reuse one existing Session event, insert second Plan-scoped prescription by distinct `microcycleId`; no duplicate Session |
+| Variant then Base confirmation | Same result independent of order, preserving each Plan's `generationKey` and historical explanation |
+| Regenerate Base after Variant exists | Scope obsolete-prescription detection to Base lineage; never delete/update Variant prescription or shared event still referenced by Variant |
+| Regenerate Variant after Base exists | Symmetric isolation; independently preserve Base prescription and audit |
+| Two confirmations concurrently | Serialize/race-proof same `sharedEventKey` creation, uniqueness, reconciliation read-set and full transaction; no duplicate/orphaned records |
+| `generated_modified` or `manual` session/prescription | Fail on protected collision or preserve ownership; never overwrite Coach changes in sibling scope |
+| Stale source, changed calendar/template/microcycle or revoked permission | Revalidate H2/H3/H4A, Team/Plan/Base–Variant relationship, generation input versions before any durable mutation |
+| Conflict, rollback, retry and consumed snapshot | Atomic Session + both relevant prescription consequences + audit per confirmation, CAS consume with result reference, deterministic retry and no partial writes |
+
+Current `reconcileSessionGeneration` is **pure** and assumes that
+`existingEvents` and `existingPrescriptions` have already been correctly
+scoped. It cannot by itself guarantee safe concurrent database writes or
+protection of sibling shared events. These guarantees require T5/T6
+repository read/write boundary and integration tests.
+
+
+#### KAN-791/T6-D — 2026-10-17 acceptance addendum (WIP PR #59)
+
+The matrix above is the historical T4/T5 requirement matrix, not the latest acceptance status.
+Operator-accredited disposable PostgreSQL tests: **71 PASS / 0 FAIL / 0 SKIP** at
+`fe58c6356f5d8e5195fcf6c2aefd9c4ef850157e`; annual read-only
+tests against `kan791_acceptance_v2`: **2 PASS / 0 FAIL / 0 SKIP**.
+Authenticated annual 53-week/239-session CREATE/GET/CONFIRM was observed earlier
+and its existing consumed review snapshot
+`7939a67f-51f9-49f8-ba76-4f9b82ee5ed4` was reused for a second
+authenticated HTTP CONFIRM (no new CREATE). The original Server Action
+redirected; complete scoped read-only SQL snapshots before and after matched
+SHA-256 `16DC3B65B94F6CF44C54A9C7624B75687629A5C11F855BD8FC7CD75AD208C8F5`.
+
+**PASS — functional idempotence via authenticated HTTP, audited action/repository
+contract and no SQL mutations.** **Evidence limitation:** the internal
+`already_consumed` branch was inferred from prior `consumed` state and
+repository behavior; it was **not directly observed** in a debugger/trace.
+Do not report a direct branch observation. Temporary dev-only E2E probe files
+were removed before final integration assessment. Drizzle catalog/migrations
+reconciliation, final ordinary six-gate verification and handoff check remain
+separate exit conditions on the definitive SHA. PR #59 stays Draft until
+explicit merge authorization.

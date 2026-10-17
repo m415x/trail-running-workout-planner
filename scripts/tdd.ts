@@ -1,7 +1,10 @@
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+
+import { assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
 
 const require = createRequire(import.meta.url)
 
@@ -68,6 +71,13 @@ function main(): void {
     process.exit(2)
   }
 
+  if (tests.some(file => {
+    if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
+  })) {
+    assertSafePostgresRegressionTarget(process.env)
+  }
+
   const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
   if (!sync.ok) {
     if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
@@ -76,7 +86,15 @@ function main(): void {
   }
 
   const tsxCli = require.resolve('tsx/cli')
-  const focused = run(process.execPath, [tsxCli, '--test', ...tests], verbose)
+  // Shared disposable PostgreSQL fixtures can conflict at SERIALIZABLE even
+  // when their IDs differ (predicate locks and unique-index reads). Run every
+  // multi-file PG focused cut sequentially; do not weaken transaction isolation.
+  const postgresFocused = tests.some(file => {
+    if (/[*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
+  })
+  const testOptions = postgresFocused ? ['--test-concurrency=1'] : []
+  const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
   if (redOnly) {
     console.log(focused.ok ? 'GREEN' : 'RED')

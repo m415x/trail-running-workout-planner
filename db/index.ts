@@ -9,6 +9,7 @@ import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
+import * as sessionGenerationReviewSnapshotSchema from '@/db/session-generation-review-snapshot-schema'
 
 // The isolated SQLite scenario contract is shared with the canonical upgrade verifier.
 // Never fall back to the developer DB when scenario mode is explicitly enabled.
@@ -36,10 +37,10 @@ if (isolatedMode) {
     throw new Error('SQLITE_DATABASE_PATH cannot target the development sqlite.db in scenario mode')
   }
 }
-const sqlite = new Database(sqlitePath, { fileMustExist: isolatedMode && sqlitePath !== ':memory:' })
+export const sqliteConnection = new Database(sqlitePath, { fileMustExist: isolatedMode && sqlitePath !== ':memory:' })
 
 // Instancia de Drizzle con autocompletado, tipos y relaciones de todos los módulos del esquema
-export const db = drizzle(sqlite, {
+export const db = drizzle(sqliteConnection, {
   schema: {
     ...coreSchema,
     ...loadStrategySchema,
@@ -49,5 +50,6 @@ export const db = drizzle(sqlite, {
     ...readinessSchema,
     ...raceCatalogSchema,
     ...raceRegistrationSchema,
+    ...sessionGenerationReviewSnapshotSchema,
   },
 })

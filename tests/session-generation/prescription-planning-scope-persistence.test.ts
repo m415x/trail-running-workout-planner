@@ -4,7 +4,7 @@ import path from 'node:path'
 import { test } from 'node:test'
 
 const source = fs.readFileSync(
-  path.join(process.cwd(), 'app', 'actions', 'session-generation-actions.ts'),
+  path.join(process.cwd(), 'lib', 'session-generation', 'review-snapshot-reconciliation-writer.ts'),
   'utf8',
 )
 
