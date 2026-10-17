@@ -9,11 +9,11 @@ test('KAN-790 PG-2 session generation preferences physical PostgreSQL table', as
   const target = new URL(url)
   assert.equal(target.hostname, '127.0.0.1')
   assert.equal(target.port, '55439')
-  assert.equal(target.pathname, '/kan789_acceptance')
+  assert.equal(target.pathname, '/kan791_regression_disposable')
   const sql = postgres(url, { max: 1, prepare: false })
   try {
     assert.equal((await sql<{ name: string }[]>`SELECT current_database() AS name`)[0]?.name,
-      'kan789_acceptance')
+      'kan791_regression_disposable')
     const tables = await sql<{ enabled: boolean }[]>`
       SELECT c.relrowsecurity AS enabled FROM pg_class c
       JOIN pg_namespace n ON n.oid = c.relnamespace
