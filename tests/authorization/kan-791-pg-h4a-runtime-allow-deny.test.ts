@@ -10,7 +10,7 @@ test('KAN-791 PostgreSQL H4A Coach evidence allows own Team and denies revoked o
   const parsed=new URL(url)
   assert.equal(parsed.hostname,'127.0.0.1')
   assert.equal(parsed.port,'55439')
-  assert.equal(parsed.pathname,'/kan789_acceptance')
+  assert.equal(parsed.pathname,'/kan791_regression_disposable')
   const sql=postgres(url,{max:1,prepare:false})
   const id='kan791-h4a-runtime'
   const teamId=id+'-team',userId=id+'-user',groupId=id+'-group'
