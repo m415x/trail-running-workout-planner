@@ -1,3 +1,15 @@
+# PR #59 — KAN-790/T5 + KAN-791/T6 post-merge baseline (2026-10-17)
+
+- **Merged to `dev` with GitHub ordinary merge**, PR #59: `e9f5f8276b4508e0fefdde7a7bd97787e27fd8d7`, confirmed GitHub `merged: true` and base `dev`. Authorized immutable PR head: `052dc218023bb4c50d53484373ce2847a5d4979a`, enforced as `expected_head_sha`. The PR was changed from Draft to Ready before merging. No bypass was used.
+- Candidate gate on authorized head: `pn verify --db -v` **PASS 6/6**, ordinary tests 3017/3017 PASS; `pn docs:handoff:check` **PASS**. PostgreSQL disposable **71/71 PASS** and annual read-only **2/2 PASS** were accredited on `fe58c6356f5d8e5195fcf6c2aefd9c4ef850157e`; subsequent branch edits removed temporary test-only probe and updated docs without modifying production PG boundaries.
+- Annual authenticated HTTP CREATE/GET/CONFIRM 53-week / 239-session acceptance approved. Second authenticated CONFIRM functional idempotence **PASS** with SQL before/after identical SHA256 `16DC3B65B94F6CF44C54A9C7624B75687629A5C11F855BD8FC7CD75AD208C8F5`. **Limit:** `already_consumed` was inferred from previously consumed snapshot, redirect and audited code path; it was **not** directly instrumented.
+- Disposable PostgreSQL read-only physical schema inspection: 41 migration records vs 41 Drizzle journal entries, effective 20 constraints and 9 indexes on four critical tables. Seven truncated FK names (PostgreSQL identifier limit / `NOTICE 42622`) have intact constraints. Individual migration hashes were **not compared**; matching cardinality alone is not hash equivalence.
+- Pre-merge Vercel `failure` linked to `build-rate-limit`, not evidence of a demonstrated compilation regression. **Merge commit** `e9f5f827...` separately reported combined Vercel status **success** with deployment URL; GitHub Actions PR workflow lookup returned no runs. Do not invent additional CI.
+- Per-file PR #59 security/coverage review inspected auth/H2-H3-H4A, authorized CREATE/GET/CONFIRM and serializable CAS, protected reconciliation, schema and indexes, Coach UI and SQLite, test isolation; no material defect identified. GitHub oversized monolithic diff was not used; generated metadata snapshot files had no textual per-file patch.
+- **Post-merge operator verification is still pending** on the final documentation HEAD: `pn verify --db -v` and `pn docs:handoff:check`. These are separate from the candidate gates and from GitHub Vercel status. Do not close KAN-790/KAN-791/KAN-784 until their complete acceptance and post-merge handoff conditions are confirmed. Neither historic annual nor forensic PostgreSQL databases may be modified. Do not rerun authenticated CONFIRM or the 73 already accredited focused PG tests without a new contract-relevant change.
+
+---
+
 # Current operational handoff — KAN-792 Coach Competition Calendar reader merged (2026-10-13)
 
 ## Latest integrated delivery

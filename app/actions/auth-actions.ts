@@ -3,7 +3,7 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { createNextServerIdentityEvidence } from '@/lib/auth/identity-backend-next-server'
 import { authenticateEptLogin } from '@/lib/auth/login-flow'
 import { resolveNextServerAudience } from '@/lib/auth/next-server-audience'
 import { resolveAudienceLoginDestination } from '@/lib/auth/audience-login-routing'
@@ -37,7 +37,7 @@ export async function loginAction(
   const returnTo = stringValue(formData.get('returnTo')) || null
 
   const supabase = await createSupabaseServerClient()
-  const lookup = createExternalIdentityLookup()
+  const lookup = createNextServerIdentityEvidence().lookup
 
   const result = await authenticateEptLogin({
     auth: supabase.auth,

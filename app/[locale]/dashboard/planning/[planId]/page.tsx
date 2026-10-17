@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { ArrowLeft, CalendarDays } from 'lucide-react'
 
+import { readCoachSessionReviewSnapshot } from '@/app/actions/coach-session-review-snapshot-actions'
 import { getCompetitionCalendarAction } from '@/app/actions/competition-calendar-actions'
 import { getGroupTrainingPlanById } from '@/app/actions/planning-actions'
 import { getSessionGenerationPreferencesForPlan } from '@/app/actions/session-generation-preferences-actions'
@@ -52,6 +53,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 
 interface PlanningDetailPageProps {
   params: Promise<{ locale: string; planId: string }>
+  searchParams: Promise<{ snapshotId?: string }>
 }
 
 function formatDate(value: string, presentationLocale: string) {
@@ -60,8 +62,10 @@ function formatDate(value: string, presentationLocale: string) {
   )
 }
 
-export default async function PlanningDetailPage({ params }: PlanningDetailPageProps) {
+export default async function PlanningDetailPage({ params, searchParams }: PlanningDetailPageProps) {
   const { locale, planId } = await params
+  const { snapshotId } = await searchParams
+  const reviewed = snapshotId ? await readCoachSessionReviewSnapshot({planId,snapshotId}) : null
   const language = locale === 'en' ? 'en' : 'es'
   const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
   const regionalContext = resolveApplicationRegionalContext({ language })
@@ -414,8 +418,8 @@ export default async function PlanningDetailPage({ params }: PlanningDetailPageP
         isAvailable={canGenerateSessions}
         planId={plan.id}
         locale={locale}
-        proposal={sharedPreview}
         generationExplanations={generationExplanations}
+        reviewedSnapshot={reviewed?.kind === 'available' ? reviewed.snapshot : null}
       />
 
       {plan.macrocycles.map((macrocycle) => (
