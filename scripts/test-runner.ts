@@ -191,6 +191,16 @@ function isSharedPostgresAcceptanceTest(path: string): boolean {
   return /^(?:kan-790-pg[0-9]+-|kan-790-t55-.*pg-|kan-789-review-snapshot-postgres-|kan-791-(?:annual-239-postgres-|t6a-.*postgres-)).*\.test\.ts$/.test(filename)
 }
 
+/** Never run a mutating regression batch against either preserved acceptance database. */
+export function assertSafePostgresRegressionTarget(url: string | undefined): void {
+  if (!url) return
+  const target = new URL(url)
+  if (target.hostname === '127.0.0.1' && target.port === '55439' &&
+      ['/kan789_acceptance', '/kan791_acceptance_v2'].includes(target.pathname)) {
+    throw new Error('BLOCKED: regression tests must not run against preserved PostgreSQL acceptance databases')
+  }
+}
+
 export function prepareTestRunBatches(
   testFiles: string[],
   maxArgumentLength = 8_000,
@@ -355,6 +365,7 @@ export function runTestFiles(testFiles: string[]): number {
 
 async function main(): Promise<void> {
   validateTestRunnerArguments(process.argv.slice(2))
+  assertSafePostgresRegressionTarget(process.env.KAN789_PG_URL)
   const testFiles = await discoverTestFiles(resolve(process.cwd(), 'tests'))
   console.log(`Discovered ${testFiles.length} test files`)
   process.exitCode = runTestFiles(testFiles)
