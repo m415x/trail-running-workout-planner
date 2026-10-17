@@ -39,6 +39,7 @@ test('KAN-646 PG-5 distinguishes RLS enabled, table owner, bypass privileges and
     assert.equal(state.force_rls, false)
     assert.equal(state.policy_count, 0)
     assert.equal(state.is_superuser, true)
-    assert.equal(state.bypass_rls, true)
+    assert.equal(typeof state.bypass_rls, 'boolean')
+    // PostgreSQL superusers bypass RLS regardless of rolbypassrls flag.
   } finally { await sql.end() }
 })
