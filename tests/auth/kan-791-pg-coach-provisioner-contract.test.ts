@@ -10,7 +10,7 @@ test('KAN-791 PG acceptance identity provisioner exposes explicit safe modes and
  assert.match(source,/KAN791_AUTH_SUBJECT/)
  const targets=readFileSync('lib/auth/kan-791-provisioner-targets.ts','utf8')
  assert.match(source,/assertKan791LocalDatabaseTargets/)
- assert.match(targets,/kan789_acceptance/)
+ assert.match(targets,/kan791_acceptance_v2/)
  assert.match(targets,/127\.0\.0\.1/)
  assert.match(targets,/55439/)
  assert.match(source,/kan791-annual-pg-239-team/)
