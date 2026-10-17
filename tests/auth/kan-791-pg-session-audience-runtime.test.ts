@@ -15,7 +15,7 @@ test('KAN-791 PG identity shares H2 verified session, H3 membership and Coach de
   const target=new URL(url)
   assert.equal(target.hostname,'127.0.0.1')
   assert.equal(target.port,'55439')
-  assert.equal(target.pathname,'/kan789_acceptance')
+  assert.equal(target.pathname,'/kan791_regression_disposable')
   const sql=postgres(url,{max:1,prepare:false})
   const id='kan791-pg-session-contract'
   const userId=id+'-user',teamId=id+'-team',subject=id+'-supabase-sub'
