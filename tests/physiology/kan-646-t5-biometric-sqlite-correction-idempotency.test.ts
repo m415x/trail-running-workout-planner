@@ -19,7 +19,7 @@ test('KAN-646/T5 correction replays identical key/payload but rejects changed pa
       UNIQUE(team_id, athlete_profile_id, recorded_by_user_id, operation_key),
       UNIQUE(supersedes_observation_id)
     )`)
-    const repository = createBiometricSelfSqliteRepository(sqlite)
+    const repository = createBiometricSelfSqliteRepository(sqlite, { reauthorizeInTransaction: () => true })
     const original = repository.create(subject, initial)
     assert.equal(original.status, 'created')
     if (original.status !== 'created') return
