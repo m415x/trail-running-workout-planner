@@ -44,7 +44,12 @@ function digestCreate(subject: BiometricWriteSubject, input: BiometricValidatedC
  * boundary before exposing mutations. Complete correction validation at the
  * authenticated entry boundary and PG parity remain separate T5 cuts.
  */
-export function createBiometricSelfSqliteRepository(connection: Database.Database) {
+export interface BiometricSqliteRepositoryOptions {
+  /** Synchronous, transaction-local authority check; required at the public writer integration boundary. */
+  readonly reauthorizeInTransaction?: (subject: BiometricWriteSubject) => boolean
+}
+
+export function createBiometricSelfSqliteRepository(connection: Database.Database, options: BiometricSqliteRepositoryOptions = {}) {
   return {
     correct(subject: BiometricWriteSubject, input: BiometricValidatedCorrection): BiometricSqliteCreateResult | { readonly status: 'denied' } {
       const requestDigest = createHash('sha256').update(JSON.stringify([
@@ -53,6 +58,9 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
         input.supersedesObservationId, input.correctionReason,
       ])).digest('hex')
       return connection.transaction(() => {
+        if (options.reauthorizeInTransaction && !options.reauthorizeInTransaction(subject)) {
+          return { status: 'denied' as const }
+        }
         const existing = connection.prepare(
           `SELECT id, request_digest FROM athlete_biometric_observations
            WHERE team_id = ? AND athlete_profile_id = ?
@@ -97,7 +105,10 @@ export function createBiometricSelfSqliteRepository(connection: Database.Databas
     },
     create(subject: BiometricWriteSubject, input: BiometricValidatedCreate): BiometricSqliteCreateResult {
       const requestDigest = digestCreate(subject, input)
-      return connection.transaction((): BiometricSqliteCreateResult => {
+      return connection.transaction((): BiometricSqliteCreateResult | { readonly status: 'denied' } => {
+        if (options.reauthorizeInTransaction && !options.reauthorizeInTransaction(subject)) {
+          return { status: 'denied' }
+        }
         const existing = connection.prepare(
           `SELECT id, request_digest FROM athlete_biometric_observations
            WHERE team_id = ? AND athlete_profile_id = ?
