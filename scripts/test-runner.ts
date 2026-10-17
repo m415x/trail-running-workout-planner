@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { readdir } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -28,6 +28,23 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
   }
 
   return files
+}
+
+export function isPostgresIntegrationSource(source: string): boolean {
+  // Explicit connection/auth inputs identify integration files, not their issue IDs.
+  return /process\\.env\\.(?:KAN789_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source)
+}
+
+export async function partitionTestFiles(files: string[]): Promise<{
+  ordinary: string[]; postgres: string[]
+}> {
+  const ordinary: string[] = []
+  const postgres: string[] = []
+  for (const file of files) {
+    const source = await readFile(file, 'utf8')
+    ;(isPostgresIntegrationSource(source) ? postgres : ordinary).push(file)
+  }
+  return { ordinary, postgres }
 }
 
 type TestRunResult = Pick<ReturnType<typeof spawnSync>, 'status' | 'signal' | 'error'>
@@ -373,13 +390,18 @@ export function runTestFiles(testFiles: string[]): number {
 }
 
 async function main(): Promise<void> {
-  validateTestRunnerArguments(process.argv.slice(2))
-  const testFiles = await discoverTestFiles(resolve(process.cwd(), 'tests'))
-  if (testFiles.some(file => /kan-(?:789-review-snapshot-postgres-|790-pg|790-t55-|791-)/.test(file))) {
+  const pgMode = process.argv[2] === '--postgres'
+  validateTestRunnerArguments(pgMode ? process.argv.slice(3) : process.argv.slice(2))
+  const all = await discoverTestFiles(resolve(process.cwd(), 'tests'))
+  const lanes = await partitionTestFiles(all)
+  const selected = pgMode ? lanes.postgres : lanes.ordinary
+  if (pgMode) {
     assertSafePostgresRegressionTarget(process.env)
+    if (selected.length === 0) throw new Error('BLOCKED: no PostgreSQL integration tests found')
   }
-  console.log(`Discovered ${testFiles.length} test files`)
-  process.exitCode = runTestFiles(testFiles)
+  console.log(`Discovered ${all.length} test files; selected ${selected.length} ${pgMode ? 'PostgreSQL integration' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
+  if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg separately (no PASS implied)')
+  process.exitCode = runTestFiles(selected)
 }
 
 const entryPoint = process.argv[1]
