@@ -20,7 +20,7 @@ test('KAN-646/T5 correction cannot proceed without an existing same-subject same
       UNIQUE(team_id, athlete_profile_id, recorded_by_user_id, operation_key),
       UNIQUE(supersedes_observation_id)
     )`)
-    const repository = createBiometricSelfSqliteRepository(db)
+    const repository = createBiometricSelfSqliteRepository(db, { reauthorizeInTransaction: () => true })
     const created = repository.create(subject, initial)
     assert.equal(created.status, 'created')
     if (created.status !== 'created') return
