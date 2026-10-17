@@ -10,13 +10,13 @@ test('KAN-791 T6-A PG Plan context is authorized and DENY leaks no identity or m
   const target=new URL(url)
   assert.equal(target.hostname,'127.0.0.1')
   assert.equal(target.port,'55439')
-  assert.equal(target.pathname,'/kan789_acceptance')
+  assert.equal(target.pathname,'/kan791_regression_disposable')
   const sql=postgres(url,{max:1,prepare:false})
   const id='kan791-t6a-context'
   const now='2026-10-15T12:00:00.000Z'
   const teamId=id+'-team',groupId=id+'-group',planId=id+'-plan',userId=id+'-user'
   try {
-    assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,'kan789_acceptance')
+    assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,'kan791_regression_disposable')
     await sql`INSERT INTO teams(id,name,created_at,updated_at)
       VALUES (${teamId},'T6-A PG Team',${now},${now})`
     await sql`INSERT INTO athlete_groups(id,team_id,category_code,level_code,created_at,updated_at)
