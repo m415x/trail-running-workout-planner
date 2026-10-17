@@ -9,7 +9,7 @@ test('KAN-791 P4 read-only verify and owned cleanup in rollback-only PostgreSQL 
  const target=new URL(url)
  assert.equal(target.hostname,'127.0.0.1')
  assert.equal(target.port,'55439')
- assert.equal(target.pathname,'/kan789_acceptance')
+ assert.equal(target.pathname,'/kan791_acceptance_v2')
  const sql=postgres(url,{max:1,prepare:false})
  const ids={userId:'kan791-p4-rollback-user',linkId:'kan791-p4-rollback-link',
   membershipId:'kan791-p4-rollback-member',teamId:'kan791-annual-pg-239-team',
