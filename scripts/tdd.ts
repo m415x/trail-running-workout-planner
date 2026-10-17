@@ -86,24 +86,14 @@ function main(): void {
   }
 
   const tsxCli = require.resolve('tsx/cli')
-  // PG-4 exercises SERIALIZABLE writers against one shared disposable
-  // PostgreSQL database. Running multiple PG-4 files in parallel can produce
-  // SQLSTATE 40001 between otherwise independent rollback fixtures.
-  // Keep the real database, transaction isolation, and assertions intact.
-  const pg4Files = tests.filter(path => {
-    const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
-    return filename.startsWith('kan-790-pg4-') && filename.endsWith('.test.ts')
+  // Shared disposable PostgreSQL fixtures can conflict at SERIALIZABLE even
+  // when their IDs differ (predicate locks and unique-index reads). Run every
+  // multi-file PG focused cut sequentially; do not weaken transaction isolation.
+  const postgresFocused = tests.some(file => {
+    if (/[*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
   })
-  // A wildcard may reach this script as one literal argument (not expanded
-  // by Git Bash or pnpm). tsx expands it later into several concurrent files.
-  const pg4Glob = tests.some(path => {
-    const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
-    return filename.startsWith('kan-790-pg4-') &&
-      (filename.includes('*') || filename.includes('?') || filename.includes('['))
-  })
-  const testOptions = pg4Files.length > 1 || pg4Glob
-    ? ['--test-concurrency=1']
-    : []
+  const testOptions = postgresFocused ? ['--test-concurrency=1'] : []
   const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
   if (redOnly) {
