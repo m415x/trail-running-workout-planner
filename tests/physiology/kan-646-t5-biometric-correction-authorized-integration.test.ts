@@ -13,12 +13,14 @@ test('KAN-646/T5 guarded SQLite correction is append-only; replays and revocatio
     db.exec(`
       CREATE TABLE team_memberships (user_id TEXT, team_id TEXT, preset TEXT, effective_from TEXT, effective_until TEXT, is_active INTEGER, is_deleted INTEGER);
       CREATE TABLE athlete_profiles (id TEXT PRIMARY KEY, user_id TEXT, team_id TEXT, is_active INTEGER, is_deleted INTEGER);
+      CREATE TABLE teams (id TEXT PRIMARY KEY, time_zone TEXT, is_deleted INTEGER NOT NULL DEFAULT 0);
+      INSERT INTO teams (id, time_zone) VALUES ('team_1', 'America/Argentina/San_Juan');
       CREATE TABLE athlete_biometric_observations (
         id TEXT PRIMARY KEY, team_id TEXT NOT NULL, athlete_profile_id TEXT NOT NULL,
         kind TEXT NOT NULL, value_scaled INTEGER NOT NULL, unit TEXT NOT NULL,
         observed_on TEXT NOT NULL, recorded_at TEXT NOT NULL, recorded_by_user_id TEXT NOT NULL,
         source TEXT NOT NULL, supersedes_observation_id TEXT, operation_key TEXT NOT NULL,
-        request_digest TEXT NOT NULL, correction_reason TEXT,
+        request_digest TEXT NOT NULL, correction_reason TEXT, observed_time_zone TEXT,
         UNIQUE(team_id, athlete_profile_id, recorded_by_user_id, operation_key),
         UNIQUE(supersedes_observation_id)
       );
