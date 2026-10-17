@@ -2,7 +2,7 @@ import type postgres from 'postgres'
 
 import type { ExternalIdentityLookup } from './server-session-identity'
 
-type Client=ReturnType<typeof postgres>
+type Client=ReturnType<typeof postgres> | postgres.TransactionSql
 
 /**
  * Read-only PostgreSQL H1 evidence, shared by login/session compositions.
