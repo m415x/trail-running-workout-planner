@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { randomUUID } from 'node:crypto'
 import postgres from 'postgres'
 
 import {
@@ -8,24 +9,25 @@ import {
 } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required; no SKIP')
+{
   const parsed = new URL(url)
   if (parsed.hostname !== '127.0.0.1' || parsed.port !== '55439' ||
-    parsed.pathname !== '/kan789_acceptance') {
-    throw new Error('KAN789_PG_URL must address disposable PostgreSQL 127.0.0.1:55439/kan789_acceptance')
+    parsed.pathname !== '/kan791_regression_disposable') {
+    throw new Error('BLOCKED: PG allocation requires local disposable kan791_regression_disposable')
   }
 }
 
 const now = '2026-10-13T12:00:00.000Z'
-const marker = 'kan789-pg-lifecycle'
+const marker = 'kan789-pg-lifecycle-' + randomUUID()
 const scope = { userId: marker + '-user', teamId: marker + '-team',
   groupTrainingPlanId: marker + '-plan' }
 
-test('KAN-789 PostgreSQL allocation has scoped reads, 30-minute TTL and atomic quota', { skip: !url }, async () => {
+test('KAN-789 PostgreSQL allocation has scoped reads, 30-minute TTL and atomic quota', async () => {
   const sql = postgres(url!, { max: 1, prepare: false })
   try {
     const identity = await sql<{ database: string }[]>`SELECT current_database() AS database`
-    assert.equal(identity[0]?.database, 'kan789_acceptance')
+    assert.equal(identity[0]?.database, 'kan791_regression_disposable')
     await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${scope.userId},${scope.userId},${marker + '@example.invalid'},'KAN789','Fixture',${now},${now})`
     await sql`INSERT INTO teams (id, name, created_at, updated_at)
