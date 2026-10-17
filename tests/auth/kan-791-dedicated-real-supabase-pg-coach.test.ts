@@ -20,7 +20,7 @@ test('KAN-791 T6-D dedicated real Supabase Coach resolves PG EPT identity withou
   const db=new URL(url)
   assert.equal(db.hostname,'127.0.0.1')
   assert.equal(db.port,'55439')
-  assert.equal(db.pathname,'/kan789_acceptance')
+  assert.equal(db.pathname,'/kan791_acceptance_v2')
   const email=required('KAN791_AUTH_TEST_EMAIL')
   resolveKan791AcceptanceIdentity({email,subject:required('KAN791_AUTH_SUBJECT')})
   const password=required('KAN791_AUTH_TEST_PASSWORD')
