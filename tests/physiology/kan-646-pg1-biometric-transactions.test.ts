@@ -25,8 +25,8 @@ test('KAN-646 PG-1 transactionally reauthorizes persisted SELF before CREATE, co
     assert.equal(identity[0]?.database, 'kan646_biometric_disposable')
     await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${userId},${userId},${userId + '@example.invalid'},'PG1','Self',${now},${now})`
-    await sql`INSERT INTO teams (id,name,created_at,updated_at)
-      VALUES (${teamId},'KAN646 isolated PG1',${now},${now})`
+    await sql`INSERT INTO teams (id,name,created_at,updated_at,time_zone)
+      VALUES (${teamId},'KAN646 isolated PG1',${now},${now},'America/Argentina/San_Juan')`
     await sql`INSERT INTO team_memberships (id,user_id,team_id,preset,effective_from,is_active,created_at,updated_at)
       VALUES (${membershipId},${userId},${teamId},'athlete','2026-01-01T00:00:00.000Z',true,${now},${now})`
     await sql`INSERT INTO athlete_profiles (id,user_id,team_id,dni,is_active,created_at,updated_at)
