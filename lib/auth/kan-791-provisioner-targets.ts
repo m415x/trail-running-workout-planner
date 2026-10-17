@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 
-/** Require both PG connections to target the exact disposable KAN-789 database. */
+/** Require both PG connections to target the exact disposable KAN-791 v2 database. */
 export function assertKan791LocalDatabaseTargets(
  acceptanceUrl:string|undefined,
  runtimeUrl:string|undefined,
@@ -12,6 +12,6 @@ export function assertKan791LocalDatabaseTargets(
   assert.ok(target.protocol==='postgresql:' || target.protocol==='postgres:','Invalid acceptance database protocol')
   assert.equal(target.hostname,'127.0.0.1','Invalid acceptance database target host')
   assert.equal(target.port,'55439','Invalid acceptance database target port')
-  assert.equal(target.pathname,'/kan789_acceptance','Invalid acceptance database target name')
+  assert.equal(target.pathname,'/kan791_acceptance_v2','Invalid acceptance database target name')
  }
 }
