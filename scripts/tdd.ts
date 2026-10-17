@@ -71,6 +71,13 @@ function main(): void {
     process.exit(2)
   }
 
+  const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
+  if (!sync.ok) {
+    if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
+    console.log('RED')
+    process.exit(1)
+  }
+
   // KAN-646 runs on its own disposable PG instance, never the KAN-791 lane.
   const kan646Postgres = tests.some(file =>
     /kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')))
@@ -81,13 +88,6 @@ function main(): void {
       isPostgresIntegrationSource(readFileSync(file, 'utf8'))
   })) {
     assertSafePostgresRegressionTarget(process.env)
-  }
-
-  const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
-  if (!sync.ok) {
-    if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
-    console.log('RED')
-    process.exit(1)
   }
 
   const tsxCli = require.resolve('tsx/cli')
