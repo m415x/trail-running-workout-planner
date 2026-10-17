@@ -16,13 +16,19 @@ export interface AthleteSelfPerformance {
  * Only the athlete-safe 1000 m RunningReference is disclosed here.
  * No hardcoded clinical metrics, zones or unapproved raw physiology fields.
  */
-export function AthleteTabContent({ performance, performanceStatus = 'unknown', biometrics }: { performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; biometrics?: BiometricSelfState | null }) {
+export function AthleteTabContent({ performance, performanceStatus = 'unknown', biometrics, biometricsStatus = 'error' }: { performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; biometrics?: BiometricSelfState | null; biometricsStatus?: 'loaded' | 'denied' | 'error' }) {
   const t = useTranslations('AthleteProfile.physiology')
   const reference = performance?.reference
 
   return (
     <div className='space-y-3 mt-2'>
-      {biometrics && <BiometricSelfEditor biometrics={biometrics} />}
+      {biometricsStatus === 'loaded' && biometrics ? <BiometricSelfEditor biometrics={biometrics} /> : (
+        <p role='status' className='rounded-xl border p-4 text-sm text-muted-foreground'>
+          {biometricsStatus === 'denied'
+            ? (t('track1000mDenied'))
+            : (t('track1000mError'))}
+        </p>
+      )}
       <CustomCard>
         <CardHeader title={t('title')} icon={Activity} />
         {reference?.status === 'available' ? (
