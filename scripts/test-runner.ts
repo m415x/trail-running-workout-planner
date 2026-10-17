@@ -32,7 +32,8 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
 
 export function isPostgresIntegrationSource(source: string): boolean {
   // Explicit connection/auth inputs identify integration files, not their issue IDs.
-  return /process\.env\.(?:KAN789_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source)
+  return /process\.env\.(?:KAN789_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source) ||
+    (/from 'postgres'/.test(source) && /signInWithPassword|\.begin\(|sql`|postgres\(url/.test(source))
 }
 
 export async function partitionTestFiles(files: string[]): Promise<{
