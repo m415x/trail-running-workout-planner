@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { validateTestRunnerArguments, assertSafePostgresRegressionTarget } from '@/scripts/test-runner'
+import { validateTestRunnerArguments, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from '@/scripts/test-runner'
 
 test('KAN-725 pn test remains full-suite only when no positional arguments are supplied', () => {
   assert.doesNotThrow(() => validateTestRunnerArguments([]))
@@ -29,4 +29,11 @@ test('KAN-791 PostgreSQL regression target guard fails closed', () => {
   assert.throws(() => assertSafePostgresRegressionTarget(mismatched), /unauthorized/)
   assert.throws(() => assertSafePostgresRegressionTarget({ ...vars('kan791_regression_disposable'), SUPABASE_DIRECT_URL: undefined }), /required/)
   assert.throws(() => assertSafePostgresRegressionTarget({ ...vars('kan791_regression_disposable'), SUPABASE_DIRECT_URL: 'postgresql://postgres:p@remote.example.com:5432/kan791_regression_disposable' }), /unauthorized/)
+})
+
+test('KAN-791 ordinary suite selects tests by real integration dependencies', () => {
+  assert.equal(isPostgresIntegrationSource("const u = process.env.KAN789_PG_URL"), true)
+  assert.equal(isPostgresIntegrationSource("const p = process.env.KAN791_AUTH_TEST_PASSWORD"), true)
+  assert.equal(isPostgresIntegrationSource("test('KAN-791 structural contract', () => {})"), false)
+  assert.equal(isPostgresIntegrationSource("const db = process.env.DATABASE_URL"), false)
 })
