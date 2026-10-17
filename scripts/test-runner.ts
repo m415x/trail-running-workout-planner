@@ -191,13 +191,22 @@ function isSharedPostgresAcceptanceTest(path: string): boolean {
   return /^(?:kan-790-pg[0-9]+-|kan-790-t55-.*pg-|kan-789-review-snapshot-postgres-|kan-791-(?:annual-239-postgres-|t6a-.*postgres-)).*\.test\.ts$/.test(filename)
 }
 
-/** Never run a mutating regression batch against either preserved acceptance database. */
-export function assertSafePostgresRegressionTarget(url: string | undefined): void {
-  if (!url) return
-  const target = new URL(url)
-  if (target.hostname === '127.0.0.1' && target.port === '55439' &&
-      ['/kan789_acceptance', '/kan791_acceptance_v2'].includes(target.pathname)) {
-    throw new Error('BLOCKED: regression tests must not run against preserved PostgreSQL acceptance databases')
+/** Positive, fail-closed guard for the dedicated disposable PG regression lane. */
+export function assertSafePostgresRegressionTarget(
+  env: NodeJS.ProcessEnv,
+): void {
+  const keys = ['KAN789_PG_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DIRECT_URL'] as const
+  for (const key of keys) {
+    const raw = env[key]
+    if (!raw) throw new Error(`BLOCKED: ${key} required for PostgreSQL regressions`)
+    let target: URL
+    try { target = new URL(raw) } catch { throw new Error(`BLOCKED: invalid ${key}`) }
+    if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+        target.hostname !== '127.0.0.1' || target.port !== '55439' ||
+        target.pathname !== '/kan791_regression_disposable' ||
+        target.search || target.hash || !target.username || !target.password) {
+      throw new Error(`BLOCKED: unauthorized regression target ${key}`)
+    }
   }
 }
 
@@ -365,8 +374,10 @@ export function runTestFiles(testFiles: string[]): number {
 
 async function main(): Promise<void> {
   validateTestRunnerArguments(process.argv.slice(2))
-  assertSafePostgresRegressionTarget(process.env.KAN789_PG_URL)
   const testFiles = await discoverTestFiles(resolve(process.cwd(), 'tests'))
+  if (testFiles.some(file => /kan-(?:789-review-snapshot-postgres-|790-pg|790-t55-|791-)/.test(file))) {
+    assertSafePostgresRegressionTarget(process.env)
+  }
   console.log(`Discovered ${testFiles.length} test files`)
   process.exitCode = runTestFiles(testFiles)
 }
