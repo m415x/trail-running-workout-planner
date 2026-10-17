@@ -9,12 +9,12 @@ test('KAN-791 T6-D PostgreSQL User EPT lookup and memberships are isolated and r
   const parsed=new URL(url)
   assert.equal(parsed.hostname,'127.0.0.1')
   assert.equal(parsed.port,'55439')
-  assert.equal(parsed.pathname,'/kan789_acceptance')
+  assert.equal(parsed.pathname,'/kan791_regression_disposable')
   const sql=postgres(url,{max:1,prepare:false})
   const id='kan791-auth-evidence'
   const now='2026-10-15T12:00:00.000Z'
   try {
-    assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,'kan789_acceptance')
+    assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,'kan791_regression_disposable')
     await sql`INSERT INTO teams(id,name,created_at,updated_at) VALUES (${id+'-team'},'Auth evidence',${now},${now})`
     await sql`INSERT INTO users(id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${id+'-user'},${id+'-user'},${id+'@example.invalid'},'Auth','Evidence',${now},${now})`
