@@ -38,7 +38,8 @@ export function isPostgresIntegrationSource(source: string): boolean {
 
 export function isAnnualPostgresAcceptanceFile(path: string): boolean {
   const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
-  return filename === 'kan-791-annual-239-postgres-effective-source.test.ts'
+  return filename === 'kan-791-annual-239-postgres-effective-source.test.ts' ||
+    filename === 'kan-791-dedicated-real-supabase-pg-coach.test.ts'
 }
 
 /** The preserved annual database may only be used by the audited read-only test. */
@@ -420,7 +421,7 @@ async function main(): Promise<void> {
   const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary
   if (annualMode) {
     assertSafeAnnualPostgresTarget(process.env)
-    if (annual.length !== 1) throw new Error('BLOCKED: expected exactly one audited annual read-only test')
+    if (annual.length !== 2) throw new Error('BLOCKED: expected exactly two audited annual read-only tests')
   }
   if (pgMode) {
     assertSafePostgresRegressionTarget(process.env)
