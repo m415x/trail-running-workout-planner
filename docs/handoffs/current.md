@@ -1,3 +1,12 @@
+# Current candidate handoff — KAN-809 runner hardening (2026-10-17)
+
+- **Candidate branch:** `feat/KAN-809-tdd-preparation-errors` from `dev@1d3103f10763ed66d9f2e9eea82064d779baf7ac`. B1 real reproduction and B2/B3 operator focal GREEN are recorded in [KAN-809 story handoff](kan-809.md).
+- **Candidate gate (operator):** `pn verify --db` PASS 6/6 — Tests 100214ms, TypeScript 9474ms, ESLint 31008ms, Build 47390ms, i18n 342ms, SQLite 44332ms, total 232760ms. This is a **pre-merge** result.
+- **Preservation:** failure-before-test is not functional RED; Postgres safety guards, concurrency and typecheck are unchanged. No application-domain scope.
+- **Pending:** documentation check, PR review/checks, ordinary merge, integrated dev verification and Jira close. Next story **KAN-810** only after those steps.
+
+---
+
 # Current operational handoff — KAN-646 Athlete Profile SELF merged (2026-10-17)
 
 - **Integrated baseline:** KAN-646 via GitHub [PR #62](https://github.com/m415x/trail-running-workout-planner/pull/62), approved head `2ed7a557aa76f57ecbc22efae8a649851c14c943`, ordinary merge `766cff4f942104e0576c508581c0cf8fd8a1ccf1`. The merged implementation lives in `dev`. See [KAN-646 story handoff](kan-646.md) and [durable architecture](../architecture/athlete-profile-self-biometrics.md).
