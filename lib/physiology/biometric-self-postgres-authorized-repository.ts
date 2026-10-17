@@ -34,7 +34,7 @@ function digest(operation: 'create' | 'correct', subject: BiometricWriteSubject,
 export function createPersistedAuthorizedBiometricPostgresRepository(client: PgClient, now: () => string) {
   async function write(subject: BiometricWriteSubject, input: BiometricValidatedCreate, correction?: Correction): Promise<Result> {
     const requestDigest = digest(correction ? 'correct' : 'create', subject, input, correction)
-    return client.begin(async tx: postgres.TransactionSql): Promise<Result> => {
+    return client.begin(async (tx: postgres.TransactionSql): Promise<Result> => {
       // Serialize all writes for this SELF scope, including competing operation keys
       // and revision successors, across separate PostgreSQL connections.
       const key = JSON.stringify(['kan646-biometric', subject.teamId, subject.athleteProfileId])
