@@ -5,20 +5,21 @@ import postgres from 'postgres'
 import { readReviewSnapshotPlanScopePostgres } from '@/lib/session-generation/review-snapshot-plan-scope-postgres'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required for disposable PostgreSQL test')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-      target.pathname !== '/kan789_acceptance') {
+      target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN-790 PG-2 requires disposable PostgreSQL')
   }
 }
 const id = 'kan790-pg2-scope'
 const now = '2026-10-14T21:30:00.000Z'
 
-test('KAN-790 PG-2 scoped Base Variant SQL read uses supplied serializable transaction', { skip: !url }, async () => {
+test('KAN-790 PG-2 scoped Base Variant SQL read uses supplied serializable transaction', async () => {
   const sql = postgres(url!, { max: 1, prepare: false })
   try {
-    assert.equal((await sql<{ db: string }[]>`SELECT current_database() AS db`)[0]?.db, 'kan789_acceptance')
+    assert.equal((await sql<{ db: string }[]>`SELECT current_database() AS db`)[0]?.db, 'kan791_regression_disposable')
     await sql`INSERT INTO teams (id,name,created_at,updated_at)
       VALUES (${id+'-team'},'PG2 disposable',${now},${now})`
     await sql`INSERT INTO athlete_groups
