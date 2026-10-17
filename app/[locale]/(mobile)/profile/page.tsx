@@ -49,6 +49,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
     <ProfileTab
       athleteProfile={athleteProfile}
       biometrics={biometricsResult.status === 'loaded' ? biometricsResult : null}
+      biometricsStatus={biometricsResult.status}
       performance={performance}
       performanceStatus={performanceStatus}
       membershipStatus={
