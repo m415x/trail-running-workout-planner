@@ -10,12 +10,14 @@ const input = { kind: 'weight', unit: 'kg', valueScaled: 725, observedOn: '2026-
 test('KAN-646/T5 SQLite checks current SELF authority INSIDE the write transaction, including replay and corrections', () => {
   const db = new Database(':memory:')
   try {
-    db.exec(`CREATE TABLE athlete_biometric_observations (
+    db.exec(`CREATE TABLE teams (id TEXT PRIMARY KEY, time_zone TEXT, is_deleted INTEGER NOT NULL DEFAULT 0);
+      INSERT INTO teams (id, time_zone) VALUES ('team_1', 'America/Argentina/San_Juan');
+      CREATE TABLE athlete_biometric_observations (
       id TEXT PRIMARY KEY, team_id TEXT NOT NULL, athlete_profile_id TEXT NOT NULL,
       kind TEXT NOT NULL, value_scaled INTEGER NOT NULL, unit TEXT NOT NULL,
       observed_on TEXT NOT NULL, recorded_at TEXT NOT NULL, recorded_by_user_id TEXT NOT NULL,
       source TEXT NOT NULL, supersedes_observation_id TEXT, operation_key TEXT NOT NULL,
-      request_digest TEXT NOT NULL, correction_reason TEXT,
+      request_digest TEXT NOT NULL, correction_reason TEXT, observed_time_zone TEXT,
       UNIQUE(team_id, athlete_profile_id, recorded_by_user_id, operation_key),
       UNIQUE(supersedes_observation_id)
     )`)
