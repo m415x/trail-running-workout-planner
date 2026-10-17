@@ -40,6 +40,7 @@ export function createBiometricSelfWriter<T>(deps: BiometricSelfWriterDeps<T>) {
     async create(input: BiometricCreateInput): Promise<
       | { readonly status: 'denied' }
       | { readonly status: 'invalid' }
+      | { readonly status: 'conflict' }
       | { readonly status: 'persisted'; readonly result: T }
     > {
       const subject = await deps.authorize()
@@ -59,9 +60,9 @@ export function createBiometricSelfWriter<T>(deps: BiometricSelfWriterDeps<T>) {
         operationKey: input.operationKey,
         valueScaled: validated.valueScaled,
       })
-      if (result !== null && typeof result === 'object'
-        && 'status' in result && result.status === 'denied') {
-        return { status: 'denied' }
+      if (result !== null && typeof result === 'object' && 'status' in result) {
+        if (result.status === 'denied') return { status: 'denied' }
+        if (result.status === 'conflict') return { status: 'conflict' }
       }
       return { status: 'persisted', result }
     },
