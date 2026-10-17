@@ -97,6 +97,7 @@ function main(): void {
     process.exit(2)
   }
 
+  const tsxCli = require.resolve('tsx/cli')
   let testOptions: string[] = []
   try {
   // KAN-646 runs on its own disposable PG instance, never the KAN-791 lane.
@@ -111,7 +112,6 @@ function main(): void {
     assertSafePostgresRegressionTarget(process.env)
   }
 
-  const tsxCli = require.resolve('tsx/cli')
   // Shared disposable PostgreSQL fixtures can conflict at SERIALIZABLE even
   // when their IDs differ (predicate locks and unique-index reads). Run every
   // multi-file PG focused cut sequentially; do not weaken transaction isolation.
