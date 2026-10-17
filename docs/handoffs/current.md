@@ -1,3 +1,13 @@
+# KAN-646/T9 — Athlete Profile candidate awaiting integration (2026-10-17)
+
+- **Not merged:** feature `feat/KAN-646-athlete-profile-self`; last executable candidate `af9ca6c980c343cfc31729131fdaa48794fb72f6`. Documentation-only commits follow that candidate. No PR, merge, CI success or post-merge gate is claimed by this note. `dev` remains the latest integrated truth below.
+- Operator reports the updated pre-merge `pn verify --db -v` **PASS 6/6** (104669/10277/31635/49573/366/44868 ms; total 241388 ms). Authenticated Athlete local walkthrough: four editable biometrics, source and zone display, weight create/correct confirmed append-only by two SQLite rows; ES/EN and responsive/accessibility PASS. Focal SELF denial, isolation and transaction reauthorization tests GREEN. Public action wiring contract GREEN, **not** HTTP tampering E2E.
+- Contract: four manual SELF biometrics require H2/H3/H5A, own AthleteProfile and persisted Team IANA; both Server Actions use authorized internal writer and transactional reauthorization; Material hidden, Settings reuse Supabase recovery/theme/logout; missing 1000m evidence stays unknown. See [Athlete Profile SELF architecture](../architecture/athlete-profile-self-biometrics.md).
+- **Known deferred:** ES comma decimal input handling is application-wide follow-up after KAN-646 merge, explicitly accepted by operator; no localized patch is authorized as part of KAN-646.
+- **Next T9 actions:** `pn docs:handoff:check`; review PR feature→`dev`, required checks, ordinary merge, post-merge `dev` verification and handoff/Jira reconciliation. Never report KAN-646 completed until those finish.
+
+---
+
 # PR #59 — KAN-790/T5 + KAN-791/T6 post-merge baseline (2026-10-17)
 
 - **Merged to `dev` with GitHub ordinary merge**, PR #59: `e9f5f8276b4508e0fefdde7a7bd97787e27fd8d7`, confirmed GitHub `merged: true` and base `dev`. Authorized immutable PR head: `052dc218023bb4c50d53484373ce2847a5d4979a`, enforced as `expected_head_sha`. The PR was changed from Draft to Ready before merging. No bypass was used.
