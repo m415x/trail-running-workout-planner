@@ -11,14 +11,14 @@ test('KAN-790 PG-4 rejects PostgreSQL confirmation after TeamMembership revocati
   const target = new URL(url)
   assert.equal(target.hostname, '127.0.0.1')
   assert.equal(target.port, '55439')
-  assert.equal(target.pathname, '/kan789_acceptance')
+  assert.equal(target.pathname, '/kan791_regression_disposable')
   const sql = postgres(url, { max: 1, prepare: false })
   const id = 'kan790-pg4-authority-revoked'
   const now = '2026-10-14T21:30:00.000Z'
   const scope = { groupTrainingPlanId: id+'-plan', teamId: id+'-team', groupId: id+'-group' }
   try {
     assert.equal((await sql<{ db: string }[]>`SELECT current_database() AS db`)[0]?.db,
-      'kan789_acceptance')
+      'kan791_regression_disposable')
     await sql`INSERT INTO teams (id,name,created_at,updated_at)
       VALUES (${scope.teamId},'PG2 effective',${now},${now})`
     await sql`INSERT INTO athlete_groups (id,team_id,category_code,level_code,created_at,updated_at)
