@@ -20,14 +20,14 @@ test('KAN-791 53 persisted PG microcycles generate 239 real events with complete
   const target = new URL(url)
   assert.equal(target.hostname, '127.0.0.1')
   assert.equal(target.port, '55439')
-  assert.equal(target.pathname, '/kan789_acceptance')
+  assert.equal(target.pathname, '/kan791_acceptance_v2')
 
   const sql = postgres(url, { max: 1, prepare: false })
   try {
     const result = await sql.begin(async tx => {
       await tx`SET TRANSACTION READ ONLY`
       const database = await tx<{ db: string }[]>`SELECT current_database() AS db`
-      assert.equal(database[0]?.db, 'kan789_acceptance')
+      assert.equal(database[0]?.db, 'kan791_acceptance_v2')
       const rows = await tx<{ count: number }[]>`
         SELECT count(*)::integer AS count
         FROM microcycles AS mi
