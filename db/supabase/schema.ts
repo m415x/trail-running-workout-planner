@@ -476,7 +476,7 @@ export const sessionGenerationPreferences = pgTable(
       table.groupTrainingPlanId,
     ),
   ],
-)
+).enableRLS()
 
 export const loadStrategies = pgTable(
   'load_strategies',
