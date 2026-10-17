@@ -24,8 +24,8 @@ test('KAN-646 PG-2 independent connections serialize same-key CREATE and preserv
     assert.equal((await setup<{ database: string }[]>`SELECT current_database() AS database`)[0]?.database, 'kan646_biometric_disposable')
     await setup`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${userId},${userId},${userId + '@example.invalid'},'PG2','Self',${now},${now})`
-    await setup`INSERT INTO teams (id,name,created_at,updated_at)
-      VALUES (${teamId},'KAN646 dedicated PG2',${now},${now})`
+    await setup`INSERT INTO teams (id,name,created_at,updated_at,time_zone)
+      VALUES (${teamId},'KAN646 dedicated PG2',${now},${now},'America/Argentina/San_Juan')`
     await setup`INSERT INTO team_memberships (id,user_id,team_id,preset,effective_from,is_active,created_at,updated_at)
       VALUES (${membershipId},${userId},${teamId},'athlete','2026-01-01T00:00:00.000Z',true,${now},${now})`
     await setup`INSERT INTO athlete_profiles (id,user_id,team_id,dni,is_active,created_at,updated_at)
