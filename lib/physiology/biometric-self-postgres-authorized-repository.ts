@@ -31,7 +31,11 @@ function digest(operation: 'create' | 'correct', subject: BiometricWriteSubject,
  * This is an internal repository, not a public Server Action. Session H2 and
  * active-Team selection must be verified independently before invoking it.
  */
-export function createPersistedAuthorizedBiometricPostgresRepository(client: PgClient, now: () => string) {
+export function createPersistedAuthorizedBiometricPostgresRepository(
+  client: PgClient,
+  now: () => string,
+  testHooks?: { readonly afterInsert: () => void },
+) {
   async function write(subject: BiometricWriteSubject, input: BiometricValidatedCreate, correction?: Correction): Promise<Result> {
     const requestDigest = digest(correction ? 'correct' : 'create', subject, input, correction)
     return client.begin(async (tx: postgres.TransactionSql): Promise<Result> => {
@@ -117,6 +121,7 @@ export function createPersistedAuthorizedBiometricPostgresRepository(client: PgC
           ${input.kind},${input.valueScaled},${input.unit},${input.observedOn},
           ${new Date().toISOString()},${subject.userId},'athlete_declared',
           ${supersedes},${input.operationKey},${requestDigest},${reason},${timeZone})`
+      testHooks?.afterInsert()
       return { status: 'created', id }
     })
   }
