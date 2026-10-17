@@ -1,9 +1,10 @@
-# Current candidate handoff — KAN-809 runner hardening (2026-10-17)
+# Current integrated handoff — KAN-809 runner hardening (2026-10-17)
 
-- **Candidate branch:** `feat/KAN-809-tdd-preparation-errors` from `dev@1d3103f10763ed66d9f2e9eea82064d779baf7ac`. B1 real reproduction and B2/B3 operator focal GREEN are recorded in [KAN-809 story handoff](kan-809.md).
+- **Integrated baseline:** KAN-809 via [PR #63](https://github.com/m415x/trail-running-workout-planner/pull/63), accepted head `725eefdd4c3736cba11a1310d315d2027347be72`, ordinary merge `a29170eecd4801990220ac552278e1c10a87e005` into `dev`. B1 real reproduction and B2/B3 operator focal GREEN are recorded in [KAN-809 story handoff](kan-809.md).
 - **Candidate gate (operator):** `pn verify --db` PASS 6/6 — Tests 100214ms, TypeScript 9474ms, ESLint 31008ms, Build 47390ms, i18n 342ms, SQLite 44332ms, total 232760ms. This is a **pre-merge** result.
 - **Preservation:** failure-before-test is not functional RED; Postgres safety guards, concurrency and typecheck are unchanged. No application-domain scope.
-- **Pending:** documentation check, PR review/checks, ordinary merge, integrated dev verification and Jira close. Next story **KAN-810** only after those steps.
+- **Pre-merge documentation check:** operator `HANDOFF DOCS: PASS` on PR head. GitHub Vercel head status `failure` links to `build-rate-limit`, not a demonstrated build regression; GitHub PR mergeable true, no GitHub check runs/reviews returned. `dev` branch protection could not be inspected due to connector permission limits.
+- **Pending:** operator post-merge `pn verify --db` and `pn docs:handoff:check` on integrated `dev`; then Jira closure. KAN-810 starts only after this evidence.
 
 ---
 
