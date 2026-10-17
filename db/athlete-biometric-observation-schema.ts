@@ -1,4 +1,5 @@
 import { check, index, integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 import { athleteProfiles, teams, users } from './schema'
 
@@ -14,7 +15,7 @@ export const athleteBiometricObservations = sqliteTable('athlete_biometric_obser
   recordedAt: text('recorded_at').notNull(),
   recordedByUserId: text('recorded_by_user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
   source: text('source').notNull().default('athlete_declared'),
-  supersedesObservationId: text('supersedes_observation_id'),
+  supersedesObservationId: text('supersedes_observation_id').references((): AnySQLiteColumn => athleteBiometricObservations.id, { onDelete: 'restrict' }),
   operationKey: text('operation_key').notNull(),
   requestDigest: text('request_digest').notNull(),
   correctionReason: text('correction_reason'),
