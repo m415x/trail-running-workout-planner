@@ -5,21 +5,22 @@ import postgres from 'postgres'
 import { readReviewPlanPeriodizationFactsPostgres } from '@/lib/session-generation/review-snapshot-plan-periodization-postgres'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required')
+{
   const parsed = new URL(url)
   if (parsed.hostname !== '127.0.0.1' || parsed.port !== '55439' ||
-    parsed.pathname !== '/kan789_acceptance') {
+    parsed.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN-790 PG-2 may use only disposable PostgreSQL')
   }
 }
 const prefix = 'kan790-pg2-period'
 const now = '2026-10-14T21:30:00.000Z'
 
-test('KAN-790 PG-2 reads current microcycle ancestry and rejects deleted facts inside same SERIALIZABLE tx', { skip: !url }, async () => {
+test('KAN-790 PG-2 reads current microcycle ancestry and rejects deleted facts inside same SERIALIZABLE tx', async () => {
   const sql = postgres(url!, { max: 1, prepare: false })
   const scope = { groupTrainingPlanId: prefix + '-plan', teamId: prefix + '-team', groupId: prefix + '-group' }
   try {
-    assert.equal((await sql<{ db: string }[]>`SELECT current_database() AS db`)[0]?.db, 'kan789_acceptance')
+    assert.equal((await sql<{ db: string }[]>`SELECT current_database() AS db`)[0]?.db, 'kan791_regression_disposable')
     await sql`INSERT INTO teams (id,name,created_at,updated_at)
       VALUES (${scope.teamId},'PG2 disposable',${now},${now})`
     await sql`INSERT INTO athlete_groups (id,team_id,category_code,level_code,created_at,updated_at)
