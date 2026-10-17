@@ -42,6 +42,7 @@ test('KAN-791 ordinary suite selects tests by real integration dependencies', ()
 test('KAN-791 annual read-only lane is explicit and never selected for disposable mutations', () => {
   const annual = 'tests/session-generation/kan-791-annual-239-postgres-effective-source.test.ts'
   assert.equal(isAnnualPostgresAcceptanceFile(annual), true)
+  assert.equal(isAnnualPostgresAcceptanceFile('tests/auth/kan-791-dedicated-real-supabase-pg-coach.test.ts'), true)
   assert.equal(isAnnualPostgresAcceptanceFile('tests/auth/kan-791-pg-coach-provisioner-transaction.test.ts'), false)
   const url = (database: string) => 'postgresql://postgres:placeholder@127.0.0.1:55439/' + database
   assert.doesNotThrow(() => assertSafeAnnualPostgresTarget({KAN789_PG_URL: url('kan791_acceptance_v2')}))
