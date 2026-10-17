@@ -1,7 +1,7 @@
 import { sqliteConnection } from '@/db'
 import { resolveBiometricCivilToday } from './biometric-regional-civil-date'
 import { resolveBiometricSelfAuthority } from './biometric-self-next-server'
-import { createBiometricSelfWriter, type BiometricCreateInput } from './biometric-self-writer'
+import { createBiometricSelfWriter, type BiometricCreateInput, type BiometricCorrectionInput } from './biometric-self-writer'
 import { createPersistedAuthorizedBiometricSqliteRepository } from './biometric-self-sqlite-authorized-repository'
 
 /**
@@ -24,6 +24,29 @@ export async function createCurrentBiometricSqliteObservation(
     authorize: () => resolveBiometricSelfAuthority('manage'),
     today: () => today,
     persist: async (subject, validated) => repository.create(subject, validated),
+    correct: async (subject, validated) => repository.correct(subject, validated),
   })
   return writer.create(input)
+}
+
+/**
+ * Internal correction operation only. The subject is always derived from
+ * authenticated SELF authority and rechecked inside the SQLite transaction.
+ */
+export async function correctCurrentBiometricSqliteObservation(
+  input: BiometricCorrectionInput,
+  serverContext: { readonly timeZone: string },
+) {
+  const today = resolveBiometricCivilToday(new Date(), serverContext.timeZone)
+  const repository = createPersistedAuthorizedBiometricSqliteRepository(
+    sqliteConnection,
+    () => new Date().toISOString(),
+  )
+  const writer = createBiometricSelfWriter({
+    authorize: () => resolveBiometricSelfAuthority('manage'),
+    today: () => today,
+    persist: async (subject, validated) => repository.create(subject, validated),
+    correct: async (subject, validated) => repository.correct(subject, validated),
+  })
+  return writer.correct(input)
 }
