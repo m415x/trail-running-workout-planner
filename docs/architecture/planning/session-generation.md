@@ -322,3 +322,27 @@ Current `reconcileSessionGeneration` is **pure** and assumes that
 scoped. It cannot by itself guarantee safe concurrent database writes or
 protection of sibling shared events. These guarantees require T5/T6
 repository read/write boundary and integration tests.
+
+
+#### KAN-791/T6-D — 2026-10-17 acceptance addendum (WIP PR #59)
+
+The matrix above is the historical T4/T5 requirement matrix, not the latest acceptance status.
+Operator-accredited disposable PostgreSQL tests: **71 PASS / 0 FAIL / 0 SKIP** at
+`fe58c6356f5d8e5195fcf6c2aefd9c4ef850157e`; annual read-only
+tests against `kan791_acceptance_v2`: **2 PASS / 0 FAIL / 0 SKIP**.
+Authenticated annual 53-week/239-session CREATE/GET/CONFIRM was observed earlier
+and its existing consumed review snapshot
+`7939a67f-51f9-49f8-ba76-4f9b82ee5ed4` was reused for a second
+authenticated HTTP CONFIRM (no new CREATE). The original Server Action
+redirected; complete scoped read-only SQL snapshots before and after matched
+SHA-256 `16DC3B65B94F6CF44C54A9C7624B75687629A5C11F855BD8FC7CD75AD208C8F5`.
+
+**PASS — functional idempotence via authenticated HTTP, audited action/repository
+contract and no SQL mutations.** **Evidence limitation:** the internal
+`already_consumed` branch was inferred from prior `consumed` state and
+repository behavior; it was **not directly observed** in a debugger/trace.
+Do not report a direct branch observation. Temporary dev-only E2E probe files
+were removed before final integration assessment. Drizzle catalog/migrations
+reconciliation, final ordinary six-gate verification and handoff check remain
+separate exit conditions on the definitive SHA. PR #59 stays Draft until
+explicit merge authorization.
