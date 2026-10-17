@@ -5,7 +5,11 @@ import test from 'node:test'
 const read = (path: string) => readFileSync(path, 'utf8')
 
 test('KAN-646/T5 SQLite and PostgreSQL model the isolated, append-only self-declared observations', () => {
-  for (const schema of ['db/schema.ts', 'db/supabase/schema.ts']) {
+  for (const [schema, config] of [
+    ['db/athlete-biometric-observation-schema.ts', 'drizzle.config.ts'],
+    ['db/supabase/athlete-biometric-observation-schema.ts', 'drizzle.supabase.config.ts'],
+  ] as const) {
+    assert.match(read(config), new RegExp(schema.replace('db/', '').replace('supabase/', 'supabase/')))
     const source = read(schema)
     assert.match(source, /athlete_biometric_observations/)
     assert.match(source, /supersedes_observation_id/)
