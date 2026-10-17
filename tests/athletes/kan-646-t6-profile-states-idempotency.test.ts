@@ -13,6 +13,6 @@ test('KAN-646 T6 Profile surfaces biometric authorization/unavailable states ins
 test('KAN-646 T6 retry reuses an operation key until the server acknowledges persistence', () => {
   const editor = readFileSync('features/profile/components/BiometricSelfEditor.tsx', 'utf8')
   assert.match(editor, /pendingOperationKeys/)
-  assert.match(editor, /operationKey:.*pendingOperationKeys/s)
+  assert.match(editor, /operationKey:[\s\S]*pendingOperationKeys/)
   assert.match(editor, /crypto\.randomUUID/)
 })
