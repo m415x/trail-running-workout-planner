@@ -38,7 +38,7 @@ test('KAN-646/T5 guarded writer delegates only valid SELF input to same-connecti
     assert.equal(first.result.status, 'created')
     db.exec('UPDATE team_memberships SET is_active = 0')
     const denied = await writer.create(input)
-    assert.deepEqual(denied, { status: 'persisted', result: { status: 'denied' } })
+    assert.deepEqual(denied, { status: 'denied' })
     assert.equal((db.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as { n: number }).n, 1)
   } finally { db.close() }
 })
