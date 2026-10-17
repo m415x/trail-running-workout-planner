@@ -36,6 +36,6 @@ test('KAN-646 T5 regional contract: Drizzle migration journals append canonical 
   assert.match(latestSqlite?.tag ?? '', /^0028_/)
   assert.equal(latestPg?.idx, 42)
   assert.match(latestPg?.tag ?? '', /^0042_/)
-  assert.match(read('drizzle/sqlite/' + latestSqlite?.tag + '.sql'), /ALTER TABLE .?teams.? ADD .?time_zone.?/i)
-  assert.match(read('drizzle/supabase/' + latestPg?.tag + '.sql'), /ALTER TABLE .?teams.? ADD .?time_zone.?/i)
+  assert.match(read('drizzle/sqlite/' + latestSqlite?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
+  assert.match(read('drizzle/supabase/' + latestPg?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
 })
