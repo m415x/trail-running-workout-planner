@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { CustomCard } from '@ui/custom/card-containers'
 import { CardHeader } from '@ui/custom/section-header'
 import { MetricBox } from '@profile/components/MetricBox'
+import { BiometricSelfEditor, type BiometricSelfState } from './BiometricSelfEditor'
 import type { RunningReference } from '@/lib/physiology/running-reference'
 
 export interface AthleteSelfPerformance {
@@ -15,12 +16,13 @@ export interface AthleteSelfPerformance {
  * Only the athlete-safe 1000 m RunningReference is disclosed here.
  * No hardcoded clinical metrics, zones or unapproved raw physiology fields.
  */
-export function AthleteTabContent({ performance, performanceStatus = 'unknown' }: { performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error' }) {
+export function AthleteTabContent({ performance, performanceStatus = 'unknown', biometrics }: { performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; biometrics?: BiometricSelfState | null }) {
   const t = useTranslations('AthleteProfile.physiology')
   const reference = performance?.reference
 
   return (
     <div className='space-y-3 mt-2'>
+      {biometrics && <BiometricSelfEditor biometrics={biometrics} />}
       <CustomCard>
         <CardHeader title={t('title')} icon={Activity} />
         {reference?.status === 'available' ? (
