@@ -5,9 +5,10 @@ import type { ProfileSelfHeader } from '@/lib/athletes/profile-self-read'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
 import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/components/AthleteTabContent'
+import type { BiometricSelfState } from '@profile/components/BiometricSelfEditor'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile, biometrics }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader; biometrics?: BiometricSelfState | null }) {
   const t = useTranslations('AthleteProfile')
 
   return (
@@ -29,7 +30,7 @@ export function ProfileTab({ membershipStatus, performance, performanceStatus, a
         </TabsList>
 
         <TabsContent value='athlete'>
-          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} />
+          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} biometrics={biometrics} />
         </TabsContent>
 
         <TabsContent value='settings'>
