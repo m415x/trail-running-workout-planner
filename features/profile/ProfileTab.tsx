@@ -8,7 +8,7 @@ import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/compone
 import type { BiometricSelfState } from '@profile/components/BiometricSelfEditor'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile, biometrics }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader; biometrics?: BiometricSelfState | null }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile, biometrics, biometricsStatus }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader; biometrics?: BiometricSelfState | null; biometricsStatus?: 'loaded' | 'denied' | 'error' }) {
   const t = useTranslations('AthleteProfile')
 
   return (
@@ -30,7 +30,7 @@ export function ProfileTab({ membershipStatus, performance, performanceStatus, a
         </TabsList>
 
         <TabsContent value='athlete'>
-          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} biometrics={biometrics} />
+          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} biometrics={biometrics} biometricsStatus={biometricsStatus} />
         </TabsContent>
 
         <TabsContent value='settings'>
