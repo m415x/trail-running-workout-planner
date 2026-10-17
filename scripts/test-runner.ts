@@ -210,7 +210,7 @@ function isSharedPostgresAcceptanceTest(path: string): boolean {
 
 /** Positive, fail-closed guard for the dedicated disposable PG regression lane. */
 export function assertSafePostgresRegressionTarget(
-  env: NodeJS.ProcessEnv,
+  env: Record<string, string | undefined>,
 ): void {
   const keys = ['KAN789_PG_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DIRECT_URL'] as const
   for (const key of keys) {
