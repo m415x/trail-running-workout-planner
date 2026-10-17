@@ -8,6 +8,7 @@ test('KAN-646/T5 biometrics read and manage are explicit nondelegable SELF capab
     const entries = CAPABILITY_CATALOG.filter((entry) => entry.key === key)
     assert.equal(entries.length, 1)
     const capability = entries[0]
+    assert.ok('requiredScope' in capability)
     assert.equal(capability.requiredScope, 'self')
     assert.equal(capability.delegable, false)
     assert.equal(capability.structural, false)
