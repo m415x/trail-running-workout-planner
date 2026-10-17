@@ -2,7 +2,7 @@
 
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   createCurrentSelfBiometricAction,
   correctCurrentSelfBiometricAction,
@@ -35,6 +35,7 @@ const parameters: { kind: Kind; key: keyof BiometricSelfState['biometrics']; uni
 export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfState }) {
   const en = useLocale() === 'en'
   const router = useRouter()
+  const pendingOperationKeys = useRef<Record<string, { fingerprint: string; key: string }>>({})
   const [working, setWorking] = useState<Kind | null>(null)
   const [feedback, setFeedback] = useState<Record<string, string>>({})
   const [drafts, setDrafts] = useState<Record<string, { value: string; observedOn: string }>>({})
@@ -56,12 +57,23 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
               if (working) return
               setWorking(parameter.kind)
               setFeedback(previous => ({ ...previous, [parameter.kind]: '' }))
+              // Reuse a key for a transport retry of the identical mutation.
+              // A changed measurement, date or correction target is a new operation.
+              const fingerprint = JSON.stringify([
+                parameter.kind, parameter.unit, draft.value, draft.observedOn, current?.id ?? null,
+              ])
+              const previous = pendingOperationKeys.current[parameter.kind]
+              if (!previous || previous.fingerprint !== fingerprint) {
+                pendingOperationKeys.current[parameter.kind] = {
+                  fingerprint, key: crypto.randomUUID(),
+                }
+              }
               const payload = {
                 kind: parameter.kind,
                 unit: parameter.unit,
                 value: draft.value,
                 observedOn: draft.observedOn,
-                operationKey: crypto.randomUUID(),
+                operationKey: pendingOperationKeys.current[parameter.kind].key,
               }
               try {
                 const result = current
@@ -81,7 +93,10 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
                         ? (en ? 'Conflicting change. Refresh and try again.' : 'Conflicto. Actualizá e intentá nuevamente.')
                         : (en ? 'Not authorized to save' : 'No autorizado para guardar'),
                 }))
-                if (result.status === 'persisted') router.refresh()
+                if (result.status === 'persisted') {
+                  delete pendingOperationKeys.current[parameter.kind]
+                  router.refresh()
+                }
               } catch {
                 setFeedback(previous => ({ ...previous, [parameter.kind]: en ? 'Could not save' : 'No se pudo guardar' }))
               } finally {
