@@ -12,6 +12,7 @@ export const athleteBiometricObservations = pgTable('athlete_biometric_observati
   valueScaled: integer('value_scaled').notNull(),
   unit: text('unit', { enum: ['kg', 'cm', 'bpm'] }).notNull(),
   observedOn: text('observed_on').notNull(),
+  observedTimeZone: text('observed_time_zone'),
   recordedAt: text('recorded_at').notNull(),
   recordedByUserId: text('recorded_by_user_id').notNull().references(() => users.id, { onDelete: 'restrict' }),
   source: text('source').notNull().default('athlete_declared'),
