@@ -26,11 +26,11 @@ export function createH5aSelfContextBoundary(deps: H5aSelfContextDeps) {
   return {
     async resolve(
       access: RequireAuthenticatedActionResult,
-      input: { at: string; capability?: 'planning.self.read' | 'workout_log.self.manage' },
+      input: { at: string; capability?: 'planning.self.read' | 'workout_log.self.manage' | 'physiology.biometric.self.read' | 'physiology.biometric.self.manage' },
     ): Promise<H5aSelfContextResult> {
       if (access.status !== 'authenticated') return { status: 'denied' }
       const capability: CapabilityKey = input.capability ?? 'planning.self.read'
-      if (capability !== 'planning.self.read' && capability !== 'workout_log.self.manage') return { status: 'denied' }
+      if (capability !== 'planning.self.read' && capability !== 'workout_log.self.manage' && capability !== 'physiology.biometric.self.read' && capability !== 'physiology.biometric.self.manage') return { status: 'denied' }
 
       try {
         const team = await deps.resolveActiveTeam(access.userId)

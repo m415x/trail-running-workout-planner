@@ -14,7 +14,7 @@ test('KAN-723 denial surfaces on four Athlete mobile pages use one localized Ath
   }
   assert.match(stats, /result\.status === 'denied'/)
   assert.doesNotMatch(stats, /t\('summary\.denied'\)/)
-  assert.match(profile, /athleteResult\.forbidden/)
+  assert.match(profile, /athleteResult\.status === 'denied'/)
   assert.doesNotMatch(profile, /return <ProfileTab \/>/)
 })
 

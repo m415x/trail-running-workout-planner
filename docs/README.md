@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Architecture
 
+- [`architecture/athlete-profile-self-biometrics.md`](architecture/athlete-profile-self-biometrics.md) — KAN-646 Athlete Profile SELF biometrics, transactional authorization, provenance, account reuse and pre-merge acceptance evidence.
+
 - [`architecture/platform/acceptance-athlete-b-provisioning.md`](architecture/platform/acceptance-athlete-b-provisioning.md) — KAN-778 local acceptance Athlete B provisioning, idempotence, identity safeguards and evidence limits.
 
 Domain and technical contracts that current implementation should preserve unless a story explicitly changes them.

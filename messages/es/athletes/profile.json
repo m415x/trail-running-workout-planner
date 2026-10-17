@@ -44,7 +44,12 @@
       "sos": "Contacto SOS",
       "bloodType": "Grupo Sanguíneo",
       "insurance": "Seguro Médico / Federación",
-      "accountPreferences": "Preferencias de la Cuenta"
+      "accountPreferences": "Preferencias de la Cuenta",
+      "theme": "Tema visual",
+      "changeTheme": "Cambiar tema visual",
+      "passwordRecovery": "Recuperar contraseña",
+      "signOut": "Cerrar sesión",
+      "signOutError": "No se pudo cerrar la sesión. Volvé a intentarlo."
     }
   }
 }

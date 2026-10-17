@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
+import { assertSafeKan646BiometricPostgresTarget, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
 
 const require = createRequire(import.meta.url)
 
@@ -71,18 +71,23 @@ function main(): void {
     process.exit(2)
   }
 
-  if (tests.some(file => {
-    if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
-    return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
-  })) {
-    assertSafePostgresRegressionTarget(process.env)
-  }
-
   const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
   if (!sync.ok) {
     if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
     console.log('RED')
     process.exit(1)
+  }
+
+  // KAN-646 runs on its own disposable PG instance, never the KAN-791 lane.
+  const kan646Postgres = tests.some(file =>
+    /kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')))
+  if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
+  if (tests.some(file => {
+    if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
+    return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
+      isPostgresIntegrationSource(readFileSync(file, 'utf8'))
+  })) {
+    assertSafePostgresRegressionTarget(process.env)
   }
 
   const tsxCli = require.resolve('tsx/cli')

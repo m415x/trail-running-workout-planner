@@ -288,6 +288,20 @@
       "when": 1791944060959,
       "tag": "0040_session_generation_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1792252225707,
+      "tag": "0041_glossy_starjammers",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792252230002,
+      "tag": "0042_team_biometric_time_zone",
+      "breakpoints": true
     }
   ]
 }

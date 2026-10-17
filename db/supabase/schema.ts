@@ -64,6 +64,7 @@ export const teams = pgTable('teams', {
   description: text('description'),
   avatarLight: text('avatar_light'),
   avatarDark: text('avatar_dark'),
+  timeZone: text('time_zone'),
 })
 
 export const trainingLocations = pgTable('training_locations', {
@@ -476,7 +477,7 @@ export const sessionGenerationPreferences = pgTable(
       table.groupTrainingPlanId,
     ),
   ],
-)
+).enableRLS()
 
 export const loadStrategies = pgTable(
   'load_strategies',

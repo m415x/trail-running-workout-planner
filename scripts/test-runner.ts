@@ -32,7 +32,7 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
 
 export function isPostgresIntegrationSource(source: string): boolean {
   // Explicit connection/auth inputs identify integration files, not their issue IDs.
-  return /process\.env\.(?:KAN789_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source) ||
+  return /process\.env\.(?:KAN789_PG_URL|KAN646_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source) ||
     (/from 'postgres'/.test(source) && /signInWithPassword|\.begin\(|sql`|postgres\(url/.test(source))
 }
 
@@ -226,7 +226,7 @@ export function createTestBatchInvocation(testFiles: string[]): {
 
 function isSharedPostgresAcceptanceTest(path: string): boolean {
   const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
-  return /^(?:kan-790-pg[0-9]+-|kan-790-t55-.*pg-|kan-789-review-snapshot-postgres-|kan-791-(?:annual-239-postgres-|t6a-.*postgres-)).*\.test\.ts$/.test(filename)
+  return /^(?:kan-646-pg[0-9]+-|kan-790-pg[0-9]+-|kan-790-t55-.*pg-|kan-789-review-snapshot-postgres-|kan-791-(?:annual-239-postgres-|t6a-.*postgres-)).*\.test\.ts$/.test(filename)
 }
 
 /** Positive, fail-closed guard for the dedicated disposable PG regression lane. */
@@ -245,6 +245,22 @@ export function assertSafePostgresRegressionTarget(
         target.search || target.hash || !target.username || !target.password) {
       throw new Error(`BLOCKED: unauthorized regression target ${key}`)
     }
+  }
+}
+
+/** KAN-646 uses a distinct, explicitly disposable PG instance; never reuse KAN-791. */
+export function assertSafeKan646BiometricPostgresTarget(
+  env: Record<string, string | undefined>,
+): void {
+  const raw = env.KAN646_PG_URL
+  if (!raw) throw new Error('BLOCKED: KAN646_PG_URL required')
+  let target: URL
+  try { target = new URL(raw) } catch { throw new Error('BLOCKED: invalid KAN646_PG_URL') }
+  if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+    target.hostname !== '127.0.0.1' || target.port !== '55446' ||
+    target.pathname !== '/kan646_biometric_disposable' ||
+    target.search || target.hash || !target.username || !target.password) {
+    throw new Error('BLOCKED: unauthorized KAN646 PostgreSQL target')
   }
 }
 

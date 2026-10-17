@@ -12,6 +12,7 @@ export default defineConfig({
     './db/supabase/race-registration-schema.ts',
     './db/supabase/session-generation-review-snapshot-schema.ts',
     './db/supabase/field-performance-test-schema.ts',
+    './db/supabase/athlete-biometric-observation-schema.ts',
   ],
   out: './drizzle/supabase',
   dialect: 'postgresql',
