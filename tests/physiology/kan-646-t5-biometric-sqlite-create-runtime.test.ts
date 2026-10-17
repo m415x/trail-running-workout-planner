@@ -32,7 +32,7 @@ function fixture() {
 test('KAN-646/T5 SQLite CREATE persists exactly once and safely replays same canonical request', () => {
   const sqlite = fixture()
   try {
-    const repository = createBiometricSelfSqliteRepository(sqlite)
+    const repository = createBiometricSelfSqliteRepository(sqlite, { reauthorizeInTransaction: () => true })
     const first = repository.create(subject, input)
     assert.equal(first.status, 'created')
     assert.deepEqual(repository.create(subject, input), { status: 'replayed', id: 'id' in first ? first.id : null })
@@ -45,7 +45,7 @@ test('KAN-646/T5 SQLite CREATE persists exactly once and safely replays same can
 test('KAN-646/T5 SQLite same operation key with changed payload conflicts without mutation', () => {
   const sqlite = fixture()
   try {
-    const repository = createBiometricSelfSqliteRepository(sqlite)
+    const repository = createBiometricSelfSqliteRepository(sqlite, { reauthorizeInTransaction: () => true })
     const first = repository.create(subject, input)
     assert.equal(first.status, 'created')
     assert.deepEqual(repository.create(subject, { ...input, valueScaled: 730 }), { status: 'conflict' })
@@ -59,7 +59,7 @@ test('KAN-646/T5 SQLite insert error rolls back the transaction', () => {
   const sqlite = fixture()
   try {
     sqlite.exec("CREATE TRIGGER reject_biometric BEFORE INSERT ON athlete_biometric_observations BEGIN SELECT RAISE(ABORT, 'forced rollback'); END;")
-    const repository = createBiometricSelfSqliteRepository(sqlite)
+    const repository = createBiometricSelfSqliteRepository(sqlite, { reauthorizeInTransaction: () => true })
     assert.throws(() => repository.create(subject, input), /forced rollback/)
     assert.equal((sqlite.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as { n: number }).n, 0)
   } finally { sqlite.close() }
