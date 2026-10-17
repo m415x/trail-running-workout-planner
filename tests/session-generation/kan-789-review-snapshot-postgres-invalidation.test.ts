@@ -10,10 +10,11 @@ import {
 } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-      target.pathname !== '/kan789_acceptance') {
+      target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN789 invalidation test forbids non-disposable PostgreSQL targets')
   }
 }
@@ -27,11 +28,11 @@ const owner = {
 }
 const scope = (id: string) => ({ ...owner, id: prefix + '-' + id })
 
-test('KAN-789 PG invalidation scopes owner, preserves consumption and blocks reuse', { skip: !url }, async () => {
+test('KAN-789 PG invalidation scopes owner, preserves consumption and blocks reuse', {}, async () => {
   const sql = postgres(url!, { max: 1, prepare: false })
   try {
     const identity = await sql<{ db: string }[]>`SELECT current_database() AS db`
-    assert.equal(identity[0]?.db, 'kan789_acceptance')
+    assert.equal(identity[0]?.db, 'kan791_regression_disposable')
     await sql`INSERT INTO users (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${owner.userId},${owner.userId},${prefix + '@example.invalid'},
         'KAN789','Fixture',${now},${now})`
