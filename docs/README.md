@@ -2,6 +2,10 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
+## Current execution and handoffs
+
+- [KAN-809 TDD runner preparation hardening](handoffs/kan-809.md) — B1/B2/B3 operator evidence, candidate gate, preservation contracts, and closure status. KAN-810 regional numeric inputs follows only after integrated closure.
+
 ## Architecture
 
 - [`architecture/athlete-profile-self-biometrics.md`](architecture/athlete-profile-self-biometrics.md) — KAN-646 Athlete Profile SELF biometrics, transactional authorization, provenance, account reuse and pre-merge acceptance evidence.
