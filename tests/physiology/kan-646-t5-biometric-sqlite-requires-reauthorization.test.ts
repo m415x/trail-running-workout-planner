@@ -12,6 +12,7 @@ test('KAN-646/T5 repository cannot be constructed without transaction-local SELF
       /reauthoriz/i,
     )
     assert.throws(
+      // @ts-expect-error Intentional invalid options: runtime must also reject missing reauthorization.
       () => createBiometricSelfSqliteRepository(sqlite, {}),
       /reauthoriz/i,
     )
