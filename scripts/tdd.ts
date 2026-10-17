@@ -73,11 +73,11 @@ function main(): void {
 
   // KAN-646 runs on its own disposable PG instance, never the KAN-791 lane.
   const kan646Postgres = tests.some(file =>
-    /kan-646-pg[0-9]+-.*\.test\.ts$/.test(file.replaceAll('\\', '/')))
+    /kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')))
   if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
   if (tests.some(file => {
     if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
-    return !/kan-646-pg[0-9]+-.*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
+    return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
       isPostgresIntegrationSource(readFileSync(file, 'utf8'))
   })) {
     assertSafePostgresRegressionTarget(process.env)
