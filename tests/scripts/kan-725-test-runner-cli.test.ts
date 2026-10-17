@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { validateTestRunnerArguments, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from '@/scripts/test-runner'
+import { validateTestRunnerArguments, assertSafePostgresRegressionTarget, isPostgresIntegrationSource, assertSafeAnnualPostgresTarget, isAnnualPostgresAcceptanceFile } from '@/scripts/test-runner'
 
 test('KAN-725 pn test remains full-suite only when no positional arguments are supplied', () => {
   assert.doesNotThrow(() => validateTestRunnerArguments([]))
@@ -36,4 +36,17 @@ test('KAN-791 ordinary suite selects tests by real integration dependencies', ()
   assert.equal(isPostgresIntegrationSource("const p = process.env.KAN791_AUTH_TEST_PASSWORD"), true)
   assert.equal(isPostgresIntegrationSource("test('KAN-791 structural contract', () => {})"), false)
   assert.equal(isPostgresIntegrationSource("const db = process.env.DATABASE_URL"), false)
+})
+
+
+test('KAN-791 annual read-only lane is explicit and never selected for disposable mutations', () => {
+  const annual = 'tests/session-generation/kan-791-annual-239-postgres-effective-source.test.ts'
+  assert.equal(isAnnualPostgresAcceptanceFile(annual), true)
+  assert.equal(isAnnualPostgresAcceptanceFile('tests/auth/kan-791-pg-coach-provisioner-transaction.test.ts'), false)
+  const url = (database: string) => 'postgresql://postgres:placeholder@127.0.0.1:55439/' + database
+  assert.doesNotThrow(() => assertSafeAnnualPostgresTarget({KAN789_PG_URL: url('kan791_acceptance_v2')}))
+  for (const database of ['kan789_acceptance','kan791_regression_disposable']) {
+    assert.throws(() => assertSafeAnnualPostgresTarget({KAN789_PG_URL: url(database)}), /BLOCKED/)
+  }
+  assert.throws(() => assertSafeAnnualPostgresTarget({}), /BLOCKED/)
 })
