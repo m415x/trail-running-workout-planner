@@ -69,6 +69,12 @@ fresh-chat-safe
 
 The approved decomposition authorizes continuous execution of its routine RED/GREEN cuts. The approved closure task likewise authorizes the routine closure sequence through merge and post-merge publication; repeated human approvals for documentation updates, PR review, merge or Jira bookkeeping are not part of the workflow. Human intervention is reserved for a material product/security decision, unexpected failure, non-trivial integration conflict, external blocker or scope change.
 
+### Worktree lifecycle and local hygiene
+
+The default local workspace is the main repository checked out on clean `dev`. After an approved story decomposition, use a separate story worktree only where isolation is useful, created from the verified current `dev` head. In Git Bash, for example: `git worktree add -b feat/KAN-646 ../trail-running-workout-planner-kan-646 dev` (illustrative only; never create a duplicate branch).
+
+Before creating or retiring a worktree, inspect `git worktree list --porcelain` and its `git status --short`. After merge and durable closure, inspect ignored/untracked resources and preserve any unique local fixtures, backups or secrets before removing the clean worktree with `git worktree remove <path>`. Windows may leave directories containing `node_modules` or generated Next.js files, or briefly lock an empty directory. Only after Git unregisters the worktree and the residual contents are inspected may the exact residual directory be deleted. Do not use `--force`, sweeping `git clean -fdx`, or delete PostgreSQL acceptance data as an incidental cleanup step. Keep the main repository on `dev` for ordinary daily operations.
+
 ### Runner invariants
 
 - `pn tdd:red <test-file> [...]` performs the repository sync and focused RED run.
