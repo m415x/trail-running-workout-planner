@@ -1,3 +1,4 @@
+import { readCurrentSelfDeclaredBiometricsSqlite } from '@/lib/physiology/biometric-self-sqlite-read'
 import { readCurrentAthleteProfile } from '@/lib/athletes/profile-self-read'
 import { getTranslations } from 'next-intl/server'
 import { AthletePageState } from '@/features/athlete-planning/components/AthletePageState'
@@ -23,6 +24,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
     return <AthletePageState message={tPlan('loadError')} />
   }
 
+  const biometricsResult = await readCurrentSelfDeclaredBiometricsSqlite()
   const athleteProfile = athleteResult.athleteProfile
   const today = getCurrentISODateInTimeZone(APPLICATION_REGIONAL_FALLBACKS.timeZone)
   const performanceResult = await getCurrentAthleteTrack1000mPerformanceAction(today)
@@ -46,6 +48,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   return (
     <ProfileTab
       athleteProfile={athleteProfile}
+      biometrics={biometricsResult.status === 'loaded' ? biometricsResult : null}
       performance={performance}
       performanceStatus={performanceStatus}
       membershipStatus={
