@@ -11,7 +11,7 @@ test('KAN-790 PG-2 preferences use actual PG transaction and distinguish missing
   const target = new URL(url)
   assert.equal(target.hostname, '127.0.0.1')
   assert.equal(target.port, '55439')
-  assert.equal(target.pathname, '/kan789_acceptance')
+  assert.equal(target.pathname, '/kan791_regression_disposable')
   const sql = postgres(url, { max: 1, prepare: false })
   const id = 'kan790-pg2-pref-reader'
   const now = '2026-10-14T21:30:00.000Z'
