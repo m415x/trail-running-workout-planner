@@ -8,10 +8,11 @@ import {
 } from '@/lib/session-generation/review-snapshot-postgres-repository'
 
 const url = process.env.KAN789_PG_URL
-if (url) {
+if (!url) throw new Error('BLOCKED: KAN789_PG_URL required')
+{
   const target = new URL(url)
   if (target.hostname !== '127.0.0.1' || target.port !== '55439' ||
-    target.pathname !== '/kan789_acceptance') {
+    target.pathname !== '/kan791_regression_disposable') {
     throw new Error('KAN-790 PG-1 retry tests forbid non-disposable PostgreSQL targets')
   }
 }
@@ -31,7 +32,7 @@ async function withDisposableSnapshot(
   }
   try {
     const current = await sql<{ db: string }[]>`SELECT current_database() AS db`
-    assert.equal(current[0]?.db, 'kan789_acceptance')
+    assert.equal(current[0]?.db, 'kan791_regression_disposable')
     await sql`INSERT INTO users
       (id,user_name,email,first_name,last_name,created_at,updated_at)
       VALUES (${scope.userId},${scope.userId},${prefix + '@example.invalid'},'PG-1','Only',${now},${now})`
@@ -66,7 +67,7 @@ async function withDisposableSnapshot(
   }
 }
 
-test('KAN-790 PG-1 real 40001 exhausts exactly three fresh SERIALIZABLE transactions with full rollback', { skip: !url }, async () => {
+test('KAN-790 PG-1 real 40001 exhausts exactly three fresh SERIALIZABLE transactions with full rollback', {}, async () => {
   await withDisposableSnapshot('exhaust', async (sql, scope) => {
     let attempts = 0
     await assert.rejects(
@@ -90,7 +91,7 @@ test('KAN-790 PG-1 real 40001 exhausts exactly three fresh SERIALIZABLE transact
   })
 })
 
-test('KAN-790 PG-1 real 40P01 opens a new transaction and commits only the last attempt', { skip: !url }, async () => {
+test('KAN-790 PG-1 real 40P01 opens a new transaction and commits only the last attempt', {}, async () => {
   await withDisposableSnapshot('deadlock', async (sql, scope) => {
     let attempts = 0
     const result = await consumeReviewSnapshotPostgres(sql, scope, now, async tx => {
@@ -109,7 +110,7 @@ test('KAN-790 PG-1 real 40P01 opens a new transaction and commits only the last 
   })
 })
 
-test('KAN-790 PG-1 real 23505 shared-event constraint is classified as conflict, never silent success or generic retry', { skip: !url }, async () => {
+test('KAN-790 PG-1 real 23505 shared-event constraint is classified as conflict, never silent success or generic retry', {}, async () => {
   await withDisposableSnapshot('unique', async (sql, scope, prefix) => {
     const sharedEventKey = prefix + '-shared'
     await sql`INSERT INTO sessions
