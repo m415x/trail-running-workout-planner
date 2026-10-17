@@ -16,6 +16,11 @@ interface StoredOperation {
   request_digest: string
 }
 
+export interface BiometricValidatedCorrection extends BiometricValidatedCreate {
+  readonly supersedesObservationId: string
+  readonly correctionReason: string
+}
+
 export type BiometricSqliteCreateResult =
   | { readonly status: 'created'; readonly id: string }
   | { readonly status: 'replayed'; readonly id: string }
@@ -32,15 +37,64 @@ function digestCreate(subject: BiometricWriteSubject, input: BiometricValidatedC
 }
 
 /**
- * Isolated first-stage CREATE-only SQLite persistence primitive.
+ * Isolated first-stage SQLite CREATE/correction persistence primitive.
  *
  * This module is NOT wired to a Server Action. In particular, the accepted
  * SELF subject must eventually be revalidated inside an authorized transaction
- * boundary before exposing mutations. Correction semantics and PG parity remain
- * separate T5 cuts; callers must not treat this primitive as complete authority.
+ * boundary before exposing mutations. Complete correction validation at the
+ * authenticated entry boundary and PG parity remain separate T5 cuts.
  */
 export function createBiometricSelfSqliteRepository(connection: Database.Database) {
   return {
+    correct(subject: BiometricWriteSubject, input: BiometricValidatedCorrection): BiometricSqliteCreateResult | { readonly status: 'denied' } {
+      const requestDigest = createHash('sha256').update(JSON.stringify([
+        'biometric.correct.v1', subject.userId, subject.teamId, subject.athleteProfileId,
+        input.operationKey, input.kind, input.valueScaled, input.unit, input.observedOn,
+        input.supersedesObservationId, input.correctionReason,
+      ])).digest('hex')
+      return connection.transaction(() => {
+        const existing = connection.prepare(
+          `SELECT id, request_digest FROM athlete_biometric_observations
+           WHERE team_id = ? AND athlete_profile_id = ?
+             AND recorded_by_user_id = ? AND operation_key = ?`,
+        ).get(subject.teamId, subject.athleteProfileId, subject.userId, input.operationKey) as StoredOperation | undefined
+
+        if (existing) {
+          return existing.request_digest === requestDigest
+            ? { status: 'replayed' as const, id: existing.id }
+            : { status: 'conflict' as const }
+        }
+
+        if (!input.supersedesObservationId || !input.correctionReason?.trim()) {
+          return { status: 'denied' as const }
+        }
+        const target = connection.prepare(
+          `SELECT id FROM athlete_biometric_observations
+           WHERE id = ? AND team_id = ? AND athlete_profile_id = ?
+             AND kind = ? AND source = 'athlete_declared'`,
+        ).get(input.supersedesObservationId, subject.teamId, subject.athleteProfileId, input.kind)
+        if (!target) return { status: 'denied' as const }
+
+        const successor = connection.prepare(
+          'SELECT id FROM athlete_biometric_observations WHERE supersedes_observation_id = ?',
+        ).get(input.supersedesObservationId)
+        if (successor) return { status: 'denied' as const }
+
+        const id = randomUUID()
+        connection.prepare(
+          `INSERT INTO athlete_biometric_observations
+             (id, team_id, athlete_profile_id, kind, value_scaled, unit,
+              observed_on, recorded_at, recorded_by_user_id, source,
+              supersedes_observation_id, operation_key, request_digest, correction_reason)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'athlete_declared', ?, ?, ?, ?)`,
+        ).run(
+          id, subject.teamId, subject.athleteProfileId, input.kind, input.valueScaled,
+          input.unit, input.observedOn, new Date().toISOString(), subject.userId,
+          input.supersedesObservationId, input.operationKey, requestDigest, input.correctionReason,
+        )
+        return { status: 'created' as const, id }
+      })()
+    },
     create(subject: BiometricWriteSubject, input: BiometricValidatedCreate): BiometricSqliteCreateResult {
       const requestDigest = digestCreate(subject, input)
       return connection.transaction((): BiometricSqliteCreateResult => {
