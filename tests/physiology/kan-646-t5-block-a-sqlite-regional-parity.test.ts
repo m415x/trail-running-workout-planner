@@ -24,7 +24,7 @@ test('KAN-646 Block A SQLite writes snapshot Team IANA timezone and deny missing
     db.prepare('INSERT INTO teams(id,time_zone) VALUES (?,?)').run(teamId, null)
     const repository = createBiometricSelfSqliteRepository(db, { reauthorizeInTransaction: () => true })
     assert.deepEqual(repository.create(subject, input), { status: 'denied' })
-    assert.equal(db.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get()?.n, 0)
+    assert.equal((db.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as {n:number}).n, 0)
 
     db.prepare('UPDATE teams SET time_zone=? WHERE id=?').run('America/Argentina/San_Juan', teamId)
     assert.equal(repository.create(subject, input).status, 'created')
@@ -38,6 +38,6 @@ test('KAN-646 Block A SQLite writes snapshot Team IANA timezone and deny missing
 
     db.prepare('UPDATE teams SET time_zone=? WHERE id=?').run('Invalid/Region', teamId)
     assert.deepEqual(repository.create(subject, input), { status: 'denied' })
-    assert.equal(db.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get()?.n, 2)
+    assert.equal((db.prepare('SELECT count(*) AS n FROM athlete_biometric_observations').get() as {n:number}).n, 2)
   } finally { db.close() }
 })
