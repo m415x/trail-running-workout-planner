@@ -6,6 +6,7 @@ import {createClient} from '@supabase/supabase-js'
 import {createPostgresIdentityEvidence} from '@/lib/auth/postgres-identity-evidence'
 import {readSupabaseServerSessionState} from '@/lib/auth/supabase-server-session-state'
 import {resolveAuthenticatedEptIdentity} from '@/lib/auth/server-session-identity'
+import {resolveKan791AcceptanceIdentity} from '@/lib/auth/kan-791-acceptance-identity'
 
 config({path:'.env.local'})
 
@@ -21,7 +22,7 @@ test('KAN-791 T6-D dedicated real Supabase Coach resolves PG EPT identity withou
   assert.equal(db.port,'55439')
   assert.equal(db.pathname,'/kan789_acceptance')
   const email=required('KAN791_AUTH_TEST_EMAIL')
-  assert.match(email,/^kan791[-+._a-z0-9]*@/i,'Only dedicated KAN-791 accounts')
+  resolveKan791AcceptanceIdentity({email,subject:required('KAN791_AUTH_SUBJECT')})
   const password=required('KAN791_AUTH_TEST_PASSWORD')
   const authUrl=required('NEXT_PUBLIC_SUPABASE_URL')
   const publishable=required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
@@ -41,7 +42,7 @@ test('KAN-791 T6-D dedicated real Supabase Coach resolves PG EPT identity withou
     assert.equal(identity.status,'authenticated','Dedicated Supabase user must be linked in PostgreSQL')
     if(identity.status!=='authenticated') throw new Error('Dedicated PostgreSQL EPT User not linked')
     const memberships=await lookup.loadMemberships(identity.userId)
-    const team=required('KAN791_HTTP_TEAM_ID')
+    const team='kan791-annual-pg-239-team'
     const valid=memberships.filter(m=>
       m.teamId===team && m.preset==='coach' && m.isActive && !m.isDeleted &&
       m.effectiveFrom<=new Date().toISOString() &&
