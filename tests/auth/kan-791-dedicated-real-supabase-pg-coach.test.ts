@@ -37,17 +37,20 @@ test('KAN-791 T6-D dedicated real Supabase Coach resolves PG EPT identity withou
     const verified=await readSupabaseServerSessionState(supabase.auth)
     assert.equal(verified.status,'verified','Supabase claims/getUser must agree')
     if(verified.status!=='verified') throw new Error('Unverified Supabase Auth')
-    const lookup=createPostgresIdentityEvidence(sql)
-    const identity=await resolveAuthenticatedEptIdentity(verified.externalSubject,lookup)
-    assert.equal(identity.status,'authenticated','Dedicated Supabase user must be linked in PostgreSQL')
-    if(identity.status!=='authenticated') throw new Error('Dedicated PostgreSQL EPT User not linked')
-    const memberships=await lookup.loadMemberships(identity.userId)
-    const team='kan791-annual-pg-239-team'
-    const valid=memberships.filter(m=>
-      m.teamId===team && m.preset==='coach' && m.isActive && !m.isDeleted &&
-      m.effectiveFrom<=new Date().toISOString() &&
-      (m.effectiveUntil===null || m.effectiveUntil>new Date().toISOString()))
-    assert.equal(valid.length,1,'One effective PG Coach membership required')
+    await sql.begin(async tx=>{
+      await tx`SET TRANSACTION READ ONLY`
+      const lookup=createPostgresIdentityEvidence(tx)
+      const identity=await resolveAuthenticatedEptIdentity(verified.externalSubject,lookup)
+      assert.equal(identity.status,'authenticated','Dedicated Supabase user must be linked in PostgreSQL')
+      if(identity.status!=='authenticated') throw new Error('Dedicated PostgreSQL EPT User not linked')
+      const memberships=await lookup.loadMemberships(identity.userId)
+      const team='kan791-annual-pg-239-team'
+      const valid=memberships.filter(m=>
+        m.teamId===team && m.preset==='coach' && m.isActive && !m.isDeleted &&
+        m.effectiveFrom<=new Date().toISOString() &&
+        (m.effectiveUntil===null || m.effectiveUntil>new Date().toISOString()))
+      assert.equal(valid.length,1,'One effective PG Coach membership required')
+    })
     process.stdout.write('KAN-791 dedicated real Supabase H2 and PostgreSQL EPT/Coach H3: PASS\\n')
   } finally {
     await supabase.auth.signOut()
