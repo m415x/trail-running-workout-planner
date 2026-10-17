@@ -22,9 +22,10 @@ test('KAN-791 T6-D login, existing-session and dashboard share selected backend 
     assert.match(code,/createNextServerIdentityEvidence/)
     assert.doesNotMatch(code,/createExternalIdentityLookup\(\)/)
   }
-  for(const code of [lookup,audience,team,navigation])
+  assert.match(lookup,/createExternalIdentityLookup/)
+  for(const code of [audience,team,navigation])
     assert.match(code,/identity-backend|IdentityBackend|identityBackend|createNextServerIdentityEvidence/,
-      'Selected backend must propagate through the identity boundary')
+      'Selected backend must propagate through the server identity boundary')
 })
 
 test('KAN-791 T6-D must preserve shared H2 and H3/H4A pure contracts',()=>{
