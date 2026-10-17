@@ -15,6 +15,7 @@ import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
 import * as sessionGenerationReviewSnapshotSchema from '@/db/session-generation-review-snapshot-schema'
+import * as biometricObservationSchema from '@/db/athlete-biometric-observation-schema'
 import { seedFeature, seedFull } from '@/db/seeds'
 
 
@@ -122,6 +123,7 @@ export async function runFullSeedScenario(projectRoot = process.cwd()): Promise<
           ...raceCatalogSchema,
           ...raceRegistrationSchema,
           ...sessionGenerationReviewSnapshotSchema,
+          ...biometricObservationSchema,
         },
       })
 
@@ -332,6 +334,7 @@ export async function runPartialSeedScenario(projectRoot = process.cwd()): Promi
             ...raceCatalogSchema,
             ...raceRegistrationSchema,
           ...sessionGenerationReviewSnapshotSchema,
+          ...biometricObservationSchema,
           },
         })
         const currentWeekStart = '2026-09-21'
