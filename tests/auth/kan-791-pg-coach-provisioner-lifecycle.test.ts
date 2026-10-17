@@ -9,10 +9,10 @@ test('KAN-791 P4 read-only verify and owned cleanup in rollback-only PostgreSQL 
  const target=new URL(url)
  assert.equal(target.hostname,'127.0.0.1')
  assert.equal(target.port,'55439')
- assert.equal(target.pathname,'/kan791_acceptance_v2')
+ assert.equal(target.pathname,'/kan791_regression_disposable')
  const sql=postgres(url,{max:1,prepare:false})
  const ids={userId:'kan791-p4-rollback-user',linkId:'kan791-p4-rollback-link',
-  membershipId:'kan791-p4-rollback-member',teamId:'kan791-annual-pg-239-team',
+  membershipId:'kan791-p4-rollback-member',teamId:'kan791-p4-rollback-team',
   email:'kan791-p4-rollback@acceptance.invalid'}
  const subject='c734b08e-25e2-4dbd-8987-9420b96bdf44'
  try{
@@ -23,6 +23,8 @@ test('KAN-791 P4 read-only verify and owned cleanup in rollback-only PostgreSQL 
    assert.equal(before[0]?.n,0,'inspect must not mutate')
    // Fixture rows exist only inside this rollback transaction; do not use CLI apply.
    const at=new Date().toISOString()
+   await tx`INSERT INTO teams(id,name,created_at,updated_at)
+     VALUES (${ids.teamId},'KAN-791 P4 disposable rollback fixture',${at},${at})`
    await tx`INSERT INTO users(id,user_name,email,first_name,last_name,created_at,updated_at)
      VALUES (${ids.userId},${ids.userId},${ids.email},'P4','Acceptance',${at},${at})`
    await tx`INSERT INTO external_identity_links(id,user_id,provider,subject,created_at,updated_at)
@@ -35,14 +37,15 @@ test('KAN-791 P4 read-only verify and owned cleanup in rollback-only PostgreSQL 
    assert.deepEqual(await cleanupKan791CoachIdentity(tx,{ids,subject,at}),{state:'absent',mutated:false})
    throw new Error('KAN791_P4_ROLLBACK')
   }),/KAN791_P4_ROLLBACK/)
-  for(const [table,id] of [['users',ids.userId],['external_identity_links',ids.linkId],['team_memberships',ids.membershipId]] as const){
+  for(const [table,id] of [['users',ids.userId],['external_identity_links',ids.linkId],['team_memberships',ids.membershipId],['teams',ids.teamId]] as const){
    // Table names are literals, not user input.
    const count=table==='users'?await sql`SELECT id FROM users WHERE id=${id}`:
     table==='external_identity_links'?await sql`SELECT id FROM external_identity_links WHERE id=${id}`:
-    await sql`SELECT id FROM team_memberships WHERE id=${id}`
+    table==='team_memberships'?await sql`SELECT id FROM team_memberships WHERE id=${id}`:
+    await sql`SELECT id FROM teams WHERE id=${id}`
    assert.equal(count.length,0,table+' must not leave residue')
   }
-  assert.equal((await sql`SELECT id FROM group_training_plans WHERE id=${'kan791-annual-pg-239-plan'}`).length,1,
-   'annual fixture must survive')
+  assert.equal((await sql<{db:string}[]>`SELECT current_database() AS db`)[0]?.db,
+   'kan791_regression_disposable')
  }finally{await sql.end()}
 })
