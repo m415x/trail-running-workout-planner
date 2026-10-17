@@ -1,9 +1,10 @@
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
-import { assertSafePostgresRegressionTarget } from './test-runner'
+import { assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
 
 const require = createRequire(import.meta.url)
 
@@ -70,7 +71,10 @@ function main(): void {
     process.exit(2)
   }
 
-  if (tests.some(file => /kan-(?:789-review-snapshot-postgres-|790-pg|790-t55-|791-)/.test(file))) {
+  if (tests.some(file => {
+    if (/[\\*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    return isPostgresIntegrationSource(readFileSync(file, 'utf8'))
+  })) {
     assertSafePostgresRegressionTarget(process.env)
   }
 
