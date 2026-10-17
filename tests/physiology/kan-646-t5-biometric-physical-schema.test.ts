@@ -27,9 +27,10 @@ test('KAN-646/T5 canonical migration continues historical snapshots without weak
     ['drizzle/supabase', '0040', '0041'],
   ] as const) {
     const entries = JSON.parse(read(root + '/meta/_journal.json')).entries as {tag:string}[]
-    const tag = entries.at(-1)?.tag
-    assert.ok(tag?.startsWith(next + '_'), 'Expected latest migration ' + next)
-    assert.equal(entries.at(-2)?.tag.startsWith(previous + '_'), true)
+    const tag = entries.find(entry => entry.tag.startsWith(next + '_'))?.tag
+    assert.ok(tag, 'Expected historical migration ' + next)
+    const migrationIndex = entries.findIndex(entry => entry.tag === tag)
+    assert.equal(entries[migrationIndex - 1]?.tag.startsWith(previous + '_'), true)
     const before = JSON.parse(read(root + '/meta/' + previous + '_snapshot.json'))
     const after = JSON.parse(read(root + '/meta/' + next + '_snapshot.json'))
     assert.equal(after.prevId, before.id)
