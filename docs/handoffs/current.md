@@ -1,10 +1,11 @@
-# KAN-646/T9 — Athlete Profile candidate awaiting integration (2026-10-17)
+# Current operational handoff — KAN-646 Athlete Profile SELF merged (2026-10-17)
 
-- **Not merged:** feature `feat/KAN-646-athlete-profile-self`; last executable candidate `af9ca6c980c343cfc31729131fdaa48794fb72f6`. Documentation-only commits follow that candidate. No PR, merge, CI success or post-merge gate is claimed by this note. `dev` remains the latest integrated truth below.
-- Operator reports the updated pre-merge `pn verify --db -v` **PASS 6/6** (104669/10277/31635/49573/366/44868 ms; total 241388 ms). Authenticated Athlete local walkthrough: four editable biometrics, source and zone display, weight create/correct confirmed append-only by two SQLite rows; ES/EN and responsive/accessibility PASS. Focal SELF denial, isolation and transaction reauthorization tests GREEN. Public action wiring contract GREEN, **not** HTTP tampering E2E.
-- Contract: four manual SELF biometrics require H2/H3/H5A, own AthleteProfile and persisted Team IANA; both Server Actions use authorized internal writer and transactional reauthorization; Material hidden, Settings reuse Supabase recovery/theme/logout; missing 1000m evidence stays unknown. See [Athlete Profile SELF architecture](../architecture/athlete-profile-self-biometrics.md).
-- **Known deferred:** ES comma decimal input handling is application-wide follow-up after KAN-646 merge, explicitly accepted by operator; no localized patch is authorized as part of KAN-646.
-- **Next T9 actions:** `pn docs:handoff:check`; review PR feature→`dev`, required checks, ordinary merge, post-merge `dev` verification and handoff/Jira reconciliation. Never report KAN-646 completed until those finish.
+- **Integrated baseline:** KAN-646 via GitHub [PR #62](https://github.com/m415x/trail-running-workout-planner/pull/62), approved head `2ed7a557aa76f57ecbc22efae8a649851c14c943`, ordinary merge `766cff4f942104e0576c508581c0cf8fd8a1ccf1`. The merged implementation lives in `dev`. See [KAN-646 story handoff](kan-646.md) and [durable architecture](../architecture/athlete-profile-self-biometrics.md).
+- **Post-merge executable gate:** operator `pn verify --db -v` **PASS 6/6** on integrated `dev` (Tests 121027 ms; TypeScript 37019 ms; ESLint 31115 ms; Build 52635 ms; i18n 365 ms; SQLite 45260 ms; total 287421 ms).
+- **Handoff reconciliation:** the first post-merge `pn docs:handoff:check` **FAILED** because `kan-646.md` and its index were missing. The follow-up changes add them and update the historic KAN-725 current-baseline assertion. **A new documentation gate and impacted focal test/full gate are still pending on this documentation-and-test HEAD**; do not treat them as passed until confirmed by operator.
+- **Acceptance scope:** real Athlete Profile SELF read/write four manual metrics, append-only correction/provenance, Team IANA fail-closed, nondelegable H2/H3/H5A authorization. Athlete real browser ES/EN/responsive/accessibility PASS; focused denial/isolation GREEN; security action-wiring static test is not adversarial HTTP E2E. Missing eligible 1000m reference remains unknown; Material hidden, Settings reuse theme and Supabase Auth.
+- **Explicitly deferred after merge:** application-wide decimal comma normalization of numeric inputs, not a KAN-646-only patch.
+- **Next:** run `pn tdd tests/scripts/kan-725-harness-v2-contract.test.ts`, `pn docs:handoff:check`, and updated integral gate as required by the changed test; then reconcile Jira closure. Older integrated baselines follow as historical handoff below.
 
 ---
 
