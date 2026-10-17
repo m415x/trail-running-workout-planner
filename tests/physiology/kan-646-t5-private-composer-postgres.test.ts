@@ -35,8 +35,12 @@ test('KAN-646 T5 private PG composer derives SELF authority and civil date serve
     await sql`INSERT INTO athlete_profiles (id,user_id,team_id,dni,is_active,created_at,updated_at)
       VALUES (${profileId},${userId},${teamId},${suffix},true,${now},${now})`
 
-    const written = await composer.create({ ...input, userId: 'foreign-user', teamId: 'foreign-team',
-      athleteProfileId: 'foreign-profile', timeZone: 'Pacific/Honolulu' })
+    // Model untrusted extra JSON fields without broadening the typed input contract.
+    const untrustedPayload = {
+      ...input, userId: 'foreign-user', teamId: 'foreign-team',
+      athleteProfileId: 'foreign-profile', timeZone: 'Pacific/Honolulu',
+    }
+    const written = await composer.create(untrustedPayload)
     assert.equal(written.status, 'persisted')
     const rows = await sql<{ team_id: string; athlete_profile_id: string; observed_time_zone: string }[]>`
       SELECT team_id,athlete_profile_id,observed_time_zone
