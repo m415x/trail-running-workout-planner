@@ -111,7 +111,7 @@ describe('persistencia de intensidad', () => {
 function createTestDatabase() {
   const sqliteDatabase = new Database(':memory:')
   sqliteDatabase.exec(`
-    CREATE TABLE teams (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, avatar_light TEXT, avatar_dark TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
+    CREATE TABLE teams (id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT, avatar_light TEXT, avatar_dark TEXT, time_zone TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE athlete_groups (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, category_code TEXT NOT NULL, level_code TEXT NOT NULL, description TEXT, is_active INTEGER DEFAULT 1, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE group_training_plans (id TEXT PRIMARY KEY, group_id TEXT NOT NULL, planning_cohort_id TEXT, source_group_training_plan_id TEXT, title TEXT NOT NULL, status TEXT DEFAULT 'draft', notes TEXT, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
     CREATE TABLE load_strategies (id TEXT PRIMARY KEY, group_training_plan_id TEXT NOT NULL UNIQUE, goal_type TEXT NOT NULL, initial_weekly_volume_km REAL NOT NULL, maximum_weekly_volume_km REAL NOT NULL, maximum_weekly_increase_percentage REAL NOT NULL, deload_percentage REAL NOT NULL, initial_weekly_elevation_gain INTEGER, maximum_weekly_elevation_gain INTEGER, field_sources TEXT NOT NULL, is_deleted INTEGER DEFAULT 0, created_at TEXT, updated_at TEXT);
