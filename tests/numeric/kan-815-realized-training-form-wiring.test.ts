@@ -5,20 +5,18 @@ import test from 'node:test'
 const hook = readFileSync('features/workouts/hooks/useLogWorkoutDialog.ts', 'utf8')
 const dialog = readFileSync('features/workouts/components/LogWorkoutDialog.tsx', 'utf8')
 
-test('KAN-815/A2 capture hook uses strict regional adapter for all numeric metrics', () => {
-  assert.match(hook, /import\s*\{\s*parseRealizedTrainingMetricDraft\s*\}\s*from\s*['"]@\/lib\/numeric\/realized-training-metric-draft['"]/)
-  assert.match(hook, /parseRealizedTrainingMetricDraft\(distance,\s*['"]distanceKm['"]\)/)
-  assert.match(hook, /parseRealizedTrainingMetricDraft\(gain,\s*['"]elevationGainM['"]\)/)
-  assert.match(hook, /parseRealizedTrainingMetricDraft\(avgHr,\s*['"]avgHrBpm['"]\)/)
+test('KAN-815/A2 capture hook delegates metric parsing to its tested validation boundary', () => {
+  assert.match(hook, /import\s*\{\s*withValidatedRealizedTrainingMetrics\s*\}\s*from\s*['"]@\/lib\/numeric\/realized-training-save-boundary['"]/)
+  assert.match(hook, /await withValidatedRealizedTrainingMetrics\(/)
+  assert.match(hook, /distance:\s*distance,\s*gain:\s*gain,\s*avgHr:\s*avgHr/)
   assert.doesNotMatch(hook, /function metricFromInput\(/)
 })
 
-test('KAN-815/A2 rejects malformed metric drafts before creating payload and calling onSave', () => {
-  assert.match(hook, /if\s*\(\s*distanceResult\.status\s*===\s*['"]invalid['"]\s*\|\|/)
+test('KAN-815/A2 blocks invalid drafts and uses validated metrics for the save payload', () => {
+  assert.match(hook, /if\s*\(saveResult\.status\s*===\s*['"]invalid['"]\)/)
   assert.match(hook, /setSaveError\(['"]invalidMetric['"]\)/)
-  assert.match(hook, /distanceKm:\s*distanceResult\.metric/)
-  assert.match(hook, /elevationGainM:\s*gainResult\.metric/)
-  assert.match(hook, /avgHrBpm:\s*avgHrResult\.metric/)
+  assert.match(hook, /metrics:\s*\{\s*\.\.\.metrics,/)
+  assert.match(hook, /await onSave\(payload\)/)
 })
 
 test('KAN-815/A2 retains original safety guards and error presentation', () => {
