@@ -25,7 +25,12 @@ test('KAN-815/A2 retains original safety guards and error presentation', () => {
   assert.match(hook, /captureLocalInstant\(performedLocal\)/)
   assert.match(hook, /if\s*\(!dateStr\s*\|\|\s*!onSave\s*\|\|\s*saving\.current\)\s*return/)
   assert.match(dialog, /saveError/)
-  assert.match(dialog, /invalidMetric/)
+  assert.match(dialog, /t\(`dialog\.\$\{saveError\}`\)/)
+  for (const locale of ['es', 'en']) {
+    const messages = JSON.parse(readFileSync(`messages/${locale}/realized-training/workouts.json`, 'utf8'))
+    assert.equal(typeof messages.Workouts.dialog.invalidMetric, 'string')
+    assert.ok(messages.Workouts.dialog.invalidMetric.length > 0)
+  }
 })
 
 test('KAN-815/A2 text input accepts local comma decimal and integer mobile keyboards', () => {
