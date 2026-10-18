@@ -10,6 +10,7 @@ import {
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
 import { normalizeMicrocyclePlanningDraft } from '@/lib/numeric/microcycle-planning-draft'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 
 interface MicrocycleVolumeFormProps {
   microcycleId: string
@@ -52,7 +53,7 @@ export function MicrocycleVolumeForm({
             name='targetVolumeKm'
             type='text'
             inputMode='decimal'
-            defaultValue={currentVolumeKm ?? ''}
+            defaultValue={formatPersistedRegionalDecimal(currentVolumeKm, locale)}
             required
             aria-label={t('targetVolumeKm')}
             aria-invalid={Boolean(state.error) || clientError}
