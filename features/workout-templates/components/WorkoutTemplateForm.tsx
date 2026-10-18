@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { normalizeSessionPrescriptionMetricDraft } from '@/lib/numeric/session-prescription-metric-draft'
+import { normalizeTemplateReferencePercentageDraft } from '@/lib/numeric/template-reference-percentage-draft'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
 import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
@@ -67,6 +68,14 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
           return
         }
         formData.set(field, normalized.status === 'valid' ? normalized.value : '')
+      }
+      if (intensityMethod === 'reference_percentage') {
+        const normalizedPercentage = normalizeTemplateReferencePercentageDraft(String(formData.get('referencePercentage') ?? ''))
+        if (normalizedPercentage.status !== 'valid') {
+          setClientError(true)
+          return
+        }
+        formData.set('referencePercentage', normalizedPercentage.value)
       }
       setClientError(false)
       formAction(formData)
@@ -138,7 +147,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
           </SelectField>
         )}
         {intensityMethod === 'reference_percentage' && (
-          <Field label={t('prescription.referencePercentage')} name='referencePercentage' defaultValue={savedValue('referencePercentage')} type='number' min='0.1' max='200' step='0.1' required error={state.fieldErrors?.intensity} />
+          <Field label={t('prescription.referencePercentage')} name='referencePercentage' defaultValue={savedValue('referencePercentage')} type='text' inputMode='decimal' required error={state.fieldErrors?.intensity} />
         )}
         <TextAreaField label={t('prescription.notes')} name='prescriptionNotes' rows={3} defaultValue={savedTextValue('prescriptionNotes')} placeholder={t('prescription.notesPlaceholder')} />
       </fieldset>
