@@ -1,17 +1,12 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { captureLocalInstant, captureDuration } from '@/lib/realized-training/manual-capture-fields'
+import { parseRealizedTrainingMetricDraft } from '@/lib/numeric/realized-training-metric-draft'
 import type {
   ManualRealizedTrainingClientInput,
   RealizedTrainingCaptureMetric,
 } from '@/types'
 import { SelfAssessmentValues } from '@workouts/components/SelfAssessment'
 import { LogWorkoutDialogProps } from '@workouts/components/LogWorkoutDialog'
-
-function metricFromInput(value: string): RealizedTrainingCaptureMetric {
-  const normalized = value.trim()
-  if (!normalized) return { state: 'unknown' }
-  return { state: 'known', value: Number(normalized) }
-}
 
 function inputFromMetric(metric: RealizedTrainingCaptureMetric | undefined): string {
   return metric?.state === 'known' ? String(metric.value) : ''
@@ -91,7 +86,7 @@ export function useLogWorkoutDialog({
   const [isSaving, setIsSaving] = useState(false)
   const saving = useRef(false)
   const [performedLocal, setPerformedLocal] = useState(emptyValues.performedLocal)
-  const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'saveFailed' | 'blockedForPriorDebt' | 'economicEvidenceUnavailable' | null>(null)
+  const [saveError, setSaveError] = useState<'invalidPerformedAt' | 'invalidMetric' | 'saveFailed' | 'blockedForPriorDebt' | 'economicEvidenceUnavailable' | null>(null)
 
   const applyValues = useCallback((input: ManualRealizedTrainingClientInput | null | undefined) => {
     const values = valuesFromInput(input)
@@ -163,6 +158,16 @@ export function useLogWorkoutDialog({
       return
     }
 
+    const distanceResult = parseRealizedTrainingMetricDraft(distance, 'distanceKm')
+    const gainResult = parseRealizedTrainingMetricDraft(gain, 'elevationGainM')
+    const avgHrResult = parseRealizedTrainingMetricDraft(avgHr, 'avgHrBpm')
+    if (distanceResult.status === 'invalid' ||
+        gainResult.status === 'invalid' ||
+        avgHrResult.status === 'invalid') {
+      setSaveError('invalidMetric')
+      return
+    }
+
     const payload: ManualRealizedTrainingClientInput = {
       sessionId: workout?.id?.toString() ?? initialInput?.sessionId ?? null,
       workoutId: initialInput?.workoutId ?? null,
@@ -170,10 +175,10 @@ export function useLogWorkoutDialog({
       performedAt,
       status: initialInput?.status ?? 'completed',
       metrics: {
-        distanceKm: metricFromInput(distance),
+        distanceKm: distanceResult.metric,
         durationMin: captureDuration(timeHr, timeMin, timeSec),
-        elevationGainM: metricFromInput(gain),
-        avgHrBpm: metricFromInput(avgHr),
+        elevationGainM: gainResult.metric,
+        avgHrBpm: avgHrResult.metric,
         rpe: assessment.rpe === null || assessment.rpe === undefined
           ? { state: 'unknown' }
           : { state: 'known', value: assessment.rpe },
