@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
 import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
 import { normalizeSessionPrescriptionMetricDraft } from '@/lib/numeric/session-prescription-metric-draft'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
@@ -97,11 +98,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [appliedPrescriptionDefaults, setAppliedPrescriptionDefaults] = useState<AppliedPrescriptionDefaults | null>(null)
   const [prescriptionValues, setPrescriptionValues] = useState<Record<string, PrescriptionFormValues>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.microcycleId, {
-      distanceKm: formValue(item.distanceKm),
+      distanceKm: formatPersistedRegionalDecimal(item.distanceKm, locale),
       durationMin: formValue(item.durationMin),
       elevationGain: formValue(item.elevationGain),
       zone: formValue(item.zone),
-      referencePercentage: formValue(item.referencePercentage),
+      referencePercentage: formatPersistedRegionalDecimal(item.referencePercentage, locale),
       notes: formValue(item.notes),
     }]) ?? [],
   ))
@@ -169,11 +170,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
   function valuesFromDefaults(defaults: AppliedPrescriptionDefaults): PrescriptionFormValues {
     return {
-      distanceKm: formValue(defaults.distance),
+      distanceKm: formatPersistedRegionalDecimal(defaults.distance, locale),
       durationMin: formValue(defaults.time),
       elevationGain: formValue(defaults.gain),
       zone: formValue(defaults.zone),
-      referencePercentage: formValue(defaults.referencePercentage),
+      referencePercentage: formatPersistedRegionalDecimal(defaults.referencePercentage, locale),
       notes: formValue(defaults.prescriptionNotes),
     }
   }
