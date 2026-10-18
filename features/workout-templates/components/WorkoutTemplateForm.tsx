@@ -3,8 +3,7 @@
 import Link from 'next/link'
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { normalizeSessionPrescriptionMetricDraft } from '@/lib/numeric/session-prescription-metric-draft'
-import { normalizeTemplateReferencePercentageDraft } from '@/lib/numeric/template-reference-percentage-draft'
+import { submitValidatedTemplateNumericDraft } from '@/lib/numeric/template-numeric-submit-boundary'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
 import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
@@ -61,24 +60,14 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
 
   return (
     <form key={state.submissionKey ?? 0} action={(formData: FormData) => {
-      for (const field of ['distanceKm', 'durationMin', 'elevationGain'] as const) {
-        const normalized = normalizeSessionPrescriptionMetricDraft(String(formData.get(field) ?? ''), field)
-        if (normalized.status === 'invalid') {
-          setClientError(true)
-          return
-        }
-        formData.set(field, normalized.status === 'valid' ? normalized.value : '')
-      }
-      if (intensityMethod === 'reference_percentage') {
-        const normalizedPercentage = normalizeTemplateReferencePercentageDraft(String(formData.get('referencePercentage') ?? ''))
-        if (normalizedPercentage.status !== 'valid') {
-          setClientError(true)
-          return
-        }
-        formData.set('referencePercentage', normalizedPercentage.value)
+      const result = submitValidatedTemplateNumericDraft(formData, intensityMethod, (payload) => {
+        formAction(payload)
+      })
+      if (result === 'invalid') {
+        setClientError(true)
+        return
       }
       setClientError(false)
-      formAction(formData)
     }} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {template && <input type='hidden' name='templateId' value={template.id} />}
