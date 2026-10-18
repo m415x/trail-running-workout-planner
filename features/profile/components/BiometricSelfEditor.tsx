@@ -4,6 +4,7 @@ import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
 import { normalizeBiometricDraftValue } from '@/lib/numeric/biometric-draft-normalization'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 import {
   createCurrentSelfBiometricAction,
   correctCurrentSelfBiometricAction,
@@ -49,7 +50,7 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
         {parameters.map(parameter => {
           const current = biometrics.biometrics[parameter.key]
           const draft = drafts[parameter.kind] ?? {
-            value: current ? String(current.valueScaled / parameter.scale) : '',
+            value: current ? (parameter.scale === 1 ? String(current.valueScaled) : formatPersistedRegionalDecimal(current.valueScaled / parameter.scale, en ? 'en' : 'es')) : '',
             observedOn: biometrics.effectiveOn,
           }
           return (
