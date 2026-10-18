@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { captureLocalInstant, captureDuration } from '@/lib/realized-training/manual-capture-fields'
-import { parseRealizedTrainingMetricDraft } from '@/lib/numeric/realized-training-metric-draft'
+import { withValidatedRealizedTrainingMetrics } from '@/lib/numeric/realized-training-save-boundary'
 import type {
   ManualRealizedTrainingClientInput,
   RealizedTrainingCaptureMetric,
@@ -158,40 +158,39 @@ export function useLogWorkoutDialog({
       return
     }
 
-    const distanceResult = parseRealizedTrainingMetricDraft(distance, 'distanceKm')
-    const gainResult = parseRealizedTrainingMetricDraft(gain, 'elevationGainM')
-    const avgHrResult = parseRealizedTrainingMetricDraft(avgHr, 'avgHrBpm')
-    if (distanceResult.status === 'invalid' ||
-        gainResult.status === 'invalid' ||
-        avgHrResult.status === 'invalid') {
-      setSaveError('invalidMetric')
-      return
-    }
-
-    const payload: ManualRealizedTrainingClientInput = {
-      sessionId: workout?.id?.toString() ?? initialInput?.sessionId ?? null,
-      workoutId: initialInput?.workoutId ?? null,
-      date: initialInput?.date ?? dateStr,
-      performedAt,
-      status: initialInput?.status ?? 'completed',
-      metrics: {
-        distanceKm: distanceResult.metric,
-        durationMin: captureDuration(timeHr, timeMin, timeSec),
-        elevationGainM: gainResult.metric,
-        avgHrBpm: avgHrResult.metric,
-        rpe: assessment.rpe === null || assessment.rpe === undefined
-          ? { state: 'unknown' }
-          : { state: 'known', value: assessment.rpe },
-      },
-      feeling: assessment.feeling ?? null,
-      athleteNotes: athleteNotes.trim() || null,
-    }
-
-    saving.current = true
     setSaveError(null)
-    setIsSaving(true)
     try {
-      const saved = await onSave(payload)
+      const saveResult = await withValidatedRealizedTrainingMetrics(
+        { distance: distance, gain: gain, avgHr: avgHr },
+        async metrics => {
+          const payload: ManualRealizedTrainingClientInput = {
+            sessionId: workout?.id?.toString() ?? initialInput?.sessionId ?? null,
+            workoutId: initialInput?.workoutId ?? null,
+            date: initialInput?.date ?? dateStr,
+            performedAt,
+            status: initialInput?.status ?? 'completed',
+            metrics: {
+              ...metrics,
+              durationMin: captureDuration(timeHr, timeMin, timeSec),
+              rpe: assessment.rpe === null || assessment.rpe === undefined
+                ? { state: 'unknown' }
+                : { state: 'known', value: assessment.rpe },
+            },
+            feeling: assessment.feeling ?? null,
+            athleteNotes: athleteNotes.trim() || null,
+          }
+
+          saving.current = true
+          setIsSaving(true)
+          return await onSave(payload)
+        },
+      )
+
+      if (saveResult.status === 'invalid') {
+        setSaveError('invalidMetric')
+        return
+      }
+      const saved = saveResult.value
       if (!saved) {
         setSaveError('saveFailed')
         return
