@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { submitValidatedTemplateNumericDraft } from '@/lib/numeric/template-numeric-submit-boundary'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
 import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
@@ -41,11 +42,11 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
     locationKey: template?.sessionDefaults.locationKey ?? undefined,
     trackPath: template?.sessionDefaults.trackPath ?? undefined,
     notes: template?.sessionDefaults.notes ?? undefined,
-    distanceKm: template?.prescriptionDefaults.distanceKm ?? undefined,
+    distanceKm: formatPersistedRegionalDecimal(template?.prescriptionDefaults.distanceKm, locale),
     durationMin: template?.prescriptionDefaults.durationMin ?? undefined,
     elevationGain: template?.prescriptionDefaults.elevationGain ?? undefined,
     zone: template?.prescriptionDefaults.intensity?.method === 'hr_zone' ? template.prescriptionDefaults.intensity.zone : undefined,
-    referencePercentage: template?.prescriptionDefaults.intensity?.method === 'reference_percentage' ? template.prescriptionDefaults.intensity.referencePercentage : undefined,
+    referencePercentage: template?.prescriptionDefaults.intensity?.method === 'reference_percentage' ? formatPersistedRegionalDecimal(template.prescriptionDefaults.intensity.referencePercentage, locale) : undefined,
     prescriptionNotes: template?.prescriptionDefaults.notes ?? undefined,
   }
   const savedValue = (name: string) => state.values?.[name] ?? originalValues[name]
