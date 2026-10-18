@@ -52,9 +52,6 @@ export function MicrocycleVolumeForm({
             name='targetVolumeKm'
             type='text'
             inputMode='decimal'
-            min='0.1'
-            max='1000'
-            step='0.1'
             defaultValue={currentVolumeKm ?? ''}
             required
             aria-label={t('targetVolumeKm')}
