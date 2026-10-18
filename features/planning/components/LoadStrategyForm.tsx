@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { PlanningIntentHelp } from '@/features/planning/components/PlanningIntentHelp'
 import { localizeLoadIssue } from '@/features/planning/load-strategy-copy'
 import { parseLoadStrategyNumericDraft } from '@/lib/numeric/load-strategy-numeric-draft'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 import { useActionState, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -56,12 +57,12 @@ const numericFields: LoadStrategyField[] = [
   'maximumWeeklyElevationGain',
 ]
 
-function draftsFromStrategy(strategy: LoadStrategyDraft): Record<LoadStrategyField, string> {
+function draftsFromStrategy(strategy: LoadStrategyDraft, locale: string): Record<LoadStrategyField, string> {
   return {
-    initialWeeklyVolumeKm: String(strategy.values.initialWeeklyVolumeKm),
-    maximumWeeklyVolumeKm: String(strategy.values.maximumWeeklyVolumeKm),
-    maximumWeeklyIncreasePercentage: String(strategy.values.maximumWeeklyIncreasePercentage),
-    deloadPercentage: String(strategy.values.deloadPercentage),
+    initialWeeklyVolumeKm: formatPersistedRegionalDecimal(strategy.values.initialWeeklyVolumeKm, locale),
+    maximumWeeklyVolumeKm: formatPersistedRegionalDecimal(strategy.values.maximumWeeklyVolumeKm, locale),
+    maximumWeeklyIncreasePercentage: formatPersistedRegionalDecimal(strategy.values.maximumWeeklyIncreasePercentage, locale),
+    deloadPercentage: formatPersistedRegionalDecimal(strategy.values.deloadPercentage, locale),
     initialWeeklyElevationGain: strategy.values.initialWeeklyElevationGain == null ? '' : String(strategy.values.initialWeeklyElevationGain),
     maximumWeeklyElevationGain: strategy.values.maximumWeeklyElevationGain == null ? '' : String(strategy.values.maximumWeeklyElevationGain),
   }
@@ -82,7 +83,7 @@ export function LoadStrategyForm({
     [groupCode, planningIntent],
   )
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
-  const [numericDrafts, setNumericDrafts] = useState(() => draftsFromStrategy(suggestion))
+  const [numericDrafts, setNumericDrafts] = useState(() => draftsFromStrategy(suggestion, locale))
   const [startDate, setStartDate] = useState(defaultStartDate)
   const [endDate, setEndDate] = useState(defaultEndDate)
   const [actionState, formAction, isPending] = useActionState(
@@ -112,7 +113,7 @@ export function LoadStrategyForm({
       resolveBasePlanLegacyGoalType(nextPlanningIntent),
     )
     setStrategy(next)
-    setNumericDrafts(draftsFromStrategy(next))
+    setNumericDrafts(draftsFromStrategy(next, locale))
   }
 
   function handleGroupChange(nextGroupCode: AthleteGroupCode) {
