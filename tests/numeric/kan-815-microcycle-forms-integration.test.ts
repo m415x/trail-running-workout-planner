@@ -25,7 +25,7 @@ test('KAN-815/A2 volume rejects empty or incomplete draft before authorized acti
 test('KAN-815/A2 elevation preserves intentional absence and rejects invalid fraction', () => {
   assert.match(elevation, /normalizeMicrocyclePlanningDraft\([^,]+,\s*['"]elevationGainM['"]\)/)
   assert.match(elevation, /normalized\.status\s*===\s*['"]invalid['"]/)
-  assert.match(elevation, /normalized\.status\s*===\s*['"]empty['"]/)
+  assert.match(elevation, /formData\.set\(['"]targetElevationGain['"],\s*normalized\.status\s*===\s*['"]valid['"]\s*\?\s*normalized\.value\s*:\s*['"]['"]\)/)
   assert.match(elevation, /targetElevationGain/)
 })
 
