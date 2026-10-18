@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import {
@@ -10,6 +10,7 @@ import {
 import { Badge } from '@ui/badge'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
+import { normalizeMicrocyclePlanningDraft } from '@/lib/numeric/microcycle-planning-draft'
 
 import type { TargetElevationSource } from '@/types'
 
@@ -31,10 +32,21 @@ export function MicrocycleElevationForm({
   currentSource,
 }: MicrocycleElevationFormProps) {
   const t = useTranslations('CoachPlanning')
+  const [clientError, setClientError] = useState(false)
   const [state, formAction, pending] = useActionState(updateMicrocycleElevation, initialState)
 
   return (
-    <form action={formAction} className='flex min-w-56 flex-col gap-1.5'>
+    <form action={(formData: FormData) => {
+      const raw = String(formData.get('targetElevationGain') ?? '')
+      const normalized = normalizeMicrocyclePlanningDraft(raw, 'elevationGainM')
+      if (normalized.status === 'invalid') {
+        setClientError(true)
+        return
+      }
+      setClientError(false)
+      formData.set('targetElevationGain', normalized.status === 'empty' ? '' : normalized.value)
+      formAction(formData)
+    }} className='flex min-w-56 flex-col gap-1.5'>
       <input type='hidden' name='microcycleId' value={microcycleId} />
       <input type='hidden' name='planId' value={planId} />
       <input type='hidden' name='locale' value={locale} />
@@ -43,14 +55,15 @@ export function MicrocycleElevationForm({
         <div className='relative'>
           <Input
             name='targetElevationGain'
-            type='number'
+            type='text'
+            inputMode='numeric'
             min='0'
             max='100000'
             step='1'
             defaultValue={currentElevationGain ?? ''}
             placeholder={t('microcycleEditor.elevationPlaceholder')}
             aria-label={t('microcycleEditor.elevationAria')}
-            aria-invalid={Boolean(state.error)}
+            aria-invalid={Boolean(state.error) || clientError}
             className='w-28 pr-7'
           />
           <span className='pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground'>m</span>
@@ -61,6 +74,7 @@ export function MicrocycleElevationForm({
         <Badge variant='outline'>{currentSource === 'manual' ? t('microcycleEditor.sourceManual') : t('microcycleEditor.sourceGenerated')}</Badge>
       </div>
 
+      {clientError && <p role='alert' className='text-xs text-destructive'>{t('microcycleEditor.elevationPlaceholder') === '' ? 'Invalid value' : (locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.')}</p>}
       {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
     </form>
   )
