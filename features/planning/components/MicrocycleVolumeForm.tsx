@@ -39,7 +39,7 @@ export function MicrocycleVolumeForm({
         return
       }
       setClientError(false)
-      formData.set('targetVolumeKm', normalized.status === 'empty' ? '' : normalized.value)
+      formData.set('targetVolumeKm', normalized.status === 'valid' ? normalized.value : '')
       formAction(formData)
     }} className='flex min-w-52 flex-col items-end gap-1.5'>
       <input type='hidden' name='microcycleId' value={microcycleId} />
@@ -68,7 +68,7 @@ export function MicrocycleVolumeForm({
         </Button>
       </div>
 
-      {clientError && <p role='alert' className='text-xs text-destructive'>{t('microcycleEditor.elevationPlaceholder') === '' ? 'Invalid value' : (locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.')}</p>}
+      {clientError && <p role='alert' className='text-xs text-destructive'>{locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.'}</p>}
       {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
     </form>
   )
