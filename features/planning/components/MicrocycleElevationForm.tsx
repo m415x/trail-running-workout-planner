@@ -44,7 +44,7 @@ export function MicrocycleElevationForm({
         return
       }
       setClientError(false)
-      formData.set('targetElevationGain', normalized.status === 'empty' ? '' : normalized.value)
+      formData.set('targetElevationGain', normalized.status === 'valid' ? normalized.value : '')
       formAction(formData)
     }} className='flex min-w-56 flex-col gap-1.5'>
       <input type='hidden' name='microcycleId' value={microcycleId} />
@@ -74,7 +74,7 @@ export function MicrocycleElevationForm({
         <Badge variant='outline'>{currentSource === 'manual' ? t('microcycleEditor.sourceManual') : t('microcycleEditor.sourceGenerated')}</Badge>
       </div>
 
-      {clientError && <p role='alert' className='text-xs text-destructive'>{t('microcycleEditor.elevationPlaceholder') === '' ? 'Invalid value' : (locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.')}</p>}
+      {clientError && <p role='alert' className='text-xs text-destructive'>{locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.'}</p>}
       {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
     </form>
   )
