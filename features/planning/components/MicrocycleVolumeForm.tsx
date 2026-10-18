@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import {
@@ -9,6 +9,7 @@ import {
 } from '@/app/actions/planning-actions'
 import { Button } from '@ui/button'
 import { Input } from '@ui/input'
+import { normalizeMicrocyclePlanningDraft } from '@/lib/numeric/microcycle-planning-draft'
 
 interface MicrocycleVolumeFormProps {
   microcycleId: string
@@ -26,10 +27,21 @@ export function MicrocycleVolumeForm({
   currentVolumeKm,
 }: MicrocycleVolumeFormProps) {
   const t = useTranslations('CoachPlanning')
+  const [clientError, setClientError] = useState(false)
   const [state, formAction, pending] = useActionState(updateMicrocycleVolume, initialState)
 
   return (
-    <form action={formAction} className='flex min-w-52 flex-col items-end gap-1.5'>
+    <form action={(formData: FormData) => {
+      const raw = String(formData.get('targetVolumeKm') ?? '')
+      const normalized = normalizeMicrocyclePlanningDraft(raw, 'volumeKm')
+      if (normalized.status !== 'valid') {
+        setClientError(true)
+        return
+      }
+      setClientError(false)
+      formData.set('targetVolumeKm', normalized.status === 'empty' ? '' : normalized.value)
+      formAction(formData)
+    }} className='flex min-w-52 flex-col items-end gap-1.5'>
       <input type='hidden' name='microcycleId' value={microcycleId} />
       <input type='hidden' name='planId' value={planId} />
       <input type='hidden' name='locale' value={locale} />
@@ -38,14 +50,15 @@ export function MicrocycleVolumeForm({
         <div className='relative'>
           <Input
             name='targetVolumeKm'
-            type='number'
+            type='text'
+            inputMode='decimal'
             min='0.1'
             max='1000'
             step='0.1'
             defaultValue={currentVolumeKm ?? ''}
             required
             aria-label={t('targetVolumeKm')}
-            aria-invalid={Boolean(state.error)}
+            aria-invalid={Boolean(state.error) || clientError}
             className='w-24 pr-8'
           />
           <span className='pointer-events-none absolute inset-y-0 right-2 flex items-center text-xs text-muted-foreground'>km</span>
@@ -55,6 +68,7 @@ export function MicrocycleVolumeForm({
         </Button>
       </div>
 
+      {clientError && <p role='alert' className='text-xs text-destructive'>{t('microcycleEditor.elevationPlaceholder') === '' ? 'Invalid value' : (locale === 'es' ? 'Ingresá un número válido.' : 'Enter a valid number.')}</p>}
       {state.error && <p role='alert' className='text-xs text-destructive'>{state.error}</p>}
     </form>
   )
