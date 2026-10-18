@@ -57,9 +57,6 @@ export function MicrocycleElevationForm({
             name='targetElevationGain'
             type='text'
             inputMode='numeric'
-            min='0'
-            max='100000'
-            step='1'
             defaultValue={currentElevationGain ?? ''}
             placeholder={t('microcycleEditor.elevationPlaceholder')}
             aria-label={t('microcycleEditor.elevationAria')}
