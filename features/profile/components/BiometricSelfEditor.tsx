@@ -3,6 +3,7 @@
 import { useLocale } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useRef, useState } from 'react'
+import { normalizeBiometricDraftValue } from '@/lib/numeric/biometric-draft-normalization'
 import {
   createCurrentSelfBiometricAction,
   correctCurrentSelfBiometricAction,
@@ -55,6 +56,14 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
             <form key={parameter.kind} className="space-y-2 rounded-xl border p-4" onSubmit={async event => {
               event.preventDefault()
               if (working) return
+              const normalizedValue = normalizeBiometricDraftValue(draft.value, parameter.kind)
+              if (normalizedValue === null) {
+                setFeedback(previous => ({
+                  ...previous,
+                  [parameter.kind]: en ? 'Enter a valid measurement' : 'Ingresá una medición válida',
+                }))
+                return
+              }
               setWorking(parameter.kind)
               setFeedback(previous => ({ ...previous, [parameter.kind]: '' }))
               // Reuse a key for a transport retry of the identical mutation.
@@ -71,7 +80,7 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
               const payload = {
                 kind: parameter.kind,
                 unit: parameter.unit,
-                value: draft.value,
+                value: normalizedValue,
                 observedOn: draft.observedOn,
                 operationKey: pendingOperationKeys.current[parameter.kind].key,
               }
@@ -105,7 +114,7 @@ export function BiometricSelfEditor({ biometrics }: { biometrics: BiometricSelfS
             }}>
               <h4 className="font-medium">{en ? parameter.en : parameter.es}</h4>
               <label className="block text-sm" htmlFor={'bio-value-' + parameter.kind}>{en ? 'Value' : 'Valor'} ({parameter.unit})</label>
-              <input id={'bio-value-' + parameter.kind} className="w-full rounded-md border bg-background p-2" inputMode="decimal" required value={draft.value} onChange={event =>
+              <input id={'bio-value-' + parameter.kind} className="w-full rounded-md border bg-background p-2" inputMode={parameter.scale === 1 ? 'numeric' : 'decimal'} required value={draft.value} onChange={event =>
                 setDrafts(previous => ({ ...previous, [parameter.kind]: { ...draft, value: event.target.value } }))
               }/>
               <label className="block text-sm" htmlFor={'bio-date-' + parameter.kind}>{en ? 'Measurement date' : 'Fecha de medición'}</label>
