@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { normalizeSessionPrescriptionMetricDraft } from '@/lib/numeric/session-prescription-metric-draft'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
 import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
@@ -25,6 +26,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
   const workoutTypeLabel = useTranslations('Workouts.types')
   const isEditing = Boolean(template)
   const [state, formAction, pending] = useActionState(isEditing ? updateWorkoutTemplate : createWorkoutTemplate, initialState)
+  const [clientError, setClientError] = useState(false)
   const [intensityMethod, setIntensityMethod] = useState(template?.prescriptionDefaults.intensity?.method ?? '')
   const templatesPath = locale === 'es' ? '/dashboard/templates' : `/${locale}/dashboard/templates`
   const originalValues: Record<string, string | number | undefined> = {
@@ -57,10 +59,22 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
   }, [state.values])
 
   return (
-    <form key={state.submissionKey ?? 0} action={formAction} className='space-y-6'>
+    <form key={state.submissionKey ?? 0} action={(formData: FormData) => {
+      for (const field of ['distanceKm', 'durationMin', 'elevationGain'] as const) {
+        const normalized = normalizeSessionPrescriptionMetricDraft(String(formData.get(field) ?? ''), field)
+        if (normalized.status === 'invalid') {
+          setClientError(true)
+          return
+        }
+        formData.set(field, normalized.status === 'valid' ? normalized.value : '')
+      }
+      setClientError(false)
+      formAction(formData)
+    }} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {template && <input type='hidden' name='templateId' value={template.id} />}
 
+      {clientError && <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{locale === 'es' ? 'Ingresá valores numéricos válidos.' : 'Enter valid numeric values.'}</div>}
       {state.error && <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{state.error}</div>}
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
@@ -108,9 +122,9 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
         <legend className='px-1 text-sm font-medium'>{t('prescription.legend')}</legend>
         <p className='text-sm text-muted-foreground'>{t('prescription.help')}</p>
         <div className='grid gap-4 sm:grid-cols-3'>
-          <Field label={t('prescription.distance')} name='distanceKm' defaultValue={savedValue('distanceKm')} type='number' min='0' step='0.1' error={state.fieldErrors?.distanceKm} />
-          <Field label={t('prescription.duration')} name='durationMin' defaultValue={savedValue('durationMin')} type='number' min='0' step='1' error={state.fieldErrors?.durationMin} />
-          <Field label={t('prescription.elevation')} name='elevationGain' defaultValue={savedValue('elevationGain')} type='number' min='0' step='1' error={state.fieldErrors?.elevationGain} />
+          <Field label={t('prescription.distance')} name='distanceKm' defaultValue={savedValue('distanceKm')} type='text' inputMode='decimal' error={state.fieldErrors?.distanceKm} />
+          <Field label={t('prescription.duration')} name='durationMin' defaultValue={savedValue('durationMin')} type='text' inputMode='numeric' error={state.fieldErrors?.durationMin} />
+          <Field label={t('prescription.elevation')} name='elevationGain' defaultValue={savedValue('elevationGain')} type='text' inputMode='numeric' error={state.fieldErrors?.elevationGain} />
         </div>
         <SelectField label={t('prescription.intensityMethod')} name='intensityMethod' value={intensityMethod} onChange={setIntensityMethod} error={state.fieldErrors?.intensity}>
           <option value=''>{t('prescription.noIntensity')}</option>
