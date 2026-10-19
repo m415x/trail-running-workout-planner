@@ -14,6 +14,7 @@ import { createActiveTeamNextServerContext } from '@/lib/authorization/active-te
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { createAuthorizedCompetitionCalendarReader } from '@/lib/periodization/authorized-competition-calendar-reader'
 import { groupTrainingPlans } from '@/db/schema'
+import { createAuthorizedCompetitionCalendarWriter } from '@/lib/periodization/authorized-competition-calendar-writer'
 import {
   changeCompetitionStatus,
   createCompetition,
@@ -32,8 +33,6 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
-
-const CURRENT_TEAM_ID = 'team_1'
 
 type SupportedLocale = 'es' | 'en'
 type EditableCompetitionDraft = Omit<CompetitionEntryDraft, 'groupTrainingPlanId' | 'status'>
@@ -97,13 +96,11 @@ function resolvePlanKind(planningCohortId: string | null): GroupTrainingPlanKind
   return planningCohortId === null ? 'group_base' : 'cohort_variant'
 }
 
-function requireAccessiblePlan(planId: string) {
+async function requireAccessiblePlan(planId: string) {
+  const authorization = await requireAuthorizedCompetitionCalendarWriter().authorizePlan(planId)
+  if (authorization.status !== 'allowed') return null
   const plan = getAccessiblePlan(planId)
-
-  if (!plan || plan.group.isDeleted || plan.group.teamId !== CURRENT_TEAM_ID) {
-    return null
-  }
-
+  if (!plan || plan.group.isDeleted || plan.group.teamId !== authorization.teamId) return null
   return plan
 }
 
@@ -123,6 +120,18 @@ function revalidateCompetitionCalendar(locale: SupportedLocale, planId: string) 
 
 function requireAuthorizedCompetitionCalendarPlan() {
   return createAuthorizedCompetitionCalendarReader({
+    database: db,
+    readAccess: async () => {
+      const supabase = await createSupabaseServerClient()
+      return readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+  })
+}
+
+function requireAuthorizedCompetitionCalendarWriter() {
+  return createAuthorizedCompetitionCalendarWriter({
     database: db,
     readAccess: async () => {
       const supabase = await createSupabaseServerClient()
@@ -160,7 +169,7 @@ export async function getCompetitionCalendarAction(
 export async function createCompetitionAction(
   input: CreateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
+  const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
   const result = createCompetition({
@@ -181,7 +190,7 @@ export async function createCompetitionAction(
 export async function updateCompetitionAction(
   input: UpdateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
+  const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
   const existing = getCompetitionCalendar(plan.id).find(({ id }) => id === input.competitionId)
@@ -213,7 +222,7 @@ export async function updateCompetitionAction(
 export async function rescheduleCompetitionAction(
   input: RescheduleCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
+  const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
   const result = rescheduleCompetition({
@@ -232,7 +241,7 @@ export async function rescheduleCompetitionAction(
 export async function changeCompetitionStatusAction(
   input: ChangeCompetitionStatusActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
+  const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
   const result = changeCompetitionStatus({
@@ -256,7 +265,7 @@ export async function createCompetitionFromCatalogAction(
   const locale = formData.get('locale') === 'en' ? 'en' : 'es'
   const priority = formData.get('priority')
   if (priority !== 'A' && priority !== 'B' && priority !== 'C') return { error: 'invalid' }
-  const plan = requireAccessiblePlan(planId)
+  const plan = await requireAccessiblePlan(planId)
   if (!plan) return { error: 'unavailable' }
   try {
     const error = db.transaction(() => {
