@@ -24,6 +24,7 @@ export interface UpdateCompetitionRecord {
   readonly id: string
   readonly draft: CompetitionEntryDraft
   readonly updatedAt: string
+  readonly groupTrainingPlanId?: string
 }
 
 /** Lists non-deleted competition entries for one owning plan in date order. */
@@ -82,6 +83,12 @@ export function updateCompetitionRecord(
   const existing = getCompetitionById(input.id, database)
   if (!existing) return null
 
+  const owningPlanId = input.groupTrainingPlanId ?? input.draft.groupTrainingPlanId
+  // Ownership is immutable through this mutable-fields writer.
+  if (existing.groupTrainingPlanId !== owningPlanId || input.draft.groupTrainingPlanId !== owningPlanId) {
+    return null
+  }
+
   resolveCompetitionDatabase(database).update(competitionEntries).set({
     groupTrainingPlanId: input.draft.groupTrainingPlanId,
     name: input.draft.name,
@@ -94,10 +101,12 @@ export function updateCompetitionRecord(
     updatedAt: input.updatedAt,
   }).where(and(
     eq(competitionEntries.id, input.id),
+    eq(competitionEntries.groupTrainingPlanId, owningPlanId),
     eq(competitionEntries.isDeleted, false),
   )).run()
 
-  return getCompetitionById(input.id, database)
+  const updated = getCompetitionById(input.id, database)
+  return updated?.groupTrainingPlanId === owningPlanId ? updated : null
 }
 
 /** Updates only the competition date; lifecycle state is intentionally unchanged. */
@@ -106,16 +115,19 @@ export function rescheduleCompetitionRecord(
   date: string,
   updatedAt: string,
   database: CompetitionDatabase = db,
+  groupTrainingPlanId?: string,
 ): CompetitionEntry | null {
   const existing = getCompetitionById(id, database)
   if (!existing) return null
 
   resolveCompetitionDatabase(database).update(competitionEntries).set({ date, updatedAt }).where(and(
     eq(competitionEntries.id, id),
+    eq(competitionEntries.groupTrainingPlanId, groupTrainingPlanId ?? existing.groupTrainingPlanId),
     eq(competitionEntries.isDeleted, false),
   )).run()
 
-  return getCompetitionById(id, database)
+  const updated = getCompetitionById(id, database)
+  return updated?.groupTrainingPlanId === (groupTrainingPlanId ?? existing.groupTrainingPlanId) ? updated : null
 }
 
 /** Updates only lifecycle status after the application layer validates the transition. */
@@ -124,14 +136,17 @@ export function updateCompetitionStatusRecord(
   status: CompetitionStatus,
   updatedAt: string,
   database: CompetitionDatabase = db,
+  groupTrainingPlanId?: string,
 ): CompetitionEntry | null {
   const existing = getCompetitionById(id, database)
   if (!existing) return null
 
   resolveCompetitionDatabase(database).update(competitionEntries).set({ status, updatedAt }).where(and(
     eq(competitionEntries.id, id),
+    eq(competitionEntries.groupTrainingPlanId, groupTrainingPlanId ?? existing.groupTrainingPlanId),
     eq(competitionEntries.isDeleted, false),
   )).run()
 
-  return getCompetitionById(id, database)
+  const updated = getCompetitionById(id, database)
+  return updated?.groupTrainingPlanId === (groupTrainingPlanId ?? existing.groupTrainingPlanId) ? updated : null
 }
