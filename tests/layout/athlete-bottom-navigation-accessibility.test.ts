@@ -15,7 +15,7 @@ test('KAN-572 Athlete bottom navigation uses scalable semantic captions and acce
     /text-\[length:var\(--athlete-text-caption\)\]/,
     'navigation captions must consume the scoped Athlete rem-based semantic caption token',
   )
-  assert.match(athleteTypography, /--athlete-text-caption:\s*0\.75rem;/)
+  // The standard preset retains KAN-572's 0.75rem caption base; T7 scales it only inside Athlete.\n  assert.match(athleteTypography, /--athlete-text-caption:\s*calc\(0\.75rem\s*\*\s*var\(--athlete-type-multiplier\)\);/)\n  assert.match(athleteTypography, /\.athlete-typography\[data-athlete-typography='standard'\]\s*\{\s*--athlete-type-multiplier:\s*1;/)
   assert.match(athleteTypography, /\.athlete-typography\s*\{/)
   assert.doesNotMatch(navigation, /text-\[9px\]/)
 
