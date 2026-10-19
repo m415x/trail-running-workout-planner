@@ -293,10 +293,10 @@ export async function createCompetitionFromCatalogAction(
         planKind: resolvePlanKind(plan.planningCohortId),
         coversEntirePlanAudience: true,
         draft: selection.selection.competitionDraft,
-        database: tx as typeof db,
+        database: tx,
       })
       if (!result.ok) return 'calendarRejected' as const
-      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id, tx as typeof db)
+      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id, tx)
       return null
     })
     if (error) return { error }
