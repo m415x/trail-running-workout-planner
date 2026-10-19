@@ -56,6 +56,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## Handoffs
 
+- [`handoffs/kan-810.md`](handoffs/kan-810.md) — **KAN-810 current candidate handoff; not yet integrated baseline**, regional numeric A1–A3 and operator PASS 6/6; KAN-809 remains current integrated handoff until PR merge and post-merge reconciliation.
+
 - [`handoffs/kan-809.md`](handoffs/kan-809.md) — **KAN-809 current integrated handoff baseline**, TDD runner preparation failures, PR #63 ordinary merge `a29170eecd4801990220ac552278e1c10a87e005`; post-merge `pn verify --db` PASS 6/6, documentation index reconciliation in progress.
 
 - [`handoffs/kan-646.md`](handoffs/kan-646.md) — **KAN-646 current integrated handoff baseline**, Athlete Profile SELF biometrics and account settings, PR #62, merge `766cff4f942104e0576c508581c0cf8fd8a1ccf1`, with post-merge gate evidence and documented limits.
