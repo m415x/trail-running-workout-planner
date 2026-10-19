@@ -8,10 +8,10 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 
-export type CompetitionDatabase = unknown
+export type CompetitionDatabase = Pick<typeof db, 'query' | 'insert' | 'update' | 'select'>
 
-function resolveCompetitionDatabase(database: CompetitionDatabase): typeof db {
-  return database as typeof db
+function resolveCompetitionDatabase(database: CompetitionDatabase): CompetitionDatabase {
+  return database
 }
 
 export interface CreateCompetitionRecord {
