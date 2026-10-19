@@ -84,6 +84,11 @@ export function updateCompetitionRecord(
   if (!existing) return null
 
   const owningPlanId = input.groupTrainingPlanId ?? input.draft.groupTrainingPlanId
+  // Ownership is immutable through this mutable-fields writer.
+  if (existing.groupTrainingPlanId !== owningPlanId || input.draft.groupTrainingPlanId !== owningPlanId) {
+    return null
+  }
+
   resolveCompetitionDatabase(database).update(competitionEntries).set({
     groupTrainingPlanId: input.draft.groupTrainingPlanId,
     name: input.draft.name,
