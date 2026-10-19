@@ -16,7 +16,7 @@ test('KAN-822/T9b Stats summary supporting text adopts Athlete semantic roles', 
   assert.match(stats, /function DomainLink[\s\S]*?className='[^']*text-\[length:var\(--athlete-text-label\)\][^']*'/)
   assert.match(stats, /className='[^']*text-\[length:var\(--athlete-text-caption\)\][^']*'>\{t\('summary\.period'\)\}/)
   assert.match(stats, /className='[^']*text-\[length:var\(--athlete-text-caption\)\][^']*'>\{t\(\x60trainingDetail\.\$\{item\.key\}\x60\)\}/)
-  assert.match(stats, /className='[^']*text-\[length:var\(--athlete-text-data\)\][^']*'>\{item\.value === null/)
+  // Preserve the previous text-lg (1.125rem) metric baseline at standard.\n  assert.match(stats, /className='[^']*text-\[length:var\(--athlete-text-title\)\][^']*'>\{item\.value === null/)
   assert.match(stats, /getCurrentAthleteStatsAction/)
   assert.match(stats, /getCurrentAthleteTrack1000mPerformanceAction/)
 })
