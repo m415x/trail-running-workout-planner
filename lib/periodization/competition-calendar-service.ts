@@ -181,6 +181,7 @@ export function updateCompetition(input: UpdateCompetitionInput): CompetitionCal
   const value = updateCompetitionRecord({
     id: input.competitionId,
     draft: input.draft,
+    groupTrainingPlanId: input.planId,
     updatedAt: input.now ?? new Date().toISOString(),
   }, database)
 
@@ -213,6 +214,7 @@ export function rescheduleCompetition(input: RescheduleCompetitionInput): Compet
     input.date,
     input.now ?? new Date().toISOString(),
     database,
+    input.planId,
   )
 
   if (!value) {
