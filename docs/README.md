@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Current execution and handoffs
 
+- [KAN-810 regional numeric inputs](handoffs/kan-810.md) — A1–A3 operator RED/GREEN, direct/equivalence acceptance, final candidate PASS 6/6, integration pending.
+
 - [KAN-809 TDD runner preparation hardening](handoffs/kan-809.md) — B1/B2/B3 operator evidence, candidate gate, preservation contracts, and closure status. KAN-810 regional numeric inputs follows only after integrated closure.
 
 ## Architecture
