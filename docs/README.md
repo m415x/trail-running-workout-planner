@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Current execution and handoffs
 
-- [KAN-798 Competition Calendar writer authorization](handoffs/kan-798.md) — pre-merge candidate: H2/H3/H4A `competition.manage` TEAM, Plan/Entry ownership, transactional catalog creation, T1–T4 evidence and PASS 6/6 operator gate; PR, merge and post-merge confirmation pending.
+- [KAN-798 Competition Calendar writer authorization](handoffs/kan-798.md) — H2/H3/H4A `competition.manage` TEAM, Plan/Entry ownership and atomic catalog linking, integrated through PR #65, `dev` merge `b6e80ac441baaab999f7193ccf894c2cca24a70a`; operator-reported post-merge PASS 6/6.
 
 - [KAN-810 regional numeric inputs](handoffs/kan-810.md) — A1–A3 operator RED/GREEN, direct/equivalence acceptance, integrated via PR #64, ordinary dev merge `d127b40dd67285b5568e841934d06c4dafe3aba8`, post-merge PASS 6/6 and handoff PASS.
 
