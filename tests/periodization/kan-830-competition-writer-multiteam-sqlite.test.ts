@@ -32,7 +32,7 @@ test('KAN-830 T4: SQLite multi-Team ownership, capability and DENY do not mutate
     let access: Awaited<ReturnType<Parameters<typeof createAuthorizedCompetitionCalendarWriter>[0]['readAccess']>> = {
       status: 'authenticated', provider: 'supabase', subject: 'coach_subject', userId: 'coach_id',
     }
-    const requests: { capability: string; teamId: string; scope: string }[] = []
+    const requests: { capability: string; teamId: string; scope: string | undefined }[] = []
     const writer = createAuthorizedCompetitionCalendarWriter({
       database,
       readAccess: async () => access,
