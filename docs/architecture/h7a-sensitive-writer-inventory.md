@@ -166,3 +166,15 @@ The `authorizationGrants` model retains `grantedByUserId` and `revokedByUserId` 
 External identity writer deployment decision: no verified authenticated caller.
 
 `associateAuthorizedExternalIdentity` is a real transactional SQLite helper with same-owner idempotence and cross-user collision rejection. It does not validate a provider session, authenticate an H2 actor, authorize an H3 Team, or persist author provenance. The focused production caller scan found no invocation in `app/` or `lib/`; consequently it is **not** an authenticated deployed association entrypoint. Future activation requires a validated provider credential, a trusted H2 subject, any applicable H3 scope, and atomic factual authorship, without inferring ownership from client `provider`/`subject` fields.
+
+
+## KAN-790/T5.5 — snapshot Coach PostgreSQL entrypoints
+
+- `createCoachSessionReviewSnapshot` — explicit authenticated CREATE, server-derived H2 actor, H3 active Team and H4A planning.manage; persisted opaque snapshot with PostgreSQL transaction, not caller proposal.
+- `confirmCoachSessionReviewSnapshot` — authenticated PostgreSQL CONFIRM by planId and snapshotId, authoritative audience/freshness checks; reconciliation and audit occur in one database transaction.
+- `readCoachSessionReviewSnapshot` — read-only GET of an authorized active snapshot; it is not a mutation entrypoint.
+- `persistGeneratedSessions` — legacy multipart action retired, fails closed without writes; no longer accepts client-generated proposals.
+
+## KAN-646 — SELF biometric mutation entrypoints (T6, feature branch)
+
+- `app/actions/biometric-self-actions.ts`: `createCurrentSelfBiometricAction` and `correctCurrentSelfBiometricAction` are exported Server Actions. They delegate to `lib/physiology/biometric-self-sqlite-server-writer.ts` and its persisted transaction-local H2/H3/SELF reauthorization. Allowed self-declared kinds: weight, height, max_hr and rest_hr; Team timezone is read from persisted `teams.time_zone`. Append-only correction and operation-key replay are preserved. **Feature branch only**: this is an inventory update, not a statement that KAN-646 is merged, that T8 acceptance passed, or that H7A automatically audits every biometric writer.

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useActionState, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { submitValidatedTemplateNumericDraft } from '@/lib/numeric/template-numeric-submit-boundary'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 
 import { createWorkoutTemplate, updateWorkoutTemplate, type WorkoutTemplateFormState } from '@/app/actions/workout-template-actions'
 import { WORKOUT_TYPES, type WorkoutTemplate, type WorkoutTemplateCategory } from '@/types'
@@ -25,6 +27,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
   const workoutTypeLabel = useTranslations('Workouts.types')
   const isEditing = Boolean(template)
   const [state, formAction, pending] = useActionState(isEditing ? updateWorkoutTemplate : createWorkoutTemplate, initialState)
+  const [clientError, setClientError] = useState(false)
   const [intensityMethod, setIntensityMethod] = useState(template?.prescriptionDefaults.intensity?.method ?? '')
   const templatesPath = locale === 'es' ? '/dashboard/templates' : `/${locale}/dashboard/templates`
   const originalValues: Record<string, string | number | undefined> = {
@@ -39,11 +42,11 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
     locationKey: template?.sessionDefaults.locationKey ?? undefined,
     trackPath: template?.sessionDefaults.trackPath ?? undefined,
     notes: template?.sessionDefaults.notes ?? undefined,
-    distanceKm: template?.prescriptionDefaults.distanceKm ?? undefined,
+    distanceKm: formatPersistedRegionalDecimal(template?.prescriptionDefaults.distanceKm, locale),
     durationMin: template?.prescriptionDefaults.durationMin ?? undefined,
     elevationGain: template?.prescriptionDefaults.elevationGain ?? undefined,
     zone: template?.prescriptionDefaults.intensity?.method === 'hr_zone' ? template.prescriptionDefaults.intensity.zone : undefined,
-    referencePercentage: template?.prescriptionDefaults.intensity?.method === 'reference_percentage' ? template.prescriptionDefaults.intensity.referencePercentage : undefined,
+    referencePercentage: template?.prescriptionDefaults.intensity?.method === 'reference_percentage' ? formatPersistedRegionalDecimal(template.prescriptionDefaults.intensity.referencePercentage, locale) : undefined,
     prescriptionNotes: template?.prescriptionDefaults.notes ?? undefined,
   }
   const savedValue = (name: string) => state.values?.[name] ?? originalValues[name]
@@ -57,10 +60,20 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
   }, [state.values])
 
   return (
-    <form key={state.submissionKey ?? 0} action={formAction} className='space-y-6'>
+    <form key={state.submissionKey ?? 0} action={(formData: FormData) => {
+      const result = submitValidatedTemplateNumericDraft(formData, intensityMethod, (payload) => {
+        formAction(payload)
+      })
+      if (result === 'invalid') {
+        setClientError(true)
+        return
+      }
+      setClientError(false)
+    }} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {template && <input type='hidden' name='templateId' value={template.id} />}
 
+      {clientError && <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{locale === 'es' ? 'Ingresá valores numéricos válidos.' : 'Enter valid numeric values.'}</div>}
       {state.error && <div role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{state.error}</div>}
 
       <fieldset className='space-y-4 rounded-lg border p-4'>
@@ -108,9 +121,9 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
         <legend className='px-1 text-sm font-medium'>{t('prescription.legend')}</legend>
         <p className='text-sm text-muted-foreground'>{t('prescription.help')}</p>
         <div className='grid gap-4 sm:grid-cols-3'>
-          <Field label={t('prescription.distance')} name='distanceKm' defaultValue={savedValue('distanceKm')} type='number' min='0' step='0.1' error={state.fieldErrors?.distanceKm} />
-          <Field label={t('prescription.duration')} name='durationMin' defaultValue={savedValue('durationMin')} type='number' min='0' step='1' error={state.fieldErrors?.durationMin} />
-          <Field label={t('prescription.elevation')} name='elevationGain' defaultValue={savedValue('elevationGain')} type='number' min='0' step='1' error={state.fieldErrors?.elevationGain} />
+          <Field label={t('prescription.distance')} name='distanceKm' defaultValue={savedValue('distanceKm')} type='text' inputMode='decimal' error={state.fieldErrors?.distanceKm} />
+          <Field label={t('prescription.duration')} name='durationMin' defaultValue={savedValue('durationMin')} type='text' inputMode='numeric' error={state.fieldErrors?.durationMin} />
+          <Field label={t('prescription.elevation')} name='elevationGain' defaultValue={savedValue('elevationGain')} type='text' inputMode='numeric' error={state.fieldErrors?.elevationGain} />
         </div>
         <SelectField label={t('prescription.intensityMethod')} name='intensityMethod' value={intensityMethod} onChange={setIntensityMethod} error={state.fieldErrors?.intensity}>
           <option value=''>{t('prescription.noIntensity')}</option>
@@ -124,7 +137,7 @@ export function WorkoutTemplateForm({ locale, locations, template }: WorkoutTemp
           </SelectField>
         )}
         {intensityMethod === 'reference_percentage' && (
-          <Field label={t('prescription.referencePercentage')} name='referencePercentage' defaultValue={savedValue('referencePercentage')} type='number' min='0.1' max='200' step='0.1' required error={state.fieldErrors?.intensity} />
+          <Field label={t('prescription.referencePercentage')} name='referencePercentage' defaultValue={savedValue('referencePercentage')} type='text' inputMode='decimal' required error={state.fieldErrors?.intensity} />
         )}
         <TextAreaField label={t('prescription.notes')} name='prescriptionNotes' rows={3} defaultValue={savedTextValue('prescriptionNotes')} placeholder={t('prescription.notesPlaceholder')} />
       </fieldset>

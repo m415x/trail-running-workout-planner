@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process'
-import { readdir } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -28,6 +28,44 @@ export async function discoverTestFiles(root: string): Promise<string[]> {
   }
 
   return files
+}
+
+export function isPostgresIntegrationSource(source: string): boolean {
+  // Explicit connection/auth inputs identify integration files, not their issue IDs.
+  return /process\.env\.(?:KAN789_PG_URL|KAN646_PG_URL|KAN791_AUTH_TEST_PASSWORD|KAN791_AUTH_TEST_EMAIL|KAN791_AUTH_SUBJECT)/.test(source) ||
+    (/from 'postgres'/.test(source) && /signInWithPassword|\.begin\(|sql`|postgres\(url/.test(source))
+}
+
+export function isAnnualPostgresAcceptanceFile(path: string): boolean {
+  const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
+  return filename === 'kan-791-annual-239-postgres-effective-source.test.ts' ||
+    filename === 'kan-791-dedicated-real-supabase-pg-coach.test.ts'
+}
+
+/** The preserved annual database may only be used by the audited read-only test. */
+export function assertSafeAnnualPostgresTarget(env: Record<string, string | undefined>): void {
+  const raw = env.KAN789_PG_URL
+  if (!raw) throw new Error('BLOCKED: KAN789_PG_URL required for annual read-only acceptance')
+  let target: URL
+  try { target = new URL(raw) } catch { throw new Error('BLOCKED: invalid annual PostgreSQL URL') }
+  if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+      target.hostname !== '127.0.0.1' || target.port !== '55439' ||
+      target.pathname !== '/kan791_acceptance_v2' || target.search || target.hash ||
+      !target.username || !target.password) {
+    throw new Error('BLOCKED: unauthorized annual PostgreSQL target')
+  }
+}
+
+export async function partitionTestFiles(files: string[]): Promise<{
+  ordinary: string[]; postgres: string[]
+}> {
+  const ordinary: string[] = []
+  const postgres: string[] = []
+  for (const file of files) {
+    const source = await readFile(file, 'utf8')
+    ;(isPostgresIntegrationSource(source) ? postgres : ordinary).push(file)
+  }
+  return { ordinary, postgres }
 }
 
 type TestRunResult = Pick<ReturnType<typeof spawnSync>, 'status' | 'signal' | 'error'>
@@ -186,11 +224,70 @@ export function createTestBatchInvocation(testFiles: string[]): {
   }
 }
 
+function isSharedPostgresAcceptanceTest(path: string): boolean {
+  const filename = path.replaceAll(String.fromCharCode(92), '/').split('/').pop() ?? ''
+  return /^(?:kan-646-pg[0-9]+-|kan-790-pg[0-9]+-|kan-790-t55-.*pg-|kan-789-review-snapshot-postgres-|kan-791-(?:annual-239-postgres-|t6a-.*postgres-)).*\.test\.ts$/.test(filename)
+}
+
+/** Positive, fail-closed guard for the dedicated disposable PG regression lane. */
+export function assertSafePostgresRegressionTarget(
+  env: Record<string, string | undefined>,
+): void {
+  const keys = ['KAN789_PG_URL', 'SUPABASE_DATABASE_URL', 'SUPABASE_DIRECT_URL'] as const
+  for (const key of keys) {
+    const raw = env[key]
+    if (!raw) throw new Error(`BLOCKED: ${key} required for PostgreSQL regressions`)
+    let target: URL
+    try { target = new URL(raw) } catch { throw new Error(`BLOCKED: invalid ${key}`) }
+    if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+        target.hostname !== '127.0.0.1' || target.port !== '55439' ||
+        target.pathname !== '/kan791_regression_disposable' ||
+        target.search || target.hash || !target.username || !target.password) {
+      throw new Error(`BLOCKED: unauthorized regression target ${key}`)
+    }
+  }
+}
+
+/** KAN-646 uses a distinct, explicitly disposable PG instance; never reuse KAN-791. */
+export function assertSafeKan646BiometricPostgresTarget(
+  env: Record<string, string | undefined>,
+): void {
+  const raw = env.KAN646_PG_URL
+  if (!raw) throw new Error('BLOCKED: KAN646_PG_URL required')
+  let target: URL
+  try { target = new URL(raw) } catch { throw new Error('BLOCKED: invalid KAN646_PG_URL') }
+  if (!['postgres:', 'postgresql:'].includes(target.protocol) ||
+    target.hostname !== '127.0.0.1' || target.port !== '55446' ||
+    target.pathname !== '/kan646_biometric_disposable' ||
+    target.search || target.hash || !target.username || !target.password) {
+    throw new Error('BLOCKED: unauthorized KAN646 PostgreSQL target')
+  }
+}
+
 export function prepareTestRunBatches(
   testFiles: string[],
   maxArgumentLength = 8_000,
 ): ReturnType<typeof createTestBatchInvocation>[] {
-  return planTestFileBatches(testFiles, maxArgumentLength).map(createTestBatchInvocation)
+  // Node's default test concurrency launches multiple fixture files against
+  // one disposable PostgreSQL database. Run that lane sequentially;
+  // leave unrelated tests at their existing concurrency and batch behavior.
+  const independent = testFiles.filter(path => !isSharedPostgresAcceptanceTest(path))
+  const postgresShared = testFiles.filter(isSharedPostgresAcceptanceTest)
+  const normal = planTestFileBatches(independent, maxArgumentLength)
+    .map(createTestBatchInvocation)
+  const pg = planTestFileBatches(postgresShared, maxArgumentLength)
+    .map(files => {
+      const invocation = createTestBatchInvocation(files)
+      return {
+        ...invocation,
+        args: [
+          ...invocation.args.slice(0, 3),
+          '--test-concurrency=1',
+          ...invocation.args.slice(3),
+        ],
+      }
+    })
+  return [...normal, ...pg]
 }
 
 export function combineTestBatchResults(outputs: string[]): {
@@ -330,10 +427,25 @@ export function runTestFiles(testFiles: string[]): number {
 }
 
 async function main(): Promise<void> {
-  validateTestRunnerArguments(process.argv.slice(2))
-  const testFiles = await discoverTestFiles(resolve(process.cwd(), 'tests'))
-  console.log(`Discovered ${testFiles.length} test files`)
-  process.exitCode = runTestFiles(testFiles)
+  const pgMode = process.argv[2] === '--postgres'
+  const annualMode = process.argv[2] === '--postgres-annual'
+  validateTestRunnerArguments(pgMode || annualMode ? process.argv.slice(3) : process.argv.slice(2))
+  const all = await discoverTestFiles(resolve(process.cwd(), 'tests'))
+  const lanes = await partitionTestFiles(all)
+  const annual = lanes.postgres.filter(isAnnualPostgresAcceptanceFile)
+  const mutable = lanes.postgres.filter(file => !isAnnualPostgresAcceptanceFile(file))
+  const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary
+  if (annualMode) {
+    assertSafeAnnualPostgresTarget(process.env)
+    if (annual.length !== 2) throw new Error('BLOCKED: expected exactly two audited annual read-only tests')
+  }
+  if (pgMode) {
+    assertSafePostgresRegressionTarget(process.env)
+    if (selected.length === 0) throw new Error('BLOCKED: no PostgreSQL integration tests found')
+  }
+  console.log(`Discovered ${all.length} test files; selected ${selected.length} ${annualMode ? 'annual read-only' : pgMode ? 'disposable PostgreSQL regression' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
+  if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg and pn test:pg:annual separately (no PASS implied)')
+  process.exitCode = runTestFiles(selected)
 }
 
 const entryPoint = process.argv[1]

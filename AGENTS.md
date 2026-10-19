@@ -31,6 +31,15 @@ Use these canonical identifiers for remote-first project inspection and delivery
 - Legacy branches such as `dashboard` and already-referenced historical story branches may remain for Jira/history traceability. Their continued existence does not make them valid bases for new work.
 - Do not rename application routes or domain concepts containing the word `dashboard`; the Git branch migration is independent from the product dashboard route.
 
+## Local Git worktree lifecycle
+
+- Keep `C:/DEV/EPT-app/trail-running-workout-planner` as the canonical everyday working directory on clean, up-to-date `dev`. Do not use it for unfinished story implementation; create an additional worktree only when the approved task requires isolation.
+- Start each approved story worktree from the **verified current** `dev` HEAD, not from a historical branch or remembered SHA. Example (Git Bash, from the main repository): `git worktree add -b feat/KAN-646 ../trail-running-workout-planner-kan-646 dev`. The story branch name is illustrative and must not be recreated when it already exists.
+- Before changing branches, run `git worktree list --porcelain`: Git permits only one worktree to check out a given branch. Never forcibly detach or delete an active worktree simply to release `dev`.
+- On story closure, check `git status --short` in the additional worktree, confirm accepted work is committed/pushed and integrated, then inspect ignored/untracked artifacts (including `.env.local`, `.tmp/`, SQLite, backups and logs) before removing it. Preserve any unique evidence outside the folder first.
+- Remove clean worktrees with `git worktree remove <path>` (without `--force`). If Git unregisters the worktree but Windows leaves a directory with `Directory not empty` or `Device or resource busy`, verify `git worktree list`, inspect remaining files and only then remove that **specific** residual directory. Never use broad `git clean -fdx`, `git reset --hard` or destructive cleanup on unknown paths.
+- Do not delete branches, retained commits, PostgreSQL databases, acceptance evidence or unrelated directories as part of worktree housekeeping. A story worktree is temporary; `dev` remains the canonical integrated baseline.
+
 ## Technology baseline
 
 - Next.js 16 App Router, React 19, TypeScript, pnpm.

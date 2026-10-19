@@ -12,7 +12,7 @@ export const fieldPerformanceTestEvents = pgTable(
     groupId: text('group_id').notNull().references(() => athleteGroups.id, { onDelete: 'restrict' }),
     scheduledAt: text('scheduled_at').notNull(),
     protocol: text('protocol').$type<FieldPerformanceTestProtocol>().notNull(),
-    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'set null' }),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('field_performance_test_events_team_group_date_idx').on(table.teamId, table.groupId, table.scheduledAt),
@@ -39,6 +39,7 @@ export const fieldPerformanceTests = pgTable(
     distanceM: integer('distance_m').notNull(),
     elapsedTimeSec: doublePrecision('elapsed_time_sec').notNull(),
     notes: text('notes'),
+    reviewedByUserId: text('reviewed_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     index('field_performance_tests_athlete_date_idx').on(table.athleteId, table.performedAt),

@@ -6,7 +6,7 @@ import test from 'node:test'
 const fullCatalogConsumers = [
   'app/[locale]/dashboard/templates/page.tsx',
   'app/actions/session-actions.ts',
-  'app/actions/session-generation-actions.ts',
+  'lib/session-generation/review-snapshot-reconciliation-writer-postgres.ts',
   'features/sessions/components/SessionForm.tsx',
   'features/workout-templates/components/WorkoutTemplateForm.tsx',
   'lib/workout-templates/workout-template-validator.ts',

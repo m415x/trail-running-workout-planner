@@ -46,9 +46,12 @@ describe('KAN-506 walkthrough residual i18n', () => {
 
     const sources = await Promise.all(paths.map(path => readFile(path, 'utf8')))
 
-    for (const source of sources) {
+    for (const source of sources.slice(0, 3)) {
       assert.match(source, /useTranslations/)
     }
+    // ProfileHeader now presents persisted identity facts only, with no translatable UI copy.
+    assert.match(sources[3], /athlete\.firstName/)
+    assert.match(sources[3], /athlete\.group/)
 
     assert.doesNotMatch(
       sources.join('\n'),

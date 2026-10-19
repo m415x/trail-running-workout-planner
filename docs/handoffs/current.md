@@ -1,3 +1,46 @@
+# Current integrated handoff — KAN-810 regional numeric inputs (2026-10-18)
+
+- **Integrated dev baseline:** [PR #64](https://github.com/m415x/trail-running-workout-planner/pull/64) ordinary merge `d127b40dd67285b5568e841934d06c4dafe3aba8`; PR head `614c3f6decbc438cd5ccc238e2b058cb11d1adb1`, functional candidate gate SHA `e32e5ffabc7c8949425972da63e2e972a2e8f326`. Documentation-only follow-ups are separate identities.
+- **Post-merge operator evidence on merge SHA:** `pn verify --db` PASS 6/6 (Tests 135460ms, TypeScript 19554ms, ESLint 32979ms, Build 32753ms, i18n 391ms, SQLite 52195ms; total 273332ms); `pn docs:handoff:check` HANDOFF DOCS: PASS.
+- **Accepted behavior:** decimal comma/dot input, strictly validated domain boundaries, canonical persisted dot, locale-aware editable retrieved decimals ES comma / EN dot. Direct operator A3: template, microcycle, biometric SELF, realized-training capture, official Coach 1000m; explicit limited technical equivalence for SessionForm, LoadStrategy and SessionGenerationPreferences, H6 DENY by prior automated regression. See [KAN-810 story handoff](kan-810.md).
+- **Post-merge publication:** updated this integrated baseline and documentation index; final documentation-only SHA requires separate `pn docs:handoff:check` and administrative Jira reconciliation. Do not attribute the integrated full gate to this later documentation SHA.
+
+---
+
+
+# Current integrated handoff — KAN-809 runner hardening (2026-10-17)
+
+- **Integrated baseline:** KAN-809 via [PR #63](https://github.com/m415x/trail-running-workout-planner/pull/63), accepted head `725eefdd4c3736cba11a1310d315d2027347be72`, ordinary merge `a29170eecd4801990220ac552278e1c10a87e005` into `dev`. B1 real reproduction and B2/B3 operator focal GREEN are recorded in [KAN-809 story handoff](kan-809.md).
+- **Candidate gate (operator):** `pn verify --db` PASS 6/6 — Tests 100214ms, TypeScript 9474ms, ESLint 31008ms, Build 47390ms, i18n 342ms, SQLite 44332ms, total 232760ms. This is a **pre-merge** result.
+- **Preservation:** failure-before-test is not functional RED; Postgres safety guards, concurrency and typecheck are unchanged. No application-domain scope.
+- **Pre-merge documentation check:** operator `HANDOFF DOCS: PASS` on PR head. GitHub Vercel head status `failure` links to `build-rate-limit`, not a demonstrated build regression; GitHub PR mergeable true, no GitHub check runs/reviews returned. `dev` branch protection could not be inspected due to connector permission limits.
+- **Pending:** operator post-merge `pn verify --db` and `pn docs:handoff:check` on integrated `dev`; then Jira closure. KAN-810 starts only after this evidence.
+
+---
+
+# Current operational handoff — KAN-646 Athlete Profile SELF merged (2026-10-17)
+
+- **Integrated baseline:** KAN-646 via GitHub [PR #62](https://github.com/m415x/trail-running-workout-planner/pull/62), approved head `2ed7a557aa76f57ecbc22efae8a649851c14c943`, ordinary merge `766cff4f942104e0576c508581c0cf8fd8a1ccf1`. The merged implementation lives in `dev`. See [KAN-646 story handoff](kan-646.md) and [durable architecture](../architecture/athlete-profile-self-biometrics.md).
+- **Post-merge executable gate:** operator `pn verify --db -v` **PASS 6/6** on integrated `dev` (Tests 121027 ms; TypeScript 37019 ms; ESLint 31115 ms; Build 52635 ms; i18n 365 ms; SQLite 45260 ms; total 287421 ms).
+- **Handoff reconciliation completed:** the initial post-merge `pn docs:handoff:check` failed because `kan-646.md` and its index were missing. Follow-up commits published the story handoff, indexed KAN-646 as the current integrated baseline, and updated the historical KAN-725 assertion. The operator subsequently confirmed **GREEN** for `pn tdd tests/scripts/kan-725-harness-v2-contract.test.ts`, **HANDOFF DOCS: PASS** for `pn docs:handoff:check`, and **PASS 6/6** for `pn verify --db -v` on the reconciled `dev` HEAD `b38edf9177d3e39163a7a41cb14095503fae7b68`. These are operator-reported results, not newly executed checks on this documentation-only commit.
+- **Acceptance scope:** real Athlete Profile SELF read/write four manual metrics, append-only correction/provenance, Team IANA fail-closed, nondelegable H2/H3/H5A authorization. Athlete real browser ES/EN/responsive/accessibility PASS; focused denial/isolation GREEN; security action-wiring static test is not adversarial HTTP E2E. Missing eligible 1000m reference remains unknown; Material hidden, Settings reuse theme and Supabase Auth.
+- **Explicitly deferred after merge:** application-wide decimal comma normalization of numeric inputs, not a KAN-646-only patch.
+- **Closure:** KAN-646 transitioned to **Finalizada** in Jira after the successful post-merge focal, handoff and six-stage gates (Jira closure comment `13510`). The application-wide decimal-comma follow-up remains separate. Older integrated baselines follow as historical handoff below.
+
+---
+
+# PR #59 — KAN-790/T5 + KAN-791/T6 post-merge baseline (2026-10-17)
+
+- **Merged to `dev` with GitHub ordinary merge**, PR #59: `e9f5f8276b4508e0fefdde7a7bd97787e27fd8d7`, confirmed GitHub `merged: true` and base `dev`. Authorized immutable PR head: `052dc218023bb4c50d53484373ce2847a5d4979a`, enforced as `expected_head_sha`. The PR was changed from Draft to Ready before merging. No bypass was used.
+- Candidate gate on authorized head: `pn verify --db -v` **PASS 6/6**, ordinary tests 3017/3017 PASS; `pn docs:handoff:check` **PASS**. PostgreSQL disposable **71/71 PASS** and annual read-only **2/2 PASS** were accredited on `fe58c6356f5d8e5195fcf6c2aefd9c4ef850157e`; subsequent branch edits removed temporary test-only probe and updated docs without modifying production PG boundaries.
+- Annual authenticated HTTP CREATE/GET/CONFIRM 53-week / 239-session acceptance approved. Second authenticated CONFIRM functional idempotence **PASS** with SQL before/after identical SHA256 `16DC3B65B94F6CF44C54A9C7624B75687629A5C11F855BD8FC7CD75AD208C8F5`. **Limit:** `already_consumed` was inferred from previously consumed snapshot, redirect and audited code path; it was **not** directly instrumented.
+- Disposable PostgreSQL read-only physical schema inspection: 41 migration records vs 41 Drizzle journal entries, effective 20 constraints and 9 indexes on four critical tables. Seven truncated FK names (PostgreSQL identifier limit / `NOTICE 42622`) have intact constraints. Individual migration hashes were **not compared**; matching cardinality alone is not hash equivalence.
+- Pre-merge Vercel `failure` linked to `build-rate-limit`, not evidence of a demonstrated compilation regression. **Merge commit** `e9f5f827...` separately reported combined Vercel status **success** with deployment URL; GitHub Actions PR workflow lookup returned no runs. Do not invent additional CI.
+- Per-file PR #59 security/coverage review inspected auth/H2-H3-H4A, authorized CREATE/GET/CONFIRM and serializable CAS, protected reconciliation, schema and indexes, Coach UI and SQLite, test isolation; no material defect identified. GitHub oversized monolithic diff was not used; generated metadata snapshot files had no textual per-file patch.
+- **Post-merge operator verification is still pending** on the final documentation HEAD: `pn verify --db -v` and `pn docs:handoff:check`. These are separate from the candidate gates and from GitHub Vercel status. Do not close KAN-790/KAN-791/KAN-784 until their complete acceptance and post-merge handoff conditions are confirmed. Neither historic annual nor forensic PostgreSQL databases may be modified. Do not rerun authenticated CONFIRM or the 73 already accredited focused PG tests without a new contract-relevant change.
+
+---
+
 # Current operational handoff — KAN-792 Coach Competition Calendar reader merged (2026-10-13)
 
 ## Latest integrated delivery

@@ -2,6 +2,7 @@
 
 import { useActionState, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { normalizeFixedSessionFrequencyDraft } from '@/lib/numeric/session-frequency-draft'
 
 import {
   type SessionGenerationPreferencesFormState,
@@ -60,6 +61,7 @@ export function SessionGenerationPreferencesForm({
   pattern,
 }: SessionGenerationPreferencesFormProps) {
   const t = useTranslations('CoachPlanning')
+  const [clientError, setClientError] = useState(false)
   const [fixedSessions, setFixedSessions] = useState(
     frequency.mode === 'fixed' ? String(frequency.sessionsPerWeek) : '',
   )
@@ -99,7 +101,16 @@ export function SessionGenerationPreferencesForm({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={formAction} className='space-y-6'>
+        <form action={(formData: FormData) => {
+          const normalized = normalizeFixedSessionFrequencyDraft(fixedSessions)
+          if (normalized.status === 'invalid') {
+            setClientError(true)
+            return
+          }
+          setClientError(false)
+          formData.set('fixedSessionsPerWeek', normalized.status === 'valid' ? normalized.value : '')
+          formAction(formData)
+        }} className='space-y-6'>
           <input type='hidden' name='planId' value={planId} />
           <input type='hidden' name='locale' value={locale} />
           <input type='hidden' name='weeklyPattern' value={patternPayload} />
@@ -110,15 +121,14 @@ export function SessionGenerationPreferencesForm({
               <Input
                 id='fixedSessionsPerWeek'
                 name='fixedSessionsPerWeek'
-                type='number'
-                min='3'
-                max='5'
-                step='1'
+                type='text'
+                inputMode='numeric'
                 value={fixedSessions}
                 placeholder={t('sessionGeneration.automatic')}
-                onChange={(event) => setFixedSessions(event.target.value)}
+                onChange={(event) => { setFixedSessions(event.target.value); setClientError(false) }}
               />
             </div>
+            {clientError && <p role='alert' className='text-sm text-destructive'>{locale === 'es' ? 'Ingresá un número entero válido.' : 'Enter a valid whole number.'}</p>}
             <p className='text-sm text-muted-foreground'>
               {t('sessionGeneration.frequencyHelp')}
             </p>

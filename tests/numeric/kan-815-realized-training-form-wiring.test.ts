@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
+import test from 'node:test'
+
+const hook = readFileSync('features/workouts/hooks/useLogWorkoutDialog.ts', 'utf8')
+const dialog = readFileSync('features/workouts/components/LogWorkoutDialog.tsx', 'utf8')
+
+test('KAN-815/A2 capture hook delegates metric parsing to its tested validation boundary', () => {
+  assert.match(hook, /import\s*\{\s*withValidatedRealizedTrainingMetrics\s*\}\s*from\s*['"]@\/lib\/numeric\/realized-training-save-boundary['"]/)
+  assert.match(hook, /await withValidatedRealizedTrainingMetrics\(/)
+  assert.match(hook, /distance:\s*distance,\s*gain:\s*gain,\s*avgHr:\s*avgHr/)
+  assert.doesNotMatch(hook, /function metricFromInput\(/)
+})
+
+test('KAN-815/A2 blocks invalid drafts and uses validated metrics for the save payload', () => {
+  assert.match(hook, /if\s*\(saveResult\.status\s*===\s*['"]invalid['"]\)/)
+  assert.match(hook, /setSaveError\(['"]invalidMetric['"]\)/)
+  assert.match(hook, /metrics:\s*\{\s*\.\.\.metrics,/)
+  assert.match(hook, /await onSave\(payload\)/)
+})
+
+test('KAN-815/A2 retains original safety guards and error presentation', () => {
+  assert.match(hook, /captureLocalInstant\(performedLocal\)/)
+  assert.match(hook, /if\s*\(!dateStr\s*\|\|\s*!onSave\s*\|\|\s*saving\.current\)\s*return/)
+  assert.match(dialog, /saveError/)
+  assert.match(dialog, /t\(`dialog\.\$\{saveError\}`\)/)
+  for (const locale of ['es', 'en']) {
+    const messages = JSON.parse(readFileSync(`messages/${locale}/realized-training/workouts.json`, 'utf8'))
+    assert.equal(typeof messages.Workouts.dialog.invalidMetric, 'string')
+    assert.ok(messages.Workouts.dialog.invalidMetric.length > 0)
+  }
+})
+
+test('KAN-815/A2 text input accepts local comma decimal and integer mobile keyboards', () => {
+  assert.match(dialog, /id='distance'[\s\S]{0,130}type='text'[\s\S]{0,130}inputMode='decimal'/)
+  assert.match(dialog, /id='elevationGain'[\s\S]{0,130}type='text'[\s\S]{0,130}inputMode='numeric'/)
+  assert.match(dialog, /id='averageHeartRate'[\s\S]{0,130}type='text'[\s\S]{0,130}inputMode='numeric'/)
+})

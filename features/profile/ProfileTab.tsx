@@ -1,14 +1,14 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
+import type { ProfileSelfHeader } from '@/lib/athletes/profile-self-read'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@ui/tabs'
 import { ProfileHeader } from '@/features/profile/components/ProfileHeader'
 import { AthleteTabContent, type AthleteSelfPerformance } from '@profile/components/AthleteTabContent'
-import { GearTabContent } from '@profile/components/GearTabContent'
+import type { BiometricSelfState } from '@profile/components/BiometricSelfEditor'
 import { SettingsTabContent } from '@profile/components/SettingsTabContent'
 
-export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: CurrentAthleteData['athleteProfile'] }) {
+export function ProfileTab({ membershipStatus, performance, performanceStatus, athleteProfile, biometrics, biometricsStatus }: { membershipStatus?: React.ReactNode; performance?: AthleteSelfPerformance | null; performanceStatus?: 'loaded' | 'unknown' | 'denied' | 'error'; athleteProfile?: ProfileSelfHeader; biometrics?: BiometricSelfState | null; biometricsStatus?: 'loaded' | 'denied' | 'error' }) {
   const t = useTranslations('AthleteProfile')
 
   return (
@@ -20,12 +20,9 @@ export function ProfileTab({ membershipStatus, performance, performanceStatus, a
 
       {/* Profile Tabs */}
       <Tabs defaultValue='athlete' className='w-full'>
-        <TabsList className='grid h-10 w-full grid-cols-3 rounded-2xl bg-secondary/60 p-1 sm:mx-auto sm:w-auto sm:gap-1 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
+        <TabsList className='grid h-10 w-full grid-cols-2 rounded-2xl bg-secondary/60 p-1 sm:mx-auto sm:w-auto sm:gap-1 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
           <TabsTrigger value='athlete' className='rounded-xl text-xs font-semibold'>
             {t('tabs.physiology')}
-          </TabsTrigger>
-          <TabsTrigger value='gear' className='rounded-xl text-xs font-semibold'>
-            {t('tabs.gear')}
           </TabsTrigger>
           <TabsTrigger value='settings' className='rounded-xl text-xs font-semibold'>
             {t('tabs.settings')}
@@ -33,11 +30,7 @@ export function ProfileTab({ membershipStatus, performance, performanceStatus, a
         </TabsList>
 
         <TabsContent value='athlete'>
-          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} />
-        </TabsContent>
-
-        <TabsContent value='gear'>
-          <GearTabContent />
+          <AthleteTabContent performance={performance} performanceStatus={performanceStatus} biometrics={biometrics} biometricsStatus={biometricsStatus} />
         </TabsContent>
 
         <TabsContent value='settings'>

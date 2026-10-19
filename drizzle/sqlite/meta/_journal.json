@@ -183,6 +183,27 @@
       "when": 1791643010000,
       "tag": "0025_h7a_test_event_author_retention",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1791944058511,
+      "tag": "0026_session_generation_review_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "6",
+      "when": 1792251770133,
+      "tag": "0027_oval_venus",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "6",
+      "when": 1792252230001,
+      "tag": "0028_team_biometric_time_zone",
+      "breakpoints": true
     }
   ]
 }

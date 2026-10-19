@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 
 import { db } from '@/db'
 import { teamMemberships } from '@/db/schema'
+import { createNextServerIdentityEvidence } from '@/lib/auth/identity-backend-next-server'
 
 import {
   createActiveTeamServerContext,
@@ -26,6 +27,8 @@ export function createActiveTeamNextServerContext() {
     },
 
     async loadMemberships(userId) {
+      const identityBackend=createNextServerIdentityEvidence()
+      if(identityBackend.backend==='postgres') return identityBackend.memberships.loadMemberships(userId)
       return db
         .select({
           userId: teamMemberships.userId,

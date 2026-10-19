@@ -1,6 +1,9 @@
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
+import { configuredIdentityBackend } from '@/lib/auth/identity-backend-selection'
+import { postgresIdentityClient } from '@/lib/auth/identity-backend-next-server'
+import { createPostgresH4aEvidenceSource } from './h4a-postgres-evidence'
 import {
   athleteProfiles,
   authorizationGrants,
@@ -15,6 +18,7 @@ import type { CapabilityKey } from './capability-catalog'
 import type { AuthorizationScope } from './scope-resolution'
 
 export function createH4aNextServerEvidenceSource() {
+  if(configuredIdentityBackend()==='postgres') return createPostgresH4aEvidenceSource(postgresIdentityClient())
   return {
     async loadMemberships(userId: string, teamId: string) {
       return db

@@ -14,7 +14,8 @@ function actionBody(name: string): string {
 test('KAN-639 login Server Action is a server-only boundary wired to Supabase and EPT identity lookup', () => {
   assert.match(source, /^['"]use server['"]/)
   assert.match(source, /createSupabaseServerClient/)
-  assert.match(source, /createExternalIdentityLookup/)
+  assert.match(source, /createNextServerIdentityEvidence\(\)\.lookup/)
+  assert.doesNotMatch(source, /createExternalIdentityLookup\(\)/)
   assert.match(source, /authenticateEptLogin/)
 })
 

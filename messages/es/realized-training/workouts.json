@@ -62,6 +62,7 @@
       "notesPlaceholder": "¿Cómo te sentiste? Terreno, clima, molestias...",
       "performedAt": "Fecha y hora de realización",
       "localTimeHint": "Ingresá el inicio real en la hora local de tu dispositivo.",
+      "invalidMetric": "Revisá las métricas: usá números válidos, sin separadores de miles ni precisión excesiva.",
       "invalidPerformedAt": "Ingresá una fecha y hora de realización válida.",
       "saveFailed": "No se pudo guardar el entrenamiento. Tus datos se conservaron; intentá nuevamente.",
       "clear": "Limpiar formulario",

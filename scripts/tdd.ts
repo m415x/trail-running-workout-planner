@@ -1,7 +1,10 @@
 import { spawnSync } from 'node:child_process'
+import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+
+import { assertSafeKan646BiometricPostgresTarget, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
 
 const require = createRequire(import.meta.url)
 
@@ -9,6 +12,26 @@ export function tddTypecheckCommand(): { command: string; args: string[] } {
   return {
     command: process.execPath,
     args: [require.resolve('tsx/cli'), resolve('scripts/typecheck-runner.ts')],
+  }
+}
+
+export class TddPreparationError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'TddPreparationError'
+  }
+}
+
+export function formatPreparationFailure(phase: 'sync' | 'input', detail: string): string {
+  return `TDD preparation failed (${phase}): ${detail.trim() || 'unknown error'}`
+}
+
+export function readFocusedTestSource(file: string): string {
+  try {
+    return readFileSync(file, 'utf8')
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    throw new TddPreparationError(formatPreparationFailure('input', detail))
   }
 }
 
@@ -70,13 +93,39 @@ function main(): void {
 
   const sync = run('git', ['pull', '--ff-only', '-q'], verbose)
   if (!sync.ok) {
-    if (!redOnly && !verbose) process.stderr.write(sync.output.trim() || 'Git sync failed')
-    console.log('RED')
-    process.exit(1)
+    process.stderr.write(`${formatPreparationFailure('sync', sync.output || 'git pull --ff-only failed')}\n`)
+    process.exit(2)
   }
 
   const tsxCli = require.resolve('tsx/cli')
-  const focused = run(process.execPath, [tsxCli, '--test', ...tests], verbose)
+  let testOptions: string[] = []
+  try {
+  // KAN-646 runs on its own disposable PG instance, never the KAN-791 lane.
+  const kan646Postgres = tests.some(file =>
+    /kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')))
+  if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
+  if (tests.some(file => {
+    if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
+    return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
+      isPostgresIntegrationSource(readFocusedTestSource(file))
+  })) {
+    assertSafePostgresRegressionTarget(process.env)
+  }
+
+  // Shared disposable PostgreSQL fixtures can conflict at SERIALIZABLE even
+  // when their IDs differ (predicate locks and unique-index reads). Run every
+  // multi-file PG focused cut sequentially; do not weaken transaction isolation.
+  const postgresFocused = tests.some(file => {
+    if (/[*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
+    return isPostgresIntegrationSource(readFocusedTestSource(file))
+  })
+  testOptions = postgresFocused ? ['--test-concurrency=1'] : []
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error)
+    process.stderr.write(`${detail}\n`)
+    process.exit(2)
+  }
+  const focused = run(process.execPath, [tsxCli, '--test', ...testOptions, ...tests], verbose)
 
   if (redOnly) {
     console.log(focused.ok ? 'GREEN' : 'RED')

@@ -10,5 +10,6 @@ test('KAN-577 Review the proposal renders the localized warning, not the raw war
   assert.match(preview, /<AlertTriangle[^>]+\/> \{formatWarning\(warning\)\}/)
   assert.match(preview, /<li key=\{warning\}>• \{formatWarning\(warning\)\}<\/li>/)
   assert.doesNotMatch(preview, /<li key=\{formatWarning\(warning\)\}>• \{warning\}<\/li>/)
-  assert.match(preview, /value=\{JSON\.stringify\(proposal\)\}/)
+  assert.doesNotMatch(preview, /value=\{JSON\.stringify\(proposal\)\}/)
+  assert.match(preview, /reviewedSnapshot/)
 })
