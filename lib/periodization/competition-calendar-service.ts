@@ -85,7 +85,7 @@ export function getCompetitionCalendar(
 }
 
 function loadPlanContext(planId: string, database: CompetitionDatabase) {
-  const resolvedDatabase = database as typeof db
+  const resolvedDatabase = database
   const plan = resolvedDatabase.query.groupTrainingPlans.findFirst({
     where: and(
       eq(groupTrainingPlans.id, planId),
