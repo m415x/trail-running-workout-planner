@@ -40,17 +40,17 @@ function AthleteTrack1000mPanel({
 
   return <article className='rounded-2xl border bg-card p-5 shadow-sm md:col-span-2'>
     <h2 className='font-heading text-[length:var(--athlete-text-title)] font-bold'>{t('track1000m.title')}</h2>
-    {!(performanceResult.success && reference?.status === 'available') && <p className='mt-1 text-sm text-muted-foreground'>{t('track1000m.intro')}</p>}
-    {performanceResult.success ? <div className='mt-4 grid gap-2 rounded-xl border p-3 text-sm'>
+    {!(performanceResult.success && reference?.status === 'available') && <p className='mt-1 text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('track1000m.intro')}</p>}
+    {performanceResult.success ? <div className='mt-4 grid gap-2 rounded-xl border p-3 text-[length:var(--athlete-text-body-compact)]'>
       {reference?.status === 'available' ? <p><span className='font-medium'>{t('track1000m.reference')}:</span> {reference.derived.paceLabel} · {reference.derived.averageSpeedKmh} km/h</p> : <p className='text-muted-foreground'>{t('track1000m.referenceUnavailable')}</p>}
       <p><span className='font-medium'>{t('track1000m.evolution')}:</span> {trend}</p>
-      {latest && <p className='text-xs text-muted-foreground'>{t('track1000m.latestTest')}: {latest.performedAt} · {latest.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p>}
-    </div> : <p role='alert' className='mt-4 text-sm text-muted-foreground'>{t('track1000m.loadError')}</p>}
+      {latest && <p className='text-[length:var(--athlete-text-caption)] text-muted-foreground'>{t('track1000m.latestTest')}: {latest.performedAt} · {latest.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p>}
+    </div> : <p role='alert' className='mt-4 text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('track1000m.loadError')}</p>}
     <Accordion className='mt-3'>
       <AccordionItem value='history'>
         <AccordionTrigger>{t('track1000m.history', { count: evolution?.series.length ?? 0 })}</AccordionTrigger>
         <AccordionContent>
-          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-sm'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-xs text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p></div></div>)}</div> : <p className='text-sm text-muted-foreground'>{t('track1000m.emptyHistory')}</p>}
+          {evolution?.series.length ? <div className='divide-y rounded-xl border'>{[...evolution.series].reverse().map(point => <div key={point.evaluationId} className='flex items-center justify-between gap-3 p-3 text-[length:var(--athlete-text-body-compact)]'><div><p className='font-semibold'>{formatElapsedTime(point.paceSecPerKm)} min/km · {point.averageSpeedKmh} km/h</p><p className='text-[length:var(--athlete-text-caption)] text-muted-foreground'>{point.performedAt} · {point.executionContext === 'official' ? t('track1000m.official') : t('track1000m.selfDirected')}</p></div></div>)}</div> : <p className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('track1000m.emptyHistory')}</p>}
         </AccordionContent>
       </AccordionItem>
     </Accordion>
