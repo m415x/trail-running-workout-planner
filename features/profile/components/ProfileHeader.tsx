@@ -25,8 +25,8 @@ export function ProfileHeader({ athlete }: { athlete: ProfileSelfHeader }) {
 
         {/* Nombre y datos del atleta */}
         <div>
-          <h1 className='font-heading text-2xl font-bold leading-tight tracking-tight text-foreground sm:text-3xl'>{displayName}</h1>
-          <p className='text-xs text-muted-foreground font-sans mt-0.5'>
+          <h1 className='font-heading text-[length:var(--athlete-text-heading)] font-bold leading-tight tracking-tight text-foreground'>{displayName}</h1>
+          <p className='text-[length:var(--athlete-text-caption)] text-muted-foreground font-sans mt-0.5'>
             {athlete.group ? [athlete.group.categoryCode, athlete.group.levelCode].filter(Boolean).join(' · ') : '—'}
           </p>
         </div>
