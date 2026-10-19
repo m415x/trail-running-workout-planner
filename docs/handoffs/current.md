@@ -1,3 +1,11 @@
+# Current candidate handoff — KAN-810 regional numeric inputs (2026-10-18)
+
+- **Not yet integrated**: feature `feat/KAN-810-regional-numeric-inputs` accepted application candidate `e32e5ffabc7c8949425972da63e2e972a2e8f326`, operator `pn verify --db` PASS 6/6 (Tests 123709ms, TypeScript 12353ms, ESLint 28651ms, Build 27465ms, i18n 387ms, SQLite 50658ms; total 243223ms). Documentation-only commits follow this SHA; do not mislabel candidate gate as dev gate.
+- **A3 acceptance**: direct WorkoutTemplateForm, MicrocycleVolume/Elevation, Biometric SELF, realized training LogWorkoutDialog, official Coach 1000m, and technical-equivalence-only SessionForm/LoadStrategy/SessionGenerationPreferences. H6 DENY uses prior automated tests, not new browser reproduction. ES/EN persisted editable decimal display corrected via two RED/GREEN cuts; [story handoff](kan-810.md).
+- **Pending**: pre-merge docs check, PR against `dev`, required checks/review, merge, post-merge dev verification and docs check, fresh-chat-safe reconciliation and Jira closure. Previous dev integrated baseline is documented below until this merge actually occurs.
+
+---
+
 # Current integrated handoff — KAN-809 runner hardening (2026-10-17)
 
 - **Integrated baseline:** KAN-809 via [PR #63](https://github.com/m415x/trail-running-workout-planner/pull/63), accepted head `725eefdd4c3736cba11a1310d315d2027347be72`, ordinary merge `a29170eecd4801990220ac552278e1c10a87e005` into `dev`. B1 real reproduction and B2/B3 operator focal GREEN are recorded in [KAN-809 story handoff](kan-809.md).
