@@ -68,7 +68,7 @@ export function HomeHeader({
           </h1>
 
           {/* Fecha de hoy en formato largo */}
-          <p className='text-muted-foreground text-xs font-normal font-sans'>{today}</p>
+          <p className='text-muted-foreground text-[length:var(--athlete-text-caption)] font-normal font-sans'>{today}</p>
         </div>
       </div>
 
