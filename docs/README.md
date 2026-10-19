@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Current execution and handoffs
 
+- [KAN-359 Athlete responsive typography — Increment A checkpoint](handoffs/kan-359.md) — **feature branch only, not integrated**: T1–T4 focused GREEN, T5 operator-reported gate PASS 6/6 and manual acceptance PASS 9/9. Cookie/SSR scoped typography foundations; effective preset scaling and accessible Settings selector remain pending in Increment B. KAN-810 remains the latest integrated `dev` baseline.
+
 - [KAN-810 regional numeric inputs](handoffs/kan-810.md) — A1–A3 operator RED/GREEN, direct/equivalence acceptance, integrated via PR #64, ordinary dev merge `d127b40dd67285b5568e841934d06c4dafe3aba8`, post-merge PASS 6/6 and handoff PASS.
 
 - [KAN-809 TDD runner preparation hardening](handoffs/kan-809.md) — B1/B2/B3 operator evidence, candidate gate, preservation contracts, and closure status. KAN-810 regional numeric inputs was subsequently integrated via PR #64.
