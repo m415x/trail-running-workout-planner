@@ -17,8 +17,8 @@ function actionBody(name: string): string {
 test('KAN-792/T1 calendar reader must never derive plan authority from the fixed fixture Team', () => {
   assert.doesNotMatch(reader, /CURRENT_TEAM_ID\s*=\s*'team_1'/)
   assert.doesNotMatch(actionBody('getCompetitionCalendarAction'), /CURRENT_TEAM_ID|requireAccessiblePlan\(/)
-  assert.match(action, /CURRENT_TEAM_ID\s*=\s*'team_1'/,
-    'Legacy writer scope remains frozen until separately authorized')
+  assert.doesNotMatch(action, /CURRENT_TEAM_ID\s*=\s*'team_1'/,
+    'KAN-798 removes the historical fixed-Team writer fixture without weakening the reader boundary')
   assert.match(reader, /requireAuthenticatedEptAction/)
   assert.match(action, /createActiveTeamNextServerContext/)
   assert.match(action, /createH4aNextServerAuthorizationBoundary/)
