@@ -15,6 +15,7 @@ import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4
 import { createAuthorizedCompetitionCalendarReader } from '@/lib/periodization/authorized-competition-calendar-reader'
 import { groupTrainingPlans } from '@/db/schema'
 import { createAuthorizedCompetitionCalendarWriter } from '@/lib/periodization/authorized-competition-calendar-writer'
+import { runAuthorizedCompetitionMutation } from '@/lib/periodization/authorized-competition-calendar-mutation'
 import {
   changeCompetitionStatus,
   createCompetition,
@@ -176,8 +177,10 @@ export async function getCompetitionCalendarAction(
 export async function createCompetitionAction(
   input: CreateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = await requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
   const result = createCompetition({
     planId: plan.id,
@@ -191,14 +194,18 @@ export async function createCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Updates mutable data without allowing edits to bypass lifecycle transitions. */
 export async function updateCompetitionAction(
   input: UpdateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = await requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
   const existing = requireAuthorizedCompetitionEntry(plan.id, input.competitionId)
   if (!existing) {
@@ -223,14 +230,18 @@ export async function updateCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Changes only the date and preserves lifecycle status. */
 export async function rescheduleCompetitionAction(
   input: RescheduleCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = await requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
   if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
 
@@ -244,14 +255,18 @@ export async function rescheduleCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Applies one explicit lifecycle transition; cancellation never deletes the record. */
 export async function changeCompetitionStatusAction(
   input: ChangeCompetitionStatusActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = await requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
   if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
 
@@ -265,6 +280,8 @@ export async function changeCompetitionStatusAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Creates a plan-scoped snapshot and optional catalog link atomically. */
@@ -276,8 +293,10 @@ export async function createCompetitionFromCatalogAction(
   const locale = formData.get('locale') === 'en' ? 'en' : 'es'
   const priority = formData.get('priority')
   if (priority !== 'A' && priority !== 'B' && priority !== 'C') return { error: 'invalid' }
-  const plan = await requireAccessiblePlan(planId)
-  if (!plan) return { error: 'unavailable' }
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(planId),
+    onDenied: () => ({ error: 'unavailable' as const }),
+    write: (plan) => {
   try {
     const error = db.transaction((tx) => {
       const context = getRaceCourseSelectionContext(String(formData.get('raceCourseId') ?? ''))
@@ -306,4 +325,6 @@ export async function createCompetitionFromCatalogAction(
   }
   revalidateCompetitionCalendar(locale, plan.id)
   redirect(planningPath(locale, plan.id))
+    },
+  })
 }
