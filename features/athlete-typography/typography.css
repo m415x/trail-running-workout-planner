@@ -1,33 +1,49 @@
 /*
- * KAN-359/T2: responsive semantic typography for the Athlete audience only.
- *
- * These values describe hierarchy and viewport composition, not accessibility
- * preference. The existing html mobile 120% baseline remains untouched.
- * No styles apply until an Athlete-owned surface opts into this scope.
- * T3 will provide the independent preference mechanism; T4 will adopt tokens.
+ * KAN-359/T7: Athlete-scoped semantic sizes and effective preference scaling.
+ * The existing global 120% mobile html baseline remains unchanged.
+ * Only adopted Athlete semantic roles scale; shell geometry, touch targets,
+ * icons, Coach surfaces and unadopted legacy text sizes remain unchanged.
  */
 .athlete-typography {
-  --athlete-text-display: 2.25rem;
-  --athlete-text-heading: 1.5rem;
-  --athlete-text-title: 1.125rem;
-  --athlete-text-body: 1rem;
-  --athlete-text-body-compact: 0.875rem;
-  --athlete-text-label: 0.875rem;
-  --athlete-text-caption: 0.75rem;
-  --athlete-text-data: 0.875rem;
+  --athlete-type-multiplier: 1;
+  --athlete-text-display: calc(2.25rem * var(--athlete-type-multiplier));
+  --athlete-text-heading: calc(1.5rem * var(--athlete-type-multiplier));
+  --athlete-text-title: calc(1.125rem * var(--athlete-type-multiplier));
+  --athlete-text-body: calc(1rem * var(--athlete-type-multiplier));
+  --athlete-text-body-compact: calc(0.875rem * var(--athlete-type-multiplier));
+  --athlete-text-label: calc(0.875rem * var(--athlete-type-multiplier));
+  --athlete-text-caption: calc(0.75rem * var(--athlete-type-multiplier));
+  --athlete-text-data: calc(0.875rem * var(--athlete-type-multiplier));
+}
+
+/* The validated SSR attribute and client state share the same four presets. */
+.athlete-typography[data-athlete-typography='compact'] {
+  --athlete-type-multiplier: 0.95;
+}
+
+.athlete-typography[data-athlete-typography='standard'] {
+  --athlete-type-multiplier: 1;
+}
+
+.athlete-typography[data-athlete-typography='large'] {
+  --athlete-type-multiplier: 1.125;
+}
+
+.athlete-typography[data-athlete-typography='extra-large'] {
+  --athlete-type-multiplier: 1.25;
 }
 
 @media (min-width: 640px) {
   .athlete-typography {
-    --athlete-text-display: 2.5rem;
-    --athlete-text-heading: 1.875rem;
-    --athlete-text-title: 1.25rem;
+    --athlete-text-display: calc(2.5rem * var(--athlete-type-multiplier));
+    --athlete-text-heading: calc(1.875rem * var(--athlete-type-multiplier));
+    --athlete-text-title: calc(1.25rem * var(--athlete-type-multiplier));
   }
 }
 
 @media (min-width: 1024px) {
   .athlete-typography {
-    --athlete-text-display: 2.75rem;
-    --athlete-text-heading: 1.875rem;
+    --athlete-text-display: calc(2.75rem * var(--athlete-type-multiplier));
+    --athlete-text-heading: calc(1.875rem * var(--athlete-type-multiplier));
   }
 }
