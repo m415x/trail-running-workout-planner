@@ -34,15 +34,15 @@ export default async function PlanPage({ params }: PlanPageProps) {
     <div className='mx-auto w-full max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
-          <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{t('currentWeek')}</h1></div>
+          <div className='min-w-0 flex-1'><p className='text-[length:var(--athlete-text-caption)] font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-[length:var(--athlete-text-heading)] font-bold leading-tight break-words'>{t('currentWeek')}</h1></div>
           {groupCode && <Badge variant='secondary' className='shrink-0'>{t('group', { group: groupCode })}</Badge>}
         </div>
-        <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(startDate, endDate, regionalContext.presentationLocale)}</p>
+        <p className='flex items-center gap-1.5 text-[length:var(--athlete-text-body-compact)] text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(startDate, endDate, regionalContext.presentationLocale)}</p>
       </header>
 
-      <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
+      <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-[length:var(--athlete-text-body-compact)] font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
 
-      {!groupCode && <Card><CardContent className='py-6 text-center text-sm text-muted-foreground'>{t('noGroup')}</CardContent></Card>}
+      {!groupCode && <Card><CardContent className='py-6 text-center text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('noGroup')}</CardContent></Card>}
 
       <div className='space-y-3'>
         {days.map((day) => {
@@ -52,12 +52,12 @@ export default async function PlanPage({ params }: PlanPageProps) {
           return (
             <section key={day.date} className={cn('rounded-2xl border bg-card p-3', isToday && 'border-primary/50 ring-1 ring-primary/20')}>
               <div className='mb-3 flex items-center justify-between'>
-                <div><p className='font-heading text-base font-bold capitalize'>{day.weekDay}</p><p className='text-xs text-muted-foreground'>{day.dateLabel}</p></div>
+                <div><p className='font-heading text-[length:var(--athlete-text-body)] font-bold capitalize'>{day.weekDay}</p><p className='text-[length:var(--athlete-text-caption)] text-muted-foreground'>{day.dateLabel}</p></div>
                 {isToday && <Badge>{t('today')}</Badge>}
               </div>
 
               {daySessions.length === 0 ? (
-                <p className='rounded-xl bg-muted/40 px-3 py-4 text-center text-sm text-muted-foreground'>{t('noTraining')}</p>
+                <p className='rounded-xl bg-muted/40 px-3 py-4 text-center text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('noTraining')}</p>
               ) : (
                 <div className='space-y-2'>
                   {daySessions.map((session) => {
