@@ -279,7 +279,7 @@ export async function createCompetitionFromCatalogAction(
   const plan = await requireAccessiblePlan(planId)
   if (!plan) return { error: 'unavailable' }
   try {
-    const error = db.transaction(() => {
+    const error = db.transaction((tx) => {
       const context = getRaceCourseSelectionContext(String(formData.get('raceCourseId') ?? ''))
       if (!context) return 'unavailable' as const
       if (JSON.stringify([context.event.updatedAt, context.edition.updatedAt, context.course.updatedAt])
@@ -293,9 +293,10 @@ export async function createCompetitionFromCatalogAction(
         planKind: resolvePlanKind(plan.planningCohortId),
         coversEntirePlanAudience: true,
         draft: selection.selection.competitionDraft,
+        database: tx as typeof db,
       })
       if (!result.ok) return 'calendarRejected' as const
-      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id)
+      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id, tx as typeof db)
       return null
     })
     if (error) return { error }
