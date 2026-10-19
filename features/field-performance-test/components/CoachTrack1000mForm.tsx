@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { normalizeTrack1000mElapsedDraft } from '@/lib/numeric/track-1000m-elapsed-draft'
 
 import { correctTrack1000mEvidenceAction, createCoachTrack1000mEvidenceAction, reviewCoachTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
@@ -30,13 +31,15 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
   const [correctingEvidence, setCorrectingEvidence] = useState<HistoryEvidence | null>(null)
   const [correctionMinutes, setCorrectionMinutes] = useState('')
   const [correctionSeconds, setCorrectionSeconds] = useState('')
-  const correctionElapsedTimeSec = Number(correctionMinutes) * 60 + Number(correctionSeconds)
-  const hasCorrectionTime = correctionMinutes !== '' && correctionSeconds !== '' && correctionElapsedTimeSec > 0
-  const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
-  const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
+  const correctionDraft = normalizeTrack1000mElapsedDraft(correctionMinutes, correctionSeconds)
+  const hasCorrectionTime = correctionDraft.status === 'valid'
+  const elapsedDraft = normalizeTrack1000mElapsedDraft(minutes, seconds)
+  const hasTime = elapsedDraft.status === 'valid'
 
   async function register(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (elapsedDraft.status !== 'valid') return
+    const elapsedTimeSec = elapsedDraft.elapsedTimeSec
     setBusy(true)
     const result = await createCoachTrack1000mEvidenceAction({ athleteId, testEventId, elapsedTimeSec })
     setBusy(false)
@@ -52,6 +55,8 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
 
   async function correct() {
     if (!correctingEvidence || !hasCorrectionTime) return
+    if (correctionDraft.status !== 'valid') return
+    const correctionElapsedTimeSec = correctionDraft.elapsedTimeSec
 
     setBusy(true)
     const evidence = correctingEvidence
@@ -97,7 +102,7 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
         <AccordionContent>
           <form onSubmit={register} className='grid gap-3'>
             {eventsError ? <p role='alert' className='text-sm text-destructive'>{es ? 'No se pudieron cargar las instancias oficiales.' : 'Official test events could not be loaded.'}</p> : events.length === 0 ? <p className='rounded-lg border border-dashed p-3 text-sm text-muted-foreground'>{es ? 'No hay instancias oficiales disponibles.' : 'No official test events are available.'}</p> : <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Instancia oficial' : 'Official test event'}</span><select value={testEventId} onChange={event => setTestEventId(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3'>{events.map(item => <option key={item.id} value={item.id}>{item.scheduledAt.slice(0, 10)}</option>)}</select></label>}
-            <div className='grid grid-cols-2 gap-3'><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='number' min='0' step='1' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='number' min='0' max='59' step='1' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label></div>
+            <div className='grid grid-cols-2 gap-3'><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='text' inputMode='numeric' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label><label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='text' inputMode='numeric' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label></div>
             <button type='submit' disabled={busy || !testEventId || !hasTime} className={buttonVariants({ size: 'sm' })}>{es ? 'Registrar' : 'Record'}</button>
           </form>
         </AccordionContent>
@@ -117,8 +122,8 @@ export function CoachTrack1000mForm({ athleteId, locale, events, pendingEvidence
           <AlertDialogDescription>{es ? 'Ingresá el tiempo corregido del test de 1000 m.' : 'Enter the corrected 1000 m test time.'}</AlertDialogDescription>
         </AlertDialogHeader>
         <div className='grid grid-cols-2 gap-3'>
-          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos de corrección' : 'Correction minutes'} type='number' min='0' step='1' required value={correctionMinutes} onChange={event => setCorrectionMinutes(event.target.value)} className='h-10 w-full min-w-0 appearance-none rounded-md border border-input bg-background px-3' /></label>
-          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos de corrección' : 'Correction seconds'} type='number' min='0' max='59' step='1' required value={correctionSeconds} onChange={event => setCorrectionSeconds(event.target.value)} className='h-10 w-full min-w-0 appearance-none rounded-md border border-input bg-background px-3' /></label>
+          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos de corrección' : 'Correction minutes'} type='text' inputMode='numeric' required value={correctionMinutes} onChange={event => setCorrectionMinutes(event.target.value)} className='h-10 w-full min-w-0 appearance-none rounded-md border border-input bg-background px-3' /></label>
+          <label className='grid min-w-0 gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos de corrección' : 'Correction seconds'} type='text' inputMode='numeric' required value={correctionSeconds} onChange={event => setCorrectionSeconds(event.target.value)} className='h-10 w-full min-w-0 appearance-none rounded-md border border-input bg-background px-3' /></label>
         </div>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={busy}>{es ? 'Cancelar' : 'Cancel'}</AlertDialogCancel>

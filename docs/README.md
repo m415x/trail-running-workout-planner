@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Current execution and handoffs
 
+- [KAN-810 regional numeric inputs](handoffs/kan-810.md) — A1–A3 operator RED/GREEN, direct/equivalence acceptance, final candidate PASS 6/6, integration pending.
+
 - [KAN-809 TDD runner preparation hardening](handoffs/kan-809.md) — B1/B2/B3 operator evidence, candidate gate, preservation contracts, and closure status. KAN-810 regional numeric inputs follows only after integrated closure.
 
 ## Architecture
@@ -53,6 +55,8 @@ Completed epics are consolidated here. History explains evolution and prior deci
 - [`architecture/platform/h7a-authorship-audit.md`](architecture/platform/h7a-authorship-audit.md) — KAN-610 actor provenance, retained audit and limits of current H4A-based read authorization.
 
 ## Handoffs
+
+- [`handoffs/kan-810.md`](handoffs/kan-810.md) — **KAN-810 current candidate handoff; not yet integrated baseline**, regional numeric A1–A3 and operator PASS 6/6; KAN-809 remains current integrated handoff until PR merge and post-merge reconciliation.
 
 - [`handoffs/kan-809.md`](handoffs/kan-809.md) — **KAN-809 current integrated handoff baseline**, TDD runner preparation failures, PR #63 ordinary merge `a29170eecd4801990220ac552278e1c10a87e005`; post-merge `pn verify --db` PASS 6/6, documentation index reconciliation in progress.
 

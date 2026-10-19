@@ -84,9 +84,8 @@ export function LogWorkoutDialog({
                   <MapPin size={11} /> {t('dialog.distance')}
                 </label>
                 <PrimaryInput id='distance'
-                  type='number'
-                  step='0.01'
-                  min='0'
+                  type='text'
+                  inputMode='decimal'
                   placeholder={workout?.distance != null ? String(workout.distance) : '0.00'}
                   value={distance}
                   onChange={(e) => setDistance(e.target.value)}
@@ -121,9 +120,8 @@ export function LogWorkoutDialog({
                   <Mountain size={11} /> {t('dialog.elevation')}
                 </label>
                 <PrimaryInput id='elevationGain'
-                  type='number'
-                  min='0'
-                  step='1'
+                  type='text'
+                  inputMode='numeric'
                   placeholder={workout?.gain != null ? String(workout.gain) : '0'}
                   value={gain}
                   onChange={(e) => setGain(e.target.value)}
@@ -135,9 +133,8 @@ export function LogWorkoutDialog({
                   <HeartPulse size={11} /> {t('dialog.heartRate')}
                 </label>
                 <PrimaryInput id='averageHeartRate'
-                  type='number'
-                  min='0'
-                  step='1'
+                  type='text'
+                  inputMode='numeric'
                   placeholder='—'
                   value={avgHr}
                   onChange={(e) => setAvgHr(e.target.value)}

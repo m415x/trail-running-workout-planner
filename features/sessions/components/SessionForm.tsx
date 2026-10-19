@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl'
 
 import { createSession, updateSession, type SessionFormState } from '@/app/actions/session-actions'
 import { SESSION_REFERENCE_PERCENTAGES } from '@/lib/sessions/reference-percentage-options'
+import { normalizeSessionPrescriptionMetricDraft } from '@/lib/numeric/session-prescription-metric-draft'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
@@ -96,11 +98,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [appliedPrescriptionDefaults, setAppliedPrescriptionDefaults] = useState<AppliedPrescriptionDefaults | null>(null)
   const [prescriptionValues, setPrescriptionValues] = useState<Record<string, PrescriptionFormValues>>(() => Object.fromEntries(
     session?.sessionPrescriptions.map((item) => [item.microcycleId, {
-      distanceKm: formValue(item.distanceKm),
+      distanceKm: formatPersistedRegionalDecimal(item.distanceKm, locale),
       durationMin: formValue(item.durationMin),
       elevationGain: formValue(item.elevationGain),
       zone: formValue(item.zone),
-      referencePercentage: formValue(item.referencePercentage),
+      referencePercentage: formatPersistedRegionalDecimal(item.referencePercentage, locale),
       notes: formValue(item.notes),
     }]) ?? [],
   ))
@@ -168,11 +170,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
   function valuesFromDefaults(defaults: AppliedPrescriptionDefaults): PrescriptionFormValues {
     return {
-      distanceKm: formValue(defaults.distance),
+      distanceKm: formatPersistedRegionalDecimal(defaults.distance, locale),
       durationMin: formValue(defaults.time),
       elevationGain: formValue(defaults.gain),
       zone: formValue(defaults.zone),
-      referencePercentage: formValue(defaults.referencePercentage),
+      referencePercentage: formatPersistedRegionalDecimal(defaults.referencePercentage, locale),
       notes: formValue(defaults.prescriptionNotes),
     }
   }
@@ -223,8 +225,26 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     document.getElementById('session-form-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
+  function handleValidatedAction(formData: FormData) {
+    for (const { microcycle } of selectedScopes) {
+      const microcycleId = microcycle.id
+      for (const kind of ['distanceKm', 'durationMin', 'elevationGain'] as const) {
+        const key = `${kind}:${microcycleId}`
+        const raw = String(formData.get(key) ?? '')
+        const normalized = normalizeSessionPrescriptionMetricDraft(raw, kind)
+        if (normalized.status === 'invalid') {
+          setClientError(locale === 'es' ? 'Ingresá valores numéricos válidos en las prescripciones.' : 'Enter valid numeric prescription values.')
+          return
+        }
+        formData.set(key, normalized.status === 'valid' ? normalized.value : '')
+      }
+    }
+    setClientError(undefined)
+    formAction(formData)
+  }
+
   return (
-    <form action={formAction} onSubmit={handleSubmit} className='space-y-6'>
+    <form action={handleValidatedAction} onSubmit={handleSubmit} className='space-y-6'>
       <input type='hidden' name='locale' value={locale} />
       {session && <input type='hidden' name='sessionId' value={session.id} />}
       {(clientError || serverError) && <div id='session-form-error' role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{clientError || serverError}</div>}
@@ -320,9 +340,9 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                         <input type='hidden' name='prescriptionMicrocycleId' value={microcycleId} />
                         <input type='hidden' name={`prescriptionGroupId:${microcycleId}`} value={group.id} />
                         <div className='grid gap-4 sm:grid-cols-3'>
-                          <Field label={t('form.prescriptions.distance')} name={`distanceKm:${microcycleId}`} type='number' min='0' step='0.1' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
-                          <Field label={t('form.prescriptions.duration')} name={`durationMin:${microcycleId}`} type='number' min='1' step='1' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
-                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${microcycleId}`} type='number' min='0' step='1' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
+                          <Field label={t('form.prescriptions.distance')} name={`distanceKm:${microcycleId}`} type='text' inputMode='decimal' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
+                          <Field label={t('form.prescriptions.duration')} name={`durationMin:${microcycleId}`} type='text' inputMode='numeric' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
+                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${microcycleId}`} type='text' inputMode='numeric' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
                         </div>
                         <SelectField
                           label={t('form.prescriptions.intensityMethod')}

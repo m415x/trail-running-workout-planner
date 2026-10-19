@@ -62,6 +62,7 @@
       "notesPlaceholder": "How did it feel? Terrain, weather, fatigue...",
       "performedAt": "Workout date and time",
       "localTimeHint": "Enter the actual start in your device’s local time.",
+      "invalidMetric": "Check the metrics: enter valid numbers without thousands separators or excessive decimal places.",
       "invalidPerformedAt": "Enter a valid workout date and time.",
       "saveFailed": "Could not save the workout. Your entries are preserved; please try again.",
       "clear": "Clear form",

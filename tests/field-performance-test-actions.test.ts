@@ -282,8 +282,8 @@ test('field-test forms capture 1000 m elapsed time as minutes plus seconds and d
   for (const form of [athleteForm, coachForm]) {
     assert.match(form, /minutes/)
     assert.match(form, /seconds/)
-    assert.match(form, /max=['"]59['"]/)
-    assert.match(form, /Number\(minutes\)\s*\*\s*60\s*\+\s*Number\(seconds\)/)
+    assert.match(form, /normalizeTrack1000mElapsedDraft\(minutes, seconds\)/)
+    assert.doesNotMatch(form, /Number\(minutes\)\s*\*\s*60\s*\+\s*Number\(seconds\)/)
   }
 
   assert.doesNotMatch(athleteForm, /Tiempo \(segundos\)/)

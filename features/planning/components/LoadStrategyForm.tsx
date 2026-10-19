@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { PlanningIntentHelp } from '@/features/planning/components/PlanningIntentHelp'
 import { localizeLoadIssue } from '@/features/planning/load-strategy-copy'
+import { parseLoadStrategyNumericDraft } from '@/lib/numeric/load-strategy-numeric-draft'
+import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted-decimal-display'
 import { useActionState, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
@@ -46,6 +48,27 @@ const planningIntentOptions: PlanningIntent[] = ['development', 'base', 'mainten
 
 const initialActionState: CreateGroupPlanWithLoadStrategyState = {}
 
+const numericFields: LoadStrategyField[] = [
+  'initialWeeklyVolumeKm',
+  'maximumWeeklyVolumeKm',
+  'maximumWeeklyIncreasePercentage',
+  'deloadPercentage',
+  'initialWeeklyElevationGain',
+  'maximumWeeklyElevationGain',
+]
+
+function draftsFromStrategy(strategy: LoadStrategyDraft, locale: string): Record<LoadStrategyField, string> {
+  return {
+    initialWeeklyVolumeKm: formatPersistedRegionalDecimal(strategy.values.initialWeeklyVolumeKm, locale),
+    maximumWeeklyVolumeKm: formatPersistedRegionalDecimal(strategy.values.maximumWeeklyVolumeKm, locale),
+    maximumWeeklyIncreasePercentage: formatPersistedRegionalDecimal(strategy.values.maximumWeeklyIncreasePercentage, locale),
+    deloadPercentage: formatPersistedRegionalDecimal(strategy.values.deloadPercentage, locale),
+    initialWeeklyElevationGain: strategy.values.initialWeeklyElevationGain == null ? '' : String(strategy.values.initialWeeklyElevationGain),
+    maximumWeeklyElevationGain: strategy.values.maximumWeeklyElevationGain == null ? '' : String(strategy.values.maximumWeeklyElevationGain),
+  }
+}
+
+
 export function LoadStrategyForm({
   groups,
   locale,
@@ -60,6 +83,7 @@ export function LoadStrategyForm({
     [groupCode, planningIntent],
   )
   const [strategy, setStrategy] = useState<LoadStrategyDraft>(() => suggestion)
+  const [numericDrafts, setNumericDrafts] = useState(() => draftsFromStrategy(suggestion, locale))
   const [startDate, setStartDate] = useState(defaultStartDate)
   const [endDate, setEndDate] = useState(defaultEndDate)
   const [actionState, formAction, isPending] = useActionState(
@@ -68,6 +92,10 @@ export function LoadStrategyForm({
   )
 
   const validation = useMemo(() => validateLoadStrategy(strategy), [strategy])
+  const hasInvalidNumericDraft = numericFields.some((field) => {
+    const normalized = parseLoadStrategyNumericDraft(numericDrafts[field], field)
+    return normalized.status !== 'valid' && !(normalized.status === 'empty' && (field === 'initialWeeklyElevationGain' || field === 'maximumWeeklyElevationGain'))
+  })
   const horizonValidation = useMemo(
     () => validateMacrocycleHorizon({ startDate, endDate }),
     [startDate, endDate],
@@ -80,10 +108,12 @@ export function LoadStrategyForm({
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
 
   function resetStrategy(nextGroupCode: AthleteGroupCode, nextPlanningIntent: PlanningIntent) {
-    setStrategy(suggestLoadStrategy(
+    const next = suggestLoadStrategy(
       nextGroupCode,
       resolveBasePlanLegacyGoalType(nextPlanningIntent),
-    ))
+    )
+    setStrategy(next)
+    setNumericDrafts(draftsFromStrategy(next, locale))
   }
 
   function handleGroupChange(nextGroupCode: AthleteGroupCode) {
@@ -96,14 +126,22 @@ export function LoadStrategyForm({
     resetStrategy(groupCode, nextPlanningIntent)
   }
 
-  function handleValueChange(field: LoadStrategyField, value: number | null) {
-    setStrategy((current) => ({
-      ...current,
-      values: {
-        ...current.values,
-        [field]: value,
-      },
-    }))
+  function handleValueChange(field: LoadStrategyField, raw: string) {
+    setNumericDrafts((current) => ({ ...current, [field]: raw }))
+    const normalized = parseLoadStrategyNumericDraft(raw, field)
+    if (normalized.status === 'valid') {
+      setStrategy((current) => ({
+        ...current,
+        values: { ...current.values, [field]: normalized.value },
+      }))
+    } else if (normalized.status === 'empty' && (
+      field === 'initialWeeklyElevationGain' || field === 'maximumWeeklyElevationGain'
+    )) {
+      setStrategy((current) => ({
+        ...current,
+        values: { ...current.values, [field]: null },
+      }))
+    }
   }
 
   function issuesFor(field: LoadStrategyField) {
@@ -113,7 +151,7 @@ export function LoadStrategyForm({
   }
 
   return (
-    <form action={formAction} className='space-y-6'>
+    <form action={formAction} onSubmit={(event) => { if (hasInvalidNumericDraft) event.preventDefault() }} className='space-y-6'>
       <input type='hidden' name='groupId' value={selectedGroup.id} />
       <input type='hidden' name='locale' value={locale} />
       <input type='hidden' name='values' value={JSON.stringify(strategy.values)} />
@@ -209,20 +247,18 @@ export function LoadStrategyForm({
               <NumberField
                 label={t('initialVolume')}
                 name='initialWeeklyVolumeKm'
-                value={strategy.values.initialWeeklyVolumeKm}
+                value={numericDrafts.initialWeeklyVolumeKm}
                 suffix={t('kmPerWeek')}
-                step='0.1'
                 issues={issuesFor('initialWeeklyVolumeKm')}
-                onChange={(value) => handleValueChange('initialWeeklyVolumeKm', value ?? 0)}
+                onChange={(value) => handleValueChange('initialWeeklyVolumeKm', value)}
               />
               <NumberField
                 label={t('maximumVolume')}
                 name='maximumWeeklyVolumeKm'
-                value={strategy.values.maximumWeeklyVolumeKm}
+                value={numericDrafts.maximumWeeklyVolumeKm}
                 suffix={t('kmPerWeek')}
-                step='0.1'
                 issues={issuesFor('maximumWeeklyVolumeKm')}
-                onChange={(value) => handleValueChange('maximumWeeklyVolumeKm', value ?? 0)}
+                onChange={(value) => handleValueChange('maximumWeeklyVolumeKm', value)}
               />
             </div>
           </fieldset>
@@ -233,20 +269,18 @@ export function LoadStrategyForm({
               <NumberField
                 label={t('increase')}
                 name='maximumWeeklyIncreasePercentage'
-                value={strategy.values.maximumWeeklyIncreasePercentage}
+                value={numericDrafts.maximumWeeklyIncreasePercentage}
                 suffix='%'
-                step='0.1'
                 issues={issuesFor('maximumWeeklyIncreasePercentage')}
-                onChange={(value) => handleValueChange('maximumWeeklyIncreasePercentage', value ?? 0)}
+                onChange={(value) => handleValueChange('maximumWeeklyIncreasePercentage', value)}
               />
               <NumberField
                 label={t('deload')}
                 name='deloadPercentage'
-                value={strategy.values.deloadPercentage}
+                value={numericDrafts.deloadPercentage}
                 suffix='%'
-                step='0.1'
                 issues={issuesFor('deloadPercentage')}
-                onChange={(value) => handleValueChange('deloadPercentage', value ?? 0)}
+                onChange={(value) => handleValueChange('deloadPercentage', value)}
               />
             </div>
           </fieldset>
@@ -260,18 +294,16 @@ export function LoadStrategyForm({
               <NumberField
                 label={t('initialElevation')}
                 name='initialWeeklyElevationGain'
-                value={strategy.values.initialWeeklyElevationGain}
+                value={numericDrafts.initialWeeklyElevationGain}
                 suffix={t('metersPerWeek')}
-                step='1'
                 issues={issuesFor('initialWeeklyElevationGain')}
                 onChange={(value) => handleValueChange('initialWeeklyElevationGain', value)}
               />
               <NumberField
                 label={t('maximumElevation')}
                 name='maximumWeeklyElevationGain'
-                value={strategy.values.maximumWeeklyElevationGain}
+                value={numericDrafts.maximumWeeklyElevationGain}
                 suffix={t('metersPerWeek')}
-                step='1'
                 issues={issuesFor('maximumWeeklyElevationGain')}
                 onChange={(value) => handleValueChange('maximumWeeklyElevationGain', value)}
               />
@@ -299,7 +331,7 @@ export function LoadStrategyForm({
         </div>
         <div className='flex justify-end gap-2'>
           <Link href={planningPath} className={buttonVariants({ variant: 'outline' })}>{t('cancel')}</Link>
-          <Button type='submit' disabled={!validation.isValid || !horizonValidation.isValid || isPending}>
+          <Button type='submit' disabled={hasInvalidNumericDraft || !validation.isValid || !horizonValidation.isValid || isPending}>
             {isPending ? t('creating') : t('create')}
           </Button>
         </div>
@@ -361,14 +393,13 @@ function SelectField({ label, name, value, onChange, children }: SelectFieldProp
 interface NumberFieldProps {
   label: string
   name: string
-  value: number | null
+  value: string
   suffix: string
-  step: string
   issues: LoadStrategyValidationIssue[]
-  onChange: (value: number | null) => void
+  onChange: (value: string) => void
 }
 
-function NumberField({ label, name, value, suffix, step, issues, onChange }: NumberFieldProps) {
+function NumberField({ label, name, value, suffix, issues, onChange }: NumberFieldProps) {
   const t = useTranslations('BasePlanning')
   const hasError = issues.some((issue) => issue.severity === 'error')
 
@@ -379,16 +410,12 @@ function NumberField({ label, name, value, suffix, step, issues, onChange }: Num
         <Input
           id={name}
           name={name}
-          type='number'
-          min='0'
-          step={step}
-          value={value ?? ''}
-          aria-invalid={hasError}
+          type='text'
+          inputMode='decimal'
+          value={value}
+          aria-invalid={hasError || (parseLoadStrategyNumericDraft(value, name as LoadStrategyField).status === 'invalid')}
           aria-describedby={issues.length > 0 ? `${name}-feedback` : undefined}
-          onChange={(event) => {
-            const nextValue = event.target.value
-            onChange(nextValue === '' ? null : Number(nextValue))
-          }}
+          onChange={(event) => onChange(event.target.value)}
           className='pr-24'
         />
         <span className='pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-muted-foreground'>
