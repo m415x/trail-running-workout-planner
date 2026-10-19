@@ -426,7 +426,7 @@ export function searchRaceCourses(input: RaceCourseSearchInput = {}): RaceCourse
   }))
 }
 
-export function linkCompetitionEntryToRaceCourse(competitionEntryId: string, raceCourseId: string, database: typeof db = db) {
+export function linkCompetitionEntryToRaceCourse(competitionEntryId: string, raceCourseId: string, database: Pick<typeof db, 'insert'> = db) {
   database.insert(competitionEntryRaceCourses)
     .values({ competitionEntryId, raceCourseId, createdAt: now() })
     .onConflictDoUpdate({
