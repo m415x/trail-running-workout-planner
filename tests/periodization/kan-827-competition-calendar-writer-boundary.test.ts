@@ -7,7 +7,7 @@ type Deps = Parameters<typeof createAuthorizedCompetitionCalendarWriter>[0]
 type Access = Awaited<ReturnType<Deps['readAccess']>>
 type Team = Awaited<ReturnType<Deps['resolveActiveTeam']>>
 
-const authenticated: Access = { status: 'authenticated', userId: 'coach_a' }
+const authenticated: Access = { status: 'authenticated', provider: 'supabase', subject: 'subject_coach_a', userId: 'coach_a' }
 const resolved = (teamId: string): Team => ({ status: 'resolved', teamId, source: 'single_membership' })
 
 function harness(options: {
@@ -62,8 +62,13 @@ test('KAN-827 authentic Coach with active Team, owned Plan and effective TEAM ca
 })
 
 test('KAN-827 anonymous, invalid and unlinked EPT identity fail closed before Team and database lookup', async () => {
-  for (const status of ['anonymous', 'invalid', 'unlinked'] as const) {
-    const { writer, calls } = harness({ access: { status } })
+  const deniedIdentities: Access[] = [
+    { status: 'anonymous' },
+    { status: 'invalid' },
+    { status: 'unlinked', provider: 'supabase', subject: 'subject_unlinked' },
+  ]
+  for (const access of deniedIdentities) {
+    const { writer, calls } = harness({ access })
     assert.deepEqual(await writer.authorizePlan('plan_a'), { status: 'denied' })
     assert.equal(calls.team, 0)
     assert.equal(calls.lookup, 0)
