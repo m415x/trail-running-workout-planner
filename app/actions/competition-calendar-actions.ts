@@ -104,6 +104,13 @@ async function requireAccessiblePlan(planId: string) {
   return plan
 }
 
+/** Entry ownership is checked again by the domain service at mutation time. */
+function requireAuthorizedCompetitionEntry(planId: string, competitionId: string) {
+  return getCompetitionCalendar(planId).find(entry =>
+    entry.id === competitionId && entry.groupTrainingPlanId === planId
+  ) ?? null
+}
+
 function forbiddenResult<T>(): CompetitionCalendarActionResult<T> {
   return {
     ok: false,
@@ -193,7 +200,7 @@ export async function updateCompetitionAction(
   const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
-  const existing = getCompetitionCalendar(plan.id).find(({ id }) => id === input.competitionId)
+  const existing = requireAuthorizedCompetitionEntry(plan.id, input.competitionId)
   if (!existing) {
     return {
       ok: false,
@@ -225,6 +232,8 @@ export async function rescheduleCompetitionAction(
   const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
 
+  if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
+
   const result = rescheduleCompetition({
     planId: plan.id,
     planKind: resolvePlanKind(plan.planningCohortId),
@@ -243,6 +252,8 @@ export async function changeCompetitionStatusAction(
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
   const plan = await requireAccessiblePlan(input.planId)
   if (!plan) return forbiddenResult()
+
+  if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
 
   const result = changeCompetitionStatus({
     planId: plan.id,
