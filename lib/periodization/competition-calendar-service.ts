@@ -257,6 +257,7 @@ export function changeCompetitionStatus(
     input.status,
     input.now ?? new Date().toISOString(),
     database,
+    input.planId,
   )
 
   if (!value) {
