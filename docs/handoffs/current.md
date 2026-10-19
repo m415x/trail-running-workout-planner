@@ -1,10 +1,12 @@
-# Current candidate handoff — KAN-810 regional numeric inputs (2026-10-18)
+# Current integrated handoff — KAN-810 regional numeric inputs (2026-10-18)
 
-- **Not yet integrated**: feature `feat/KAN-810-regional-numeric-inputs` accepted application candidate `e32e5ffabc7c8949425972da63e2e972a2e8f326`, operator `pn verify --db` PASS 6/6 (Tests 123709ms, TypeScript 12353ms, ESLint 28651ms, Build 27465ms, i18n 387ms, SQLite 50658ms; total 243223ms). Documentation-only commits follow this SHA; do not mislabel candidate gate as dev gate.
-- **A3 acceptance**: direct WorkoutTemplateForm, MicrocycleVolume/Elevation, Biometric SELF, realized training LogWorkoutDialog, official Coach 1000m, and technical-equivalence-only SessionForm/LoadStrategy/SessionGenerationPreferences. H6 DENY uses prior automated tests, not new browser reproduction. ES/EN persisted editable decimal display corrected via two RED/GREEN cuts; [story handoff](kan-810.md).
-- **Pending**: pre-merge docs check, PR against `dev`, required checks/review, merge, post-merge dev verification and docs check, fresh-chat-safe reconciliation and Jira closure. Previous dev integrated baseline is documented below until this merge actually occurs.
+- **Integrated dev baseline:** [PR #64](https://github.com/m415x/trail-running-workout-planner/pull/64) ordinary merge `d127b40dd67285b5568e841934d06c4dafe3aba8`; PR head `614c3f6decbc438cd5ccc238e2b058cb11d1adb1`, functional candidate gate SHA `e32e5ffabc7c8949425972da63e2e972a2e8f326`. Documentation-only follow-ups are separate identities.
+- **Post-merge operator evidence on merge SHA:** `pn verify --db` PASS 6/6 (Tests 135460ms, TypeScript 19554ms, ESLint 32979ms, Build 32753ms, i18n 391ms, SQLite 52195ms; total 273332ms); `pn docs:handoff:check` HANDOFF DOCS: PASS.
+- **Accepted behavior:** decimal comma/dot input, strictly validated domain boundaries, canonical persisted dot, locale-aware editable retrieved decimals ES comma / EN dot. Direct operator A3: template, microcycle, biometric SELF, realized-training capture, official Coach 1000m; explicit limited technical equivalence for SessionForm, LoadStrategy and SessionGenerationPreferences, H6 DENY by prior automated regression. See [KAN-810 story handoff](kan-810.md).
+- **Post-merge publication:** updated this integrated baseline and documentation index; final documentation-only SHA requires separate `pn docs:handoff:check` and administrative Jira reconciliation. Do not attribute the integrated full gate to this later documentation SHA.
 
 ---
+
 
 # Current integrated handoff — KAN-809 runner hardening (2026-10-17)
 
