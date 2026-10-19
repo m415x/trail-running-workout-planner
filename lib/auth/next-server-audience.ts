@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { teamMemberships } from '@/db/schema'
+import { createNextServerIdentityEvidence } from './identity-backend-next-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { resolveAudienceDestination } from './audience-destination'
 
@@ -15,7 +16,10 @@ export async function resolveNextServerAudience(userId: string) {
     })
   }
 
-  const memberships = await db.select({
+  const identityBackend=createNextServerIdentityEvidence()
+  const memberships = identityBackend.backend==='postgres'
+    ? await identityBackend.memberships.loadMemberships(userId)
+    : await db.select({
     userId: teamMemberships.userId,
     teamId: teamMemberships.teamId,
     preset: teamMemberships.preset,

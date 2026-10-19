@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { normalizeTrack1000mElapsedDraft } from '@/lib/numeric/track-1000m-elapsed-draft'
 
 import { getCurrentAthleteTrack1000mEvidenceAction } from '@/app/actions/field-performance-test-actions'
 import { buttonVariants } from '@ui/button'
@@ -19,8 +20,8 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
   const [notes, setNotes] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
-  const elapsedTimeSec = Number(minutes) * 60 + Number(seconds)
-  const hasTime = minutes !== '' && seconds !== '' && elapsedTimeSec > 0
+  const elapsedDraft = normalizeTrack1000mElapsedDraft(minutes, seconds)
+  const hasTime = elapsedDraft.status === 'valid'
 
   function localizeError(error: string) {
     if (error === 'test_event_not_yet_occurred') {
@@ -36,6 +37,8 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (elapsedDraft.status !== 'valid') return
+    const elapsedTimeSec = elapsedDraft.elapsedTimeSec
     setPending(true)
     setMessage(null)
     const result = await getCurrentAthleteTrack1000mEvidenceAction({
@@ -58,8 +61,8 @@ export function AthleteTrack1000mForm({ locale, events }: { locale: string; even
     {events.length === 0 && <p className='rounded-lg border border-dashed p-3 text-sm text-muted-foreground'>{es ? 'No hay instancias oficiales disponibles. Podés registrar un intento autogestionado.' : 'No official test events are available. You can record a self-directed attempt.'}</p>}
     {executionContext === 'official' ? <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Instancia oficial' : 'Official test'}</span><select value={testEventId} onChange={event => setTestEventId(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3'>{events.map(item => <option key={item.id} value={item.id}>{item.scheduledAt.slice(0, 10)}</option>)}</select></label> : <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Fecha realizada' : 'Performed date'}</span><input type='date' required value={performedAt} onChange={event => setPerformedAt(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>}
     <div className='grid grid-cols-2 gap-3'>
-      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='number' min='0' step='1' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
-      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='number' min='0' max='59' step='1' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Minutos' : 'Minutes'}</span><input aria-label={es ? 'Minutos' : 'Minutes'} type='text' inputMode='numeric' required value={minutes} onChange={event => setMinutes(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
+      <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Segundos' : 'Seconds'}</span><input aria-label={es ? 'Segundos' : 'Seconds'} type='text' inputMode='numeric' required value={seconds} onChange={event => setSeconds(event.target.value)} className='h-10 rounded-md border border-input bg-background px-3' /></label>
     </div>
     <label className='grid gap-1'><span className='text-xs text-muted-foreground'>{es ? 'Notas (opcional)' : 'Notes (optional)'}</span><textarea value={notes} onChange={event => setNotes(event.target.value)} className='min-h-20 rounded-md border border-input bg-background p-3' /></label>
     <button type='submit' disabled={pending || !hasTime || (executionContext === 'official' && !testEventId)} className={buttonVariants({ size: 'sm' })}>{pending ? (es ? 'Guardando…' : 'Saving…') : (es ? 'Registrar test' : 'Record test')}</button>

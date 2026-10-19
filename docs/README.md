@@ -2,7 +2,19 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
+## Current execution and handoffs
+
+- [KAN-798 Competition Calendar writer authorization](handoffs/kan-798.md) — H2/H3/H4A `competition.manage` TEAM, Plan/Entry ownership and atomic catalog linking, integrated through PR #65, `dev` merge `b6e80ac441baaab999f7193ccf894c2cca24a70a`; operator-reported post-merge PASS 6/6.
+
+- [KAN-810 regional numeric inputs](handoffs/kan-810.md) — A1–A3 operator RED/GREEN, direct/equivalence acceptance, integrated via PR #64, ordinary dev merge `d127b40dd67285b5568e841934d06c4dafe3aba8`, post-merge PASS 6/6 and handoff PASS.
+
+- [KAN-809 TDD runner preparation hardening](handoffs/kan-809.md) — B1/B2/B3 operator evidence, candidate gate, preservation contracts, and closure status. KAN-810 regional numeric inputs was subsequently integrated via PR #64.
+
 ## Architecture
+
+- [`architecture/athlete-profile-self-biometrics.md`](architecture/athlete-profile-self-biometrics.md) — KAN-646 Athlete Profile SELF biometrics, transactional authorization, provenance, account reuse and pre-merge acceptance evidence.
+
+- [`architecture/platform/acceptance-athlete-b-provisioning.md`](architecture/platform/acceptance-athlete-b-provisioning.md) — KAN-778 local acceptance Athlete B provisioning, idempotence, identity safeguards and evidence limits.
 
 Domain and technical contracts that current implementation should preserve unless a story explicitly changes them.
 
@@ -40,11 +52,29 @@ Completed epics are consolidated here. History explains evolution and prior deci
 
 ## H7A — Authorship and audit
 
+- [`handoffs/kan-772.md`](handoffs/kan-772.md) — KAN-772 merged SQLite H7A 0020–0025 physical-drift detection, clean disposable bootstrap and supported lifecycle idempotence evidence (PR #54, merge `70994015`).
+
 - [`architecture/platform/h7a-authorship-audit.md`](architecture/platform/h7a-authorship-audit.md) — KAN-610 actor provenance, retained audit and limits of current H4A-based read authorization.
 
 ## Handoffs
 
-`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-724** effective audience/session routing baseline (PR #53, merge `b3c04e8d`) with SHA-scoped evidence in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
+- [`handoffs/kan-810.md`](handoffs/kan-810.md) — **KAN-810 current integrated handoff baseline**, regional numeric A1–A3 and operator PASS 6/6; KAN-809 is the preceding integrated baseline.
+
+- [`handoffs/kan-809.md`](handoffs/kan-809.md) — **KAN-809 preceding integrated handoff baseline**, TDD runner preparation failures, PR #63 ordinary merge `a29170eecd4801990220ac552278e1c10a87e005`; post-merge `pn verify --db` PASS 6/6, documentation index reconciliation in progress.
+
+- [`handoffs/kan-646.md`](handoffs/kan-646.md) — **KAN-646 current integrated handoff baseline**, Athlete Profile SELF biometrics and account settings, PR #62, merge `766cff4f942104e0576c508581c0cf8fd8a1ccf1`, with post-merge gate evidence and documented limits.
+
+- [`handoffs/kan-790.md`](handoffs/kan-790.md) — **KAN-790/T5 integrated baseline**, PR #59 merged to `dev` (`e9f5f8276b4508e0fefdde7a7bd97787e27fd8d7`); PostgreSQL authorized Coach CREATE/GET/CONFIRM, SERIALIZABLE/CAS, H2/H3/H4A, reconciliation and evidence/limitations. Post-merge six-gate PASS on `5ac81c79...`; documentation-only follow-up gate pending on current documentation HEAD.
+
+- [`handoffs/kan-784.md`](handoffs/kan-784.md) — historical and acceptance handoff for KAN-784/T4–T6; PR #59 merged, with SHA-scoped PostgreSQL and idempotence evidence.
+
+- [`handoffs/kan-792.md`](handoffs/kan-792.md) — KAN-792 merged Competition Calendar Plan/Team reader (PR #58) and explicit KAN-798 High security blocker for five mutation entry points.
+
+- [`handoffs/kan-688.md`](handoffs/kan-688.md) — KAN-688 Coach Templates H2/H3/H4A merged baseline, PR #57, SHA-scoped isolated SQLite and action composition evidence.
+
+- [`handoffs/kan-778.md`](handoffs/kan-778.md) — KAN-778 integrated provisioning of Supabase Athlete B in local SQLite, operator acceptance evidence, no-write rerun and KAN-766/T8 remaining boundary.
+
+`docs/handoffs/` is temporary operational state, not an archive. [`handoffs/current.md`](handoffs/current.md) records the latest integrated **KAN-810** regional numeric baseline (PR #64), following **KAN-809** TDD runner baseline (PR #63), following **KAN-646** Athlete Profile SELF baseline (PR #62), after **KAN-790/T5** authorized SQL snapshot baseline (PR #59), following the **KAN-792** Competition Calendar reader (PR #58, merge `7d11c885f827f62448f49c9fbed0dddbe81963cf`) and the independent KAN-798 writer security blocker, following **KAN-688** Coach Templates authority (PR #57, merge `02923d0facb66d8db6335d6348a4919158d19bf2`), with the preceding **KAN-778** acceptance Athlete B baseline (PR #55, merge `59e7b3ac`) with SHA-scoped evidence in [`handoffs/kan-778.md`](handoffs/kan-778.md). Earlier KAN-724 routing evidence is retained in [`handoffs/kan-724.md`](handoffs/kan-724.md). Previous KAN-606/H4C, KAN-739 Harness v2 and KAN-610/H7A baselines are retained in [`handoffs/kan-739.md`](handoffs/kan-739.md) and [`handoffs/kan-610.md`](handoffs/kan-610.md). Jira and remote `dev` determine actual integration state.
 
 KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as historical integration evidence.
 
@@ -56,7 +86,7 @@ KAN-609/H6 is retained in [`handoffs/kan-609.md`](handoffs/kan-609.md) as histor
 
 ## KAN-724 — Effective audience routing (merged)
 
-- [`handoffs/kan-724.md`](handoffs/kan-724.md) — KAN-724/T1–T8 H2 + validated active Team + effective H3 preset routing, localized login/logout, cross-shell redirects, fail-closed multi-Team selection and SHA-scoped candidate evidence. Merged in PR #53 to `dev` (`b3c04e8d`); now the latest integrated operational handoff. KAN-757 canonical SQLite reviewer recovery and KAN-758 opt-in multi-Team acceptance fixture are part of the merged evidence; the base seed and H2 identity model remain unchanged.
+- [`handoffs/kan-724.md`](handoffs/kan-724.md) — KAN-724/T1–T8 H2 + validated active Team + effective H3 preset routing, localized login/logout, cross-shell redirects, fail-closed multi-Team selection and SHA-scoped candidate evidence. Merged in PR #53 to `dev` (`b3c04e8d`); retained as an earlier integrated operational handoff. KAN-757 canonical SQLite reviewer recovery and KAN-758 opt-in multi-Team acceptance fixture are part of the merged evidence; the base seed and H2 identity model remain unchanged.
 - [`architecture/platform/authentication-session-lifecycle.md`](architecture/platform/authentication-session-lifecycle.md) — the underlying H2 session boundary remains authoritative; H3 capabilities and resource-level guards are unchanged.
 
 ## Verification runner

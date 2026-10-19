@@ -10,6 +10,8 @@ export default defineConfig({
     './db/readiness-schema.ts',
     './db/race-catalog-schema.ts',
     './db/race-registration-schema.ts',
+    './db/session-generation-review-snapshot-schema.ts',
+    './db/athlete-biometric-observation-schema.ts',
   ],
   out: './drizzle/sqlite',
   dialect: 'sqlite',

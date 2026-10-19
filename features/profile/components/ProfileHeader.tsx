@@ -1,13 +1,10 @@
 'use client'
 
-import { Pencil } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
+import type { ProfileSelfHeader } from '@/lib/athletes/profile-self-read'
 import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
 import { CustomCard } from '@ui/custom/card-containers'
 
-export function ProfileHeader({ athlete }: { athlete: CurrentAthleteData['athleteProfile'] }) {
-  const t = useTranslations('AthleteProfile.header')
+export function ProfileHeader({ athlete }: { athlete: ProfileSelfHeader }) {
   const fullName = [athlete.firstName, athlete.lastName].filter(Boolean).join(' ').trim()
   const displayName = athlete.nickName?.trim() || fullName || '—'
   const initials = [athlete.firstName?.charAt(0), athlete.lastName?.charAt(0)].filter(Boolean).join('').toUpperCase() || '—'
@@ -24,13 +21,6 @@ export function ProfileHeader({ athlete }: { athlete: CurrentAthleteData['athlet
               {initials}
             </AvatarFallback>
           </Avatar>
-          <button
-            type='button'
-            className='absolute bottom-0 right-0 p-1.5 rounded-full bg-primary text-white hover:bg-primary/90 transition-transform active:scale-95 shadow-md cursor-pointer border-2 border-background'
-            title={t('editPhoto')}
-          >
-            <Pencil size={12} />
-          </button>
         </div>
 
         {/* Nombre y datos del atleta */}

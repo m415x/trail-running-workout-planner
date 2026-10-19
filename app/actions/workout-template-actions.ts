@@ -6,15 +6,17 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { trainingLocations, workouts } from '@/db/schema'
 import {
-  createWorkoutTemplateRecord,
-  duplicateWorkoutTemplateRecord,
-  setWorkoutTemplateArchiveStatusRecord,
-  updateWorkoutTemplateRecord,
   type WorkoutTemplatePersistenceValues,
 } from '@/lib/workout-templates/workout-template-persistence'
 import { matchesWorkoutTemplateSearch, normalizeWorkoutTemplateTags } from '@/lib/workout-templates/workout-template-search'
+import { createWorkoutTemplateActionComposition } from '@/lib/workout-templates/workout-template-action-composition'
 import { validateWorkoutTemplateDefaults, type WorkoutTemplateDefaultField } from '@/lib/workout-templates/workout-template-validator'
 import type {
   IntensityMethod,
@@ -27,7 +29,17 @@ import type {
   WorkoutType,
 } from '@/types'
 
-const CURRENT_TEAM_ID = 'team_1'
+function workoutTemplateActionComposition() {
+  return createWorkoutTemplateActionComposition({
+    database: db,
+    readAccess: async () => {
+      const supabase = await createSupabaseServerClient()
+      return readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+  })
+}
 
 export interface WorkoutTemplateFormState {
   error?: string
@@ -61,7 +73,7 @@ function templateEditPath(locale: string, templateId: string) {
   return `${templatesPath(locale)}/${templateId}/edit`
 }
 
-function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
+function draftFromFormData(formData: FormData, teamId: string): WorkoutTemplateDraft {
   const intensityMethod = optionalText(formData, 'intensityMethod') as IntensityMethod | null
   let intensity: TrainingIntensity | null = null
 
@@ -86,7 +98,7 @@ function draftFromFormData(formData: FormData): WorkoutTemplateDraft {
   const hasStructure = Object.values(structure).some(Boolean)
 
   return {
-    teamId: CURRENT_TEAM_ID,
+    teamId,
     category: formData.get('category')?.toString() as WorkoutTemplateCategory,
     tags: (formData.get('tags')?.toString() ?? '').split(',').map((tag) => tag.trim()).filter(Boolean),
     sessionDefaults: {
@@ -143,10 +155,10 @@ function toWorkoutTemplate(row: typeof workouts.$inferSelect): WorkoutTemplate {
   }
 }
 
-function persistenceValues(draft: WorkoutTemplateDraft): WorkoutTemplatePersistenceValues {
+function persistenceValues(draft: WorkoutTemplateDraft, teamId: string): WorkoutTemplatePersistenceValues {
   const intensity = draft.prescriptionDefaults.intensity
   return {
-    teamId: CURRENT_TEAM_ID,
+    teamId: teamId,
     category: draft.category,
     tags: normalizeWorkoutTemplateTags(draft.tags),
     title: draft.sessionDefaults.title.trim(),
@@ -173,8 +185,10 @@ function persistenceValues(draft: WorkoutTemplateDraft): WorkoutTemplatePersiste
  */
 export async function getWorkoutTemplates(
   criteria: WorkoutTemplateSearchCriteria = {},
-  teamId: string = CURRENT_TEAM_ID,
 ) {
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) throw new Error('No autorizado')
+  const teamId = authorized.teamId
   const rows = db.query.workouts.findMany({
     where: and(eq(workouts.teamId, teamId), eq(workouts.isDeleted, false)),
     orderBy: (table, { asc }) => [asc(table.title)],
@@ -190,10 +204,12 @@ export async function getWorkoutTemplates(
 
 /** Returns one team-owned template or undefined when it is unavailable. */
 export async function getWorkoutTemplateById(templateId: string) {
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) return undefined
   const row = db.query.workouts.findFirst({
     where: and(
       eq(workouts.id, templateId),
-      eq(workouts.teamId, CURRENT_TEAM_ID),
+      eq(workouts.teamId, authorized.teamId),
       eq(workouts.isDeleted, false),
     ),
   }).sync()
@@ -203,6 +219,8 @@ export async function getWorkoutTemplateById(templateId: string) {
 
 /** Returns the lightweight lookup data required by the template form. */
 export async function getWorkoutTemplateFormOptions() {
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) throw new Error('No autorizado')
   return {
     locations: db.select({ key: trainingLocations.key, name: trainingLocations.name })
       .from(trainingLocations)
@@ -217,7 +235,9 @@ export async function createWorkoutTemplate(
   formData: FormData,
 ): Promise<WorkoutTemplateFormState> {
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
-  const draft = draftFromFormData(formData)
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) return { error: 'No autorizado' }
+  const draft = draftFromFormData(formData, authorized.teamId)
   const validation = validateWorkoutTemplateDefaults(draft)
 
   if (!validation.isValid) {
@@ -232,10 +252,11 @@ export async function createWorkoutTemplate(
   }
 
   try {
-    createWorkoutTemplateRecord({
-      id: randomUUID(),
-      values: persistenceValues(draft),
-    })
+    const created = await workoutTemplateActionComposition().service().create(
+      randomUUID(),
+      persistenceValues(draft, authorized.teamId),
+    )
+    if (created.status !== 'allowed') return { error: 'No autorizado' }
   } catch (error) {
     console.error('Error creating workout template:', error)
     return {
@@ -257,7 +278,9 @@ export async function updateWorkoutTemplate(
 ): Promise<WorkoutTemplateFormState> {
   const templateId = formData.get('templateId')?.toString()
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
-  const draft = draftFromFormData(formData)
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) return { error: 'No autorizado' }
+  const draft = draftFromFormData(formData, authorized.teamId)
   const validation = validateWorkoutTemplateDefaults(draft)
 
   if (!templateId) return { error: 'No se pudo identificar la plantilla.' }
@@ -277,11 +300,11 @@ export async function updateWorkoutTemplate(
     const template = await getWorkoutTemplateById(templateId)
     if (!template) return { error: 'Plantilla no encontrada.' }
 
-    updateWorkoutTemplateRecord({
-      id: templateId,
-      teamId: CURRENT_TEAM_ID,
-      values: persistenceValues(draft),
-    })
+    const updated = await workoutTemplateActionComposition().service().update(
+      templateId,
+      persistenceValues(draft, authorized.teamId),
+    )
+    if (updated.status !== 'allowed') return { error: 'Plantilla no encontrada.' }
   } catch (error) {
     console.error('Error updating workout template:', error)
     return {
@@ -298,18 +321,19 @@ export async function updateWorkoutTemplate(
 
 /** Creates an active, independent copy and opens it for review. */
 export async function duplicateWorkoutTemplate(formData: FormData) {
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) throw new Error('No autorizado')
   const templateId = formData.get('templateId')?.toString()
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   if (!templateId) redirect(templatesPath(locale))
 
   const duplicateId = randomUUID()
-  const duplicated = duplicateWorkoutTemplateRecord({
-    sourceId: templateId,
+  const duplicated = await workoutTemplateActionComposition().service().duplicate(
+    templateId,
     duplicateId,
-    teamId: CURRENT_TEAM_ID,
-    titlePrefix: locale === 'es' ? 'Copia de' : 'Copy of',
-  })
-  if (!duplicated) redirect(templatesPath(locale))
+    locale === 'es' ? 'Copia de' : 'Copy of',
+  )
+  if (duplicated.status !== 'allowed') redirect(templatesPath(locale))
 
   revalidatePath(templatesPath(locale))
   redirect(templateEditPath(locale, duplicateId))
@@ -317,17 +341,15 @@ export async function duplicateWorkoutTemplate(formData: FormData) {
 
 /** Archives or reactivates a team-owned template without deleting its history. */
 export async function setWorkoutTemplateArchiveStatus(formData: FormData) {
+  const authorized = await workoutTemplateActionComposition().authorize()
+  if (!authorized) throw new Error('No autorizado')
   const templateId = formData.get('templateId')?.toString()
   const shouldArchive = formData.get('archive')?.toString() === 'true'
   const locale = formData.get('locale')?.toString() === 'en' ? 'en' : 'es'
   if (!templateId) return
 
-  const changed = setWorkoutTemplateArchiveStatusRecord({
-    id: templateId,
-    teamId: CURRENT_TEAM_ID,
-    archived: shouldArchive,
-  })
-  if (!changed) return
+  const changed = await workoutTemplateActionComposition().service().archive(templateId, shouldArchive)
+  if (changed.status !== 'allowed') return
 
   revalidatePath(templatesPath(locale))
   revalidatePath(`${locale === 'es' ? '/dashboard/sessions' : `/${locale}/dashboard/sessions`}/new`)

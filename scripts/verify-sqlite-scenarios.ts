@@ -14,6 +14,8 @@ import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
 import * as raceRegistrationSchema from '@/db/race-registration-schema'
+import * as sessionGenerationReviewSnapshotSchema from '@/db/session-generation-review-snapshot-schema'
+import * as biometricObservationSchema from '@/db/athlete-biometric-observation-schema'
 import { seedFeature, seedFull } from '@/db/seeds'
 
 
@@ -89,6 +91,10 @@ export function runEmptyBootstrapScenario(projectRoot = process.cwd()): void {
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     assertScenarioDatabaseExists(workspace)
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    // Validate the fresh physical H7A 0020–0025 schema and exact applied hashes
+    // before disposable cleanup; never rely on journal metadata alone.
+    const verifyH7aScript = resolve(projectRoot, 'scripts/verify-h7a-sqlite.ts')
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
   } finally {
     removeScenarioWorkspace(workspace)
   }
@@ -116,6 +122,8 @@ export async function runFullSeedScenario(projectRoot = process.cwd()): Promise<
           ...readinessSchema,
           ...raceCatalogSchema,
           ...raceRegistrationSchema,
+          ...sessionGenerationReviewSnapshotSchema,
+          ...biometricObservationSchema,
         },
       })
 
@@ -325,6 +333,8 @@ export async function runPartialSeedScenario(projectRoot = process.cwd()): Promi
             ...readinessSchema,
             ...raceCatalogSchema,
             ...raceRegistrationSchema,
+          ...sessionGenerationReviewSnapshotSchema,
+          ...biometricObservationSchema,
           },
         })
         const currentWeekStart = '2026-09-21'
@@ -793,23 +803,40 @@ export function runDriftScenario(projectRoot = process.cwd()): void {
   }
 }
 
-export function runRerunScenario(projectRoot = process.cwd()): void {
+export function readCanonicalMigrationMetadata(path: string): unknown[] {
+  const db = new Database(path, { readonly: true, fileMustExist: true })
+  try {
+    return db.prepare('SELECT id, hash, created_at FROM __drizzle_migrations ORDER BY id').all()
+  } finally {
+    db.close()
+  }
+}
+
+function runRerunScenario(projectRoot = process.cwd()): void {
   const workspace = createScenarioWorkspace('rerun')
   try {
     createRepresentativeLegacyDatabase(workspace, projectRoot)
 
     const upgradeScript = resolve(projectRoot, 'scripts/upgrade-sqlite.ts')
     const verifyScript = resolve(projectRoot, 'scripts/verify-sqlite.ts')
+    const verifyH7aScript = resolve(projectRoot, 'scripts/verify-h7a-sqlite.ts')
     const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
 
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
     const schemaAfterFirstUpgrade = readNormalizedSchema(workspace.sqlitePath)
+    const metadataAfterFirstUpgrade = readCanonicalMigrationMetadata(workspace.sqlitePath)
 
     // A database already at canonical HEAD must remain a safe no-op target.
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, verifyH7aScript])
     const schemaAfterSecondUpgrade = readNormalizedSchema(workspace.sqlitePath)
+    const metadataAfterSecondUpgrade = readCanonicalMigrationMetadata(workspace.sqlitePath)
+    if (JSON.stringify(metadataAfterFirstUpgrade) !== JSON.stringify(metadataAfterSecondUpgrade)) {
+      throw new Error('SQLite migration metadata changed after rerunning the supported upgrade at HEAD')
+    }
 
     if (
       schemaAfterFirstUpgrade.length !== schemaAfterSecondUpgrade.length ||

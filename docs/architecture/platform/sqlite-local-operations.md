@@ -55,6 +55,12 @@ For that partial-metadata HEAD state, the canonical runner first verifies the ph
 
 A successful migration command alone is not sufficient evidence of a healthy local database. The verifier checks physical schema invariants in addition to migration metadata.
 
+## Pre-beta disposable developer database and H7A physical audit
+
+KAN-772 extends the normal SQLite verifier to fail closed on H7A 0020–0025 physical author-column, FK, CHECK and index drift, alongside canonical applied-migration hash checks. The `empty` scenario now runs the same audit on a newly generated isolated database; `rerun` checks H7A physical integrity and unchanged migration rows before/after the second officially supported upgrade. `pn db:sqlite:check` remains the authoritative nine-scenario gate, including supported legacy upgrades and preservation.
+
+During pre-beta, the developer's own `sqlite.db` is **disposable** only after an explicitly announced and approved regeneration. No verifier, routine command or test may delete it automatically. Do not modify historical migrations or invent migration metadata to conceal drift. Supported upgrades must continue preserving real data within their documented contract. Before beta, production-grade historical-data recovery requires a separately approved design and acceptance criteria.
+
 ## Recovery from an inconsistent database
 
 If the canonical upgrade rejects the database as unrecognized or inconsistent:

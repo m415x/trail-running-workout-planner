@@ -68,6 +68,36 @@ describe('competition repository', () => {
     )
   })
 
+  it('KAN-828 rejects ownership drift and cannot move an Entry to another Plan through update', () => {
+    createCompetitionRecord({
+      id: 'competition-1',
+      draft: competitionDraft(),
+      createdAt: '2027-01-01T00:00:00.000Z',
+    }, database)
+    const before = sqlite.prepare('SELECT * FROM competition_entries WHERE id = ?').get('competition-1')
+    const moved = updateCompetitionRecord({
+      id: 'competition-1',
+      draft: competitionDraft({ groupTrainingPlanId: 'plan-other', name: 'Unauthorized move' }),
+      groupTrainingPlanId: 'plan-1',
+      updatedAt: '2027-01-05T00:00:00.000Z',
+    }, database)
+    assert.equal(moved, null)
+    assert.deepEqual(sqlite.prepare('SELECT * FROM competition_entries WHERE id = ?').get('competition-1'), before)
+
+    const staleUpdate = updateCompetitionRecord({
+      id: 'competition-1',
+      draft: competitionDraft({ name: 'Unauthorized update' }),
+      groupTrainingPlanId: 'plan-other',
+      updatedAt: '2027-01-05T00:00:00.000Z',
+    }, database)
+    const staleDate = rescheduleCompetitionRecord('competition-1', '2027-05-01', '2027-01-05T00:00:00.000Z', database, 'plan-other')
+    const staleStatus = updateCompetitionStatusRecord('competition-1', 'cancelled', '2027-01-05T00:00:00.000Z', database, 'plan-other')
+    assert.equal(staleUpdate, null)
+    assert.equal(staleDate, null)
+    assert.equal(staleStatus, null)
+    assert.deepEqual(sqlite.prepare('SELECT * FROM competition_entries WHERE id = ?').get('competition-1'), before)
+  })
+
   it('updates mutable competition fields while preserving identity and creation metadata', () => {
     createCompetitionRecord({
       id: 'competition-1',

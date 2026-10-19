@@ -12,7 +12,12 @@ for (const [name, source] of [
   test(`KAN-641 ${name} layout protects the server tree with the H2 boundary`, () => {
     assert.doesNotMatch(source, /^['"]use client['"]/)
     assert.match(source, /createSupabaseServerClient/)
-    assert.match(source, /createExternalIdentityLookup/)
+    if (name === 'coach dashboard') {
+      assert.match(source, /createNextServerIdentityEvidence/)
+      assert.doesNotMatch(source, /createExternalIdentityLookup\(\)/)
+    } else {
+      assert.match(source, /createExternalIdentityLookup/)
+    }
     assert.match(source, /readEptSessionAccessState/)
     assert.match(source, /requireAuthenticatedEptSession/)
     assert.match(source, /redirect\(/)

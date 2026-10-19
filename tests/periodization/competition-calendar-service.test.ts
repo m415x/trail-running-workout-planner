@@ -8,6 +8,7 @@ import * as competitionEntrySchema from '@/db/competition-entry-schema'
 import * as intensityStrategySchema from '@/db/intensity-strategy-schema'
 import * as loadStrategySchema from '@/db/load-strategy-schema'
 import * as raceCatalogSchema from '@/db/race-catalog-schema'
+import { competitionEntryRaceCourses } from '@/db/race-catalog-schema'
 import * as readinessSchema from '@/db/readiness-schema'
 import * as schema from '@/db/schema'
 import * as sessionGenerationPreferencesSchema from '@/db/session-generation-preferences-schema'
@@ -56,6 +57,33 @@ describe('competition calendar service', () => {
   })
 
   afterEach(() => sqlite.close())
+
+  it('KAN-829 rolls back competition creation when catalog link insertion fails', () => {
+    sqlite.pragma('foreign_keys = ON')
+    const before = sqlite.prepare('SELECT * FROM competition_entries').all()
+    assert.throws(() => {
+      database.transaction((tx) => {
+        const created = createCompetition({
+          ...mutationContext(),
+          database: tx,
+          id: 'catalog-rollback-entry',
+          now: '2027-01-01T00:00:00.000Z',
+          draft: draft(),
+        })
+        assert.equal(created.ok, true)
+        if (!created.ok) throw new Error('calendar rejected')
+        // Same transactional handle as the catalog linker; the nonexisting course
+        // is an actual FK failure after the competition INSERT has executed.
+        tx.insert(competitionEntryRaceCourses).values({
+          competitionEntryId: created.value.id,
+          raceCourseId: 'missing-course',
+          createdAt: '2027-01-01T00:00:00.000Z',
+        }).run()
+      })
+    })
+    assert.deepEqual(sqlite.prepare('SELECT * FROM competition_entries').all(), before)
+    assert.deepEqual(sqlite.prepare('SELECT * FROM competition_entry_race_courses').all(), [])
+  })
 
   it('creates and reads a competition inside the plan horizon', () => {
     const created = createCompetition({
@@ -230,6 +258,16 @@ function createTestDatabase() {
       created_at TEXT NOT NULL,
       updated_at TEXT NOT NULL
     );
+
+    CREATE TABLE competition_entry_race_courses (
+      competition_entry_id TEXT PRIMARY KEY NOT NULL,
+      race_course_id TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (competition_entry_id) REFERENCES competition_entries(id),
+      FOREIGN KEY (race_course_id) REFERENCES race_courses(id)
+    );
+
+    CREATE TABLE race_courses (id TEXT PRIMARY KEY NOT NULL);
 
     CREATE TABLE competition_entries (
       id TEXT PRIMARY KEY NOT NULL,

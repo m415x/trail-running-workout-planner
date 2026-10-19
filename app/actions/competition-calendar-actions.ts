@@ -7,7 +7,15 @@ import { getRaceCourseSelectionContext, linkCompetitionEntryToRaceCourse } from 
 import { selectRaceCourseForCompetition } from '@/lib/race-catalog/competition-entry-selection'
 
 import { db } from '@/db'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
+import { createAuthorizedCompetitionCalendarReader } from '@/lib/periodization/authorized-competition-calendar-reader'
 import { groupTrainingPlans } from '@/db/schema'
+import { createAuthorizedCompetitionCalendarWriter } from '@/lib/periodization/authorized-competition-calendar-writer'
+import { runAuthorizedCompetitionMutation } from '@/lib/periodization/authorized-competition-calendar-mutation'
 import {
   changeCompetitionStatus,
   createCompetition,
@@ -26,8 +34,6 @@ import type {
   CompetitionStatus,
 } from '@/types/training/competition-entry.types'
 import type { GroupTrainingPlanKind } from '@/types/training/periodization.types'
-
-const CURRENT_TEAM_ID = 'team_1'
 
 type SupportedLocale = 'es' | 'en'
 type EditableCompetitionDraft = Omit<CompetitionEntryDraft, 'groupTrainingPlanId' | 'status'>
@@ -91,14 +97,19 @@ function resolvePlanKind(planningCohortId: string | null): GroupTrainingPlanKind
   return planningCohortId === null ? 'group_base' : 'cohort_variant'
 }
 
-function requireAccessiblePlan(planId: string) {
+async function requireAccessiblePlan(planId: string) {
+  const authorization = await requireAuthorizedCompetitionCalendarWriter().authorizePlan(planId)
+  if (authorization.status !== 'allowed') return null
   const plan = getAccessiblePlan(planId)
-
-  if (!plan || plan.group.isDeleted || plan.group.teamId !== CURRENT_TEAM_ID) {
-    return null
-  }
-
+  if (!plan || plan.group.isDeleted || plan.group.teamId !== authorization.teamId) return null
   return plan
+}
+
+/** Entry ownership is checked again by the domain service at mutation time. */
+function requireAuthorizedCompetitionEntry(planId: string, competitionId: string) {
+  return getCompetitionCalendar(planId).find(entry =>
+    entry.id === competitionId && entry.groupTrainingPlanId === planId
+  ) ?? null
 }
 
 function forbiddenResult<T>(): CompetitionCalendarActionResult<T> {
@@ -115,22 +126,48 @@ function revalidateCompetitionCalendar(locale: SupportedLocale, planId: string) 
   revalidatePath(`/${locale}/dashboard/planning/${planId}`)
 }
 
+function requireAuthorizedCompetitionCalendarPlan() {
+  return createAuthorizedCompetitionCalendarReader({
+    database: db,
+    readAccess: async () => {
+      const supabase = await createSupabaseServerClient()
+      return readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+  })
+}
+
+function requireAuthorizedCompetitionCalendarWriter() {
+  return createAuthorizedCompetitionCalendarWriter({
+    database: db,
+    readAccess: async () => {
+      const supabase = await createSupabaseServerClient()
+      return readEptSessionAccessState(supabase.auth, createExternalIdentityLookup())
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+  })
+}
+
 /**
- * Returns the visible competition calendar only for plans owned by the current
- * team, enriched with the current H8 distance advisory from the owning group.
- * Compatibility remains derived at read time and is never persisted.
+ * Team/Plan-scoped read: DENY remains explicit and cannot be represented as
+ * an authorized calendar with zero competitions.
  */
 export async function getCompetitionCalendarAction(
   input: CompetitionCalendarActionContext,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntryWithDistanceCompatibility[]>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  const authorized = await requireAuthorizedCompetitionCalendarPlan().read(input.planId)
+  if (authorized.status === 'denied') return forbiddenResult()
+
+  const plan = getAccessiblePlan(input.planId)
+  if (!plan || plan.group.isDeleted) return forbiddenResult()
 
   return {
     ok: true,
     value: withCompetitionDistanceCompatibility(
       plan.group.categoryCode,
-      getCompetitionCalendar(input.planId),
+      authorized.competitions,
     ),
     sameDateCompetitionIds: [],
   }
@@ -140,8 +177,10 @@ export async function getCompetitionCalendarAction(
 export async function createCompetitionAction(
   input: CreateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
   const result = createCompetition({
     planId: plan.id,
@@ -155,16 +194,20 @@ export async function createCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Updates mutable data without allowing edits to bypass lifecycle transitions. */
 export async function updateCompetitionAction(
   input: UpdateCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
 
-  const existing = getCompetitionCalendar(plan.id).find(({ id }) => id === input.competitionId)
+  const existing = requireAuthorizedCompetitionEntry(plan.id, input.competitionId)
   if (!existing) {
     return {
       ok: false,
@@ -187,14 +230,20 @@ export async function updateCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Changes only the date and preserves lifecycle status. */
 export async function rescheduleCompetitionAction(
   input: RescheduleCompetitionActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
+
+  if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
 
   const result = rescheduleCompetition({
     planId: plan.id,
@@ -206,14 +255,20 @@ export async function rescheduleCompetitionAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Applies one explicit lifecycle transition; cancellation never deletes the record. */
 export async function changeCompetitionStatusAction(
   input: ChangeCompetitionStatusActionInput,
 ): Promise<CompetitionCalendarActionResult<CompetitionEntry>> {
-  const plan = requireAccessiblePlan(input.planId)
-  if (!plan) return forbiddenResult()
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(input.planId),
+    onDenied: () => forbiddenResult<CompetitionEntry>(),
+    write: (plan) => {
+
+  if (!requireAuthorizedCompetitionEntry(plan.id, input.competitionId)) return forbiddenResult()
 
   const result = changeCompetitionStatus({
     planId: plan.id,
@@ -225,6 +280,8 @@ export async function changeCompetitionStatusAction(
 
   if (result.ok) revalidateCompetitionCalendar(input.locale ?? 'es', plan.id)
   return result
+    },
+  })
 }
 
 /** Creates a plan-scoped snapshot and optional catalog link atomically. */
@@ -236,10 +293,12 @@ export async function createCompetitionFromCatalogAction(
   const locale = formData.get('locale') === 'en' ? 'en' : 'es'
   const priority = formData.get('priority')
   if (priority !== 'A' && priority !== 'B' && priority !== 'C') return { error: 'invalid' }
-  const plan = requireAccessiblePlan(planId)
-  if (!plan) return { error: 'unavailable' }
+  return runAuthorizedCompetitionMutation({
+    authorize: () => requireAccessiblePlan(planId),
+    onDenied: () => ({ error: 'unavailable' as const }),
+    write: (plan) => {
   try {
-    const error = db.transaction(() => {
+    const error = db.transaction((tx) => {
       const context = getRaceCourseSelectionContext(String(formData.get('raceCourseId') ?? ''))
       if (!context) return 'unavailable' as const
       if (JSON.stringify([context.event.updatedAt, context.edition.updatedAt, context.course.updatedAt])
@@ -253,9 +312,10 @@ export async function createCompetitionFromCatalogAction(
         planKind: resolvePlanKind(plan.planningCohortId),
         coversEntirePlanAudience: true,
         draft: selection.selection.competitionDraft,
+        database: tx,
       })
       if (!result.ok) return 'calendarRejected' as const
-      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id)
+      linkCompetitionEntryToRaceCourse(result.value.id, context.course.id, tx)
       return null
     })
     if (error) return { error }
@@ -265,4 +325,6 @@ export async function createCompetitionFromCatalogAction(
   }
   revalidateCompetitionCalendar(locale, plan.id)
   redirect(planningPath(locale, plan.id))
+    },
+  })
 }

@@ -15,6 +15,8 @@ export type CapabilityKey =
   | 'planning.self.read'
   | 'stats.self.read'
   | 'physiology.self.read'
+  | 'physiology.biometric.self.read'
+  | 'physiology.biometric.self.manage'
   | 'workout_log.self.manage'
   | 'training.coordinate'
   | 'physiology.read'
@@ -67,6 +69,20 @@ export const CAPABILITY_CATALOG = [
   },
   {
     key: 'stats.self.read',
+    basePresets: ['athlete', 'assistant', 'coach', 'admin'],
+    delegable: false,
+    structural: false,
+    requiredScope: 'self',
+  },
+  {
+    key: 'physiology.biometric.self.read',
+    basePresets: ['athlete', 'assistant', 'coach', 'admin'],
+    delegable: false,
+    structural: false,
+    requiredScope: 'self',
+  },
+  {
+    key: 'physiology.biometric.self.manage',
     basePresets: ['athlete', 'assistant', 'coach', 'admin'],
     delegable: false,
     structural: false,

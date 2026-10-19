@@ -471,3 +471,21 @@ ok 1 - later success
     'failed test names must be repeated after the aggregate summary',
   )
 })
+
+
+test('KAN-790 T5.5 shared PostgreSQL fixtures run only in a serial lane', async () => {
+  const { prepareTestRunBatches } = await import('../scripts/test-runner')
+  const files = [
+    'tests/session-generation/kan-790-t55-pg-create-get-confirm-parity.test.ts',
+    'tests/session-generation/kan-789-review-snapshot-postgres-concurrency.test.ts',
+    'tests/session-generation/kan-790-t55-pg-create-quota-rollback.test.ts',
+    'tests/session-generation/kan-790-t55-pg-get-readonly.test.ts',
+    'tests/session-generation/generation-explanation-preview-ui.test.ts',
+  ]
+  const batches = prepareTestRunBatches(files)
+  const serial = batches.filter(batch => batch.args.includes('--test-concurrency=1'))
+  const parallel = batches.filter(batch => !batch.args.includes('--test-concurrency=1'))
+  const filenames = serial.flatMap(batch => batch.args.filter(arg => arg.endsWith('.test.ts')))
+  assert.deepEqual(filenames.sort(), files.slice(0, 4).sort())
+  assert.ok(parallel.some(batch => batch.args.includes(files[4]!)))
+})

@@ -64,6 +64,7 @@ export const teams = pgTable('teams', {
   description: text('description'),
   avatarLight: text('avatar_light'),
   avatarDark: text('avatar_dark'),
+  timeZone: text('time_zone'),
 })
 
 export const trainingLocations = pgTable('training_locations', {
@@ -449,6 +450,34 @@ export const groupTrainingPlans = pgTable(
     ),
   ],
 )
+
+/**
+ * KAN-790/T5.4 PG-2 — SQLite-equivalent optional per-Plan generation facts.
+ * Pattern remains serialized JSON text; absent rows resolve to domain defaults
+ * only after a successful authorized SQL read.
+ */
+export const sessionGenerationPreferences = pgTable(
+  'session_generation_preferences',
+  {
+    id: text('id').primaryKey(),
+    groupTrainingPlanId: text('group_training_plan_id')
+      .notNull()
+      .references(() => groupTrainingPlans.id, { onDelete: 'cascade' }),
+    frequencyMode: text('frequency_mode').$type<'auto' | 'fixed'>().notNull(),
+    fixedSessionsPerWeek: integer('fixed_sessions_per_week'),
+    weeklyPattern: text('weekly_pattern').notNull(),
+    isDeleted: boolean('is_deleted').notNull().default(false),
+    createdAt: text('created_at').notNull()
+      .$defaultFn(() => new Date().toISOString()),
+    updatedAt: text('updated_at').notNull()
+      .$defaultFn(() => new Date().toISOString()),
+  },
+  (table) => [
+    uniqueIndex('session_generation_preferences_group_training_plan_unique').on(
+      table.groupTrainingPlanId,
+    ),
+  ],
+).enableRLS()
 
 export const loadStrategies = pgTable(
   'load_strategies',
@@ -866,6 +895,7 @@ export const globalMonthlyDueDateExceptions = pgTable(
     dueDate: text('due_date').notNull(),
     reason: text('reason').notNull(),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('global_monthly_due_date_exceptions_month_check', sql`${table.month} between 1 and 12`),
@@ -885,6 +915,7 @@ export const monthlyChargeReductions = pgTable(
     reductionAmountMinor: integer('reduction_amount_minor').notNull(),
     reason: text('reason').notNull(),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('monthly_charge_reductions_amount_check', sql`${table.reductionAmountMinor} >= 0`),
@@ -904,6 +935,7 @@ export const monthlyChargeExtensions = pgTable(
     extendedDueDate: text('extended_due_date'),
     reason: text('reason').notNull(),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     uniqueIndex('monthly_charge_extensions_charge_current_unique')
@@ -925,6 +957,7 @@ export const paymentRevisions = pgTable(
     paidAt: text('paid_at').notNull(),
     voided: boolean('voided').notNull().default(false),
     isCurrent: boolean('is_current').notNull().default(true),
+    createdByUserId: text('created_by_user_id').references(() => users.id, { onDelete: 'restrict' }),
   },
   (table) => [
     check('payment_revisions_amount_positive_check', sql`${table.amountMinor} > 0`),
