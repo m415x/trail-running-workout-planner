@@ -12,7 +12,7 @@ test('KAN-829 T3 RED: catalog creation uses the same transaction for Entry and c
   const body = actions.slice(start)
   assert.match(body, /db\.transaction\(\(tx\)\s*=>/)
   assert.match(body, /createCompetition\(\{[\s\S]*?database:\s*tx/)
-  assert.match(body, /linkCompetitionEntryToRaceCourse\(result\.value\.id,\s*context\.course\.id,\s*tx\)/)
+  assert.match(body, /linkCompetitionEntryToRaceCourse\(result\.value\.id,\s*context\.course\.id,\s*tx(?: as typeof db)?\)/)
 })
 
 test('KAN-829 T3 RED: linking a catalog course accepts the transaction database', () => {
