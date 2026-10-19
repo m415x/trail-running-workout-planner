@@ -19,7 +19,7 @@ test('KAN-823/T9c 1000m panel secondary states use Athlete-scaled roles with unc
 test('KAN-823/T9c history entries and summary reference text scale without changing data boundaries', () => {
   assert.match(stats, /rounded-xl border p-3 text-\[length:var\(--athlete-text-body-compact\)\]/)
   assert.match(stats, /gap-3 p-3 text-\[length:var\(--athlete-text-body-compact\)\]/)
-  assert.match(stats, /point\.performedAt[^]*text-\[length:var\(--athlete-text-caption\)\]/)
+  assert.match(stats, /className='text-\[length:var\(--athlete-text-caption\)\] text-muted-foreground'>\{point\.performedAt/)
   assert.match(stats, /getCurrentAthleteTrack1000mPerformanceAction/)
   assert.match(stats, /getCurrentAthleteStatsAction/)
   assert.match(stats, /buildAthleteStatsSummaryView/)
