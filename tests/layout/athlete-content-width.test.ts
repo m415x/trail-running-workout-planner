@@ -55,7 +55,7 @@ test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detai
 })
 
 test('KAN-563 compacts the Profile tab selector like the wide Athlete bottom navigation', () => {
-  assert.match(profile, /<TabsList[^>]*className=['"][^'"]*w-full[^'"]*sm:w-auto/)
+  assert.match(profile, /<TabsList[^>]*className=['\"][^'\"]*w-full[^'\"]*max-w-full/)
   assert.match(profile, /sm:mx-auto/)
   assert.match(profile, /sm:gap-1/)
   assert.match(profile, /sm:rounded-\[var\(--radius-ept-overlay\)\]/)
