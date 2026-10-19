@@ -105,9 +105,15 @@ test('KAN-830 T4: SQLite multi-Team ownership, capability and DENY do not mutate
     assert.equal(dispatchedWrites, 1)
     assert.deepEqual(entrySnapshot(), [{ id: 'allowed_team_b', group_training_plan_id: 'plan_b', status: 'planned' }])
 
+    // ALLOW legitimately increments total_changes(). Use the post-ALLOW
+    // baseline to prove that the subsequent anonymous DENY adds no writes.
+    const afterAllowed = snapshot()
+    const entriesAfterAllowed = entrySnapshot()
     access = { status: 'anonymous' }
     assert.deepEqual(await writer.authorizePlan('plan_b'), { status: 'denied' })
-    assert.deepEqual(snapshot(), before)
+    assert.deepEqual(snapshot(), afterAllowed)
+    assert.deepEqual(entrySnapshot(), entriesAfterAllowed)
+    assert.equal(dispatchedWrites, 1)
   } finally {
     sqlite.close()
   }
