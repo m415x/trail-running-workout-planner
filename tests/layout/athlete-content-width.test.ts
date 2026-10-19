@@ -42,7 +42,8 @@ test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats',
   assert.match(athleteTypography, /@media\s*\(min-width:\s*640px\)\s*\{\s*\.athlete-typography\s*\{[^}]*--athlete-text-heading:\s*calc\(1\.875rem\s*\*\s*var\(--athlete-type-multiplier\)\);/)
   assert.match(athleteTypography, /@media\s*\(min-width:\s*1024px\)\s*\{\s*\.athlete-typography\s*\{[^}]*--athlete-text-heading:\s*calc\(1\.875rem\s*\*\s*var\(--athlete-type-multiplier\)\);/)
   assert.match(plan, /text-2xl[^'"]*sm:text-3xl/)
-  assert.match(profileHeader, /text-2xl[^'"]*sm:text-3xl/)
+  // KAN-825: standard=1 and heading breakpoint assertions above preserve KAN-563 sizing.
+  assert.match(profileHeader, /text-\[length:var\(--athlete-text-heading\)\]/)
 })
 
 test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detail scrolls', () => {
