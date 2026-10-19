@@ -34,7 +34,9 @@ test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats',
 
   // Athlete Home/Stats now share scoped semantics while preserving the
   // original KAN-563 1.5rem mobile and 1.875rem tablet+ visual hierarchy.
-  // The standard preset multiplier preserves KAN-563's original responsive heading sizes.\n  assert.match(athleteTypography, /\.athlete-typography\[data-athlete-typography='standard'\]\s*\{\s*--athlete-type-multiplier:\s*1;/)\n  assert.match(homeHeader, /text-\[length:var\(--athlete-text-heading\)\]/)
+  // The standard preset multiplier preserves KAN-563's original responsive heading sizes.
+  assert.match(athleteTypography, /\.athlete-typography\[data-athlete-typography='standard'\]\s*\{\s*--athlete-type-multiplier:\s*1;/)
+  assert.match(homeHeader, /text-\[length:var\(--athlete-text-heading\)\]/)
   assert.match(stats, /text-\[length:var\(--athlete-text-heading\)\]/)
   assert.match(athleteTypography, /--athlete-text-heading:\s*calc\(1\.5rem\s*\*\s*var\(--athlete-type-multiplier\)\);/)
   assert.match(athleteTypography, /@media\s*\(min-width:\s*640px\)\s*\{\s*\.athlete-typography\s*\{[^}]*--athlete-text-heading:\s*calc\(1\.875rem\s*\*\s*var\(--athlete-type-multiplier\)\);/)
