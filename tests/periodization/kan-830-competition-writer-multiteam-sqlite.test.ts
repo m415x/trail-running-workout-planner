@@ -5,11 +5,13 @@ import { drizzle } from 'drizzle-orm/better-sqlite3'
 
 import * as schema from '@/db/schema'
 import { createAuthorizedCompetitionCalendarWriter } from '@/lib/periodization/authorized-competition-calendar-writer'
+import { runAuthorizedCompetitionMutation } from '@/lib/periodization/authorized-competition-calendar-mutation'
 
 test('KAN-830 T4: SQLite multi-Team ownership, capability and DENY do not mutate any durable rows', async () => {
   const sqlite = new Database(':memory:')
   try {
     sqlite.exec(`
+      CREATE TABLE competition_entries (id TEXT PRIMARY KEY NOT NULL, group_training_plan_id TEXT NOT NULL, status TEXT NOT NULL);
       CREATE TABLE athlete_groups (
         id TEXT PRIMARY KEY NOT NULL,
         team_id TEXT NOT NULL,
@@ -72,6 +74,36 @@ test('KAN-830 T4: SQLite multi-Team ownership, capability and DENY do not mutate
     assert.deepEqual(await writer.authorizePlan('plan_a'), { status: 'denied' })
     assert.deepEqual(await writer.authorizePlan('plan_b'), { status: 'allowed', teamId: 'team_b' })
     assert.deepEqual(snapshot(), before)
+
+    // Integrate actual SQLite ownership decision with the production mutation dispatcher.
+    // All rejected decisions must stop before a SQL writer is called.
+    const entrySnapshot = () => sqlite.prepare('SELECT * FROM competition_entries ORDER BY id').all()
+    let dispatchedWrites = 0
+    const dispatch = (planId: string, entryId: string) => runAuthorizedCompetitionMutation({
+      authorize: async () => {
+        const decision = await writer.authorizePlan(planId)
+        return decision.status === 'allowed' ? { planId, teamId: decision.teamId } : null
+      },
+      onDenied: (): { ok: boolean } => ({ ok: false }),
+      write: ({ planId: authorizedPlanId }) => {
+        dispatchedWrites++
+        sqlite.prepare('INSERT INTO competition_entries (id, group_training_plan_id, status) VALUES (?, ?, ?)').run(entryId, authorizedPlanId, 'planned')
+        return { ok: true }
+      },
+    })
+    const emptyEntries = entrySnapshot()
+    currentTeam = 'team_a'
+    permitted = false
+    assert.deepEqual(await dispatch('plan_a', 'denied_capability'), { ok: false })
+    permitted = true
+    assert.deepEqual(await dispatch('plan_b', 'denied_foreign_team'), { ok: false })
+    assert.deepEqual(await dispatch('plan_deleted', 'denied_deleted_plan'), { ok: false })
+    assert.equal(dispatchedWrites, 0)
+    assert.deepEqual(entrySnapshot(), emptyEntries)
+    currentTeam = 'team_b'
+    assert.deepEqual(await dispatch('plan_b', 'allowed_team_b'), { ok: true })
+    assert.equal(dispatchedWrites, 1)
+    assert.deepEqual(entrySnapshot(), [{ id: 'allowed_team_b', group_training_plan_id: 'plan_b', status: 'planned' }])
 
     access = { status: 'anonymous' }
     assert.deepEqual(await writer.authorizePlan('plan_b'), { status: 'denied' })
