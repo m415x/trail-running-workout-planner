@@ -38,19 +38,19 @@ export function SettingsTabContent() {
 
   return (
     <div className='mt-2 space-y-3'>
-      <div className='flex items-center justify-between rounded-2xl border border-border p-4'>
-        <span className='text-sm font-medium text-foreground'>{t('theme')}</span>
+      <div className='flex min-h-11 flex-wrap items-center justify-between gap-3 rounded-2xl border border-border p-4'>
+        <span className='text-[length:var(--athlete-text-label)] font-medium text-foreground'>{t('theme')}</span>
         <ThemeToggleButton aria-label={t('changeTheme')} />
       </div>
       <section className='rounded-2xl border border-border p-4' aria-label={t('accessibility.title')}>
-        <h2 className='mb-3 text-base font-semibold text-foreground'>{t('accessibility.title')}</h2>
+        <h2 className='mb-3 text-[length:var(--athlete-text-title)] font-semibold text-foreground'>{t('accessibility.title')}</h2>
         <fieldset>
-          <legend className='mb-2 text-sm font-medium text-foreground'>{t('accessibility.fontSize')}</legend>
+          <legend className='mb-2 text-[length:var(--athlete-text-label)] font-medium text-foreground'>{t('accessibility.fontSize')}</legend>
           <div className='grid grid-cols-1 gap-2 sm:grid-cols-2'>
             {ATHLETE_TYPOGRAPHY_PRESETS.map((preset) => (
               <label
                 key={preset}
-                className='flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-sm text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background'
+                className='flex min-h-11 cursor-pointer items-center gap-3 rounded-xl border border-border px-3 py-2 text-[length:var(--athlete-text-body)] text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 focus-within:ring-offset-background'
               >
                 <input
                   type='radio'
@@ -66,13 +66,13 @@ export function SettingsTabContent() {
           </div>
         </fieldset>
       </section>
-      <Link href={`/${locale}/auth/recovery`} className='flex min-h-11 items-center rounded-2xl border border-border p-4 text-sm font-medium underline-offset-4 hover:underline'>
+      <Link href={`/${locale}/auth/recovery`} className='flex min-h-11 items-center rounded-2xl border border-border p-4 text-[length:var(--athlete-text-body)] font-medium underline-offset-4 hover:underline'>
         {t('passwordRecovery')}
       </Link>
-      <Button type='button' variant='outline' className='min-h-11 w-full rounded-2xl' disabled={loggingOut} onClick={handleLogout}>
+      <Button type='button' variant='outline' className='min-h-11 w-full rounded-2xl text-[length:var(--athlete-text-body)]' disabled={loggingOut} onClick={handleLogout}>
         {t('signOut')}
       </Button>
-      {logoutFailed && <p role='alert' className='text-sm text-destructive'>{t('signOutError')}</p>}
+      {logoutFailed && <p role='alert' className='text-[length:var(--athlete-text-body)] text-destructive'>{t('signOutError')}</p>}
     </div>
   )
 }
