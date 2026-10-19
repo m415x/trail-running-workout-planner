@@ -50,7 +50,7 @@ test('KAN-830 T4: SQLite multi-Team ownership, capability and DENY do not mutate
     const snapshot = () => ({
       groups: sqlite.prepare('SELECT * FROM athlete_groups ORDER BY id').all(),
       plans: sqlite.prepare('SELECT * FROM group_training_plans ORDER BY id').all(),
-      changes: sqlite.totalChanges,
+      changes: sqlite.prepare('SELECT total_changes() AS count').get(),
     })
     const before = snapshot()
 
