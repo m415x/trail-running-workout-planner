@@ -22,5 +22,5 @@ test('KAN-830 T4 RED: all five Server Action writers delegate through an injecta
       : actions.indexOf('\nexport async function ', start + 1))
     assert.match(body, /runAuthorizedCompetitionMutation\(/, `${name} must gate its delegated write`)
   }
-  assert.match(readFileSync(guardPath, 'utf8'), /export async function runAuthorizedCompetitionMutation\(/)
+  assert.match(readFileSync(guardPath, 'utf8'), /export async function runAuthorizedCompetitionMutation(?:<[^>]+>)?\(/)
 })
