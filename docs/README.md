@@ -2,7 +2,7 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
-## Current execution and handoffs
+## Handoffs
 
 - [KAN-832 progressive SQLite seeds — integrated in dev](handoffs/kan-832.md) — [PR #68](https://github.com/m415x/trail-running-workout-planner/pull/68), accredited init/base/plan/demo and staged H4B acceptance; operator-reported premerge and postmerge PASS 6/6. See [current integrated handoff](handoffs/current.md).
 
