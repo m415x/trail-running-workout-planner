@@ -7,7 +7,7 @@ import { CustomCard } from '@/components/ui/custom/card-containers'
 export function AthletePageState({ message }: { message: string }) {
   return (
     <div className='mx-auto w-full max-w-5xl px-4 py-6 sm:px-6'>
-      <CustomCard role='alert' className='items-center py-8 text-center text-sm text-destructive'>
+      <CustomCard role='alert' className='items-center py-8 text-center text-[length:var(--athlete-text-body-compact)] text-destructive'>
         <p>{message}</p>
       </CustomCard>
     </div>
