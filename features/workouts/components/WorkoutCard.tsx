@@ -65,7 +65,7 @@ export function BaseWorkoutCard({
     <>
       <CustomCard className={cardClassName}>
         <CardHeader title={headerTitle} icon={WorkoutIcon}>
-          <span className='font-mono text-muted-foreground text-xs'>{dateLabel}</span>
+          <span className='font-mono text-muted-foreground text-[length:var(--athlete-text-caption)]'>{dateLabel}</span>
         </CardHeader>
 
         <CustomCardInside className='flex items-center'>
@@ -74,9 +74,9 @@ export function BaseWorkoutCard({
               <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
                 {workout.distance}
               </span>
-              <span className='font-heading text-xl font-semibold text-muted-foreground'>km</span>
+              <span className='font-heading text-[length:var(--athlete-text-title)] font-semibold text-muted-foreground'>km</span>
             </div>
-            {showSubtitle && workout.title && <p className='text-muted-foreground text-xs mt-1'>{workout.title}</p>}
+            {showSubtitle && workout.title && <p className='text-muted-foreground text-[length:var(--athlete-text-caption)] mt-1'>{workout.title}</p>}
           </div>
 
           <ZonePill zoneInfo={zoneInfo} bpmRange={bpmRange} />
