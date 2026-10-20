@@ -3,6 +3,7 @@
     "loadError": "The training plan could not be loaded.",
     "eyebrow": "My plan",
     "currentWeek": "Current week",
+    "selectedWeek": "Selected week",
     "group": "Group {group}",
     "competitions": "Competitions",
     "viewRegistrations": "View registrations",
