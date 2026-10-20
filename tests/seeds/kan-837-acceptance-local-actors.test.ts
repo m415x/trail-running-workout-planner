@@ -24,7 +24,7 @@ test('KAN-837 S5: acceptance actors are explicit local EPT fixtures, not Supabas
       assert.equal(result.status, 0, `${file} failed: ${result.stdout}\n${result.stderr}`)
     }
     const actorFile = 'scripts/provision-h4b-acceptance-actors.ts'
-    const actorEnv = { ...process.env, NODE_ENV: 'test', CI: 'false',
+    const actorEnv: NodeJS.ProcessEnv = { ...process.env, NODE_ENV: 'test', CI: 'false',
       SQLITE_SCENARIO_MODE: '', TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.json') }
     const inspect = (args: string[]) => {
       const result = run(actorFile, args, actorEnv)
