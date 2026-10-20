@@ -23,21 +23,23 @@ To verify the current database directly, run:
 pn db:sqlite:verify
 ```
 
-## Seed operations
+## Seed operations — KAN-832 candidate (not yet integrated)
 
-Seeding is optional and separate from schema bootstrap.
+Seeding is optional and independent of schema upgrades. All mutable progressive commands are **fail-closed** unless `SQLITE_SCENARIO_MODE=1`, `SQLITE_SEED_DISPOSABLE_ACK=1`, `SQLITE_DATABASE_PATH` identifies an existing SQLite in a recognized OS-temp `trail-running-sqlite-base-seed-*` workspace, and `TSX_TSCONFIG_PATH` locates the project tsconfig. The shared KAN-834 guard rejects the canonical developer `sqlite.db`, missing accreditation and non-disposable destinations. The scenario verifier creates its own isolated workspaces; do **not** run these commands directly on a recovered development or acceptance database.
 
-```bash
-pn db:seed:base
-pn db:seed:race-catalog
-pn db:seed:realized-training
-pn db:seed:plan-real
-pn db:seed
-```
+| Command | Result |
+| --- | --- |
+| `pn db:seed:init` | Minimal structural Team |
+| `pn db:seed:base` | Init plus ungrouped sample athletes; no groups, plans or effective sessions |
+| `pn db:seed:plan` | Base plus groups, cohorts, base/variant plans and strategies; no effective sessions/prescriptions |
+| `pn db:seed:demo` | Historical full `db/seed.ts` compatibility fixture; sessions and H4B shared S2/M1 prescriptions |
+| `pn db:seed:acceptance` | Explicit staged demo plus local H4B actor provisioning with one accredited SQLite target; not Supabase authentication |
+| `pn db:seed` | Rich historical composition: demo, race-catalog, realized-training and plan-real |
+| `pn db:seed:acceptance:multiteam` | Separate explicit opt-in KAN-758 scenario, never implicit in demo/acceptance/rich |
 
-The composable feature fixtures live under `db/seeds/`. Automated verification also exercises focused `groups` and `competitions` feature seeds in isolation, which keeps prerequisites explicit and allows empty-state testing without implicitly loading the full fixture set.
+The three rich complement scripts use the same shared accreditation guard. `db:seed:acceptance` copies the accredited target into another recognized disposable workspace and applies demo then H4B there; it publishes only after both succeed. The existing H4B collision, Team, group, memberships, identity and idempotence validations remain; production and CI are forbidden. A foreign Supabase subject string in local fixture data is **not** proof of a real Supabase account or authenticated session. The legacy provisioner retains its separate non-scenario invocation path for historical tooling; never invoke it as a substitute for accredited public acceptance.
 
-The three specialized commands retain walkthrough data for the race catalog, realized training and plan-real comparison. Their implementation is also owned under `db/seeds/`; they are not obsolete root-level seed scripts.
+**Intentional breaking change:** previous `db:seed:base` was the historical monolithic seed; its equivalent is now `db:seed:demo`. Historical `db:sqlite:check` base-seed coverage deliberately still targets `db/seed.ts` to preserve the legacy H4B fixture. `db:seed` remains the richer composition, not an alias for minimal base.
 
 ## Verification gate
 
