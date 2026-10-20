@@ -57,7 +57,7 @@ export function LogWorkoutDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
-      <DialogContent className='max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
+      <DialogContent className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
