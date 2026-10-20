@@ -14,7 +14,7 @@ test('KAN-834 S2 RED: seed denies a non-accredited existing SQLite target withou
   const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
   const env = {
     ...process.env,
-    NODE_ENV: 'test',
+    NODE_ENV: 'test' as const,
     SQLITE_SCENARIO_MODE: '1',
     SQLITE_DATABASE_PATH: sqlitePath,
     TSX_TSCONFIG_PATH: resolve(projectRoot, 'tsconfig.json'),
