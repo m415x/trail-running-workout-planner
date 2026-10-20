@@ -41,7 +41,7 @@ export function BottomNavigationBar() {
             >
               <Icon size={20} className='transition-transform duration-200' />
 
-              <span className='font-medium text-[length:var(--text-ept-caption)] leading-tight text-center'>{t(labelKey)}</span>
+              <span className='font-medium text-[length:var(--athlete-text-caption)] leading-tight text-center'>{t(labelKey)}</span>
             </Link>
           )
         })}
