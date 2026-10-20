@@ -1,6 +1,15 @@
 'use server'
 
-import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm'
+import { and, asc, eq, gte, inArray, lte } from 'd      const hasAthleteAdjustment = session.sessionPrescriptions.some((prescription) => (
+        adjustmentBySourcePrescriptionId.has(prescription.id)
+      ))
+      if (!shouldEvaluateAthletePeriodSession({
+        originalDate: session.date,
+        startDate: scope.startDate,
+        endDate: scope.endDate,
+        hasAthleteAdjustment,
+      })) return []
+rizzle-orm'
 
 import { db } from '@/db'
 import {
@@ -310,15 +319,6 @@ export async function getCurrentAthletePlanningWeek(
     }
 
     const resolvedSessions = weekSessions.flatMap((session) => {
-      const hasAthleteAdjustment = session.sessionPrescriptions.some((prescription) => (
-        adjustmentBySourcePrescriptionId.has(prescription.id)
-      ))
-      if (!shouldEvaluateAthletePeriodSession({
-        originalDate: session.date,
-        startDate: scope.startDate,
-        endDate: scope.endDate,
-        hasAthleteAdjustment,
-      })) return []
       const planning = resolveAthletePlanningOnDate({
         athleteTeamId: athlete.teamId,
         currentGroupId: athlete.groupId,
