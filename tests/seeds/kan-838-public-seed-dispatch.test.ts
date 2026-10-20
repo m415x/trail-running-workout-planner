@@ -22,8 +22,13 @@ test('KAN-838 S6 RED: public seed dispatch is progressive and unauthorized targe
   for (const [name, target] of Object.entries(expected)) {
     assert.equal(scripts[name], target, `${name} must dispatch to ${target}`)
   }
-  assert.match(scripts['db:seed:acceptance'] ?? '', /db:seed:demo/, 'acceptance must not use minimal base')
-  assert.doesNotMatch(scripts['db:seed:acceptance'], /db:seed:base/, 'H4B actors require historical demo fixtures')
+  assert.equal(scripts['db:seed:acceptance'], 'tsx scripts/seed-acceptance-disposable.ts',
+    'acceptance must dispatch through the approved disposable H4B orchestrator')
+  const acceptanceSource = readFileSync(join(root, 'scripts/seed-acceptance-disposable.ts'), 'utf8')
+  assert.match(acceptanceSource, /run\('db\/seeds\/demo\.ts'\)/,
+    'acceptance orchestrator must stage the historical demo fixtures')
+  assert.match(acceptanceSource, /run\('scripts\/provision-h4b-acceptance-actors\.ts', \['--apply'\]\)/,
+    'acceptance orchestrator must provision H4B actors after demo')
 
   const workspace = mkdtempSync(join(tmpdir(), 'trail-running-sqlite-base-seed-'))
   const path = join(workspace, 'sqlite.db')
