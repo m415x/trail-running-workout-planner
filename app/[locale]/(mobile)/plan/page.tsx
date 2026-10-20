@@ -90,7 +90,7 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     <div className='mx-auto w-full min-w-0 max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
-          <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{t('currentWeek')}</h1></div>
+          <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{monday === (resolveSelectedAthletePlanWeek(null, civilToday).status === 'resolved' ? resolveSelectedAthletePlanWeek(null, civilToday).monday : '') ? t('currentWeek') : t('selectedWeek')}</h1></div>
 
         </div>
         <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(monday, sunday, regionalContext.presentationLocale)}</p>
