@@ -1,3 +1,4 @@
+import { assertAccreditedScenarioSeedTarget } from '@/db/seeds/assert-disposable-target'
 import { eq } from 'drizzle-orm'
 
 import { db } from '@/db'
@@ -65,6 +66,7 @@ function classification(
 }
 
 async function seedRaceCatalogFixtures() {
+  assertAccreditedScenarioSeedTarget()
   console.log('🏁 Poblando fixtures representativos del catálogo competitivo...')
 
   const now = new Date().toISOString()
