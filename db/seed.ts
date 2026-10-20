@@ -301,7 +301,9 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
 // KAN-834 S2: scenario seeding requires independent disposable-target accreditation.
 // This does not change the historical db:seed:base composition (KAN-835/S3).
 function assertAccreditedScenarioSeedTarget(): void {
-  if (process.env.SQLITE_SCENARIO_MODE !== '1') return
+  if (process.env.SQLITE_SCENARIO_MODE !== '1') {
+    throw new Error('KAN-834: seed destination is not explicitly accredited as disposable')
+  }
   const path = process.env.SQLITE_DATABASE_PATH
   if (!path || process.env.SQLITE_SEED_DISPOSABLE_ACK !== '1') {
     throw new Error('KAN-834: isolated seed target is not explicitly accredited as disposable')
