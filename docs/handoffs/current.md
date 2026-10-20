@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-645 Athlete Plan multisemana (2026-10-19)
+
+- **Integrated dev baseline:** [PR #66](https://github.com/m415x/trail-running-workout-planner/pull/66), ordinary merge `fba2e11e7a3f777602c253e73a9a33ccc364eee1`; PR head `388450950004aa546df43b29443aa6e5f0900ca7`; functional candidate and pre-merge gate `0458afb6a341a05d399cb547a5fc8570605089ab`. Documentation-only follow-ups have separate SHAs.
+- **Post-merge operator gate on integrated dev:** `pn verify --db` **PASS 6/6** — Tests 133323ms, TypeScript 12189ms, ESLint 34225ms, Build 32184ms, i18n 379ms, SQLite 48243ms, total 260543ms. GitHub dev confirmed identical to merge SHA at documentation start. Local `git rev-parse HEAD` was not included with post-merge gate output; treat attribution to merge SHA as operator worktree context rather than independently confirmed local HEAD.
+- **Acceptance:** /plan?week civil-week navigation, seven-day effective sessions, 3-week planned distance/D+ summary, Competition context, ES/EN, dark/light, 360/390/mobile, landscape/tablet/desktop, keyboard/focus and 200% zoom operator PASS. The S2 SQLite fixture is seeded; its 101 km / 2970m D+ represents persisted data, **not** coach-generated load validation. Initial artificial `missing-effective-prescription` conflict traced to a zero-prescription Team seed session; corrected with fail-closed preservation for genuine conflict and temporal candidate guard. See [KAN-645 story handoff](kan-645.md).
+- **Post-merge publication:** update of integrated current/index and story reconciliation is documentation-only. `pn docs:handoff:check` on the documentation HEAD and Jira KAN-645/KAN-766 administrative closure remain required. Do not attribute the full post-merge gate to later docs-only commits.
+
+---
+
 # Current integrated handoff — KAN-810 regional numeric inputs (2026-10-18)
 
 - **Integrated dev baseline:** [PR #64](https://github.com/m415x/trail-running-workout-planner/pull/64) ordinary merge `d127b40dd67285b5568e841934d06c4dafe3aba8`; PR head `614c3f6decbc438cd5ccc238e2b058cb11d1adb1`, functional candidate gate SHA `e32e5ffabc7c8949425972da63e2e972a2e8f326`. Documentation-only follow-ups are separate identities.
