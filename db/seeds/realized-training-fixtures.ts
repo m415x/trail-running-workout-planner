@@ -1,3 +1,4 @@
+import { assertAccreditedScenarioSeedTarget } from '@/db/seeds/assert-disposable-target'
 import { and, eq, gte, isNull, lte } from 'drizzle-orm'
 
 import { db } from '@/db/index'
@@ -51,6 +52,7 @@ function getCurrentDateInArgentina() {
 }
 
 async function seedRealizedTrainingFixtures() {
+  assertAccreditedScenarioSeedTarget()
   console.log('🏃 Seeding realized-training walkthrough fixtures...')
 
   const athlete = await db
