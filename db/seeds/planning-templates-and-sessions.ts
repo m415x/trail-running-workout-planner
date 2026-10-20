@@ -24,6 +24,7 @@ export async function seedPlanningTemplatesAndSessions(
   groups: SeededAthleteGroup[],
   currentWeekStart: string,
   shiftISODate: (value: string, days: number) => string,
+  options: { includeLegacySession?: boolean } = {},
 ): Promise<void> {
   const s2GroupId = groupId(groups, 'S2')
   const planId = 'group_plan_s2_12k'
@@ -97,6 +98,8 @@ export async function seedPlanningTemplatesAndSessions(
   }))
 
   await db.insert(microcycles).values(microcycleRows).onConflictDoNothing().run()
+
+  if (options.includeLegacySession === false) return
 
   await db.insert(sessions).values({
     id: 'session_s2_seed_fixture',
