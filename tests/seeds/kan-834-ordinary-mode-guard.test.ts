@@ -7,6 +7,27 @@ import test from 'node:test'
 
 import Database from 'better-sqlite3'
 
+// Snapshot all durable SQLite tables and rows, not just Team counts. A rejected
+// seed must leave identities, groups, plans, sessions and migration metadata intact.
+function snapshotSqlite(path: string): string {
+  const sqlite = new Database(path, { readonly: true, fileMustExist: true })
+  try {
+    const tables = sqlite.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    ).all() as Array<{ name: string }>
+    const state = tables.map(({ name }) => {
+      const quoted = '"' + name.replaceAll('"', '""') + '"'
+      return {
+        name,
+        rows: sqlite.prepare(`SELECT * FROM ${quoted} ORDER BY rowid`).all(),
+      }
+    })
+    return JSON.stringify(state)
+  } finally {
+    sqlite.close()
+  }
+}
+
 // S2: SQLite destination safety must hold even when scenario mode is not enabled.
 test('KAN-834 S2 RED: ordinary seed refuses an existing unaccredited SQLite without writes', () => {
   const root = resolve(process.cwd())
@@ -25,10 +46,13 @@ test('KAN-834 S2 RED: ordinary seed refuses an existing unaccredited SQLite with
     })
     assert.equal(migrate.status, 0, `temporary migration failed: ${migrate.stdout}\n${migrate.stderr}`)
 
-    const beforeDb = new Database(path, { readonly: true, fileMustExist: true })
-    const before = (beforeDb.prepare('SELECT COUNT(*) AS n FROM teams').get() as { n: number }).n
-    beforeDb.close()
-    assert.equal(before, 0)
+    const before = snapshotSqlite(path)
+    const empty = new Database(path, { readonly: true, fileMustExist: true })
+    try {
+      assert.equal((empty.prepare('SELECT COUNT(*) AS n FROM teams').get() as { n: number }).n, 0)
+    } finally {
+      empty.close()
+    }
 
     // Run from disposable cwd with no scenario accreditation: legacy CLI would
     // silently target cwd/sqlite.db. This must fail closed before any mutation.
@@ -36,12 +60,18 @@ test('KAN-834 S2 RED: ordinary seed refuses an existing unaccredited SQLite with
     const seeded = spawnSync(process.execPath, [tsx, resolve(root, 'db/seed.ts')], {
       cwd: workspace, env, encoding: 'utf8', timeout: 120000,
     })
-    assert.equal(seeded.error, undefined)
-    assert.notEqual(seeded.status, 0, 'unaccredited ordinary seed must refuse SQLite mutation')
+    assert.equal(seeded.error, undefined, 'seed process must launch')
+    const output = `${seeded.stdout ?? ''}\n${seeded.stderr ?? ''}`
+    assert.notEqual(seeded.status, 0, `unaccredited seed must be denied; output:\n${output}`)
+    assert.match(
+      output,
+      /KAN-834: seed destination is not explicitly accredited as disposable/,
+      `reject only for the documented target-accreditation guard, not infrastructure: \n${output}`,
+    )
+    assert.equal(snapshotSqlite(path), before, 'denied seed must preserve all durable tables and rows')
 
     const afterDb = new Database(path, { readonly: true, fileMustExist: true })
     try {
-      assert.equal((afterDb.prepare('SELECT COUNT(*) AS n FROM teams').get() as { n: number }).n, before)
       assert.deepEqual(afterDb.pragma('foreign_key_check'), [])
     } finally {
       afterDb.close()
