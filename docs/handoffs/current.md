@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-832 progressive SQLite seeds (2026-10-20)
+
+- **Integrated dev:** [PR #68](https://github.com/m415x/trail-running-workout-planner/pull/68), ordinary merge `80c9bda168561cdddc71278a83500e711f59f17d`; documentation fix `80cc99a171e89be7c39767a356178a13c514bce3` restored three rich alias references required by historical SQLite operations test.
+- **Gates:** premerge operator `pn verify --db` PASS 6/6 (detailed durations in [story handoff](kan-832.md)); initial postmerge test gate FAIL only on outdated documentation of rich aliases, corrected documentation-only; subsequent operator-reported postmerge `pn verify --db` **PASS 6/6**, Jira KAN-838 comment 13760. Operator did not provide local HEAD SHA or duration breakdown for latest PASS; do not attribute to exact locally attested HEAD.
+- **Delivered:** safe progressive `init` → `base` → `plan` → `demo`; explicit staged `acceptance` with local H4B fixture validation and shared S2/M1 prescriptions; `db:seed` retains rich demo-plus-complements composition, multiteam remains opt-in. KAN-834 rejects non-accredited targets; no claim of live Supabase authentication.
+- **Pending administrative closure:** documentation handoff check on final `dev` documentation HEAD; Jira reconciliation; operator-mediated story worktree inventory and disposition or recorded blocker. Inspect ignored SQLite, env, logs and local evidence before any worktree retirement; no automated force-delete.
+
+---
+
 # Current integrated handoff — KAN-645 Athlete Plan multisemana (2026-10-19)
 
 - **Integrated dev baseline:** [PR #66](https://github.com/m415x/trail-running-workout-planner/pull/66), ordinary merge `fba2e11e7a3f777602c253e73a9a33ccc364eee1`; PR head `388450950004aa546df43b29443aa6e5f0900ca7`; functional candidate and pre-merge gate `0458afb6a341a05d399cb547a5fc8570605089ab`. Documentation-only follow-ups have separate SHAs.
