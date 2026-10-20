@@ -309,9 +309,14 @@ function assertAccreditedScenarioSeedTarget(): void {
   const actual = realpathSync(path)
   const parent = realpathSync(dirname(actual))
   const tempRoot = realpathSync(tmpdir())
+  // Scenario runner deliberately executes with cwd at the disposable workspace.
+  // Resolve the canonical developer DB from the project tsconfig, not process.cwd().
+  const projectTsconfig = process.env.TSX_TSCONFIG_PATH
+  if (!projectTsconfig) throw new Error('KAN-834: project tsconfig is required for isolated seed accreditation')
+  const developerDb = resolve(dirname(projectTsconfig), 'sqlite.db')
   const norm = (value: string) => process.platform === 'win32' ? value.toLowerCase() : value
   if (
-    norm(resolve(actual)) === norm(resolve(process.cwd(), 'sqlite.db')) ||
+    norm(resolve(actual)) === norm(developerDb) ||
     !norm(resolve(parent)).startsWith(norm(resolve(tempRoot)) + (process.platform === 'win32' ? '\\' : sep)) ||
     !basename(parent).startsWith('trail-running-sqlite-base-seed-')
   ) {
