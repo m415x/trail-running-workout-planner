@@ -312,7 +312,7 @@ function assertAccreditedScenarioSeedTarget(): void {
   const norm = (value: string) => process.platform === 'win32' ? value.toLowerCase() : value
   if (
     norm(resolve(actual)) === norm(resolve(process.cwd(), 'sqlite.db')) ||
-    !norm(parent).startsWith(norm(tempRoot) + sep) ||
+    !norm(resolve(parent)).startsWith(norm(resolve(tempRoot)) + (process.platform === 'win32' ? '\\' : sep)) ||
     !basename(parent).startsWith('trail-running-sqlite-base-seed-')
   ) {
     throw new Error('KAN-834: seed destination lacks a recognized disposable scenario workspace')
