@@ -29,6 +29,7 @@ import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlet
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 import { createIntegratedAthleteSelfPeriodRead } from '@/lib/athlete-planning/integrated-self-period-read'
 import { decideAthletePeriodPrescription } from '@/lib/athlete-planning/period-prescription-decision'
+import { shouldEvaluateAthletePeriodSession } from '@/lib/athlete-planning/period-session-candidate'
 
 function formatISODate(date: Date) {
   const year = date.getFullYear()
@@ -309,6 +310,15 @@ export async function getCurrentAthletePlanningWeek(
     }
 
     const resolvedSessions = weekSessions.flatMap((session) => {
+      const hasAthleteAdjustment = session.sessionPrescriptions.some((prescription) => (
+        adjustmentBySourcePrescriptionId.has(prescription.id)
+      ))
+      if (!shouldEvaluateAthletePeriodSession({
+        originalDate: session.date,
+        startDate: scope.startDate,
+        endDate: scope.endDate,
+        hasAthleteAdjustment,
+      })) return []
       const planning = resolveAthletePlanningOnDate({
         athleteTeamId: athlete.teamId,
         currentGroupId: athlete.groupId,
