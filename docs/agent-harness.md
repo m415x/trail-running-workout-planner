@@ -64,6 +64,8 @@ post-merge reconciliation
         ↓
 verify dev + current handoff + story handoff + indexes + Jira
         ↓
+Post-merge Worktree Cleanup (operator-mediated or blocker documented)
+        ↓
 fresh-chat-safe
 ```
 
@@ -74,6 +76,16 @@ The approved decomposition authorizes continuous execution of its routine RED/GR
 The default local workspace is the main repository checked out on clean `dev`. After an approved story decomposition, use a separate story worktree only where isolation is useful, created from the verified current `dev` head. In Git Bash, for example: `git worktree add -b feat/KAN-646 ../trail-running-workout-planner-kan-646 dev` (illustrative only; never create a duplicate branch).
 
 Before creating or retiring a worktree, inspect `git worktree list --porcelain` and its `git status --short`. After merge and durable closure, inspect ignored/untracked resources and preserve any unique local fixtures, backups or secrets before removing the clean worktree with `git worktree remove <path>`. Windows may leave directories containing `node_modules` or generated Next.js files, or briefly lock an empty directory. Only after Git unregisters the worktree and the residual contents are inspected may the exact residual directory be deleted. Do not use `--force`, sweeping `git clean -fdx`, or delete PostgreSQL acceptance data as an incidental cleanup step. Keep the main repository on `dev` for ordinary daily operations.
+
+### Post-merge Worktree Cleanup
+
+This is a mandatory *post-publication* closure phase, after merge, post-merge gate and docs/Jira reconciliation; it never silently performs destructive operations. The closure outcome is **worktree retired or operational blocker documented**. Administrative cleanup alone requires **no repeat of functional gates**.
+
+Use `git worktree list --porcelain` to distinguish existing worktrees, missing-directory **prunable** registration records, and independent **local branches**. For each existing completed-story worktree, verify that its accepted commits are in `dev`, inspect `git status --short` plus `git status --ignored --short`, identify and preserve ignored and untracked artifacts (SQLite, logs, credentials, backups, acceptance evidence) before **operator confirmation**. The operator may then execute `git worktree remove <path>` without force; never remove the primary worktree.
+
+For prunable records, verify the physical directory really is absent and assess unrecovered evidence. Run `git worktree prune --dry-run --verbose` to inspect candidates before requesting **operator authorization** for `git worktree prune --verbose`. Pruning removes obsolete registration metadata; it is not an instruction to delete a branch or another directory. Retain local branches unless a separate decision justifies routine safe deletion; `git branch -D` and `git clean -fdx` are not routine cleanup commands. Preserve active KAN-645, KAN-359 and KAN-832 worktrees and all non-reproducible files. On Windows lock/residual issues stop and record an operational impediment, do not use force.
+
+Record the path, inspected worktree/branch state, artifacts preserved, actual operator commands and final disposition in Jira/handoff. The human operator executes every removal or pruning action; the agent never performs deletion automatically.
 
 ### Runner invariants
 
