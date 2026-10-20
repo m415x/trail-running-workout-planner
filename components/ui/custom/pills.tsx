@@ -14,12 +14,12 @@ export function StatPill({ icon: Icon, label, value, unit, className }: StatPill
     <CustomCardInside key={label} className={cn('p-3 flex flex-col items-center', className)}>
       <Icon size={14} className='text-primary/70 mb-1.5' />
 
-      <p className='font-heading text-foreground font-bold leading-none text-xs text-center'>
+      <p className='font-heading text-foreground font-bold leading-none text-[length:var(--athlete-text-body-compact,0.75rem)] text-center'>
         {value}
-        <span className='text-muted-foreground font-normal text-xs ml-1 whitespace-pre-line'>{unit}</span>
+        <span className='text-muted-foreground font-normal text-[length:var(--athlete-text-body-compact,0.75rem)] ml-1 whitespace-pre-line'>{unit}</span>
       </p>
 
-      <p className='text-muted-foreground text-[10px] uppercase mt-1'>{label}</p>
+      <p className='text-muted-foreground text-[length:var(--athlete-text-caption,0.625rem)] uppercase mt-1'>{label}</p>
     </CustomCardInside>
   )
 }
