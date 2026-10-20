@@ -642,6 +642,8 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
       const decision = decideAthletePeriodPrescription(planning, prescriptionResolution)
       if (decision.kind === 'conflict') { conflictReason = decision.reason; return [] }
       if (decision.kind === 'omit') return []
+      // The helper's decision does not narrow this separate discriminated union.
+      if (prescriptionResolution.status !== 'resolved') return []
 
       const sourcePrescription = session.sessionPrescriptions.find(
         ({ id }) => id === prescriptionResolution.prescriptionId,
