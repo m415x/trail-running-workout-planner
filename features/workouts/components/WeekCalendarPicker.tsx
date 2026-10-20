@@ -34,7 +34,7 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
     <div className='w-68 p-2 select-none font-sans'>
       {/* ── Cabecera de Mes y Navegación ── */}
       <div className='flex items-center justify-between mb-3 px-1'>
-        <span className='font-heading font-bold text-sm text-foreground'>
+        <span className='font-heading font-bold text-[length:var(--athlete-text-title)] text-foreground'>
           {monthName} <span className='font-normal text-muted-foreground'>{currentYear}</span>
         </span>
 
@@ -65,7 +65,7 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
             .slice(0, 2)
 
           return (
-            <span key={index} className='text-[11px] font-semibold text-muted-foreground uppercase'>
+            <span key={index} className='text-[length:var(--athlete-text-caption)] font-semibold text-muted-foreground uppercase'>
               {label}
             </span>
           )
@@ -88,7 +88,7 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
                 onClose?.()
               }}
               className={cn(
-                'size-8 mx-auto flex items-center justify-center rounded-xl text-xs font-mono transition-all cursor-pointer',
+                'size-8 mx-auto flex items-center justify-center rounded-xl text-[length:var(--athlete-text-caption)] font-mono transition-all cursor-pointer',
                 !isCurrentMonth && 'text-muted-foreground/30 hover:text-muted-foreground',
                 isCurrentMonth && !selected && !inWeek && 'text-foreground hover:bg-secondary/60',
                 inWeek && !selected && isCurrentMonth && 'bg-primary/10 text-primary font-semibold',
@@ -109,13 +109,13 @@ export function WeekCalendarPicker({ selectedDate, onSelectDate, onClose }: Week
           variant='ghost'
           size='sm'
           onClick={handleGoToday}
-          className='h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1 rounded-lg'
+          className='h-7 px-2 text-[length:var(--athlete-text-caption)] text-primary hover:text-primary hover:bg-primary/10 gap-1 rounded-lg'
         >
           <CalendarCheck size={13} />
           <span>{t('today')}</span>
         </Button>
 
-        <span className='text-[10px] text-muted-foreground font-mono'>{t('selectedWeek')}</span>
+        <span className='text-[length:var(--athlete-text-caption)] text-muted-foreground font-mono'>{t('selectedWeek')}</span>
       </div>
     </div>
   )
