@@ -55,7 +55,7 @@ export function WeeklyCalendarCard({
               </PrimaryOutlineButton>
             }
           />
-          <PopoverContent className='w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
+          <PopoverContent className='athlete-typography w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
             <WeekCalendarPicker
               selectedDate={selectedDate}
               onSelectDate={(date) => {
