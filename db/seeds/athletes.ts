@@ -42,7 +42,7 @@ export async function seedAthletes(db: SeedDb, groups: SeededAthleteGroup[]): Pr
       id: athleteProfileId,
       userId,
       teamId,
-      groupId: groupId(groups, 'S2'),
+      groupId: groups.length === 0 ? null : groupId(groups, 'S2'),
       nickName: currentAthlete.nickName || null,
       dni: currentAthlete.dni || '12345678A',
       birthday: currentAthlete.birthday || null,
@@ -50,10 +50,10 @@ export async function seedAthletes(db: SeedDb, groups: SeededAthleteGroup[]): Pr
       emergencyContact: currentAthlete.emergencyContact || null,
       emergencyPhone: currentAthlete.emergencyPhone || null,
     },
-    { id: 'profile_user_2', userId: 'user_2', teamId, groupId: groupId(groups, 'S2'), nickName: 'Ani', dni: '30111222', birthday: '1988-03-12', phone: '+54 9 264 111-2202', emergencyContact: null, emergencyPhone: null },
-    { id: 'profile_user_3', userId: 'user_3', teamId, groupId: groupId(groups, 'S2'), nickName: null, dni: '32333444', birthday: '1990-07-21', phone: '+54 9 264 111-2203', emergencyContact: null, emergencyPhone: null },
-    { id: 'profile_user_4', userId: 'user_4', teamId, groupId: groupId(groups, 'M1'), nickName: 'Car', dni: '34555666', birthday: '1994-11-05', phone: null, emergencyContact: null, emergencyPhone: null },
-    { id: 'profile_user_5', userId: 'user_5', teamId, groupId: groupId(groups, 'B3'), nickName: null, dni: '36777888', birthday: '1997-01-18', phone: '+54 9 264 111-2205', emergencyContact: null, emergencyPhone: null },
+    { id: 'profile_user_2', userId: 'user_2', teamId, groupId: groups.length === 0 ? null : groupId(groups, 'S2'), nickName: 'Ani', dni: '30111222', birthday: '1988-03-12', phone: '+54 9 264 111-2202', emergencyContact: null, emergencyPhone: null },
+    { id: 'profile_user_3', userId: 'user_3', teamId, groupId: groups.length === 0 ? null : groupId(groups, 'S2'), nickName: null, dni: '32333444', birthday: '1990-07-21', phone: '+54 9 264 111-2203', emergencyContact: null, emergencyPhone: null },
+    { id: 'profile_user_4', userId: 'user_4', teamId, groupId: groups.length === 0 ? null : groupId(groups, 'M1'), nickName: 'Car', dni: '34555666', birthday: '1994-11-05', phone: null, emergencyContact: null, emergencyPhone: null },
+    { id: 'profile_user_5', userId: 'user_5', teamId, groupId: groups.length === 0 ? null : groupId(groups, 'B3'), nickName: null, dni: '36777888', birthday: '1997-01-18', phone: '+54 9 264 111-2205', emergencyContact: null, emergencyPhone: null },
     { id: 'profile_user_6', userId: 'user_6', teamId, groupId: null, nickName: 'Ele', dni: '38999000', birthday: '1999-09-30', phone: '+54 9 264 111-2206', emergencyContact: null, emergencyPhone: null },
   ]).onConflictDoNothing().run()
 }
