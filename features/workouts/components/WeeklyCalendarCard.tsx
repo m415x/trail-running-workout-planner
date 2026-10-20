@@ -11,6 +11,7 @@ import ProgressGradient from '@ui/custom/progress-gradient'
 import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
 import { WeekCalendarPicker } from '@workouts/components/WeekCalendarPicker'
 import { useWeeklyCalendarCard } from '@workouts/hooks/useWeeklyCalendarCard'
+import { useAthleteTypography } from '@/components/layout/MobileShell'
 import { WeeklyCarousel } from '@workouts/components/WeeklyCarousel'
 
 export interface WeeklyCalendarCardProps {
@@ -34,6 +35,7 @@ export function WeeklyCalendarCard({
   onNextWeek,
   onSelectDate,
 }: WeeklyCalendarCardProps) {
+  const { preference } = useAthleteTypography()
   const locale = useLocale()
   const t = useTranslations('Workouts.home')
   const language = locale === 'en' ? 'en' : 'es'
@@ -55,7 +57,7 @@ export function WeeklyCalendarCard({
               </PrimaryOutlineButton>
             }
           />
-          <PopoverContent className='athlete-typography w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
+          <PopoverContent data-athlete-typography={preference} className='athlete-typography w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
             <WeekCalendarPicker
               selectedDate={selectedDate}
               onSelectDate={(date) => {
