@@ -5,6 +5,7 @@ import { seedAthletes } from '@/db/seeds/athletes'
 import { seedGroups } from '@/db/seeds/groups'
 import { seedCohorts } from '@/db/seeds/cohorts'
 import { seedPlanningTemplatesAndSessions } from '@/db/seeds/planning-templates-and-sessions'
+import { seedPlanStrategies } from '@/db/seeds/plan-strategies'
 
 function shiftISODate(value: string, days: number): string {
   const date = new Date(`${value}T00:00:00Z`)
@@ -22,6 +23,7 @@ async function main(): Promise<void> {
   await seedPlanningTemplatesAndSessions(db, groups, currentWeekStart, shiftISODate, {
     includeLegacySession: false,
   })
+  await seedPlanStrategies(db)
   console.log('KAN-836: plan hierarchy initialized without effective sessions')
 }
 
