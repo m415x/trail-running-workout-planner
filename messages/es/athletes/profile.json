@@ -49,7 +49,15 @@
       "changeTheme": "Cambiar tema visual",
       "passwordRecovery": "Recuperar contraseña",
       "signOut": "Cerrar sesión",
-      "signOutError": "No se pudo cerrar la sesión. Volvé a intentarlo."
+      "signOutError": "No se pudo cerrar la sesión. Volvé a intentarlo.",
+      "accessibility": {
+        "title": "Accesibilidad",
+        "fontSize": "Tamaño de texto",
+        "compact": "Compacto",
+        "standard": "Estándar",
+        "large": "Grande",
+        "extraLarge": "Extra grande"
+      }
     }
   }
 }
