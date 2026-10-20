@@ -55,11 +55,11 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
     <Card className='gap-3 py-4 shadow-none'>
       <CardHeader className='px-4'>
         <div className='flex items-start justify-between gap-2'>
-          <CardTitle className='text-base'>{session.title}</CardTitle>
+          <CardTitle className='text-[length:var(--athlete-text-title)]'>{session.title}</CardTitle>
           <Badge variant='outline'>{tWorkouts(`types.${session.type}`)}</Badge>
         </div>
       </CardHeader>
-      <CardContent className='space-y-2 px-4 text-[length:var(--text-ept-body-compact)] text-muted-foreground'>
+      <CardContent className='space-y-2 px-4 text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>
         <div className='rounded-lg bg-muted/40 p-2.5'>
           <p className='mb-1.5 font-medium text-foreground'>{t('session.volume')}</p>
           {hasVolume ? (
