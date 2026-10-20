@@ -56,7 +56,7 @@ export function RouteMapCard({
             onClick={() => {
               window.open(navigationUrl, '_blank', 'noopener,noreferrer')
             }}
-            className='rounded-full font-mono text-xs h-0 py-3.5'
+            className='rounded-full font-mono text-[length:var(--athlete-text-label)] h-0 py-3.5'
           >
             <Navigation2 className='size-3 fill-primary' />
             <span>{t('map.meetingPoint')}</span>
