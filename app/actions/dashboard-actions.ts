@@ -28,6 +28,7 @@ import type { PersistedAthleteSessionAdjustmentRevision } from '@/lib/planning-c
 import { resolveAthleteSessionPrescription } from '@/lib/planning-cohorts/athlete-session-prescription'
 import { resolveAthletePlanningOnDate } from '@/lib/planning-cohorts/planning-resolution'
 import { createIntegratedAthleteSelfPeriodRead } from '@/lib/athlete-planning/integrated-self-period-read'
+import { decideAthletePeriodPrescription } from '@/lib/athlete-planning/period-prescription-decision'
 
 function formatISODate(date: Date) {
   const year = date.getFullYear()
@@ -638,9 +639,9 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
         }),
       })
 
-      if (planning.status === 'conflict') { conflictReason = planning.reason; return [] }
-      if (prescriptionResolution.status === 'conflict') { conflictReason = prescriptionResolution.reason; return [] }
-      if (prescriptionResolution.status !== 'resolved') { if (planning.status === 'resolved') conflictReason = 'missing-effective-prescription'; return [] }
+      const decision = decideAthletePeriodPrescription(planning, prescriptionResolution)
+      if (decision.kind === 'conflict') { conflictReason = decision.reason; return [] }
+      if (decision.kind === 'omit') return []
 
       const sourcePrescription = session.sessionPrescriptions.find(
         ({ id }) => id === prescriptionResolution.prescriptionId,
