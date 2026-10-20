@@ -6,7 +6,10 @@ import { resolve } from 'node:path'
 test('KAN-758 dedicated opt-in multi-Team seed does not change existing seed contracts', () => {
   const pkg = JSON.parse(readFileSync(resolve('package.json'), 'utf8')) as { scripts: Record<string, string> }
   assert.equal(pkg.scripts['db:seed:acceptance:multiteam'], 'tsx scripts/provision-multiteam-acceptance.ts')
-  assert.equal(pkg.scripts['db:seed:acceptance'], 'pn db:seed:base && pn exec tsx scripts/provision-h4b-acceptance-actors.ts --apply')
+  // KAN-838 supersedes the historical acceptance chain with a disposable orchestrator.
+  // KAN-758 retains its non-delegable contract: multiteam is an explicit opt-in alias.
+  assert.equal(pkg.scripts['db:seed:acceptance'], 'tsx scripts/seed-acceptance-disposable.ts')
+  assert.equal(pkg.scripts['db:seed:base'], 'tsx db/seeds/base.ts')
   assert.doesNotMatch(pkg.scripts['db:seed'], /multiteam/)
 })
 

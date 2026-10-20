@@ -1,11 +1,17 @@
 import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 import Database from 'better-sqlite3'
+import { assertAccreditedScenarioSeedTarget } from '@/db/seeds/assert-disposable-target'
 
-const databasePath = resolve('sqlite.db')
+const accredited = process.env.H4B_DISPOSABLE_ORCHESTRATION === '1'
+if (process.env.NODE_ENV === 'production' || process.env.CI === 'true') {
+  throw new Error('Acceptance provisioning is forbidden in production and CI')
+}
+if (accredited) assertAccreditedScenarioSeedTarget()
+const databasePath = accredited ? resolve(process.env.SQLITE_DATABASE_PATH ?? '') : resolve('sqlite.db')
 const apply = process.argv.includes('--apply')
 if (process.argv.some(arg => arg.startsWith('--') && arg !== '--apply')) throw new Error('Only --apply is supported')
-if (process.env.NODE_ENV === 'production' || process.env.CI === 'true' || process.env.SQLITE_SCENARIO_MODE) {
+if (process.env.SQLITE_SCENARIO_MODE && !accredited) {
   throw new Error('Acceptance provisioning is forbidden in production, CI and SQLite scenarios')
 }
 if (!existsSync(databasePath)) throw new Error('Missing local sqlite.db; no database will be created')

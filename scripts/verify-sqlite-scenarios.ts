@@ -153,7 +153,7 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
     const tsxCli = resolve(projectRoot, 'node_modules/tsx/dist/cli.mjs')
 
     runScenarioCommand(workspace.root, process.execPath, [tsxCli, upgradeScript])
-    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript], { ...process.env, SQLITE_SEED_DISPOSABLE_ACK: '1' })
 
     // Verify the H4B shared fixture on a freshly migrated temporary SQLite,
     // then rerun the real base seed to assert idempotence of the same records.
@@ -273,7 +273,7 @@ export function runBaseSeedScenario(projectRoot = process.cwd()): void {
     }
 
     const firstSharedFixture = assertSharedFixture()
-    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript])
+    runScenarioCommand(workspace.root, process.execPath, [tsxCli, seedScript], { ...process.env, SQLITE_SEED_DISPOSABLE_ACK: '1' })
     if (assertSharedFixture() !== firstSharedFixture) {
       throw new Error('H4B shared fixture was modified by repeat base seed')
     }

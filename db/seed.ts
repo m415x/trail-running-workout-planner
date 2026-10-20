@@ -1,4 +1,5 @@
 import { db } from '@/db/index'
+import { assertAccreditedScenarioSeedTarget } from '@/db/seeds/assert-disposable-target'
 import {
   groupSessionPrescriptions,
   groupTrainingPlans,
@@ -296,6 +297,7 @@ function buildIntensityTarget(planKey: string, microcycle: SeededMicrocycle) {
 }
 
 async function seed() {
+  assertAccreditedScenarioSeedTarget()
   console.log('🌱 Poblando base de datos SQLite...')
 
   const now = new Date().toISOString()
