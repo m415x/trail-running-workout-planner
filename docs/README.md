@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Current execution and handoffs
 
-- [KAN-645 Athlete Plan multisemana — candidate pre-merge](handoffs/kan-645.md) — navegación por lunes civil, sesiones efectivas SELF SQLite, panorama y Competition; conflictos sin prescripción y temporal reconciliados; acceptance ES/EN/responsive/teclado/zoom; candidate gate `0458afb6` PASS 6/6 informado. PR/merge/post-merge pendientes.
+- [KAN-645 Athlete Plan multisemana — integrado en dev](handoffs/kan-645.md) — [PR #66](https://github.com/m415x/trail-running-workout-planner/pull/66), merge `fba2e11e7a3f777602c253e73a9a33ccc364eee1`, gate post-merge PASS 6/6 informado, aceptación ES/EN y accesibilidad, resolución de conflicto seed; publicación documental posterior requiere handoff check.
 
 - [KAN-798 Competition Calendar writer authorization](handoffs/kan-798.md) — H2/H3/H4A `competition.manage` TEAM, Plan/Entry ownership and atomic catalog linking, integrated through PR #65, `dev` merge `b6e80ac441baaab999f7193ccf894c2cca24a70a`; operator-reported post-merge PASS 6/6.
 
