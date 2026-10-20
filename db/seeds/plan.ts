@@ -25,7 +25,7 @@ async function main(): Promise<void> {
     includeLegacySession: false,
   })
   await seedPlanStrategies(db)
-  await seedPlanVariant(db)
+  await seedPlanVariant(db, groups)
   console.log('KAN-836: plan hierarchy initialized without effective sessions')
 }
 
