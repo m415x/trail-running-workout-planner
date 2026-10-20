@@ -57,7 +57,7 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
           <div className='flex items-start gap-2'>
             <span
               className={cn(
-                'size-7 rounded-lg font-heading font-bold text-xs flex items-center justify-center',
+                'size-7 rounded-lg font-heading font-bold text-[length:var(--athlete-text-title,0.75rem)] flex items-center justify-center',
                 zoneInfo.styles.badgeBg,
                 'text-primary-foreground',
               )}
@@ -65,8 +65,8 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
               {zoneInfo.code}
             </span>
             <div>
-              <p className='font-heading font-bold text-xs text-foreground leading-tight'>{t(`${zoneKey}.name`)}</p>
-              <p className={cn('text-xs font-bold', zoneInfo.styles.text)}>{bpmRange}</p>
+              <p className='font-heading font-bold text-[length:var(--athlete-text-title,0.75rem)] text-foreground leading-tight'>{t(`${zoneKey}.name`)}</p>
+              <p className={cn('text-[length:var(--athlete-text-caption,0.75rem)] font-bold', zoneInfo.styles.text)}>{bpmRange}</p>
             </div>
           </div>
           <div className='p-2.5 rounded-lg bg-background/70 border border-border/40 text-xs space-y-1.5'>
