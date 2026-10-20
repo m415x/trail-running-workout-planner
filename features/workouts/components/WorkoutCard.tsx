@@ -91,7 +91,7 @@ export function BaseWorkoutCard({
         </div>
 
         {executionGuidance.quality?.status === 'available' && !shouldPrioritizeTerrainEffort && (
-          <CustomCardInside className='space-y-1 text-xs'>
+          <CustomCardInside className='space-y-1 text-[length:var(--athlete-text-body-compact)]'>
             <p className='font-medium text-foreground'>{executionGuidance.quality.intensityPercentage}% · {executionGuidance.quality.paceLabel}</p>
             <p className='text-muted-foreground'>{executionGuidance.quality.averageSpeedKmh} km/h</p>
           </CustomCardInside>
@@ -99,15 +99,15 @@ export function BaseWorkoutCard({
 
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>
-            <p className='font-bold uppercase tracking-wider mb-1.5 text-xs text-secondary'>{t('card.coachNote')}</p>
-            <p className='text-foreground/80 text-xs leading-relaxed'>{workout.notes}</p>
+            <p className='font-bold uppercase tracking-wider mb-1.5 text-[length:var(--athlete-text-caption)] text-secondary'>{t('card.coachNote')}</p>
+            <p className='text-foreground/80 text-[length:var(--athlete-text-body-compact)] leading-relaxed'>{workout.notes}</p>
           </CustomCardInside>
         )}
 
         {(captureUiState.status === 'loading' || captureUiState.status === 'denied' || captureUiState.status === 'error') && (
           <p
             role={captureUiState.status === 'loading' ? 'status' : 'alert'}
-            className='text-xs text-muted-foreground'
+            className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'
           >
             {t(`captureState.${captureUiState.status}`)}
           </p>
@@ -119,13 +119,13 @@ export function BaseWorkoutCard({
               <GlassFilledButton
                 disabled={!canEditLoggedWorkout}
                 onClick={canEditLoggedWorkout ? openLogDialog : undefined}
-                className='rounded-xl text-xs active:scale-98'
+                className='rounded-xl text-[length:var(--athlete-text-body-compact)] active:scale-98'
               >
                 <CheckCircleIcon />
                 <span>{canEditLoggedWorkout ? common('edit') : t('card.logged')}</span>
               </GlassFilledButton>
             ) : (
-              <PrimaryFilledButton disabled={!isCaptureReady} onClick={openLogDialog} className='rounded-xl text-xs active:scale-98'>
+              <PrimaryFilledButton disabled={!isCaptureReady} onClick={openLogDialog} className='rounded-xl text-[length:var(--athlete-text-body-compact)] active:scale-98'>
                 <CheckCircleIcon />
                 <span>{actionButtonLabel ?? t('card.logWorkoutButton')}</span>
               </PrimaryFilledButton>
@@ -196,10 +196,10 @@ export function RestCard({ date, onRealizedTrainingSaved }: RestCardProps = {}) 
     <>
       <CustomCard className='items-center py-6'>
         <CoffeeIcon className='text-muted-foreground' size={22} />
-        <p className='font-heading font-semibold text-foreground text-sm mt-1'>{t('types.Rest')}</p>
-        <p className='text-xs text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
+        <p className='font-heading font-semibold text-foreground text-[length:var(--athlete-text-title)] mt-1'>{t('types.Rest')}</p>
+        <p className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground mt-0.5 font-sans'>{t('card.restMessage')}</p>
         {date && !isFuture && (
-          <PrimaryFilledButton onClick={() => setIsLogOpen(true)} className='rounded-xl text-xs mt-3 active:scale-98'>
+          <PrimaryFilledButton onClick={() => setIsLogOpen(true)} className='rounded-xl text-[length:var(--athlete-text-body-compact)] mt-3 active:scale-98'>
             <PlusCircleIcon />
             <span>{t('card.logWorkoutButton')}</span>
           </PrimaryFilledButton>
