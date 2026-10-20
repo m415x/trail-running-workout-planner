@@ -15,9 +15,7 @@ export function decideAthletePeriodPrescription(
   if (planning.status === 'conflict') return { kind: 'conflict', reason: planning.reason }
   if (prescription.status === 'conflict') return { kind: 'conflict', reason: prescription.reason }
   if (prescription.status !== 'resolved') {
-    return planning.status === 'resolved'
-      ? { kind: 'conflict', reason: 'missing-effective-prescription' }
-      : { kind: 'omit' }
+    return { kind: 'omit' }
   }
   return { kind: 'continue' }
 }
