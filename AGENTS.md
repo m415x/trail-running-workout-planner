@@ -40,6 +40,16 @@ Use these canonical identifiers for remote-first project inspection and delivery
 - Remove clean worktrees with `git worktree remove <path>` (without `--force`). If Git unregisters the worktree but Windows leaves a directory with `Directory not empty` or `Device or resource busy`, verify `git worktree list`, inspect remaining files and only then remove that **specific** residual directory. Never use broad `git clean -fdx`, `git reset --hard` or destructive cleanup on unknown paths.
 - Do not delete branches, retained commits, PostgreSQL databases, acceptance evidence or unrelated directories as part of worktree housekeeping. A story worktree is temporary; `dev` remains the canonical integrated baseline.
 
+### Post-merge Worktree Cleanup (mandatory closure phase)
+
+After the functional gate, ordinary merge to `dev`, post-merge verification, documentation/Jira reconciliation and handoff check, the closure owner must explicitly inventory and dispose of the **story's temporary worktree**, or document an operational blocker. Final disposition: **worktree retired or operational blocker documented**. Do not repeat functional gates solely for administrative cleanup.
+
+- Inspect `git worktree list --porcelain` and distinguish (1) existing registered worktrees with physical directories, (2) stale **prunable** Git administrative entries whose physical worktree is absent, and (3) **local branches** retained independently of worktree registration. A branch is not a disposable directory; a prunable record is not proof that files have been preserved.
+- For an existing story worktree, identify its exact path and branch, compare accepted commits with integrated `dev`, inspect `git status --short`, `git status --ignored --short`, and relevant untracked/ignored data (e.g. `.env.local`, `.tmp/`, SQLite, logs, ZIPs, backups). Preserve non-reproducible artifacts and evidence outside the worktree before **operator confirmation**. The operator alone performs `git worktree remove <path>` without `--force` when the worktree is clean and preservation is confirmed.
+- For a **prunable** administrative record, confirm its path is truly absent and no linked evidence needs recovery. Inspect the proposed administrative changes with `git worktree prune --dry-run --verbose`; only after **operator authorization** may the operator run `git worktree prune --verbose`. Never infer that a prunable entry licenses deletion of another worktree.
+- Inventory **local branches** separately and retain them by default; deletion, if ever justified, is a different explicit decision. Never use `git branch -D` or `git clean -fdx` as routine cleanup. Never forcibly delete or detach the main worktree or an active branch; specifically preserve active KAN-645, KAN-359 and KAN-832 worktrees.
+- If Windows locks a residual directory, inspect the exact path and Git registration, retain files as needed, and document the impediment rather than forcing deletion. Record in Jira/handoff the story/worktree path, retained evidence, commands actually run, disposition and any blocker. No repeat of functional gates for cleanup alone.
+
 ## Technology baseline
 
 - Next.js 16 App Router, React 19, TypeScript, pnpm.
