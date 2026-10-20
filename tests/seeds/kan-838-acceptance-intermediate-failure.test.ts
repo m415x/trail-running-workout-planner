@@ -35,8 +35,8 @@ test('KAN-838 S6: H4B collision after staged demo never publishes partial accept
     // The demo phase can succeed, but actor provisioning must reject this user.
     const sqlite = new Database(dbPath, { fileMustExist: true })
     try {
-      sqlite.prepare("INSERT INTO users (id, user_name, email, first_name, last_name) VALUES (?, ?, ?, ?, ?)")
-        .run('collision_other_user', 'collision.other', 'athlete@test.com', 'Collision', 'Control')
+      sqlite.prepare("INSERT INTO users (id, user_name, email, first_name, last_name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)")
+        .run('collision_other_user', 'collision.other', 'athlete@test.com', 'Collision', 'Control', new Date().toISOString(), new Date().toISOString())
     } finally { sqlite.close() }
     const before = snapshot()
     const failed = run('scripts/seed-acceptance-disposable.ts')
