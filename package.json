@@ -30,7 +30,7 @@
     "db:seed:base": "tsx db/seeds/base.ts",
     "db:seed:plan": "tsx db/seeds/plan.ts",
     "db:seed:demo": "tsx db/seeds/demo.ts",
-    "db:seed:acceptance": "pn db:seed:demo && pn exec tsx scripts/provision-h4b-acceptance-actors.ts --apply",
+    "db:seed:acceptance": "tsx scripts/seed-acceptance-disposable.ts",
     "db:seed:acceptance:multiteam": "tsx scripts/provision-multiteam-acceptance.ts",
     "db:seed:acceptance:check": "pn exec tsx scripts/provision-h4b-acceptance-actors.ts",
     "db:seed:race-catalog": "tsx db/seeds/race-catalog-fixtures.ts",
