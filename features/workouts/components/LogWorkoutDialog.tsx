@@ -8,6 +8,7 @@ import { PrimaryInput } from '@ui/custom/inputs'
 import type { ManualRealizedTrainingClientInput, WorkoutProps } from '@/types'
 import { PrimaryFilledButton, GlassOutlineButton } from '@ui/custom/buttons'
 import { SelfAssessment } from '@workouts/components/SelfAssessment'
+import { useAthleteTypography } from '@/components/layout/MobileShell'
 import { useLogWorkoutDialog } from '@workouts/hooks/useLogWorkoutDialog'
 
 export type LogWorkoutSaveOutcome = boolean | 'blocked_for_prior_debt' | 'economic_evidence_unavailable'
@@ -29,6 +30,7 @@ export function LogWorkoutDialog({
   initialInput,
   onSave,
 }: LogWorkoutDialogProps) {
+  const { preference } = useAthleteTypography()
   const t = useTranslations('Workouts')
   const {
     distance,
@@ -57,7 +59,7 @@ export function LogWorkoutDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
-      <DialogContent className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
+      <DialogContent data-athlete-typography={preference} className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
