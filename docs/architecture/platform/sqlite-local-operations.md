@@ -37,6 +37,8 @@ Seeding is optional and independent of schema upgrades. All mutable progressive 
 | `pn db:seed` | Rich historical composition: demo, race-catalog, realized-training and plan-real |
 | `pn db:seed:acceptance:multiteam` | Separate explicit opt-in KAN-758 scenario, never implicit in demo/acceptance/rich |
 
+The rich complement aliases remain available individually: `pn db:seed:race-catalog`, `pn db:seed:realized-training` and `pn db:seed:plan-real`. Each must use an explicitly accredited disposable SQLite destination; none may be run against the canonical developer database.
+
 The three rich complement scripts use the same shared accreditation guard. `db:seed:acceptance` copies the accredited target into another recognized disposable workspace and applies demo then H4B there; it publishes only after both succeed. The existing H4B collision, Team, group, memberships, identity and idempotence validations remain; production and CI are forbidden. A foreign Supabase subject string in local fixture data is **not** proof of a real Supabase account or authenticated session. The legacy provisioner retains its separate non-scenario invocation path for historical tooling; never invoke it as a substitute for accredited public acceptance.
 
 **Intentional breaking change:** previous `db:seed:base` was the historical monolithic seed; its equivalent is now `db:seed:demo`. Historical `db:sqlite:check` base-seed coverage deliberately still targets `db/seed.ts` to preserve the legacy H4B fixture. `db:seed` remains the richer composition, not an alias for minimal base.
