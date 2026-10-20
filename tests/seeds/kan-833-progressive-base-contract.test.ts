@@ -9,13 +9,14 @@ import Database from 'better-sqlite3'
 
 test('KAN-833 S1 RED: base bootstraps Team and athletes without planning groups or sessions', () => {
   const root = resolve(process.cwd())
-  const workspace = mkdtempSync(join(tmpdir(), 'kan-833-base-contract-'))
+  const workspace = mkdtempSync(join(tmpdir(), 'trail-running-sqlite-base-seed-'))
   const sqlitePath = join(workspace, 'sqlite.db')
   const tsx = resolve(root, 'node_modules/tsx/dist/cli.mjs')
   const env = {
     ...process.env,
     SQLITE_SCENARIO_MODE: '1',
     SQLITE_DATABASE_PATH: sqlitePath,
+    SQLITE_SEED_DISPOSABLE_ACK: '1',
     TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.json'),
   }
   function execute(script: string): void {
@@ -26,7 +27,7 @@ test('KAN-833 S1 RED: base bootstraps Team and athletes without planning groups 
   }
   try {
     execute('scripts/upgrade-sqlite.ts')
-    execute('db/seed.ts') // Current implementation of db:seed:base; no production edit in S1.
+    execute('db/seeds/base.ts') // S3 implementation of the prospective S1 contract.
     const sqlite = new Database(sqlitePath, { readonly: true, fileMustExist: true })
     try {
       const count = (table: string): number => {
