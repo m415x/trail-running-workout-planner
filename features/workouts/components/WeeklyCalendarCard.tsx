@@ -49,7 +49,7 @@ export function WeeklyCalendarCard({
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger
             render={
-              <PrimaryOutlineButton className='rounded-full font-xs font-mono h-0 py-3.5'>
+              <PrimaryOutlineButton className='rounded-full text-[length:var(--athlete-text-label)] font-mono h-0 py-3.5'>
                 <CalendarIcon className='size-3! opacity-80' />
                 <span>{dateRange}</span>
               </PrimaryOutlineButton>
@@ -79,7 +79,7 @@ export function WeeklyCalendarCard({
 
       {/* Barra de progreso de la semana */}
       <div className='mt-2 space-y-1.5'>
-        <div className='flex justify-between text-[11px]'>
+        <div className='flex justify-between text-[length:var(--athlete-text-caption)]'>
           <span className='text-muted-foreground'>{t('weeklyProgress')}</span>
           <span className='text-foreground font-semibold'>
             {currentKm} km <span className='text-muted-foreground font-normal'>/ {cycle.targetKm} km</span>
