@@ -59,7 +59,7 @@ export function LogWorkoutDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
-      <DialogContent data-athlete-typography={preference} className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
+      <DialogContent data-athlete-typography={preference} data-athlete-log-dialog className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-[length:var(--athlete-text-title)] text-foreground flex items-center gap-2'>
@@ -75,7 +75,7 @@ export function LogWorkoutDialog({
           <div className='space-y-4 pt-4 pb-1 px-0.5'>
             <label htmlFor='performedAt' className='block space-y-1 text-[length:var(--athlete-text-body-compact)]'>
               <span>{t('dialog.performedAt')}</span>
-              <PrimaryInput id='performedAt' type='datetime-local' step='1' required value={performedLocal}
+              <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='performedAt' type='datetime-local' step='1' required value={performedLocal}
                 disabled={isSaving} onChange={(event) => setPerformedLocal(event.target.value)} />
               <span className='text-muted-foreground'>{t('dialog.localTimeHint')}</span>
             </label>
@@ -85,7 +85,7 @@ export function LogWorkoutDialog({
                 <label htmlFor='distance' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <MapPin size={11} /> {t('dialog.distance')}
                 </label>
-                <PrimaryInput id='distance'
+                <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='distance'
                   type='text'
                   inputMode='decimal'
                   placeholder={workout?.distance != null ? String(workout.distance) : '0.00'}
@@ -101,9 +101,9 @@ export function LogWorkoutDialog({
 
                 <div className='grid grid-cols-3 gap-1.5'>
                   <label htmlFor='durationHours' className='sr-only'>{t('dialog.durationHours')}</label>
-                  <PrimaryInput id='durationHours' type='number' min='0' placeholder='0' value={timeHr} onChange={(e) => setTimeHr(e.target.value)} />
+                  <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='durationHours' type='number' min='0' placeholder='0' value={timeHr} onChange={(e) => setTimeHr(e.target.value)} />
                   <label htmlFor='durationMinutes' className='sr-only'>{t('dialog.durationMinutes')}</label>
-                  <PrimaryInput id='durationMinutes' type='number' min='0' placeholder='0' value={timeMin} onChange={(e) => handleMinutesChange(e.target.value)} />
+                  <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='durationMinutes' type='number' min='0' placeholder='0' value={timeMin} onChange={(e) => handleMinutesChange(e.target.value)} />
                   <label htmlFor='durationSeconds' className='sr-only'>{t('dialog.durationSeconds')}</label>
                   <PrimaryInput
                     id='durationSeconds'
@@ -121,7 +121,7 @@ export function LogWorkoutDialog({
                 <label htmlFor='elevationGain' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <Mountain size={11} /> {t('dialog.elevation')}
                 </label>
-                <PrimaryInput id='elevationGain'
+                <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='elevationGain'
                   type='text'
                   inputMode='numeric'
                   placeholder={workout?.gain != null ? String(workout.gain) : '0'}
@@ -134,7 +134,7 @@ export function LogWorkoutDialog({
                 <label htmlFor='averageHeartRate' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <HeartPulse size={11} /> {t('dialog.heartRate')}
                 </label>
-                <PrimaryInput id='averageHeartRate'
+                <PrimaryInput className='text-[length:var(--athlete-text-body-compact)]' id='averageHeartRate'
                   type='text'
                   inputMode='numeric'
                   placeholder='—'
@@ -162,11 +162,11 @@ export function LogWorkoutDialog({
         </ScrollArea>
 
         <DialogFooter className='flex flex-row gap-2 py-3.5 border-t border-border/40 bg-card shrink-0 mt-0'>
-          <GlassOutlineButton onClick={resetForm} disabled={isSaving}>{t('dialog.clear')}</GlassOutlineButton>
-          <GlassOutlineButton onClick={onClose} className='flex-4' disabled={isSaving}>
+          <GlassOutlineButton className='text-[length:var(--athlete-text-body-compact)]' onClick={resetForm} disabled={isSaving}>{t('dialog.clear')}</GlassOutlineButton>
+          <GlassOutlineButton onClick={onClose} className='flex-4 text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
             {t('dialog.cancel')}
           </GlassOutlineButton>
-          <PrimaryFilledButton onClick={() => void handleSave()} className='flex-6' disabled={isSaving}>
+          <PrimaryFilledButton onClick={() => void handleSave()} className='flex-6 text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
             {t('dialog.save')}
           </PrimaryFilledButton>
         </DialogFooter>
