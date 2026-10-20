@@ -3,6 +3,7 @@
     "loadError": "No se pudo cargar la planificación.",
     "eyebrow": "Mi planificación",
     "currentWeek": "Semana actual",
+    "selectedWeek": "Semana seleccionada",
     "group": "Grupo {group}",
     "competitions": "Competencias",
     "viewRegistrations": "Ver inscripciones",
