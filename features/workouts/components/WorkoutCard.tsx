@@ -71,7 +71,7 @@ export function BaseWorkoutCard({
         <CustomCardInside className='flex items-center'>
           <div className='flex-1'>
             <div className='flex items-baseline gap-1.5'>
-              <span className='font-heading font-black text-foreground leading-none text-5xl tracking-tight'>
+              <span className='font-heading font-black text-foreground leading-none text-[length:var(--athlete-text-display)] tracking-tight'>
                 {workout.distance}
               </span>
               <span className='font-heading text-[length:var(--athlete-text-title)] font-semibold text-muted-foreground'>km</span>
