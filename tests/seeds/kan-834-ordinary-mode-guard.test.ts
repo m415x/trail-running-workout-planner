@@ -56,7 +56,7 @@ test('KAN-834 S2 RED: ordinary seed refuses an existing unaccredited SQLite with
 
     // Run from disposable cwd with no scenario accreditation: legacy CLI would
     // silently target cwd/sqlite.db. This must fail closed before any mutation.
-    const env = { ...process.env, NODE_ENV: 'test' as const, SQLITE_SCENARIO_MODE: '', SQLITE_DATABASE_PATH: '', SQLITE_SEED_DISPOSABLE_ACK: '' }
+    const env = { ...process.env, NODE_ENV: 'test' as const, TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.json'), SQLITE_SCENARIO_MODE: '', SQLITE_DATABASE_PATH: '', SQLITE_SEED_DISPOSABLE_ACK: '' }
     const seeded = spawnSync(process.execPath, [tsx, resolve(root, 'db/seed.ts')], {
       cwd: workspace, env, encoding: 'utf8', timeout: 120000,
     })
