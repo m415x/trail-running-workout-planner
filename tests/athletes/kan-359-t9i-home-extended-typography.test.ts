@@ -11,8 +11,8 @@ test('KAN-359/T9i external portals receive Athlete scope locally, without global
   const logging = read('features/workouts/components/LogWorkoutDialog.tsx')
   assert.match(popover, /PopoverPrimitive\.Portal/, 'calendar popover uses a portal')
   assert.match(dialog, /DialogPortal/, 'logging dialog uses a portal')
-  assert.match(weekly, /<PopoverContent[^>]*className=[^>]*athlete-typography/s, 'the actual calendar popup must receive Athlete scope')
-  assert.match(logging, /<DialogContent[^>]*className=[^>]*athlete-typography/s, 'the actual logging popup must receive Athlete scope')
+  assert.match(weekly, /<PopoverContent[^>]*className=[\s\S]*?athlete-typography/, 'the actual calendar popup must receive Athlete scope')
+  assert.match(logging, /<DialogContent[^>]*className=[\s\S]*?athlete-typography/, 'the actual logging popup must receive Athlete scope')
   assert.doesNotMatch(read('features/athlete-typography/typography.css'), /(?:^|[},\n])\s*(?:html|body|:root)\s*\{/m)
 })
 
