@@ -9,7 +9,6 @@ export function shouldEvaluateAthletePeriodSession(input: {
   readonly endDate: string
   readonly hasAthleteAdjustment: boolean
 }): boolean {
-  // Neutral extraction: RED first, no behavior change until GREEN.
-  void input
-  return true
+  return input.hasAthleteAdjustment
+    || (input.originalDate >= input.startDate && input.originalDate <= input.endDate)
 }
