@@ -62,27 +62,27 @@ export function LogWorkoutDialog({
       <DialogContent data-athlete-typography={preference} className='athlete-typography max-w-md w-[92vw] sm:w-full rounded-3xl p-4 bg-card border-border/80 h-[75dvh] max-h-160 flex flex-col overflow-hidden gap-0'>
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
-          <DialogTitle className='font-heading font-bold text-lg text-foreground flex items-center gap-2'>
+          <DialogTitle className='font-heading font-bold text-[length:var(--athlete-text-title)] text-foreground flex items-center gap-2'>
             <CheckCircle2 size={20} className='text-primary' />
             {t('dialog.title')}
           </DialogTitle>
-          <p className='text-xs text-muted-foreground p-0'>
+          <p className='text-[length:var(--athlete-text-caption)] text-muted-foreground p-0'>
             {dateStr ?? '—'}{workout?.title ? <> &bull; {workout.title}</> : null}
           </p>
         </DialogHeader>
 
         <ScrollArea className='flex-1 min-h-0 w-full'>
           <div className='space-y-4 pt-4 pb-1 px-0.5'>
-            <label htmlFor='performedAt' className='block space-y-1 text-xs'>
+            <label htmlFor='performedAt' className='block space-y-1 text-[length:var(--athlete-text-body-compact)]'>
               <span>{t('dialog.performedAt')}</span>
               <PrimaryInput id='performedAt' type='datetime-local' step='1' required value={performedLocal}
                 disabled={isSaving} onChange={(event) => setPerformedLocal(event.target.value)} />
               <span className='text-muted-foreground'>{t('dialog.localTimeHint')}</span>
             </label>
-            {saveError && <p role='alert' className='text-sm text-destructive'>{t(`dialog.${saveError}`)}</p>}
+            {saveError && <p role='alert' className='text-[length:var(--athlete-text-body-compact)] text-destructive'>{t(`dialog.${saveError}`)}</p>}
             <div className='grid grid-cols-2 gap-2.5'>
               <div className='space-y-1'>
-                <label htmlFor='distance' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='distance' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <MapPin size={11} /> {t('dialog.distance')}
                 </label>
                 <PrimaryInput id='distance'
@@ -95,7 +95,7 @@ export function LogWorkoutDialog({
               </div>
 
               <div className='space-y-1'>
-                <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1 pl-1'>
+                <label className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1 pl-1'>
                   <Timer size={11} /> {t('dialog.time')}
                 </label>
 
@@ -118,7 +118,7 @@ export function LogWorkoutDialog({
               </div>
 
               <div className='space-y-1'>
-                <label htmlFor='elevationGain' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='elevationGain' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <Mountain size={11} /> {t('dialog.elevation')}
                 </label>
                 <PrimaryInput id='elevationGain'
@@ -131,7 +131,7 @@ export function LogWorkoutDialog({
               </div>
 
               <div className='space-y-1'>
-                <label htmlFor='averageHeartRate' className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+                <label htmlFor='averageHeartRate' className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                   <HeartPulse size={11} /> {t('dialog.heartRate')}
                 </label>
                 <PrimaryInput id='averageHeartRate'
@@ -147,7 +147,7 @@ export function LogWorkoutDialog({
             <SelfAssessment value={assessment} onChange={setAssessment} />
 
             <div className='space-y-1'>
-              <label className='text-[10px] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
+              <label className='text-[length:var(--athlete-text-caption)] font-sans font-semibold text-muted-foreground uppercase flex items-center gap-1'>
                 <MessageSquare size={11} /> {t('dialog.notes')}
               </label>
               <textarea
@@ -155,7 +155,7 @@ export function LogWorkoutDialog({
                 placeholder={t('dialog.notesPlaceholder')}
                 value={athleteNotes}
                 onChange={(e) => setAthleteNotes(e.target.value)}
-                className='bg-background rounded-xl p-3 border border-border w-full text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none'
+                className='bg-background rounded-xl p-3 border border-border w-full text-[length:var(--athlete-text-body-compact)] text-foreground placeholder:text-muted-foreground/60 focus:outline-none focus:ring-1 focus:ring-primary transition-all resize-none'
               />
             </div>
           </div>
