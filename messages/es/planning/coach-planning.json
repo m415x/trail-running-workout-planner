@@ -94,7 +94,15 @@
         "active": "Activo",
         "completed": "Completado",
         "cancelled": "Cancelado"
-      }
+      },
+      "deniedTitle": "Acceso no autorizado",
+      "deniedDescription": "No tenés permisos para consultar estas planificaciones.",
+      "errorTitle": "No pudimos cargar las planificaciones",
+      "errorDescription": "Ocurrió un problema al consultar los datos. Intentá nuevamente.",
+      "selectionRequiredTitle": "Seleccioná un equipo",
+      "selectionRequiredDescription": "Elegí el equipo activo para ver sus planificaciones.",
+      "invalidContextTitle": "Contexto de equipo no disponible",
+      "invalidContextDescription": "La selección de equipo ya no es válida. Volvé a seleccionar un equipo."
     },
     "detail": {
       "group": "Grupo {code}",
@@ -127,12 +135,12 @@
       "minDays": "Seleccioná al menos 3 días habituales."
     },
     "sessionPreview": {
-    "reviewCreate": "Crear revisión",
-    "reviewCreateHelp": "Crear una revisión autorizada antes de confirmar las sesiones.",
-    "reviewConfirmHelp": "Confirmar la revisión autorizada y guardar las sesiones.",
-    "reviewDenied": "No autorizado",
-    "reviewUnavailable": "La revisión ya no está disponible.",
-    "reviewFailed": "No se pudo completar la operación.",
+      "reviewCreate": "Crear revisión",
+      "reviewCreateHelp": "Crear una revisión autorizada antes de confirmar las sesiones.",
+      "reviewConfirmHelp": "Confirmar la revisión autorizada y guardar las sesiones.",
+      "reviewDenied": "No autorizado",
+      "reviewUnavailable": "La revisión ya no está disponible.",
+      "reviewFailed": "No se pudo completar la operación.",
       "title": "Vista previa de sesiones",
       "description": "Propuesta calculada desde cada microciclo. Revisala antes de guardarla.",
       "saved": "Guardado",
