@@ -15,7 +15,7 @@ test('KAN-848/T2 direct complete proxy keeps ES rewrite without a self-redirect'
       const response = await proxy(request)
       rows.push({
         url,
-        status: response.status,
+        status: 'status' in response && typeof response.status === 'number' ? response.status : -1,
         location: response.headers.get('location'),
         rewrite: response.headers.get('x-middleware-rewrite'),
       })
