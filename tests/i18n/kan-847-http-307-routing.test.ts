@@ -107,13 +107,11 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
       const result = await trace(base, scenario.path, scenario.cookie, scenario.host)
       traces.push({ scenario, ...result })
     }
-    // Include each response and Location/rewrite in the RED failure for causal analysis.
-    for (const row of traces) {
-      assert.notEqual(row.termination, 'self-redirect', JSON.stringify(row))
-      assert.notEqual(row.termination, 'cycle', JSON.stringify(row))
-      assert.notEqual(row.termination, 'limit', JSON.stringify(row))
-      assert.ok(row.hops.every(h => h.status < 500), JSON.stringify(row))
-    }
+    // Report the full bounded matrix before asserting, so the first failing
+    // route does not hide other host/locale observations.
+    const failures = traces.filter(row =>
+      row.termination !== 'terminal' || row.hops.some(h => h.status >= 500))
+    assert.equal(failures.length, 0, JSON.stringify({ traces }, null, 2))
   } catch (error) {
     if (exited) throw new Error('Next.js failed or exited: ' + diagnostics, { cause: error })
     throw error
