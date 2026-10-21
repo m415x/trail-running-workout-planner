@@ -5,6 +5,7 @@ import Database from 'better-sqlite3'
 
 import { resolveActiveTeamContext } from '../../lib/authorization/active-team-context'
 import { createMembershipPageLoader } from '../../lib/memberships/membership-page-loader'
+import { createMembershipAuthorizedPageReader } from '../../lib/memberships/membership-authorized-page-reader'
 
 // KAN-689/T1 RED: disposable persistence, never the developer sqlite.db.
 // Canonical-shaped team_memberships and H3 resolver; not an HTTP-authenticated session test.
@@ -98,4 +99,60 @@ test('KAN-689/T1 RED: production Membership page cannot hardcode Team or bypass 
   const source = readFileSync('app/[locale]/dashboard/membership/page.tsx', 'utf8')
   assert.doesNotMatch(source, /teamId:\s*['"]team_1['"]/)
   assert.match(source, /(?:createH4aNextServerAuthorizationBoundary|createMembershipAuthorizedPageReader)/)
+})
+
+test('KAN-689/T1: authorized boundary scopes real persisted policies and exceptions to H3 Team B', async () => {
+  const s = scenario()
+  try {
+    const reader = createMembershipAuthorizedPageReader({
+      authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach_1' }),
+      resolveActiveTeam: async () => s.resolve('team_B'),
+      authorize: async (_access, teamId) => ({ allowed: teamId === 'team_B' }),
+      load: s.load,
+      hasData: model => Boolean(model.currentPolicy.effectiveFrom),
+    })
+    const result = await reader({ db: s.sqlite, locale: 'es', onDate: '2026-10-21' })
+    assert.equal(result.status, 'ready')
+    assert.deepEqual(s.calls.sort(), ['exception:team_B', 'policy:team_B'])
+    if (result.status !== 'ready') return
+    assert.equal(result.model.currentPolicy.monthlyAmount, new Intl.NumberFormat('es-AR', {
+      style: 'currency', currency: 'ARS', maximumFractionDigits: 0,
+    }).format(200))
+    assert.equal(result.model.globalDueDateExceptionHistory[0]?.reason, 'private-B')
+  } finally { s.sqlite.close() }
+})
+
+test('KAN-689/T1: selection, revoked Team and H4A denial never enter economic repositories', async () => {
+  const s = scenario()
+  try {
+    for (const selected of [null, 'invalid_team', 'team_B']) {
+      const reader = createMembershipAuthorizedPageReader({
+        authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach_1' }),
+        resolveActiveTeam: async () => s.resolve(selected),
+        authorize: async () => ({ allowed: false }),
+        load: s.load,
+        hasData: () => true,
+      })
+      const result = await reader({ db: s.sqlite, locale: 'en', onDate: '2026-10-21' })
+      assert.equal(result.status, selected === null ? 'selection_required' : selected === 'invalid_team' ? 'invalid_context' : 'denied')
+    }
+    assert.deepEqual(s.calls, [])
+  } finally { s.sqlite.close() }
+})
+
+test('KAN-689/T1: failed economic read is error, permitted empty remains empty', async () => {
+  const base = {
+    authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach_1' }),
+    resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_B', source: 'persisted' as const }),
+    authorize: async () => ({ allowed: true }),
+  }
+  const empty = createMembershipAuthorizedPageReader({
+    ...base, load: async () => ({ count: 0 }), hasData: model => model.count > 0,
+  })
+  assert.equal((await empty({ db: 'unused', locale: 'es', onDate: '2026-10-21' })).status, 'empty')
+  const failed = createMembershipAuthorizedPageReader({
+    ...base, load: async (): Promise<{ count: number }> => { throw Error('DB offline') },
+    hasData: model => model.count > 0,
+  })
+  assert.equal((await failed({ db: 'unused', locale: 'es', onDate: '2026-10-21' })).status, 'error')
 })
