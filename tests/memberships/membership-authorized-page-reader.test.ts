@@ -6,6 +6,7 @@ import Database from 'better-sqlite3'
 import { resolveActiveTeamContext } from '../../lib/authorization/active-team-context'
 import { createMembershipPageLoader } from '../../lib/memberships/membership-page-loader'
 import { createMembershipAuthorizedPageReader } from '../../lib/memberships/membership-authorized-page-reader'
+import { authorizeEffectiveCapability } from '../../lib/authorization/effective-authorization'
 
 // KAN-689/T1 RED: disposable persistence, never the developer sqlite.db.
 // Canonical-shaped team_memberships and H3 resolver; not an HTTP-authenticated session test.
@@ -155,4 +156,60 @@ test('KAN-689/T1: failed economic read is error, permitted empty remains empty',
     hasData: model => model.count > 0,
   })
   assert.equal((await failed({ db: 'unused', locale: 'es', onDate: '2026-10-21' })).status, 'error')
+})
+
+test('KAN-689/T1: effective H4A policy privilege is independent from economy privilege for all presets', async () => {
+  const presets = [
+    { preset: 'coach', policy: true, economy: true },
+    { preset: 'admin', policy: true, economy: true },
+    { preset: 'assistant', policy: false, economy: true },
+    { preset: 'athlete', policy: false, economy: false },
+  ] as const
+  for (const item of presets) {
+    const s = scenario()
+    try {
+      const userId = 'actor_' + item.preset
+      const member = {
+        userId, teamId: 'team_B', preset: item.preset,
+        effectiveFrom: '2025-01-01', effectiveUntil: null, isActive: true,
+      }
+      const authorize = async (_access: {status:'authenticated';userId:string}, teamId: string, at: string) =>
+        authorizeEffectiveCapability({
+          authenticatedUserId: userId, teamId, at, capability: 'economic_policy.manage',
+          resource: { teamId }, memberships: [member], athleteProfiles: [], grants: [],
+        })
+      const reader = createMembershipAuthorizedPageReader({
+        authenticate: async () => ({ status: 'authenticated' as const, userId }),
+        resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_B', source: 'persisted' as const }),
+        authorize,
+        load: s.load,
+        hasData: model => Boolean(model.currentPolicy.effectiveFrom),
+      })
+      const result = await reader({ db: s.sqlite, locale: 'es', onDate: '2026-10-21' })
+      assert.equal(result.status, item.policy ? 'ready' : 'denied', item.preset)
+      assert.deepEqual(s.calls.sort(), item.policy ? ['exception:team_B','policy:team_B'] : [], item.preset)
+      assert.equal(authorizeEffectiveCapability({
+        authenticatedUserId: userId, teamId: 'team_B', at: '2026-10-21T12:00:00.000Z',
+        capability: 'economy.manage', resource: { teamId: 'team_B' },
+        memberships: [member], athleteProfiles: [], grants: [],
+      }).allowed, item.economy, item.preset)
+    } finally { s.sqlite.close() }
+  }
+})
+
+test('KAN-689/T1: absent H2 identity denies before H3 or economic repository', async () => {
+  const s = scenario()
+  try {
+    let activeTeamCalls = 0
+    const reader = createMembershipAuthorizedPageReader({
+      authenticate: async () => ({ status: 'forbidden' as const, reason: 'anonymous' as const }),
+      resolveActiveTeam: async () => { activeTeamCalls++; return s.resolve('team_B') },
+      authorize: async () => ({ allowed: true }),
+      load: s.load, hasData: () => true,
+    })
+    const result = await reader({ db: s.sqlite, locale: 'es', onDate: '2026-10-21' })
+    assert.equal(result.status, 'denied')
+    assert.equal(activeTeamCalls, 0)
+    assert.deepEqual(s.calls, [])
+  } finally { s.sqlite.close() }
 })
