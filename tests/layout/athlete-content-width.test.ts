@@ -30,9 +30,9 @@ test('KAN-563 aligns Athlete page spacing and primary heading scale with Stats',
   assert.match(plan, /px-4[^'"]*py-6[^'"]*sm:px-6/)
   assert.match(profile, /px-4[^'"]*py-6[^'"]*sm:px-6/)
 
-  assert.match(homeHeader, /text-2xl[^'"]*sm:text-3xl/)
-  assert.match(plan, /text-2xl[^'"]*sm:text-3xl/)
-  assert.match(profileHeader, /text-2xl[^'"]*sm:text-3xl/)
+  assert.match(homeHeader, /--athlete-text-heading/)
+  assert.match(plan, /--athlete-text-heading/)
+  assert.match(profileHeader, /--athlete-text-heading/)
 })
 
 test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detail scrolls', () => {
@@ -44,7 +44,7 @@ test('KAN-563 keeps Athlete Home identity and calendar fixed while workout detai
 })
 
 test('KAN-563 compacts the Profile tab selector like the wide Athlete bottom navigation', () => {
-  assert.match(profile, /<TabsList[^>]*className=['"][^'"]*w-full[^'"]*sm:w-auto/)
+  assert.match(profile, /<TabsList[^>]*className=['\"][^'\"]*w-full[^'\"]*sm:gap-1/)
   assert.match(profile, /sm:mx-auto/)
   assert.match(profile, /sm:gap-1/)
   assert.match(profile, /sm:rounded-\[var\(--radius-ept-overlay\)\]/)

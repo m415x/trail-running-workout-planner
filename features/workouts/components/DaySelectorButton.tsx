@@ -51,13 +51,13 @@ export function DaySelectorButton({
             })}
         </div>
 
-        <span className={cn('text-[10px] font-semibold mb-0.5', isSelected ? 'text-white' : 'text-muted-foreground')}>
+        <span className={cn('text-[length:var(--athlete-text-caption,10px)] font-semibold mb-0.5', isSelected ? 'text-white' : 'text-muted-foreground')}>
           {day.day}
         </span>
 
         <span
           className={cn(
-            'font-heading text-lg font-bold leading-none',
+            'font-heading text-[length:var(--athlete-text-title,1.125rem)] font-bold leading-none',
             isSelected ? 'text-white' : day.isToday ? 'text-foreground' : 'text-foreground/70',
           )}
         >
@@ -69,7 +69,7 @@ export function DaySelectorButton({
         </div>
       </button>
       {day.isToday && (
-        <span className='font-heading text-[10px] font-bold leading-none text-foreground/60'>{t('today').toUpperCase()}</span>
+        <span className='font-heading text-[length:var(--athlete-text-caption,10px)] font-bold leading-none text-foreground/60'>{t('today').toUpperCase()}</span>
       )}
       {!day.isToday && <span className='h-2.5' />}
     </div>

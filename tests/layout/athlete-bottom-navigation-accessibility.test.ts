@@ -11,7 +11,7 @@ test('KAN-572 Athlete bottom navigation uses scalable semantic captions and acce
 
   assert.match(
     navigation,
-    /text-\[length:var\(--text-ept-caption\)\]/,
+    /text-\[length:var\(--athlete-text-caption\)\]/,
     'navigation captions must consume the KAN-507 rem-based semantic caption token',
   )
   assert.doesNotMatch(navigation, /text-\[9px\]/)

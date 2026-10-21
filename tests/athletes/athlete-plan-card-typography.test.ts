@@ -9,7 +9,7 @@ test('KAN-572 uses compact body typography for prescribed Athlete Plan instructi
   assert.match(css, /--text-ept-body-compact:\s*0\.875rem/)
   assert.match(
     card,
-    /<CardContent className='[^']*text-\[length:var\(--text-ept-body-compact\)\][^']*'>/,
+    /<CardContent className='[^']*text-\[length:var\(--athlete-text-body-compact\)\][^']*'>/,
     'training prescription body must consume the KAN-507 compact body token',
   )
   assert.doesNotMatch(

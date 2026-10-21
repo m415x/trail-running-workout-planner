@@ -4,6 +4,9 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
+- [KAN-359 Athlete responsive typography — pre-merge candidate](handoffs/kan-359.md) — KAN-820/T9 selective reconciliation on KAN-645-era `dev`; functional candidate `3a13257df21009e72679212773d4fbb4fba1519a`, operator-reported `pn verify --db` PASS 6/6. Integration, post-merge gate and worktree disposition remain pending. This is **not** the current integrated `dev` handoff.
+
+
 - [KAN-832 progressive SQLite seeds — integrated in dev](handoffs/kan-832.md) — [PR #68](https://github.com/m415x/trail-running-workout-planner/pull/68), accredited init/base/plan/demo and staged H4B acceptance; operator-reported premerge and postmerge PASS 6/6. See [current integrated handoff](handoffs/current.md).
 
 - [KAN-645 Athlete Plan multisemana — integrado en dev](handoffs/kan-645.md) — [PR #66](https://github.com/m415x/trail-running-workout-planner/pull/66), merge `fba2e11e7a3f777602c253e73a9a33ccc364eee1`, gate post-merge PASS 6/6 informado, aceptación ES/EN y accesibilidad, resolución de conflicto seed; publicación documental posterior requiere handoff check.

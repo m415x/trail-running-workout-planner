@@ -17,7 +17,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
 
   if (isLoading) {
     return (
-      <CustomCardInside className='px-3 py-1.5 rounded-xl animate-pulse flex items-center justify-center text-[10px] text-muted-foreground'>
+      <CustomCardInside className='px-3 py-1.5 rounded-xl animate-pulse flex items-center justify-center text-[length:var(--athlete-text-caption)] text-muted-foreground'>
         Consultando condiciones meteorológicas...
       </CustomCardInside>
     )
@@ -33,20 +33,20 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
       <div className='flex flex-1 items-center justify-center gap-1'>
         <WeatherIcon iconType={condition} />
 
-        <span className='font-heading font-bold text-foreground text-[11px]'>
+        <span className='font-heading font-bold text-foreground text-[length:var(--athlete-text-caption)]'>
           {weather.tempMax}°<span className='font-normal text-muted-foreground ml-0.5'>/ {weather.tempMin}°</span>
         </span>
 
-        {/* <span className='text-[10px] text-muted-foreground hidden sm:inline'>· {label}</span> */}
+        {/* <span className='text-[length:var(--athlete-text-caption)] text-muted-foreground hidden sm:inline'>· {label}</span> */}
       </div>
 
       {/* Viento y dirección */}
       <div className='flex flex-1 items-center justify-center gap-1 text-foreground/90 font-mono'>
         <WindIcon className={duration > 0 ? 'animate-spin' : ''} style={{ animationDuration: `${duration}s` }} />
 
-        <span className='font-heading font-bold text-foreground text-[11px]'>
+        <span className='font-heading font-bold text-foreground text-[length:var(--athlete-text-caption)]'>
           {weather.windSpeed}
-          <span className='text-[10px] font-semibold pl-1'>km/h</span>
+          <span className='text-[length:var(--athlete-text-caption)] font-semibold pl-1'>km/h</span>
         </span>
 
         {/* Flecha de brújula */}
@@ -60,16 +60,16 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
           <ArrowCircleDownIcon size={14} />
         </span>
 
-        <span className='text-[11px] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
+        <span className='text-[length:var(--athlete-text-caption)] font-bold text-muted-foreground'>{weather.windDirectionCardinal}</span>
       </div>
 
       {/* Ráfagas */}
       <div className='flex flex-1 items-center justify-center gap-1 text-foreground/90 font-mono'>
         <GustIcon />
 
-        <span className='font-heading font-bold text-foreground text-[11px]'>
+        <span className='font-heading font-bold text-foreground text-[length:var(--athlete-text-caption)]'>
           {weather.windGusts}
-          <span className='text-[10px] font-semibold pl-1'>km/h</span>
+          <span className='text-[length:var(--athlete-text-caption)] font-semibold pl-1'>km/h</span>
         </span>
       </div>
 
@@ -78,7 +78,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
         <div className='flex flex-1 items-center justify-center gap-1 text-cyan-500 font-mono'>
           <IconBrandSnowflake size={14} />
 
-          <span className='font-heading font-semibold text-[11px]'>
+          <span className='font-heading font-semibold text-[length:var(--athlete-text-caption)]'>
             {weather.snowfallSum > 0 ? `${weather.snowfallSum} cm` : `${weather.precipitationProb}%`}
           </span>
         </div>
@@ -87,7 +87,7 @@ export function WeatherPillStrip({ weather, isLoading }: WeatherPillStripProps) 
           <div className='flex flex-1 items-center justify-center gap-1 text-blue-500 font-mono'>
             <DropIcon size={14} />
 
-            <span className='font-heading font-semibold text-[11px]'>{weather.precipitationProb}%</span>
+            <span className='font-heading font-semibold text-[length:var(--athlete-text-caption)]'>{weather.precipitationProb}%</span>
           </div>
         )
       )}

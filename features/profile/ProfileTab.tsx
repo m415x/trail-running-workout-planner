@@ -20,11 +20,11 @@ export function ProfileTab({ membershipStatus, performance, performanceStatus, a
 
       {/* Profile Tabs */}
       <Tabs defaultValue='athlete' className='w-full'>
-        <TabsList className='grid h-10 w-full grid-cols-2 rounded-2xl bg-secondary/60 p-1 sm:mx-auto sm:w-auto sm:gap-1 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
-          <TabsTrigger value='athlete' className='rounded-xl text-xs font-semibold'>
+        <TabsList className='grid h-auto min-w-0 w-full max-w-full grid-cols-2 rounded-2xl bg-secondary/60 p-1 group-data-horizontal/tabs:h-auto sm:mx-auto sm:gap-1 sm:rounded-[var(--radius-ept-overlay)] sm:border sm:shadow-[var(--elevation-ept-overlay)]'>
+          <TabsTrigger value='athlete' className='min-w-0 min-h-11 h-auto rounded-xl text-center whitespace-normal break-words text-[length:var(--athlete-text-label)] font-semibold'>
             {t('tabs.physiology')}
           </TabsTrigger>
-          <TabsTrigger value='settings' className='rounded-xl text-xs font-semibold'>
+          <TabsTrigger value='settings' className='min-w-0 min-h-11 h-auto rounded-xl text-center whitespace-normal break-words text-[length:var(--athlete-text-label)] font-semibold'>
             {t('tabs.settings')}
           </TabsTrigger>
         </TabsList>

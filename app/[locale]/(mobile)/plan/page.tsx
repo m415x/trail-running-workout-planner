@@ -92,24 +92,24 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
     <div className='mx-auto w-full min-w-0 max-w-5xl space-y-4 px-4 py-6 sm:px-6'>
       <header className='space-y-2 px-1 pt-1'>
         <div className='flex items-start justify-between gap-3'>
-          <div className='min-w-0 flex-1'><p className='text-xs font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-2xl font-bold leading-tight break-words sm:text-3xl'>{monday === currentWeekMonday ? t('currentWeek') : t('selectedWeek')}</h1></div>
+          <div className='min-w-0 flex-1'><p className='text-[length:var(--athlete-text-caption)] font-medium uppercase tracking-wide text-muted-foreground'>{t('eyebrow')}</p><h1 className='font-heading text-[length:var(--athlete-text-heading)] font-bold leading-tight break-words'>{monday === currentWeekMonday ? t('currentWeek') : t('selectedWeek')}</h1></div>
 
         </div>
-        <p className='flex items-center gap-1.5 text-sm text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(monday, sunday, regionalContext.presentationLocale)}</p>
+        <p className='flex items-center gap-1.5 text-[length:var(--athlete-text-body-compact)] text-muted-foreground'><CalendarDays className='size-4' /> {formatWeekRange(monday, sunday, regionalContext.presentationLocale)}</p>
       </header>
 
-      <nav aria-label={t('calendar.selectedWeek')} className='flex flex-wrap items-center gap-3 text-sm'>
+      <nav aria-label={t('calendar.selectedWeek')} className='flex flex-wrap items-center gap-3 text-[length:var(--athlete-text-body-compact)]'>
         <Link href={previousHref} className='rounded-lg border px-3 py-2'>← {t('previousWeek')}</Link>
         <Link href={currentHref} className='rounded-lg border px-3 py-2'>{t('today')}</Link>
         <Link href={nextHref} className='rounded-lg border px-3 py-2'>{t('nextWeek')} →</Link>
       </nav>
 
       <section aria-label={language === 'es' ? 'Panorama multisemana planificado' : 'Planned multiweek overview'} className='space-y-3 rounded-2xl border bg-card p-4'>
-        <h2 className='font-heading text-lg font-bold'>{t('plannedOverview')}</h2>
-        <p className='text-sm text-muted-foreground'>{formatWeekRange(overview.period.startDate, overview.period.endDate, regionalContext.presentationLocale)}</p>
+        <h2 className='font-heading text-[length:var(--athlete-text-title)] font-bold'>{t('plannedOverview')}</h2>
+        <p className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{formatWeekRange(overview.period.startDate, overview.period.endDate, regionalContext.presentationLocale)}</p>
         <ol className='grid gap-3 sm:grid-cols-3' aria-label={language === 'es' ? 'Resumen textual de semanas planificadas' : 'Text summary of planned weeks'}>
           {overview.weeks.map((week) => (
-            <li key={week.monday} className='min-w-0 space-y-1 break-words rounded-xl bg-muted/40 p-3 text-sm'>
+            <li key={week.monday} className='min-w-0 space-y-1 break-words rounded-xl bg-muted/40 p-3 text-[length:var(--athlete-text-body-compact)]'>
               <p className='font-semibold'>{formatWeekRange(week.monday, formatISODate(new Date(Date.parse(`${shiftAthletePlanWeek(week.monday, 1)}T00:00:00Z`) - 86400000)), regionalContext.presentationLocale)}</p>
               <p>{t('plannedDistance')}: {week.distance.status === 'complete' ? `${week.distance.value} km` : week.distance.status === 'incomplete' ? t('incompleteMetric') : t('unknownMetric')}</p>
               <p>{t('plannedAscent')}: {week.elevationGain.status === 'complete' ? `${week.elevationGain.value} m D+` : week.elevationGain.status === 'incomplete' ? (language === 'es' ? 'Datos incompletos' : 'Incomplete data') : (language === 'es' ? 'Sin datos' : 'Unknown')}</p>
@@ -120,21 +120,21 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
       </section>
 
       <section className='space-y-3 rounded-2xl border bg-card p-4' aria-label={language === 'es' ? 'Hitos competitivos' : 'Competition milestones'}>
-        <h2 className='font-heading text-lg font-bold'>{t('competitions')}</h2>
-        {milestoneResult.status === 'denied' && <p role='alert' className='text-sm text-muted-foreground'>{t('unauthorized')}</p>}
-        {milestoneResult.status === 'error' && <p role='alert' className='text-sm text-muted-foreground'>{t('loadError')}</p>}
+        <h2 className='font-heading text-[length:var(--athlete-text-title)] font-bold'>{t('competitions')}</h2>
+        {milestoneResult.status === 'denied' && <p role='alert' className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('unauthorized')}</p>}
+        {milestoneResult.status === 'error' && <p role='alert' className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('loadError')}</p>}
         {milestoneResult.status === 'loaded' && (milestoneResult.milestones.length === 0
-          ? <p className='text-sm text-muted-foreground'>{t('noUpcomingRegistrations')}</p>
+          ? <p className='text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('noUpcomingRegistrations')}</p>
           : <ol className='space-y-2'>{milestoneResult.milestones.map((registration) => (
-            <li key={registration.registrationId} className='rounded-xl bg-muted/40 p-3 text-sm'>
+            <li key={registration.registrationId} className='rounded-xl bg-muted/40 p-3 text-[length:var(--athlete-text-body-compact)]'>
               <p className='font-semibold'>{registration.eventName}</p>
               <p className='text-muted-foreground'>{registration.editionDate} · {registration.editionLabel} · {registration.courseLabel}</p>
-              <p className='text-xs text-muted-foreground'>{t('registrationMilestone')}</p>
+              <p className='text-[length:var(--athlete-text-caption)] text-muted-foreground'>{t('registrationMilestone')}</p>
             </li>
           ))}</ol>)}
       </section>
 
-      <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-sm font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
+      <Link href='/plan/competition' className='flex flex-col items-start gap-2 rounded-2xl border bg-card p-4 text-[length:var(--athlete-text-body-compact)] font-semibold sm:flex-row sm:items-center sm:justify-between'><span className='flex min-w-0 items-center gap-2'><Flag className='size-4 shrink-0' />{t('competitions')}</span><span className='break-words text-primary'>{t('viewRegistrations')}</span></Link>
 
 
 
@@ -146,12 +146,12 @@ export default async function PlanPage({ params, searchParams }: PlanPageProps) 
           return (
             <section key={day.date} className={cn('rounded-2xl border bg-card p-3', isToday && 'border-primary/50 ring-1 ring-primary/20')}>
               <div className='mb-3 flex items-center justify-between'>
-                <div><p className='font-heading text-base font-bold capitalize'>{day.weekDay}</p><p className='text-xs text-muted-foreground'>{day.dateLabel}</p></div>
+                <div><p className='font-heading text-[length:var(--athlete-text-body)] font-bold capitalize'>{day.weekDay}</p><p className='text-[length:var(--athlete-text-caption)] text-muted-foreground'>{day.dateLabel}</p></div>
                 {isToday && <Badge>{t('today')}</Badge>}
               </div>
 
               {daySessions.length === 0 ? (
-                <p className='rounded-xl bg-muted/40 px-3 py-4 text-center text-sm text-muted-foreground'>{t('noTraining')}</p>
+                <p className='rounded-xl bg-muted/40 px-3 py-4 text-center text-[length:var(--athlete-text-body-compact)] text-muted-foreground'>{t('noTraining')}</p>
               ) : (
                 <div className='space-y-2'>
                   {daySessions.map((session) => {

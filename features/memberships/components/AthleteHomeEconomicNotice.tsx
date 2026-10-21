@@ -48,7 +48,7 @@ export function AthleteHomeEconomicNotice({
       aria-label={labels.title}
       role={urgent ? 'alert' : 'status'}
       data-economic-tone={state.tone}
-      className={`min-w-0 rounded-lg border p-3 text-sm ${toneClass[state.tone]}`}
+      className={`min-w-0 rounded-lg border p-3 text-[length:var(--athlete-text-body-compact)] ${toneClass[state.tone]}`}
     >
       <p className='font-medium'>{labels[state.message]}</p>
       <Link

@@ -11,6 +11,7 @@ import ProgressGradient from '@ui/custom/progress-gradient'
 import { Popover, PopoverContent, PopoverTrigger } from '@ui/popover'
 import { WeekCalendarPicker } from '@workouts/components/WeekCalendarPicker'
 import { useWeeklyCalendarCard } from '@workouts/hooks/useWeeklyCalendarCard'
+import { useAthleteTypography } from '@/components/layout/MobileShell'
 import { WeeklyCarousel } from '@workouts/components/WeeklyCarousel'
 
 export interface WeeklyCalendarCardProps {
@@ -34,6 +35,7 @@ export function WeeklyCalendarCard({
   onNextWeek,
   onSelectDate,
 }: WeeklyCalendarCardProps) {
+  const { preference } = useAthleteTypography()
   const locale = useLocale()
   const t = useTranslations('Workouts.home')
   const language = locale === 'en' ? 'en' : 'es'
@@ -49,13 +51,13 @@ export function WeeklyCalendarCard({
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger
             render={
-              <PrimaryOutlineButton className='rounded-full font-xs font-mono h-0 py-3.5'>
+              <PrimaryOutlineButton className='rounded-full text-[length:var(--athlete-text-label)] font-mono h-0 py-3.5'>
                 <CalendarIcon className='size-3! opacity-80' />
                 <span>{dateRange}</span>
               </PrimaryOutlineButton>
             }
           />
-          <PopoverContent className='w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
+          <PopoverContent data-athlete-typography={preference} className='athlete-typography w-auto p-2 bg-card border-border/80 rounded-2xl shadow-xl z-50' align='end'>
             <WeekCalendarPicker
               selectedDate={selectedDate}
               onSelectDate={(date) => {
@@ -79,7 +81,7 @@ export function WeeklyCalendarCard({
 
       {/* Barra de progreso de la semana */}
       <div className='mt-2 space-y-1.5'>
-        <div className='flex justify-between text-[11px]'>
+        <div className='flex justify-between text-[length:var(--athlete-text-caption)]'>
           <span className='text-muted-foreground'>{t('weeklyProgress')}</span>
           <span className='text-foreground font-semibold'>
             {currentKm} km <span className='text-muted-foreground font-normal'>/ {cycle.targetKm} km</span>

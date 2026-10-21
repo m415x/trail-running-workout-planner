@@ -1,5 +1,6 @@
 'use client'
 
+import { useAthleteTypography } from '@/components/layout/MobileShell'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { useLocale, useTranslations } from 'next-intl'
 import { Mountain } from 'lucide-react'
@@ -19,7 +20,7 @@ function ElevTooltip({ active, payload, label }: ElevTooltipProps) {
   if (!active || !payload?.length) return null
 
   return (
-    <div className='rounded-xl border border-border/50 bg-popover/90 px-3 py-2 text-xs shadow-md backdrop-blur-md'>
+    <div className='rounded-xl border border-border/50 bg-popover/90 px-3 py-2 text-[length:var(--athlete-text-caption)] shadow-md backdrop-blur-md'>
       <p className='text-muted-foreground'>km {label}</p>
       <p className='font-semibold text-primary'>{payload[0].value} m</p>
     </div>
@@ -36,6 +37,9 @@ export interface ElevationChartProps {
 }
 
 export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: ElevationChartProps) {
+  const { preference } = useAthleteTypography()
+  const typographyMultiplier = ({ compact: 0.95, standard: 1, large: 1.125, 'extra-large': 1.25 } as const)[preference]
+  const athleteTickFontSize = 12 * typographyMultiplier
   const locale = useLocale()
   const t = useTranslations('Workouts')
   const regionalContext = resolveApplicationRegionalContext({
@@ -47,7 +51,7 @@ export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: El
     <CustomCard>
       {/* Header row */}
       <CardHeader title={t('map.elevationProfile')} icon={Mountain}>
-        <div className='flex justify-center gap-3 text-[11px]'>
+        <div className='flex justify-center gap-3 text-[length:var(--athlete-text-caption)]'>
           <span className='text-muted-foreground'>
             {t('map.maximum')} <span className='text-foreground font-semibold'>{formatNumber(elevMax, regionalContext.presentationLocale)} m</span>
           </span>
@@ -69,7 +73,7 @@ export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: El
             {/* <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' strokeOpacity={1} vertical={true} /> */}
             <XAxis
               dataKey='km'
-              tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: athleteTickFontSize }}
               tickLine={false}
               axisLine={false}
               type='number'
@@ -77,12 +81,12 @@ export function ElevationProfileCard({ elevData, elevMin, elevMax, yDomain }: El
               tickCount={10}
               unit='k'
               stroke='#888888'
-              fontSize={10}
+              fontSize={athleteTickFontSize}
               fontFamily={'var(--font-mono)'}
             />
             <YAxis
               domain={yDomain}
-              tick={{ fill: 'var(--muted-foreground)', fontSize: 9 }}
+              tick={{ fill: 'var(--muted-foreground)', fontSize: athleteTickFontSize }}
               tickLine={false}
               axisLine={false}
               unit='m'

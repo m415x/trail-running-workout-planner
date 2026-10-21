@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 
 import { MobileShell } from '@/components/layout/MobileShell'
 import { AudienceAccessUnavailable } from '@/components/auth/AudienceAccessUnavailable'
@@ -8,6 +9,8 @@ import { createExternalIdentityLookup } from '@/lib/auth/external-identity-looku
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { ATHLETE_TYPOGRAPHY_COOKIE_NAME } from '@/lib/athlete-typography/preference'
+import { resolveAthleteTypographyBootstrap } from '@/lib/athlete-typography/bootstrap'
 
 export default async function MobileLayout({
   children,
@@ -44,5 +47,11 @@ export default async function MobileLayout({
   if (decision.status === 'redirect') redirect(decision.location)
   if (decision.status === 'deny') return <AudienceAccessUnavailable locale={locale} />
 
-  return <MobileShell>{children}</MobileShell>
+  // The preference is presentation-only and is read after audience enforcement.
+  const cookieStore = await cookies()
+  const initialTypographyPreference = resolveAthleteTypographyBootstrap(
+    cookieStore.get(ATHLETE_TYPOGRAPHY_COOKIE_NAME)?.value,
+  ).preference
+
+  return <MobileShell initialTypographyPreference={initialTypographyPreference}>{children}</MobileShell>
 }

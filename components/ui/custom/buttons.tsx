@@ -103,11 +103,11 @@ export const PillButton = React.forwardRef<HTMLButtonElement, PillButtonProps>(
         {...props}
       >
         {Icon && <Icon aria-hidden='true' size={13} className={cn('mb-1 shrink-0', iconClassName)} />}
-        <span className={cn('font-heading text-2xl font-black leading-none tracking-tight', valueClassName)}>
+        <span className={cn('font-heading text-[length:var(--athlete-text-display,1.5rem)] font-black leading-none tracking-tight', valueClassName)}>
           {value}
         </span>
         {subtitle && (
-          <span className={cn('text-[9px] font-medium mt-0.5 tracking-tight', subtitleClassName)}>{subtitle}</span>
+          <span className={cn('text-[length:var(--athlete-text-caption,9px)] font-medium mt-0.5 tracking-tight', subtitleClassName)}>{subtitle}</span>
         )}
       </button>
     )
