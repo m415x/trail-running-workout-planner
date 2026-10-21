@@ -56,6 +56,7 @@ test('KAN-717 denies without any write/revalidation and checks AthleteProfile ow
   assert.deepEqual(deniedFixture.revalidations, [])
 
   const crossTeam = fixture()
+  assert.equal((await crossTeam.actions.applyInitial({ athleteId: 'athlete_b', effectiveFrom: '2026-10-09', locale: 'es' })).success, false)
   assert.equal((await crossTeam.actions.change({ athleteId: 'athlete_b', effectiveFrom: '2026-11-01', monthlyAmountMinor: 2000000, currency: 'ARS', locale: 'es' })).success, false)
   assert.deepEqual(crossTeam.writes, [])
   assert.deepEqual(crossTeam.revalidations, [])
