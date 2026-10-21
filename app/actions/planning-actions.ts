@@ -282,6 +282,7 @@ export async function getGroupTrainingPlans() {
  */
 export async function getCoachPlanningListResult() {
   let authenticated: Awaited<ReturnType<typeof requireAuthenticatedPlanningReadAccess>> = null
+  let authorizedGroupIds: string[] = []
 
   const reader = createCoachPlanningListReader({
     async resolveContext() {
@@ -301,31 +302,49 @@ export async function getCoachPlanningListResult() {
     async authorizeListing(context) {
       const current = authenticated
       if (!current || current.teamId !== context.teamId) return false
-      // Listing access is evaluated independently from the existence of Plans.
-      // The H3 capability remains planning.manage; no planning.read is created.
-      const decision = await createH4aNextServerAuthorizationBoundary().authorize(
-        current.access,
-        {
-          capability: 'planning.manage',
-          resource: { teamId: context.teamId },
-          requiredScope: 'team',
-          at: new Date().toISOString(),
-        },
-      )
-      return decision.allowed
-    },
 
-    async loadPlans(context) {
+      // The Team check permits an authorized empty Team, even with no groups.
+      // SPORTING_GROUP authority is checked against persisted group ownership,
+      // never against client-supplied identifiers or a fabricated Plan.
+      const authorization = createH4aNextServerAuthorizationBoundary()
+      const at = new Date().toISOString()
+      const teamDecision = await authorization.authorize(current.access, {
+        capability: 'planning.manage',
+        resource: { teamId: context.teamId },
+        at,
+      })
       const groups = await db.query.athleteGroups.findMany({
         where: and(
           eq(athleteGroups.teamId, context.teamId),
           eq(athleteGroups.isDeleted, false),
         ),
       })
-      if (groups.length === 0) return []
+
+      if (teamDecision.allowed) {
+        authorizedGroupIds = groups.map((group) => group.id)
+        return true
+      }
+
+      if (groups.length === 0) return false
+      const decisions = await Promise.all(groups.map((group) =>
+        authorization.authorize(current.access, {
+          capability: 'planning.manage',
+          resource: { teamId: context.teamId, sportingGroupId: group.id },
+          at,
+        }),
+      ))
+      authorizedGroupIds = groups
+        .filter((_group, index) => decisions[index]?.allowed === true)
+        .map((group) => group.id)
+      return authorizedGroupIds.length > 0
+    },
+
+    async loadPlans(context) {
+      // Group authorization was established before this read.
+      if (authorizedGroupIds.length === 0) return []
       const plans = await db.query.groupTrainingPlans.findMany({
         where: and(
-          inArray(groupTrainingPlans.groupId, groups.map((group) => group.id)),
+          inArray(groupTrainingPlans.groupId, authorizedGroupIds),
           eq(groupTrainingPlans.isDeleted, false),
         ),
         with: {
