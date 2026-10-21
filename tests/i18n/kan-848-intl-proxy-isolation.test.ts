@@ -41,7 +41,7 @@ test('KAN-848/T2 isolates next-intl response from auth response composition acro
         observations.push({
           requestUrl: url, host, cookie,
           status: prior.status, location: prior.location, rewrite: prior.rewrite,
-          composedStatus: composed.status,
+          composedStatus: localized.status,
           composedLocation: composed.headers.get('location'),
           composedRewrite: composed.headers.get('x-middleware-rewrite'),
         })
