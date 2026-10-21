@@ -31,9 +31,9 @@ async function waitForServer(base: string, exited: () => boolean, diagnostics: (
   for (let attempt = 0; attempt < 30; attempt++) {
     if (exited()) throw new Error('Next.js exited before HTTP readiness; infrastructure failure. Logs: ' + diagnostics())
     try {
-      const response = await fetch(base + '/en/login', { redirect: 'manual', signal: AbortSignal.timeout(3000) })
-      if (response.status < 500) return
-      lastObservation = 'HTTP ' + response.status + ' from /en/login'
+      const response = await fetch(base + '/api/kan-847-readiness-probe', { redirect: 'manual', signal: AbortSignal.timeout(3000) })
+      if (response.status === 404) return
+      lastObservation = 'HTTP ' + response.status + ' from /api/kan-847-readiness-probe'
     } catch (error) {
       lastObservation = error instanceof Error ? error.message : String(error)
     }
