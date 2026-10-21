@@ -94,7 +94,15 @@
         "active": "Active",
         "completed": "Completed",
         "cancelled": "Cancelled"
-      }
+      },
+      "deniedTitle": "Access denied",
+      "deniedDescription": "You do not have permission to view these plans.",
+      "errorTitle": "Could not load plans",
+      "errorDescription": "An error occurred while loading planning data. Please try again.",
+      "selectionRequiredTitle": "Select a team",
+      "selectionRequiredDescription": "Choose your active team to view its plans.",
+      "invalidContextTitle": "Team context unavailable",
+      "invalidContextDescription": "Your selected team is no longer valid. Select an active team again."
     },
     "detail": {
       "group": "Group {code}",
@@ -127,12 +135,12 @@
       "minDays": "Select at least 3 usual training days."
     },
     "sessionPreview": {
-    "reviewCreate": "Create review",
-    "reviewCreateHelp": "Create an authorized review before confirming sessions.",
-    "reviewConfirmHelp": "Confirm the authorized review and save sessions.",
-    "reviewDenied": "Not authorized",
-    "reviewUnavailable": "The review is no longer available.",
-    "reviewFailed": "The operation could not be completed.",
+      "reviewCreate": "Create review",
+      "reviewCreateHelp": "Create an authorized review before confirming sessions.",
+      "reviewConfirmHelp": "Confirm the authorized review and save sessions.",
+      "reviewDenied": "Not authorized",
+      "reviewUnavailable": "The review is no longer available.",
+      "reviewFailed": "The operation could not be completed.",
       "title": "Session preview",
       "description": "A proposal generated from each microcycle. Review it before saving.",
       "saved": "Saved",
