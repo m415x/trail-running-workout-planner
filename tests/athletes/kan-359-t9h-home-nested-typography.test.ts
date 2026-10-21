@@ -32,6 +32,6 @@ test('KAN-359/T9h Athlete tokens stay scoped, with fixed distance hierarchy docu
   const css = read('features/athlete-typography/typography.css')
   const workout = read('features/workouts/components/WorkoutCard.tsx')
   assert.match(css, /\.athlete-typography\s*\{/)
-  assert.match(workout, /text-5xl/, 'primary distance intentionally retains its hierarchy')
+  assert.match(workout, /--athlete-text-display/, 'primary distance retains display hierarchy and scales with preset')
   assert.doesNotMatch(css, /(?:^|[},\n])\s*(?:html|body|:root)\s*\{/m)
 })
