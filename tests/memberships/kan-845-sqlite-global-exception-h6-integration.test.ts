@@ -82,6 +82,8 @@ test('KAN-845 economic global exception uses real Drizzle writer and preserves b
       assert.equal(writes, 1, label + ': no writer callback')
       assert.deepEqual(snapshot(), baseline, label + ': no durable mutation')
     }
+    selected = 'team-unknown'
+    await deny('invalid_context foreign or forged Team')
     selected = null
     await deny('selection_required')
     selected = 'team-a'
