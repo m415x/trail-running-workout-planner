@@ -43,7 +43,7 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
       );
     `)
     const db = drizzle(sqlite, { schema: { athleteGroups, groupTrainingPlans, teamMemberships } })
-    const groups = [
+    const groups: (typeof athleteGroups.$inferInsert)[] = [
       { id: 'g-allow', teamId: 'team-a', categoryCode: 'M', levelCode: '1', isActive: true, isDeleted: false, createdAt: NOW, updatedAt: NOW },
       { id: 'g-other', teamId: 'team-a', categoryCode: 'S', levelCode: '2', isActive: true, isDeleted: false, createdAt: NOW, updatedAt: NOW },
     ]
