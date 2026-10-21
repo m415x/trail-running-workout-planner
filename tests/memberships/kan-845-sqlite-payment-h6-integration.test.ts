@@ -43,8 +43,9 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     })
     const before = () => sqlite.prepare('SELECT id, payment_id, monthly_charge_id, amount_minor, is_current FROM payment_revisions ORDER BY id').all()
     const current = { revisionId: 'rev-b1', paymentId: 'payment-b', monthlyChargeId: 'charge-b', amountMinor: 200, paymentMethod: 'cash' as const, paidAt: '2026-10-10', voided: false, isCurrent: true, createdByUserId: 'coach-a' }
+    let authenticated = true
     const actions = createH6PaymentActions({
-      authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach-a' }),
+      authenticate: async () => authenticated ? ({ status: 'authenticated' as const, userId: 'coach-a' }) : ({ status: 'forbidden' as const, reason: 'anonymous' as const }),
       authorize: (actor, request) => boundary.authorize(actor, request),
       ownsCharge: async (teamId, _athleteId, chargeId) => teamId === 'team-b' && chargeId === 'charge-b',
       ownsPayment: async (teamId, _athleteId, chargeId, paymentId) => teamId === 'team-b' && chargeId === 'charge-b' && paymentId === 'payment-b',
@@ -70,6 +71,10 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     const missingChargePayload = { ...input, monthlyChargeId: 'missing-charge' }
     assert.equal((await actions.correct(missingChargePayload)).success, false, 'missing Charge must not reach payment writer')
     assert.deepEqual(before(), baseline, 'missing Charge DENY preserves all revisions')
+    authenticated = false
+    assert.equal((await actions.correct(input)).success, false, 'anonymous H2 cannot reach the durable payment adapter')
+    assert.deepEqual(before(), baseline, 'anonymous H2 preserves both Teams')
+    authenticated = true
     selected = 'team-a'
     assert.equal((await actions.correct(input)).success, false)
     assert.deepEqual(before(), baseline, 'foreign Team DENY must preserve all payment revisions')
