@@ -1,3 +1,14 @@
+# Current integrated handoff — KAN-359 Athlete responsive typography (2026-10-20)
+
+- **Integrated dev:** [PR #69](https://github.com/m415x/trail-running-workout-planner/pull/69), ordinary merge `6dc25aa149e1523723723b23059dedbe41e8482d`, PR head `8a94d39971038eb62ac2c5c1327af54f66b24b10`. Historical divergent KAN-359 branch remains preserved. Latest integrated baseline before this story was KAN-832, preserved below.
+- **Functional premerge gate:** operator-reported `pn verify --db` PASS 6/6, functional SHA `3a13257df21009e72679212773d4fbb4fba1519a` (operator did not separately provide local HEAD at that stage). Premerge `HANDOFF DOCS: PASS` and exact local docs HEAD `8a94d39971038eb62ac2c5c1327af54f66b24b10` confirmed.
+- **Post-merge gate:** operator-reported `pn verify --db` **PASS 6/6** on locally confirmed `dev@6dc25aa149e1523723723b23059dedbe41e8482d`: Tests 159625ms; TypeScript 10666ms; ESLint 26000ms; Build 22306ms; i18n 406ms; SQLite 48877ms; total 267880ms. Do not attribute this gate to later documentation-only commits.
+- **Delivered:** four Athlete typography presets (compact, standard, large, extra-large), validated preference / SSR bootstrap, scoped Athlete text roles across Home/Plan/Stats/Profile, nested cards, calendar, zone heart-rate popover and workout logging dialog; keyboard/reflow/legibility visual corrections operator-accepted. Integrated KAN-645 multisemana Plan retained; Coach scope, H5A/H5B and workout persistence unchanged.
+- **Pre-merge finding:** legacy hard-coded class assertions in six tests reconciled to Athlete semantic typography, layout and preserved reset action; first full gate FAIL followed by PASS 6/6.
+- **Pending administrative:** `pn docs:handoff:check` on final docs-only `dev` SHA; reconcile Jira KAN-820 and parent KAN-359 status; inspect worktrees with ignored/untracked assets before operator-mediated disposition; no force removal. See [KAN-359 handoff](kan-359.md).
+
+---
+
 # Current integrated handoff — KAN-832 progressive SQLite seeds (2026-10-20)
 
 - **Integrated dev:** [PR #68](https://github.com/m415x/trail-running-workout-planner/pull/68), ordinary merge `80c9bda168561cdddc71278a83500e711f59f17d`; documentation fix `80cc99a171e89be7c39767a356178a13c514bce3` restored three rich alias references required by historical SQLite operations test.
