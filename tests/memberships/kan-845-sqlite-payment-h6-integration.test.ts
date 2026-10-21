@@ -39,7 +39,7 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
       loadMemberships: async (userId, teamId): Promise<EffectiveTeamMembership[]> => load()
         .filter(m => m.user_id === userId && m.team_id === teamId)
         .map(m => ({ userId: m.user_id, teamId: m.team_id, preset: m.preset, effectiveFrom: m.effective_from, effectiveUntil: m.effective_until, isActive: Boolean(m.is_active) && !Boolean(m.is_deleted) })),
-      resolveResourceTeam: async resourceId => resourceId === 'charge-b' ? 'team-b' : resourceId === 'charge-a' ? 'team-a' : null,
+      resolveResourceTeam: async (resourceId, teamId) => resourceId === '__active_team_economy__' ? teamId : resourceId === 'charge-b' ? 'team-b' : resourceId === 'charge-a' ? 'team-a' : null,
     })
     const before = () => sqlite.prepare('SELECT id, payment_id, monthly_charge_id, amount_minor, is_current FROM payment_revisions ORDER BY id').all()
     const current = { revisionId: 'rev-b1', paymentId: 'payment-b', monthlyChargeId: 'charge-b', amountMinor: 200, paymentMethod: 'cash' as const, paidAt: '2026-10-10', voided: false, isCurrent: true, createdByUserId: 'coach-a' }
