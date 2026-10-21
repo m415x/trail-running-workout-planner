@@ -34,7 +34,7 @@ export function createPlanningCreationEligibility<TGroup extends Group>(
             resource: { teamId: team.teamId, sportingGroupId: group.id },
             at: deps.now(),
           })
-          if (decision.allowed && 'teamId' in decision) return true
+          if (decision.allowed) return true
         }
         return false
       } catch {
