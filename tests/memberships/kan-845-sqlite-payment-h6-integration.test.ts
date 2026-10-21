@@ -64,7 +64,8 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     assert.deepEqual(sqlite.prepare("SELECT id, created_by_user_id FROM payment_revisions WHERE id = 'rev-b2'").all(), [{ id: 'rev-b2', created_by_user_id: 'coach-a' }], 'server-owned authorship must survive client spoofing')
     assert.deepEqual(sqlite.prepare("SELECT id, amount_minor, is_current FROM payment_revisions WHERE monthly_charge_id = 'charge-a'").all(), [{ id: 'rev-a1', amount_minor: 100, is_current: 1 }])
     const baseline = before()
-    assert.equal((await actions.correct({ ...input, monthlyChargeId: 'charge-a', paymentId: 'payment-a', teamId: 'team-b' })).success, false, 'forged Team cannot authorize a foreign charge')
+    const foreignChargePayload = { ...input, monthlyChargeId: 'charge-a', paymentId: 'payment-a', teamId: 'team-b' }
+    assert.equal((await actions.correct(foreignChargePayload)).success, false, 'forged Team cannot authorize a foreign charge')
     assert.deepEqual(before(), baseline, 'foreign charge DENY must preserve both Teams')
     selected = 'team-a'
     assert.equal((await actions.correct(input)).success, false)
