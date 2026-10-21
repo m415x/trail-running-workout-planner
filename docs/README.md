@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
+- [KAN-689 Coach Membership H3/H4A reader — T1 candidate, not integrated](handoffs/kan-689.md) — [KAN-843](https://trail-running-workout-planning.atlassian.net/browse/KAN-843), economic_policy.manage-protected read, Team A/B regression; operator-reported PASS 6/6 on functional candidate `acae812a53cec9ecec96b560109bc01b0dcd623a` (local HEAD not separately attested), post-handoff docs check PASS on `065f20779668800e86309783358cc14fada57c83`; PR #71 opened in draft; review and merge pending; do not treat as dev integration.
+
 - [KAN-696 Coach Planning DENY/EMPTY — integrated in dev](handoffs/kan-696.md) — [PR #70](https://github.com/m415x/trail-running-workout-planner/pull/70), merge `b4ba97944b2a54cc9dc308c75af4cef1d4acb4ce`; premerge gate PASS 6/6 and premerge handoff PASS operator-reported. Postmerge gate/documentation verification pending. See [current integrated handoff](handoffs/current.md).
 
 - [KAN-359 Athlete responsive typography — integrated in dev](handoffs/kan-359.md) — [PR #69](https://github.com/m415x/trail-running-workout-planner/pull/69), merge `6dc25aa149e1523723723b23059dedbe41e8482d`, operator-confirmed exact-HEAD post-merge `pn verify --db` PASS 6/6. Final documentation checker and operator worktree disposition remain pending.

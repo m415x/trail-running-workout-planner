@@ -1,4 +1,12 @@
 import { getTranslations } from 'next-intl/server'
+import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
+import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
+import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
+import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
+import { createH4aAuthorizationAdapter } from '@/lib/authorization/h4a-authorization-adapter'
+import { createH4aNextServerEvidenceSource } from '@/lib/authorization/h4a-next-server-authorization'
+import { createMembershipAuthorizedPageReader } from '@/lib/memberships/membership-authorized-page-reader'
 import { db } from '@/db'
 import { MembershipPolicyCard } from '@/features/memberships/components/MembershipPolicyCard'
 import { TeamEconomicPolicyForm } from '@/features/memberships/components/TeamEconomicPolicyForm'
@@ -23,16 +31,53 @@ const loadMembershipPage = createMembershipPageLoader({
   createRepository: createTeamEconomicPolicyQueryRepository,
 })
 
+const readAuthorizedMembershipPage = createMembershipAuthorizedPageReader({
+  authenticate: async () => {
+    const supabase = await createSupabaseServerClient()
+    return requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, createExternalIdentityLookup()),
+    })
+  },
+  resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
+  authorize: (access, teamId, at) => createH4aAuthorizationAdapter(
+    createH4aNextServerEvidenceSource(),
+  ).authorize(access, {
+    teamId, capability: 'economic_policy.manage', resource: { teamId }, at,
+  }),
+  load: loadMembershipPage,
+  hasData: (model) => Boolean(
+    model.currentPolicy.effectiveFrom
+    || model.scheduledPolicies.length
+    || model.pastPolicies.length
+    || model.globalDueDateExceptionHistory.length,
+  ),
+})
+
 export default async function MembershipPage({ params }: MembershipPageProps) {
   const { locale } = await params
   const supportedLocale = locale === 'en' ? 'en' : 'es'
-  const model = await loadMembershipPage({
+  const result = await readAuthorizedMembershipPage({
     db,
     locale: supportedLocale,
-    teamId: 'team_1',
     onDate: membershipPageCalendarDate(APPLICATION_REGIONAL_FALLBACKS.timeZone),
   })
-
+  if (result.status !== 'ready' && result.status !== 'empty') {
+    const messages = supportedLocale === 'es'
+      ? {
+          selection_required: 'Seleccioná un equipo para consultar Membresía.',
+          invalid_context: 'La selección del equipo no es válida.',
+          denied: 'No tenés autorización para consultar esta sección.',
+          error: 'No se pudo cargar la información de Membresía.',
+        }
+      : {
+          selection_required: 'Select a team to view Membership.',
+          invalid_context: 'The selected team is invalid.',
+          denied: 'You are not authorized to view this section.',
+          error: 'Membership information could not be loaded.',
+        }
+    return <p role='status' className='text-sm text-muted-foreground'>{messages[result.status]}</p>
+  }
+  const model = result.model
   const t = await getTranslations({ locale, namespace: 'Membership' })
 
   return (
