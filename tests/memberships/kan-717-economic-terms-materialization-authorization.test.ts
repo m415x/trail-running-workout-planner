@@ -56,7 +56,28 @@ test('KAN-717 denies without any write/revalidation and checks AthleteProfile ow
   assert.deepEqual(deniedFixture.revalidations, [])
 
   const crossTeam = fixture()
+  assert.equal((await crossTeam.actions.applyInitial({ athleteId: 'athlete_b', effectiveFrom: '2026-10-09', locale: 'es' })).success, false)
   assert.equal((await crossTeam.actions.change({ athleteId: 'athlete_b', effectiveFrom: '2026-11-01', monthlyAmountMinor: 2000000, currency: 'ARS', locale: 'es' })).success, false)
   assert.deepEqual(crossTeam.writes, [])
   assert.deepEqual(crossTeam.revalidations, [])
+})
+
+test('KAN-844 anonymous H2 terms and bulk operations do not authorize or write', async () => {
+  let authorized = 0
+  let writes = 0
+  const actions = createH6TermsAndMaterializationActions({
+    authenticate: async () => ({ status: 'forbidden' as const, reason: 'anonymous' as const }),
+    authorize: async () => { authorized++; return { allowed: true as const, teamId: 'team_a' } },
+    ownsAthlete: async () => true,
+    initializeTerms: async () => { writes++; return { success: true as const } },
+    changeTerms: async () => { writes++; return { success: true as const } },
+    materialize: async () => { writes++; return { success: true as const, processedAthletes: 1, materializedCharges: 1 } },
+    revalidate: () => { throw new Error('DENY must not revalidate') },
+    now: () => at,
+  })
+  assert.equal((await actions.applyInitial({ athleteId: 'athlete_a', effectiveFrom: '2026-10-09', locale: 'es' })).success, false)
+  assert.equal((await actions.change({ athleteId: 'athlete_a', effectiveFrom: '2026-11-01', monthlyAmountMinor: 2000000, currency: 'ARS', locale: 'es' })).success, false)
+  assert.equal((await actions.materialize({ year: 2026, month: 10, locale: 'es' })).success, false)
+  assert.equal(authorized, 0)
+  assert.equal(writes, 0)
 })

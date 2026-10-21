@@ -3,6 +3,7 @@ import test from 'node:test'
 
 import { createH6EconomicAuthorizationBoundary } from '@/lib/authorization/h6-economic-authorization'
 import type { EffectiveTeamMembership } from '@/lib/authorization/effective-authorization'
+import { createH6PaymentActions } from '@/lib/memberships/h6-payment-actions'
 
 const at = '2026-10-09T12:00:00.000Z'
 const access = { status: 'authenticated' as const, userId: 'user_1' }
@@ -60,5 +61,33 @@ test('KAN-715 fails closed on invalid H2, Team, revocation, duplicate membership
     const decision = await h.boundary.authorize(actor, { at, capability: 'economy.manage', resourceId: 'charge_1' })
     assert.equal(decision.allowed, false)
     assert.equal(h.writes(), 0)
+  }
+})
+
+test('KAN-844 revoked membership and unresolved Team propagate H6 DENY before payment callback', async () => {
+  for (const state of ['revoked', 'unresolved'] as const) {
+    const h = harness(state === 'revoked'
+      ? { members: [{ ...membership, isActive: false }] }
+      : { activeTeam: { status: 'selection_required' } })
+    let writes = 0
+    let revalidations = 0
+    const actions = createH6PaymentActions({
+      authenticate: async () => access,
+      authorize: (actor, request) => h.boundary.authorize(actor, request),
+      ownsCharge: async () => true,
+      ownsPayment: async () => true,
+      register: async () => { writes++; return { success: true as const } },
+      correct: async () => { writes++; return { success: true as const } },
+      voidPayment: async () => { writes++; return { success: true as const } },
+      revalidate: () => { revalidations++ },
+      now: () => at,
+    })
+    const base = { athleteId: 'athlete_a', monthlyChargeId: 'charge_a', locale: 'es' as const }
+    const paid = { ...base, amountMinor: 1000, paymentMethod: 'cash' as const, paidAt: '2026-10-09' }
+    assert.equal((await actions.register(paid)).success, false, state)
+    assert.equal((await actions.correct({ ...paid, paymentId: 'payment_a' })).success, false, state)
+    assert.equal((await actions.voidPayment({ ...base, paymentId: 'payment_a' })).success, false, state)
+    assert.equal(writes, 0, state)
+    assert.equal(revalidations, 0, state)
   }
 })

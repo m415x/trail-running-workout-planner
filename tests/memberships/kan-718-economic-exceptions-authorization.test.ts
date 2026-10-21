@@ -52,3 +52,32 @@ test('KAN-718 DENY and mismatched persisted charge ownership have zero write/rev
   assert.deepEqual(denied.writes, [])
   assert.deepEqual(denied.revalidations, [])
 })
+
+test('KAN-844 wrong charge period denies reduction and extension before persistence', async () => {
+  const h = fixture()
+  assert.equal((await h.actions.reduction({ ...h.charge, month: 10, reductionAmountMinor: 1000 })).success, false)
+  assert.equal((await h.actions.extension({ ...h.charge, year: 2025, extendedDueDate: null })).success, false)
+  assert.deepEqual(h.writes, [])
+  assert.deepEqual(h.revalidations, [])
+})
+
+test('KAN-844 anonymous H2 cannot invoke global, reduction or extension writers', async () => {
+  let authorized = 0
+  let writes = 0
+  const actions = createH6EconomicExceptionActions({
+    authenticate: async () => ({ status: 'forbidden' as const, reason: 'anonymous' as const }),
+    authorize: async () => { authorized++; return { allowed: true as const, teamId: 'team_a' } },
+    ownsCharge: async () => true,
+    globalDueDate: async () => { writes++; return { success: true as const } },
+    reduce: async () => { writes++; return { success: true as const } },
+    extend: async () => { writes++; return { success: true as const } },
+    revalidate: () => { throw new Error('DENY must not revalidate') },
+    now: () => at,
+  })
+  const charge = { monthlyChargeId: 'charge_a', athleteId: 'athlete_a', year: 2026, month: 9, reason: 'Review', locale: 'es' as const }
+  assert.equal((await actions.global({ year: 2026, month: 9, dueDate: '2026-10-15', reason: 'Review', locale: 'es' })).success, false)
+  assert.equal((await actions.reduction({ ...charge, reductionAmountMinor: 1000 })).success, false)
+  assert.equal((await actions.extension({ ...charge, extendedDueDate: null })).success, false)
+  assert.equal(authorized, 0)
+  assert.equal(writes, 0)
+})

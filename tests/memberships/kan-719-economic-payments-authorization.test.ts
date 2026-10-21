@@ -57,3 +57,24 @@ test('KAN-719 authorization, charge and payment ownership DENY without revisions
     assert.deepEqual(h.revalidations, [])
   }
 })
+
+test('KAN-844 anonymous H2 denies payment register, correct and void before authorization or write', async () => {
+  let authorized = 0
+  let writes = 0
+  const actions = createH6PaymentActions({
+    authenticate: async () => ({ status: 'forbidden' as const, reason: 'anonymous' as const }),
+    authorize: async () => { authorized++; return { allowed: true as const, teamId: 'team_a' } },
+    ownsCharge: async () => true,
+    ownsPayment: async () => true,
+    register: async () => { writes++; return { success: true as const } },
+    correct: async () => { writes++; return { success: true as const } },
+    voidPayment: async () => { writes++; return { success: true as const } },
+    revalidate: () => { throw new Error('DENY must not revalidate') },
+    now: () => '2026-10-09T12:00:00.000Z',
+  })
+  assert.equal((await actions.register(paid)).success, false)
+  assert.equal((await actions.correct(amended)).success, false)
+  assert.equal((await actions.voidPayment(voided)).success, false)
+  assert.equal(authorized, 0)
+  assert.equal(writes, 0)
+})
