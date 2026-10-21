@@ -28,7 +28,8 @@ export function createCoachPlanningListOperation<TGroup extends Group, TPlan ext
       const current = await deps.authenticate()
       if (current.status !== 'authenticated') return { status: 'denied' }
       const team = await deps.resolveActiveTeam(current.userId)
-      if (team.status !== 'resolved') return { status: 'denied' }
+      if (team.status === 'selection_required') return { status: 'selection_required' }
+      if (team.status === 'invalid_context') return { status: 'invalid_context' }
       access = current
       return { status: 'resolved', actorId: current.userId, teamId: team.teamId }
     },
