@@ -215,6 +215,15 @@
       "elevationAria": "Target elevation gain in meters",
       "sourceManual": "Manual",
       "sourceGenerated": "Generated"
+    },
+    "newStrategyPage": {
+      "back": "Back to planning",
+      "title": "New load strategy",
+      "description": "Set the starting point for your group's planning.",
+      "noGroupsTitle": "No active groups",
+      "noGroupsDescription": "Activate or create a group before configuring its load strategy.",
+      "deniedTitle": "Access denied",
+      "deniedDescription": "You do not have permission to create planning strategies."
     }
   }
 }
