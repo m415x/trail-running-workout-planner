@@ -14,7 +14,8 @@ const withPWA = withPWAInit({
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Test-only Next dev instances must never write generated types into the operator's .next.
+  ...(process.env.KAN_HTTP_FIXTURE_DIST_DIR ? { distDir: process.env.KAN_HTTP_FIXTURE_DIST_DIR } : {}),
 }
 
 // Envolvemos la configuración aplicando primero PWA y luego next-intl (o viceversa)
