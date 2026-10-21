@@ -30,7 +30,9 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
         is_deleted INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
       );
       CREATE TABLE group_training_plans (
-        id TEXT PRIMARY KEY, group_id TEXT NOT NULL, title TEXT NOT NULL, status TEXT NOT NULL,
+        id TEXT PRIMARY KEY, group_id TEXT NOT NULL,
+        planning_cohort_id TEXT, source_group_training_plan_id TEXT,
+        title TEXT NOT NULL, status TEXT NOT NULL, notes TEXT,
         is_deleted INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
       );
       CREATE TABLE team_memberships (
