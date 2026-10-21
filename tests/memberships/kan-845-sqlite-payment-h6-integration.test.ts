@@ -65,6 +65,9 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     selected = 'team-a'
     assert.equal((await actions.correct(input)).success, false)
     assert.deepEqual(before(), baseline, 'foreign Team DENY must preserve all payment revisions')
+    selected = null
+    assert.equal((await actions.correct(input)).success, false, 'ambiguous H3 Team cannot authorize corrections')
+    assert.deepEqual(before(), baseline, 'selection_required must preserve payment revisions')
     selected = 'team-b'
     sqlite.prepare("UPDATE team_memberships SET is_active = 0 WHERE team_id = 'team-b'").run()
     assert.equal((await actions.correct(input)).success, false)
