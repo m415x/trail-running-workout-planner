@@ -75,6 +75,10 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     assert.equal((await actions.correct(input)).success, false, 'anonymous H2 cannot reach the durable payment adapter')
     assert.deepEqual(before(), baseline, 'anonymous H2 preserves both Teams')
     authenticated = true
+    sqlite.prepare("UPDATE team_memberships SET preset = 'athlete' WHERE team_id = 'team-b'").run()
+    assert.equal((await actions.correct(input)).success, false, 'athlete preset cannot manage economics')
+    assert.deepEqual(before(), baseline, 'insufficient H4A capability preserves payment revisions')
+    sqlite.prepare("UPDATE team_memberships SET preset = 'coach' WHERE team_id = 'team-b'").run()
     selected = 'team-a'
     assert.equal((await actions.correct(input)).success, false)
     assert.deepEqual(before(), baseline, 'foreign Team DENY must preserve all payment revisions')
