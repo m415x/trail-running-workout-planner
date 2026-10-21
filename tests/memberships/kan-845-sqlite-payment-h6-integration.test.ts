@@ -59,7 +59,8 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
       now: () => '2026-10-21T12:00:00.000Z',
     })
     const input = { athleteId: 'athlete-b', monthlyChargeId: 'charge-b', paymentId: 'payment-b', amountMinor: 250, paymentMethod: 'cash' as const, paidAt: '2026-10-21', locale: 'es' as const }
-    assert.equal((await actions.correct(input)).success, true)
+    assert.equal((await actions.correct({ ...input, teamId: 'team-a', authenticatedActorUserId: 'forged-user' })).success, true)
+    assert.deepEqual(sqlite.prepare("SELECT id, created_by_user_id FROM payment_revisions WHERE id = 'rev-b2'").all(), [{ id: 'rev-b2', created_by_user_id: 'coach-a' }], 'server-owned authorship must survive client spoofing')
     assert.deepEqual(sqlite.prepare("SELECT id, amount_minor, is_current FROM payment_revisions WHERE monthly_charge_id = 'charge-a'").all(), [{ id: 'rev-a1', amount_minor: 100, is_current: 1 }])
     const baseline = before()
     selected = 'team-a'
