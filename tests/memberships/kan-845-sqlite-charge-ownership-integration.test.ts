@@ -30,6 +30,8 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
       INSERT INTO athlete_profiles (id,team_id,is_deleted,created_at,updated_at,is_active,dni) VALUES ('athlete-a','team-a',0,'2026-10-21','2026-10-21',1,'A'),('athlete-b','team-b',0,'2026-10-21','2026-10-21',1,'B');
     `)
     const repo = createDrizzleBillingDatabase(drizzle(sqlite))
+    assert.ok(repo.applyMonthlyChargeReductionAtomically, 'SQLite reduction port must be available')
+    assert.ok(repo.applyMonthlyChargeExtensionAtomically, 'SQLite extension port must be available')
     const charge = (athleteId: string) => ({
       athleteId, billingTermsId: 'terms-' + athleteId,
       year: 2026, month: 10, baseAmountMinor: 10000, amountDueMinor: 10000,
