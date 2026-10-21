@@ -16,6 +16,7 @@ test('KAN-627 real SQLite: two bounded scoped SELECTs, active revisions and no c
         id TEXT PRIMARY KEY, is_deleted INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '',
         user_id TEXT, team_id TEXT NOT NULL, group_id TEXT, is_active INTEGER NOT NULL DEFAULT 1,
+        first_name TEXT, last_name TEXT, contact_email TEXT,
         nick_name TEXT, dni TEXT NOT NULL DEFAULT '', birthday TEXT,
         phone TEXT, emergency_contact TEXT, emergency_phone TEXT,
         physiology TEXT, medical TEXT
