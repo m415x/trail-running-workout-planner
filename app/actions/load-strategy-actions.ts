@@ -71,6 +71,47 @@ function planningPath(locale: string, suffix = '') {
   return `${base}${suffix}`
 }
 
+/**
+ * Server-owned eligibility for the New Strategy CTA.
+ * Mirrors the writer's persisted active Group and H4A planning.manage checks.
+ * The writer remains the final authority for every mutation.
+ */
+export async function getCoachPlanningCreationEligibility(): Promise<boolean> {
+  try {
+    const supabase = await createSupabaseServerClient()
+    const lookup = createExternalIdentityLookup()
+    const access = await requireAuthenticatedEptAction({
+      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+    })
+    if (access.status !== 'authenticated') return false
+
+    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+    if (activeTeam.status !== 'resolved') return false
+
+    const groups = await db.query.athleteGroups.findMany({
+      where: and(
+        eq(athleteGroups.teamId, activeTeam.teamId),
+        eq(athleteGroups.isDeleted, false),
+        eq(athleteGroups.isActive, true),
+      ),
+    })
+    if (groups.length === 0) return false
+
+    const boundary = createH4aNextServerAuthorizationBoundary()
+    for (const group of groups) {
+      const decision = await boundary.authorize(access, {
+        capability: 'planning.manage',
+        resource: { teamId: group.teamId, sportingGroupId: group.id },
+        at: new Date().toISOString(),
+      })
+      if (decision.allowed && 'teamId' in decision) return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
 export async function createGroupPlanWithLoadStrategy(
   _previousState: CreateGroupPlanWithLoadStrategyState,
   formData: FormData,
