@@ -132,6 +132,7 @@ test('KAN-845 forged Team selection, revoked membership and missing selection ca
   try {
     for (const selected of ['team_unknown', 'team_a', null] as const) {
       if (selected === 'team_a') s.revoke('team_a')
+      if (selected === null) s.revoke('team_b')
       s.select(selected)
       const before = s.snapshot()
       const priorReads = s.reads()
