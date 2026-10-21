@@ -67,7 +67,7 @@ test('KAN-689/T1: H3-selected Team B scopes both persisted economic queries', as
     // H3 is the only legitimate source of Team for the projection.
     const model = await s.load({ db: s.sqlite, locale: 'es', teamId: active.teamId, onDate: '2026-10-21' })
     assert.deepEqual(s.calls, ['policy:team_B', 'exception:team_B'])
-    assert.equal(model.currentPolicy.monthlyAmount, new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(100))
+    assert.equal(model.currentPolicy.monthlyAmount, new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(200))
   } finally { s.sqlite.close() }
 })
 
