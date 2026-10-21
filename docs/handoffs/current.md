@@ -1,3 +1,13 @@
+# Current integrated handoff — KAN-689/T1 (2026-10-21)
+
+- PR #71 merged normally to dev at `3bb52c8571b10a5af227684dede133637078bbe5` (remote identity verified).
+- Operator-confirmed post-merge `pn verify --db` **PASS 6/6** at this exact local dev SHA: Tests 174905ms, TypeScript 242488ms, ESLint 65868ms, Build 128304ms, i18n 406ms, SQLite 37017ms; total 648988ms.
+- T1 enforces H2/H3/H4A `economic_policy.manage` before Team-policy and due-date-exception reads; removes hardcoded `team_1`, preserves presentation loader and economic writers. The ASSISTANT `economy.manage` ability is independent; policy landing denied.
+- Authenticated HTTP/browser acceptance, multi-Team end-to-end and durable snapshots remain for KAN-689/T3; ten writer adversarial checks belong to T2. Jira KAN-843 administrative completion and handoff check on this documentation commit are pending.
+- Detail: [KAN-689](kan-689.md). Existing historical handoffs preserved below.
+
+---
+
 # Current integrated handoff — KAN-696 Coach Planning authorization states (2026-10-21)
 
 - **Integrated dev:** PR [#70](https://github.com/m415x/trail-running-workout-planner/pull/70), ordinary merge `b4ba97944b2a54cc9dc308c75af4cef1d4acb4ce`, feature/candidate HEAD `28e67a51f5e12a3a826e9faa8705bef4e6830f2c`. Previous integrated handoff KAN-359 remains below.
