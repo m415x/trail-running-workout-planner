@@ -118,8 +118,15 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
 
     teamStatus = 'selection_required'
     const readsBeforeAmbiguous = planReads
-    assert.deepEqual(await operation.read(), { status: 'denied' })
-    assert.equal(planReads, readsBeforeAmbiguous)
+    const snapshotBeforeAmbiguous = snapshot()
+    assert.deepEqual(await operation.read(), { status: 'selection_required' })
+    assert.equal(planReads, readsBeforeAmbiguous, 'H3 ambiguous context must not query Plans')
+    assert.equal(snapshot(), snapshotBeforeAmbiguous, 'H3 ambiguity must not write SQLite')
+
+    teamStatus = 'invalid_context'
+    assert.deepEqual(await operation.read(), { status: 'invalid_context' })
+    assert.equal(planReads, readsBeforeAmbiguous, 'H3 revoked/invalid context must not query Plans')
+    assert.equal(snapshot(), snapshotBeforeAmbiguous, 'H3 invalid context must not write SQLite')
 
     teamStatus = 'resolved'
     db.update(teamMemberships).set({ isActive: false }).where(eq(teamMemberships.userId, 'coach-1')).run()
