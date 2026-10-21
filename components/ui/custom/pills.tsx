@@ -53,7 +53,7 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
 
       <PopoverContent
         data-athlete-typography={preference}
-        className={cn(preference && 'athlete-typography', 'w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]')}
+        className={cn(preference && 'athlete-typography', 'w-[min(21rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]')}
         align='end'
       >
         <div className='space-y-2 p-1'>
