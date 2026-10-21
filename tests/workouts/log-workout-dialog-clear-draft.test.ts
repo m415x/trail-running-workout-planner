@@ -17,7 +17,7 @@ test('KAN-577 Clear form empties the editing draft rather than restoring saved v
   }
   assert.match(reset, /setAssessment\(\{\s*feeling:\s*null,\s*rpe:\s*null,?\s*\}\)/)
   assert.match(reset, /setSaveError\(null\)/)
-  assert.match(dialog, /<GlassOutlineButton onClick=\{resetForm\} disabled=\{isSaving\}>/)
+  assert.match(dialog, /<GlassOutlineButton[^>]*onClick=\\{resetForm\\}[^>]*disabled=\\{isSaving\\}/)
 })
 
 test('KAN-577 Clear form does not erase persisted workout or alter dialog-open hydration', () => {
