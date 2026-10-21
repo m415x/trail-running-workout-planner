@@ -26,18 +26,20 @@ async function freePort(): Promise<number> {
   })
 }
 
-async function waitForServer(base: string, exited: () => boolean): Promise<void> {
-  for (let attempt = 0; attempt < 90; attempt++) {
-    if (exited()) throw new Error('Next.js exited before HTTP readiness; infrastructure failure, not RED')
+async function waitForServer(base: string, exited: () => boolean, diagnostics: () => string): Promise<void> {
+  let lastObservation = 'No HTTP response yet'
+  for (let attempt = 0; attempt < 30; attempt++) {
+    if (exited()) throw new Error('Next.js exited before HTTP readiness; infrastructure failure. Logs: ' + diagnostics())
     try {
-      const response = await fetch(base + '/en/login', { redirect: 'manual', signal: AbortSignal.timeout(4000) })
+      const response = await fetch(base + '/en/login', { redirect: 'manual', signal: AbortSignal.timeout(3000) })
       if (response.status < 500) return
-    } catch {
-      // The server may still be compiling; retry boundedly.
+      lastObservation = 'HTTP ' + response.status + ' from /en/login'
+    } catch (error) {
+      lastObservation = error instanceof Error ? error.message : String(error)
     }
     await delay(1000)
   }
-  throw new Error('Next.js did not become HTTP-ready; infrastructure failure, not RED')
+  throw new Error('Next.js startup/readiness failure (not functional RED): ' + lastObservation + '\\nNext output: ' + diagnostics())
 }
 
 async function trace(base: string, pathname: string, cookie: string | null, host: string, maxHops = 6) {
@@ -89,7 +91,7 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
   next.stderr?.on('data', chunk => { diagnostics = (diagnostics + String(chunk)).slice(-8000) })
 
   try {
-    await waitForServer(base, () => exited)
+    await waitForServer(base, () => exited, () => diagnostics)
     const cases = [
       { path: '/', cookie: 'es', host: '127.0.0.1:' + port },
       { path: '/dashboard/athletes', cookie: 'es', host: '127.0.0.1:' + port },
