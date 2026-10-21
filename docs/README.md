@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-689 Coach Membership H3/H4A reader — T1 candidate, not integrated](handoffs/kan-689.md) — [KAN-843](https://trail-running-workout-planning.atlassian.net/browse/KAN-843), economic_policy.manage-protected read, Team A/B regression; operator-reported PASS 6/6 on functional candidate `acae812a53cec9ecec96b560109bc01b0dcd623a` (local HEAD not separately attested), post-handoff docs check PASS on `065f20779668800e86309783358cc14fada57c83`; PR #71 opened in draft; review and merge pending; do not treat as dev integration.
+- [KAN-689 Coach Membership H3/H4A reader — T1 integrated in dev](handoffs/kan-689.md) — [KAN-843](https://trail-running-workout-planning.atlassian.net/browse/KAN-843), economic_policy.manage-protected read, Team A/B regression; operator-reported PASS 6/6 on functional candidate `acae812a53cec9ecec96b560109bc01b0dcd623a` (local HEAD not separately attested), post-handoff docs check PASS on `065f20779668800e86309783358cc14fada57c83`; [PR #71](https://github.com/m415x/trail-running-workout-planner/pull/71) merged on dev at `3bb52c8571b10a5af227684dede133637078bbe5`; exact-SHA postmerge PASS 6/6; `HANDOFF DOCS: PASS` on `872c167d36f5456a00ce8f2f273b72649ae16d4d`.
 
 - [KAN-696 Coach Planning DENY/EMPTY — integrated in dev](handoffs/kan-696.md) — [PR #70](https://github.com/m415x/trail-running-workout-planner/pull/70), merge `b4ba97944b2a54cc9dc308c75af4cef1d4acb4ce`; premerge gate PASS 6/6 and premerge handoff PASS operator-reported. Postmerge gate/documentation verification pending. See [current integrated handoff](handoffs/current.md).
 
