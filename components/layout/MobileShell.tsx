@@ -22,6 +22,10 @@ type AthleteTypographyState = {
 const AthleteTypographyContext = createContext<AthleteTypographyState | null>(null)
 
 /** Future Settings controls may consume this without changing the auth boundary. */
+export function useOptionalAthleteTypography() {
+  return useContext(AthleteTypographyContext)
+}
+
 export function useAthleteTypography() {
   const state = useContext(AthleteTypographyContext)
   if (!state) throw new Error('useAthleteTypography requires MobileShell')
