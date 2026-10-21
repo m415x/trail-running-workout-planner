@@ -67,6 +67,9 @@ test('KAN-845 H3/H6 revocation denies real Drizzle payment revision mutation acr
     const foreignChargePayload = { ...input, monthlyChargeId: 'charge-a', paymentId: 'payment-a', teamId: 'team-b' }
     assert.equal((await actions.correct(foreignChargePayload)).success, false, 'forged Team cannot authorize a foreign charge')
     assert.deepEqual(before(), baseline, 'foreign charge DENY must preserve both Teams')
+    const missingChargePayload = { ...input, monthlyChargeId: 'missing-charge' }
+    assert.equal((await actions.correct(missingChargePayload)).success, false, 'missing Charge must not reach payment writer')
+    assert.deepEqual(before(), baseline, 'missing Charge DENY preserves all revisions')
     selected = 'team-a'
     assert.equal((await actions.correct(input)).success, false)
     assert.deepEqual(before(), baseline, 'foreign Team DENY must preserve all payment revisions')
