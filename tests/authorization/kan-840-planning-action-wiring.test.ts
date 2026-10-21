@@ -2,33 +2,39 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, it } from 'node:test'
 
-const source = readFileSync('app/actions/planning-actions.ts', 'utf8')
-const existingList = source.slice(
-  source.indexOf('export async function getGroupTrainingPlans('),
-  source.indexOf('export async function getGroupTrainingPlanById('),
-)
+const action = readFileSync('app/actions/planning-actions.ts', 'utf8')
+const operation = readFileSync('lib/planning/coach-planning-list-operation.ts', 'utf8')
+const reader = readFileSync('lib/planning/coach-planning-list-reader.ts', 'utf8')
+const legacyStart = action.indexOf('export async function getGroupTrainingPlans(')
+const newStart = action.indexOf('export async function getCoachPlanningListResult(')
+const detailStart = action.indexOf('export async function getGroupTrainingPlanById(')
+const legacyList = action.slice(legacyStart, newStart)
+const newList = action.slice(newStart, detailStart)
 
-describe('KAN-840/T1 production integration RED', () => {
-  it('exports a discriminated Coach planning list reader independently of legacy array API', () => {
-    assert.match(source, /export async function getCoachPlanningListResult\s*\(/)
-    assert.match(source, /createCoachPlanningListReader/)
-    assert.match(existingList, /export async function getGroupTrainingPlans\s*\(/)
+describe('KAN-840/T1 production integration contract', () => {
+  it('keeps the legacy array API and composes a distinct discriminated reader', () => {
+    assert.ok(legacyStart >= 0 && newStart > legacyStart && detailStart > newStart)
+    assert.match(legacyList, /export async function getGroupTrainingPlans\s*\(/)
+    assert.match(newList, /createCoachPlanningListOperation\(/)
+    assert.match(operation, /createCoachPlanningListReader/)
+    assert.match(reader, /status: 'denied'/)
+    assert.match(reader, /status: 'empty'/)
+    assert.match(reader, /status: 'ready'/)
+    assert.match(reader, /status: 'error'/)
   })
 
-  it('enforces planning.manage on the Team before returning authorized empty', () => {
-    const start = source.indexOf('export async function getCoachPlanningListResult(')
-    assert.notEqual(start, -1)
-    const implementation = source.slice(start)
-    assert.match(implementation, /planning\.manage/)
-    assert.match(implementation, /createH4aNextServerAuthorizationBoundary/)
-    assert.match(implementation, /sportingGroupId|teamId/)
+  it('composes production H2 H3 H4A and the persisted H4B Plan authorization', () => {
+    assert.match(newList, /requireAuthenticatedEptAction/)
+    assert.match(newList, /createActiveTeamNextServerContext/)
+    assert.match(newList, /createH4aNextServerAuthorizationBoundary/)
+    assert.match(newList, /createPlanningReadAuthorization/)
+    assert.match(operation, /planning\.manage/)
+    assert.match(operation, /sportingGroupId/)
   })
 
-  it('does not route the new discriminated reader through the legacy lossy [] result', () => {
-    const start = source.indexOf('export async function getCoachPlanningListResult(')
-    assert.notEqual(start, -1)
-    const implementation = source.slice(start)
-    assert.doesNotMatch(implementation, /await getGroupTrainingPlans\s*\(/)
-    assert.match(implementation, /status|createCoachPlanningListReader/)
+  it('does not delegate through the lossy legacy array API', () => {
+    assert.doesNotMatch(newList, /await getGroupTrainingPlans\s*\(/)
+    assert.match(newList, /await operation\.read\(\)/)
+    assert.match(newList, /result\.status/)
   })
 })
