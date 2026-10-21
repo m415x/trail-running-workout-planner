@@ -1,3 +1,14 @@
+# Current integrated handoff — KAN-696 Coach Planning authorization states (2026-10-21)
+
+- **Integrated dev:** PR [#70](https://github.com/m415x/trail-running-workout-planner/pull/70), ordinary merge `b4ba97944b2a54cc9dc308c75af4cef1d4acb4ce`, feature/candidate HEAD `28e67a51f5e12a3a826e9faa8705bef4e6830f2c`. Previous integrated handoff KAN-359 remains below.
+- **Premerge gate:** operator-reported `pn verify --db` PASS 6/6 on candidate HEAD (Tests 143138ms; TypeScript 12137ms; ESLint 36952ms; Build 30225ms; i18n 359ms; SQLite 44467ms); `pn docs:handoff:check` PASS reported. **Post-merge gate on dev is pending**; do not reinterpret candidate evidence as postmerge.
+- **Scope:** Coach Planning listing distinguishes denied, empty, ready, error, plus active-Team selection_required/invalid_context; H2/H3/H4A and H4B per-Plan persisted ownership; independently authorized active-group CTA and protected direct New Strategy route; ES/EN messages. Legacy array reader retained for compatible callers.
+- **Acceptance:** operator-observed real-browser Coach ES/EN rendering, KAN-758 multi-Team: no selection deny, team_1 ATHLETE redirects Home, team_2 COACH returns authorized EMPTY without CTA, invalid Team denied, revocation denied. A disposable SQLite 54-table snapshot proved no additional durable changes beyond deliberate revocation and exact restoration; no direct denied Writer mutation or HTTP status capture claimed.
+- **Durable detail:** [KAN-696 story handoff](kan-696.md); Jira KAN-696 / KAN-840 / KAN-841 / KAN-842. Complete postmerge verification and docs check on the updated dev head before declaring fresh-chat-safe.
+- **Worktree:** operator inventory/preservation and safe retirement pending; do not delete worktrees automatically.
+
+---
+
 # Current integrated handoff — KAN-359 Athlete responsive typography (2026-10-20)
 
 - **Integrated dev:** [PR #69](https://github.com/m415x/trail-running-workout-planner/pull/69), ordinary merge `6dc25aa149e1523723723b23059dedbe41e8482d`, PR head `8a94d39971038eb62ac2c5c1327af54f66b24b10`. Historical divergent KAN-359 branch remains preserved. Latest integrated baseline before this story was KAN-832, preserved below.
