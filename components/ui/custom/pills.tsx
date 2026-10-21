@@ -1,6 +1,6 @@
 'use client'
 
-import { useAthleteTypography } from '@/components/layout/MobileShell'
+import { useOptionalAthleteTypography } from '@/components/layout/MobileShell'
 import { Heart, Info } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { StatPillProps } from '@/types'
@@ -31,7 +31,7 @@ interface ZonePillProps {
 }
 
 export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
-  const { preference } = useAthleteTypography()
+  const preference = useOptionalAthleteTypography()?.preference
   const t = useTranslations('DomainGlossary.heartRateZones')
   const zoneKey = zoneInfo.code
 
@@ -53,7 +53,7 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
 
       <PopoverContent
         data-athlete-typography={preference}
-        className='athlete-typography w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]'
+        className={cn(preference && 'athlete-typography', 'w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]')}
         align='end'
       >
         <div className='space-y-2 p-1'>
