@@ -17,6 +17,16 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
         currency TEXT NOT NULL, base_due_date TEXT NOT NULL, effective_due_date TEXT NOT NULL,
         is_deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
       );
+      CREATE TABLE monthly_charge_reductions (
+        id TEXT PRIMARY KEY, monthly_charge_id TEXT NOT NULL REFERENCES monthly_charges(id),
+        reduction_amount_minor INTEGER NOT NULL, reason TEXT NOT NULL, created_by_user_id TEXT,
+        is_current INTEGER NOT NULL, is_deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
+      CREATE TABLE monthly_charge_extensions (
+        id TEXT PRIMARY KEY, monthly_charge_id TEXT NOT NULL REFERENCES monthly_charges(id),
+        extended_due_date TEXT, reason TEXT NOT NULL, created_by_user_id TEXT,
+        is_current INTEGER NOT NULL, is_deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
+      );
       INSERT INTO athlete_profiles (id,team_id,is_deleted,created_at,updated_at,is_active,dni) VALUES ('athlete-a','team-a',0,'2026-10-21','2026-10-21',1,'A'),('athlete-b','team-b',0,'2026-10-21','2026-10-21',1,'B');
     `)
     const repo = createDrizzleBillingDatabase(drizzle(sqlite))
@@ -49,6 +59,32 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
       /Athlete does not belong to the requested team/,
     )
     assert.deepEqual(snapshot(), baseline, 'soft-deleted Athlete cannot receive a Charge')
+    const teamBCharge = sqlite.prepare("SELECT id FROM monthly_charges WHERE athlete_id = 'athlete-b'").get() as { id: string }
+    const reduction = { id: 'reduction-b', monthlyChargeId: teamBCharge.id, athleteId: 'athlete-b',
+      year: 2026, month: 10, reductionAmountMinor: 1000, reason: 'Adjustment', createdByUserId: null, isCurrent: true }
+    const extension = { id: 'extension-b', monthlyChargeId: teamBCharge.id, athleteId: 'athlete-b',
+      year: 2026, month: 10, extendedDueDate: '2026-10-25', reason: 'Adjustment', createdByUserId: null, isCurrent: true }
+    const updatedCharge = { ...charge('athlete-b'), amountDueMinor: 9000, effectiveDueDate: '2026-10-25' }
+    const economicSnapshot = () => ({
+      charges: sqlite.prepare('SELECT * FROM monthly_charges ORDER BY id').all(),
+      reductions: sqlite.prepare('SELECT * FROM monthly_charge_reductions ORDER BY id').all(),
+      extensions: sqlite.prepare('SELECT * FROM monthly_charge_extensions ORDER BY id').all(),
+    })
+    const beforeDeniedRevisions = economicSnapshot()
+    await assert.rejects(
+      repo.applyMonthlyChargeReductionAtomically('team-a', teamBCharge.id, reduction, updatedCharge),
+      /outside the requested team scope/,
+    )
+    await assert.rejects(
+      repo.applyMonthlyChargeExtensionAtomically('team-a', teamBCharge.id, extension, updatedCharge),
+      /outside the requested team scope/,
+    )
+    assert.deepEqual(economicSnapshot(), beforeDeniedRevisions, 'foreign Team cannot mutate charge or revisions')
+    await repo.applyMonthlyChargeReductionAtomically('team-b', teamBCharge.id, reduction, updatedCharge)
+    await repo.applyMonthlyChargeExtensionAtomically('team-b', teamBCharge.id, extension, updatedCharge)
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_reductions').get()?.n, 1)
+    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_extensions').get()?.n, 1)
+    assert.equal(sqlite.prepare("SELECT amount_due_minor FROM monthly_charges WHERE athlete_id = 'athlete-b'").get()?.amount_due_minor, 9000)
     assert.deepEqual(sqlite.pragma('foreign_key_check'), [])
   } finally { sqlite.close() }
 })
