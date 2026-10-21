@@ -130,18 +130,18 @@ test('KAN-845 persisted Team B authorization scopes economic reads and policy mu
     if (a.status !== 'ready') return
     assert.equal(a.teamId, 'team_a')
     assert.deepEqual(a.model.policy, [{ amount_minor: 10000 }])
-    assert.deepEqual(a.model.exceptions.map(row => row.team_id), ['team_a'])
-    assert.deepEqual(a.model.charges.map(row => row.team_id), ['team_a'])
-    assert.deepEqual(a.model.payments.map(row => row.team_id), ['team_a'])
+    assert.deepEqual(a.model.exceptions.map(row => (row as { team_id: string }).team_id), ['team_a'])
+    assert.deepEqual(a.model.charges.map(row => (row as { team_id: string }).team_id), ['team_a'])
+    assert.deepEqual(a.model.payments.map(row => (row as { team_id: string }).team_id), ['team_a'])
     s.select('team_b')
     const b = await s.page({ db: s.sql, locale: 'es', onDate })
     assert.equal(b.status, 'ready')
     if (b.status !== 'ready') return
     assert.equal(b.teamId, 'team_b')
     assert.deepEqual(b.model.policy, [{ amount_minor: 20000 }, { amount_minor: 25000 }])
-    assert.deepEqual(b.model.exceptions.map(row => row.team_id), ['team_b'])
-    assert.deepEqual(b.model.charges.map(row => row.team_id), ['team_b'])
-    assert.deepEqual(b.model.payments.map(row => row.team_id), ['team_b'])
+    assert.deepEqual(b.model.exceptions.map(row => (row as { team_id: string }).team_id), ['team_b'])
+    assert.deepEqual(b.model.charges.map(row => (row as { team_id: string }).team_id), ['team_b'])
+    assert.deepEqual(b.model.payments.map(row => (row as { team_id: string }).team_id), ['team_b'])
   } finally { s.sql.close() }
 })
 
