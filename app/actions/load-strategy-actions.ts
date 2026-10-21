@@ -9,6 +9,7 @@ import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createPlanningCreationEligibility } from '@/lib/planning/planning-creation-eligibility'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
@@ -77,39 +78,27 @@ function planningPath(locale: string, suffix = '') {
  * The writer remains the final authority for every mutation.
  */
 export async function getCoachPlanningCreationEligibility(): Promise<boolean> {
-  try {
-    const supabase = await createSupabaseServerClient()
-    const lookup = createExternalIdentityLookup()
-    const access = await requireAuthenticatedEptAction({
-      readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
-    })
-    if (access.status !== 'authenticated') return false
-
-    const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
-    if (activeTeam.status !== 'resolved') return false
-
-    const groups = await db.query.athleteGroups.findMany({
-      where: and(
-        eq(athleteGroups.teamId, activeTeam.teamId),
-        eq(athleteGroups.isDeleted, false),
-        eq(athleteGroups.isActive, true),
-      ),
-    })
-    if (groups.length === 0) return false
-
-    const boundary = createH4aNextServerAuthorizationBoundary()
-    for (const group of groups) {
-      const decision = await boundary.authorize(access, {
-        capability: 'planning.manage',
-        resource: { teamId: group.teamId, sportingGroupId: group.id },
-        at: new Date().toISOString(),
+  return createPlanningCreationEligibility({
+    async authenticate() {
+      const supabase = await createSupabaseServerClient()
+      const lookup = createExternalIdentityLookup()
+      return requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
       })
-      if (decision.allowed && 'teamId' in decision) return true
-    }
-    return false
-  } catch {
-    return false
-  }
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    async listActiveGroups(teamId) {
+      return db.query.athleteGroups.findMany({
+        where: and(
+          eq(athleteGroups.teamId, teamId),
+          eq(athleteGroups.isDeleted, false),
+          eq(athleteGroups.isActive, true),
+        ),
+      })
+    },
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+    now: () => new Date().toISOString(),
+  }).check()
 }
 
 export async function createGroupPlanWithLoadStrategy(
