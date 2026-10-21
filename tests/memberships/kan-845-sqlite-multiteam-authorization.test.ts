@@ -144,3 +144,14 @@ test('KAN-845 forged Team selection, revoked membership and missing selection ca
     }
   } finally { s.sql.close() }
 })
+
+test('KAN-845 policy writer rejects assistant capability with full economic snapshot unchanged', async () => {
+  const s = fixture()
+  try {
+    s.sql.prepare("UPDATE team_memberships SET preset = 'assistant' WHERE team_id = 'team_b'").run()
+    const before = s.snapshot()
+    const result = await s.policy(policyInput)
+    assert.equal(result.success, false)
+    assert.deepEqual(s.snapshot(), before, 'assistant cannot change Team economic policy')
+  } finally { s.sql.close() }
+})
