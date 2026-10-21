@@ -6,10 +6,14 @@
 export type CoachPlanningListContext =
   | { status: 'resolved'; actorId: string; teamId: string }
   | { status: 'denied' }
+  | { status: 'selection_required' }
+  | { status: 'invalid_context' }
   | { status: 'error' }
 
 export type CoachPlanningListResult<TPlan> =
   | { status: 'denied' }
+  | { status: 'selection_required' }
+  | { status: 'invalid_context' }
   | { status: 'empty' }
   | { status: 'ready'; plans: TPlan[] }
   | { status: 'error' }
@@ -32,6 +36,8 @@ export function createCoachPlanningListReader<TPlan extends { teamId: string }>(
       try {
         const context = await deps.resolveContext()
         if (context.status === 'denied') return { status: 'denied' }
+        if (context.status === 'selection_required') return { status: 'selection_required' }
+        if (context.status === 'invalid_context') return { status: 'invalid_context' }
         if (context.status === 'error') return { status: 'error' }
 
         if (!(await deps.authorizeListing(context))) return { status: 'denied' }
