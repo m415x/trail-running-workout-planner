@@ -28,6 +28,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH4bPlanningAuthorizationBoundary } from '@/lib/authorization/h4b-planning-authorization'
+import { createCoachPlanningListReader } from '@/lib/planning/coach-planning-list-reader'
 import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
@@ -272,6 +273,108 @@ export async function getGroupTrainingPlans() {
       ...plan,
       macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
     }))
+}
+
+/**
+ * KAN-840: explicit Coach list result. Deliberately separate from the legacy
+ * getGroupTrainingPlans() array API consumed by the existing planning landing.
+ * T2 will switch the landing after ES/EN and CTA authorization are ready.
+ */
+export async function getCoachPlanningListResult() {
+  let authenticated: Awaited<ReturnType<typeof requireAuthenticatedPlanningReadAccess>> = null
+
+  const reader = createCoachPlanningListReader({
+    async resolveContext() {
+      const supabase = await createSupabaseServerClient()
+      const lookup = createExternalIdentityLookup()
+      const access = await requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+      })
+      if (access.status !== 'authenticated') return { status: 'denied' as const }
+
+      const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+      if (activeTeam.status !== 'resolved') return { status: 'denied' as const }
+      authenticated = { access, teamId: activeTeam.teamId }
+      return { status: 'resolved' as const, actorId: access.userId, teamId: activeTeam.teamId }
+    },
+
+    async authorizeListing(context) {
+      const current = authenticated
+      if (!current || current.teamId !== context.teamId) return false
+      // Listing access is evaluated independently from the existence of Plans.
+      // The H3 capability remains planning.manage; no planning.read is created.
+      const decision = await createH4aNextServerAuthorizationBoundary().authorize(
+        current.access,
+        {
+          capability: 'planning.manage',
+          resource: { teamId: context.teamId },
+          requiredScope: 'team',
+          at: new Date().toISOString(),
+        },
+      )
+      return decision.allowed
+    },
+
+    async loadPlans(context) {
+      const groups = await db.query.athleteGroups.findMany({
+        where: and(
+          eq(athleteGroups.teamId, context.teamId),
+          eq(athleteGroups.isDeleted, false),
+        ),
+      })
+      if (groups.length === 0) return []
+      const plans = await db.query.groupTrainingPlans.findMany({
+        where: and(
+          inArray(groupTrainingPlans.groupId, groups.map((group) => group.id)),
+          eq(groupTrainingPlans.isDeleted, false),
+        ),
+        with: {
+          group: true,
+          planningCohort: true,
+          sourceGroupTrainingPlan: true,
+          macrocycles: {
+            with: {
+              mesocycles: {
+                with: {
+                  microcycles: true,
+                },
+              },
+            },
+          },
+        },
+      })
+      return plans.map((plan) => ({ ...plan, teamId: plan.group.teamId }))
+    },
+
+    async authorizePlan(context, plan) {
+      const current = authenticated
+      if (!current || current.teamId !== context.teamId || plan.teamId !== context.teamId) {
+        return false
+      }
+      const planningAuthorization = createPlanningReadAuthorization(new Map([[
+        plan.id,
+        { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
+      ]]))
+      const decision = await planningAuthorization.authorize(current.access, {
+        resourceId: plan.id,
+        at: new Date().toISOString(),
+      })
+      return decision.allowed
+    },
+  })
+
+  const result = await reader.read()
+  if (result.status !== 'ready') return result
+
+  return {
+    status: 'ready' as const,
+    plans: result.plans
+      .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+      .map((plan) => ({
+        ...plan,
+        macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
+      })),
+  }
 }
 
 export async function getGroupTrainingPlanById(planId: string) {
