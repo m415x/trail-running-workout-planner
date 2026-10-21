@@ -46,9 +46,10 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
     const groups: (typeof athleteGroups.$inferInsert)[] = [
       { id: 'g-allow', teamId: 'team-a', categoryCode: 'M', levelCode: '1', isActive: true, isDeleted: false, createdAt: NOW, updatedAt: NOW },
       { id: 'g-other', teamId: 'team-a', categoryCode: 'S', levelCode: '2', isActive: true, isDeleted: false, createdAt: NOW, updatedAt: NOW },
+      { id: 'g-foreign', teamId: 'team-b', categoryCode: 'B', levelCode: '3', isActive: true, isDeleted: false, createdAt: NOW, updatedAt: NOW },
     ]
     for (const group of groups) db.insert(athleteGroups).values(group).run()
-    for (const [id, groupId] of [['p-allow', 'g-allow'], ['p-other', 'g-other']] as const) {
+    for (const [id, groupId] of [['p-allow', 'g-allow'], ['p-other', 'g-other'], ['p-foreign', 'g-foreign']] as const) {
       db.insert(groupTrainingPlans).values({ id, groupId, title: id, status: 'draft', isDeleted: false, createdAt: NOW, updatedAt: NOW }).run()
     }
     for (const [id, preset] of [['athlete-1', 'athlete'], ['coach-1', 'coach'], ['coach-empty', 'coach']] as const) {
@@ -89,8 +90,10 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
       listPlans: async groupIds => {
         planReads++
         if (failAfterAuthorization) throw new Error('controlled SQLite read failure')
+        const persistedGroups = db.select().from(athleteGroups).all()
+        const teamByGroup = new Map(persistedGroups.map(group => [group.id, group.teamId]))
         return db.select().from(groupTrainingPlans).all().filter(plan => groupIds.includes(plan.groupId))
-          .map(plan => ({ ...plan, teamId: 'team-a', groupId: plan.groupId }))
+          .map(plan => ({ ...plan, teamId: teamByGroup.get(plan.groupId)!, groupId: plan.groupId }))
       },
       authorizePlan: async (access, plan) => {
         const h4b = createH4bPlanningAuthorizationBoundary({
@@ -112,6 +115,7 @@ test('KAN-840/T1.4 SQLite-backed effective H3/H4A/H4B authorization distinguishe
     const ready = await operation.read()
     assert.equal(ready.status, 'ready')
     if (ready.status === 'ready') assert.deepEqual(ready.plans.map(plan => plan.id).sort(), ['p-allow', 'p-other'])
+    assert.equal(ready.status === 'ready' && ready.plans.some(plan => plan.id === 'p-foreign'), false, 'cross-Team Plan must remain invisible')
 
     db.delete(groupTrainingPlans).run()
     assert.deepEqual(await operation.read(), { status: 'empty' })
