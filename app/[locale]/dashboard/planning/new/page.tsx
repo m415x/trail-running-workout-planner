@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getCoachPlanningCreationEligibility } from '@/app/actions/load-strategy-actions'
 import { addDays, format, parseISO } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
 
@@ -26,6 +27,22 @@ function todayInBuenosAires() {
 
 export default async function NewPlanningPage({ params }: NewPlanningPageProps) {
   const { locale } = await params
+  const creationAllowed = await getCoachPlanningCreationEligibility()
+  if (!creationAllowed) {
+    return (
+      <div className='mx-auto w-full max-w-5xl space-y-4'>
+        <Link href={locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+          <ArrowLeft /> {locale === 'es' ? 'Volver a planificación' : 'Back to planning'}
+        </Link>
+        <Card>
+          <CardHeader>
+            <CardTitle>{locale === 'es' ? 'Acceso no autorizado' : 'Access denied'}</CardTitle>
+            <CardDescription>{locale === 'es' ? 'No tenés permisos para crear estrategias de planificación.' : 'You do not have permission to create planning strategies.'}</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    )
+  }
   const groups = await getActiveAthleteGroups()
   const planningPath = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   const defaultStartDate = parseISO(todayInBuenosAires())
