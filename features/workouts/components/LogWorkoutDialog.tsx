@@ -59,7 +59,7 @@ export function LogWorkoutDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => { if (!open && !isSaving) onClose() }}>
-      <DialogContent data-athlete-typography={preference} data-athlete-log-dialog className='athlete-typography max-w-md w-[92vw] sm:w-full min-w-0 rounded-3xl p-4 bg-card border-border/80 h-[min(75dvh,40rem)] max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden gap-0'>
+      <DialogContent data-athlete-typography={preference} data-athlete-log-dialog className='athlete-typography w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] sm:w-[min(40rem,calc(100vw-3rem))] sm:max-w-[min(40rem,calc(100vw-3rem))] min-w-0 rounded-3xl p-4 bg-card border-border/80 h-[min(75dvh,40rem)] max-h-[calc(100dvh-2rem)] flex flex-col overflow-hidden gap-0'>
 
         <DialogHeader className='text-left pb-3 border-b border-border/40 shrink-0'>
           <DialogTitle className='font-heading font-bold text-[length:var(--athlete-text-title)] text-foreground flex items-center gap-2'>
@@ -161,12 +161,12 @@ export function LogWorkoutDialog({
           </div>
         </ScrollArea>
 
-        <DialogFooter className='grid grid-cols-1 sm:grid-cols-3 gap-2 py-3.5 border-t border-border/40 bg-card shrink-0 mt-0'>
-          <GlassOutlineButton className='text-[length:var(--athlete-text-body-compact)]' onClick={resetForm} disabled={isSaving}>{t('dialog.clear')}</GlassOutlineButton>
-          <GlassOutlineButton onClick={onClose} className='flex-4 text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
+        <DialogFooter className='grid min-w-0 grid-cols-1 sm:grid-cols-3 gap-2 py-3.5 border-t border-border/40 bg-card shrink-0 mt-0'>
+          <GlassOutlineButton className='min-w-0 w-full whitespace-normal text-center text-[length:var(--athlete-text-body-compact)]' onClick={resetForm} disabled={isSaving}>{t('dialog.clear')}</GlassOutlineButton>
+          <GlassOutlineButton onClick={onClose} className='min-w-0 w-full whitespace-normal text-center text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
             {t('dialog.cancel')}
           </GlassOutlineButton>
-          <PrimaryFilledButton onClick={() => void handleSave()} className='flex-6 text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
+          <PrimaryFilledButton onClick={() => void handleSave()} className='min-w-0 w-full whitespace-normal text-center text-[length:var(--athlete-text-body-compact)]' disabled={isSaving}>
             {t('dialog.save')}
           </PrimaryFilledButton>
         </DialogFooter>
