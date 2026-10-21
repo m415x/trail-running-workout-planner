@@ -1,5 +1,6 @@
 'use client'
 
+import { useAthleteTypography } from '@/components/layout/MobileShell'
 import { Heart, Info } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { StatPillProps } from '@/types'
@@ -30,6 +31,7 @@ interface ZonePillProps {
 }
 
 export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
+  const { preference } = useAthleteTypography()
   const t = useTranslations('DomainGlossary.heartRateZones')
   const zoneKey = zoneInfo.code
 
@@ -43,14 +45,15 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
             subtitle={zoneInfo.pct}
             iconClassName={zoneInfo.styles.text}
             valueClassName={zoneInfo.styles.text}
-            subtitleClassName={zoneInfo.styles.textMuted}
-            className={cn(zoneInfo.styles.bg, zoneInfo.styles.border)}
+            subtitleClassName={cn('whitespace-nowrap', zoneInfo.styles.textMuted)}
+            className={cn('w-auto min-w-17', zoneInfo.styles.bg, zoneInfo.styles.border)}
           />
         }
       />
 
       <PopoverContent
-        className='w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]'
+        data-athlete-typography={preference}
+        className='athlete-typography w-auto sm:w-72 p-2 bg-popover/95 backdrop-blur-md border-border/50 rounded-[var(--radius-ept-overlay)] shadow-[var(--elevation-ept-overlay)]'
         align='end'
       >
         <div className='space-y-2 p-1'>
@@ -69,12 +72,12 @@ export function ZonePill({ zoneInfo, bpmRange }: ZonePillProps) {
               <p className={cn('text-[length:var(--athlete-text-caption,0.75rem)] font-bold', zoneInfo.styles.text)}>{bpmRange}</p>
             </div>
           </div>
-          <div className='p-2.5 rounded-lg bg-background/70 border border-border/40 text-xs space-y-1.5'>
-            <p className='font-semibold text-foreground/90 text-[11px] flex items-center gap-1.5'>
+          <div className='p-2.5 rounded-lg bg-background/70 border border-border/40 text-[length:var(--athlete-text-body-compact)] space-y-1.5'>
+            <p className='font-semibold text-foreground/90 text-[length:var(--athlete-text-caption)] flex items-center gap-1.5'>
               <Info size={12} className={cn('text-primary', zoneInfo.styles.text)} />
               {t('effortLabel')} (RPE {zoneInfo.rpe})
             </p>
-            <p className='text-muted-foreground text-[11px]'>{t(`${zoneKey}.effortAndPerception`)}</p>
+            <p className='text-muted-foreground text-[length:var(--athlete-text-caption)]'>{t(`${zoneKey}.effortAndPerception`)}</p>
           </div>
         </div>
       </PopoverContent>
