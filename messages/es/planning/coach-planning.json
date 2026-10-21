@@ -215,6 +215,15 @@
       "elevationAria": "Desnivel positivo objetivo en metros",
       "sourceManual": "Manual",
       "sourceGenerated": "Generado"
+    },
+    "newStrategyPage": {
+      "back": "Volver a planificación",
+      "title": "Nueva estrategia de carga",
+      "description": "Configurá el punto de partida para la planificación del grupo.",
+      "noGroupsTitle": "No hay grupos activos",
+      "noGroupsDescription": "Activá o creá un grupo antes de configurar su estrategia de carga.",
+      "deniedTitle": "Acceso no autorizado",
+      "deniedDescription": "No tenés permisos para crear estrategias de planificación."
     }
   }
 }
