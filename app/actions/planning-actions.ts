@@ -28,7 +28,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH4bPlanningAuthorizationBoundary } from '@/lib/authorization/h4b-planning-authorization'
-import { createCoachPlanningListReader } from '@/lib/planning/coach-planning-list-reader'
+import { createCoachPlanningListOperation } from '@/lib/planning/coach-planning-list-operation'
 import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
@@ -281,70 +281,28 @@ export async function getGroupTrainingPlans() {
  * T2 will switch the landing after ES/EN and CTA authorization are ready.
  */
 export async function getCoachPlanningListResult() {
-  let authenticated: Awaited<ReturnType<typeof requireAuthenticatedPlanningReadAccess>> = null
-  let authorizedGroupIds: string[] = []
-
-  const reader = createCoachPlanningListReader({
-    async resolveContext() {
+  const operation = createCoachPlanningListOperation({
+    async authenticate() {
       const supabase = await createSupabaseServerClient()
       const lookup = createExternalIdentityLookup()
-      const access = await requireAuthenticatedEptAction({
+      return requireAuthenticatedEptAction({
         readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
       })
-      if (access.status !== 'authenticated') return { status: 'denied' as const }
-
-      const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
-      if (activeTeam.status !== 'resolved') return { status: 'denied' as const }
-      authenticated = { access, teamId: activeTeam.teamId }
-      return { status: 'resolved' as const, actorId: access.userId, teamId: activeTeam.teamId }
     },
-
-    async authorizeListing(context) {
-      const current = authenticated
-      if (!current || current.teamId !== context.teamId) return false
-
-      // The Team check permits an authorized empty Team, even with no groups.
-      // SPORTING_GROUP authority is checked against persisted group ownership,
-      // never against client-supplied identifiers or a fabricated Plan.
-      const authorization = createH4aNextServerAuthorizationBoundary()
-      const at = new Date().toISOString()
-      const teamDecision = await authorization.authorize(current.access, {
-        capability: 'planning.manage',
-        resource: { teamId: context.teamId },
-        at,
-      })
-      const groups = await db.query.athleteGroups.findMany({
+    resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+    async listGroups(teamId) {
+      return db.query.athleteGroups.findMany({
         where: and(
-          eq(athleteGroups.teamId, context.teamId),
+          eq(athleteGroups.teamId, teamId),
           eq(athleteGroups.isDeleted, false),
         ),
       })
-
-      if (teamDecision.allowed) {
-        authorizedGroupIds = groups.map((group) => group.id)
-        return true
-      }
-
-      if (groups.length === 0) return false
-      const decisions = await Promise.all(groups.map((group) =>
-        authorization.authorize(current.access, {
-          capability: 'planning.manage',
-          resource: { teamId: context.teamId, sportingGroupId: group.id },
-          at,
-        }),
-      ))
-      authorizedGroupIds = groups
-        .filter((_group, index) => decisions[index]?.allowed === true)
-        .map((group) => group.id)
-      return authorizedGroupIds.length > 0
     },
-
-    async loadPlans(context) {
-      // Group authorization was established before this read.
-      if (authorizedGroupIds.length === 0) return []
+    async listPlans(groupIds) {
       const plans = await db.query.groupTrainingPlans.findMany({
         where: and(
-          inArray(groupTrainingPlans.groupId, authorizedGroupIds),
+          inArray(groupTrainingPlans.groupId, groupIds),
           eq(groupTrainingPlans.isDeleted, false),
         ),
         with: {
@@ -354,9 +312,7 @@ export async function getCoachPlanningListResult() {
           macrocycles: {
             with: {
               mesocycles: {
-                with: {
-                  microcycles: true,
-                },
+                with: { microcycles: true },
               },
             },
           },
@@ -364,27 +320,21 @@ export async function getCoachPlanningListResult() {
       })
       return plans.map((plan) => ({ ...plan, teamId: plan.group.teamId }))
     },
-
-    async authorizePlan(context, plan) {
-      const current = authenticated
-      if (!current || current.teamId !== context.teamId || plan.teamId !== context.teamId) {
-        return false
-      }
-      const planningAuthorization = createPlanningReadAuthorization(new Map([[
+    async authorizePlan(access, plan) {
+      const authorization = createPlanningReadAuthorization(new Map([[
         plan.id,
         { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
       ]]))
-      const decision = await planningAuthorization.authorize(current.access, {
+      const decision = await authorization.authorize(access, {
         resourceId: plan.id,
         at: new Date().toISOString(),
       })
       return decision.allowed
     },
+    now: () => new Date().toISOString(),
   })
-
-  const result = await reader.read()
+  const result = await operation.read()
   if (result.status !== 'ready') return result
-
   return {
     status: 'ready' as const,
     plans: result.plans
