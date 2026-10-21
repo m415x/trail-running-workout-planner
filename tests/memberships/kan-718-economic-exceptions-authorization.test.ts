@@ -52,3 +52,11 @@ test('KAN-718 DENY and mismatched persisted charge ownership have zero write/rev
   assert.deepEqual(denied.writes, [])
   assert.deepEqual(denied.revalidations, [])
 })
+
+test('KAN-844 wrong charge period denies reduction and extension before persistence', async () => {
+  const h = fixture()
+  assert.equal((await h.actions.reduction({ ...h.charge, month: 10, reductionAmountMinor: 1000 })).success, false)
+  assert.equal((await h.actions.extension({ ...h.charge, year: 2025, extendedDueDate: null })).success, false)
+  assert.deepEqual(h.writes, [])
+  assert.deepEqual(h.revalidations, [])
+})
