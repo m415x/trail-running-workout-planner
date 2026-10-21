@@ -9,7 +9,7 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
   sqlite.pragma('foreign_keys = ON')
   try {
     sqlite.exec(`
-      CREATE TABLE athlete_profiles (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, is_deleted INTEGER NOT NULL);
+      CREATE TABLE athlete_profiles (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, is_deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, user_id TEXT, group_id TEXT, is_active INTEGER NOT NULL, first_name TEXT, last_name TEXT, contact_email TEXT, nick_name TEXT, dni TEXT NOT NULL, birthday TEXT, phone TEXT, emergency_contact TEXT, emergency_phone TEXT, physiology TEXT, medical TEXT);
       CREATE TABLE monthly_charges (
         id TEXT PRIMARY KEY, athlete_id TEXT NOT NULL REFERENCES athlete_profiles(id),
         billing_terms_id TEXT NOT NULL, year INTEGER NOT NULL, month INTEGER NOT NULL,
@@ -17,7 +17,7 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
         currency TEXT NOT NULL, base_due_date TEXT NOT NULL, effective_due_date TEXT NOT NULL,
         is_deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL
       );
-      INSERT INTO athlete_profiles VALUES ('athlete-a','team-a',0),('athlete-b','team-b',0);
+      INSERT INTO athlete_profiles (id,team_id,is_deleted,created_at,updated_at,is_active,dni) VALUES ('athlete-a','team-a',0,'2026-10-21','2026-10-21',1,'A'),('athlete-b','team-b',0,'2026-10-21','2026-10-21',1,'B');
     `)
     const repo = createDrizzleBillingDatabase(drizzle(sqlite))
     const charge = (athleteId: string) => ({
