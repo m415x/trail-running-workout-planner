@@ -32,7 +32,7 @@ test('KAN-627 real SQLite: two bounded scoped SELECTs, active revisions and no c
       CREATE TABLE payment_revisions (
         id TEXT PRIMARY KEY, is_deleted INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL DEFAULT '', updated_at TEXT NOT NULL DEFAULT '',
-        payment_id TEXT NOT NULL, monthly_charge_id TEXT NOT NULL,
+        payment_id TEXT NOT NULL, created_by_user_id TEXT, monthly_charge_id TEXT NOT NULL,
         amount_minor INTEGER NOT NULL, payment_method TEXT NOT NULL,
         paid_at TEXT NOT NULL, voided INTEGER NOT NULL, is_current INTEGER NOT NULL
       );
