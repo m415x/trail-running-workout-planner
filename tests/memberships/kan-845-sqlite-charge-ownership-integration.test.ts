@@ -82,9 +82,9 @@ test('KAN-845 real Drizzle charge insertion respects persisted Athlete Team and 
     assert.deepEqual(economicSnapshot(), beforeDeniedRevisions, 'foreign Team cannot mutate charge or revisions')
     await repo.applyMonthlyChargeReductionAtomically('team-b', teamBCharge.id, reduction, updatedCharge)
     await repo.applyMonthlyChargeExtensionAtomically('team-b', teamBCharge.id, extension, updatedCharge)
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_reductions').get()?.n, 1)
-    assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_extensions').get()?.n, 1)
-    assert.equal(sqlite.prepare("SELECT amount_due_minor FROM monthly_charges WHERE athlete_id = 'athlete-b'").get()?.amount_due_minor, 9000)
+    assert.equal((sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_reductions').get() as { n: number }).n, 1)
+    assert.equal((sqlite.prepare('SELECT COUNT(*) AS n FROM monthly_charge_extensions').get() as { n: number }).n, 1)
+    assert.equal((sqlite.prepare("SELECT amount_due_minor FROM monthly_charges WHERE athlete_id = 'athlete-b'").get() as { amount_due_minor: number }).amount_due_minor, 9000)
     assert.deepEqual(sqlite.pragma('foreign_key_check'), [])
   } finally { sqlite.close() }
 })
