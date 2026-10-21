@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getTranslations } from 'next-intl/server'
 import { getCoachPlanningCreationEligibility } from '@/app/actions/load-strategy-actions'
 import { addDays, format, parseISO } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
@@ -27,17 +28,18 @@ function todayInBuenosAires() {
 
 export default async function NewPlanningPage({ params }: NewPlanningPageProps) {
   const { locale } = await params
+  const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
   const creationAllowed = await getCoachPlanningCreationEligibility()
   if (!creationAllowed) {
     return (
       <div className='mx-auto w-full max-w-5xl space-y-4'>
         <Link href={locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-          <ArrowLeft /> {locale === 'es' ? 'Volver a planificación' : 'Back to planning'}
+          <ArrowLeft /> {t('newStrategyPage.back')}
         </Link>
         <Card>
           <CardHeader>
-            <CardTitle>{locale === 'es' ? 'Acceso no autorizado' : 'Access denied'}</CardTitle>
-            <CardDescription>{locale === 'es' ? 'No tenés permisos para crear estrategias de planificación.' : 'You do not have permission to create planning strategies.'}</CardDescription>
+            <CardTitle>{t('newStrategyPage.deniedTitle')}</CardTitle>
+            <CardDescription>{t('newStrategyPage.deniedDescription')}</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -52,19 +54,19 @@ export default async function NewPlanningPage({ params }: NewPlanningPageProps) 
     <div className='mx-auto w-full max-w-5xl space-y-6'>
       <div className='space-y-2'>
         <Link href={planningPath} className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-          <ArrowLeft /> Volver a planificación
+          <ArrowLeft /> {t('newStrategyPage.back')}
         </Link>
         <div>
-          <h2 className='text-3xl font-bold tracking-tight'>Nueva estrategia de carga</h2>
-          <p className='text-muted-foreground'>Configurá el punto de partida para la planificación del grupo.</p>
+          <h2 className='text-3xl font-bold tracking-tight'>{t('newStrategyPage.title')}</h2>
+          <p className='text-muted-foreground'>{t('newStrategyPage.description')}</p>
         </div>
       </div>
 
       {groups.length === 0 ? (
         <Card>
           <CardHeader>
-            <CardTitle>No hay grupos activos</CardTitle>
-            <CardDescription>Activá o creá un grupo antes de configurar su estrategia de carga.</CardDescription>
+            <CardTitle>{t('newStrategyPage.noGroupsTitle')}</CardTitle>
+            <CardDescription>{t('newStrategyPage.noGroupsDescription')}</CardDescription>
           </CardHeader>
         </Card>
       ) : (
