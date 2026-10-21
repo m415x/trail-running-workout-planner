@@ -7,20 +7,20 @@ import { resolveActiveTeamContext } from '../../lib/authorization/active-team-co
 import { createMembershipPageLoader } from '../../lib/memberships/membership-page-loader'
 
 // KAN-689/T1 RED: disposable persistence, never the developer sqlite.db.
-// These are H3/domain-boundary tests, NOT proof of authenticated HTTP sessions.
+// Canonical team_memberships column semantics and H3 resolver; not an HTTP-authenticated session test.
 function scenario() {
   const sqlite = new Database(':memory:')
   sqlite.exec(`
-    CREATE TABLE fixture_membership (user_id TEXT, team_id TEXT, is_active INTEGER, is_deleted INTEGER, effective_from TEXT, effective_until TEXT);
+    CREATE TABLE team_memberships (id TEXT PRIMARY KEY, user_id TEXT NOT NULL, team_id TEXT NOT NULL, preset TEXT NOT NULL, is_active INTEGER NOT NULL, is_deleted INTEGER NOT NULL, effective_from TEXT NOT NULL, effective_until TEXT);
     CREATE TABLE fixture_policy (team_id TEXT, amount INTEGER);
     CREATE TABLE fixture_exception (team_id TEXT, reason TEXT);
-    INSERT INTO fixture_membership VALUES
-      ('coach_1','team_A',1,0,'2025-01-01',NULL),
-      ('coach_1','team_B',1,0,'2025-01-01',NULL);
+    INSERT INTO team_memberships VALUES
+      ('membership_A','coach_1','team_A','coach',1,0,'2025-01-01',NULL),
+      ('membership_B','coach_1','team_B','coach',1,0,'2025-01-01',NULL);
     INSERT INTO fixture_policy VALUES ('team_A',10000),('team_B',20000);
     INSERT INTO fixture_exception VALUES ('team_A','private-A'),('team_B','private-B');
   `)
-  const memberships = sqlite.prepare('SELECT * FROM fixture_membership WHERE user_id = ?').all('coach_1') as Array<{
+  const memberships = sqlite.prepare('SELECT * FROM team_memberships WHERE user_id = ?').all('coach_1') as Array<{
     team_id: string; is_active: number; is_deleted: number; effective_from: string; effective_until: string | null
   }>
   const resolve = (selected: string | null) => resolveActiveTeamContext({
@@ -80,8 +80,8 @@ test('KAN-689/T1 RED: selection_required cannot reach policy or exception reposi
 test('KAN-689/T1 RED: revoked Team selection cannot reach economic repositories', async () => {
   const s = scenario()
   try {
-    s.sqlite.prepare("UPDATE fixture_membership SET is_active=0 WHERE team_id='team_B'").run()
-    const rows = s.sqlite.prepare("SELECT * FROM fixture_membership WHERE user_id='coach_1'").all() as Array<{team_id: string; is_active: number; is_deleted: number; effective_from: string; effective_until: string | null}>
+    s.sqlite.prepare("UPDATE team_memberships SET is_active=0 WHERE team_id='team_B'").run()
+    const rows = s.sqlite.prepare("SELECT * FROM team_memberships WHERE user_id='coach_1'").all() as Array<{team_id: string; is_active: number; is_deleted: number; effective_from: string; effective_until: string | null}>
     const decision = resolveActiveTeamContext({
       persistedTeamId: 'team_B', onDate: '2026-10-21',
       memberships: rows.map(x => ({ teamId:x.team_id, isActive:Boolean(x.is_active), isDeleted:Boolean(x.is_deleted),
