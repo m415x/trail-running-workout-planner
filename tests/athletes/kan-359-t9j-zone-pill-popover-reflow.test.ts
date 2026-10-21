@@ -14,7 +14,7 @@ test('KAN-359/T9j zone badge can grow horizontally and keeps percentage unbroken
 
 test('KAN-359/T9j zone details portal receives current Athlete preset and scales actual copy', () => {
   const pills = read('components/ui/custom/pills.tsx')
-  assert.match(pills, /<PopoverContent[\\s\\S]*?athlete-typography/, 'detached detail portal must include Athlete scope')
+  assert.ok(pills.includes("className={cn(preference && 'athlete-typography'"), 'detached portal enables Athlete scope only with an active preference')
   assert.match(pills, /data-athlete-typography=\{/, 'detached detail portal must receive live preset')
   assert.match(pills, /--athlete-text-body-compact/, 'explanatory copy must scale')
   assert.match(pills, /--athlete-text-caption/, 'supporting caption must scale')
