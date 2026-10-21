@@ -9,6 +9,7 @@ import { getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 
 import { db } from '@/db'
+import { createPlanningCreationEligibility } from '@/lib/planning/planning-creation-eligibility'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
@@ -69,6 +70,35 @@ export interface CreateGroupPlanWithLoadStrategyState {
 function planningPath(locale: string, suffix = '') {
   const base = locale === 'es' ? '/dashboard/planning' : `/${locale}/dashboard/planning`
   return `${base}${suffix}`
+}
+
+/**
+ * Server-owned eligibility for the New Strategy CTA.
+ * Mirrors the writer's persisted active Group and H4A planning.manage checks.
+ * The writer remains the final authority for every mutation.
+ */
+export async function getCoachPlanningCreationEligibility(): Promise<boolean> {
+  return createPlanningCreationEligibility({
+    async authenticate() {
+      const supabase = await createSupabaseServerClient()
+      const lookup = createExternalIdentityLookup()
+      return requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+      })
+    },
+    resolveActiveTeam: userId => createActiveTeamNextServerContext().resolve(userId),
+    async listActiveGroups(teamId) {
+      return db.query.athleteGroups.findMany({
+        where: and(
+          eq(athleteGroups.teamId, teamId),
+          eq(athleteGroups.isDeleted, false),
+          eq(athleteGroups.isActive, true),
+        ),
+      })
+    },
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+    now: () => new Date().toISOString(),
+  }).check()
 }
 
 export async function createGroupPlanWithLoadStrategy(

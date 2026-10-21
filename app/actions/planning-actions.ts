@@ -28,6 +28,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { createH4bPlanningAuthorizationBoundary } from '@/lib/authorization/h4b-planning-authorization'
+import { createCoachPlanningListOperation } from '@/lib/planning/coach-planning-list-operation'
 import { getCompetitionCalendar } from '@/lib/periodization/competition-calendar-service'
 import {
   buildLoadProgressionPreview,
@@ -272,6 +273,77 @@ export async function getGroupTrainingPlans() {
       ...plan,
       macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
     }))
+}
+
+/**
+ * KAN-840: explicit Coach list result. Deliberately separate from the legacy
+ * getGroupTrainingPlans() array API consumed by the existing planning landing.
+ * T2 will switch the landing after ES/EN and CTA authorization are ready.
+ */
+export async function getCoachPlanningListResult() {
+  const operation = createCoachPlanningListOperation({
+    async authenticate() {
+      const supabase = await createSupabaseServerClient()
+      const lookup = createExternalIdentityLookup()
+      return requireAuthenticatedEptAction({
+        readAccess: () => readEptSessionAccessState(supabase.auth, lookup),
+      })
+    },
+    resolveActiveTeam: (userId) => createActiveTeamNextServerContext().resolve(userId),
+    authorize: (access, request) => createH4aNextServerAuthorizationBoundary().authorize(access, request),
+    async listGroups(teamId) {
+      return db.query.athleteGroups.findMany({
+        where: and(
+          eq(athleteGroups.teamId, teamId),
+          eq(athleteGroups.isDeleted, false),
+        ),
+      })
+    },
+    async listPlans(groupIds) {
+      const plans = await db.query.groupTrainingPlans.findMany({
+        where: and(
+          inArray(groupTrainingPlans.groupId, groupIds),
+          eq(groupTrainingPlans.isDeleted, false),
+        ),
+        with: {
+          group: true,
+          planningCohort: true,
+          sourceGroupTrainingPlan: true,
+          macrocycles: {
+            with: {
+              mesocycles: {
+                with: { microcycles: true },
+              },
+            },
+          },
+        },
+      })
+      return plans.map((plan) => ({ ...plan, teamId: plan.group.teamId }))
+    },
+    async authorizePlan(access, plan) {
+      const authorization = createPlanningReadAuthorization(new Map([[
+        plan.id,
+        { teamId: plan.group.teamId, sportingGroupIds: [plan.groupId] },
+      ]]))
+      const decision = await authorization.authorize(access, {
+        resourceId: plan.id,
+        at: new Date().toISOString(),
+      })
+      return decision.allowed
+    },
+    now: () => new Date().toISOString(),
+  })
+  const result = await operation.read()
+  if (result.status !== 'ready') return result
+  return {
+    status: 'ready' as const,
+    plans: result.plans
+      .sort((first, second) => second.updatedAt.localeCompare(first.updatedAt))
+      .map((plan) => ({
+        ...plan,
+        macrocycles: withPlanningRaceDistance(plan.group.categoryCode, plan.macrocycles),
+      })),
+  }
 }
 
 export async function getGroupTrainingPlanById(planId: string) {

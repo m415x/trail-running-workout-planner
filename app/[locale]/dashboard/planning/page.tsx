@@ -2,7 +2,8 @@ import { Link } from '@/i18n/routing'
 import { getTranslations } from 'next-intl/server'
 import { ArrowRight, CalendarRange, Plus } from 'lucide-react'
 
-import { getGroupTrainingPlans } from '@/app/actions/planning-actions'
+import { getCoachPlanningListResult } from '@/app/actions/planning-actions'
+import { getCoachPlanningCreationEligibility } from '@/app/actions/load-strategy-actions'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -14,7 +15,12 @@ interface PlanningPageProps {
 export default async function PlanningPage({ params }: PlanningPageProps) {
   const { locale } = await params
   const t = await getTranslations({ locale, namespace: 'CoachPlanning' })
-  const plans = await getGroupTrainingPlans()
+  const [result, creationAllowed] = await Promise.all([
+    getCoachPlanningListResult(),
+    getCoachPlanningCreationEligibility(),
+  ])
+  const canCreateStrategy = creationAllowed && (result.status === 'empty' || result.status === 'ready')
+  const plans = result.status === 'ready' ? result.plans : []
   const planningPath = '/dashboard/planning'
 
   return (
@@ -24,16 +30,18 @@ export default async function PlanningPage({ params }: PlanningPageProps) {
           <h2 className='text-3xl font-bold tracking-tight'>{t('list.title')}</h2>
           <p className='text-muted-foreground'>{t('list.description')}</p>
         </div>
-        <Link href={`${planningPath}/new`} className={buttonVariants()}>
-          <Plus /> {t('list.newStrategy')}
-        </Link>
+        {canCreateStrategy && (
+          <Link href={`${planningPath}/new`} className={buttonVariants()}>
+            <Plus /> {t('list.newStrategy')}
+          </Link>
+        )}
       </div>
 
-      {plans.length === 0 ? (
+      {result.status !== 'ready' ? (
         <Card>
           <CardHeader>
-            <CardTitle>{t('list.emptyTitle')}</CardTitle>
-            <CardDescription>{t('list.emptyDescription')}</CardDescription>
+            <CardTitle>{t(result.status === 'denied' ? 'list.deniedTitle' : result.status === 'selection_required' ? 'list.selectionRequiredTitle' : result.status === 'invalid_context' ? 'list.invalidContextTitle' : result.status === 'error' ? 'list.errorTitle' : 'list.emptyTitle')}</CardTitle>
+            <CardDescription>{t(result.status === 'denied' ? 'list.deniedDescription' : result.status === 'selection_required' ? 'list.selectionRequiredDescription' : result.status === 'invalid_context' ? 'list.invalidContextDescription' : result.status === 'error' ? 'list.errorDescription' : 'list.emptyDescription')}</CardDescription>
           </CardHeader>
         </Card>
       ) : (
