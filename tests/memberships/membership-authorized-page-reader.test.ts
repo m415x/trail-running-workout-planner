@@ -64,7 +64,7 @@ test('KAN-689/T1 RED: selected Team B must never read persisted economic data of
     // This mirrors the current production page's hardcoded team_1 (Team A).
     const model = await s.load({ db: s.sqlite, locale: 'es', teamId: 'team_A', onDate: '2026-10-21' })
     assert.deepEqual(s.calls, ['policy:team_B', 'exception:team_B'])
-    assert.equal(model.currentPolicy.monthlyAmountMinor, 20000)
+    assert.equal(model.currentPolicy.monthlyAmount, new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(100))
   } finally { s.sqlite.close() }
 })
 
@@ -81,7 +81,7 @@ test('KAN-689/T1 RED: revoked Team selection cannot reach economic repositories'
   const s = scenario()
   try {
     s.sqlite.prepare("UPDATE fixture_membership SET is_active=0 WHERE team_id='team_B'").run()
-    const rows = s.sqlite.prepare("SELECT * FROM fixture_membership WHERE user_id='coach_1'").all() as Array<any>
+    const rows = s.sqlite.prepare("SELECT * FROM fixture_membership WHERE user_id='coach_1'").all() as Array<{team_id: string; is_active: number; is_deleted: number; effective_from: string; effective_until: string | null}>
     const decision = resolveActiveTeamContext({
       persistedTeamId: 'team_B', onDate: '2026-10-21',
       memberships: rows.map(x => ({ teamId:x.team_id, isActive:Boolean(x.is_active), isDeleted:Boolean(x.is_deleted),
