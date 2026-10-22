@@ -6,7 +6,7 @@
 // Run ONLY in trail-running-workout-planner-kan-849-exp after baseline RED.
 import { createRequire } from 'node:module'
 import { createHash } from 'node:crypto'
-import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync, realpathSync } from 'node:fs'
+import { readFileSync, writeFileSync, renameSync, statSync, unlinkSync, realpathSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const root = process.cwd()
@@ -32,6 +32,7 @@ const original = before.toString('utf8')
 const matches = original.split(oldText).length - 1
 if (matches !== 1) throw new Error('Expected exactly one upstream initUrl anchor; found ' + matches)
 const patched = Buffer.from(original.replace(oldText, replacement), 'utf8')
+mkdirSync(resolve(root, '.tmp'), { recursive: true })
 const backup = resolve(root, '.tmp/kan-849-router-original.js')
 const temp = routerPath + '.kan-849-private-write'
 const baselineStat = statSync(routerPath)
