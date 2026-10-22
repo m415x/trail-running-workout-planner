@@ -64,6 +64,7 @@ async function inspect(bindHost: string) {
   child.stderr?.on('data', chunk => { output = (output + String(chunk)).slice(-6000) })
   try {
     let ready = false
+    let readinessFailure = ''
     for (let attempt = 0; attempt < 30; attempt++) {
       if (exited) throw new Error('Next exited: ' + output)
       try {
@@ -71,10 +72,11 @@ async function inspect(bindHost: string) {
           redirect: 'manual', signal: AbortSignal.timeout(3000),
         })
         if (response.status === 404) { ready = true; break }
-      } catch { /* bounded startup retry */ }
+        readinessFailure = JSON.stringify({ status: response.status, body: (await response.text()).slice(0, 3500) })
+      } catch (error) { readinessFailure = String(error) }
       await delay(1000)
     }
-    assert.ok(ready, 'Next HTTP readiness failed: ' + output)
+    assert.ok(ready, 'Next HTTP readiness failed: ' + readinessFailure + '\\n' + output)
     const cases = []
     for (const forwardedHost of [null, '127.0.0.1:' + port, 'localhost:' + port]) {
       for (const path of ['/', '/dashboard/athletes']) {
