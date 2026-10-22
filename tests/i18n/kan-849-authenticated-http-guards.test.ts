@@ -54,7 +54,7 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
     setAll:parts=>parts.forEach(c=>{if(c.value)jar.set(c.name,c.value);else jar.delete(c.name)}),
   },auth:{autoRefreshToken:false,persistSession:false,detectSessionInUrl:false}})
   const sign=await auth.auth.signInWithPassword({email:email!,password:password!})
-  assert.ok(!sign.error&&sign.data.session,'Verified local sign-in is mandatory')
+  assert.ok(!sign.error&&sign.data.session, 'Verified local sign-in is mandatory: '+JSON.stringify({errorName:sign.error?.name??null,errorCode:sign.error?.code??null,httpStatus:sign.error?.status??null,sessionPresent:Boolean(sign.data.session),userPresent:Boolean(sign.data.user)}))
   const claims=await auth.auth.getClaims(),user=await auth.auth.getUser()
   assert.ok(!claims.error&&!user.error&&claims.data?.claims?.sub===user.data.user?.id)
   assert.ok(jar.size>0,'Supabase SSR login must generate session cookies')
