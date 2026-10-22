@@ -119,7 +119,7 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       const nextNotFound = response.body.includes('NEXT_HTTP_ERROR_FALLBACK;404')
       const renderDiagnostic = {
         htmlLength:response.body.length,
-        hasRootHtml:/<html\\b/i.test(response.body),
+        hasRootHtml:/<html\b/i.test(response.body),
         hasNextErrorBoundary:/<meta\\b[^>]+name=["']next-error["']/i.test(response.body),
         hasMetaRefresh:metaRefresh.length>0,
         hasFlightRedirect:nextRedirect,
