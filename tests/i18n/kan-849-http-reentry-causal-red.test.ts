@@ -52,6 +52,15 @@ async function inspect(bindHost: '127.0.0.1' | 'localhost') {
         redirect: 'manual', headers: { host: address + ':' + port, cookie: 'NEXT_LOCALE=' + (path.startsWith('/en/') ? 'en' : 'es') }, signal: AbortSignal.timeout(15000),
       })
       rows.push({ path, status: r.status, location: r.headers.get('location'), rewrite: r.headers.get('x-middleware-rewrite') })
+      if (r.status >= 500) {
+        const body = await r.text()
+        const errorMatch = body.match(/<script id="__NEXT_DATA__" type="application\\/json">([^<]+)<\\/script>/)
+        let errorDetails: unknown = null
+        if (errorMatch) {
+          try { errorDetails = JSON.parse(errorMatch[1]).err ?? null } catch { /* diagnostic only */ }
+        }
+        process.stdout.write('KAN-849 HTTP_500_DIAGNOSTIC ' + JSON.stringify({ bindHost, path, status: r.status, errorDetails, logs: logs.slice(-6500) }) + '\\n')
+      }
     }
     const stages = logs.split(/\r?\n/).filter(line => line.startsWith('KAN-849 PROXY_STAGE ')).map(line => JSON.parse(line.slice('KAN-849 PROXY_STAGE '.length)))
     process.stdout.write('KAN-849 REENTRY_BIND_MATRIX ' + JSON.stringify({ bindHost, rows, stages }) + '\n')
