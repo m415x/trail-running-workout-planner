@@ -53,8 +53,8 @@ async function inspect(bindHost: '127.0.0.1' | 'localhost') {
       })
       rows.push({ path, status: r.status, location: r.headers.get('location'), rewrite: r.headers.get('x-middleware-rewrite') })
     }
-    const stages = logs.split(/\\r?\\n/).filter(line => line.startsWith('KAN-849 PROXY_STAGE ')).map(line => JSON.parse(line.slice('KAN-849 PROXY_STAGE '.length)))
-    process.stdout.write('KAN-849 REENTRY_BIND_MATRIX ' + JSON.stringify({ bindHost, rows, stages }) + '\\n')
+    const stages = logs.split(/\r?\n/).filter(line => line.startsWith('KAN-849 PROXY_STAGE ')).map(line => JSON.parse(line.slice('KAN-849 PROXY_STAGE '.length)))
+    process.stdout.write('KAN-849 REENTRY_BIND_MATRIX ' + JSON.stringify({ bindHost, rows, stages }) + '\n')
     assert.equal(rows.length, 4)
     assert.ok(stages.some(stage => stage.stage === 'after-intl'), 'No intl stage captured')
     assert.ok(stages.some(stage => stage.stage === 'after-auth-carry'), 'No post-auth stage captured')
