@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { spawn, spawnSync, type ChildProcess } from 'node:child_process'
+import { spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, existsSync, mkdirSync } from 'node:fs'
 import { resolve, join } from 'node:path'
