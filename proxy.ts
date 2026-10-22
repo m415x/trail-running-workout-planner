@@ -7,26 +7,35 @@ import { routing } from '@/i18n/routing'
 import { normalizeLocalSpanishRewrite } from '@/lib/i18n/normalize-local-rewrite'
 
 const intlMiddleware = createMiddleware(routing)
+let fixtureInvocationSequence = 0
 
 export async function proxy(request: NextRequest) {
-  const auth = await refreshSupabaseProxySession(request)
-  const localizedResponse = intlMiddleware(request)
-
-  const beforeRewrite = localizedResponse.headers.get('x-middleware-rewrite')
-  const normalized = normalizeLocalSpanishRewrite(request, localizedResponse)
-  const finalResponse = carryAuthRefreshIntoResponse(auth.response, normalized)
-  if (process.env.KAN_HTTP_FIXTURE_DIAGNOSTICS === '1' && process.env.KAN_HTTP_FIXTURE_DIST_DIR) {
-    // Fixture-only boundary probe: never log credentials, cookies or arbitrary request headers.
-    console.info('KAN-849 PROXY_BOUNDARY ' + JSON.stringify({
-      url: request.url,
-      nextUrl: request.nextUrl.href,
+  const diagnostic = process.env.KAN_HTTP_FIXTURE_DIAGNOSTICS === '1' && Boolean(process.env.KAN_HTTP_FIXTURE_DIST_DIR)
+  const invocation = diagnostic ? ++fixtureInvocationSequence : null
+  // Logging is deliberately restricted to fixed diagnostic fields and URL pathnames.
+  const observe = (stage: string, response?: { status: number; headers: Headers }) => {
+    if (!diagnostic) return
+    console.info('KAN-849 PROXY_STAGE ' + JSON.stringify({
+      invocation,
+      stage,
+      url: new URL(request.url).origin + new URL(request.url).pathname,
       host: request.headers.get('host'),
-      beforeRewrite,
-      afterRewrite: normalized.headers.get('x-middleware-rewrite'),
-      responseRewrite: finalResponse.headers.get('x-middleware-rewrite'),
-      location: finalResponse.headers.get('location'),
+      status: response?.status ?? null,
+      location: response?.headers.get('location') ?? null,
+      rewrite: response?.headers.get('x-middleware-rewrite') ?? null,
     }))
   }
+
+  observe('entry')
+  const auth = await refreshSupabaseProxySession(request)
+  observe('before-intl')
+  const localizedResponse = intlMiddleware(request)
+  observe('after-intl', localizedResponse)
+
+  const normalized = normalizeLocalSpanishRewrite(request, localizedResponse)
+  observe('after-normalizer', normalized)
+  const finalResponse = carryAuthRefreshIntoResponse(auth.response, normalized)
+  observe('after-auth-carry', finalResponse)
   return finalResponse
 }
 
