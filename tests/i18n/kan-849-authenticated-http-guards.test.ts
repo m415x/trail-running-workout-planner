@@ -124,9 +124,11 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
           const alerts = (response.body.match(/<div[^>]*role=["']alert["'][^>]*>/g)??[]).length
           const denials = response.body.split('No autorizado').length-1
           const near = response.body.indexOf('No autorizado')
-          const excerpt = near>=0 ? response.body.slice(Math.max(0,near-130),Math.min(response.body.length,near+170)).replace(/[^\\x20-\\x7E]/g,' ') : null
+          const excerpt = near>=0 ? response.body.slice(Math.max(0,near-100),Math.min(response.body.length,near+130)).replace(/[\\r\\n]/g,' ').slice(0,230) : null
           const hasAthleteRows = response.body.includes('<table')
           process.stdout.write('KAN-849 DENY_HTTP_DIAGNOSTIC '+JSON.stringify({scenario:s.name,status:response.status,alerts,denials,hasAthleteRows,excerpt})+'\n')
+          const textNodes = Array.from(response.body.matchAll(/>([^<>]{1,180})</g), m=>m[1]?.trim()).filter(Boolean)
+          process.stdout.write('KAN-849 DENY_TEXT_NODES '+JSON.stringify({scenario:s.name,textNodes:textNodes.filter(t=>t?.includes('No autorizado')).slice(0,3),rscHasDenial:response.body.includes('No autorizado')})+'\n')
           assert.ok(renderedDenyAlert(response.body),'H3/H4A denied page must render a DENY alert (serialized text is insufficient)')
         }
         else assert.ok(response.location?.includes('/login')||response.location?.includes('/auth/'),'Denied navigation must use legitimate auth redirect')
