@@ -30,7 +30,7 @@ function snapshot(db: Database.Database) {
 }
 function renderedDenyAlert(html: string): boolean {
   // Inspect the server-rendered alert rather than arbitrary RSC/Next serialized payload text.
-  const alerts = html.match(/<div\\b[^>]*\\brole=["']alert["'][^>]*>[\\s\\S]*?<\\/div>/g) ?? []
+  const alerts = html.match(new RegExp('<div\\b[^>]*\\brole=["\\\']alert["\\\'][^>]*>[\\s\\S]*?</div>', 'g')) ?? []
   return alerts.some(alert => alert.includes('No autorizado'))
 }
 async function freePort() {
