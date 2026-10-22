@@ -114,6 +114,9 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
     // route does not hide other host/locale observations.
     const failures = traces.filter(row =>
       row.termination !== 'terminal' || row.hops.some(h => h.status >= 500))
+    if (traces.some(row => row.hops.some(h => h.status >= 500))) {
+      process.stdout.write('KAN-849 HTTP_500_SERVER_DIAGNOSTICS ' + JSON.stringify({ diagnostics }) + '\\n')
+    }
     assert.equal(failures.length, 0, JSON.stringify({ traces }, null, 2))
   } catch (error) {
     if (exited) throw new Error('Next.js failed or exited: ' + diagnostics, { cause: error })
