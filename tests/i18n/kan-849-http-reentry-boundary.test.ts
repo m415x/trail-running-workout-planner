@@ -21,7 +21,7 @@ async function freePort(): Promise<number> {
 async function inspect(bindHost: '127.0.0.1' | 'localhost') {
   const port = await freePort()
   const fixture = createHttpDistDir()
-  const base = 'http://127.0.0.1:' + port
+  const base = 'http://' + bindHost + ':' + port
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', bindHost, '-p', String(port)], {
     cwd: process.cwd(),
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath, KAN_HTTP_FIXTURE_DIAGNOSTICS: '1' },
