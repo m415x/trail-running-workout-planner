@@ -4,7 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
-import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
+import { createHttpDistDir, operatorTypesSnapshot, operatorConfigSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -90,8 +90,10 @@ async function inspect(bindHost: string) {
 
 test('KAN-848/T2 contrasts binding and complete ES redirect chains over real HTTP', { timeout: 180000 }, async () => {
   const before = operatorTypesSnapshot()
+  const configBefore = operatorConfigSnapshot()
   const rows = [...await inspect('127.0.0.1'), ...await inspect('0.0.0.0')]
   assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
+  assert.equal(operatorConfigSnapshot(), configBefore, 'HTTP fixture changed operator tsconfig.json')
   process.stdout.write('KAN-848 HTTP_BIND_CHAIN_MATRIX ' + JSON.stringify(rows) + '\n')
   assert.equal(rows.length, 12)
   for (const row of rows) {
