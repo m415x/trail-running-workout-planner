@@ -4,6 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
+import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -20,11 +21,13 @@ async function availablePort(): Promise<number> {
 }
 
 test('KAN-848/T2 contrasts HTTP request authority with locale rewrite authority', { timeout: 130000 }, async () => {
+  const before = operatorTypesSnapshot()
   const port = await availablePort()
   const base = 'http://127.0.0.1:' + port
+  const fixture = createHttpDistDir()
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', '0.0.0.0', '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-authority', NEXT_TELEMETRY_DISABLED: '1' },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-authority', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
@@ -73,7 +76,8 @@ test('KAN-848/T2 contrasts HTTP request authority with locale rewrite authority'
     assert.ok(connected.length >= 4, 'Insufficient comparable HTTP responses: ' + JSON.stringify(observations))
     assert.ok(connected.every(o => o.status! < 500), 'HTTP server errors: ' + JSON.stringify(observations))
   } finally {
-    child.kill()
-    await Promise.race([new Promise<void>(resolve => child.once('exit', () => resolve())), delay(3000)])
+    await stopNextHttpServer(child)
+    fixture.cleanup()
+    assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
   }
 })
