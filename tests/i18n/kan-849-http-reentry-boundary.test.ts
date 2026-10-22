@@ -46,19 +46,29 @@ async function inspect(bindHost: '127.0.0.1' | 'localhost') {
     assert.ok(ready, 'Next failed readiness: ' + logs.slice(-3500))
     // Do not follow a public redirect: inspect the internal reentry from a single initial fetch.
     const rows = []
+    const perRequestEntries: { path: string; entries: { url: string; host: string | null; invocation: number }[] }[] = []
     const address = bindHost === 'localhost' ? 'localhost' : '127.0.0.1'
     for (const path of ['/', '/dashboard/athletes', '/es/dashboard/athletes', '/en/dashboard/athletes']) {
+      await delay(40)
+      const beforeRequest = logs.length
       const r = await fetch('http://' + address + ':' + port + path, {
         redirect: 'manual', headers: { host: address + ':' + port, cookie: 'NEXT_LOCALE=' + (path.startsWith('/en/') ? 'en' : 'es') }, signal: AbortSignal.timeout(15000),
       })
       rows.push({ path, status: r.status, location: r.headers.get('location'), rewrite: r.headers.get('x-middleware-rewrite') })
+      await delay(100)
+      const entries = logs.slice(beforeRequest).split(/\r?\n/)
+        .filter(line => line.startsWith('KAN-849 PROXY_STAGE '))
+        .map(line => JSON.parse(line.slice('KAN-849 PROXY_STAGE '.length)))
+        .filter(stage => stage.stage === 'entry')
+        .map(stage => ({ url: stage.url as string, host: stage.host as string | null, invocation: stage.invocation as number }))
+      perRequestEntries.push({ path, entries })
     }
     const stages = logs.split(/\r?\n/).filter(line => line.startsWith('KAN-849 PROXY_STAGE ')).map(line => JSON.parse(line.slice('KAN-849 PROXY_STAGE '.length)))
-    process.stdout.write('KAN-849 REENTRY_BIND_MATRIX ' + JSON.stringify({ bindHost, rows, stages }) + '\n')
+    process.stdout.write('KAN-849 REENTRY_BIND_MATRIX ' + JSON.stringify({ bindHost, rows, perRequestEntries, stages }) + '\n')
     assert.equal(rows.length, 4)
     assert.ok(stages.some(stage => stage.stage === 'after-intl'), 'No intl stage captured')
     assert.ok(stages.some(stage => stage.stage === 'after-auth-carry'), 'No post-auth stage captured')
-    return { rows, stages }
+    return { rows, stages, perRequestEntries }
   } finally {
     await stopNextHttpServer(child)
     fixture.cleanup()
@@ -72,6 +82,17 @@ test('KAN-849/T3 characterizes internal Spanish proxy reentry under matched bind
     const loopback = await inspect('127.0.0.1')
     const localhost = await inspect('localhost')
     assert.ok(loopback.stages.length > 0 && localhost.stages.length > 0)
+    for (const result of [loopback, localhost]) {
+      const bindHost = result === loopback ? '127.0.0.1' : 'localhost'
+      const direct = result.perRequestEntries.find(row => row.path === '/es/dashboard/athletes')
+      const unprefixed = result.perRequestEntries.find(row => row.path === '/dashboard/athletes')
+      assert.ok(direct && unprefixed)
+      assert.equal(direct.entries.length, 1, 'Public /es/... must invoke proxy once: ' + JSON.stringify({ bindHost, direct }))
+      assert.equal(direct.entries[0].host?.split(':')[0], bindHost, 'Public /es/... must retain original Host')
+      assert.equal(unprefixed.entries.length, 1, 'Unprefixed ES must not trigger internal proxy reentry: ' + JSON.stringify({ bindHost, unprefixed }))
+      assert.equal(unprefixed.entries[0].host?.split(':')[0], bindHost, 'Original external Host must be preserved')
+      assert.ok(!unprefixed.entries.some(entry => entry.url.includes('/es/dashboard/athletes') && entry.host?.startsWith('localhost:')), 'No internal localhost canonicalization on ES rewrite')
+    }
   } finally {
     assert.equal(operatorTypesSnapshot(), typesBefore, 'Operator Next types changed')
     assert.equal(operatorConfigSnapshot(), configBefore, 'Operator tsconfig changed')
