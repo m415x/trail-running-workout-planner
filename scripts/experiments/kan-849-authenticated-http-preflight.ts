@@ -23,6 +23,7 @@ const client = createClient(required('NEXT_PUBLIC_SUPABASE_URL'), required('NEXT
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 })
 const mask = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 12)
+async function main(): Promise<void> {
 try {
   const { data, error } = await client.auth.signInWithPassword({ email, password })
   if (error || !data.session) throw error ?? new Error('No acceptance session')
@@ -56,3 +57,9 @@ try {
   process.stderr.write('KAN-849 AUTHENTICATED_HTTP_PREFLIGHT FAILED: ' + (error instanceof Error ? error.message : String(error)) + '\n')
   process.exitCode = 1
 }
+}
+
+void main().catch(error => {
+  process.stderr.write('KAN-849 AUTHENTICATED_HTTP_PREFLIGHT UNHANDLED: ' + (error instanceof Error ? error.message : String(error)) + '\n')
+  process.exitCode = 1
+})
