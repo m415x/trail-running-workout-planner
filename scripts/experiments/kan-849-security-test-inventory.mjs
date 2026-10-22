@@ -9,7 +9,7 @@ function walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
     const p = join(dir, entry.name)
     if (entry.isDirectory()) walk(p)
-    else if (entry.isFile() && /\\.test\\.[cm]?[jt]sx?$/.test(entry.name)) paths.push(p)
+    else if (entry.isFile() && ['.test.ts', '.test.tsx', '.test.js', '.test.mjs'].some(s => entry.name.endsWith(s))) paths.push(p)
   }
 }
 walk(base)
@@ -19,7 +19,7 @@ const patterns = [
   ['authorization-H4A', /KAN-605|H4A|scope.?authorization|permission|authoriz/i],
   ['supabase-cookies', /supabase.?proxy|proxy.?response|carryAuthRefreshIntoResponse|cookie.?refresh|set-cookie/i],
   ['cross-team', /cross.?team|team.?isolation|other.?team|revoked.?membership|forged.?cookie/i],
-  ['HTTP-Next', /spawn\\s*\\(|next\\/dist\\/bin\\/next|HTTP.*fixture|fetch\\s*\\(/i],
+  ['HTTP-Next', /spawn|next.*dist.*bin.*next|HTTP.*fixture|fetch/i],
 ]
 const rows = []
 for (const path of paths) {
