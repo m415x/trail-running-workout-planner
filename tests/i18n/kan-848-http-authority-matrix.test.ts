@@ -28,7 +28,7 @@ test('KAN-848/T2 contrasts HTTP request authority with locale rewrite authority'
   const fixture = createHttpDistDir()
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', '0.0.0.0', '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-authority', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-authority', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
