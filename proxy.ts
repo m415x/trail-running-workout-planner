@@ -13,14 +13,14 @@ export async function proxy(request: NextRequest) {
   const diagnostic = process.env.KAN_HTTP_FIXTURE_DIAGNOSTICS === '1' && Boolean(process.env.KAN_HTTP_FIXTURE_DIST_DIR)
   const invocation = diagnostic ? ++fixtureInvocationSequence : null
   // Logging is deliberately restricted to fixed diagnostic fields and URL pathnames.
-  const observe = (stage: string, response?: { status: number; headers: Headers }) => {
+  const observe = (stage: string, response?: { status?: number; headers: { get(name: string): string | null } }, knownStatus?: number) => {
     if (!diagnostic) return
     console.info('KAN-849 PROXY_STAGE ' + JSON.stringify({
       invocation,
       stage,
       url: new URL(request.url).origin + new URL(request.url).pathname,
       host: request.headers.get('host'),
-      status: response?.status ?? null,
+      status: knownStatus ?? response?.status ?? null,
       location: response?.headers.get('location') ?? null,
       rewrite: response?.headers.get('x-middleware-rewrite') ?? null,
     }))
@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
   const normalized = normalizeLocalSpanishRewrite(request, localizedResponse)
   observe('after-normalizer', normalized)
   const finalResponse = carryAuthRefreshIntoResponse(auth.response, normalized)
-  observe('after-auth-carry', finalResponse)
+  observe('after-auth-carry', finalResponse, normalized.status)
   return finalResponse
 }
 
