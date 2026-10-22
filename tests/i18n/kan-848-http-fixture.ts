@@ -34,13 +34,15 @@ export function createHttpDistDir(): { distDir: string; cleanup: () => void } {
 }
 
 export async function stopNextHttpServer(child: ChildProcess): Promise<void> {
-  if (child.exitCode !== null || child.signalCode !== null) return
+  // A terminated CLI parent does not prove that its Next dev worker exited.
   if (process.platform === 'win32' && child.pid) {
     // Terminate the whole spawned Next process tree, not only its CLI parent.
-    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true })
+    const result = spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true })
+    if (result.error) throw result.error
   } else {
     child.kill()
   }
+  if (child.exitCode !== null || child.signalCode !== null) return
   const closed = await Promise.race([
     new Promise<boolean>(resolve => child.once('close', () => resolve(true))),
     new Promise<boolean>(resolve => setTimeout(() => resolve(false), 2500)),
