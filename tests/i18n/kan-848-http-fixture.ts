@@ -27,18 +27,24 @@ export function operatorConfigSnapshot(): string {
   return digestTree(resolve('tsconfig.json'))
 }
 
-export function createHttpDistDir(): { distDir: string; cleanup: () => void } {
+export function createHttpDistDir(): { distDir: string; tsconfigPath: string; cleanup: () => void } {
   const root = resolve('.tmp')
   mkdirSync(root, { recursive: true })
   const absolute = mkdtempSync(join(root, 'kan-848-next-http-'))
-  // Next dev is allowed to update only its private tsconfig, never the tracked root.
-  writeFileSync(join(absolute, 'tsconfig.fixture.json'), JSON.stringify({
-    extends: '../../tsconfig.json',
-    include: ['../../next-env.d.ts', '../../**/*.ts', '../../**/*.tsx', '../../**/*.mts', './types/**/*.ts', './dev/types/**/*.ts'],
+  // Turbopack resolves tsconfigPath as a project-root-relative filename on Windows.
+  const name = absolute.split(/[\\/]/).at(-1)!
+  const configName = `tsconfig.${name}.json`
+  writeFileSync(resolve(configName), JSON.stringify({
+    extends: './tsconfig.json',
+    include: ['next-env.d.ts', '**/*.ts', '**/*.tsx', '**/*.mts'],
   }, null, 2) + '\n')
   return {
-    distDir: '.tmp/' + absolute.split(/[\\/]/).at(-1),
-    cleanup: () => rmSync(absolute, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 }),
+    distDir: '.tmp/' + name,
+    tsconfigPath: configName,
+    cleanup: () => {
+      rmSync(resolve(configName), { force: true })
+      rmSync(absolute, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 })
+    },
   }
 }
 
