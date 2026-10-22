@@ -21,6 +21,6 @@ export function normalizeLocalSpanishRewrite(request: NextRequest, response: Nex
     response.headers.has('location')
   ) return response
 
-  response.headers.set('x-middleware-rewrite', target.pathname + target.search)
+  response.headers.set('x-middleware-rewrite', new URL(target.pathname + target.search, `${origin.protocol}//${originalHost}`).toString())
   return response
 }
