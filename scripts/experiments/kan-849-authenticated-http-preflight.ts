@@ -16,7 +16,7 @@ const root = process.cwd()
 assert.ok(root.toLowerCase().endsWith('trail-running-workout-planner-kan-849-exp'), 'Disposable experimental worktree required')
 const dbPath = realpathSync(resolve(required('SQLITE_DATABASE_PATH')))
 assert.ok(existsSync(dbPath))
-assert.notEqual(dbPath.toLowerCase(), realpathSync(resolve('sqlite.db')).toLowerCase(), 'Development DB forbidden')
+assert.notEqual(dbPath.toLowerCase(), resolve('sqlite.db').toLowerCase(), 'Development DB forbidden')
 const email = required('SUPABASE_AUTH_TEST_EMAIL')
 const password = required('SUPABASE_AUTH_TEST_PASSWORD')
 const client = createClient(required('NEXT_PUBLIC_SUPABASE_URL'), required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), {
