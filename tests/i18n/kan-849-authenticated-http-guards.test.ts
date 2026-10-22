@@ -104,7 +104,7 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       {name:'forged',team:'team_forged_kan849',expectAllow:false},
       {name:'revoked',team:team.teamId,prepare:()=>{const r=db.prepare('UPDATE team_memberships SET is_active=0 WHERE id=?').run(team.id);assert.equal(r.changes,1)},expectAllow:false},
     ]
-    const findings=[]
+    const findings:Array<{scenario:string;status:number;location:string|null;allow:boolean;dbUnchanged:boolean;setCookieHeaders:number;visibleDeny:boolean;rowCount:number;emptyState:boolean}>=[]
     for(const s of scenarios){
       s.prepare?.()
       const before=snapshot(db) // after fixture writes, before verified HTTP GET
@@ -121,13 +121,14 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       } else {
         assert.ok(response.status===307||response.status===200,'Guard must fail closed without 5xx')
         if(response.status===200) {
-          assert.equal(presentation.visibleDeny,true,'HTTP DENY must render a real alert; missing alert is unresolved and cannot pass')
+          // Characterize first; enforce DENY after all three scenarios have been observed.
         } else assert.ok(response.location?.includes('/login')||response.location?.includes('/auth/'),'Denied redirect must be legitimate auth route')
       }
-      findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders})
+      findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders,visibleDeny:presentation.visibleDeny,rowCount:presentation.rowCount,emptyState:presentation.emptyState})
     }
     process.stdout.write('KAN-849 AUTHENTICATED_HTTP_GUARDS '+JSON.stringify({verifiedH2:true,findings})+'\n')
     assert.ok(logs.includes('KAN-849 PROXY_STAGE '),'Real Next proxy must be exercised')
+    for(const finding of findings.filter(f=>!f.allow && f.status===200)) assert.equal(finding.visibleDeny,true,'H3/H4A denial must be visibly evidenced: '+finding.scenario)
   } finally {
     try{db.prepare('UPDATE team_memberships SET is_active=1 WHERE id=?').run((db.prepare("SELECT m.id FROM team_memberships m JOIN external_identity_links l ON l.user_id=m.user_id WHERE l.subject=? AND m.is_active=0 LIMIT 1").get(user.data.user!.id) as {id:string}|undefined)?.id??'__none__')}catch{}
     await stopNextHttpServer(child)
