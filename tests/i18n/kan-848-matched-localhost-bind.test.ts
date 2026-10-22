@@ -4,7 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
-import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
+import { createHttpDistDir, operatorTypesSnapshot, operatorConfigSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -22,6 +22,7 @@ async function port(): Promise<number> {
 
 test('KAN-848/T2 checks matched localhost bind against loopback-host mismatch', { timeout: 120000 }, async () => {
   const before = operatorTypesSnapshot()
+  const configBefore = operatorConfigSnapshot()
   const fixture = createHttpDistDir()
   const n = await port()
   const base = 'http://localhost:' + n
@@ -62,5 +63,6 @@ test('KAN-848/T2 checks matched localhost bind against loopback-host mismatch', 
     await stopNextHttpServer(child)
     fixture.cleanup()
     assert.equal(operatorTypesSnapshot(), before, 'HTTP test contaminated operator .next/dev/types')
+    assert.equal(operatorConfigSnapshot(), configBefore, 'HTTP test contaminated operator tsconfig.json')
   }
 })
