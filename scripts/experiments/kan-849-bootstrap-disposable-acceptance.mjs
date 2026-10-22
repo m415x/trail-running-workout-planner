@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // KAN-849 disposable acceptance bootstrap. No dependency on shell export or developer sqlite.db.
-import { mkdtempSync, existsSync, writeFileSync, realpathSync, statSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, existsSync, writeFileSync, realpathSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
@@ -43,6 +43,7 @@ try {
   if (actual.toLowerCase() === resolve(root, 'sqlite.db').toLowerCase()) throw new Error('Development database collision')
   const state = resolve(root, '.tmp/kan-849-acceptance-db-path.txt')
   // Only an isolated database path is persisted; never auth tokens/credentials.
+  mkdirSync(dirname(state), { recursive: true })
   writeFileSync(state, actual + '\n', { flag: 'w' })
   process.stdout.write('KAN-849 DISPOSABLE_DB_READY ' + JSON.stringify({ path: actual, state }) + '\n')
 } catch (error) {
