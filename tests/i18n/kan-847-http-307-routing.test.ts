@@ -84,14 +84,14 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
   const fixture = createHttpDistDir()
   const next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath, KAN_HTTP_FIXTURE_DIAGNOSTICS: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
   let exited = false
   let diagnostics = ''
   next.on('exit', () => { exited = true })
-  next.stdout?.on('data', chunk => { diagnostics = (diagnostics + String(chunk)).slice(-8000) })
+  next.stdout?.on('data', chunk => { diagnostics = (diagnostics + String(chunk)).slice(-20000) })
   next.stderr?.on('data', chunk => { diagnostics = (diagnostics + String(chunk)).slice(-8000) })
 
   try {
@@ -115,6 +115,10 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
     // route does not hide other host/locale observations.
     const failures = traces.filter(row =>
       row.termination !== 'terminal' || row.hops.some(h => h.status >= 500))
+    if (failures.length > 0) {
+      const proxyBoundary = diagnostics.split(/\\r?\\n/).filter(line => line.includes('KAN-849 PROXY_BOUNDARY'))
+      process.stdout.write('KAN-849 HTTP_PROXY_BOUNDARY_MATRIX ' + JSON.stringify({ proxyBoundary, traces }) + '\\n')
+    }
     if (traces.some(row => row.hops.some(h => h.status >= 500))) {
       process.stdout.write('KAN-849 HTTP_500_SERVER_DIAGNOSTICS ' + JSON.stringify({ diagnostics }) + '\\n')
     }
