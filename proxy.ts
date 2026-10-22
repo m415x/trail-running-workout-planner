@@ -12,7 +12,22 @@ export async function proxy(request: NextRequest) {
   const auth = await refreshSupabaseProxySession(request)
   const localizedResponse = intlMiddleware(request)
 
-  return carryAuthRefreshIntoResponse(auth.response, normalizeLocalSpanishRewrite(request, localizedResponse))
+  const beforeRewrite = localizedResponse.headers.get('x-middleware-rewrite')
+  const normalized = normalizeLocalSpanishRewrite(request, localizedResponse)
+  const finalResponse = carryAuthRefreshIntoResponse(auth.response, normalized)
+  if (process.env.KAN_HTTP_FIXTURE_DIAGNOSTICS === '1' && process.env.KAN_HTTP_FIXTURE_DIST_DIR) {
+    // Fixture-only boundary probe: never log credentials, cookies or arbitrary request headers.
+    console.info('KAN-849 PROXY_BOUNDARY ' + JSON.stringify({
+      url: request.url,
+      nextUrl: request.nextUrl.href,
+      host: request.headers.get('host'),
+      beforeRewrite,
+      afterRewrite: normalized.headers.get('x-middleware-rewrite'),
+      responseRewrite: finalResponse.headers.get('x-middleware-rewrite'),
+      location: finalResponse.headers.get('location'),
+    }))
+  }
+  return finalResponse
 }
 
 export const config = {
