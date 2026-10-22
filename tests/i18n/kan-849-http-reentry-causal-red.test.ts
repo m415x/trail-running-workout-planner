@@ -79,7 +79,7 @@ test('KAN-849/T3 causal RED: internal ES canonicalization never becomes public s
     assert.equal(canonical.location, '/dashboard/athletes')
     // The English locale remains explicitly prefixed and guarded.
     assert.equal(english.status, 307)
-    assert.match(english.location ?? '', /^\\/en\\/login\\?/)
+    assert.ok((english.location ?? '').startsWith('/en/login?'), 'EN must keep prefixed login')
     // The public unprefixed ES route must not redirect back to itself.
     const selfRedirect = route.status >= 300 && route.status < 400 &&
       new URL(route.location ?? '', 'http://127.0.0.1/').pathname === '/dashboard/athletes'
