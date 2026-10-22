@@ -15,7 +15,10 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 
 const nextConfig: NextConfig = {
   // Test-only Next dev instances must never write generated types into the operator's .next.
-  ...(process.env.KAN_HTTP_FIXTURE_DIST_DIR ? { distDir: process.env.KAN_HTTP_FIXTURE_DIST_DIR } : {}),
+  ...(process.env.KAN_HTTP_FIXTURE_DIST_DIR ? {
+    distDir: process.env.KAN_HTTP_FIXTURE_DIST_DIR,
+    typescript: { tsconfigPath: `${process.env.KAN_HTTP_FIXTURE_DIST_DIR}/tsconfig.fixture.json` },
+  } : {}),
 }
 
 // Envolvemos la configuración aplicando primero PWA y luego next-intl (o viceversa)
