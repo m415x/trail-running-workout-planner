@@ -4,6 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
+import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -76,11 +77,13 @@ async function trace(base: string, pathname: string, cookie: string | null, host
 }
 
 test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect or cycle', { timeout: 180000 }, async () => {
+  const before = operatorTypesSnapshot()
   const port = await freePort()
   const base = 'http://127.0.0.1:' + port
+  const fixture = createHttpDistDir()
   const next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1' },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
@@ -116,7 +119,8 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
     if (exited) throw new Error('Next.js failed or exited: ' + diagnostics, { cause: error })
     throw error
   } finally {
-    next.kill()
-    await Promise.race([new Promise<void>(resolve => next.once('exit', () => resolve())), delay(3000)])
+    await stopNextHttpServer(next)
+    fixture.cleanup()
+    assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
   }
 })
