@@ -4,7 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
-import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
+import { createHttpDistDir, operatorTypesSnapshot, operatorConfigSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -78,6 +78,7 @@ async function trace(base: string, pathname: string, cookie: string | null, host
 
 test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect or cycle', { timeout: 180000 }, async () => {
   const before = operatorTypesSnapshot()
+  const configBefore = operatorConfigSnapshot()
   const port = await freePort()
   const base = 'http://127.0.0.1:' + port
   const fixture = createHttpDistDir()
@@ -125,5 +126,6 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
     await stopNextHttpServer(next)
     fixture.cleanup()
     assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
+    assert.equal(operatorConfigSnapshot(), configBefore, 'HTTP fixture changed operator tsconfig.json')
   }
 })
