@@ -105,12 +105,12 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
         assert.equal(response.status,200,'Valid Coach must reach athletes page')
         const denyOccurrences = response.body.split('No autorizado').length - 1
         const alertPresent = /role=["']alert["']/.test(response.body)
-        const alertWithDeny = /role=["']alert["'][^>]*>[\\s\\S]{0,600}?No autorizado/.test(response.body)
+        const alertWithDeny = /role=["']alert["'][^>]*>[\s\S]{0,600}?No autorizado/.test(response.body)
         const titlePresent = response.body.includes('<h2') && response.body.includes('Athlete')
         process.stdout.write('KAN-849 VALID_TEAM_HTTP_DIAGNOSTIC '+JSON.stringify({
           status:response.status,denyOccurrences,alertPresent,alertWithDeny,titlePresent,
           loginRedirect:Boolean(response.location?.includes('/login')),cookieHeaderCount:response.sessionHeaders,
-        })+'\\n')
+        })+'\n')
         assert.ok(!response.body.includes('No autorizado'),'Authorized page must not show H4A DENY')
       } else {
         assert.ok(response.status===307||response.status===200,'Guard must fail closed without 5xx')
