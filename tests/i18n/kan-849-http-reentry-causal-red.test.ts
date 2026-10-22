@@ -54,7 +54,7 @@ async function inspect(bindHost: '127.0.0.1' | 'localhost') {
       rows.push({ path, status: r.status, location: r.headers.get('location'), rewrite: r.headers.get('x-middleware-rewrite') })
       if (r.status >= 500) {
         const body = await r.text()
-        const errorMatch = body.match(/<script id="__NEXT_DATA__" type="application\\/json">([^<]+)<\\/script>/)
+        const errorMatch = body.match(/<script id="__NEXT_DATA__"[^>]*>([^<]+)<\/script>/)
         let errorDetails: unknown = null
         if (errorMatch) {
           try { errorDetails = JSON.parse(errorMatch[1]).err ?? null } catch { /* diagnostic only */ }
