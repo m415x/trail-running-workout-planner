@@ -30,13 +30,13 @@ function snapshot(db: Database.Database) {
 }
 function projectDocument(html: string) {
   // Next streams RSC Flight data in script tags; never treat scripts as visible text.
-  const withoutScripts = html.replace(/<script\\b[^>]*>[\\s\\S]*?<\\/script>/gi, '')
-  const withoutStyles = withoutScripts.replace(/<style\\b[^>]*>[\\s\\S]*?<\\/style>/gi, '')
-  const alerts = Array.from(withoutStyles.matchAll(/<div\\b[^>]*role=["']alert["'][^>]*>([\\s\\S]*?)<\\/div>/gi), match => match[1].replace(/<[^>]+>/g, '').trim())
-  const rowCount = (withoutStyles.match(/<tr\\b/gi) ?? []).length
-  const emptyState = /<h3\\b[^>]*>/.test(withoutStyles) && rowCount === 0
+  const withoutScripts = html.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
+  const withoutStyles = withoutScripts.replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '')
+  const alerts = Array.from(withoutStyles.matchAll(/<div\b[^>]*role=["']alert["'][^>]*>([\s\S]*?)<\/div>/gi), match => match[1].replace(/<[^>]+>/g, '').trim())
+  const rowCount = (withoutStyles.match(/<tr\b/gi) ?? []).length
+  const emptyState = /<h3\b[^>]*>/.test(withoutStyles) && rowCount === 0
   const visibleDeny = alerts.some(text => text.includes('No autorizado'))
-  const headings = Array.from(withoutStyles.matchAll(/<h[23]\\b[^>]*>([\\s\\S]*?)<\\/h[23]>/gi), match => match[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean)
+  const headings = Array.from(withoutStyles.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi), match => match[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean)
   return {visibleDeny,alertCount:alerts.length,rowCount,emptyState,headingCount:headings.length,hasAthletesHeading:headings.some(h=>h.length>0),flightOnlyDenials:(html.match(/No autorizado/g)??[]).length-(withoutStyles.match(/No autorizado/g)??[]).length}
 }
 async function freePort() {
