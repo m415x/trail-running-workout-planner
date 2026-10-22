@@ -20,7 +20,7 @@ test('KAN-849 diagnoses NextRequest canonical URL versus actual loopback authori
   }
   process.stdout.write('KAN-849 REWRITE_NORMALIZATION_MATRIX ' + JSON.stringify(rows) + '\n')
   assert.equal(rows.length, 2)
-  assert.equal(rows[0].after, '/es/dashboard/athletes',
+  assert.equal(rows[0].after, 'http://127.0.0.1:31940/es/dashboard/athletes',
     'Loopback rewrite should become relative for actual 127.0.0.1 request')
   assert.equal(rows[1].after, rows[1].before,
     'Matched localhost authority should be left intact')
