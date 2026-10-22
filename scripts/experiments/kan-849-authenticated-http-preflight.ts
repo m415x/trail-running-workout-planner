@@ -12,19 +12,21 @@ const required = (key: string) => {
   if (!value) throw new Error('KAN-849 PRECHECK missing ' + key)
   return value
 }
+const mask = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 12)
+async function main(): Promise<void> {
+try {
 const root = process.cwd()
 assert.ok(root.toLowerCase().endsWith('trail-running-workout-planner-kan-849-exp'), 'Disposable experimental worktree required')
 const dbPath = realpathSync(resolve(required('SQLITE_DATABASE_PATH')))
-assert.ok(existsSync(dbPath))
+assert.ok(existsSync(dbPath), 'Disposable database does not exist')
 assert.notEqual(dbPath.toLowerCase(), resolve('sqlite.db').toLowerCase(), 'Development DB forbidden')
 const email = required('SUPABASE_AUTH_TEST_EMAIL')
 const password = required('SUPABASE_AUTH_TEST_PASSWORD')
 const client = createClient(required('NEXT_PUBLIC_SUPABASE_URL'), required('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'), {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 })
-const mask = (value: string) => createHash('sha256').update(value).digest('hex').slice(0, 12)
-async function main(): Promise<void> {
-try {
+
+
   const { data, error } = await client.auth.signInWithPassword({ email, password })
   if (error || !data.session) throw error ?? new Error('No acceptance session')
   const claims = await client.auth.getClaims()
