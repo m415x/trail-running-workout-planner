@@ -53,7 +53,7 @@ async function inspect(bindHost: string) {
   const fixture = createHttpDistDir()
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', bindHost, '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-bind-matrix', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-bind-matrix', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
