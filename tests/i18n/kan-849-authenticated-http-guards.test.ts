@@ -113,6 +113,17 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       assert.equal(after,before,s.name+' GET unexpectedly changed durable SQLite state')
       assert.notEqual(response.status,500,s.name+' server error: '+logs.slice(-1800))
       const presentation=projectDocument(response.body)
+      const renderDiagnostic = {
+        htmlLength: response.body.length,
+        hasNextError: response.body.includes('NEXT_NOT_FOUND') || response.body.includes('NEXT_REDIRECT') || response.body.includes('missing') || response.body.includes('Internal Server Error'),
+        hasNextErrorBoundary: /<meta[^>]+name=["']next-error["']/.test(response.body),
+        hasRootHtml: /<html\\b/.test(response.body),
+        hasMain: /<main\\b/.test(response.body),
+        hasDashboardShell: response.body.includes('dashboard'),
+        hasAlertMarkup: /role=["']alert["']/.test(response.body),
+        responseShape: response.body.slice(0,160).replace(/[^\\x20-\\x7e]/g,' '),
+      }
+      process.stdout.write('KAN-849 HTTP_RENDER_SHAPE '+JSON.stringify({scenario:s.name,...renderDiagnostic})+'\n')
       process.stdout.write('KAN-849 HTTP_RENDER_PROJECTION '+JSON.stringify({scenario:s.name,status:response.status,...presentation,cookieHeaders:response.sessionHeaders})+'\n')
       if(s.expectAllow){
         assert.equal(response.status,200,'Valid Coach must reach athletes page')
