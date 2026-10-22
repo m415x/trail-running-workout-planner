@@ -4,6 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
+import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -49,9 +50,10 @@ async function trace(start: string, host: string, maxHops = 6) {
 async function inspect(bindHost: string) {
   const port = await freePort()
   const base = 'http://127.0.0.1:' + port
+  const fixture = createHttpDistDir()
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', bindHost, '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-bind-matrix', NEXT_TELEMETRY_DISABLED: '1' },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-http-bind-matrix', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
@@ -81,16 +83,15 @@ async function inspect(bindHost: string) {
     }
     return cases
   } finally {
-    child.kill()
-    await Promise.race([
-      new Promise<void>(resolve => child.once('exit', () => resolve())),
-      delay(3000),
-    ])
+    await stopNextHttpServer(child)
+    fixture.cleanup()
   }
 }
 
 test('KAN-848/T2 contrasts binding and complete ES redirect chains over real HTTP', { timeout: 180000 }, async () => {
+  const before = operatorTypesSnapshot()
   const rows = [...await inspect('127.0.0.1'), ...await inspect('0.0.0.0')]
+  assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
   process.stdout.write('KAN-848 HTTP_BIND_CHAIN_MATRIX ' + JSON.stringify(rows) + '\n')
   assert.equal(rows.length, 12)
   for (const row of rows) {
