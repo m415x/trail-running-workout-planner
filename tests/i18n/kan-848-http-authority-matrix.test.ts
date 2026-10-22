@@ -4,7 +4,7 @@ import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
-import { createHttpDistDir, operatorTypesSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
+import { createHttpDistDir, operatorTypesSnapshot, operatorConfigSnapshot, stopNextHttpServer } from './kan-848-http-fixture'
 
 const require = createRequire(import.meta.url)
 
@@ -22,6 +22,7 @@ async function availablePort(): Promise<number> {
 
 test('KAN-848/T2 contrasts HTTP request authority with locale rewrite authority', { timeout: 130000 }, async () => {
   const before = operatorTypesSnapshot()
+  const configBefore = operatorConfigSnapshot()
   const port = await availablePort()
   const base = 'http://127.0.0.1:' + port
   const fixture = createHttpDistDir()
@@ -79,5 +80,6 @@ test('KAN-848/T2 contrasts HTTP request authority with locale rewrite authority'
     await stopNextHttpServer(child)
     fixture.cleanup()
     assert.equal(operatorTypesSnapshot(), before, 'HTTP fixture changed operator .next/dev/types')
+    assert.equal(operatorConfigSnapshot(), configBefore, 'HTTP fixture changed operator tsconfig.json')
   }
 })
