@@ -84,7 +84,7 @@ test('KAN-847 HTTP RED: Spanish canonical paths terminate without self-redirect 
   const fixture = createHttpDistDir()
   const next = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-847-isolated-http', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
