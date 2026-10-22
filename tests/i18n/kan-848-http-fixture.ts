@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync, type ChildProcess } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, existsSync, mkdirSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, statSync, existsSync, mkdirSync, writeFileSync } from 'node:fs'
 import { resolve, join } from 'node:path'
 
 function digestTree(path: string): string {
@@ -23,10 +23,19 @@ export function operatorTypesSnapshot(): string {
   return digestTree(resolve('.next/dev/types'))
 }
 
+export function operatorConfigSnapshot(): string {
+  return digestTree(resolve('tsconfig.json'))
+}
+
 export function createHttpDistDir(): { distDir: string; cleanup: () => void } {
   const root = resolve('.tmp')
   mkdirSync(root, { recursive: true })
   const absolute = mkdtempSync(join(root, 'kan-848-next-http-'))
+  // Next dev is allowed to update only its private tsconfig, never the tracked root.
+  writeFileSync(join(absolute, 'tsconfig.fixture.json'), JSON.stringify({
+    extends: '../../tsconfig.json',
+    include: ['../../next-env.d.ts', '../../**/*.ts', '../../**/*.tsx', '../../**/*.mts', './types/**/*.ts', './dev/types/**/*.ts'],
+  }, null, 2) + '\n')
   return {
     distDir: '.tmp/' + absolute.split(/[\\/]/).at(-1),
     cleanup: () => rmSync(absolute, { recursive: true, force: true, maxRetries: 3, retryDelay: 300 }),
