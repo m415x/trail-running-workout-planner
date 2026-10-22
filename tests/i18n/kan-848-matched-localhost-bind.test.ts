@@ -28,7 +28,7 @@ test('KAN-848/T2 checks matched localhost bind against loopback-host mismatch', 
   const base = 'http://localhost:' + n
   const child = spawn(process.execPath, [require.resolve('next/dist/bin/next'), 'dev', '-H', 'localhost', '-p', String(n)], {
     cwd: process.cwd(),
-    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-localhost-bind', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir },
+    env: { ...process.env, NODE_TEST_CONTEXT: 'kan-848-localhost-bind', NEXT_TELEMETRY_DISABLED: '1', KAN_HTTP_FIXTURE_DIST_DIR: fixture.distDir, KAN_HTTP_FIXTURE_TSCONFIG: fixture.tsconfigPath },
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   })
