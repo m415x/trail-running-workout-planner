@@ -11,8 +11,9 @@ export function normalizeLocalSpanishRewrite(request: NextRequest, response: Nex
 
   const target = new URL(rewrite)
   const origin = request.nextUrl
+  const originalHost = request.headers.get('host')
   if (
-    origin.hostname !== '127.0.0.1' ||
+    !originalHost || new URL('http://' + originalHost).hostname !== '127.0.0.1' ||
     target.hostname !== 'localhost' ||
     target.protocol !== origin.protocol ||
     target.port !== origin.port ||
