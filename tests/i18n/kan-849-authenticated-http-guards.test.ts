@@ -40,6 +40,48 @@ function projectDocument(html: string) {
   const audienceUnavailable = /<h1\b[^>]*>Acceso no disponible<\/h1>/i.test(withoutStyles) && withoutStyles.includes('No se pudo determinar un equipo y acceso válidos.')
   return {visibleDeny,alertCount:alerts.length,rowCount,emptyState,audienceUnavailable,headingCount:headings.length,hasAthletesHeading:headings.some(h=>h.length>0),flightOnlyDenials:(html.match(/No autorizado/g)??[]).length-(withoutStyles.match(/No autorizado/g)??[]).length}
 }
+
+function expiredSessionCookieCopy(original: Map<string,string>) {
+  // Exercise a legitimate refresh token by expiring ONLY the client-side session
+  // expiry metadata, without fabricating a token or changing production config.
+  const result = new Map(original)
+  const chunks=Array.from(result.entries()).filter(([name])=>/auth-token(?:\.\d+)?$/.test(name)).sort(([a],[b])=>{
+    const ai=Number(a.match(/\.(\d+)$/)?.[1]??0),bi=Number(b.match(/\.(\d+)$/)?.[1]??0)
+    return ai-bi
+  })
+  assert.ok(chunks.length>0,'Supabase SSR session cookie must exist')
+  const serialized=chunks.map(([,value])=>value).join('')
+  assert.ok(serialized.startsWith('base64-'),'Expected Supabase SSR base64 session encoding')
+  const decoded=JSON.parse(Buffer.from(serialized.slice(7),'base64url').toString('utf8')) as Record<string,unknown>
+  assert.equal(typeof decoded.refresh_token,'string','Real refresh token must remain in encoded cookie')
+  assert.equal(typeof decoded.expires_at,'number','SSR expiry metadata must exist')
+  const oldExpiry=decoded.expires_at as number
+  decoded.expires_at=1
+  const updated='base64-'+Buffer.from(JSON.stringify(decoded),'utf8').toString('base64url')
+  let offset=0
+  for (let i=0;i<chunks.length;i++) {
+    const [name,value]=chunks[i]!
+    const next=i===chunks.length-1 ? updated.slice(offset) : updated.slice(offset,offset+value.length)
+    result.set(name,next)
+    offset+=next.length
+  }
+  assert.equal(offset,updated.length,'All session data must fit existing cookie chunks')
+  return {cookies:result,oldExpiry,forcedExpiry:decoded.expires_at}
+}
+function applySetCookieHeaders(jar:Map<string,string>,headers:readonly string[]) {
+  let applied=0
+  for(const header of headers) {
+    const match=/^([^=;\s]+)=([^;]*)/.exec(header)
+    if(!match) continue
+    const [,name,value]=match
+    if(!name.startsWith('sb-')) continue
+    if(/(?:^|;\s*)max-age=0(?:;|$)/i.test(header) || !value) jar.delete(name)
+    else jar.set(name,value)
+    applied++
+  }
+  return applied
+}
+
 async function freePort() {
   const server = createServer()
   return new Promise<number>((ok, fail) => {server.once('error',fail);server.listen(0,'127.0.0.1',()=>{const x=server.address();if(!x||typeof x==='string') return fail(new Error('No port'));server.close(()=>ok(x.port))})})
@@ -81,13 +123,13 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
   child.stderr?.on('data',x=>{logs+=String(x)})
   child.on('exit',()=>{exited=true})
   let expectedAuthCookies=Array.from(jar.entries())
-  const loggedRequest=async(path:string,team:string|null)=>{
+  const loggedRequest=async(path:string,team:string|null,requestJar:Map<string,string>=jar)=>{
     // Rebuild each request from the original verified session, never from prior response cookies.
     assert.deepEqual(Array.from(jar.entries()),expectedAuthCookies,'Session jar mutated across HTTP scenarios')
-    const cookie=Array.from(jar,([n,v])=>encodeURIComponent(n)+'='+encodeURIComponent(v)).join('; ')+(team?'; ept_active_team='+encodeURIComponent(team):'')
+    const cookie=Array.from(requestJar,([n,v])=>encodeURIComponent(n)+'='+encodeURIComponent(v)).join('; ')+(team?'; ept_active_team='+encodeURIComponent(team):'')
     const response=await fetch(base+path,{redirect:'manual',headers:{cookie,host:'127.0.0.1:'+port},signal:AbortSignal.timeout(25000)})
     const body=await response.text()
-    return {status:response.status,location:response.headers.get('location'),body,sessionHeaders:response.headers.getSetCookie().filter(x=>x.includes('sb-')).length}
+    return {status:response.status,location:response.headers.get('location'),body,setCookies:response.headers.getSetCookie(),sessionHeaders:response.headers.getSetCookie().filter(x=>x.includes('sb-')).length}
   }
   let revokedByTest=false
   let revokedMembershipId:string|null=null
@@ -185,6 +227,35 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       forgedAudienceDenied:refreshedForgedProjection.audienceUnavailable,
       sqliteUnchanged:snapshot(db)===refreshedBefore,
       proxyTriggeredRefresh:false,
+    })+'\n')
+
+    // Proxy-owned refresh: the token pair remains genuine and untouched. Only
+    // its cookie expiry metadata is forced into the past to make getClaims()
+    // exercise Supabase's legitimate refresh-token exchange on the next GET.
+    const expired = expiredSessionCookieCopy(jar)
+    const browserJar = expired.cookies
+    const proxyBefore=snapshot(db)
+    const proxyFirst=await loggedRequest('/dashboard/athletes',team.teamId,browserJar)
+    assert.equal(snapshot(db),proxyBefore,'Proxy refresh GET must not mutate SQLite')
+    assert.equal(proxyFirst.status,200,'Proxy must preserve authorized navigation after refresh')
+    assert.ok(projectDocument(proxyFirst.body).rowCount>0,'Coach must remain authorized after proxy refresh')
+    assert.ok(proxyFirst.sessionHeaders>0,'Proxy must issue Supabase Set-Cookie for refreshed session')
+    const changedCookies=applySetCookieHeaders(browserJar,proxyFirst.setCookies)
+    assert.ok(changedCookies>0,'Browser must apply refreshed Set-Cookie values')
+    const proxySecond=await loggedRequest('/dashboard/athletes',team.teamId,browserJar)
+    assert.equal(proxySecond.status,200,'Browser must navigate using propagated refreshed cookies')
+    assert.ok(projectDocument(proxySecond.body).rowCount>0,'Propagated cookies must retain authorized Coach data')
+    const proxyForged=await loggedRequest('/dashboard/athletes','team_forged_kan849',browserJar)
+    assert.equal(proxyForged.status,200)
+    assert.equal(projectDocument(proxyForged.body).audienceUnavailable,true,'Refreshed proxy cookies must not authorize forged Team')
+    assert.equal(projectDocument(proxyForged.body).rowCount,0,'Refreshed forged Team must not expose athlete rows')
+    assert.equal(snapshot(db),proxyBefore,'Proxy refreshed navigation and forged Team must not mutate SQLite')
+    process.stdout.write('KAN-849 PROXY_AUTO_REFRESH_HTTP '+JSON.stringify({
+      realRefreshTokenPreserved:true,expiryMetadataForced:true,
+      responseSetCookies:proxyFirst.sessionHeaders,appliedCookies:changedCookies,
+      authorizedAfterRefresh:projectDocument(proxySecond.body).rowCount>0,
+      forgedDenied:projectDocument(proxyForged.body).audienceUnavailable,
+      sqliteUnchanged:snapshot(db)===proxyBefore,
     })+'\n')
     process.stdout.write('KAN-849 AUTHENTICATED_HTTP_GUARDS '+JSON.stringify({verifiedH2:true,findings})+'\n')
     assert.ok(logs.includes('KAN-849 PROXY_STAGE '),'Real Next proxy must be exercised')
