@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
@@ -80,7 +80,7 @@ test('KAN-849 restore refuses unknown installed router and preserves backup', ()
     fail(run(restoreScript,f.cwd),'Unexpected installed hash')
     unchanged(f.router,unknown)
     assert.equal(existsSync(f.backup),true)
-    writeFileSync(f.router,canonicalBytes.length ? readFileSync(f.backup) : canonicalBytes)
+    writeFileSync(f.router,readFileSync(f.backup))
     assert.equal(run(restoreScript,f.cwd).status,0,'Idempotent restored baseline must be accepted')
     unchanged(f.router)
     assert.equal(existsSync(f.backup),false)
