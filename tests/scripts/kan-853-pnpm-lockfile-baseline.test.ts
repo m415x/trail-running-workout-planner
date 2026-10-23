@@ -2,57 +2,50 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
 
-const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
   packageManager: string
   dependencies: Record<string, string>
   devDependencies: Record<string, string>
 }
-const lock = readFileSync('pnpm-lock.yaml', 'utf8')
 const workspace = readFileSync('pnpm-workspace.yaml', 'utf8')
+const lockfile = readFileSync('pnpm-lock.yaml', 'utf8')
 
-function secondDocument(): string {
-  const documents = lock.split(/^---\\s*$/m).filter((part) => part.trim())
-  assert.equal(documents.length, 2, 'pnpm 12 lockfile must retain manager and app YAML documents')
-  assert.match(documents[0], /^\\s*packageManagerDependencies:/m)
-  assert.match(documents[0], /pnpm:\\s*\\n\\s+specifier: 12\\.4\\.1/)
+function getApplicationDocument(): string {
+  const documents = lockfile.split(/^---\s*$/m).filter((doc) => doc.trim().length > 0)
+  assert.equal(documents.length, 2, 'pnpm 12 must retain manager and application YAML documents')
+  assert.match(documents[0], /^\s*packageManagerDependencies:/m)
+  assert.match(documents[0], /pnpm:\s*\n\s+specifier: 12\.4\.1/)
+  assert.match(documents[1], /^importers:/m)
+  assert.match(documents[1], /^packages:/m)
+  assert.match(documents[1], /^snapshots:/m)
   return documents[1]
 }
 
-function importerSection(doc: string): string {
-  const match = doc.match(/^importers:\\s*\\n\\s*\\n\\s{2}\\.:\\s*\\n([\\s\\S]*?)(?=^packages:|^snapshots:|\\$(?!))/m)
-  assert.ok(match, 'second document must contain root application importer')
-  return match[1]
-}
-
-test('KAN-853 S1: pnpm dual-document lockfile carries the application importer', () => {
-  assert.equal(manifest.packageManager, 'pnpm@12.4.1')
-  assert.match(workspace, /^packages:\\s*\\n\\s+- '\\.'$/m)
-  const doc = secondDocument()
-  assert.match(doc, /^lockfileVersion: '9\\.0'$/m)
-  const importer = importerSection(doc)
-  assert.match(importer, /^\\s{4}dependencies:/m)
-  assert.match(importer, /^\\s{4}devDependencies:/m)
+test('KAN-853/S1 dual-document pnpm lockfile and workspace are present', () => {
+  assert.equal(packageJson.packageManager, 'pnpm@12.4.1')
+  assert.match(workspace, /^packages:\s*\n\s+- '\.'$/m)
+  assert.match(getApplicationDocument(), /^lockfileVersion: '9\.0'$/m)
 })
 
-test('KAN-853 S1: resolved application importer covers every declared direct dependency', () => {
-  const importer = importerSection(secondDocument())
-  for (const [kind, entries] of Object.entries({
-    dependencies: manifest.dependencies,
-    devDependencies: manifest.devDependencies,
+test('KAN-853/S1 resolved root importer covers all direct application dependencies', () => {
+  const application = getApplicationDocument()
+  const importer = application.split(/^importers:\s*$/m)[1]?.split(/^packages:\s*$/m)[0]
+  assert.ok(importer, 'application importer missing')
+  for (const [sectionName, entries] of Object.entries({
+    dependencies: packageJson.dependencies,
+    devDependencies: packageJson.devDependencies,
   })) {
-    const start = importer.indexOf('    ' + kind + ':\\n')
-    assert.notEqual(start, -1, kind + ' section missing')
-    const tail = importer.slice(start + 5 + kind.length)
-    const next = tail.search(/^    [a-zA-Z]/m)
-    const section = next < 0 ? tail : tail.slice(0, next)
+    const section = importer.split(new RegExp('^    ' + sectionName + ':\\s*$', 'm'))[1]
+      ?.split(/^    (?:dependencies|devDependencies|optionalDependencies):/m)[0]
+    assert.ok(section, sectionName + ' section missing')
     for (const [name, specifier] of Object.entries(entries)) {
-      const key = '      ' + (name.startsWith('@') ? "'" + name + "'" : name) + ':'
-      assert.ok(section.includes(key + '\\n'), kind + ' missing ' + name)
-      const entry = section.slice(section.indexOf(key + '\\n') + key.length)
-      const spec = entry.match(/^\\s*specifier: (.+)$/m)
-      assert.ok(spec, name + ' missing specifier')
-      assert.equal(spec[1].replace(/^['\"]|['\"]$/g, ''), specifier, name + ' specifier drift')
-      assert.match(entry, /^\\s*version: /m, name + ' missing resolved version')
+      const key = name.startsWith('@') ? "'" + name + "'" : name
+      const stanza = section.split('      ' + key + ':\n')[1]?.split(/^      (?:'[^']+'|[^:\n]+):/m)[0]
+      assert.ok(stanza, 'missing importer dependency ' + name)
+      assert.ok(stanza.includes('        specifier: ' + specifier + '\n')
+        || stanza.includes("        specifier: '" + specifier + "'\n"),
+        name + ' specifier disagrees with package.json')
+      assert.match(stanza, /^\s+version: /m, name + ' resolved version missing')
     }
   }
 })
