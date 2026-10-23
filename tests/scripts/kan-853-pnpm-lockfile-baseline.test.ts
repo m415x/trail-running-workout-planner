@@ -7,8 +7,8 @@ const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
   dependencies: Record<string, string>
   devDependencies: Record<string, string>
 }
-const workspace = readFileSync('pnpm-workspace.yaml', 'utf8')
-const lockfile = readFileSync('pnpm-lock.yaml', 'utf8')
+const workspace = readFileSync('pnpm-workspace.yaml', 'utf8').replace(/\r\n/g, '\n')
+const lockfile = readFileSync('pnpm-lock.yaml', 'utf8').replace(/\r\n/g, '\n')
 
 function getApplicationDocument(): string {
   const documents = lockfile.split(/^---\s*$/m).filter((doc) => doc.trim().length > 0)
