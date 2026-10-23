@@ -147,6 +147,11 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       }
       findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders,visibleDeny:presentation.visibleDeny,rowCount:presentation.rowCount,emptyState:presentation.emptyState,audienceUnavailable:presentation.audienceUnavailable})
     }
+    // Restore the temporary revocation before checking refreshed ALLOW. The test
+    // still keeps a conditional cleanup fallback for unexpected failures.
+    assert.ok(revokedByTest && revokedMembershipId === team.id,'Revoked scenario must be completed')
+    assert.equal(db.prepare('UPDATE team_memberships SET is_active=1 WHERE id=? AND is_active=0').run(team.id).changes,1)
+    revokedByTest=false
     // Local GoTrue rotates the token legitimately. These cookies are not proxy-emitted;
     // this phase proves continued HTTP authorization after a real SDK session refresh.
     // It does NOT substitute for a separate proxy-triggered Set-Cookie regression.
