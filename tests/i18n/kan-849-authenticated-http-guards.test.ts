@@ -80,10 +80,10 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
   child.stdout?.on('data',x=>{logs+=String(x)})
   child.stderr?.on('data',x=>{logs+=String(x)})
   child.on('exit',()=>{exited=true})
-  const initialAuthCookies=Array.from(jar.entries())
+  let expectedAuthCookies=Array.from(jar.entries())
   const loggedRequest=async(path:string,team:string|null)=>{
     // Rebuild each request from the original verified session, never from prior response cookies.
-    assert.deepEqual(Array.from(jar.entries()),initialAuthCookies,'Session jar mutated across HTTP scenarios')
+    assert.deepEqual(Array.from(jar.entries()),expectedAuthCookies,'Session jar mutated across HTTP scenarios')
     const cookie=Array.from(jar,([n,v])=>encodeURIComponent(n)+'='+encodeURIComponent(v)).join('; ')+(team?'; ept_active_team='+encodeURIComponent(team):'')
     const response=await fetch(base+path,{redirect:'manual',headers:{cookie,host:'127.0.0.1:'+port},signal:AbortSignal.timeout(25000)})
     const body=await response.text()
@@ -147,6 +147,40 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       }
       findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders,visibleDeny:presentation.visibleDeny,rowCount:presentation.rowCount,emptyState:presentation.emptyState,audienceUnavailable:presentation.audienceUnavailable})
     }
+    // Local GoTrue rotates the token legitimately. These cookies are not proxy-emitted;
+    // this phase proves continued HTTP authorization after a real SDK session refresh.
+    // It does NOT substitute for a separate proxy-triggered Set-Cookie regression.
+    const sessionBeforeRefresh = sign.data.session!
+    const priorCookieValues = Array.from(jar.entries())
+    const rotated = await auth.auth.refreshSession()
+    assert.ok(!rotated.error && rotated.data.session,'Local Supabase refreshSession must succeed')
+    assert.notEqual(rotated.data.session!.access_token,sessionBeforeRefresh.access_token,'Refresh must rotate the access JWT')
+    assert.notEqual(rotated.data.session!.refresh_token,sessionBeforeRefresh.refresh_token,'Refresh token must rotate')
+    assert.notDeepEqual(Array.from(jar.entries()),priorCookieValues,'SSR cookie jar must reflect rotated session')
+    const refreshedIdentity = await auth.auth.getUser()
+    assert.ok(!refreshedIdentity.error && refreshedIdentity.data.user?.id===user.data.user!.id,'Rotated session must retain the same authenticated subject')
+    expectedAuthCookies=Array.from(jar.entries())
+    const refreshedBefore=snapshot(db)
+    const refreshedValid=await loggedRequest('/dashboard/athletes',team.teamId)
+    const refreshedAfter=snapshot(db)
+    assert.equal(refreshedAfter,refreshedBefore,'Refresh-valid navigation must not mutate SQLite')
+    const refreshedProjection=projectDocument(refreshedValid.body)
+    assert.equal(refreshedValid.status,200,'Rotated session must reach the Coach page')
+    assert.equal(refreshedProjection.audienceUnavailable,false,'Rotated Coach must retain authorized audience')
+    assert.ok(refreshedProjection.rowCount>0,'Rotated Coach must still see seeded athletes')
+    const refreshedForged=await loggedRequest('/dashboard/athletes','team_forged_kan849')
+    assert.equal(snapshot(db),refreshedAfter,'Refresh-forged navigation must not mutate SQLite')
+    const refreshedForgedProjection=projectDocument(refreshedForged.body)
+    assert.equal(refreshedForged.status,200,'Forged active Team with refreshed session must produce the established audience screen')
+    assert.equal(refreshedForgedProjection.audienceUnavailable,true,'Refresh must not enable forged Team access')
+    assert.equal(refreshedForgedProjection.rowCount,0,'Refresh-forged response must not expose athlete rows')
+    process.stdout.write('KAN-849 AUTH_SDK_REFRESH_HTTP '+JSON.stringify({
+      accessTokenChanged:true,refreshTokenChanged:true,subjectPreserved:true,
+      cookieJarChanged:true,authorizedRows:refreshedProjection.rowCount,
+      forgedAudienceDenied:refreshedForgedProjection.audienceUnavailable,
+      sqliteUnchanged:snapshot(db)===refreshedBefore,
+      proxyTriggeredRefresh:false,
+    })+'\n')
     process.stdout.write('KAN-849 AUTHENTICATED_HTTP_GUARDS '+JSON.stringify({verifiedH2:true,findings})+'\n')
     assert.ok(logs.includes('KAN-849 PROXY_STAGE '),'Real Next proxy must be exercised')
     for(const finding of findings.filter(f=>!f.allow && f.status===200)) {
