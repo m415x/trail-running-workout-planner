@@ -37,7 +37,8 @@ function projectDocument(html: string) {
   const emptyState = /<h3\b[^>]*>/.test(withoutStyles) && rowCount === 0
   const visibleDeny = alerts.some(text => text.includes('No autorizado'))
   const headings = Array.from(withoutStyles.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi), match => match[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean)
-  return {visibleDeny,alertCount:alerts.length,rowCount,emptyState,headingCount:headings.length,hasAthletesHeading:headings.some(h=>h.length>0),flightOnlyDenials:(html.match(/No autorizado/g)??[]).length-(withoutStyles.match(/No autorizado/g)??[]).length}
+  const audienceUnavailable = /<h1\\b[^>]*>Acceso no disponible<\\/h1>/i.test(withoutStyles) && withoutStyles.includes('No se pudo determinar un equipo y acceso válidos.')
+  return {visibleDeny,alertCount:alerts.length,rowCount,emptyState,audienceUnavailable,headingCount:headings.length,hasAthletesHeading:headings.some(h=>h.length>0),flightOnlyDenials:(html.match(/No autorizado/g)??[]).length-(withoutStyles.match(/No autorizado/g)??[]).length}
 }
 async function freePort() {
   const server = createServer()
@@ -108,7 +109,7 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
       {name:'forged',team:'team_forged_kan849',expectAllow:false},
       {name:'revoked',team:team.teamId,prepare:()=>{const r=db.prepare('UPDATE team_memberships SET is_active=0 WHERE id=?').run(team.id);assert.equal(r.changes,1);revokedByTest=true;revokedMembershipId=team.id},expectAllow:false},
     ]
-    const findings:Array<{scenario:string;status:number;location:string|null;allow:boolean;dbUnchanged:boolean;setCookieHeaders:number;visibleDeny:boolean;rowCount:number;emptyState:boolean}>=[]
+    const findings:Array<{scenario:string;status:number;location:string|null;allow:boolean;dbUnchanged:boolean;setCookieHeaders:number;visibleDeny:boolean;rowCount:number;emptyState:boolean;audienceUnavailable:boolean}>=[]
     for(const s of scenarios){
       s.prepare?.()
       const before=snapshot(db) // after fixture writes, before verified HTTP GET
@@ -144,11 +145,15 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
           // Characterize first; enforce DENY after all three scenarios have been observed.
         } else assert.ok(response.location?.includes('/login')||response.location?.includes('/auth/'),'Denied redirect must be legitimate auth route')
       }
-      findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders,visibleDeny:presentation.visibleDeny,rowCount:presentation.rowCount,emptyState:presentation.emptyState})
+      findings.push({scenario:s.name,status:response.status,location:response.location,allow:s.expectAllow,dbUnchanged:after===before,setCookieHeaders:response.sessionHeaders,visibleDeny:presentation.visibleDeny,rowCount:presentation.rowCount,emptyState:presentation.emptyState,audienceUnavailable:presentation.audienceUnavailable})
     }
     process.stdout.write('KAN-849 AUTHENTICATED_HTTP_GUARDS '+JSON.stringify({verifiedH2:true,findings})+'\n')
     assert.ok(logs.includes('KAN-849 PROXY_STAGE '),'Real Next proxy must be exercised')
-    for(const finding of findings.filter(f=>!f.allow && f.status===200)) assert.equal(finding.visibleDeny,true,'H3/H4A denial must be visibly evidenced: '+finding.scenario)
+    for(const finding of findings.filter(f=>!f.allow && f.status===200)) {
+      assert.equal(finding.audienceUnavailable,true,'Invalid active Team must render the existing fail-closed audience screen: '+finding.scenario)
+      assert.equal(finding.rowCount,0,'Denied audience must not expose any athlete rows: '+finding.scenario)
+    }
+    assert.equal(findings.filter(f=>!f.allow).length,2,'Both negative Team scenarios must be exercised')
   } finally {
     // Never reactivate an unrelated or originally inactive membership.
     try{if(revokedByTest) db.prepare('UPDATE team_memberships SET is_active=1 WHERE id=?').run(revokedMembershipId)}catch{}
