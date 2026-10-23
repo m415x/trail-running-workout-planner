@@ -70,7 +70,6 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
   assert.ok(!claims.error&&!user.error&&claims.data?.claims?.sub===user.data.user?.id)
   assert.ok(jar.size>0,'Supabase SSR login must generate session cookies')
   const db=new Database(dbPath,{fileMustExist:true})
-  let fixtureReturn:()=>void=()=>{}
   const fixture=createHttpDistDir()
   const port=await freePort(),base='http://127.0.0.1:'+port
   const child=spawn(process.execPath,[require.resolve('next/dist/bin/next'),'dev','-H','127.0.0.1','-p',String(port)],{
@@ -80,12 +79,17 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
   child.stdout?.on('data',x=>{logs+=String(x)})
   child.stderr?.on('data',x=>{logs+=String(x)})
   child.on('exit',()=>{exited=true})
+  const initialAuthCookies=Array.from(jar.entries())
   const loggedRequest=async(path:string,team:string|null)=>{
+    // Rebuild each request from the original verified session, never from prior response cookies.
+    assert.deepEqual(Array.from(jar.entries()),initialAuthCookies,'Session jar mutated across HTTP scenarios')
     const cookie=Array.from(jar,([n,v])=>encodeURIComponent(n)+'='+encodeURIComponent(v)).join('; ')+(team?'; ept_active_team='+encodeURIComponent(team):'')
     const response=await fetch(base+path,{redirect:'manual',headers:{cookie,host:'127.0.0.1:'+port},signal:AbortSignal.timeout(25000)})
     const body=await response.text()
     return {status:response.status,location:response.headers.get('location'),body,sessionHeaders:response.headers.getSetCookie().filter(x=>x.includes('sb-')).length}
   }
+  let revokedByTest=false
+  let revokedMembershipId:string|null=null
   try {
     let ready=false
     for(let i=0;i<65;i++){
@@ -102,7 +106,7 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
     const scenarios:Array<{name:string;team:string|null;prepare?:()=>void;expectAllow:boolean}>=[
       {name:'valid',team:team.teamId,expectAllow:true},
       {name:'forged',team:'team_forged_kan849',expectAllow:false},
-      {name:'revoked',team:team.teamId,prepare:()=>{const r=db.prepare('UPDATE team_memberships SET is_active=0 WHERE id=?').run(team.id);assert.equal(r.changes,1)},expectAllow:false},
+      {name:'revoked',team:team.teamId,prepare:()=>{const r=db.prepare('UPDATE team_memberships SET is_active=0 WHERE id=?').run(team.id);assert.equal(r.changes,1);revokedByTest=true;revokedMembershipId=team.id},expectAllow:false},
     ]
     const findings:Array<{scenario:string;status:number;location:string|null;allow:boolean;dbUnchanged:boolean;setCookieHeaders:number;visibleDeny:boolean;rowCount:number;emptyState:boolean}>=[]
     for(const s of scenarios){
@@ -146,7 +150,8 @@ test('KAN-849/T3 authenticated HTTP Coach H2/H3/H4A scope remains fail-closed', 
     assert.ok(logs.includes('KAN-849 PROXY_STAGE '),'Real Next proxy must be exercised')
     for(const finding of findings.filter(f=>!f.allow && f.status===200)) assert.equal(finding.visibleDeny,true,'H3/H4A denial must be visibly evidenced: '+finding.scenario)
   } finally {
-    try{db.prepare('UPDATE team_memberships SET is_active=1 WHERE id=?').run((db.prepare("SELECT m.id FROM team_memberships m JOIN external_identity_links l ON l.user_id=m.user_id WHERE l.subject=? AND m.is_active=0 LIMIT 1").get(user.data.user!.id) as {id:string}|undefined)?.id??'__none__')}catch{}
+    // Never reactivate an unrelated or originally inactive membership.
+    try{if(revokedByTest) db.prepare('UPDATE team_memberships SET is_active=1 WHERE id=?').run(revokedMembershipId)}catch{}
     await stopNextHttpServer(child)
     fixture.cleanup()
     db.close()
