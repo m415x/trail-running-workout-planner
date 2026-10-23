@@ -23,6 +23,7 @@ if (!realpathSync(routerPath).startsWith(root + '\\') && !realpathSync(routerPat
 }
 
 const expectedSha = '95a3614008d21a383a8fd7b97b369a0d0c7a96a0bc806c2b19071ad8647ce962'
+const expectedPatchedSha = '53083187795bda3c82cbfc1245928ac6cfe64a371bf6a05f5167ccf0fb5139c3'
 const before = readFileSync(routerPath)
 const hash = s => createHash('sha256').update(s).digest('hex')
 if (hash(before) !== expectedSha) throw new Error('Preimage SHA mismatch; refusing experimental patch: ' + hash(before))
@@ -32,6 +33,7 @@ const original = before.toString('utf8')
 const matches = original.split(oldText).length - 1
 if (matches !== 1) throw new Error('Expected exactly one upstream initUrl anchor; found ' + matches)
 const patched = Buffer.from(original.replace(oldText, replacement), 'utf8')
+if (hash(patched) !== expectedPatchedSha) throw new Error('Patch output SHA mismatch; refusing unverified transformation')
 mkdirSync(resolve(root, '.tmp'), { recursive: true })
 const backup = resolve(root, '.tmp/kan-849-router-original.js')
 const temp = routerPath + '.kan-849-private-write'
@@ -43,9 +45,14 @@ if (baselineStat.nlink > 1) {
 writeFileSync(backup, before, { flag: 'wx' })
 try {
   writeFileSync(temp, patched, { flag: 'wx', mode: baselineStat.mode })
+  if (hash(readFileSync(temp)) !== expectedPatchedSha) throw new Error('Temporary patch file SHA mismatch')
   renameSync(temp, routerPath)
 } catch (error) {
   try { unlinkSync(temp) } catch {}
+  // Only discard the backup if the canonical original is still installed.
+  if (hash(readFileSync(routerPath)) === expectedSha) {
+    try { unlinkSync(backup) } catch {}
+  }
   throw error
 }
 process.stdout.write('KAN-849 UPSTREAM_PATCH_APPLIED ' + JSON.stringify({
