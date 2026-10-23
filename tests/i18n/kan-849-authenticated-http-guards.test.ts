@@ -37,7 +37,7 @@ function projectDocument(html: string) {
   const emptyState = /<h3\b[^>]*>/.test(withoutStyles) && rowCount === 0
   const visibleDeny = alerts.some(text => text.includes('No autorizado'))
   const headings = Array.from(withoutStyles.matchAll(/<h[23]\b[^>]*>([\s\S]*?)<\/h[23]>/gi), match => match[1].replace(/<[^>]+>/g, '').trim()).filter(Boolean)
-  const audienceUnavailable = /<h1\\b[^>]*>Acceso no disponible<\\/h1>/i.test(withoutStyles) && withoutStyles.includes('No se pudo determinar un equipo y acceso válidos.')
+  const audienceUnavailable = /<h1\b[^>]*>Acceso no disponible<\/h1>/i.test(withoutStyles) && withoutStyles.includes('No se pudo determinar un equipo y acceso válidos.')
   return {visibleDeny,alertCount:alerts.length,rowCount,emptyState,audienceUnavailable,headingCount:headings.length,hasAthletesHeading:headings.some(h=>h.length>0),flightOnlyDenials:(html.match(/No autorizado/g)??[]).length-(withoutStyles.match(/No autorizado/g)??[]).length}
 }
 async function freePort() {
