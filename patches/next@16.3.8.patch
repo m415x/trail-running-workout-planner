@@ -1,0 +1,13 @@
+diff --git a/dist/server/lib/router-utils/resolve-routes.js b/dist/server/lib/router-utils/resolve-routes.js
+index 04411126b340eeb59720cbeaebe9a6604fa77a6c..16e74d841480628436195b10fedc5fc7609b175b 100644
+--- a/dist/server/lib/router-utils/resolve-routes.js
++++ b/dist/server/lib/router-utils/resolve-routes.js	
+@@ -114,7 +114,7 @@ function getResolveRoutes(fsChecker, config, opts, renderServer, renderServerOpt
+         // TODO: inherit this from higher up
+         const protocol = (req == null ? void 0 : (_req_socket = req.socket) == null ? void 0 : _req_socket.encrypted) || ((_req_headers_xforwardedproto = req.headers['x-forwarded-proto']) == null ? void 0 : _req_headers_xforwardedproto.includes('https')) ? 'https' : 'http';
+         // When there are hostname and port we build an absolute URL
+-        const initUrl = config.experimental.trustHostHeader ? `https://${req.headers.host || 'localhost'}${req.url}` : opts.port ? `${protocol}://${(0, _formathostname.formatHostname)(opts.hostname || 'localhost')}:${opts.port}${req.url}` : req.url || '';
++        const initUrl = config.experimental.trustHostHeader ? `https://${req.headers.host || 'localhost'}${req.url}` : opts.port ? `${protocol}://${(0, _formathostname.formatHostname)(/^(?:127(?:\.(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)){3}|\[::1\]|::1|localhost)$/i.test(opts.hostname || 'localhost') ? 'localhost' : (opts.hostname || 'localhost'))}:${opts.port}${req.url}` : req.url || '';
+         (0, _requestmeta.addRequestMeta)(req, 'initURL', initUrl);
+         (0, _requestmeta.addRequestMeta)(req, 'initQuery', {
+             ...parsedUrl.query

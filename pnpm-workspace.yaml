@@ -30,3 +30,5 @@ minimumReleaseAgeExclude:
   - '@next/swc-win32-x64-msvc@16.3.8'
   - eslint-config-next@16.3.8
   - next@16.3.8
+patchedDependencies:
+  next@16.3.8: patches/next@16.3.8.patch
