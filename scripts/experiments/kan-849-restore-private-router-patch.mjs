@@ -14,9 +14,19 @@ if (!realpathSync(routerPath).startsWith(root + '\\') && !realpathSync(routerPat
 const backup = resolve(root, '.tmp/kan-849-router-original.js')
 if (!existsSync(backup)) throw new Error('Baseline backup absent; nothing restored')
 const expected = '95a3614008d21a383a8fd7b97b369a0d0c7a96a0bc806c2b19071ad8647ce962'
+const expectedPatched = '53083187795bda3c82cbfc1245928ac6cfe64a371bf6a05f5167ccf0fb5139c3'
 const hash = bytes => createHash('sha256').update(bytes).digest('hex')
 const bytes = readFileSync(backup)
 if (hash(bytes) !== expected) throw new Error('Baseline backup SHA mismatch; refusing restore')
+const installedHash = hash(readFileSync(routerPath))
+if (installedHash !== expectedPatched && installedHash !== expected) {
+  throw new Error('Unexpected installed router SHA; refusing to overwrite unrelated modifications: ' + installedHash)
+}
+if (installedHash === expected) {
+  unlinkSync(backup)
+  process.stdout.write('KAN-849 UPSTREAM_PATCH_RESTORED ' + JSON.stringify({sha256: expected, target: routerPath, alreadyOriginal:true}) + '\n')
+  process.exit(0)
+}
 const temp = routerPath + '.kan-849-restore-private'
 writeFileSync(temp, bytes, { flag: 'wx' })
 try { renameSync(temp, routerPath) } catch (err) { try { unlinkSync(temp) } catch {} throw err }
