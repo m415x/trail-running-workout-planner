@@ -62,6 +62,11 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/B patc
     assert.equal(digest(patch), patchHash, 'EXPERIMENT_INCONCLUSIVE: B patch identity differs')
     const patchFile = join(dir, 'historical.patch')
     writeFileSync(patchFile, patch)
+    // Git launched inside .tmp otherwise discovers the parent application's .git,
+    // so git apply may target the outer worktree instead of this isolated package.
+    // Establish a disposable repository root strictly inside the copied runtime.
+    const init = spawnSync('git', ['init', '--quiet'], { cwd: runtimeRoot, encoding: 'utf8', windowsHide: true })
+    assert.equal(init.status, 0, 'EXPERIMENT_SETUP_ERROR: cannot isolate Git patch target: ' + init.stderr)
     const check = spawnSync('git', ['apply', '--check', patchFile], { cwd: runtimeRoot, encoding: 'utf8', windowsHide: true })
     assert.equal(check.status, 0, 'EXPERIMENT_INCONCLUSIVE: isolated Next router patch cannot apply: '+check.stderr)
     const applied = spawnSync('git', ['apply', patchFile], { cwd: runtimeRoot, encoding: 'utf8', windowsHide: true })
