@@ -73,6 +73,17 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     assert.equal((JSON.parse(readFileSync(join(installedEslint,'package.json'),'utf8')) as {version:string}).version,'16.4.3')
     // pnpm's node_modules/next is a symlink on Windows. Copy its physical package
     // contents instead; creating a symlink here requires extra Windows privileges.
+    const swcPlatformPackage = process.platform === 'win32'
+      ? (process.arch === 'arm64' ? '@next/swc-win32-arm64-msvc' : '@next/swc-win32-x64-msvc')
+      : (process.platform === 'linux' ? (process.arch === 'arm64' ? '@next/swc-linux-arm64-gnu' : '@next/swc-linux-x64-gnu') : '@next/swc-darwin-arm64')
+    const nativePackageFile = join(installRoot, 'node_modules', ...swcPlatformPackage.split('/'), 'package.json')
+    assert.ok(existsSync(nativePackageFile), 'EXPERIMENT_SETUP_ERROR: C native SWC package missing in isolated installation')
+    const nativeVersion = (JSON.parse(readFileSync(nativePackageFile, 'utf8')) as {version:string}).version
+    assert.equal(nativeVersion, '16.4.3', 'EXPERIMENT_INCONCLUSIVE: isolated C SWC mismatched')
+    const fixtureNativeDir = join(dir, 'node_modules', ...swcPlatformPackage.split('/'))
+    mkdirSync(dirname(fixtureNativeDir), {recursive:true})
+    cpSync(join(installRoot,'node_modules',...swcPlatformPackage.split('/')), fixtureNativeDir, {recursive:true, dereference:true})
+    assert.equal((JSON.parse(readFileSync(join(fixtureNativeDir,'package.json'),'utf8')) as {version:string}).version, '16.4.3')
     cpSync(resolve(installedNext), runtimeRoot, {recursive:true, dereference:true})
     const routerPath = join(runtimeRoot,'dist/server/lib/router-utils/resolve-routes.js')
     const routerRaw = readFileSync(routerPath)
@@ -81,7 +92,7 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     assert.equal(existsSync(join(installRoot,'patches')),false,'EXPERIMENT_INCONCLUSIVE: unexpected patch metadata')
     const nextBin = join(runtimeRoot,'dist/bin/next')
     assert.ok(existsSync(nextBin))
-    process.stdout.write('KAN-854 C_RUNTIME_PRESTART '+JSON.stringify({bindHost,nextVersion:'16.4.3',eslintConfigNextVersion:'16.4.3',routerHash,nextBin,routerPath,mechanism:'isolated pnpm install no patch'})+'\n')
+    process.stdout.write('KAN-854 C_RUNTIME_PRESTART '+JSON.stringify({bindHost,nextVersion:'16.4.3',eslintConfigNextVersion:'16.4.3',routerHash,nativeSwcPackage:swcPlatformPackage,nativeSwcVersion:nativeVersion,nextBin,routerPath,mechanism:'isolated pnpm install no patch'})+'\n')
     // db/index.ts compares scenario DB against process.cwd()/sqlite.db.
     // A disposable fixture still must use a differently named DB, and it must exist.
     const scenarioDbPath = join(dir, 'kan-854-scenario.sqlite')
@@ -197,6 +208,7 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     assert.ok(provenance.every(item => item.match && item.sha256 === routerHash), 'EXPERIMENT_INCONCLUSIVE: server loaded router outside B runtime or unexpected bytes')
     assert.equal(findings.length, 2)
     assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot characterize IPv4 bind')
+    assert.ok(!logs.includes('Mismatching @next/swc version'), 'EXPERIMENT_INCONCLUSIVE: server loaded mismatched SWC despite isolated package')
     assert.ok(findings.every(f => f.status < 500), 'EXPERIMENT_SETUP_ERROR: HTTP 5xx invalidates routing comparison; inspect nextLogs for missing snapshot sources')
   } catch (error) {
     failure = true
