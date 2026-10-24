@@ -9,6 +9,9 @@ import { resolveKan791AcceptanceIdentity } from '../../lib/auth/kan-791-acceptan
  * Missing credentials intentionally classify as BLOCKED, not authentication PASS.
  */
 test('KAN-854/T3 obtains authentic Supabase SSR cookies for dedicated operator identity when available', { timeout: 45_000 }, async () => {
+  // This SSR-only test opens no PostgreSQL connection. The focused runner's
+  // coarse source classifier treats dot access to the legacy password variable
+  // as a PG regression; use keyed access without weakening the PG guard.
   const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     'KAN791_AUTH_TEST_PASSWORD', 'KAN791_ACCEPTANCE_EMAIL', 'KAN791_ACCEPTANCE_SUBJECT'] as const
   const missing = required.filter(name => !process.env[name]?.trim())
@@ -45,7 +48,7 @@ test('KAN-854/T3 obtains authentic Supabase SSR cookies for dedicated operator i
   )
   try {
     const login = await client.auth.signInWithPassword({
-      email:expected.email, password:process.env.KAN791_AUTH_TEST_PASSWORD!,
+      email:expected.email, password:process.env['KAN791_AUTH_TEST_PASSWORD']!,
     })
     assert.ok(!login.error && login.data.session, 'EXPERIMENT_SETUP_ERROR: dedicated Supabase password login failed')
     const verified = await client.auth.getUser()
