@@ -2,8 +2,7 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
@@ -23,7 +22,7 @@ async function availablePort(): Promise<number> {
 }
 
 test('KAN-854/T1 captures genuine disposable Next HTTP redirects without repository writes', { timeout: 120_000 }, async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'kan-854-http-smoke-'))
+  // Place the disposable fixture inside the repository filesystem root so Next can\n  // resolve the existing pnpm installation without an out-of-root junction.\n  const temporaryRoot = resolve('.tmp')\n  mkdirSync(temporaryRoot, { recursive: true })\n  const dir = mkdtempSync(join(temporaryRoot, 'kan-854-http-smoke-'))
   const port = await availablePort()
   const app = join(dir, 'app')
   mkdirSync(join(app, 'api', 'kan-854-redirect'), { recursive: true })
@@ -38,9 +37,7 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
     "  return new Response(null, { status: 307, headers: { Location: '/es/login', 'X-KAN-854-Fixture': 'next-route' } })",
     "}",
   ].join('\n'))
-  // Use webpack for this minimal fixture: Turbopack forbids the external pnpm junction.
-  // Dependencies remain resolved by the Next CLI from the repository installation.
-  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
+  // Run webpack for predictable isolated fixture compilation; no package installation.\n  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: dir,
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
