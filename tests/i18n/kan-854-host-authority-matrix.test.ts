@@ -89,19 +89,6 @@ test('KAN-854/T1 compares loopback Host authority on authentic anonymous applica
     assert.equal(findings.length, 4)
     assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot compare Host authorities')
   } catch (error) {
-        const detail = error instanceof Error ? error.name + ': ' + error.message : String(error)
-        findings.push({ route, termination: 'experimental_error', status: 0, location: null, error: detail })
-        process.stdout.write('KAN-854 HTTP_EXPERIMENT_ERROR ' + JSON.stringify({ route, detail }) + '\n')
-      }
-    }
-    process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\n')
-    assert.equal(findings.length, 2, 'Incomplete focal public-route characterization')
-    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: focal public route timed out')
-    assert.ok(findings.every(f => f.termination === 'loop' && f.status === 307), 'CHARACTERIZATION_DRIFT: expected observed self-redirects changed; inspect hops')
-    assert.ok(findings.every(f => f.error !== 'HTTP_5XX_OBSERVED'), 'CONTRACT_RED: HTTP 5xx observed')
-    // A self-loop remains a documented contractual RED finding even if this
-    // characterization collector completes successfully.
-  } catch (error) {
     failure = true
     throw error
   } finally {
