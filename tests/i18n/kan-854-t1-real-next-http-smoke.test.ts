@@ -73,15 +73,40 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
     assert.equal(response.headers.get('location'), '/es/login')
     assert.match(nextVersion, /^16\.3\.8$/, 'T1 smoke must not silently run candidate C or patched branch')
   } finally {
-    if (!closed) {
+    // Windows can briefly retain locks on .next artifacts after taskkill exits.
+    // Cleanup must not hide a failed HTTP assertion; retain the exact fixture path.
+    if (!closed && child.pid) {
       if (process.platform === 'win32') {
-        // Node on Windows may leave child descendants; terminate the spawned process tree.
         const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
-        await new Promise<void>(done => killer.once('exit', () => done()))
+        await new Promise<void>(done => {
+          killer.once('error', () => done())
+          killer.once('exit', () => done())
+        })
       } else {
         child.kill('SIGTERM')
       }
     }
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
+    if (!closed) {
+      await Promise.race([
+        new Promise<void>(done => child.once('exit', () => done())),
+        delay(3000),
+      ])
+    }
+    let cleaned = false
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 250 })
+        cleaned = true
+        break
+      } catch (error) {
+        if (attempt === 7) {
+          const detail = error instanceof Error ? error.message : String(error)
+          process.stderr.write('KAN-854 cleanup deferred (fixture retained at ' + dir + '): ' + detail + '\\n')
+        } else {
+          await delay(500)
+        }
+      }
+    }
+    if (!cleaned) process.stderr.write('KAN-854 fixture requires targeted cleanup after process exit: ' + dir + '\\n')
   }
 })
