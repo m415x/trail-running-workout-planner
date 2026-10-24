@@ -37,7 +37,8 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
     "  return new Response(null, { status: 307, headers: { Location: '/es/login', 'X-KAN-854-Fixture': 'next-route' } })",
     "}",
   ].join('\n'))
-  // Run webpack for predictable isolated fixture compilation; no package installation.\n  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
+  // Run webpack for predictable isolated fixture compilation; no package installation.
+  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: dir,
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
