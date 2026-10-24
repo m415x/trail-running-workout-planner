@@ -8,7 +8,7 @@ interface Gate { outcome:'READY'|'BLOCKED'; blockers:string[] }
 function evaluatePrerequisites(input:{
   url?:string; publicKey?:string; dedicatedSubjectVerified:boolean;
   disposableDataPrepared:boolean; realSessionCookieObtained:boolean;
-  realFormCaptured:boolean; scenario:Scenario
+  realFormCaptured?:boolean; scenario:Scenario
 }):Gate {
   const blockers:string[]=[]
   if(!input.url?.trim() || !input.publicKey?.trim()) blockers.push('supabase-public-config')
@@ -38,5 +38,5 @@ test('KAN-854/T3/T4 require authentic dedicated Supabase session, EPT scope and 
   assert.deepEqual(action,{outcome:'BLOCKED',blockers:['real-next-action-form-reference-missing']})
   const ready=evaluatePrerequisites({scenario:'authenticated-http',url:'http://fixture.invalid',publicKey:'fixture-key',dedicatedSubjectVerified:true,disposableDataPrepared:true,realSessionCookieObtained:true,realFormCaptured:false})
   assert.equal(ready.outcome,'READY')
-  process.stdout.write('KAN-854 AUTH_CONTRACT_PREFLIGHT '+JSON.stringify({existingAuthMechanism:'supabase-password-login-getUser-ssr-cookies',anonymousToAuthenticatedUpgrade:'requires real cookies and verified subject',eptScope:'requires disposable EPT identity/team/role link',serverActions:'requires captured actual Next action form',noCredentialsLogged:true})+'\\n')
+  process.stdout.write('KAN-854 AUTH_CONTRACT_PREFLIGHT '+JSON.stringify({existingAuthMechanism:'supabase-password-login-getUser-ssr-cookies',anonymousToAuthenticatedUpgrade:'requires real cookies and verified subject',eptScope:'requires disposable EPT identity/team/role link',serverActions:'requires captured actual Next action form',noCredentialsLogged:true})+'\n')
 })
