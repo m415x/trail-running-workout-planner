@@ -40,7 +40,11 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     assert.equal(readFileSync(join(dir, 'next.config.ts'), 'utf8'), readFileSync('next.config.ts', 'utf8'))
     const version = (require('next/package.json') as {version:string}).version
     assert.equal(version, '16.3.8')
-    // db/index.ts compares scenario DB against process.cwd()/sqlite.db.\n    // A disposable fixture still must use a differently named DB, and it must exist.\n    const scenarioDbPath = join(dir, 'kan-854-scenario.sqlite')\n    assert.notEqual(resolve(scenarioDbPath), resolve(dir, 'sqlite.db'), 'scenario DB cannot alias default development file')\n    // Provision a disposable database using the canonical tracked migration journal.
+    // db/index.ts compares scenario DB against process.cwd()/sqlite.db.
+    // A disposable fixture still must use a differently named DB, and it must exist.
+    const scenarioDbPath = join(dir, 'kan-854-scenario.sqlite')
+    assert.notEqual(resolve(scenarioDbPath), resolve(dir, 'sqlite.db'), 'scenario DB cannot alias default development file')
+    // Provision a disposable database using the canonical tracked migration journal.
     // Never open or clone the development sqlite.db.
     const Database = require('better-sqlite3') as typeof import('better-sqlite3')
     const { drizzle } = require('drizzle-orm/better-sqlite3') as typeof import('drizzle-orm/better-sqlite3')
@@ -48,7 +52,8 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     const sqlite = new Database(scenarioDbPath)
     try { migrate(drizzle(sqlite), { migrationsFolder: resolve(root, 'drizzle/sqlite') }) }
     finally { sqlite.close() }
-    assert.ok(existsSync(scenarioDbPath), 'EXPERIMENT_SETUP_ERROR: migrated SQLite not created')\n    const port = await new Promise<number>((done, reject) => {
+    assert.ok(existsSync(scenarioDbPath), 'EXPERIMENT_SETUP_ERROR: migrated SQLite not created')
+    const port = await new Promise<number>((done, reject) => {
       const server = createServer()
       server.once('error', reject)
       server.listen(0, '127.0.0.1', () => {
