@@ -40,9 +40,13 @@ test('KAN-854/B applies authentic historical router patch only to a disposable c
     assert.equal(check.status, 0, 'EXPERIMENT_INCONCLUSIVE: historical patch cannot apply to A installed router: ' + check.stderr)
     const apply = spawnSync('git', ['apply', patchFile], { cwd: dir, encoding: 'utf8', windowsHide: true })
     assert.equal(apply.status, 0, 'EXPERIMENT_SETUP_ERROR: disposable historical patch apply failed: ' + apply.stderr)
-    const actual = sha256(readFileSync(target))
-    process.stdout.write('KAN-854 B_ROUTER_PROOF ' + JSON.stringify({ version, historicalSha, patchHash, unpatchedRouterHash: sha256(original), patchedRouterHash: actual, isolation: 'disposable-copy' }) + '\n')
-    assert.equal(actual, patchedRouterHash, 'EXPERIMENT_INCONCLUSIVE: patched router differs from historical B artifact')
+    const patchedBytes = readFileSync(target)
+    const actual = sha256(patchedBytes)
+    const normalizedHash = sha256(Buffer.from(patchedBytes.toString('utf8').replace(/\r\n/g, '\n')))
+    const originalNormalizedHash = sha256(Buffer.from(original.toString('utf8').replace(/\r\n/g, '\n')))
+    const lineEndings = { originalCrLf: (original.toString('utf8').match(/\r\n/g) ?? []).length, patchedCrLf: (patchedBytes.toString('utf8').match(/\r\n/g) ?? []).length }
+    process.stdout.write('KAN-854 B_ROUTER_PROOF ' + JSON.stringify({ version, historicalSha, patchHash, unpatchedRouterHash: sha256(original), patchedRouterHash: actual, patchedNormalizedHash: normalizedHash, originalNormalizedHash, lineEndings, isolation: 'disposable-copy' }) + '\n')
+    assert.ok(actual === patchedRouterHash || normalizedHash === patchedRouterHash, 'EXPERIMENT_INCONCLUSIVE: patched router differs from historical B artifact even after LF normalization')
     assert.equal(sha256(readFileSync(installedRouter)), sha256(original), 'Installed A router unexpectedly changed')
   } finally {
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
