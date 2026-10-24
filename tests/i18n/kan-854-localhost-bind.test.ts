@@ -61,7 +61,7 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
       const socket = connect({ host, port, timeout: 1500 })
       socket.once('connect', () => { socket.destroy(); done('connected') })
       socket.once('timeout', () => { socket.destroy(); done('timeout') })
-      socket.once('error', error => done(error.code ?? error.message))
+      socket.once('error', error => done((error as NodeJS.ErrnoException).code ?? error.message))
     })
     const networkDiagnostic = { resolvedAddresses, ipv4: await tcpProbe('127.0.0.1'), ipv6: await tcpProbe('::1') }
     process.stdout.write('KAN-854 LOCALHOST_NETWORK ' + JSON.stringify(networkDiagnostic) + '\n')
