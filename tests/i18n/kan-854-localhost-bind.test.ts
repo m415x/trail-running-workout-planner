@@ -44,14 +44,25 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     // A disposable fixture still must use a differently named DB, and it must exist.
     const scenarioDbPath = join(dir, 'kan-854-scenario.sqlite')
     assert.notEqual(resolve(scenarioDbPath), resolve(dir, 'sqlite.db'), 'scenario DB cannot alias default development file')
-    // Provision a disposable database using the canonical tracked migration journal.
-    // Never open or clone the development sqlite.db.
-    const Database = require('better-sqlite3') as typeof import('better-sqlite3')
-    const { drizzle } = require('drizzle-orm/better-sqlite3') as typeof import('drizzle-orm/better-sqlite3')
-    const { migrate } = require('drizzle-orm/better-sqlite3/migrator') as typeof import('drizzle-orm/better-sqlite3/migrator')
-    const sqlite = new Database(scenarioDbPath)
-    try { migrate(drizzle(sqlite), { migrationsFolder: resolve(root, 'drizzle/sqlite') }) }
-    finally { sqlite.close() }
+    // KAN-615 intentionally blocks generic Drizzle migration at 0016.
+    // Use the canonical dedicated upgrade executor on an isolated target.
+    const tsxCli = require.resolve('tsx/cli')
+    const upgrade = spawnSync(process.execPath, [tsxCli, resolve(root, 'scripts/upgrade-sqlite.ts')], {
+      cwd: root,
+      env: {
+        ...process.env,
+        SQLITE_SCENARIO_MODE: '1',
+        SQLITE_DATABASE_PATH: scenarioDbPath,
+        TSX_TSCONFIG_PATH: resolve(root, 'tsconfig.json'),
+      },
+      windowsHide: true,
+      encoding: 'utf8',
+      timeout: 120_000,
+      maxBuffer: 4 * 1024 * 1024,
+    })
+    assert.equal(upgrade.error, undefined, 'EXPERIMENT_SETUP_ERROR: SQLite upgrade could not start')
+    assert.equal(upgrade.status, 0,
+      'EXPERIMENT_SETUP_ERROR: dedicated SQLite upgrade failed: ' + upgrade.stdout + upgrade.stderr)
     assert.ok(existsSync(scenarioDbPath), 'EXPERIMENT_SETUP_ERROR: migrated SQLite not created')
     const port = await new Promise<number>((done, reject) => {
       const server = createServer()
