@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { createRequire } from 'node:module'
 import { setTimeout as delay } from 'node:timers/promises'
 import test from 'node:test'
@@ -30,8 +30,6 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
   const nextPackagePath = require.resolve('next/package.json')
   const nextVersion = (require(nextPackagePath) as { version: string }).version
   const nextCli = require.resolve('next/dist/bin/next')
-  // Next resolves React and its own dependencies through this junction; npm install is forbidden here.
-  symlinkSync(resolve('node_modules'), join(dir, 'node_modules'), process.platform === 'win32' ? 'junction' : 'dir')
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ private: true, name: 'kan-854-disposable-next-http', version: '0.0.0' }))
   writeFileSync(join(app, 'layout.tsx'), "export default function Layout({children}:{children:React.ReactNode}){return <html><body>{children}</body></html>}\n")
   writeFileSync(join(app, 'page.tsx'), "export default function Page(){return <p>KAN-854 disposable fixture</p>}\n")
@@ -40,7 +38,9 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
     "  return new Response(null, { status: 307, headers: { Location: '/es/login', 'X-KAN-854-Fixture': 'next-route' } })",
     "}",
   ].join('\n'))
-  const child = spawn(process.execPath, [nextCli, 'dev', '-H', '127.0.0.1', '-p', String(port)], {
+  // Use webpack for this minimal fixture: Turbopack forbids the external pnpm junction.
+  // Dependencies remain resolved by the Next CLI from the repository installation.
+  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
     cwd: dir,
     env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
