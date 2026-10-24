@@ -39,7 +39,7 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     assert.equal(readFileSync(join(dir, 'proxy.ts'), 'utf8'), readFileSync('proxy.ts', 'utf8'))
     assert.equal(readFileSync(join(dir, 'next.config.ts'), 'utf8'), readFileSync('next.config.ts', 'utf8'))
     // Load developer-local public Auth configuration without copying .env files to the fixture.
-    const { loadEnvConfig } = require('@next/env') as typeof import('@next/env')
+    const { loadEnvConfig } = require('next/dist/compiled/@next/env') as { loadEnvConfig: (dir: string, dev?: boolean) => unknown }
     loadEnvConfig(root, true)
     const authUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
     const authKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim()
