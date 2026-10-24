@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
-import { createServer } from 'node:net'
+import { createServer, connect } from 'node:net'
+import { lookup } from 'node:dns/promises'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -55,6 +56,15 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     child.stderr?.on('data', chunk => { logs = (logs + String(chunk)).slice(-9000) })
     child.once('close', () => { stopped = true })
     const origin = 'http://localhost:' + port
+    const resolvedAddresses = await lookup('localhost', { all: true })
+    const tcpProbe = async (host: string): Promise<string> => await new Promise<string>(done => {
+      const socket = connect({ host, port, timeout: 1500 })
+      socket.once('connect', () => { socket.destroy(); done('connected') })
+      socket.once('timeout', () => { socket.destroy(); done('timeout') })
+      socket.once('error', error => done(error.code ?? error.message))
+    })
+    const networkDiagnostic = { resolvedAddresses, ipv4: await tcpProbe('127.0.0.1'), ipv6: await tcpProbe('::1') }
+    process.stdout.write('KAN-854 LOCALHOST_NETWORK ' + JSON.stringify(networkDiagnostic) + '\n')
     let ready = false
     for (let n = 0; n < 50; n++) {
       if (stopped) throw new Error('EXPERIMENT_SETUP_ERROR: Next exited: ' + logs)
@@ -81,11 +91,11 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
         } catch (error) {
           const detail = error instanceof Error ? error.name + ': ' + error.message : String(error)
           findings.push({ requestedHost, route, termination: 'experimental_error', status: 0, location: null, error: detail })
-          process.stdout.write('KAN-854 HOST_MATRIX_ERROR ' + JSON.stringify({ requestedHost, route, detail }) + '\n')
+          process.stdout.write('KAN-854 BIND_MATRIX_ERROR ' + JSON.stringify({ requestedHost, route, detail }) + '\n')
         }
       }
     }
-    process.stdout.write('KAN-854 BIND_CHARACTERIZATION ' + JSON.stringify(findings) + '\n')
+    process.stdout.write('KAN-854 BIND_CHARACTERIZATION ' + JSON.stringify({ findings, networkDiagnostic, nextLogs: logs }) + '\n')
     assert.equal(findings.length, 2)
     assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot compare Host authorities')
   } catch (error) {
