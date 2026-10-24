@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import Database from 'better-sqlite3'
@@ -55,6 +55,6 @@ async function main(){
       assert.deepEqual(db.pragma('foreign_key_check'),[])
     }).immediate()
   }finally{db.close()}
-  process.stdout.write('KAN-854 EPT_FIXTURE '+JSON.stringify({outcome:'PREPARED',databasePath:path,scope:'disposable-only',identity:'real-supabase-login-verified',role:'coach',productionChanges:false})+'\\n')
+  process.stdout.write('KAN-854 EPT_FIXTURE '+JSON.stringify({outcome:'PREPARED',databasePath:path,scope:'disposable-only',identity:'real-supabase-login-verified',role:'coach',productionChanges:false})+'\n')
 }
 main().catch(error=>{process.stderr.write('KAN-854 EPT_FIXTURE_ERROR '+(error instanceof Error?error.message:String(error))+'\\n');process.exitCode=1})
