@@ -71,7 +71,9 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     const installedEslint = join(installed,'eslint-config-next')
     assert.equal((JSON.parse(readFileSync(join(installedNext,'package.json'),'utf8')) as {version:string}).version,'16.4.3')
     assert.equal((JSON.parse(readFileSync(join(installedEslint,'package.json'),'utf8')) as {version:string}).version,'16.4.3')
-    cpSync(installedNext, runtimeRoot, {recursive:true})
+    // pnpm's node_modules/next is a symlink on Windows. Copy its physical package
+    // contents instead; creating a symlink here requires extra Windows privileges.
+    cpSync(resolve(installedNext), runtimeRoot, {recursive:true, dereference:true})
     const routerPath = join(runtimeRoot,'dist/server/lib/router-utils/resolve-routes.js')
     const routerRaw = readFileSync(routerPath)
     const routerHash = digest(routerRaw)
