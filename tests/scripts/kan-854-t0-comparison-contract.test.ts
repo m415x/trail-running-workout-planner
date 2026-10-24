@@ -33,5 +33,5 @@ test('KAN-854/T0 rejects accidental transplantation of the historical Next patch
   assert.doesNotMatch(workspace, /(?:^|\n)\s*patchedDependencies\s*:/)
   assert.doesNotMatch(workspace, /next@16\.3\.8\s*:\s*patches\//)
   const manifest = read('package.json')
-  assert.doesNotMatch(manifest, /"pnpm"\s*:\s*\{[^}]*"patchedDependencies"/s)
+  assert.doesNotMatch(manifest, /"pnpm"\s*:\s*\{[^}]*"patchedDependencies"/)
 })
