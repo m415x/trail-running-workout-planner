@@ -59,7 +59,7 @@ test('KAN-854/B provisions isolated executable Next package with historical rout
     assert.equal(proof.sha256, actual)
     assert.equal(resolve(resolvedRouter), resolve(target))
     assert.ok(resolve(resolvedNext).startsWith(resolve(runtimeRoot)))
-    process.stdout.write('KAN-854 B_EXECUTABLE_RUNTIME ' + JSON.stringify({ version, historicalSha, patchHash, routerRawSha256: actual, routerNormalizedSha256: normalizedHash, nodeResolvedPath: proof.resolved, packageResolution: resolvedNext, runtime: 'disposable-package-copy', loadedBySeparateNode: true }) + '\\n')
+    process.stdout.write('KAN-854 B_EXECUTABLE_RUNTIME ' + JSON.stringify({ version, historicalSha, patchHash, routerRawSha256: actual, routerNormalizedSha256: normalizedHash, nodeResolvedPath: proof.resolved, packageResolution: resolvedNext, runtime: 'disposable-package-copy', resolvedBySeparateNode: true }) + '\n')
   } finally {
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
   }
