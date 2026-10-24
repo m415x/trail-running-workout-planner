@@ -15,7 +15,7 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
-  const prefixes = ['app/', 'components/', 'context/', 'features/', 'workouts/', 'hooks/', 'i18n/', 'lib/', 'db/', 'public/', 'messages/', 'types/', 'utils/']
+  const prefixes = ['app/', 'components/', 'context/', 'features/', 'workouts/', 'service/', 'hooks/', 'i18n/', 'lib/', 'db/', 'public/', 'messages/', 'types/', 'utils/']
   const roots = new Set(['next.config.ts', 'proxy.ts', 'package.json', 'tsconfig.json', 'next-env.d.ts', 'postcss.config.mjs', 'components.json', 'tailwind.config.ts'])
   const files = (tracked.stdout as Buffer).toString('utf8').split('\0')
     .filter(path => prefixes.some(p => path.startsWith(p)) || roots.has(path))
@@ -98,7 +98,8 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     }
     process.stdout.write('KAN-854 BIND_CHARACTERIZATION ' + JSON.stringify({ findings, networkDiagnostic, nextLogs: logs }) + '\n')
     assert.equal(findings.length, 2)
-    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot compare Host authorities')
+    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot compare localhost bind')
+    assert.ok(findings.every(f => f.status < 500), 'EXPERIMENT_SETUP_ERROR: HTTP 5xx invalidates routing comparison; inspect nextLogs for missing snapshot sources')
   } catch (error) {
     failure = true
     throw error
