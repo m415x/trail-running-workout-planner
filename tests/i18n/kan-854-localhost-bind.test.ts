@@ -15,7 +15,7 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
-  const prefixes = ['app/', 'components/', 'hooks/', 'i18n/', 'lib/', 'db/', 'public/', 'messages/', 'types/', 'utils/']
+  const prefixes = ['app/', 'components/', 'context/', 'features/', 'workouts/', 'hooks/', 'i18n/', 'lib/', 'db/', 'public/', 'messages/', 'types/', 'utils/']
   const roots = new Set(['next.config.ts', 'proxy.ts', 'package.json', 'tsconfig.json', 'next-env.d.ts', 'postcss.config.mjs', 'components.json', 'tailwind.config.ts'])
   const files = (tracked.stdout as Buffer).toString('utf8').split('\0')
     .filter(path => prefixes.some(p => path.startsWith(p)) || roots.has(path))
@@ -63,8 +63,6 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
       socket.once('timeout', () => { socket.destroy(); done('timeout') })
       socket.once('error', error => done((error as NodeJS.ErrnoException).code ?? error.message))
     })
-    const networkDiagnostic = { resolvedAddresses, ipv4: await tcpProbe('127.0.0.1'), ipv6: await tcpProbe('::1') }
-    process.stdout.write('KAN-854 LOCALHOST_NETWORK ' + JSON.stringify(networkDiagnostic) + '\n')
     let ready = false
     for (let n = 0; n < 50; n++) {
       if (stopped) throw new Error('EXPERIMENT_SETUP_ERROR: Next exited: ' + logs)
@@ -75,6 +73,9 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
       await delay(1000)
     }
     assert.ok(ready, 'EXPERIMENT_SETUP_ERROR: no HTTP readiness: ' + logs)
+    const networkDiagnostic = { resolvedAddresses, ipv4: await tcpProbe('127.0.0.1'), ipv6: await tcpProbe('::1') }
+    process.stdout.write('KAN-854 LOCALHOST_NETWORK ' + JSON.stringify(networkDiagnostic) + '\n')
+    assert.ok(readFileSync(join(dir, 'context/MobileShellContext.tsx'), 'utf8').length > 0, 'EXPERIMENT_SETUP_ERROR: missing context source')
     const findings: Array<{requestedHost:string;route:string;termination:string;status:number;location:string|null;error?:string}> = []
     for (const requestedHost of ['localhost']) {
       for (const route of ['/', '/es']) {
