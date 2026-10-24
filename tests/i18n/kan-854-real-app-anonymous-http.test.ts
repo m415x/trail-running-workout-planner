@@ -65,13 +65,18 @@ test('KAN-854/T1 observes authentic anonymous application routing', { timeout: 1
       await delay(1000)
     }
     assert.ok(ready, 'EXPERIMENT_SETUP_ERROR: no HTTP readiness: ' + logs)
-    // Characterization: capture every route even if one loops. No premature GREEN.\n    const findings: Array<{route:string;termination:string;status:number;location:string|null}> = []\n    for (const route of ['/', '/es', '/en', '/dashboard/athletes', '/es/dashboard/athletes', '/en/dashboard/athletes']) {
+    // Characterization: capture every route even if one loops. No premature GREEN.
+    const findings: Array<{route:string;termination:string;status:number;location:string|null}> = []
+    for (const route of ['/', '/es', '/en', '/dashboard/athletes', '/es/dashboard/athletes', '/en/dashboard/athletes']) {
       const result = await captureHttpRedirectChain(origin + route, { permittedOrigins: [origin], maxHops: 5, timeoutMs: 20_000 })
       process.stdout.write('KAN-854 HTTP ' + JSON.stringify({ version, route, result }) + '\n')
       assert.ok(result.hops.length > 0)
       findings.push({ route, termination: result.termination, status: result.hops[0]?.status ?? 0, location: result.hops[0]?.location ?? null })
       assert.ok(result.hops.every(h => h.status < 500), 'CONTRACT_RED: HTTP 5xx on ' + route + ': ' + logs)
-    }\n    process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\\n')\n    assert.ok(findings.length === 6, 'Incomplete routing characterization')\n  } catch (error) {
+    }
+    process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\\n')
+    assert.ok(findings.length === 6, 'Incomplete routing characterization')
+  } catch (error) {
     failure = true
     throw error
   } finally {
