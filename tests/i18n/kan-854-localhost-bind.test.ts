@@ -15,10 +15,13 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
-  const prefixes = ['app/', 'components/', 'context/', 'features/', 'workouts/', 'service/', 'hooks/', 'i18n/', 'lib/', 'db/', 'public/', 'messages/', 'types/', 'utils/']
-  const roots = new Set(['next.config.ts', 'proxy.ts', 'package.json', 'tsconfig.json', 'next-env.d.ts', 'postcss.config.mjs', 'components.json', 'tailwind.config.ts'])
+  // Copy the complete tracked application tree, not a hand-maintained directory allowlist.
+  // Explicitly exclude non-runtime, executable, secret and local-state paths.
+  const excluded = /^(?:tests\/|scripts\/|docs\/|\.github\/|drizzle\/|patches\/|\.tmp\/|\.next\/|node_modules\/|\.env(?:\.|$)|sqlite\.db$|.*\.(?:db|sqlite|zip|log)$)/
   const files = (tracked.stdout as Buffer).toString('utf8').split('\0')
-    .filter(path => prefixes.some(p => path.startsWith(p)) || roots.has(path))
+    .filter(path => path && !excluded.test(path) && !path.startsWith('.git/'))
+  assert.ok(files.includes('data/data.ts'), 'EXPERIMENT_SETUP_ERROR: tracked data/data.ts absent')
+  assert.ok(files.includes('context/MobileShellContext.tsx'), 'EXPERIMENT_SETUP_ERROR: tracked context source absent')
   mkdirSync(resolve('.tmp'), { recursive: true })
   const dir = mkdtempSync(resolve('.tmp/kan-854-routing-'))
   let child: ReturnType<typeof spawn> | undefined
