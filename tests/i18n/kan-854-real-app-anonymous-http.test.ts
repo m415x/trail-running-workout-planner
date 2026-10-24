@@ -69,7 +69,7 @@ test('KAN-854/T1 observes authentic anonymous application routing', { timeout: 1
       const result = await captureHttpRedirectChain(origin + route, { permittedOrigins: [origin], maxHops: 5, timeoutMs: 20_000 })
       process.stdout.write('KAN-854 HTTP ' + JSON.stringify({ version, route, result }) + '\n')
       assert.ok(result.hops.length > 0)
-      assert.notEqual(result.termination, 'loop', 'CONTRACT_RED: redirect loop on ' + route)
+      assert.notEqual(result.termination, 'loop', 'CONTRACT_RED_OBSERVED_CAUSALITY_PENDING: redirect loop on ' + route + '; hops=' + JSON.stringify(result.hops) + '; nextLogs=' + logs)
       assert.ok(result.hops.every(h => h.status < 500), 'CONTRACT_RED: HTTP 5xx on ' + route + ': ' + logs)
     }
   } catch (error) {
