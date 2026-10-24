@@ -35,8 +35,8 @@ test('KAN-854/B preflight verifies historical patch and application-source compa
   // that a historical app checkout is an otherwise-equivalent runtime B.
   const sourceRoots = ['app/', 'components/', 'context/', 'data/', 'db/', 'features/', 'hooks/', 'i18n/', 'lib/', 'service/', 'types/', 'proxy.ts', 'next.config.ts']
   const diff = git(['diff', '--name-status', historicalSha, 'HEAD', '--', ...sourceRoots]).toString('utf8').trim()
-  const rows = diff ? diff.split(/\\r?\\n/).map(line => {
-    const [change, ...pathParts] = line.split('\\t')
+  const rows = diff ? diff.split(/\r?\n/).map(line => {
+    const [change, ...pathParts] = line.split('\t')
     return {change, path: pathParts.join(' -> ')}
   }) : []
   const critical = ['proxy.ts', 'next.config.ts', 'i18n/routing.ts', 'i18n/request.ts', 'lib/i18n/normalize-local-rewrite.ts']
@@ -49,7 +49,7 @@ test('KAN-854/B preflight verifies historical patch and application-source compa
     historicalTreeEquivalent: rows.length === 0,
     comparisonMode: rows.length === 0 ? 'historical-head-comparable' : 'fixed-A-application-required',
   }
-  process.stdout.write('KAN-854 B_SOURCE_PARITY ' + JSON.stringify(summary) + '\\n')
+  process.stdout.write('KAN-854 B_SOURCE_PARITY ' + JSON.stringify(summary) + '\n')
   assert.ok(rows.length > 0 || summary.historicalTreeEquivalent)
   // Historical changes are an expected diagnostic, not a patch runtime GREEN.
   // No HTTP B may be inferred from this test.
