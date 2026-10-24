@@ -22,7 +22,10 @@ async function availablePort(): Promise<number> {
 }
 
 test('KAN-854/T1 captures genuine disposable Next HTTP redirects without repository writes', { timeout: 120_000 }, async () => {
-  // Place the disposable fixture inside the repository filesystem root so Next can\n  // resolve the existing pnpm installation without an out-of-root junction.\n  const temporaryRoot = resolve('.tmp')\n  mkdirSync(temporaryRoot, { recursive: true })\n  const dir = mkdtempSync(join(temporaryRoot, 'kan-854-http-smoke-'))
+  // Keep the disposable fixture within the worktree for pnpm resolution.
+  const temporaryRoot = resolve('.tmp')
+  mkdirSync(temporaryRoot, { recursive: true })
+  const dir = mkdtempSync(join(temporaryRoot, 'kan-854-http-smoke-'))
   const port = await availablePort()
   const app = join(dir, 'app')
   mkdirSync(join(app, 'api', 'kan-854-redirect'), { recursive: true })
