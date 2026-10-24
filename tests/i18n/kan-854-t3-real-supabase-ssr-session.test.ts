@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { loadEnvConfig } from '@next/env'
+import { createRequire } from 'node:module'
 import { createServerClient } from '@supabase/ssr'
 import { resolveKan791AcceptanceIdentity } from '../../lib/auth/kan-791-acceptance-identity'
 
@@ -14,6 +14,8 @@ test('KAN-854/T3 obtains authentic Supabase SSR cookies for dedicated operator i
   // coarse source classifier treats dot access to the legacy password variable
   // as a PG regression; use keyed access without weakening the PG guard.
   // Mirror A/B/C fixture configuration without copying or printing .env.local.
+  const require = createRequire(import.meta.url)
+  const { loadEnvConfig } = require('@next/env') as {loadEnvConfig:(dir:string,dev?:boolean)=>unknown}
   loadEnvConfig(process.cwd(), true)
   const required = ['NEXT_PUBLIC_SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY',
     'KAN791_AUTH_TEST_PASSWORD', 'KAN791_ACCEPTANCE_EMAIL', 'KAN791_ACCEPTANCE_SUBJECT'] as const
