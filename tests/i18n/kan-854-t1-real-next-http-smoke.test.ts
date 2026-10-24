@@ -33,6 +33,8 @@ test('KAN-854/T1 captures genuine disposable Next HTTP redirects without reposit
   const nextVersion = (require(nextPackagePath) as { version: string }).version
   const nextCli = require.resolve('next/dist/bin/next')
   writeFileSync(join(dir, 'package.json'), JSON.stringify({ private: true, name: 'kan-854-disposable-next-http', version: '0.0.0' }))
+  // Explicit neutral configuration: this fixture does not exercise project next-intl/PWA.
+  writeFileSync(join(dir, 'next.config.mjs'), 'export default { reactStrictMode: true }\n')
   writeFileSync(join(app, 'layout.tsx'), "export default function Layout({children}:{children:React.ReactNode}){return <html><body>{children}</body></html>}\n")
   writeFileSync(join(app, 'page.tsx'), "export default function Page(){return <p>KAN-854 disposable fixture</p>}\n")
   writeFileSync(join(app, 'api', 'kan-854-redirect', 'route.ts'), [
