@@ -134,7 +134,7 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/B prov
       "  }",
       "  return value",
       "}",
-    ].join('\\n') + '\\n')
+    ].join('\n') + '\n')
     const injectedOptions = [process.env.NODE_OPTIONS ?? '', '--require', JSON.stringify(preload)].filter(Boolean).join(' ')
     child = spawn(process.execPath, [nextBin, 'dev', '--webpack', '-H', bindHost, '-p', String(port)], {
       cwd: dir,
@@ -187,8 +187,8 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/B prov
       }
     }
     process.stdout.write('KAN-854 B_HTTP_CHARACTERIZATION ' + JSON.stringify({ findings, networkDiagnostic, nextLogs: logs }) + '\n')
-    const provenance = existsSync(provenanceFile) ? readFileSync(provenanceFile, 'utf8').trim().split(/\\r?\\n/).filter(Boolean).map(line => JSON.parse(line) as {pid:number;resolved:string;sha256:string;match:boolean}) : []
-    process.stdout.write('KAN-854 B_SERVER_ROUTER_PROVENANCE ' + JSON.stringify({bindHost, events: provenance}) + '\\n')
+    const provenance = existsSync(provenanceFile) ? readFileSync(provenanceFile, 'utf8').trim().split(/\r?\n/).filter(Boolean).map(line => JSON.parse(line) as {pid:number;resolved:string;sha256:string;match:boolean}) : []
+    process.stdout.write('KAN-854 B_SERVER_ROUTER_PROVENANCE ' + JSON.stringify({bindHost, events: provenance}) + '\n')
     assert.ok(provenance.length > 0, 'EXPERIMENT_INCONCLUSIVE: Next server router loading not observed; instrumentation may not cover loader')
     assert.ok(provenance.every(item => item.match && item.sha256 === digest(routerRaw)), 'EXPERIMENT_INCONCLUSIVE: server loaded router outside B runtime or unexpected bytes')
     assert.equal(findings.length, 2)
