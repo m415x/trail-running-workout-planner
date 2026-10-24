@@ -52,14 +52,15 @@ test('KAN-854/B provisions isolated executable Next package with historical rout
     const isolatedRequire = createRequire(join(dir, 'runtime-entry.cjs'))
     const resolvedNext = isolatedRequire.resolve('next/package.json')
     const resolvedRouter = isolatedRequire.resolve('next/dist/server/lib/router-utils/resolve-routes.js')
-    const result = spawnSync(process.execPath, ['-e', `const r=require('node:module').createRequire(process.argv[1]); const path=r.resolve('next/dist/server/lib/router-utils/resolve-routes.js'); const fs=require('node:fs'); const crypto=require('node:crypto'); process.stdout.write(JSON.stringify({resolved:path, sha256:crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex')}))`, join(dir, 'runtime-entry.cjs')], { cwd: dir, encoding: 'utf8', windowsHide: true })
+    const result = spawnSync(process.execPath, ['-e', `const r=require('node:module').createRequire(process.argv[1]); const path=r.resolve('next/dist/server/lib/router-utils/resolve-routes.js'); const fs=require('node:fs'); const crypto=require('node:crypto'); r('next/dist/server/lib/router-utils/resolve-routes.js'); process.stdout.write(JSON.stringify({resolved:path, loaded: Boolean(require.cache[path]), sha256:crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex')}))`, join(dir, 'runtime-entry.cjs')], { cwd: dir, encoding: 'utf8', windowsHide: true })
     assert.equal(result.status, 0, 'EXPERIMENT_SETUP_ERROR: isolated Node resolution failed: ' + result.stderr)
-    const proof = JSON.parse(result.stdout) as { resolved: string; sha256: string }
+    const proof = JSON.parse(result.stdout) as { resolved: string; loaded: boolean; sha256: string }
     assert.equal(resolve(proof.resolved), resolve(target), 'EXPERIMENT_INCONCLUSIVE: Node resolved A router instead of B')
+    assert.equal(proof.loaded, true, 'EXPERIMENT_INCONCLUSIVE: isolated router was resolved but not loaded')
     assert.equal(proof.sha256, actual)
     assert.equal(resolve(resolvedRouter), resolve(target))
     assert.ok(resolve(resolvedNext).startsWith(resolve(runtimeRoot)))
-    process.stdout.write('KAN-854 B_EXECUTABLE_RUNTIME ' + JSON.stringify({ version, historicalSha, patchHash, routerRawSha256: actual, routerNormalizedSha256: normalizedHash, nodeResolvedPath: proof.resolved, packageResolution: resolvedNext, runtime: 'disposable-package-copy', resolvedBySeparateNode: true }) + '\n')
+    process.stdout.write('KAN-854 B_EXECUTABLE_RUNTIME ' + JSON.stringify({ version, historicalSha, patchHash, routerRawSha256: actual, routerNormalizedSha256: normalizedHash, nodeResolvedPath: proof.resolved, packageResolution: resolvedNext, runtime: 'disposable-package-copy', loadedBySeparateNode: true }) + '\n')
   } finally {
     rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 })
   }
