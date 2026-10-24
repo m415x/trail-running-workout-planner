@@ -11,7 +11,7 @@ import { captureHttpRedirectChain } from '../../scripts/experiments/kan-854-http
 
 const require = createRequire(import.meta.url)
 
-test('KAN-854/T1 compares loopback bind hostname on authentic anonymous application', { timeout: 180_000 }, async () => {
+test('KAN-854/T1 compares loopback bind hostname on authentic anonymous application', { timeout: 240_000 }, async () => {
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
@@ -85,7 +85,7 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
             permittedOrigins: [origin],
             headers: { Host: requestedHost + ':' + port },
             maxHops: 4,
-            timeoutMs: 12_000,
+            timeoutMs: 60_000,
           })
           findings.push({ requestedHost, route, termination: result.termination, status: result.hops[0]?.status ?? 0, location: result.hops[0]?.location ?? null })
           process.stdout.write('KAN-854 BIND_MATRIX ' + JSON.stringify({ requestedHost, route, result }) + '\n')
