@@ -67,7 +67,9 @@ test('KAN-854/T1 observes authentic anonymous application routing', { timeout: 1
     assert.ok(ready, 'EXPERIMENT_SETUP_ERROR: no HTTP readiness: ' + logs)
     // Characterization: capture every route even if one loops. No premature GREEN.
     const findings: Array<{route:string;termination:string;status:number;location:string|null;error?:string}> = []
-    // Limit this causal routing characterization to the two reproducible public loops.\n    // Compilation-heavy and auth routes require separate preflight and a per-route budget.\n    for (const route of ['/', '/es']) {
+    // Limit this causal routing characterization to the two reproducible public loops.
+    // Compilation-heavy and auth routes require separate preflight and a per-route budget.
+    for (const route of ['/', '/es']) {
       try {
         const result = await captureHttpRedirectChain(origin + route, { permittedOrigins: [origin], maxHops: 5, timeoutMs: 8_000 })
         process.stdout.write('KAN-854 HTTP ' + JSON.stringify({ version, route, result }) + '\n')
@@ -82,7 +84,8 @@ test('KAN-854/T1 observes authentic anonymous application routing', { timeout: 1
     }
     process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\n')
     assert.equal(findings.length, 2, 'Incomplete focal public-route characterization')
-    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: focal public route timed out')\n    assert.ok(findings.every(f => f.termination === 'loop' && f.status === 307), 'CHARACTERIZATION_DRIFT: expected observed self-redirects changed; inspect hops')
+    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: focal public route timed out')
+    assert.ok(findings.every(f => f.termination === 'loop' && f.status === 307), 'CHARACTERIZATION_DRIFT: expected observed self-redirects changed; inspect hops')
     assert.ok(findings.every(f => f.error !== 'HTTP_5XX_OBSERVED'), 'CONTRACT_RED: HTTP 5xx observed')
     // A self-loop remains a documented contractual RED finding even if this
     // characterization collector completes successfully.
