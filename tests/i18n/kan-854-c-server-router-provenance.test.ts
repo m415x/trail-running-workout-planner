@@ -50,7 +50,7 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     const digest = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex')
     const runtimeRoot = join(dir, 'node_modules', 'next')
     const workspace = join(dir, 'pnpm-workspace.yaml')
-    writeFileSync(workspace, "packages:\\n  - '.'\\n")
+    writeFileSync(workspace, "packages:\n  - '.'\n")
     // Install C from a disposable manifest. Reuse the A application files; no patch metadata.
     const sourcePackage = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {dependencies:Record<string,string>;devDependencies:Record<string,string>}
     const installRoot = join(dir, 'kan-854-c-dependencies')
@@ -59,10 +59,10 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
       name: 'kan-854-c-runtime', version: '0.0.0', private:true,
       dependencies: {next:'16.4.3', 'eslint-config-next':'16.4.3', react:sourcePackage.dependencies.react, 'react-dom':sourcePackage.dependencies['react-dom']}
     }))
-    writeFileSync(join(installRoot, 'pnpm-workspace.yaml'), "packages:\\n  - '.'\\n")
-    const pnpm = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm'
+    writeFileSync(join(installRoot, 'pnpm-workspace.yaml'), "packages:\n  - '.'\n")
+    const pnpm = 'pnpm'
     const install = spawnSync(pnpm, ['install', '--ignore-scripts', '--no-frozen-lockfile', '--config.minimum-release-age=0'], {
-      cwd:installRoot, encoding:'utf8', windowsHide:true, timeout:180_000, maxBuffer:4*1024*1024
+      cwd:installRoot, shell:process.platform === 'win32', encoding:'utf8', windowsHide:true, timeout:180_000, maxBuffer:4*1024*1024
     })
     assert.equal(install.error, undefined, 'EXPERIMENT_SETUP_ERROR: C install process launch failed')
     assert.equal(install.status, 0, 'EXPERIMENT_SETUP_ERROR: C isolated install failed: '+install.stdout+install.stderr)
@@ -79,7 +79,7 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     assert.equal(existsSync(join(installRoot,'patches')),false,'EXPERIMENT_INCONCLUSIVE: unexpected patch metadata')
     const nextBin = join(runtimeRoot,'dist/bin/next')
     assert.ok(existsSync(nextBin))
-    process.stdout.write('KAN-854 C_RUNTIME_PRESTART '+JSON.stringify({bindHost,nextVersion:'16.4.3',eslintConfigNextVersion:'16.4.3',routerHash,nextBin,routerPath,mechanism:'isolated pnpm install no patch'})+'\\n')
+    process.stdout.write('KAN-854 C_RUNTIME_PRESTART '+JSON.stringify({bindHost,nextVersion:'16.4.3',eslintConfigNextVersion:'16.4.3',routerHash,nextBin,routerPath,mechanism:'isolated pnpm install no patch'})+'\n')
     // db/index.ts compares scenario DB against process.cwd()/sqlite.db.
     // A disposable fixture still must use a differently named DB, and it must exist.
     const scenarioDbPath = join(dir, 'kan-854-scenario.sqlite')
