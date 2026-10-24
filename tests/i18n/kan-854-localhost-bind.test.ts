@@ -38,6 +38,12 @@ test('KAN-854/T1 compares loopback bind hostname on authentic anonymous applicat
     }
     assert.equal(readFileSync(join(dir, 'proxy.ts'), 'utf8'), readFileSync('proxy.ts', 'utf8'))
     assert.equal(readFileSync(join(dir, 'next.config.ts'), 'utf8'), readFileSync('next.config.ts', 'utf8'))
+    // Load developer-local public Auth configuration without copying .env files to the fixture.
+    const { loadEnvConfig } = require('@next/env') as typeof import('@next/env')
+    loadEnvConfig(root, true)
+    const authUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim()
+    const authKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim()
+    assert.ok(authUrl && authKey, 'EXPERIMENT_SETUP_ERROR: real-app HTTP requires local Supabase public URL/key; no synthetic fallback')
     const version = (require('next/package.json') as {version:string}).version
     assert.equal(version, '16.3.8')
     // db/index.ts compares scenario DB against process.cwd()/sqlite.db.
