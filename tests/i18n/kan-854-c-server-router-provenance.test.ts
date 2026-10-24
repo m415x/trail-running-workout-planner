@@ -53,11 +53,14 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     writeFileSync(workspace, "packages:\n  - '.'\n")
     // Install C from a disposable manifest. Reuse the A application files; no patch metadata.
     const sourcePackage = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {dependencies:Record<string,string>;devDependencies:Record<string,string>}
+    const swcPlatformPackage = process.platform === 'win32'
+      ? (process.arch === 'arm64' ? '@next/swc-win32-arm64-msvc' : '@next/swc-win32-x64-msvc')
+      : (process.platform === 'linux' ? (process.arch === 'arm64' ? '@next/swc-linux-arm64-gnu' : '@next/swc-linux-x64-gnu') : '@next/swc-darwin-arm64')
     const installRoot = join(dir, 'kan-854-c-dependencies')
     mkdirSync(installRoot, {recursive:true})
     writeFileSync(join(installRoot, 'package.json'), JSON.stringify({
       name: 'kan-854-c-runtime', version: '0.0.0', private:true,
-      dependencies: {next:'16.4.3', 'eslint-config-next':'16.4.3', react:sourcePackage.dependencies.react, 'react-dom':sourcePackage.dependencies['react-dom']}
+      dependencies: {next:'16.4.3', 'eslint-config-next':'16.4.3', [swcPlatformPackage]:'16.4.3', react:sourcePackage.dependencies.react, 'react-dom':sourcePackage.dependencies['react-dom']}
     }))
     writeFileSync(join(installRoot, 'pnpm-workspace.yaml'), "packages:\n  - '.'\n")
     const pnpm = 'pnpm'
@@ -73,9 +76,6 @@ for (const bindHost of ['127.0.0.1', 'localhost'] as const) test('KAN-854/C prov
     assert.equal((JSON.parse(readFileSync(join(installedEslint,'package.json'),'utf8')) as {version:string}).version,'16.4.3')
     // pnpm's node_modules/next is a symlink on Windows. Copy its physical package
     // contents instead; creating a symlink here requires extra Windows privileges.
-    const swcPlatformPackage = process.platform === 'win32'
-      ? (process.arch === 'arm64' ? '@next/swc-win32-arm64-msvc' : '@next/swc-win32-x64-msvc')
-      : (process.platform === 'linux' ? (process.arch === 'arm64' ? '@next/swc-linux-arm64-gnu' : '@next/swc-linux-x64-gnu') : '@next/swc-darwin-arm64')
     const nativePackageFile = join(installRoot, 'node_modules', ...swcPlatformPackage.split('/'), 'package.json')
     assert.ok(existsSync(nativePackageFile), 'EXPERIMENT_SETUP_ERROR: C native SWC package missing in isolated installation')
     const nativeVersion = (JSON.parse(readFileSync(nativePackageFile, 'utf8')) as {version:string}).version
