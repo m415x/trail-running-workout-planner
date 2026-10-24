@@ -66,16 +66,26 @@ test('KAN-854/T1 observes authentic anonymous application routing', { timeout: 1
     }
     assert.ok(ready, 'EXPERIMENT_SETUP_ERROR: no HTTP readiness: ' + logs)
     // Characterization: capture every route even if one loops. No premature GREEN.
-    const findings: Array<{route:string;termination:string;status:number;location:string|null}> = []
+    const findings: Array<{route:string;termination:string;status:number;location:string|null;error?:string}> = []
     for (const route of ['/', '/es', '/en', '/dashboard/athletes', '/es/dashboard/athletes', '/en/dashboard/athletes']) {
-      const result = await captureHttpRedirectChain(origin + route, { permittedOrigins: [origin], maxHops: 5, timeoutMs: 20_000 })
-      process.stdout.write('KAN-854 HTTP ' + JSON.stringify({ version, route, result }) + '\n')
-      assert.ok(result.hops.length > 0)
-      findings.push({ route, termination: result.termination, status: result.hops[0]?.status ?? 0, location: result.hops[0]?.location ?? null })
-      assert.ok(result.hops.every(h => h.status < 500), 'CONTRACT_RED: HTTP 5xx on ' + route + ': ' + logs)
+      try {
+        const result = await captureHttpRedirectChain(origin + route, { permittedOrigins: [origin], maxHops: 5, timeoutMs: 8_000 })
+        process.stdout.write('KAN-854 HTTP ' + JSON.stringify({ version, route, result }) + '\n')
+        assert.ok(result.hops.length > 0)
+        findings.push({ route, termination: result.termination, status: result.hops[0]?.status ?? 0, location: result.hops[0]?.location ?? null })
+        if (result.hops.some(h => h.status >= 500)) findings[findings.length - 1].error = 'HTTP_5XX_OBSERVED'
+      } catch (error) {
+        const detail = error instanceof Error ? error.name + ': ' + error.message : String(error)
+        findings.push({ route, termination: 'experimental_error', status: 0, location: null, error: detail })
+        process.stdout.write('KAN-854 HTTP_EXPERIMENT_ERROR ' + JSON.stringify({ route, detail }) + '\n')
+      }
     }
-    process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\\n')
-    assert.ok(findings.length === 6, 'Incomplete routing characterization')
+    process.stdout.write('KAN-854 ROUTING_CHARACTERIZATION ' + JSON.stringify(findings) + '\n')
+    assert.equal(findings.length, 6, 'Incomplete routing characterization')
+    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: one or more routes timed out; inspect routing characterization')
+    assert.ok(findings.every(f => f.error !== 'HTTP_5XX_OBSERVED'), 'CONTRACT_RED: HTTP 5xx observed')
+    // A self-loop remains a documented contractual RED finding even if this
+    // characterization collector completes successfully.
   } catch (error) {
     failure = true
     throw error
