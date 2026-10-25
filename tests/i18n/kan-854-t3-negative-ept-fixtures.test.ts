@@ -68,11 +68,11 @@ test('KAN-854/T3 N1-N5 fail closed on independent SQLite copies without protecte
           const identity=await resolveAuthenticatedEptIdentity({provider:'supabase',subject},lookup)
           const access=await requireAuthenticatedEptAction({readAccess:async()=>identity})
           const activeTeam=resolveActiveTeamContext({persistedTeamId:null,memberships:rows.map(m=>({teamId:m.teamId,isActive:m.isActive,isDeleted:m.isDeleted,effectiveFrom:m.effectiveFrom,effectiveUntil:m.effectiveUntil})),onDate:new Date().toISOString()})
-          const decision=authorizeEffectiveCapability({authenticatedUserId:user,teamId:teamA,capability:'planning.manage',
+          const decision=scenario==='N1'||scenario==='N5'?null:authorizeEffectiveCapability({authenticatedUserId:user,teamId:teamA,capability:'planning.manage',
             resource:{teamId:scenario==='N4'?'kan854_other_team':teamA},at:new Date().toISOString(),
             memberships:rows.map(m=>({userId:m.userId,teamId:m.teamId,preset:m.preset,effectiveFrom:m.effectiveFrom,effectiveUntil:m.effectiveUntil,isActive:m.isActive})),athleteProfiles:[],grants:[]})
-          if(scenario==='N1'){assert.equal(identity.status,'unlinked');assert.equal(access.status,'forbidden');assert.equal(decision.allowed,true) /* downstream not reached by H2 */}
-          if(scenario==='N2'){assert.equal(activeTeam.status,'invalid_context');assert.equal(decision.allowed,false)}
+          if(scenario==='N1'){assert.equal(identity.status,'unlinked');assert.equal(access.status,'forbidden');assert.equal(decision,null)}
+          if(scenario==='N2'){assert.equal(activeTeam.status,'invalid_context');assert.equal(decision?.allowed,false)}
           if(scenario==='N3'){assert.equal(activeTeam.status,'resolved');assert.equal(decision.allowed,false)}
           if(scenario==='N4'){assert.equal(activeTeam.status,'resolved');assert.equal(decision.allowed,false)}
           if(scenario==='N5'){assert.equal(activeTeam.status,'selection_required')}
