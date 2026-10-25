@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
+import { setTimeout as delay } from 'node:timers/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -35,12 +36,28 @@ test('KAN-854/T4 Chrome CDP starts with isolated profile and no application navi
   process.stdout.write('KAN-854 T4_CDP_PREFLIGHT '+JSON.stringify({outcome,browserVersion,cdpEndpoint,isolatedProfile:true,applicationNavigation:false,supabaseAuthUsed:false,nextStarted:false,bindingCaptured:false,stderrSummary:outcome==='BLOCKED'?stderr.replace(/https?:\/\/\S+/g,'[url]').slice(-500):undefined})+'\n')
   assert.equal(outcome,'CDP_READY','EXPERIMENT_SETUP_ERROR: isolated browser CDP unavailable')
  }finally{
-  if(child.pid&&child.exitCode===null){
+  const closed = child.exitCode!==null || child.signalCode!==null
+  if(!closed&&child.pid){
    if(process.platform==='win32'){
-    const {spawnSync}=await import('node:child_process')
-    spawnSync('taskkill',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,timeout:8000})
+    const result=spawnSync('taskkill',['/PID',String(child.pid),'/T','/F'],{windowsHide:true,timeout:8000})
+    if(result.error)process.stderr.write('KAN-854 CDP_TERMINATION_WARNING '+JSON.stringify({reason:'taskkill-launch-failed',code:(result.error as NodeJS.ErrnoException).code})+'\n')
    }else child.kill('SIGTERM')
   }
-  rmSync(dir,{recursive:true,force:true,maxRetries:5,retryDelay:250})
+  // Windows releases Chrome profile handles after child/process-tree termination;
+  // taskkill returning is not evidence that every descendant has exited.
+  if(child.exitCode===null&&child.signalCode===null){
+   await Promise.race([new Promise<void>(done=>child.once('close',()=>done())),delay(5000)])
+  }
+  let cleaned=false
+  for(let attempt=0;attempt<16;attempt++){
+   try{rmSync(dir,{recursive:true,force:true,maxRetries:2,retryDelay:150});cleaned=true;break}
+   catch(error){
+    if(attempt===15){
+     const code=error instanceof Error&&'code' in error?String(error.code):'UNKNOWN'
+     process.stderr.write('KAN-854 CDP_CLEANUP_DEFERRED '+JSON.stringify({directory:dir,code,attempts:16})+'\n')
+    }else await delay(300)
+   }
+  }
+  if(!cleaned)process.stderr.write('KAN-854 CDP_CLEANUP_INCOMPLETE: disposable profile only; no application resources affected\\n')
  }
 })
