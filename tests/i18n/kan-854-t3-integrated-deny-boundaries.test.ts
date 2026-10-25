@@ -12,7 +12,7 @@ test('KAN-854/T3 integrated H2 H3 H4A deny before persistence or cookie mutation
  const cookieStore={get:(_name:string)=>undefined,set:(_name:string,_value:string,_options:unknown)=>{cookieWrites++}}
  const members=[{userId:user,teamId:team,effectiveFrom:'2020-01-01T00:00:00.000Z',effectiveUntil:null,isActive:true,isDeleted:false}]
  const context=createActiveTeamServerContext({cookies:async()=>cookieStore,loadMemberships:async()=>members,now:()=>now,secureCookies:false})
- const unlinked=await requireAuthenticatedEptAction({readAccess:async()=>({status:'unlinked'})})
+ const unlinked=await requireAuthenticatedEptAction({readAccess:async()=>({status:'unlinked',provider:'supabase',subject:'kan854-unlinked-test-subject'})})
  assert.equal(unlinked.status,'forbidden')
  const deniedTeam=await context.select(user,other)
  assert.equal(deniedTeam.status,'rejected')
