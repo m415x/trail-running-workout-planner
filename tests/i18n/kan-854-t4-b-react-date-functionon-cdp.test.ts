@@ -253,9 +253,9 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B React date sta
       if(afterDate?.selectedMicrocycleValues.includes('kan854_t4_micro'))break
     }
     const reactUpdated=!!afterDate?.selectedMicrocycleValues.includes('kan854_t4_micro')&&afterDate.checkedCheckboxes>0
-    const outcome=reactUpdated?'REACT_DATE_AND_MICROCYCLE_CONFIRMED':afterDate?.dateValue==='2026-10-24'?'DOM_DATE_ONLY':'DATE_NOT_PERSISTED'
-    process.stdout.write('KAN-854 T4_B_REACT_DATE '+JSON.stringify({outcome,variant:'B',before:{dateValue:optionState.dateValue,checkboxes:optionState.checkboxCount},nativeSetter:appliedDate,afterDate,reactUpdated,postSent:false,actionBindingCaptured:false,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha})+'\n')
-    assert.equal(outcome,'REACT_DATE_AND_MICROCYCLE_CONFIRMED','EXPERIMENT_INCONCLUSIVE: native setter did not lead to a verified React microcycle selection')
+    const reactDateOutcome=reactUpdated?'REACT_DATE_AND_MICROCYCLE_CONFIRMED':afterDate?.dateValue==='2026-10-24'?'DOM_DATE_ONLY':'DATE_NOT_PERSISTED'
+    process.stdout.write('KAN-854 T4_B_REACT_DATE '+JSON.stringify({outcome:reactDateOutcome,variant:'B',before:{dateValue:optionState.dateValue,checkboxes:optionState.checkboxCount},nativeSetter:appliedDate,afterDate,reactUpdated,postSent:false,actionBindingCaptured:false,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha})+'\n')
+    assert.equal(reactDateOutcome,'REACT_DATE_AND_MICROCYCLE_CONFIRMED','EXPERIMENT_INCONCLUSIVE: native setter did not lead to a verified React microcycle selection')
     assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
     const last=hops[hops.length-1]
     const outcome=termination==='loop'?'ROUTING_LOOP':last?.status===200&&current.pathname.includes('dashboard/sessions/new')?'AUTHENTICATED_ROUTE_REACHED':last?.status===200&&current.pathname.includes('/login')?'AUTH_REDIRECT':'INCONCLUSIVE'
