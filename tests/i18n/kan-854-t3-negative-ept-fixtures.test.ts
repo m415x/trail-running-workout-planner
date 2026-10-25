@@ -73,8 +73,8 @@ test('KAN-854/T3 N1-N5 fail closed on independent SQLite copies without protecte
             memberships:rows.map(m=>({userId:m.userId,teamId:m.teamId,preset:m.preset,effectiveFrom:m.effectiveFrom,effectiveUntil:m.effectiveUntil,isActive:m.isActive})),athleteProfiles:[],grants:[]})
           if(scenario==='N1'){assert.equal(identity.status,'unlinked');assert.equal(access.status,'forbidden');assert.equal(decision,null)}
           if(scenario==='N2'){assert.equal(activeTeam.status,'invalid_context');assert.equal(decision?.allowed,false)}
-          if(scenario==='N3'){assert.equal(activeTeam.status,'resolved');assert.equal(decision.allowed,false)}
-          if(scenario==='N4'){assert.equal(activeTeam.status,'resolved');assert.equal(decision.allowed,false)}
+          if(scenario==='N3'){assert.equal(activeTeam.status,'resolved');assert.equal(decision?.allowed,false)}
+          if(scenario==='N4'){assert.equal(activeTeam.status,'resolved');assert.equal(decision?.allowed,false)}
           if(scenario==='N5'){assert.equal(activeTeam.status,'selection_required')}
           outcomes.push({case:scenario,boundary:scenario==='N1'?'H2':scenario==='N2'||scenario==='N5'?'H3':'H4A',result:scenario==='N5'?'selection_required':'DENY',unchanged:false})
         }finally{db.close()}
