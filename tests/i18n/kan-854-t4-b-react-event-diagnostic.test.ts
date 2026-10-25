@@ -255,7 +255,22 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B React date eve
     const reactUpdated=!!afterDate?.selectedMicrocycleValues.includes('kan854_t4_micro')&&afterDate.checkedCheckboxes>0
     const reactDateOutcome=reactUpdated?'REACT_DATE_AND_MICROCYCLE_CONFIRMED':afterDate?.dateValue==='2026-10-24'?'DOM_DATE_ONLY':'DATE_NOT_PERSISTED'
     process.stdout.write('KAN-854 T4_B_REACT_DATE '+JSON.stringify({outcome:reactDateOutcome,variant:'B',before:{dateValue:optionState.dateValue,checkboxes:optionState.checkboxCount},nativeSetter:appliedDate,afterDate,reactUpdated,postSent:false,actionBindingCaptured:false,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha})+'\n')
-    const probe=await cdp('Runtime.evaluate',{expression:"(() => {const d=document.querySelector('form input[name=date]');if(!d)return {present:false};const keys=Object.keys(d);const reactPropsKey=keys.find(k=>k.startsWith('__reactProps
+    const probeExpression = `(() => {
+      const d = document.querySelector('form input[name=date]');
+      if (!d) return {present:false};
+      const keys = Object.keys(d);
+      const reactPropsKey = keys.find(k => k.startsWith('__reactProps$'));
+      const reactFiberKey = keys.find(k => k.startsWith('__reactFiber$'));
+      const props = reactPropsKey ? d[reactPropsKey] : undefined;
+      return {present:true,hasReactProps:!!reactPropsKey,hasReactFiber:!!reactFiberKey,
+        hasOnChangeHandler:typeof props?.onChange === 'function',
+        reactPropValue:typeof props?.value === 'string' ? props.value : null,
+        nativeDomValue:d.value,scriptCount:document.scripts.length,readyState:document.readyState};
+    })()`
+    const probe=await cdp('Runtime.evaluate',{expression:probeExpression,returnByValue:true})
+    const hydration=(probe.result as {value?:{present:boolean;hasReactProps:boolean;hasReactFiber:boolean;hasOnChangeHandler:boolean;reactPropValue:string|null;nativeDomValue:string;scriptCount:number;readyState:string}}|undefined)?.value
+    assert.ok(hydration,'EXPERIMENT_SETUP_ERROR: React hydration observation unavailable')
+    process.stdout.write('KAN-854 T4_B_REACT_EVENT_DIAG '+JSON.stringify({outcome:reactDateOutcome,hydration,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false})+'\\n')
     assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
     const last=hops[hops.length-1]
     const outcome=termination==='loop'?'ROUTING_LOOP':last?.status===200&&current.pathname.includes('dashboard/sessions/new')?'AUTHENTICATED_ROUTE_REACHED':last?.status===200&&current.pathname.includes('/login')?'AUTH_REDIRECT':'INCONCLUSIVE'
