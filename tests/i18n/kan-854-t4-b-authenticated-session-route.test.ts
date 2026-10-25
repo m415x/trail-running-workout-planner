@@ -163,17 +163,6 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B patched runtim
     process.stdout.write('KAN-854 T4_B_AUTH_HTTP '+JSON.stringify({outcome,variant:'B',nextVersion:version,host:bindHost,termination,hops,verifiedSubject:true,domainSourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false,cookieValuesLogged:false})+'\n')
     assert.equal(outcome,'AUTHENTICATED_ROUTE_REACHED','EXPERIMENT_INCONCLUSIVE: real SSR authenticated SessionForm route not reached')
   } catch (error) {
-          const detail = error instanceof Error ? error.name + ': ' + error.message : String(error)
-          findings.push({ requestedHost, route, termination: 'experimental_error', status: 0, location: null, error: detail })
-          process.stdout.write('KAN-854 B_HTTP_ERROR ' + JSON.stringify({ requestedHost, route, detail }) + '\n')
-        }
-      }
-    }
-    process.stdout.write('KAN-854 T4_B_ROUTING ' + JSON.stringify({outcome:findings[0]?.termination==='terminal'&&findings[0]?.status===200?'HTTP_ROUTE_TERMINAL':'ROUTING_OR_AUTH_INCONCLUSIVE',findings,networkDiagnostic,nextVersion:version,domainSourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,bindingCaptured:false,authenticated:false}) + '\n')
-    assert.equal(findings.length, 1)
-    assert.ok(findings.every(f => f.termination !== 'experimental_error'), 'EXPERIMENT_INCONCLUSIVE: cannot characterize IPv4 bind')
-    assert.ok(findings.every(f => f.status < 500), 'EXPERIMENT_SETUP_ERROR: HTTP 5xx invalidates routing comparison; inspect nextLogs for missing snapshot sources')
-  } catch (error) {
     failure = true
     throw error
   } finally {
