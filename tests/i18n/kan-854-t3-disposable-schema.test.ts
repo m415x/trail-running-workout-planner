@@ -35,7 +35,14 @@ test('KAN-854/T3 prepares isolated canonical SQLite schema without identities', 
       const schema=db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE type IN ('table','index','trigger') AND name NOT LIKE 'sqlite_%' ORDER BY type,name").all() as Array<{type:string;name:string;tbl_name:string;sql:string|null}>
       for(const name of required) assert.ok(schema.some(row=>row.type==='table'&&row.name===name),'EXPERIMENT_SETUP_ERROR: missing '+name)
       const unique=db.pragma('index_list(external_identity_links)') as Array<{name:string;unique:number}>
-      assert.ok(unique.length>0,'EXPERIMENT_SETUP_ERROR: identity indexes absent')
+      assert.ok(unique.some(index=>index.unique===1),'EXPERIMENT_SETUP_ERROR: unique identity index absent')
+      const membershipIndexes=db.pragma('index_list(team_memberships)') as Array<{name:string;unique:number}>
+      assert.ok(membershipIndexes.length>0,'EXPERIMENT_SETUP_ERROR: membership indexes absent')
+      const linkForeignKeys=db.pragma('foreign_key_list(external_identity_links)') as Array<{table:string;from:string;to:string}>
+      const membershipForeignKeys=db.pragma('foreign_key_list(team_memberships)') as Array<{table:string;from:string;to:string}>
+      assert.ok(linkForeignKeys.some(fk=>fk.table==='users'&&fk.from==='user_id'),'EXPERIMENT_SETUP_ERROR: missing identity link user FK')
+      assert.ok(membershipForeignKeys.some(fk=>fk.table==='users'&&fk.from==='user_id'),'EXPERIMENT_SETUP_ERROR: missing membership user FK')
+      assert.ok(membershipForeignKeys.some(fk=>fk.table==='teams'&&fk.from==='team_id'),'EXPERIMENT_SETUP_ERROR: missing membership team FK')
       for(const table of ['users','external_identity_links','team_memberships','teams']){
         const count=(db.prepare('SELECT COUNT(*) AS total FROM "'+table+'"').get() as {total:number}).total
         assert.equal(count,0,'EXPERIMENT_SETUP_ERROR: schema fixture unexpectedly contains records in '+table)
@@ -50,10 +57,10 @@ test('KAN-854/T3 prepares isolated canonical SQLite schema without identities', 
       const dbSha256=createHash('sha256').update(readFileSync(dbPath)).digest('hex')
       process.stdout.write('KAN-854 T3_DISPOSABLE_SCHEMA '+JSON.stringify({
         outcome:'SCHEMA_READY',directory:dir,database:dbPath,schemaSha256,migrationSourcesSha256,dbSha256,
-        objects:schema.length,identityIndexCount:unique.length,integrity:'ok',foreignKeys:'ok',identityRows:0,
+        objects:schema.length,identityIndexCount:unique.length,membershipIndexCount:membershipIndexes.length,integrity:'ok',foreignKeys:'ok',identityRows:0,
         migrationsCommand:'SQLITE_SCENARIO_MODE=1 SQLITE_DATABASE_PATH=<temp> tsx scripts/upgrade-sqlite.ts',
         authorization:'BLOCKED-unprovisioned',sourceMemberships:'not-copied'
-      })+'\\n')
+      })+'\n')
       successful=true
     }finally{db.close()}
   }finally{if(!successful)rmSync(dir,{recursive:true,force:true})}
