@@ -50,7 +50,7 @@ test('KAN-854/T3 prepares isolated canonical SQLite schema without identities', 
       const schemaSha256=createHash('sha256').update(JSON.stringify(schema)).digest('hex')
       const migrationFiles=spawnSync('git',['ls-files','drizzle/sqlite','db/migrations'],{cwd:root,encoding:'utf8'})
       assert.equal(migrationFiles.status,0)
-      const paths=migrationFiles.stdout.trim().split(/\\r?\\n/).filter(Boolean)
+      const paths=migrationFiles.stdout.trim().split(/\r?\n/).filter(Boolean)
       const h=createHash('sha256')
       for(const path of paths){h.update(path+'\\0');h.update(readFileSync(resolve(root,path)))}
       const migrationSourcesSha256=h.digest('hex')
