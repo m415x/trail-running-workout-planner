@@ -234,8 +234,8 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B SessionForm da
     assert.ok(observed,'EXPERIMENT_SETUP_ERROR: missing DOM diagnostics')
     process.stdout.write('KAN-854 T4_B_OPTIONS_RUNTIME_DIAG '+JSON.stringify({outcome:outcomeOptions,observed,fixtureSourceSha256:expectedDomainSha,readOnly:true,postSent:false,reason:outcomeOptions==='NO_MICROCYCLE_OPTIONS'?'options-not-in-rendered-dom':'options-present'})+'\n')
     const applyDate=await cdp('Runtime.evaluate',{expression:"(() => {const date=document.querySelector('form input[name=date]');if(!(date instanceof HTMLInputElement))return {applied:false};const setter=Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value')?.set;setter?.call(date,'2026-10-24');date.dispatchEvent(new Event('input',{bubbles:true}));date.dispatchEvent(new Event('change',{bubbles:true}));return {applied:true,domValue:date.value}})()",returnByValue:true})
-    const applied=(applyDate.result as {value?:{applied:boolean;domValue:string}}|undefined)?.value
-    assert.equal(applied?.domValue,'2026-10-24','EXPERIMENT_SETUP_ERROR: date input did not update')
+    const dateApplied=(applyDate.result as {value?:{applied:boolean;domValue:string}}|undefined)?.value
+    assert.equal(dateApplied?.domValue,'2026-10-24','EXPERIMENT_SETUP_ERROR: date input did not update')
     let afterDate:{dateValue:string;checkboxCount:number;microcycleIdInForm:boolean;prescriptionFields:number}|undefined
     for(let i=0;i<20;i++){
       await delay(200)
