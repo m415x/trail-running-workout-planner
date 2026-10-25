@@ -26,8 +26,9 @@ test('KAN-854/T4 observes rendered SessionForm via real Chrome CDP without submi
   const target=await fetch('http://127.0.0.1:'+port+'/json/new?'+encodeURIComponent('about:blank'),{method:'PUT',signal:AbortSignal.timeout(5000)})
   assert.equal(target.status,200)
   const descriptor=await target.json() as {webSocketDebuggerUrl?:string}
-  assert.ok(descriptor.webSocketDebuggerUrl?.startsWith('ws://127.0.0.1:'+port+'/devtools/page/'))
-  socket=new WebSocket(descriptor.webSocketDebuggerUrl)
+  const endpoint=descriptor.webSocketDebuggerUrl
+  assert.ok(typeof endpoint==='string'&&endpoint.startsWith('ws://127.0.0.1:'+port+'/devtools/page/'),'EXPERIMENT_SETUP_ERROR: invalid CDP target endpoint')
+  socket=new WebSocket(endpoint)
   await new Promise<void>((done,reject)=>{socket!.addEventListener('open',()=>done(),{once:true});socket!.addEventListener('error',()=>reject(new Error('EXPERIMENT_SETUP_ERROR: CDP socket failed')),{once:true})})
   let seq=0
   const pending=new Map<number,{resolve:(v:Record<string,unknown>)=>void;reject:(e:Error)=>void}>()
