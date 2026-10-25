@@ -270,60 +270,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B React date eve
     const probe=await cdp('Runtime.evaluate',{expression:probeExpression,returnByValue:true})
     const hydration=(probe.result as {value?:{present:boolean;hasReactProps:boolean;hasReactFiber:boolean;hasOnChangeHandler:boolean;reactPropValue:string|null;nativeDomValue:string;scriptCount:number;readyState:string}}|undefined)?.value
     assert.ok(hydration,'EXPERIMENT_SETUP_ERROR: React hydration observation unavailable')
-    process.stdout.write('KAN-854 T4_B_REACT_EVENT_DIAG '+JSON.stringify({outcome:reactDateOutcome,hydration,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false})+'\\n')
-    assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
-    const last=hops[hops.length-1]
-    const outcome=termination==='loop'?'ROUTING_LOOP':last?.status===200&&current.pathname.includes('dashboard/sessions/new')?'AUTHENTICATED_ROUTE_REACHED':last?.status===200&&current.pathname.includes('/login')?'AUTH_REDIRECT':'INCONCLUSIVE'
-    process.stdout.write('KAN-854 T4_B_AUTH_HTTP '+JSON.stringify({outcome,variant:'B',nextVersion:version,host:bindHost,termination,hops,verifiedSubject:true,domainSourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false,cookieValuesLogged:false})+'\n')
-    assert.equal(outcome,'AUTHENTICATED_ROUTE_REACHED','EXPERIMENT_INCONCLUSIVE: real SSR authenticated SessionForm route not reached')
-  } catch (error) {
-    failure = true
-    throw error
-  } finally {
-    cdpSocket?.close()
-    if(chrome?.pid&&chrome.exitCode===null){if(process.platform==='win32')spawnSync('taskkill',['/PID',String(chrome.pid),'/T','/F'],{windowsHide:true,timeout:8000});else chrome.kill('SIGTERM')}
-    if(chromeProfile)await delay(800)
-    if (child && !stopped && child.pid) {
-      if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, timeout: 10000 })
-      else child.kill('SIGTERM')
-      if (!stopped) await Promise.race([new Promise<void>(done => child?.once('close', () => done())), delay(4000)])
-    }
-    try { rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 400 }) }
-    catch (error) {
-      process.stderr.write('KAN-854 CLEANUP_DEFERRED ' + JSON.stringify({ dir, priorFailure: failure, detail: String(error) }) + '\n')
-    }
-  }
-})
-));const reactFiberKey=keys.find(k=>k.startsWith('__reactFiber
-    assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
-    const last=hops[hops.length-1]
-    const outcome=termination==='loop'?'ROUTING_LOOP':last?.status===200&&current.pathname.includes('dashboard/sessions/new')?'AUTHENTICATED_ROUTE_REACHED':last?.status===200&&current.pathname.includes('/login')?'AUTH_REDIRECT':'INCONCLUSIVE'
-    process.stdout.write('KAN-854 T4_B_AUTH_HTTP '+JSON.stringify({outcome,variant:'B',nextVersion:version,host:bindHost,termination,hops,verifiedSubject:true,domainSourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false,cookieValuesLogged:false})+'\n')
-    assert.equal(outcome,'AUTHENTICATED_ROUTE_REACHED','EXPERIMENT_INCONCLUSIVE: real SSR authenticated SessionForm route not reached')
-  } catch (error) {
-    failure = true
-    throw error
-  } finally {
-    cdpSocket?.close()
-    if(chrome?.pid&&chrome.exitCode===null){if(process.platform==='win32')spawnSync('taskkill',['/PID',String(chrome.pid),'/T','/F'],{windowsHide:true,timeout:8000});else chrome.kill('SIGTERM')}
-    if(chromeProfile)await delay(800)
-    if (child && !stopped && child.pid) {
-      if (process.platform === 'win32') spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, timeout: 10000 })
-      else child.kill('SIGTERM')
-      if (!stopped) await Promise.race([new Promise<void>(done => child?.once('close', () => done())), delay(4000)])
-    }
-    try { rmSync(dir, { recursive: true, force: true, maxRetries: 6, retryDelay: 400 }) }
-    catch (error) {
-      process.stderr.write('KAN-854 CLEANUP_DEFERRED ' + JSON.stringify({ dir, priorFailure: failure, detail: String(error) }) + '\n')
-    }
-  }
-})
-));const props=reactPropsKey?d[reactPropsKey]:undefined;return {present:true,hasReactProps:!!reactPropsKey,hasReactFiber:!!reactFiberKey,hasOnChangeHandler:typeof props?.onChange==='function',reactPropValue:typeof props?.value==='string'?props.value:null,nativeDomValue:d.value,scriptCount:document.scripts.length,readyState:document.readyState}})()",returnByValue:true})
-    const hydration=(probe.result as {value?:{present:boolean;hasReactProps:boolean;hasReactFiber:boolean;hasOnChangeHandler:boolean;reactPropValue:string|null;nativeDomValue:string;scriptCount:number;readyState:string}}|undefined)?.value
-    assert.ok(hydration,'EXPERIMENT_SETUP_ERROR: React hydration observation unavailable')
     process.stdout.write('KAN-854 T4_B_REACT_EVENT_DIAG '+JSON.stringify({outcome:reactDateOutcome,hydration,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha,postSent:false,bindingCaptured:false})+'\n')
-    // This is diagnostic; DOM_DATE_ONLY remains non-GREEN for the acceptance contract.
-
     assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
     const last=hops[hops.length-1]
     const outcome=termination==='loop'?'ROUTING_LOOP':last?.status===200&&current.pathname.includes('dashboard/sessions/new')?'AUTHENTICATED_ROUTE_REACHED':last?.status===200&&current.pathname.includes('/login')?'AUTH_REDIRECT':'INCONCLUSIVE'
@@ -347,3 +294,4 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B React date eve
     }
   }
 })
+
