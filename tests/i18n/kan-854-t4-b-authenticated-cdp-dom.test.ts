@@ -166,7 +166,20 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B hydrated Sessi
     chrome=spawn(browserPath,['--headless=new','--disable-gpu','--no-first-run','--remote-debugging-port=0','--user-data-dir='+chromeProfile,'about:blank'],{windowsHide:true,stdio:'ignore'})
     const marker=join(chromeProfile,'DevToolsActivePort')
     let cdpPort=0
-    for(let i=0;i<60;i++){if(existsSync(marker)){cdpPort=Number(readFileSync(marker,'utf8').split(/\\r?\\n/)[0]);break}await delay(150)}
+    for(let i=0;i<80;i++){
+      if(chrome.exitCode!==null||chrome.signalCode!==null)throw Error('EXPERIMENT_SETUP_ERROR: Chrome exited before CDP readiness')
+      if(existsSync(marker)){
+        try{
+          const raw=readFileSync(marker,'utf8').split(/\r?\n/)[0]
+          const parsed=Number(raw)
+          if(Number.isInteger(parsed)&&parsed>0&&parsed<=65535){cdpPort=parsed;break}
+        }catch(error){
+          const code=(error as NodeJS.ErrnoException).code
+          if(!['EBUSY','EPERM','EACCES','ENOENT'].includes(code??''))throw error
+        }
+      }
+      await delay(150)
+    }
     assert.ok(cdpPort>0,'EXPERIMENT_SETUP_ERROR: Chrome CDP did not start')
     const descriptorResponse=await fetch('http://127.0.0.1:'+cdpPort+'/json/new?about:blank',{method:'PUT',signal:AbortSignal.timeout(5000)})
     assert.equal(descriptorResponse.status,200)
