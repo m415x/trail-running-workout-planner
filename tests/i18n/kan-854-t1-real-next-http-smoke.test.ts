@@ -1,0 +1,114 @@
+import assert from 'node:assert/strict'
+import { spawn } from 'node:child_process'
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:net'
+import { join, resolve } from 'node:path'
+import { createRequire } from 'node:module'
+import { setTimeout as delay } from 'node:timers/promises'
+import test from 'node:test'
+
+const require = createRequire(import.meta.url)
+
+async function availablePort(): Promise<number> {
+  const server = createServer()
+  return await new Promise<number>((resolvePort, reject) => {
+    server.once('error', reject)
+    server.listen(0, '127.0.0.1', () => {
+      const address = server.address()
+      if (!address || typeof address === 'string') return reject(new Error('No port'))
+      server.close(() => resolvePort(address.port))
+    })
+  })
+}
+
+test('KAN-854/T1 captures genuine disposable Next HTTP redirects without repository writes', { timeout: 120_000 }, async () => {
+  // Keep the disposable fixture within the worktree for pnpm resolution.
+  const temporaryRoot = resolve('.tmp')
+  mkdirSync(temporaryRoot, { recursive: true })
+  const dir = mkdtempSync(join(temporaryRoot, 'kan-854-http-smoke-'))
+  const port = await availablePort()
+  const app = join(dir, 'app')
+  mkdirSync(join(app, 'api', 'kan-854-redirect'), { recursive: true })
+  const nextPackagePath = require.resolve('next/package.json')
+  const nextVersion = (require(nextPackagePath) as { version: string }).version
+  const nextCli = require.resolve('next/dist/bin/next')
+  writeFileSync(join(dir, 'package.json'), JSON.stringify({ private: true, name: 'kan-854-disposable-next-http', version: '0.0.0' }))
+  // Explicit neutral configuration: this fixture does not exercise project next-intl/PWA.
+  writeFileSync(join(dir, 'next.config.mjs'), 'export default { reactStrictMode: true }\n')
+  writeFileSync(join(app, 'layout.tsx'), "export default function Layout({children}:{children:React.ReactNode}){return <html><body>{children}</body></html>}\n")
+  writeFileSync(join(app, 'page.tsx'), "export default function Page(){return <p>KAN-854 disposable fixture</p>}\n")
+  writeFileSync(join(app, 'api', 'kan-854-redirect', 'route.ts'), [
+    "export async function GET() {",
+    "  return new Response(null, { status: 307, headers: { Location: '/es/login', 'X-KAN-854-Fixture': 'next-route' } })",
+    "}",
+  ].join('\n'))
+  // Run webpack for predictable isolated fixture compilation; no package installation.
+  const child = spawn(process.execPath, [nextCli, 'dev', '--webpack', '-H', '127.0.0.1', '-p', String(port)], {
+    cwd: dir,
+    env: { ...process.env, NEXT_TELEMETRY_DISABLED: '1' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  })
+  let logs = ''
+  let closed = false
+  child.once('exit', () => { closed = true })
+  child.stdout?.on('data', chunk => { logs += String(chunk); logs = logs.slice(-5000) })
+  child.stderr?.on('data', chunk => { logs += String(chunk); logs = logs.slice(-5000) })
+  try {
+    let response: Response | undefined
+    for (let attempt = 0; attempt < 55; attempt++) {
+      if (closed) throw new Error('Next fixture exited: ' + logs)
+      try {
+        const probe = await fetch('http://127.0.0.1:' + port + '/api/kan-854-redirect', {
+          redirect: 'manual',
+          signal: AbortSignal.timeout(3000),
+        })
+        if (probe.headers.get('x-kan-854-fixture') === 'next-route') {
+          response = probe
+          break
+        }
+      } catch { /* Next compilation can take time; bounded attempts */ }
+      await delay(1000)
+    }
+    assert.ok(response, 'Real Next route did not become ready: ' + logs)
+    assert.equal(response.status, 307)
+    assert.equal(response.headers.get('location'), '/es/login')
+    assert.match(nextVersion, /^16\.3\.8$/, 'T1 smoke must not silently run candidate C or patched branch')
+  } finally {
+    // Windows can briefly retain locks on .next artifacts after taskkill exits.
+    // Cleanup must not hide a failed HTTP assertion; retain the exact fixture path.
+    if (!closed && child.pid) {
+      if (process.platform === 'win32') {
+        const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true })
+        await new Promise<void>(done => {
+          killer.once('error', () => done())
+          killer.once('exit', () => done())
+        })
+      } else {
+        child.kill('SIGTERM')
+      }
+    }
+    if (!closed) {
+      await Promise.race([
+        new Promise<void>(done => child.once('exit', () => done())),
+        delay(3000),
+      ])
+    }
+    let cleaned = false
+    for (let attempt = 0; attempt < 8; attempt++) {
+      try {
+        rmSync(dir, { recursive: true, force: true, maxRetries: 2, retryDelay: 250 })
+        cleaned = true
+        break
+      } catch (error) {
+        if (attempt === 7) {
+          const detail = error instanceof Error ? error.message : String(error)
+          process.stderr.write('KAN-854 cleanup deferred (fixture retained at ' + dir + '): ' + detail + '\\n')
+        } else {
+          await delay(500)
+        }
+      }
+    }
+    if (!cleaned) process.stderr.write('KAN-854 fixture requires targeted cleanup after process exit: ' + dir + '\\n')
+  }
+})

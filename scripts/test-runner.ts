@@ -56,6 +56,22 @@ export function assertSafeAnnualPostgresTarget(env: Record<string, string | unde
   }
 }
 
+// Historical KAN-854 HTTP/Chrome experiments run only via explicit pn tdd paths.
+// Exact-name allowlist; unknown tests remain in the ordinary gate (fail closed).
+export const KAN854_LAB_ONLY_TESTS = new Set([
+  'kan-854-b-http-complete-fixture.test.ts',
+  'kan-854-b-server-router-provenance.test.ts',
+  'kan-854-c-server-router-provenance.test.ts',
+  'kan-854-localhost-bind.test.ts',
+  'kan-854-t4-chrome-cdp-preflight.test.ts',
+])
+
+export function isKan854LabOnlyTest(file: string): boolean {
+  const normalized = file.replaceAll('\\', '/')
+  return normalized.includes('/tests/i18n/') &&
+    KAN854_LAB_ONLY_TESTS.has(normalized.split('/').at(-1) ?? '')
+}
+
 export async function partitionTestFiles(files: string[]): Promise<{
   ordinary: string[]; postgres: string[]
 }> {
@@ -434,7 +450,7 @@ async function main(): Promise<void> {
   const lanes = await partitionTestFiles(all)
   const annual = lanes.postgres.filter(isAnnualPostgresAcceptanceFile)
   const mutable = lanes.postgres.filter(file => !isAnnualPostgresAcceptanceFile(file))
-  const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary
+  const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary.filter(file => !isKan854LabOnlyTest(file))
   if (annualMode) {
     assertSafeAnnualPostgresTarget(process.env)
     if (annual.length !== 2) throw new Error('BLOCKED: expected exactly two audited annual read-only tests')
@@ -444,6 +460,7 @@ async function main(): Promise<void> {
     if (selected.length === 0) throw new Error('BLOCKED: no PostgreSQL integration tests found')
   }
   console.log(`Discovered ${all.length} test files; selected ${selected.length} ${annualMode ? 'annual read-only' : pgMode ? 'disposable PostgreSQL regression' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
+  if (!pgMode && !annualMode) console.log('KAN-854 historical lab-only files excluded from ordinary test gate: '+lanes.ordinary.filter(isKan854LabOnlyTest).length+'; run explicitly with pn tdd <path> (no PASS implied)')
   if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg and pn test:pg:annual separately (no PASS implied)')
   process.exitCode = runTestFiles(selected)
 }

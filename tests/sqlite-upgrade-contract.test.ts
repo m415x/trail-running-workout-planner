@@ -566,18 +566,16 @@ test('Drizzle Kit can push repository-relative schemas into an explicitly isolat
   const workspace = mkdtempSync(path.join(tmpdir(), 'trail-sqlite-drizzle-kit-'))
   const databasePath = path.join(workspace, 'sqlite.db')
   try {
-    const drizzleKit = path.resolve(
-      projectRoot,
-      'node_modules/.bin',
-      process.platform === 'win32' ? 'drizzle-kit.cmd' : 'drizzle-kit',
-    )
+    // Invoke the JS CLI directly through Node: cmd.exe would split paths containing spaces.
+    const drizzleKit = path.resolve(projectRoot, 'node_modules/drizzle-kit/bin.cjs')
+    assert.equal(fs.existsSync(drizzleKit), true, 'EXPERIMENT_SETUP_ERROR: Drizzle Kit CLI missing')
     const result = spawnSync(
-      drizzleKit,
-      ['push', `--config=${path.resolve(projectRoot, 'drizzle.sqlite.config.ts')}`],
+      process.execPath,
+      [drizzleKit, 'push', `--config=${path.resolve(projectRoot, 'drizzle.sqlite.config.ts')}`],
       {
         cwd: projectRoot,
         encoding: 'utf8',
-        shell: process.platform === 'win32',
+        shell: false,
         env: {
           ...process.env,
           SQLITE_SCENARIO_MODE: '1',

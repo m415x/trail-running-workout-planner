@@ -2,6 +2,12 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
+## KAN-854/S2 experimental causal comparison (not integrated)
+
+- [KAN-854/S2 suite inventory and non-suppressive retention policy](security/kan-854-test-retention-policy.md) — separates deterministic regressions from Next/Chrome/Supabase lab characterizations; preserves Drizzle Kit independent gate pending diagnosis.
+- [KAN-854/S2 experimental closure handoff](handoffs/kan-854.md) — candidate status, S3 conditions, independent KAN-858, and unmet integration gates.
+- [T5 A/B/C HTTP and authorization causal matrix](security/kan-854-t5-causal-matrix.md) — 16.3.8 historical B patch compared with isolated Next 16.4.3 C unpatched; C authenticated localhost PASS, C 127.0.0.1 redirect-cycle FAIL for root/default ES, additional scenarios INCONCLUSIVE/BLOCKED. KAN-858 residual H4B session writer defect is independent. **Experimental branch only: no full candidate gates, PR/merge or postmerge GREEN attested**. KAN-855/S3 must diagnose the 307 emitter and preserve ES as-needed and H2/H3/H4A.
+
 ## Handoffs
 
 - [KAN-689 Coach Membership H3/H4A reader — T1 integrated in dev](handoffs/kan-689.md) — [KAN-843](https://trail-running-workout-planning.atlassian.net/browse/KAN-843), economic_policy.manage-protected read, Team A/B regression; operator-reported PASS 6/6 on functional candidate `acae812a53cec9ecec96b560109bc01b0dcd623a` (local HEAD not separately attested), post-handoff docs check PASS on `065f20779668800e86309783358cc14fada57c83`; [PR #71](https://github.com/m415x/trail-running-workout-planner/pull/71) merged on dev at `3bb52c8571b10a5af227684dede133637078bbe5`; exact-SHA postmerge PASS 6/6; `HANDOFF DOCS: PASS` on `872c167d36f5456a00ce8f2f273b72649ae16d4d`.
