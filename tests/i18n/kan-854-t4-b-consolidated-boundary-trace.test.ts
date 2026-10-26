@@ -3,8 +3,7 @@ import Database from 'better-sqlite3'
 import { spawn, spawnSync } from 'node:child_process'
 import { copyFileSync, cpSync, existsSync, writeFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { createServer, connect } from 'node:net'
-import { lookup } from 'node:dns/promises'
+import { createServer } from 'node:net'
 import { createRequire } from 'node:module'
 import { dirname, join, relative, resolve, sep } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
@@ -131,13 +130,6 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
     child.stderr?.on('data', chunk => { logs = (logs + String(chunk)).slice(-9000);traceLog=(traceLog+String(chunk)).slice(-24000) })
     child.once('close', () => { stopped = true })
     const origin = 'http://' + bindHost + ':' + port
-    const resolvedAddresses = await lookup('localhost', { all: true })
-    const tcpProbe = async (host: string): Promise<string> => await new Promise<string>(done => {
-      const socket = connect({ host, port, timeout: 1500 })
-      socket.once('connect', () => { socket.destroy(); done('connected') })
-      socket.once('timeout', () => { socket.destroy(); done('timeout') })
-      socket.once('error', error => done((error as NodeJS.ErrnoException).code ?? error.message))
-    })
     let ready = false
     for (let n = 0; n < 50; n++) {
       if (stopped) throw new Error('EXPERIMENT_SETUP_ERROR: Next exited: ' + logs)
@@ -376,7 +368,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
     let loadingFailure:string|undefined
     let requestSeen=false
     let postLoadingFinished=false
-    let otherRequests:Array<{method:string;path:string;disposition:string}>=[]
+    const otherRequests:Array<{method:string;path:string;disposition:string}>=[]
     ws.addEventListener('message',event=>{
       let item:{method?:string;params?:{requestId?:string;errorText?:string;blockedReason?:string;canceled?:boolean;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number;mimeType?:string}}}
       try{item=JSON.parse(String(event.data))}catch{return}
