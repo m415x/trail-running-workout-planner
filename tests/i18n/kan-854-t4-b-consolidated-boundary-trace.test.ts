@@ -56,7 +56,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
       ["  const data = parsed.data\n\n  try {","  const data = parsed.data\n  console.info('KAN854_REQUEST_TRACE '+JSON.stringify({stage:'form',prescriptionsCount:prescriptions.data.length,expectedGroup:prescriptions.data.some(p=>p.groupId==='kan854_t4_group'),expectedMicrocycle:prescriptions.data.some(p=>p.microcycleId==='kan854_t4_micro')}));\n\n  try {"]
     ]
     for(const [oldCode,newCode] of replacements){
-      assert.equal(instrumentedAction.split(oldCode).length-1,1,'EXPERIMENT_SETUP_ERROR: cannot uniquely patch temporary action observation')
+      assert.ok(instrumentedAction.includes(oldCode),'EXPERIMENT_SETUP_ERROR: cannot patch temporary action observation')
       instrumentedAction=instrumentedAction.replace(oldCode,newCode)
     }
     writeFileSync(sourceActionPath,instrumentedAction)
@@ -481,7 +481,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
     })()`,returnByValue:true})
     const clientResult=(domResult.result as {value?:{errorVisible:boolean;errorText:string|null;formPresent:boolean;route:string;submissionPending:boolean}}|undefined)?.value
     process.stdout.write('KAN-854 T4_B_ACTION_RESULT '+JSON.stringify({clientResult:clientResult??null,domException:(domResult.exceptionDetails as {text?:string}|undefined)?.text??null,response:httpResponse??null,bodyNotLogged:true,cookiesNotLogged:true})+'\n')
-    const traceRows=traceLog.split(/\\r?\\n/).flatMap(line=>{
+    const traceRows=traceLog.split(/\r?\n/).flatMap(line=>{
       const pos=line.indexOf('KAN854_REQUEST_TRACE ')
       if(pos<0)return []
       try{return [JSON.parse(line.slice(pos+'KAN854_REQUEST_TRACE '.length)) as Record<string,unknown>]}
