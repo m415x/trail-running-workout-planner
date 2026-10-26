@@ -33,7 +33,13 @@ The feature branch introduces **63** `tests/i18n/kan-854-*.test.ts` files and **
 
 C Next.js 16.4.3 **unpatched** emitted 307 `Location: /` upon GET `/` to IPv4 `127.0.0.1`; this is exact self-redirect evidence. Emitting component is **not** identified. B historically patched 16.3.8, in authenticated `localhost` retained H2/H3/H4A and RSC POST. C authenticated `localhost` 10 GET routes terminal; Server Action response headers 200 but `ERR_ABORTED` and `loadingFinished:false` remain INCONCLUSIVE. Real refresh not exercised. `createSession` writer blocked by **KAN-858**, independent H4B issue. Full A/B/C table and source SHA are in [T5 matrix](kan-854-t5-causal-matrix.md).
 
-## Gate policy proposed, not yet applied
+## Initial narrow implementation — candidate (2026-10-26)
+
+The ordinary runner `scripts/test-runner.ts` now uses an **exact-name, fail-closed set of five laboratory-only files**: `kan-854-b-http-complete-fixture`, `kan-854-b-server-router-provenance`, `kan-854-c-server-router-provenance`, `kan-854-localhost-bind` and `kan-854-t4-chrome-cdp-preflight` (each with `.test.ts`). These are preserved and can still be run with `pn tdd tests/i18n/<filename> --verbose`; no result is silently counted as PASS. Proof test: `tests/scripts/kan-854-lab-lane-classification.test.ts` checks exact paths, Windows separators, negative paths, and known/unknown ordinary regressions. Implementation commits: `918cc0b2ce0aca0c2870fc4d422dc9982f82b1b0`, `a2ca24cbfd5ff8b70fb4f4996e2e3d4e372634fc`.
+
+This **does not blanket-exclude** other `kan-854-*.test.ts` files: real-app anonymous HTTP, new C GET matrix, deterministic contracts, H2/H3/H4A, etc. stay in the ordinary gate. The policy's larger inventory is a taxonomy, **not** an exclusion list. Runner `pn test:pg` and annual lanes stay unmodified. The first post-change functional gate is **pending**; a transient/expected RED may still appear in retained experiments, which must be resolved explicitly rather than silently ignored.
+
+## Gate policy (initial proposal, partially applied)
 
 1. Keep deterministic unit/contract/fixture tests in the ordinary gate; do not hide a real regression behind test filenames.
 2. Any Next/Chrome/auth experimental lane must have an **explicit opt-in invocation** (e.g., existing `pn tdd path` or a dedicated script), preserved test source and bounded phase readiness plus per-request timeouts. Do not merely increase global timeout to mask a genuine loop.
