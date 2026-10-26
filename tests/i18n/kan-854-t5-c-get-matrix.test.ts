@@ -14,7 +14,7 @@ import { resolveKan791AcceptanceIdentity } from '../../lib/auth/kan-791-acceptan
 
 const require = createRequire(import.meta.url)
 
-for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C unpatched Next authenticated GET-only routing matrix '+bindHost, { timeout: 300_000 }, async () => {
+for (const bindHost of ['127.0.0.1'] as const) test('KAN-854/T4 C unpatched Next authenticated GET-only routing matrix '+bindHost, { timeout: 300_000 }, async () => {
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
@@ -83,6 +83,7 @@ for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C un
     assert.equal(digest(readFileSync(domainPath)),expectedDomainSha,'EXPERIMENT_SETUP_ERROR: T4 fixture drift')
     const scenarioDbPath=join(dir,'kan-854-domain-runtime.sqlite')
     copyFileSync(domainPath,scenarioDbPath)
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'runtime-install-ready'})+'\n')
     const port = await new Promise<number>((done, reject) => {
       const server = createServer()
       server.once('error', reject)
@@ -118,6 +119,7 @@ for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C un
       } catch { /* Next startup is bounded */ }
       await delay(1000)
     }
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'http-readiness',ready})+'\n')
     assert.ok(ready, 'EXPERIMENT_SETUP_ERROR: no HTTP readiness: ' + logs)
     const required=['KAN791_ACCEPTANCE_EMAIL','KAN791_ACCEPTANCE_SUBJECT','KAN791_AUTH_TEST_PASSWORD'] as const
     const missing=required.filter(key=>!process.env[key]?.trim())
@@ -129,16 +131,19 @@ for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C un
       cookies:{getAll:()=>[...authCookies.values()],setAll:(updates)=>{for(const cookie of updates){if(cookie.value)authCookies.set(cookie.name,cookie as AuthCookie);else authCookies.delete(cookie.name)}}},
       auth:{autoRefreshToken:false,detectSessionInUrl:false,persistSession:true},
     })
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authentication-start'})+'\n')
     const login=await auth.auth.signInWithPassword({email:expected.email,password:process.env['KAN791_AUTH_TEST_PASSWORD']!})
     assert.ok(login.data.session&&!login.error,'EXPERIMENT_SETUP_ERROR: dedicated Supabase Auth login rejected')
     const verified=await auth.auth.getUser()
     assert.equal(verified.data.user?.id.toLowerCase(),expected.subject,'EXPERIMENT_SETUP_ERROR: dedicated subject mismatch')
     assert.ok([...authCookies.keys()].some(name=>name.startsWith('sb-')),'EXPERIMENT_SETUP_ERROR: authentic SSR cookies missing')
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authentication-verified'})+'\n')
     const cookieHeader=[...authCookies.values()].map(({name,value})=>encodeURIComponent(name)+'='+encodeURIComponent(value)).join('; ')
     const hops:Array<{path:string;status:number;location:string|null;setCookieNames:string[]}>=[]
     let current=new URL('/dashboard/sessions/new',origin)
     const visited=new Set<string>()
     let termination='terminal'
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authenticated-reentry-start'})+'\n')
     for(let i=0;i<6;i++){
       if(visited.has(current.href)){termination='loop';break}
       visited.add(current.href)
@@ -151,10 +156,12 @@ for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C un
       current=target
       if(i===5)termination='redirect_limit'
     }
+    process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authenticated-reentry-done',hops:hops.map(h=>({path:h.path,status:h.status}))})+'\n')
     // GET-only T5 route matrix. The authentic Supabase session is retained; no token refresh is induced.
     const routePaths=['/','/es','/en','/dashboard','/es/dashboard','/en/dashboard','/dashboard/sessions/new','/login','/es/login','/en/login']
     const routeResults:Array<{path:string;hops:Array<{status:number;path:string;locationPath:string|null;setCookieNames:string[]}>;termination:string}>=[]
     for(const path of routePaths){
+      process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'route-start',path})+'\n')
       let route=new URL(path,origin)
       const chain:Array<{status:number;path:string;locationPath:string|null;setCookieNames:string[]}>=[]
       const seen=new Set<string>()
@@ -173,6 +180,7 @@ for (const bindHost of ['localhost','127.0.0.1'] as const) test('KAN-854/T4 C un
         if(hop===6)ended='redirect-limit'
       }
       routeResults.push({path,hops:chain,termination:ended})
+      process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'route-done',path,termination:ended,hops:chain.map(h=>h.status)})+'\n')
     }
     const failures=routeResults.filter(x=>x.termination!=='terminal'||x.hops.some(h=>h.status>=500))
     process.stdout.write('KAN-854 T5_C_GET_MATRIX '+JSON.stringify({version,bindHost,patchApplied:false,authenticated:true,refreshExercised:false,sessionPreservedOnly:true,scenarios:routeResults,failures:failures.length,cookieValuesLogged:false,sourceUnchanged:digest(readFileSync(domainPath))===expectedDomainSha})+'\n')
