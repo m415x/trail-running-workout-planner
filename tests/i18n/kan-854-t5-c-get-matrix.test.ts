@@ -130,10 +130,9 @@ for (const bindHost of ['127.0.0.1'] as const) test('KAN-854/T5 C unpatched Next
     const hops:Array<{path:string;status:number;location:string|null;setCookieNames:string[]}>=[]
     let current=new URL('/dashboard/sessions/new',origin)
     const visited=new Set<string>()
-    let termination='terminal'
     process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authenticated-reentry-start'})+'\n')
     for(let i=0;i<6;i++){
-      if(visited.has(current.href)){termination='loop';break}
+      if(visited.has(current.href)){break}
       visited.add(current.href)
       const response=await fetch(current,{redirect:'manual',headers:{cookie:cookieHeader},signal:AbortSignal.timeout(60000)})
       const location=response.headers.get('location')
@@ -142,7 +141,6 @@ for (const bindHost of ['127.0.0.1'] as const) test('KAN-854/T5 C unpatched Next
       const target=new URL(location,current)
       assert.equal(target.origin,origin,'EXPERIMENT_SETUP_ERROR: redirect leaves isolated runtime')
       current=target
-      if(i===5)termination='redirect_limit'
     }
     process.stdout.write('KAN-854 T5_C_PHASE '+JSON.stringify({bindHost,phase:'authenticated-reentry-done',hops:hops.map(h=>({path:h.path,status:h.status}))})+'\n')
     // GET-only T5 route matrix. The authentic Supabase session is retained; no token refresh is induced.
