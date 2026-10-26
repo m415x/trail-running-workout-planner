@@ -16,10 +16,6 @@ function git(args: string[]): Buffer {
   return result.stdout as Buffer
 }
 
-function trackedAt(revision: string): string[] {
-  return git(['ls-tree', '-r', '--name-only', '-z', revision]).toString('utf8').split('\0').filter(Boolean)
-}
-
 test('KAN-854/B preflight verifies historical patch and application-source comparability', () => {
   const patch = git(['show', historicalSha + ':' + patchPath])
   assert.equal(createHash('sha256').update(patch).digest('hex'), expectedPatchHash)
