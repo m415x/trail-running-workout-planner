@@ -42,7 +42,6 @@ test('KAN-854/C installs unpatched Next 16.4.3 and eslint-config-next 16.4.3 in 
     assert.ok(existsSync(router), 'EXPERIMENT_SETUP_ERROR: C router missing')
     const bytes = readFileSync(router)
     const hash = createHash('sha256').update(bytes).digest('hex')
-    const text = bytes.toString('utf8')
     assert.notEqual(hash, '53083187795bda3c82cbfc1245928ac6cfe64a371bf6a05f5167ccf0fb5139c3', 'EXPERIMENT_INCONCLUSIVE: C resolves historical B router artifact')
     assert.equal(existsSync(join(dir, 'patches')), false, 'EXPERIMENT_INCONCLUSIVE: C inherited historical patch directory')
     assert.ok(existsSync(join(nextPath, 'dist/bin/next')), 'EXPERIMENT_SETUP_ERROR: C executable absent')
