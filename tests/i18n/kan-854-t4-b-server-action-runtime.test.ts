@@ -349,7 +349,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
       let item:{method?:string;params?:{requestId?:string;errorText?:string;blockedReason?:string;canceled?:boolean;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number}}}
       try{item=JSON.parse(String(event.data))}catch{return}
       if(item.method==='Network.requestWillBeSent'&&item.params?.request?.method==='POST'&&new URL(item.params.request.url).pathname==='/dashboard/sessions/new'){targetNetworkRequestId=item.params.requestId;requestSeen=true}
-      if(item.method==='Network.loadingFailed'&&item.params?.requestId===targetNetworkRequestId){loadingFailure=item.params.errorText??'unknown-loading-failure';releaseResponse?.()}
+      if(item.method==='Network.loadingFailed'&&item.params&&item.params.requestId===targetNetworkRequestId){loadingFailure=item.params.errorText??'unknown-loading-failure';releaseResponse?.()}
       if(item.method==='Network.responseReceived'&&item.params?.response){
         const response=item.params.response
         if(new URL(response.url).origin===origin&&new URL(response.url).pathname.includes('dashboard/sessions/new')){
