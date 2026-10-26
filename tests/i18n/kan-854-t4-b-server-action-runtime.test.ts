@@ -344,6 +344,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
     let continueFailure:string|undefined
     let loadingFailure:string|undefined
     let requestSeen=false
+    let otherRequests:Array<{method:string;path:string;disposition:string}>=[]
     ws.addEventListener('message',event=>{
       let item:{method?:string;params?:{requestId?:string;errorText?:string;blockedReason?:string;canceled?:boolean;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number}}}
       try{item=JSON.parse(String(event.data))}catch{return}
@@ -365,7 +366,11 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
         attempt={method:request.method,path:url.pathname,headerNames:names.filter(n=>!/cookie|authorization|token/i.test(n)),hasNextActionHeader:true,bodyAvailable:typeof request.postData==='string'}
         releaseAttempt?.()
         void cdp('Fetch.continueRequest',{requestId}).then(()=>{continued=true}).catch(error=>{continueFailure=error instanceof Error?error.name:'CDP_ERROR';releaseResponse?.()})
+      }else if(request.method==='GET'&&url.origin===origin){
+        if(otherRequests.length<16)otherRequests.push({method:request.method,path:url.pathname,disposition:'continued'})
+        void cdp('Fetch.continueRequest',{requestId}).catch(()=>undefined)
       }else{
+        if(otherRequests.length<16)otherRequests.push({method:request.method,path:url.pathname,disposition:'blocked'})
         void cdp('Fetch.failRequest',{requestId,errorReason:'BlockedByClient'}).catch(()=>undefined)
       }
     })
@@ -394,7 +399,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
     const after=readCounts()
     const sourceUnchanged=digest(readFileSync(domainPath))===expectedDomainSha
     const serverActionResponseObserved=Boolean(attempt&&httpResponse)
-    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,requestSeen,continued,continueFailure,loadingFailure,targetNetworkRequestMatched:!!targetNetworkRequestId,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
+    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,requestSeen,continued,continueFailure,loadingFailure,targetNetworkRequestMatched:!!targetNetworkRequestId,otherRequests,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
     assert.equal(permittedPosts,1,'EXPERIMENT_INCONCLUSIVE: expected one browser-produced Server Action')
     assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no HTTP response; inspect CDP continue/loading diagnostics before assessing server action')
     assert.ok(sourceUnchanged,'EXPERIMENT_SETUP_ERROR: immutable source T4 database changed')
