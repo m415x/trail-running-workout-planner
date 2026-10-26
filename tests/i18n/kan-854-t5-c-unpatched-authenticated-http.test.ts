@@ -56,7 +56,8 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 C unpatched Next
     mkdirSync(installer,{recursive:true})
     writeFileSync(join(installer,'package.json'),JSON.stringify({name:'kan854-c-sandbox',private:true,version:'1.0.0'}))
     const npm=process.platform==='win32'?'npm.cmd':'npm'
-    const installed=spawnSync(npm,['install','--prefix',installer,'--no-save','--no-package-lock','--ignore-scripts','--no-audit','--no-fund','next@16.4.3'],{cwd:installer,encoding:'utf8',windowsHide:true,timeout:180000,maxBuffer:2*1024*1024,shell:process.platform==='win32'})
+    // The working directory already scopes installation. Do not pass --prefix with a spaced Windows path to cmd.exe.
+    const installed=spawnSync(npm,['install','--no-save','--no-package-lock','--ignore-scripts','--no-audit','--no-fund','next@16.4.3'],{cwd:installer,encoding:'utf8',windowsHide:true,timeout:180000,maxBuffer:2*1024*1024,shell:process.platform==='win32'})
     assert.equal(installed.status,0,'EXPERIMENT_SETUP_ERROR: cannot install isolated Next 16.4.3; '+(installed.stderr??'').slice(-500))
     const downloaded=join(installer,'node_modules','next')
     const metadata=JSON.parse(readFileSync(join(downloaded,'package.json'),'utf8')) as {version:string}
