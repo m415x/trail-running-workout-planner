@@ -344,15 +344,17 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
     let continueFailure:string|undefined
     let loadingFailure:string|undefined
     let requestSeen=false
+    let postLoadingFinished=false
     let otherRequests:Array<{method:string;path:string;disposition:string}>=[]
     ws.addEventListener('message',event=>{
       let item:{method?:string;params?:{requestId?:string;errorText?:string;blockedReason?:string;canceled?:boolean;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number;mimeType?:string}}}
       try{item=JSON.parse(String(event.data))}catch{return}
       if(item.method==='Network.requestWillBeSent'&&item.params?.request?.method==='POST'&&new URL(item.params.request.url).pathname==='/dashboard/sessions/new'){targetNetworkRequestId=item.params.requestId;requestSeen=true}
+      if(item.method==='Network.loadingFinished'&&item.params?.requestId===targetNetworkRequestId){postLoadingFinished=true;releaseResponse?.()}
       if(item.method==='Network.loadingFailed'&&item.params&&item.params.requestId===targetNetworkRequestId){loadingFailure=item.params.errorText??'unknown-loading-failure';releaseResponse?.()}
       if(item.method==='Network.responseReceived'&&item.params?.response){
         const response=item.params.response
-        if(new URL(response.url).origin===origin&&new URL(response.url).pathname.includes('dashboard/sessions/new')){
+        if(item.params.requestId===targetNetworkRequestId&&new URL(response.url).origin===origin&&new URL(response.url).pathname==='/dashboard/sessions/new'){
           httpResponse={status:response.status,path:new URL(response.url).pathname,mime:response.mimeType??null};releaseResponse?.()
         }
       }
@@ -441,9 +443,9 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action 
     const after=readCounts()
     const sourceUnchanged=digest(readFileSync(domainPath))===expectedDomainSha
     const serverActionResponseObserved=Boolean(attempt&&httpResponse)
-    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,requestSeen,continued,continueFailure,loadingFailure,targetNetworkRequestMatched:!!targetNetworkRequestId,otherRequests,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
+    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,requestSeen,continued,continueFailure,loadingFailure,postLoadingFinished,targetNetworkRequestMatched:!!targetNetworkRequestId,otherRequests,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
     assert.equal(permittedPosts,1,'EXPERIMENT_INCONCLUSIVE: expected one browser-produced Server Action')
-    assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no HTTP response; inspect CDP continue/loading diagnostics before assessing server action')
+    assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no response specifically correlated to action POST requestId')
     assert.ok(sourceUnchanged,'EXPERIMENT_SETUP_ERROR: immutable source T4 database changed')
     assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
     const last=hops[hops.length-1]
