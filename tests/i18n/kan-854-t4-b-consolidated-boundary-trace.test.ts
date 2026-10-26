@@ -47,7 +47,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
     // Disposable runtime-only observation. Do not change decision paths or guards.
     const sourceActionPath=join(dir,'app/actions/session-actions.ts')
     const originalAction=readFileSync(sourceActionPath,'utf8')
-    let instrumentedAction=originalAction
+    let instrumentedAction=originalAction.replace(/\r\n/g,'\n')
     const replacements:Array<[string,string]>=[
       ["  if (access.status !== 'authenticated') return null","  console.info('KAN854_REQUEST_TRACE '+JSON.stringify({stage:'identity',authenticated:access.status==='authenticated',status:access.status}));\n  if (access.status !== 'authenticated') return null"],
       ["  if (activeTeam.status !== 'resolved') return null","  console.info('KAN854_REQUEST_TRACE '+JSON.stringify({stage:'team',resolved:activeTeam.status==='resolved',status:activeTeam.status,expectedTeam:activeTeam.status==='resolved'&&activeTeam.teamId==='team_1'}));\n  if (activeTeam.status !== 'resolved') return null"],
@@ -55,8 +55,8 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B consolidated a
       ["      return decision.allowed","      console.info('KAN854_REQUEST_TRACE '+JSON.stringify({stage:'h4a',allowed:decision.allowed,teamMatched:decision.teamId===activeTeam.teamId}));\n      return decision.allowed"],
       ["  const data = parsed.data\n\n  try {","  const data = parsed.data\n  console.info('KAN854_REQUEST_TRACE '+JSON.stringify({stage:'form',prescriptionsCount:prescriptions.data.length,expectedGroup:prescriptions.data.some(p=>p.groupId==='kan854_t4_group'),expectedMicrocycle:prescriptions.data.some(p=>p.microcycleId==='kan854_t4_micro')}));\n\n  try {"]
     ]
-    for(const [oldCode,newCode] of replacements){
-      assert.ok(instrumentedAction.includes(oldCode),'EXPERIMENT_SETUP_ERROR: cannot patch temporary action observation')
+    for(const [index,[oldCode,newCode]] of replacements.entries()){
+      assert.ok(instrumentedAction.includes(oldCode),'EXPERIMENT_SETUP_ERROR: cannot patch temporary action observation selector '+index)
       instrumentedAction=instrumentedAction.replace(oldCode,newCode)
     }
     writeFileSync(sourceActionPath,instrumentedAction)
