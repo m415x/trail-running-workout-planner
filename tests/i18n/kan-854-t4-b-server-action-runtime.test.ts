@@ -386,8 +386,8 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B isolated real 
     await cdp('Fetch.disable')
     const after=readCounts()
     const sourceUnchanged=digest(readFileSync(domainPath))===expectedDomainSha
-    const observed=attempt&&httpResponse
-    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:observed?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
+    const serverActionResponseObserved=Boolean(attempt&&httpResponse)
+    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
     assert.equal(permittedPosts,1,'EXPERIMENT_INCONCLUSIVE: expected one browser-produced Server Action')
     assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no HTTP response for authentic Next action')
     assert.ok(sourceUnchanged,'EXPERIMENT_SETUP_ERROR: immutable source T4 database changed')
