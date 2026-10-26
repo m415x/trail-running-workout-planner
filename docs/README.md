@@ -4,6 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## KAN-854/S2 experimental causal comparison (not integrated)
 
+- [KAN-854/S2 suite inventory and non-suppressive retention policy](security/kan-854-test-retention-policy.md) — separates deterministic regressions from Next/Chrome/Supabase lab characterizations; preserves Drizzle Kit independent gate pending diagnosis.
 - [KAN-854/S2 experimental closure handoff](handoffs/kan-854.md) — candidate status, S3 conditions, independent KAN-858, and unmet integration gates.
 - [T5 A/B/C HTTP and authorization causal matrix](security/kan-854-t5-causal-matrix.md) — 16.3.8 historical B patch compared with isolated Next 16.4.3 C unpatched; C authenticated localhost PASS, C 127.0.0.1 redirect-cycle FAIL for root/default ES, additional scenarios INCONCLUSIVE/BLOCKED. KAN-858 residual H4B session writer defect is independent. **Experimental branch only: no full candidate gates, PR/merge or postmerge GREEN attested**. KAN-855/S3 must diagnose the 307 emitter and preserve ES as-needed and H2/H3/H4A.
 
