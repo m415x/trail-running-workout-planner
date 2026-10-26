@@ -14,7 +14,7 @@ import { resolveKan791AcceptanceIdentity } from '../../lib/auth/kan-791-acceptan
 
 const require = createRequire(import.meta.url)
 
-for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B isolated real Server Action POST with SQLite audit '+bindHost, { timeout: 300_000 }, async () => {
+for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B Server Action CDP transport diagnostic with SQLite audit '+bindHost, { timeout: 300_000 }, async () => {
   const root = resolve('.')
   const tracked = spawnSync('git', ['ls-files', '-z'], { cwd: root, encoding: 'buffer', windowsHide: true })
   assert.equal(tracked.status, 0)
@@ -339,9 +339,16 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B isolated real 
     const attempted=new Promise<void>(done=>{releaseAttempt=done})
     const responded=new Promise<void>(done=>{releaseResponse=done})
     let permittedPosts=0
+    let targetNetworkRequestId:string|undefined
+    let continued=false
+    let continueFailure:string|undefined
+    let loadingFailure:string|undefined
+    let requestSeen=false
     ws.addEventListener('message',event=>{
-      let item:{method?:string;params?:{requestId?:string;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number}}}
+      let item:{method?:string;params?:{requestId?:string;errorText?:string;blockedReason?:string;canceled?:boolean;request?:{url:string;method:string;headers:Record<string,string>;postData?:string};response?:{url:string;status:number}}}
       try{item=JSON.parse(String(event.data))}catch{return}
+      if(item.method==='Network.requestWillBeSent'&&item.params?.request?.method==='POST'&&new URL(item.params.request.url).pathname==='/dashboard/sessions/new'){targetNetworkRequestId=item.params.requestId;requestSeen=true}
+      if(item.method==='Network.loadingFailed'&&item.params?.requestId===targetNetworkRequestId){loadingFailure=item.params.errorText??'unknown-loading-failure';releaseResponse?.()}
       if(item.method==='Network.responseReceived'&&item.params?.response){
         const response=item.params.response
         if(new URL(response.url).origin===origin&&new URL(response.url).pathname.includes('dashboard/sessions/new')){
@@ -357,7 +364,7 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B isolated real 
         permittedPosts++
         attempt={method:request.method,path:url.pathname,headerNames:names.filter(n=>!/cookie|authorization|token/i.test(n)),hasNextActionHeader:true,bodyAvailable:typeof request.postData==='string'}
         releaseAttempt?.()
-        void cdp('Fetch.continueRequest',{requestId}).catch(()=>undefined)
+        void cdp('Fetch.continueRequest',{requestId}).then(()=>{continued=true}).catch(error=>{continueFailure=error instanceof Error?error.name:'CDP_ERROR';releaseResponse?.()})
       }else{
         void cdp('Fetch.failRequest',{requestId,errorReason:'BlockedByClient'}).catch(()=>undefined)
       }
@@ -387,9 +394,9 @@ for (const bindHost of ['localhost'] as const) test('KAN-854/T4 B isolated real 
     const after=readCounts()
     const sourceUnchanged=digest(readFileSync(domainPath))===expectedDomainSha
     const serverActionResponseObserved=Boolean(attempt&&httpResponse)
-    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
+    process.stdout.write('KAN-854 T4_B_SERVER_ACTION '+JSON.stringify({outcome:serverActionResponseObserved?'HTTP_RESPONSE_OBSERVED':attempt?'POST_SENT_NO_RESPONSE':'POST_NOT_OBSERVED',prepared,attempt:attempt??null,response:httpResponse??null,before,after,permittedPosts,requestSeen,continued,continueFailure,loadingFailure,targetNetworkRequestMatched:!!targetNetworkRequestId,sourceUnchanged,sourceFixtureProtected:true,postSent:!!attempt,bodyNotLogged:true,authCookiesNotLogged:true})+'\n')
     assert.equal(permittedPosts,1,'EXPERIMENT_INCONCLUSIVE: expected one browser-produced Server Action')
-    assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no HTTP response for authentic Next action')
+    assert.ok(httpResponse,'EXPERIMENT_INCONCLUSIVE: no HTTP response; inspect CDP continue/loading diagnostics before assessing server action')
     assert.ok(sourceUnchanged,'EXPERIMENT_SETUP_ERROR: immutable source T4 database changed')
     assert.ok(formReached,'EXPERIMENT_INCONCLUSIVE: authenticated client SessionForm did not render')
     const last=hops[hops.length-1]
