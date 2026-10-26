@@ -9,7 +9,7 @@ import { executeAuthorizedSessionMutation } from '../../lib/sessions/authorized-
 test('KAN-854/T3 integrated H2 H3 H4A deny before persistence or cookie mutation',async()=>{
  const user='accept-only-user',team='accept-only-team',other='other-team',now='2026-10-24T12:00:00.000Z'
  let mutations=0,cookieWrites=0,authCalls=0
- const cookieStore={get:(_name:string)=>undefined,set:(_name:string,_value:string,_options:unknown)=>{cookieWrites++}}
+ const cookieStore={get:()=>undefined,set:()=>{cookieWrites++}}
  const members=[{userId:user,teamId:team,effectiveFrom:'2020-01-01T00:00:00.000Z',effectiveUntil:null,isActive:true,isDeleted:false}]
  const context=createActiveTeamServerContext({cookies:async()=>cookieStore,loadMemberships:async()=>members,now:()=>now,secureCookies:false})
  const unlinked=await requireAuthenticatedEptAction({readAccess:async()=>({status:'unlinked',provider:'supabase',subject:'kan854-unlinked-test-subject'})})
