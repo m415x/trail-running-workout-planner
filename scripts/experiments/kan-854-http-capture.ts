@@ -4,6 +4,8 @@ export type HttpHop = {
   method: string
   url: string
   host: string
+  forwardedHost: string | null
+  middlewareRewrite: string | null
   status: number
   location: string | null
   actionRedirect: string | null
@@ -48,6 +50,8 @@ export async function captureHttpRedirectChain(
       method: options.method ?? 'GET',
       url: current.href,
       host: current.host,
+      forwardedHost: options.headers ? (Object.entries(options.headers).find(([name]) => name.toLowerCase() === 'x-forwarded-host')?.[1] ?? null) : null,
+      middlewareRewrite: response.headers.get('x-middleware-rewrite'),
       status: response.status,
       location,
       actionRedirect: response.headers.get('x-action-redirect'),
