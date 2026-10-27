@@ -1,3 +1,5 @@
+- [KAN-853/S1 dependency security audit — integrated in dev](security/kan-853-dependency-audit-baseline.md) — [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) merged `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; premerge operator gate/handoff PASS (Jira `14432`), postmerge local gate and final handoff check pending. KAN-854/S2 reduced candidate next; PR #73 experimental Draft remains preserved.
+
 # Documentation index
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
