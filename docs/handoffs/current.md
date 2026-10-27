@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-854/S2 (2026-10-27)
+
+- **Integrated S2:** [PR #75](https://github.com/m415x/trail-running-workout-planner/pull/75) merged normally into `dev` at `8c4757ae5bbc4511952c932558918b349b94c3b2`. Candidate SHA `dd59907df026cac301db86d938b017606ade0d3e`, base `7db8331b23f8770db8169b8b0d3d91d978d463fd`. Clean 12-file reduction: seven durable docs, capture helper and four autonomous deterministic tests. No Next.js/Zod/package/lockfile change; no experimental runner exclusions. See [story handoff](kan-854.md), [retention policy](../security/kan-854-test-retention-policy.md) and [causal matrix](../security/kan-854-t5-causal-matrix.md).
+- **Candidate verification (operator):** `pn verify --db` PASS 6/6 — Tests 148528ms, TypeScript 13119ms, ESLint 32990ms, Build 25924ms, i18n 323ms, SQLite 45154ms; total 266038ms. `pn docs:handoff:check` PASS. HEAD at execution not independently printed; no incorrect attribution to merge or subsequent docs commits. Vercel `success` on merge; GitHub Actions functional CI not run/applicable to branch-scoped historical workflows.
+- **Postmerge:** remote `dev` merge SHA verified. Reconciliation on later docs-only commits follows; final structural docs checker **pending operator run on final documentary SHA**. Postmerge six-gate repeat not claimed; follow applicable Harness v2 closure criteria. Jira reconciliation pending record; worktree cleanup requires separate operator inventory/preservation.
+- **Outstanding:** A/B/C causal evidence retained, Next 16.4.3 unpatched 10 localhost authenticated GET routes, IPv4 `307 Location: /` self-loop; exact emitting component remains unknown and is scoped to KAN-855/S3 *after* S2 closure. C POST completion (`ERR_ABORTED`) and refresh authentic behavior remain inconclusive. KAN-858 H4B fixed-Team defect independent. Experimental PR #73 remains Draft/intact; do not redo CDP or `groupNotFound`.
+
+---
+
 # Current integrated handoff — KAN-853/S1 (2026-10-27)
 
 - **Integrated:** KAN-853/S1 security dependency characterization, [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) ordinary merge into `dev` at `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; approved PR head `63f904f51210cd813c4482ed47f55c7cb37e4086`, previous integrated `dev` `dfbd0018b4b9d19f9764df054535da24bf032de0`.
