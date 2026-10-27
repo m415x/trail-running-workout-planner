@@ -1,3 +1,13 @@
+# Current integrated handoff — KAN-853/S1 (2026-10-27)
+
+- **Integrated:** KAN-853/S1 security dependency characterization, [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) ordinary merge into `dev` at `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; approved PR head `63f904f51210cd813c4482ed47f55c7cb37e4086`, previous integrated `dev` `dfbd0018b4b9d19f9764df054535da24bf032de0`.
+- **Scope:** three files only: `docs/security/kan-853-dependency-audit-baseline.md`, `tests/scripts/kan-853-pnpm-lockfile-baseline.test.ts`, `tests/sqlite-upgrade-contract.test.ts` (cross-platform Drizzle Kit Node CLI test invocation). No production change or package/lockfile upgrade. Jira KAN-853 Finalizada.
+- **Premerge:** operator-reported focal Drizzle, `pn verify --db` PASS and `pn docs:handoff:check` PASS on candidate SHA (Jira comment `14432`); no independent detailed 6-gate transcript. Vercel candidate success. GitHub Actions functional workflow **not applicable to this PR** based on four historical branch-scoped workflows; no GitHub Actions run or functional CI PASS claimed. GitHub `dev` protection endpoint inaccessible to connector (403); GitHub nevertheless accepted ordinary Ready → merge with expected head SHA.
+- **Postmerge:** remote `dev` HEAD confirmed identical to merge SHA; Vercel `success` for merge SHA. **Operator exact-SHA postmerge `pn verify --db` and `pn docs:handoff:check` on this documentation-only follow-up remain pending**; do not attribute premerge gates to merge/docs commits. Worktree inventory and preservation/retirement remain operator-mediated.
+- **Next:** KAN-854/S2 reduced clean candidate only after S1 integrated. Original experimental [PR #73](https://github.com/m415x/trail-running-workout-planner/pull/73) stays Draft and unmodified, HEAD `2724544094789c440d4faa94063db1761daa2459`. Preserve approved KEEP/REMOVE/SEPARATE in Jira KAN-854 comments `14421`–`14424`; do not repeat A/B/C and do not begin KAN-855/S3 before S2 closure.
+
+---
+
 # Current integrated handoff — KAN-689/T2–T4 (2026-10-21)
 
 ## T2–T4 integrated closure — 2026-10-21
