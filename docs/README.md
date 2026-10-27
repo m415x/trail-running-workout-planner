@@ -1,10 +1,10 @@
-- [KAN-853/S1 dependency security audit — integrated in dev](security/kan-853-dependency-audit-baseline.md) — [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) merged `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; premerge operator gate/handoff PASS (Jira `14432`), postmerge local gate and final handoff check pending. KAN-854/S2 reduced candidate next; PR #73 experimental Draft remains preserved.
-
 # Documentation index
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
 ## Handoffs
+
+- [KAN-853/S1 — current integrated handoff baseline](handoffs/kan-853.md) — [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) merge `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; operator postmerge `pn verify --db` PASS 6/6 on prior documentation HEAD `364a567a8f66bc0eb4062a0a607ed410a5a783c8`; checker FAIL for missing handoff/index, now corrected by documentation-only publication, pending new check. See [current handoff](handoffs/current.md), [security audit matrix](security/kan-853-dependency-audit-baseline.md). Next KAN-854/S2 reduced; preserve experimental PR #73.
 
 - [KAN-689 Coach Membership H3/H4A reader — T1 integrated in dev](handoffs/kan-689.md) — [KAN-843](https://trail-running-workout-planning.atlassian.net/browse/KAN-843), economic_policy.manage-protected read, Team A/B regression; operator-reported PASS 6/6 on functional candidate `acae812a53cec9ecec96b560109bc01b0dcd623a` (local HEAD not separately attested), post-handoff docs check PASS on `065f20779668800e86309783358cc14fada57c83`; [PR #71](https://github.com/m415x/trail-running-workout-planner/pull/71) merged on dev at `3bb52c8571b10a5af227684dede133637078bbe5`; exact-SHA postmerge PASS 6/6; `HANDOFF DOCS: PASS` on `872c167d36f5456a00ce8f2f273b72649ae16d4d`.
 
