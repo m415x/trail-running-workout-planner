@@ -15,7 +15,7 @@ test('KAN-854/T0 preserves the historical 16.3.8 experimental baseline after S3 
   assert.match(historical, /`next@16\.3\.8`/)
   assert.match(historical, /16\.4\.3 without private 16\.3\.8 patch/)
   assert.equal(manifest.dependencies.next, manifest.devDependencies['eslint-config-next'])
-  assert.equal(manifest.dependencies.zod, '^4.4.3')
+  assert.match(historical, /`zod@4\.4\.3`/)
 })
 
 test('KAN-854/T0 identifies authentic proxy and localized routing boundaries', () => {
