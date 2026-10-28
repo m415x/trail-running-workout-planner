@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
       intlStatus: localizedResponse.status,
       intlLocation: safe(localizedResponse.headers.get('location')),
       intlRewrite: safe(localizedResponse.headers.get('x-middleware-rewrite')),
-      finalProxyStatus: response.status,
+      finalProxyStatus: localizedResponse.status,
       finalProxyLocation: safe(response.headers.get('location')),
       finalProxyRewrite: safe(response.headers.get('x-middleware-rewrite')),
     }))
