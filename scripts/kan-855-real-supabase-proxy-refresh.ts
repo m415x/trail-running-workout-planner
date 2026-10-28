@@ -21,9 +21,10 @@ assert.ok(canonical(dirname(real)).startsWith(canonical(temp)+sep))
 assert.ok(basename(dirname(real)).startsWith('trail-running-sqlite-base-seed-kan855-'))
 assert.notEqual(canonical(real),canonical(resolve('sqlite.db')))
 
+async function main() {
 const envFile=resolve('../trwp-kan855-next1643/.env.local')
 assert.ok(existsSync(envFile),'Fixture auth environment missing')
-const {parse}=await import('dotenv')
+const { parse } = await import('dotenv')
 const authEnv=parse(readFileSync(envFile))
 const email=authEnv.SUPABASE_AUTH_TEST_EMAIL
 const password=authEnv.SUPABASE_AUTH_TEST_PASSWORD
@@ -80,3 +81,10 @@ assert.ok(newSession.access_token && newSession.access_token!==before,'Access to
 assert.ok(newSession.refresh_token && newSession.refresh_token!==signed.data.session.refresh_token,'Refresh token did not rotate')
 assert.ok((newSession.expires_at??0)>Math.floor(Date.now()/1000),'Rotated session expired')
 console.log(JSON.stringify({status:'PASS',auth:'real-supabase',proxy:'verified',accessTokenRotated:true,refreshTokenRotated:true,rotatedCookieCount:rotated.length,fixture:'verified-disposable-sqlite',mutated:false}))
+
+}
+
+main().catch((error: unknown) => {
+  console.error('KAN-855 refresh probe DENY: ' + (error instanceof Error ? error.message : 'unknown'))
+  process.exitCode = 1
+})
