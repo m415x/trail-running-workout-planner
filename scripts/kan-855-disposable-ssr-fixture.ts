@@ -28,7 +28,7 @@ function run(script: string) {
     cwd: dir, env, encoding: 'utf8', timeout: 180_000,
   })
   if (result.error || result.status !== 0) {
-    throw new Error(script + ': ' + (result.error?.message ?? result.stderr.slice(-1600)))
+    throw new Error(script + ': ' + (result.error?.message ?? (result.stderr ?? '').slice(-1600)))
   }
 }
 let phase = 'init'
