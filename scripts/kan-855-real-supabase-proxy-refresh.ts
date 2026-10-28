@@ -97,7 +97,7 @@ if(localHttpEnabled) {
   const origin=process.env.KAN855_REFRESH_HTTP_ORIGIN || 'http://localhost:3000'
   assert.equal(origin,'http://localhost:3000','Only the accredited local HTTP origin is allowed')
   const endpoint=origin+'/dashboard/athletes'
-  const cookies=Array.from(jar.values()).map(c=>encodeURIComponent(c.name)+'='+encodeURIComponent(c.value)).join('; ')
+  const cookies=requestCookies.map(c=>encodeURIComponent(c.name)+'='+encodeURIComponent(c.value)).join('; ')
   const refreshed=await fetch(endpoint,{
     headers:{cookie:cookies},
     redirect:'manual',
