@@ -11,7 +11,21 @@ export async function proxy(request: NextRequest) {
   const auth = await refreshSupabaseProxySession(request)
   const localizedResponse = intlMiddleware(request)
 
-  return carryAuthRefreshIntoResponse(auth.response, localizedResponse)
+  const response = carryAuthRefreshIntoResponse(auth.response, localizedResponse)
+  if (process.env.KAN855_PROXY_DIAGNOSTICS === '1') {
+    // Diagnostic-only: observe decisions, never log cookies or authorization headers.
+    const safe = (value: string | null) => value ? new URL(value, request.url).pathname : null
+    console.info('[KAN-855 proxy]', JSON.stringify({
+      requestPath: request.nextUrl.pathname,
+      intlStatus: localizedResponse.status,
+      intlLocation: safe(localizedResponse.headers.get('location')),
+      intlRewrite: safe(localizedResponse.headers.get('x-middleware-rewrite')),
+      finalProxyStatus: response.status,
+      finalProxyLocation: safe(response.headers.get('location')),
+      finalProxyRewrite: safe(response.headers.get('x-middleware-rewrite')),
+    }))
+  }
+  return response
 }
 
 export const config = {
