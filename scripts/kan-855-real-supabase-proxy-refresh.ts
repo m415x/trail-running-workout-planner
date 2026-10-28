@@ -29,11 +29,23 @@ const authEnv=parse(readFileSync(envFile))
 const email=authEnv.SUPABASE_AUTH_TEST_EMAIL
 const password=authEnv.SUPABASE_AUTH_TEST_PASSWORD
 const subject=authEnv.SUPABASE_AUTH_TEST_SUBJECT
-const url=config.NEXT_PUBLIC_SUPABASE_URL || authEnv.NEXT_PUBLIC_SUPABASE_URL
-const key=config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || authEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+const appEnvFile=resolve('.env.local')
+assert.ok(existsSync(appEnvFile),'Application .env.local missing')
+const appEnv=parse(readFileSync(appEnvFile))
+const url=appEnv.NEXT_PUBLIC_SUPABASE_URL
+const key=appEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 assert.ok(email && password && subject && url && key,'Missing acceptance configuration')
-assert.equal(config.NEXT_PUBLIC_SUPABASE_URL,url,'Supabase URL differs from Next app configuration')
-assert.equal(config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,key,'Supabase key differs from Next app configuration')
+if (
+  (config.NEXT_PUBLIC_SUPABASE_URL && config.NEXT_PUBLIC_SUPABASE_URL !== url) ||
+  (config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key) ||
+  (authEnv.NEXT_PUBLIC_SUPABASE_URL && authEnv.NEXT_PUBLIC_SUPABASE_URL !== url) ||
+  (authEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && authEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key)
+) {
+  throw new Error('Application and acceptance Supabase public configuration differ')
+}
+// The actual proxy reads process.env, whereas Next dev loads .env.local itself.
+process.env.NEXT_PUBLIC_SUPABASE_URL=url
+process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=key
 const jar=new Map<string,Cookie>()
 const client=createServerClient(url,key,{
   cookies:{
