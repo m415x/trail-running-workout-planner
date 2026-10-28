@@ -21,7 +21,7 @@ const env = {
   SQLITE_SEED_DISPOSABLE_ACK: '1',
   SQLITE_DATABASE_PATH: path,
   TSX_TSCONFIG_PATH: tsconfig,
-  NODE_ENV: 'test',
+  NODE_ENV: 'test' as const,
 }
 function run(script: string) {
   const result = spawnSync(process.execPath, [tsxCli, resolve(root, script)], {
