@@ -92,7 +92,26 @@ const newSession=JSON.parse(afterJson) as {access_token?:string;refresh_token?:s
 assert.ok(newSession.access_token && newSession.access_token!==before,'Access token did not rotate')
 assert.ok(newSession.refresh_token && newSession.refresh_token!==signed.data.session.refresh_token,'Refresh token did not rotate')
 assert.ok((newSession.expires_at??0)>Math.floor(Date.now()/1000),'Rotated session expired')
-console.log(JSON.stringify({status:'PASS',auth:'real-supabase',proxy:'verified',accessTokenRotated:true,refreshTokenRotated:true,rotatedCookieCount:rotated.length,fixture:'verified-disposable-sqlite',mutated:false}))
+const localHttpEnabled=process.env.KAN855_REFRESH_HTTP_ACCEPTANCE==='1'
+if(localHttpEnabled) {
+  const origin=process.env.KAN855_REFRESH_HTTP_ORIGIN || 'http://localhost:3000'
+  assert.equal(origin,'http://localhost:3000','Only the accredited local HTTP origin is allowed')
+  const endpoint=origin+'/dashboard/athletes'
+  const cookies=Array.from(jar.values()).map(c=>encodeURIComponent(c.name)+'='+encodeURIComponent(c.value)).join('; ')
+  const refreshed=await fetch(endpoint,{
+    headers:{cookie:cookies},
+    redirect:'manual',
+    signal:AbortSignal.timeout(20_000),
+  })
+  try {
+    assert.equal(refreshed.status,200,'Refreshed session did not reach protected athletes route')
+    assert.equal(refreshed.headers.get('location'),null,'Refreshed session was redirected')
+    assert.match(await refreshed.text(),/Atletas|Athletes|atletas|athletes/,'Expected protected athletes page')
+  } finally {
+    await refreshed.body?.cancel()
+  }
+}
+console.log(JSON.stringify({status:'PASS',auth:'real-supabase',proxy:'verified',accessTokenRotated:true,refreshTokenRotated:true,rotatedCookieCount:rotated.length,httpAuthenticatedContinuation:localHttpEnabled?'PASS':'NOT_RUN',fixture:'verified-disposable-sqlite',mutated:false}))
 
 }
 
