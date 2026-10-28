@@ -78,6 +78,61 @@ else {
   const chunkSize=Math.max(1,Math.ceil(replaced.length/cookieNames.length))
   cookieNames.forEach((name,index)=>jar.set(name,{...template[index],value:replaced.slice(index*chunkSize,(index+1)*chunkSize)}))
 }
+if (process.env.KAN855_REFRESH_HTTP_FIRST === '1') {
+  assert.equal(process.env.KAN855_REFRESH_HTTP_ACCEPTANCE, '1', 'HTTP acceptance opt-in required')
+  const cookieHeader = () => Array.from(jar.values()).map(c =>
+    encodeURIComponent(c.name) + '=' + encodeURIComponent(c.value)
+  ).join('; ')
+  const incoming = await fetch('http://localhost:3000/dashboard/athletes', {
+    headers: { cookie: cookieHeader() },
+    redirect: 'manual',
+    signal: AbortSignal.timeout(20_000),
+  })
+  assert.equal(incoming.status, 200, 'Expired-cookie HTTP request must reach authenticated athletes page')
+  assert.equal(incoming.headers.get('location'), null, 'Expired-cookie request was redirected')
+  assert.match(await incoming.text(), /Atletas|Athletes|atletas|athletes/, 'Protected athletes page not rendered')
+
+  const cookieLines = incoming.headers.getSetCookie()
+  const updatedNames = new Set<string>()
+  for (const line of cookieLines) {
+    const first = line.split(';', 1)[0] ?? ''
+    const split = first.indexOf('=')
+    if (split < 1) continue
+    const name = decodeURIComponent(first.slice(0, split).trim())
+    if (!name.includes('auth-token')) continue
+    const value = decodeURIComponent(first.slice(split + 1))
+    updatedNames.add(name)
+    if (value) jar.set(name, { name, value })
+    else jar.delete(name)
+  }
+  assert.ok(updatedNames.size > 0, 'HTTP proxy did not return rotated authentication Set-Cookie')
+
+  const names = Array.from(jar.keys()).filter(n => n.includes('auth-token')).sort()
+  assert.ok(names.length > 0, 'No rotated HTTP auth cookies')
+  const assembled = names.map(n => jar.get(n)!.value).join('')
+  const payload = assembled.startsWith('base64-')
+    ? Buffer.from(assembled.slice(7), 'base64url').toString('utf8')
+    : assembled
+  const fresh = JSON.parse(payload) as {access_token?:string;refresh_token?:string;expires_at?:number}
+  assert.ok(fresh.access_token && fresh.access_token !== before, 'HTTP access token did not rotate')
+  assert.ok(fresh.refresh_token && fresh.refresh_token !== signed.data.session.refresh_token, 'HTTP refresh token did not rotate')
+  assert.ok((fresh.expires_at ?? 0) > Math.floor(Date.now()/1000), 'HTTP refreshed session not current')
+  const following = await fetch('http://localhost:3000/dashboard/athletes', {
+    headers: {cookie: cookieHeader()},
+    redirect: 'manual',
+    signal: AbortSignal.timeout(20_000),
+  })
+  assert.equal(following.status, 200, 'Rotated HTTP session failed follow-up authorization')
+  assert.equal(following.headers.get('location'), null, 'Follow-up request redirected')
+  assert.match(await following.text(), /Atletas|Athletes|atletas|athletes/, 'Follow-up protected page absent')
+  console.log(JSON.stringify({
+    status: 'PASS', auth: 'real-supabase', refreshInitiatedBy: 'http-next-proxy',
+    accessTokenRotated: true, refreshTokenRotated: true,
+    rotatedCookieCount: updatedNames.size, httpAuthenticatedContinuation: 'PASS',
+    fixture: 'verified-disposable-sqlite', mutated: false,
+  }))
+  return
+}
 const request=new NextRequest('http://localhost:3000/dashboard',{
   headers:{cookie:Array.from(jar.values()).map(c=>encodeURIComponent(c.name)+'='+encodeURIComponent(c.value)).join('; ')},
 })
