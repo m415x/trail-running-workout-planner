@@ -8,6 +8,10 @@ import { resolveKan791AcceptanceIdentity } from '@/lib/auth/kan-791-acceptance-i
 import { verifyKan791SupabaseIdentity } from '@/lib/auth/kan-791-supabase-identity-verification'
 
 config({ path: resolve(import.meta.dirname, '../.env.local') })
+// Reuse the already verified dedicated auth-test identity without printing credentials.
+process.env.KAN791_AUTH_TEST_EMAIL ??= process.env.SUPABASE_AUTH_TEST_EMAIL
+process.env.KAN791_AUTH_SUBJECT ??= process.env.SUPABASE_AUTH_TEST_SUBJECT
+process.env.KAN791_AUTH_TEST_PASSWORD ??= process.env.SUPABASE_AUTH_TEST_PASSWORD
 
 const mode = process.argv[2]
 assert.ok(mode === 'verify' || mode === 'apply', 'Usage: script verify|apply')
