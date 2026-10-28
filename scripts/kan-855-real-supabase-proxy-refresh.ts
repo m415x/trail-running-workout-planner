@@ -103,13 +103,9 @@ if(localHttpEnabled) {
     redirect:'manual',
     signal:AbortSignal.timeout(20_000),
   })
-  try {
-    assert.equal(refreshed.status,200,'Refreshed session did not reach protected athletes route')
-    assert.equal(refreshed.headers.get('location'),null,'Refreshed session was redirected')
-    assert.match(await refreshed.text(),/Atletas|Athletes|atletas|athletes/,'Expected protected athletes page')
-  } finally {
-    await refreshed.body?.cancel()
-  }
+  assert.equal(refreshed.status,200,'Refreshed session did not reach protected athletes route')
+  assert.equal(refreshed.headers.get('location'),null,'Refreshed session was redirected')
+  assert.match(await refreshed.text(),/Atletas|Athletes|atletas|athletes/,'Expected protected athletes page')
 }
 console.log(JSON.stringify({status:'PASS',auth:'real-supabase',proxy:'verified',accessTokenRotated:true,refreshTokenRotated:true,rotatedCookieCount:rotated.length,httpAuthenticatedContinuation:localHttpEnabled?'PASS':'NOT_RUN',fixture:'verified-disposable-sqlite',mutated:false}))
 
