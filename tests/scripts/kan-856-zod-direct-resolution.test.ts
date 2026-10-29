@@ -22,7 +22,7 @@ test('KAN-856/T2 direct Zod resolves to the approved 4.6.7 in manifest and pnpm 
   const zodMatch = dependencyMatch[1].match(/^      zod:\n        specifier: (.+)\n        version: (.+)$/m)
   assert.ok(zodMatch, 'root Zod dependency resolution missing')
 
-  assert.equal(manifest.dependencies.zod, '4.6.7', 'approved direct Zod version required')
+  assert.equal(manifest.dependencies.zod, '^4.6.7', 'approved direct Zod version range required')
   assert.equal(zodMatch[1], manifest.dependencies.zod, 'manifest/importer specifier drift')
   assert.equal(zodMatch[2], '4.6.7', 'root importer must resolve safe Zod version')
   assert.match(application, /^  zod@4\.6\.7:\s*\n    resolution:/m, 'resolved package missing')
