@@ -17,7 +17,7 @@ test('KAN-856/T2 direct Zod resolves to the approved 4.6.7 in manifest and pnpm 
   // Whitespace between YAML sections is allowed; anchor sections, not adjacency.
   const importerMatch = application.match(/^importers:\s*\n\s*  \.:\s*\n([\s\S]*?)(?=^packages:)/m)
   assert.ok(importerMatch, 'root importer missing')
-  const dependencyMatch = importerMatch[1].match(/^    dependencies:\s*\n([\s\S]*?)(?=^    devDependencies:|^  [^ ]|$)/m)
+  const dependencyMatch = importerMatch[1].match(/^    dependencies:\s*\n([\s\S]*?)(?=^    devDependencies:|^  [^ ])/m)
   assert.ok(dependencyMatch, 'root production dependencies missing')
   const zodMatch = dependencyMatch[1].match(/^      zod:\n        specifier: (.+)\n        version: (.+)$/m)
   assert.ok(zodMatch, 'root Zod dependency resolution missing')
