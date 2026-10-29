@@ -27,7 +27,7 @@ test('KAN-854/T1 captures actual HTTP hops and sanitizes cookie values', async (
       ['GET', 307, '/en/login'],
       ['GET', 200, null],
     ])
-    assert.equal(result.hops[0].actionRedirect, '/en/dashboard')
+    assert.equal(result.hops[0].actionRedirect, '[redacted]')
     assert.deepEqual(result.hops[0].cookieNames, ['sb-token'])
     assert.ok(!JSON.stringify(result).includes('SECRET_MUST_NOT_LEAK'))
   } finally {

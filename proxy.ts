@@ -11,7 +11,9 @@ export async function proxy(request: NextRequest) {
   const auth = await refreshSupabaseProxySession(request)
   const localizedResponse = intlMiddleware(request)
 
-  return carryAuthRefreshIntoResponse(auth.response, localizedResponse)
+  const response = carryAuthRefreshIntoResponse(auth.response, localizedResponse)
+
+  return response
 }
 
 export const config = {

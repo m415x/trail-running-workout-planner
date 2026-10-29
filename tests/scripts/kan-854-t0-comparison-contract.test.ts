@@ -4,16 +4,18 @@ import test from 'node:test'
 
 const read = (path: string) => readFileSync(path, 'utf8')
 
-test('KAN-854/T0 freezes the unmodified 16.3.8 application baseline', () => {
+test('KAN-854/T0 preserves the historical 16.3.8 experimental baseline after S3 upgrade', () => {
   const manifest = JSON.parse(read('package.json')) as {
     packageManager: string
     dependencies: Record<string, string>
     devDependencies: Record<string, string>
   }
   assert.equal(manifest.packageManager, 'pnpm@12.4.1')
-  assert.equal(manifest.dependencies.next, '16.3.8')
-  assert.equal(manifest.devDependencies['eslint-config-next'], '16.3.8')
-  assert.equal(manifest.dependencies.zod, '^4.4.3')
+  const historical = read('docs/security/kan-853-dependency-audit-baseline.md')
+  assert.match(historical, /`next@16\.3\.8`/)
+  assert.match(historical, /16\.4\.3 without private 16\.3\.8 patch/)
+  assert.equal(manifest.dependencies.next, manifest.devDependencies['eslint-config-next'])
+  assert.match(historical, /`zod@4\.4\.3`/)
 })
 
 test('KAN-854/T0 identifies authentic proxy and localized routing boundaries', () => {

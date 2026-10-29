@@ -4,7 +4,9 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-854/S2 — current integrated handoff baseline](handoffs/kan-854.md) — [PR #75](https://github.com/m415x/trail-running-workout-planner/pull/75), merge `8c4757ae5bbc4511952c932558918b349b94c3b2`; 12-file reduced causal evidence, no production Next upgrade. Operator candidate gate PASS 6/6 (266038ms) and handoff PASS; postmerge documentary check pending. Experimental PR #73 retained untouched; KAN-855/S3 not yet started.
+- [KAN-855/S3 — Next.js 16.4.3 candidate, not integrated](handoffs/kan-855.md) — operator-reported `pn verify --db` PASS after isolated-env recovery; authenticated Coach SSR/H2/H3, H4A read-only ALLOW/DENY, real HTTP-triggered Supabase token refresh and cookie continuity PASS. **Authenticated H4A DENY over HTTP remains unaccredited**; docs checker, PR and merge pending.
+
+- [KAN-854/S2 — current integrated handoff baseline](handoffs/kan-854.md) — [PR #75](https://github.com/m415x/trail-running-workout-planner/pull/75), merge `8c4757ae5bbc4511952c932558918b349b94c3b2`; 12-file reduced causal evidence, no production Next upgrade. Operator candidate gate PASS 6/6 (266038ms) and handoff PASS; postmerge documentary check pending. Experimental PR #73 retained untouched; KAN-855/S3 is a separate nonintegrated candidate.
 
 - [KAN-853/S1 — previously integrated dependency audit](handoffs/kan-853.md) — [PR #74](https://github.com/m415x/trail-running-workout-planner/pull/74) merge `b45e3e9a2d539c360be66c1272b1b64bf87533e1`; operator postmerge `pn verify --db` PASS 6/6 on prior documentation HEAD `364a567a8f66bc0eb4062a0a607ed410a5a783c8`; checker FAIL for missing handoff/index, now corrected by documentation-only publication, pending new check. See [current handoff](handoffs/current.md), [security audit matrix](security/kan-853-dependency-audit-baseline.md). Next KAN-854/S2 reduced; preserve experimental PR #73.
 
