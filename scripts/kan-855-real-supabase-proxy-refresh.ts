@@ -36,8 +36,7 @@ const key=appEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
 assert.ok(email && password && subject && url && key,'Missing acceptance configuration')
 if (
   (config.NEXT_PUBLIC_SUPABASE_URL && config.NEXT_PUBLIC_SUPABASE_URL !== url) ||
-  (config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key) ||
-  false
+  (config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key)
 ) {
   throw new Error('Application and acceptance Supabase public configuration differ')
 }
