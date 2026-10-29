@@ -14,9 +14,10 @@ test('KAN-856/T2 direct Zod resolves to the approved 4.6.7 in manifest and pnpm 
   assert.equal(documents.length, 2, 'pnpm 12 lockfile must retain two documents')
   const application = documents[1]
   assert.match(application, /^lockfileVersion: '9\.0'$/m)
-  const importerMatch = application.match(/^importers:\n  \.:\n([\s\S]*?)^packages:$/m)
+  // Whitespace between YAML sections is allowed; anchor sections, not adjacency.
+  const importerMatch = application.match(/^importers:\s*\n\s*  \.:\s*\n([\s\S]*?)(?=^packages:)/m)
   assert.ok(importerMatch, 'root importer missing')
-  const dependencyMatch = importerMatch[1].match(/^    dependencies:\n([\s\S]*?)(?=^    devDependencies:|^  [^ ]|$(?![\s\S]))/m)
+  const dependencyMatch = importerMatch[1].match(/^    dependencies:\s*\n([\s\S]*?)(?=^    devDependencies:|^  [^ ]|$)/m)
   assert.ok(dependencyMatch, 'root production dependencies missing')
   const zodMatch = dependencyMatch[1].match(/^      zod:\n        specifier: (.+)\n        version: (.+)$/m)
   assert.ok(zodMatch, 'root Zod dependency resolution missing')
