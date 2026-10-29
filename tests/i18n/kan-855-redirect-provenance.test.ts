@@ -39,3 +39,32 @@ test('KAN-855/S3 records bounded redirect provenance without leaking forwarded a
     await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
   }
 })
+
+test('KAN-855/S3 strips query fragments and action headers from returned HTTP capture', async () => {
+  const server = createServer((_req, res) => {
+    res.writeHead(307, {
+      Location: '/login?code=SECRET_QUERY#SECRET_FRAGMENT',
+      'x-action-redirect': '/dashboard?token=SECRET_ACTION',
+      'x-middleware-rewrite': 'http://localhost:3000/es/login?secret=SECRET_REWRITE#SECRET_HASH',
+    })
+    res.end()
+  })
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  try {
+    const address = server.address()
+    assert.ok(address && typeof address !== 'string')
+    const origin = 'http://127.0.0.1:' + address.port
+    const capture = await captureHttpRedirectChain(origin + '/?key=SECRET_START#SECRET_START_HASH', {
+      permittedOrigins: [origin],
+      maxHops: 1,
+    })
+    const text = JSON.stringify(capture)
+    for (const secret of ['SECRET_QUERY', 'SECRET_FRAGMENT', 'SECRET_ACTION', 'SECRET_REWRITE', 'SECRET_HASH', 'SECRET_START']) {
+      assert.ok(!text.includes(secret), 'Sensitive capture value leaked')
+    }
+    assert.equal(capture.hops[0]?.location, '/login')
+    assert.equal(capture.hops[0]?.actionRedirect, '[redacted]')
+  } finally {
+    await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()))
+  }
+})
