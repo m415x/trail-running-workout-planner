@@ -12,6 +12,18 @@ export type HttpHop = {
   cookieNames: string[]
 }
 
+// Preserve the full URL only inside the loop detector; never expose credentials,
+// query values, fragments or userinfo in capture artifacts.
+function safeUrl(value: string | null, base?: URL): string | null {
+  if (value === null) return null
+  try {
+    const url = base ? new URL(value, base) : new URL(value)
+    return url.origin + url.pathname
+  } catch {
+    return '[invalid-url]'
+  }
+}
+
 function cookieNames(headers: Headers): string[] {
   const cookies = typeof headers.getSetCookie === 'function'
     ? headers.getSetCookie()
@@ -48,13 +60,13 @@ export async function captureHttpRedirectChain(
     const location = response.headers.get('location')
     hops.push({
       method: options.method ?? 'GET',
-      url: current.href,
+      url: safeUrl(current.href)!,
       host: current.host,
-      forwardedHost: options.headers ? (Object.entries(options.headers).find(([name]) => name.toLowerCase() === 'x-forwarded-host')?.[1] ?? null) : null,
-      middlewareRewrite: response.headers.get('x-middleware-rewrite'),
+      forwardedHost: options.headers ? (Object.entries(options.headers).find(([name]) => name.toLowerCase() === 'x-forwarded-host')?.[1]?.replace(/[^a-zA-Z0-9.:[\\]-]/g, '') ?? null) : null,
+      middlewareRewrite: safeUrl(response.headers.get('x-middleware-rewrite'), current),
       status: response.status,
-      location,
-      actionRedirect: response.headers.get('x-action-redirect'),
+      location: safeUrl(location, current),
+      actionRedirect: response.headers.has('x-action-redirect') ? '[redacted]' : null,
       cookieNames: cookieNames(response.headers),
     })
     if (![301, 302, 303, 307, 308].includes(response.status) || !location) {
