@@ -1,3 +1,13 @@
+# Current integrated handoff — KAN-855/S3 (2026-10-29)
+
+- **Integrated:** [PR #76](https://github.com/m415x/trail-running-workout-planner/pull/76) ordinary merge `bf62a678bd0c7f5b1c680c638c0636607d827549`, PR HEAD `3fb51903fa2ef9e51a6f0db227b8c7b7fd2c42d4`, prior dev `0a7e197c29af80be4479a3c739aa63a589c2427c`. Next/eslint-config-next upgraded 16.3.8 → 16.4.3, 18 files. No KAN-856/KAN-858.
+- **Operator premerge evidence:** `pn verify --db` PASS 6/6 on functional candidate `913b1d97a036aeea7ccdb9a8ce02dea331c1b6cf`; final documentation-only PR HEAD `3fb51903...` had `pn docs:handoff:check` PASS. No postmerge functional gate yet.
+- **Remote postmerge:** dev HEAD independently verified as merge SHA. Vercel status success and Vercel Preview Comments success. No KAN-855 GitHub Actions workflow; historical workflows scoped to other branches. Branch-protection API inaccessible (403), ordinary merge accepted by GitHub.
+- **Acceptance:** real Supabase Coach SSR login and protected HTTP PASS; incoming expired cookie triggers HTTP proxy token refresh and rotated Set-Cookie, next authorized GET PASS. SQLite read-only H4A Coach ALLOW/DENY contract PASS. **Authenticated H4A HTTP DENY NOT ACCREDITED**, residual risk expressly accepted for S3 upgrade, not an end-to-end DENY GREEN.
+- **Remaining S3 closure:** postmerge operator `pn verify --db` on integrated dev SHA, doc checker on documentary head, Jira KAN-855 administrative resolution and operator-mediated worktree inventory/preservation/retirement or explicit blocker. KAN-852 parent remains open for S4/S5; do not start S4 here. [Details](kan-855.md).
+
+---
+
 # Current integrated handoff — KAN-854/S2 (2026-10-27)
 
 - **Integrated S2:** [PR #75](https://github.com/m415x/trail-running-workout-planner/pull/75) merged normally into `dev` at `8c4757ae5bbc4511952c932558918b349b94c3b2`. Candidate SHA `dd59907df026cac301db86d938b017606ade0d3e`, base `7db8331b23f8770db8169b8b0d3d91d978d463fd`. Clean 12-file reduction: seven durable docs, capture helper and four autonomous deterministic tests. No Next.js/Zod/package/lockfile change; no experimental runner exclusions. See [story handoff](kan-854.md), [retention policy](../security/kan-854-test-retention-policy.md) and [causal matrix](../security/kan-854-t5-causal-matrix.md).
