@@ -22,13 +22,12 @@ assert.ok(basename(dirname(real)).startsWith('trail-running-sqlite-base-seed-kan
 assert.notEqual(canonical(real),canonical(resolve('sqlite.db')))
 
 async function main() {
-const envFile=resolve('../trwp-kan855-next1643/.env.local')
-assert.ok(existsSync(envFile),'Fixture auth environment missing')
+// Require explicit dedicated test credentials from the caller's environment.
+// No sibling worktree or implicit acceptance-secret file lookup.
+const email=config.SUPABASE_AUTH_TEST_EMAIL
+const password=config.SUPABASE_AUTH_TEST_PASSWORD
+const subject=config.SUPABASE_AUTH_TEST_SUBJECT
 const { parse } = await import('dotenv')
-const authEnv=parse(readFileSync(envFile))
-const email=authEnv.SUPABASE_AUTH_TEST_EMAIL
-const password=authEnv.SUPABASE_AUTH_TEST_PASSWORD
-const subject=authEnv.SUPABASE_AUTH_TEST_SUBJECT
 const appEnvFile=resolve('.env.local')
 assert.ok(existsSync(appEnvFile),'Application .env.local missing')
 const appEnv=parse(readFileSync(appEnvFile))
@@ -38,8 +37,7 @@ assert.ok(email && password && subject && url && key,'Missing acceptance configu
 if (
   (config.NEXT_PUBLIC_SUPABASE_URL && config.NEXT_PUBLIC_SUPABASE_URL !== url) ||
   (config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key) ||
-  (authEnv.NEXT_PUBLIC_SUPABASE_URL && authEnv.NEXT_PUBLIC_SUPABASE_URL !== url) ||
-  (authEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY && authEnv.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY !== key)
+  false
 ) {
   throw new Error('Application and acceptance Supabase public configuration differ')
 }
