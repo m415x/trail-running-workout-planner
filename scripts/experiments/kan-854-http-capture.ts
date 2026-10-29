@@ -65,7 +65,7 @@ export async function captureHttpRedirectChain(
       forwardedHost: options.headers ? (Object.entries(options.headers).find(([name]) => name.toLowerCase() === 'x-forwarded-host')?.[1]?.replace(/[^a-zA-Z0-9.:[\\]-]/g, '') ?? null) : null,
       middlewareRewrite: safeUrl(response.headers.get('x-middleware-rewrite'), current),
       status: response.status,
-      location: safeUrl(location, current),
+      location: location?.startsWith('/') && !location.startsWith('//') ? new URL(location, current).pathname : safeUrl(location, current),
       actionRedirect: response.headers.has('x-action-redirect') ? '[redacted]' : null,
       cookieNames: cookieNames(response.headers),
     })
