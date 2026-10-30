@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-856/S4 (2026-10-29)
+
+- **Integrated:** [PR #77](https://github.com/m415x/trail-running-workout-planner/pull/77) by ordinary merge `9a58a881cb688acca82f1bd10a0c342ee96c46bd` into `dev`, reviewed head `4e57f9c7430492ac47ddc56741cce4d3696f0f9b`. Zod direct dependency `^4.4.3` → `^4.6.7`, pnpm resolution 4.6.7; Zod 3 transitively preserved. Five-file PR: manifest, lock, contract test, story handoff and index. No DB changes.
+- **Evidence:** premerge `pn install --frozen-lockfile`, focal Race Catalog/Zod test + typecheck, `pn verify --db` PASS 6/6 and `HANDOFF DOCS: PASS` reported by operator. Initial gate FAIL traced to inherited KAN-855 disposable SQLite variables, cleaned without modifying code. Postmerge operator reports `pn verify --db` PASS and `pn docs:handoff:check` PASS for integrated `dev@9a58a881...`; raw full gate output/independent local HEAD not provided. Remote Vercel status success on merge.
+- **Scope:** T1 focal boundary inventory, T3 no-app-change disposition for inspected paths only; no exhaustive guarantee concerning every API or import parser. The `weeklyPattern` JSON parse/map pre-cardinality cost, FormData bulk athlete IDs, and GPX/XML are separate prospective concerns, not Zod collection findings. See [KAN-856 story handoff](kan-856.md), Jira comments 14557–14564.
+- **Remaining administration:** final documentation-only handoff checker for this updated `current.md`, reconcile Jira KAN-856 completion, and operator-controlled preservation/inventory of implementation worktree. KAN-852 remains open; KAN-857/S5 must be separately bootstrapped, not started in this closure.
+
+---
+
 # Current integrated handoff — KAN-855/S3 (2026-10-29)
 
 - **Integrated:** [PR #76](https://github.com/m415x/trail-running-workout-planner/pull/76) ordinary merge `bf62a678bd0c7f5b1c680c638c0636607d827549`, PR HEAD `3fb51903fa2ef9e51a6f0db227b8c7b7fd2c42d4`, prior dev `0a7e197c29af80be4479a3c739aa63a589c2427c`. Next/eslint-config-next upgraded 16.3.8 → 16.4.3, 18 files. No KAN-856/KAN-858.
