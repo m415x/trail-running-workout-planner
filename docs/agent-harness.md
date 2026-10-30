@@ -160,6 +160,10 @@ Use a micro-sprint when the immediate goal is resolution, recovery or delivery o
 - **Exit A — verified and integrated increment:** the bounded increment is reconstructed/implemented, its required evidence is current, and it is integrated into its intended parent/integration branch.
 - **Exit B — one demonstrated external material blocker:** exactly one remaining blocker outside the bounded scope is shown with objective evidence, ownership/dependency is clear, and no independent in-scope work remains enabled.
 
+### Incremental Jira evidence for acceptance-only work
+
+Every materially completed acceptance cut, including operator-run HTTP/browser walkthroughs and read-only validations without source changes, **must** be recorded in the owning Jira issue before the next cut begins. The agent owns that record; the operator supplies local execution results. Capture the exact tested SHA/recoverable tree, actual command and parameters, runtime and authorized disposable fixture, observed HTTP/auth/persistence outcome, acceptance criteria covered, and remaining limitations. Distinguish operator-reported execution from independently checked repository facts and from CI; a terminal login HTTP 200 is not an authenticated resource HTTP 200, and a contract DENY is not automatically an HTTP DENY. Consolidate related scenarios into one material checkpoint rather than posting per request. Do not rerun valid tests merely to recover missing bookkeeping, invent evidence for unexecuted paths, or assume an acceptance-only GREEN is a production code change. Keep the Jira issue `En curso` while acceptance remains incomplete, and reconcile final evidence and limitations in the handoff.
+
 ### Evidence identity and reuse
 
 Treat every verification result as a relation between **result ↔ exact SHA/recoverable tree**. Record the SHA/tree with focused tests, full gates, CI and manual acceptance whenever the result is used for delivery or closure.
