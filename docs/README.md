@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-856/S4 — Zod 4.6.7 and bounded external-boundary audit (candidate)](handoffs/kan-856.md) — branch `feat/KAN-856-zod-boundary-limits`, functional SHA `7cc7e379a8c6500c820a32ac61841a61f5ca43b5`; operator focal/frozen install PASS, full story gate and integration pending; T3 no-app-change disposition limited to inspected boundaries. No KAN-857/S5.
+- [KAN-856/S4 — Zod 4.6.7 integrated and scoped external-boundary review](handoffs/kan-856.md) — PR #77 ordinary merge `9a58a881cb688acca82f1bd10a0c342ee96c46bd`; operator-reported premerge and postmerge `pn verify --db` PASS 6/6, postmerge handoff checker PASS, Vercel success. T3 no-app-change disposition applies only to inspected boundaries. See [current integrated handoff](handoffs/current.md); KAN-857/S5 separate.
 
 - [KAN-855/S3 — Next.js 16.4.3 integrated baseline](handoffs/kan-855.md) — [PR #76](https://github.com/m415x/trail-running-workout-planner/pull/76), ordinary merge `bf62a678bd0c7f5b1c680c638c0636607d827549`; candidate gate 6/6 and handoff PASS reported, Vercel postmerge success. **Authenticated H4A HTTP DENY NOT ACCREDITED**, residual risk accepted. Postmerge local gate/docs checker pending; KAN-852 S4/S5 separate.
 
