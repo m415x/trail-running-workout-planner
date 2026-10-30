@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-857/S5 security closure (2026-10-29)
+
+- **Integrated:** [PR #78](https://github.com/m415x/trail-running-workout-planner/pull/78) ordinary merge `0754de0d96284dbba85baf5837a8ac80b6b1668e`, PR HEAD `a4f01b6cd4f0543f6c102d781442c2940cdb9d99`, base `dev@7ff1f7d4b56a932556df887f55dd6f23b5f67b2e`. Documentation-only: [S5 evidence matrix](../security/kan-857-security-closure-matrix.md), [S5 story handoff](kan-857.md), docs index. No functional/dependency/schema/operational DB changes.
+- **Evidence:** operator `pn docs:handoff:check` PASS reported on S5 PR head; Vercel status success. Earlier S4 integrated combined functional `pn verify --db` PASS 6/6 operator-reported at `9a58a881cb688acca82f1bd10a0c342ee96c46bd`; no automatic re-run solely for S5 documentation. The final integrated docs checker on the documentary HEAD containing this entry remains **pending**.
+- **Residual disposition:** direct Next 16.4.3 and Zod 4.6.7 implemented; transitive Zod 3.x exploit reachability unproven, toolchain/PWA advisory exposure not universally resolved, client weeklyPattern/bulk-ID cost and XML/GPX findings separately owned. **Authenticated H4A HTTP DENY NOT ACCREDITED**; prior limited acceptance retained without fictitious GREEN. See [matrix](../security/kan-857-security-closure-matrix.md).
+- **Administrative remaining:** final `pn docs:handoff:check` on updated `dev` and subsequent KAN-857/KAN-852 reconciliation. Worktree retirement is operator-mediated; main `dev` and historical `verify/KAN-853-s1` retained pending separate preservation decision. No KAN-850/T4 or KAN-851/T5 acceptance is implied.
+
+---
+
 # Current integrated handoff — KAN-856/S4 (2026-10-29)
 
 - **Integrated:** [PR #77](https://github.com/m415x/trail-running-workout-planner/pull/77) by ordinary merge `9a58a881cb688acca82f1bd10a0c342ee96c46bd` into `dev`, reviewed head `4e57f9c7430492ac47ddc56741cce4d3696f0f9b`. Zod direct dependency `^4.4.3` → `^4.6.7`, pnpm resolution 4.6.7; Zod 3 transitively preserved. Five-file PR: manifest, lock, contract test, story handoff and index. No DB changes.
