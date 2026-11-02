@@ -1,3 +1,12 @@
+# Current integrated handoff — KAN-851/T5 / KAN-625 (2026-11-01)
+
+- **Integrated:** [PR #79](https://github.com/m415x/trail-running-workout-planner/pull/79), ordinary merge `1b943c240bed793d0d79c22830c25cdc8b6d0f3f`, PR head `5d91121fafb0574669318bad752b684b890f38d5`, previous dev `0a06fef4f166e1c15528a14324c2f50b3cf4cf44`. Four TypeScript acceptance contracts and three documentation files; no routing, auth-policy, schema or dependency changes.
+- **Candidate evidence:** `pn verify --db` PASS 6/6 operator-reported at functional SHA `ae8bf18daab5547288eee454982acfc58e9cfe5d`; `HANDOFF DOCS: PASS` operator-reported at documentary candidate `5d91121f...`. GitHub Vercel success on PR and merge `1b943c...`. Formal PR review submissions: none; technical diff assessed before ordinary merge. Do not infer GitHub Actions or an independent Supabase acceptance gate.
+- **Functional acceptance:** KAN-850/T4 Finalizada with Jira 14572–14600; real hydrated React Server Actions ES/EN and localized `X-Action-Redirect`, navigation and one-row SQLite diffs PASS. H4A HTTP 500 remains noncausal to in-request capability decision or controlled UX; refresh cookie observation does not independently attest token cryptography. See [acceptance matrix](../i18n/kan-625-acceptance-matrix.md), [KAN-851 handoff](kan-851.md).
+- **Remaining publication:** postmerge operator `pn verify --db` PASS 6/6 on integrated dev; `pn docs:handoff:check` on final documentary HEAD; Jira KAN-851/KAN-625 status reconciliation and operator-mediated inventory/preservation/retirement of the four KAN-850 worktrees. Historical H4A fixture UKXg1d must not be reused (changed during initial misrouted RSC acceptance). Worktree disposition not yet accredited.
+
+---
+
 # Current integrated handoff — KAN-857/S5 security closure (2026-10-29)
 
 - **Integrated:** [PR #78](https://github.com/m415x/trail-running-workout-planner/pull/78) ordinary merge `0754de0d96284dbba85baf5837a8ac80b6b1668e`, PR HEAD `a4f01b6cd4f0543f6c102d781442c2940cdb9d99`, base `dev@7ff1f7d4b56a932556df887f55dd6f23b5f67b2e`. Documentation-only: [S5 evidence matrix](../security/kan-857-security-closure-matrix.md), [S5 story handoff](kan-857.md), docs index. No functional/dependency/schema/operational DB changes.
