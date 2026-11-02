@@ -4,7 +4,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
-import { getTableColumns } from 'drizzle-orm'
+import { and, eq, getTableColumns, getTableName } from 'drizzle-orm'
 import ts from 'typescript'
 import * as schema from '@/db/schema'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
@@ -24,10 +24,10 @@ test('KAN-858 T1 production prescription boundary accepts persisted Team B refer
     for (const table of tables) {
       const columns = Object.values(getTableColumns(table))
       const definitions = columns.map(column => {
-        const kind = column.dataType === 'number' ? 'REAL' : 'TEXT'
+        const kind = column.dataType === 'number' || column.dataType === 'boolean' ? 'INTEGER' : 'TEXT'
         return `"${column.name}" ${kind}${column.name === 'id' ? ' PRIMARY KEY' : ''}`
       })
-      sqlite.exec(`CREATE TABLE "${table[Symbol.for('drizzle:Name')]}" (${definitions.join(', ')})`)
+      sqlite.exec(`CREATE TABLE "${getTableName(table)}" (${definitions.join(', ')})`)
     }
 
     const insert = (table: string, fields: Record<string, string | number>) => {
@@ -70,8 +70,8 @@ test('KAN-858 T1 production prescription boundary accepts persisted Team B refer
       mesocycles: schema.mesocycles,
       microcycles: schema.microcycles,
       CURRENT_TEAM_ID: 'team_1',
-      and: requireDrizzleAnd(),
-      eq: requireDrizzleEq(),
+      and,
+      eq,
       validateSessionMicrocyclePrescriptions,
       __actualValidator: undefined as undefined | ((rows: unknown[], date: string, teamId: string) => { errorCode?: string } | null),
     }
@@ -88,9 +88,3 @@ test('KAN-858 T1 production prescription boundary accepts persisted Team B refer
   }
 })
 
-function requireDrizzleAnd() {
-  return require('drizzle-orm').and as typeof import('drizzle-orm').and
-}
-function requireDrizzleEq() {
-  return require('drizzle-orm').eq as typeof import('drizzle-orm').eq
-}
