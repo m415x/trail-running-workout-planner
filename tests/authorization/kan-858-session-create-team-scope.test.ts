@@ -32,8 +32,8 @@ test('KAN-858 T1 rejects legacy fixed team authority for a valid Team B group on
     const matchingGroups = sqlite.prepare('SELECT id FROM athlete_groups WHERE id = ? AND team_id = ? AND is_active = 1 AND is_deleted = 0')
       .all('group-b', activeTeam)
     assert.equal(matchingGroups.length, 1)
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM sessions').get()!.n, 0)
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM group_session_prescriptions').get()!.n, 0)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM sessions').get() as { n: number }).n, 0)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM group_session_prescriptions').get() as { n: number }).n, 0)
   } finally {
     sqlite.close()
   }
