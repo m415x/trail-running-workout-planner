@@ -31,7 +31,6 @@ import {
   workouts,
 } from '@/db/schema'
 
-const CURRENT_TEAM_ID = 'team_1'
 const optionalText = z.string().trim().transform((value) => value || null)
 
 const createSessionSchema = z.object({
@@ -368,7 +367,7 @@ export async function createSession(_previousState: SessionFormState, formData: 
         }
       : null
 
-    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
+    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date, planningAccess.teamId)
     if (referenceError) return referenceError
 
     const now = new Date().toISOString()
@@ -420,7 +419,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         eq(groupSessionPrescriptions.isDeleted, false),
       )).all().map(({ groupId }) => groupId))]
     const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
-    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date)
+    const referenceError = validatePrescriptionReferences(prescriptions.data, data.date, planningAccess.teamId)
     if (referenceError) return referenceError
 
     if (data.workoutId) {
@@ -543,13 +542,13 @@ export async function updateSession(_previousState: SessionFormState, formData: 
   redirect(`${path}/${sessionId}`)
 }
 
-function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[], sessionDate: string) {
+function validatePrescriptionReferences(prescriptions: SessionPrescriptionInput[], sessionDate: string, teamId: string) {
   const candidatesByGroup: Record<string, Array<{ id: string; startDate: string; endDate: string }>> = {}
   const groupCodes = new Map<string, string>()
   for (const prescription of prescriptions) {
     const group = db.query.athleteGroups.findFirst({
       where: and(
-        eq(athleteGroups.id, prescription.groupId), eq(athleteGroups.teamId, CURRENT_TEAM_ID),
+        eq(athleteGroups.id, prescription.groupId), eq(athleteGroups.teamId, teamId),
         eq(athleteGroups.isActive, true), eq(athleteGroups.isDeleted, false),
       ),
     }).sync()
