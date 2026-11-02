@@ -1,40 +1,96 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import vm from 'node:vm'
 import Database from 'better-sqlite3'
+import { drizzle } from 'drizzle-orm/better-sqlite3'
+import { getTableColumns } from 'drizzle-orm'
+import ts from 'typescript'
+import * as schema from '@/db/schema'
+import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 
-const source = readFileSync('app/actions/session-actions.ts', 'utf8')
-const validatorStart = source.indexOf('function validatePrescriptionReferences(')
-assert.ok(validatorStart >= 0, 'production prescription validator must exist')
-const validator = source.slice(validatorStart)
-
-test('KAN-858 T1 rejects legacy fixed team authority for a valid Team B group on disposable SQLite', () => {
+test('KAN-858 T1 production prescription boundary accepts persisted Team B references', () => {
   const sqlite = new Database(':memory:')
   try {
-    sqlite.exec(`
-      CREATE TABLE athlete_groups (id TEXT PRIMARY KEY, team_id TEXT NOT NULL, is_active INTEGER NOT NULL, is_deleted INTEGER NOT NULL);
-      CREATE TABLE sessions (id TEXT PRIMARY KEY, team_id TEXT NOT NULL);
-      CREATE TABLE group_session_prescriptions (id TEXT PRIMARY KEY, session_id TEXT NOT NULL, group_id TEXT NOT NULL);
-      INSERT INTO athlete_groups VALUES ('group-b', 'team-b', 1, 0);
-    `)
+    const tables = [
+      schema.athleteGroups,
+      schema.groupTrainingPlans,
+      schema.macrocycles,
+      schema.mesocycles,
+      schema.microcycles,
+      schema.sessions,
+      schema.groupSessionPrescriptions,
+    ]
+    for (const table of tables) {
+      const columns = Object.values(getTableColumns(table))
+      const definitions = columns.map(column => {
+        const kind = column.dataType === 'number' ? 'REAL' : 'TEXT'
+        return `"${column.name}" ${kind}${column.name === 'id' ? ' PRIMARY KEY' : ''}`
+      })
+      sqlite.exec(`CREATE TABLE "${table[Symbol.for('drizzle:Name')]}" (${definitions.join(', ')})`)
+    }
 
-    const activeTeam = 'team-b' // H3 server-owned authority in this isolated scope witness
-    const authorized = sqlite.prepare('SELECT 1 FROM athlete_groups WHERE id = ? AND team_id = ? AND is_active = 1 AND is_deleted = 0')
-      .get('group-b', activeTeam)
-    assert.ok(authorized, 'persisted Group belongs to the active Team B')
+    const insert = (table: string, fields: Record<string, string | number>) => {
+      const keys = Object.keys(fields)
+      sqlite.prepare(`INSERT INTO "${table}" (${keys.map(key => `"${key}"`).join(',')}) VALUES (${keys.map(() => '?').join(',')})`)
+        .run(...Object.values(fields))
+    }
+    insert('athlete_groups', {
+      id: 'group-b', team_id: 'team-b', category_code: 'S', level_code: '2', is_active: 1, is_deleted: 0,
+    })
+    insert('group_training_plans', { id: 'plan-b', group_id: 'group-b', is_deleted: 0 })
+    insert('macrocycles', { id: 'macro-b', group_training_plan_id: 'plan-b', is_deleted: 0 })
+    insert('mesocycles', { id: 'meso-b', macrocycle_id: 'macro-b', is_deleted: 0 })
+    insert('microcycles', {
+      id: 'micro-b', mesocycle_id: 'meso-b', start_date: '2026-11-02',
+      end_date: '2026-11-08', is_deleted: 0,
+    })
 
-    // The actual production query in validatePrescriptionReferences currently filters on
-    // CURRENT_TEAM_ID. Check its authority source before demonstrating the SQLite consequence.
-    const groupLookup = validator.slice(0, validator.indexOf('groupCodes.set('))
-    assert.match(groupLookup, /eq\(athleteGroups\.teamId,\s*teamId\)/,
-      'prescription lookup must use the server-owned active Team, not a fixed Team')
-
-    const matchingGroups = sqlite.prepare('SELECT id FROM athlete_groups WHERE id = ? AND team_id = ? AND is_active = 1 AND is_deleted = 0')
-      .all('group-b', activeTeam)
-    assert.equal(matchingGroups.length, 1)
+    const activeTeam = 'team-b'
+    assert.ok(sqlite.prepare('SELECT id FROM athlete_groups WHERE id=? AND team_id=? AND is_active=1 AND is_deleted=0')
+      .get('group-b', activeTeam), 'persisted Sporting Group must belong to authorized Team B')
+    assert.ok(sqlite.prepare('SELECT id FROM microcycles WHERE id=?').get('micro-b'), 'microcycle fixture exists')
     assert.equal((sqlite.prepare('SELECT count(*) AS n FROM sessions').get() as { n: number }).n, 0)
+
+    // Execute the unmodified production validator body with real Drizzle/SQLite.
+    // This isolates the production boundary without booting Next, Supabase or HTTP.
+    const source = readFileSync('app/actions/session-actions.ts', 'utf8')
+    const start = source.indexOf('function validatePrescriptionReferences(')
+    assert.ok(start >= 0)
+    const productionFunction = source.slice(start)
+    const compiled = ts.transpileModule(
+      productionFunction + '\n globalThis.__actualValidator = validatePrescriptionReferences',
+      { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } },
+    ).outputText
+    const context = {
+      db: drizzle(sqlite, { schema }),
+      athleteGroups: schema.athleteGroups,
+      groupTrainingPlans: schema.groupTrainingPlans,
+      macrocycles: schema.macrocycles,
+      mesocycles: schema.mesocycles,
+      microcycles: schema.microcycles,
+      CURRENT_TEAM_ID: 'team_1',
+      and: requireDrizzleAnd(),
+      eq: requireDrizzleEq(),
+      validateSessionMicrocyclePrescriptions,
+      __actualValidator: undefined as undefined | ((rows: unknown[], date: string, teamId: string) => { errorCode?: string } | null),
+    }
+    vm.runInNewContext(compiled, context)
+    assert.ok(context.__actualValidator, 'production function must compile')
+    const actual = context.__actualValidator([
+      { groupId: 'group-b', microcycleId: 'micro-b' },
+    ], '2026-11-04', activeTeam)
+    assert.equal(actual?.errorCode ?? null, null,
+      'authorized Team B prescription should be valid; legacy fixed team_1 yields groupNotFound')
     assert.equal((sqlite.prepare('SELECT count(*) AS n FROM group_session_prescriptions').get() as { n: number }).n, 0)
   } finally {
     sqlite.close()
   }
 })
+
+function requireDrizzleAnd() {
+  return require('drizzle-orm').and as typeof import('drizzle-orm').and
+}
+function requireDrizzleEq() {
+  return require('drizzle-orm').eq as typeof import('drizzle-orm').eq
+}
