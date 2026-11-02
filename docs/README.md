@@ -4,6 +4,8 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
+- [KAN-851/T5 — KAN-625 premerge closure candidate](handoffs/kan-851.md) — [ES/EN acceptance matrix and limitations](i18n/kan-625-acceptance-matrix.md). Candidate TypeScript contracts at `ae8bf18d`; operator local gate PASS 6/6; no PR/merge or postmerge gate yet. KAN-850/T4 Finalizada (Jira 14600).
+
 - [KAN-857/S5 — integrated security closure](handoffs/kan-857.md) — [consolidated S1–S4 evidence and residual-risk matrix](security/kan-857-security-closure-matrix.md); PR #78 ordinary merge `0754de0d96284dbba85baf5837a8ac80b6b1668e`. Final integrated docs checker and Jira reconciliation pending. Does not close KAN-850/T4 or KAN-851/T5.
 
 - [KAN-856/S4 — Zod 4.6.7 integrated and scoped external-boundary review](handoffs/kan-856.md) — PR #77 ordinary merge `9a58a881cb688acca82f1bd10a0c342ee96c46bd`; operator-reported premerge and postmerge `pn verify --db` PASS 6/6, postmerge handoff checker PASS, Vercel success. T3 no-app-change disposition applies only to inspected boundaries. See [current integrated handoff](handoffs/current.md); KAN-857/S5 separate.
