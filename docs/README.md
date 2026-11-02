@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-851/T5 — KAN-625 premerge closure candidate](handoffs/kan-851.md) — [ES/EN acceptance matrix and limitations](i18n/kan-625-acceptance-matrix.md). Candidate TypeScript contracts at `ae8bf18d`; operator local gate PASS 6/6; no PR/merge or postmerge gate yet. KAN-850/T4 Finalizada (Jira 14600).
+- [KAN-851/T5 — KAN-625 ES/EN acceptance integrated](handoffs/kan-851.md) — [ES/EN evidence matrix and limitations](i18n/kan-625-acceptance-matrix.md); [PR #79](https://github.com/m415x/trail-running-workout-planner/pull/79), ordinary merge `1b943c240bed793d0d79c22830c25cdc8b6d0f3f`, local candidate gate 6/6 and documentary handoff PASS operator-reported. Postmerge local gate, final handoff check, Jira parent closeout and worktree disposition pending. KAN-850/T4 Finalizada (Jira 14600).
 
 - [KAN-857/S5 — integrated security closure](handoffs/kan-857.md) — [consolidated S1–S4 evidence and residual-risk matrix](security/kan-857-security-closure-matrix.md); PR #78 ordinary merge `0754de0d96284dbba85baf5837a8ac80b6b1668e`. Final integrated docs checker and Jira reconciliation pending. Does not close KAN-850/T4 or KAN-851/T5.
 
