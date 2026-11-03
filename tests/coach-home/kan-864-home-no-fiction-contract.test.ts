@@ -30,10 +30,17 @@ test('KAN-864 T1: Home headings must be localized in ES/EN', () => {
     'Spanish literals must not be embedded into the locale-neutral component')
 })
 
-test('KAN-864 T1: Home has real navigation and distinct unavailable-state semantics', () => {
-  assert.match(page, /\bLink\b/, 'Home must provide navigable canonical Coach destinations')
-  assert.match(page, /denied|selection_required|invalid_context/,
-    'An authorization failure must not be rendered as an empty team')
-  assert.match(page, /empty|status === 'ready'|status: 'ready'/,
-    'Authorized no-data state must not be replaced by hardcoded business metrics')
+test('KAN-864 T1: Home offers only destinations projected by authenticated Coach layout', () => {
+  const layout = readFileSync('app/[locale]/dashboard/layout.tsx', 'utf8')
+  const context = readFileSync('features/coach-home/coach-home-destinations.tsx', 'utf8')
+  assert.match(layout, /createCoachNavigationNextServerProjection/)
+  assert.match(layout, /visibleDestinations=\{visibleDestinations\}/)
+  assert.match(shell, /CoachHomeDestinationsContext\.Provider value=\{visibleDestinations\}/)
+  assert.match(context, /createContext<readonly string\[\]>/)
+  assert.match(page, /useCoachHomeDestinations\(\)/)
+  assert.match(page, /selectCoachSidebarDestinations\(visibleDestinations\)/)
+  assert.match(page, /const links = WORK_AREAS\.filter\(\(area\) => destinations\.has\(area\.href\)\)/)
+  assert.match(page, /<Link/)
+  assert.match(page, /links\.length === 0/)
+  assert.doesNotMatch(page, /\bteam_1\b|\bCURRENT_TEAM_ID\b/)
 })
