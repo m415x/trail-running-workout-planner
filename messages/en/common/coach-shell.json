@@ -43,6 +43,27 @@
       "selection_required": "Select a team to view athletes.",
       "invalid_context": "The team selection is invalid.",
       "error": "The athlete summary could not be loaded."
+    },
+    "planning": {
+      "title": "Planning and microcycles",
+      "count": "Authorized plans: {count}",
+      "noWeeks": "No nearby microcycles are recorded.",
+      "target": "Target: {volume} km",
+      "unknownTarget": "Volume target not defined",
+      "week": "Week {number}",
+      "period": "{start} to {end}",
+      "past": "Previous",
+      "current": "Current",
+      "future": "Upcoming",
+      "showPlan": "View plan",
+      "states": {
+        "loading": "Loading authorized planning…",
+        "empty": "No plans are available for your access.",
+        "denied": "You cannot access planning.",
+        "selection_required": "Select a team to view planning.",
+        "invalid_context": "The team selection is invalid.",
+        "error": "Planning could not be loaded."
+      }
     }
   }
 }
