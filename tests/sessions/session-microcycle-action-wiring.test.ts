@@ -7,8 +7,8 @@ const source = fs.readFileSync(path.join(process.cwd(), 'app/actions/session-act
 
 test('both session mutations share authoritative multi-group microcycle validation', () => {
   assert.match(source, /import \{ validateSessionMicrocyclePrescriptions \} from '@\/lib\/sessions\/session-microcycle-integration'/)
-  assert.match(source, /validatePrescriptionReferences\(prescriptions\.data, data\.date\)/)
-  assert.equal((source.match(/validatePrescriptionReferences\(prescriptions\.data, data\.date\)/g) ?? []).length, 2)
+  assert.match(source, /validatePrescriptionReferences\(prescriptions\.data, data\.date, planningAccess\.teamId\)/)
+  assert.equal((source.match(/validatePrescriptionReferences\(prescriptions\.data, data\.date, planningAccess\.teamId\)/g) ?? []).length, 2)
   assert.match(source, /validateSessionMicrocyclePrescriptions\(sessionDate, prescriptions, candidatesByGroup\)/)
   assert.doesNotMatch(source, /validateSessionMicrocycleDate\(/)
 })
