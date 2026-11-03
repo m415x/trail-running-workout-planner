@@ -17,6 +17,23 @@
     "profile": "Profile",
     "settings": "Settings",
     "signOut": "Sign out",
-    "footer": "Phase 3 · Individual monitoring, training load and competition catalog"
+    "footer": "Phase 3 · Individual monitoring, training load and competition catalog",
+    "accountMenu": "Account menu",
+    "signOutError": "Could not sign out."
+  },
+  "CoachHome": {
+    "title": "Coach Home",
+    "description": "Access the work areas available to your team.",
+    "workflows": "Available work areas",
+    "unavailable": "No other work areas are available with your current permissions.",
+    "dataPending": "Operational summaries will appear when authorized reads are available.",
+    "navigation": {
+      "athletes": "Athletes",
+      "planning": "Planning",
+      "sessions": "Sessions",
+      "groups": "Sporting groups",
+      "cohorts": "Planning subgroups",
+      "membership": "Membership"
+    }
   }
 }
