@@ -17,6 +17,23 @@
     "profile": "Perfil",
     "settings": "Configuración",
     "signOut": "Cerrar sesión",
-    "footer": "Fase 3 · Seguimiento individual, carga y catálogo competitivo"
+    "footer": "Fase 3 · Seguimiento individual, carga y catálogo competitivo",
+    "accountMenu": "Menú de cuenta",
+    "signOutError": "No se pudo cerrar la sesión."
+  },
+  "CoachHome": {
+    "title": "Inicio del Coach",
+    "description": "Accesos a las áreas de trabajo disponibles para tu equipo.",
+    "workflows": "Áreas disponibles",
+    "unavailable": "No hay otras áreas disponibles con tus permisos actuales.",
+    "dataPending": "Los resúmenes operativos se mostrarán cuando estén disponibles lecturas autorizadas.",
+    "navigation": {
+      "athletes": "Atletas",
+      "planning": "Planificación",
+      "sessions": "Sesiones",
+      "groups": "Grupos deportivos",
+      "cohorts": "Subgrupos de planificación",
+      "membership": "Membresía"
+    }
   }
 }
