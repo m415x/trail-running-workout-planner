@@ -34,6 +34,15 @@
       "groups": "Grupos deportivos",
       "cohorts": "Subgrupos de planificación",
       "membership": "Membresía"
+    },
+    "activeAthletes": "Atletas activos",
+    "athleteStates": {
+      "loading": "Consultando atletas autorizados…",
+      "empty": "No hay atletas activos en este equipo.",
+      "denied": "No tenés acceso al resumen de atletas.",
+      "selection_required": "Seleccioná un equipo para consultar atletas.",
+      "invalid_context": "La selección del equipo no es válida.",
+      "error": "No se pudo consultar el resumen de atletas."
     }
   }
 }
