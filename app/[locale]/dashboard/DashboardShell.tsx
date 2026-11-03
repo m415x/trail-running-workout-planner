@@ -5,14 +5,12 @@ import { Separator } from '@ui/separator'
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '@ui/avatar'
+import { CircleUserRound } from 'lucide-react'
 import { AppSidebar } from '@/components/dashboard/app-sidebar'
+import { CoachHomeDestinationsContext } from '@/features/coach-home/coach-home-destinations'
 import { DashboardDirtyFormGuardProvider } from '@/components/forms/dashboard-dirty-form-guard'
 import { useLocale, useTranslations } from 'next-intl'
 import { logoutAction } from '@/app/actions/auth-actions'
@@ -55,39 +53,28 @@ export function DashboardShell({ children, visibleDestinations }: {
               <h1 className='text-lg font-semibold'>{t('title')}</h1>
 
               <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <Avatar className='h-8 w-8'>
-                    <AvatarImage src='/avatars/coach.png' alt='Coach' />
-                    <AvatarFallback>CO</AvatarFallback>
-                  </Avatar>
+                <DropdownMenuTrigger
+                  aria-label={t('accountMenu')}
+                  className='inline-flex size-9 items-center justify-center rounded-full border border-border hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                >
+                  <CircleUserRound className='size-5' aria-hidden='true' />
                 </DropdownMenuTrigger>
-
                 <DropdownMenuContent className='w-56' align='end'>
-                  <DropdownMenuGroup>
-                    <DropdownMenuLabel className='font-normal'>
-                      <div className='flex flex-col space-y-1'>
-                        <p className='text-sm font-medium leading-none'>Coach Name</p>
-                        <p className='text-xs leading-none text-muted-foreground'>coach@trailrun.com</p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>{t('profile')}</DropdownMenuItem>
-                    <DropdownMenuItem>{t('settings')}</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {logoutFailed && <p role='alert' className='px-2 text-sm text-destructive'>{logoutLocale === 'es' ? 'No se pudo cerrar la sesión.' : 'Could not sign out.'}</p>}
-                    <DropdownMenuItem
-                      className='text-red-600 focus:text-red-600'
-                      onClick={() => { setLogoutFailed(false); void completeLogoutNavigation({ locale: logoutLocale, signOut: () => logoutAction(logoutLocale), replace: (path) => router.replace(path), refresh: () => router.refresh() }).then((result) => { if (result === 'invalid') setLogoutFailed(true) }) }}
-                    >
-                      {t('signOut')}
-                    </DropdownMenuItem>
-                  </DropdownMenuGroup>
+                  {logoutFailed && <p role='alert' className='px-2 text-sm text-destructive'>{t('signOutError')}</p>}
+                  <DropdownMenuItem
+                    className='text-red-600 focus:text-red-600'
+                    onClick={() => { setLogoutFailed(false); void completeLogoutNavigation({ locale: logoutLocale, signOut: () => logoutAction(logoutLocale), replace: (path) => router.replace(path), refresh: () => router.refresh() }).then((result) => { if (result === 'invalid') setLogoutFailed(true) }) }}
+                  >
+                    {t('signOut')}
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           </header>
 
-          <main className='flex min-w-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-8 lg:p-8'>{children}</main>
+          <main className='flex min-w-0 flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:gap-8 lg:p-8'>
+            <CoachHomeDestinationsContext.Provider value={visibleDestinations}>{children}</CoachHomeDestinationsContext.Provider>
+          </main>
         </SidebarInset>
       </SidebarProvider>
     </DashboardDirtyFormGuardProvider>
