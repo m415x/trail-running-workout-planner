@@ -1,10 +1,9 @@
 import { and, eq, count } from 'drizzle-orm'
 import { athleteProfiles } from '@/db/schema'
+import type { db } from '@/db'
 
 /** A single aggregate, not the full administrative athlete list. */
-export function createCoachHomeActiveAthleteCountQuery(database: {
-  select: (selection: { total: ReturnType<typeof count> }) => any
-}) {
+export function createCoachHomeActiveAthleteCountQuery(database: typeof db) {
   return async (teamId: string): Promise<number> => {
     const rows = await database.select({ total: count() })
       .from(athleteProfiles)
