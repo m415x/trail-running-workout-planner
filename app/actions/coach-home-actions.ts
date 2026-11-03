@@ -9,6 +9,9 @@ import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4
 import { createCoachHomeAthleteCountReader } from '@/lib/coach-home/athlete-count-reader'
 import { createCoachHomeActiveAthleteCountQuery } from '@/lib/coach-home/athlete-count-query'
 import { db } from '@/db'
+import { getCoachPlanningListResult } from '@/app/actions/planning-actions'
+import { projectCoachHomePlanning } from '@/lib/coach-home/planning-summary'
+import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 
 export async function getCoachHomeActiveAthleteCount() {
   const reader = createCoachHomeAthleteCountReader({
@@ -39,4 +42,15 @@ export async function getCoachHomeActiveAthleteCount() {
     countActive: createCoachHomeActiveAthleteCountQuery(db),
   })
   return reader.read()
+}
+
+
+/** The planning reader performs H2/H3/H4A per Plan before this bounded projection. */
+export async function getCoachHomePlanningSummary() {
+  const date = new Intl.DateTimeFormat('en-CA', {
+    timeZone: APPLICATION_REGIONAL_FALLBACKS.timeZone,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date())
+  const result = await getCoachPlanningListResult()
+  return projectCoachHomePlanning(result, date)
 }
