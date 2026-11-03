@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-858/T5 — Team H3 prescription-scope correctivo (candidato)](handoffs/kan-858.md) — RED Team B real en validador productivo, GREEN server-owned Team; cobertura focal de edición, cross-Team y rollback, con límites explícitos de integración Server Action. Gate candidato `pn verify --db` PASS 6/6 reportado; PR, integración y postmerge pendientes. La línea base integrada continúa en [current.md](handoffs/current.md).
+- [KAN-858/T5 — Team H3 prescription-scope correctivo integrado](handoffs/kan-858.md) — [PR #80](https://github.com/m415x/trail-running-workout-planner/pull/80), merge `a933f332b27c43004b6845753ded4a1ce8463f61`. RED Team B causal, GREEN usando Team server-owned, regresiones focales de edición, cross-Team y rollback con límites explícitos; `pn verify --db` PASS 6/6 candidato y PASS postmerge informado por operador. [Current integrated handoff](handoffs/current.md); checker documental final y disposición de worktree pendientes.
 
 
 - [KAN-851/T5 — KAN-625 ES/EN acceptance integrated](handoffs/kan-851.md) — [ES/EN evidence matrix and limitations](i18n/kan-625-acceptance-matrix.md); [PR #79](https://github.com/m415x/trail-running-workout-planner/pull/79), ordinary merge `1b943c240bed793d0d79c22830c25cdc8b6d0f3f`, local candidate gate 6/6 and documentary handoff PASS operator-reported. Postmerge local gate, final handoff check, Jira parent closeout and worktree disposition pending. KAN-850/T4 Finalizada (Jira 14600).
