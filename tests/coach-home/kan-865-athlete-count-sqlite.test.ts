@@ -8,7 +8,7 @@ import { createCoachHomeActiveAthleteCountQuery } from '@/lib/coach-home/athlete
 
 test('KAN-865/T2: one bounded SQLite count filters active, nondeleted Team profiles without PII', async () => {
   const sqlStatements: string[] = []
-  const sqlite = new Database(':memory:', { verbose: (sql) => sqlStatements.push(sql) })
+  const sqlite = new Database(':memory:', { verbose: (sql) => { if (typeof sql === 'string') sqlStatements.push(sql) } })
   try {
     sqlite.exec(`
       CREATE TABLE athlete_profiles (
