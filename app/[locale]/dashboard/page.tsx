@@ -2,14 +2,15 @@
 
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
-import { ArrowRight, Compass, Users } from 'lucide-react'
+import { ArrowRight, CalendarRange, Compass, Users } from 'lucide-react'
 
 import { Link } from '@/i18n/routing'
 import { useCoachHomeDestinations } from '@/features/coach-home/coach-home-destinations'
 import { selectCoachSidebarDestinations } from '@/components/dashboard/coach-sidebar-destinations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
-import { getCoachHomeActiveAthleteCount } from '@/app/actions/coach-home-actions'
+import { getCoachHomeActiveAthleteCount, getCoachHomePlanningSummary } from '@/app/actions/coach-home-actions'
 import type { CoachHomeAthleteCountResult } from '@/lib/coach-home/athlete-count-reader'
+import type { CoachHomePlanningResult } from '@/lib/coach-home/planning-summary'
 
 const WORK_AREAS = [
   { href: '/dashboard/athletes', label: 'athletes' },
@@ -23,11 +24,15 @@ const WORK_AREAS = [
 export default function DashboardPage() {
   const t = useTranslations('CoachHome')
   const [athletes, setAthletes] = useState<CoachHomeAthleteCountResult | { status: 'loading' }>({ status: 'loading' })
+  const [planning, setPlanning] = useState<CoachHomePlanningResult | { status: 'loading' }>({ status: 'loading' })
   useEffect(() => {
     let active = true
     void getCoachHomeActiveAthleteCount()
       .then((result) => { if (active) setAthletes(result) })
       .catch(() => { if (active) setAthletes({ status: 'error' }) })
+    void getCoachHomePlanningSummary()
+      .then((result) => { if (active) setPlanning(result) })
+      .catch(() => { if (active) setPlanning({ status: 'error' }) })
     return () => { active = false }
   }, [])
   const visibleDestinations = useCoachHomeDestinations()
@@ -55,6 +60,55 @@ export default function DashboardPage() {
             <p role='status' className='text-sm text-muted-foreground'>
               {athletes.status === 'loading' ? t('athleteStates.loading')
                 : t(`athleteStates.${athletes.status}`)}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <CalendarRange aria-hidden='true' className='size-5' /> {t('planning.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-4'>
+          {planning.status === 'ready' ? (
+            <>
+              <p className='text-sm text-muted-foreground'>{t('planning.count', { count: planning.planCount })}</p>
+              <div className='grid gap-3 md:grid-cols-2'>
+                {planning.plans.map((plan) => (
+                  <section key={plan.id} className='space-y-2 rounded-md border p-3'>
+                    <div className='flex flex-wrap items-center justify-between gap-2'>
+                      <h3 className='font-semibold'>{plan.title}</h3>
+                      {destinations.has('/dashboard/planning') && (
+                        <Link href={`/dashboard/planning/${plan.id}`}
+                          className='text-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'>
+                          {t('planning.showPlan')}
+                        </Link>
+                      )}
+                    </div>
+                    {plan.weeks.length === 0 ? (
+                      <p className='text-sm text-muted-foreground'>{t('planning.noWeeks')}</p>
+                    ) : (
+                      <ul className='space-y-2'>
+                        {plan.weeks.map((week) => (
+                          <li key={week.id} className='rounded-md bg-muted/40 p-2 text-sm'>
+                            <span className='font-medium'>{t(`planning.${week.relative}`)} · {t('planning.week', { number: week.weekNumber })}</span>
+                            <p className='text-muted-foreground'>{t('planning.period', { start: week.startDate, end: week.endDate })}</p>
+                            <p>{week.targetVolumeKm === null
+                              ? t('planning.unknownTarget')
+                              : t('planning.target', { volume: week.targetVolumeKm })}</p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p role='status' className='text-sm text-muted-foreground'>
+              {planning.status === 'loading' ? t('planning.states.loading')
+                : t(`planning.states.${planning.status}`)}
             </p>
           )}
         </CardContent>
