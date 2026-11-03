@@ -17,7 +17,7 @@ test('KAN-866/T3 loads Plan collection once for N visible Plans and bounds Home 
   }))
   const reader = createCoachPlanningListOperation({
     authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach' }),
-    resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_A' }),
+    resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_A', source: 'single_membership' as const }),
     authorize: async () => { count.authorize++; return { allowed: true } },
     listGroups: async () => { count.listGroups++; return [{ id: 'group_A', teamId: 'team_A' }] },
     listPlans: async (groupIds: string[]) => {
@@ -44,7 +44,7 @@ test('KAN-866/T3 does not read Plan collection for a denied capability', async (
   let loads = 0
   const reader = createCoachPlanningListOperation({
     authenticate: async () => ({ status: 'authenticated' as const, userId: 'coach' }),
-    resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_A' }),
+    resolveActiveTeam: async () => ({ status: 'resolved' as const, teamId: 'team_A', source: 'single_membership' as const }),
     authorize: async () => ({ allowed: false }),
     listGroups: async () => [{ id: 'group_A', teamId: 'team_A' }],
     listPlans: async () => { loads++; return [] },
