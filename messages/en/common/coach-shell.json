@@ -34,6 +34,15 @@
       "groups": "Sporting groups",
       "cohorts": "Planning subgroups",
       "membership": "Membership"
+    },
+    "activeAthletes": "Active athletes",
+    "athleteStates": {
+      "loading": "Loading authorized athletes…",
+      "empty": "There are no active athletes in this team.",
+      "denied": "You cannot access the athlete summary.",
+      "selection_required": "Select a team to view athletes.",
+      "invalid_context": "The team selection is invalid.",
+      "error": "The athlete summary could not be loaded."
     }
   }
 }
