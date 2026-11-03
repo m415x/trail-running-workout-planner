@@ -1,81 +1,62 @@
+'use client'
+
+import { useTranslations } from 'next-intl'
+import { ArrowRight, Compass } from 'lucide-react'
+
+import { Link } from '@/i18n/routing'
+import { useCoachHomeDestinations } from '@/features/coach-home/coach-home-destinations'
+import { selectCoachSidebarDestinations } from '@/components/dashboard/coach-sidebar-destinations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
-import { Users, TrendingUp, CalendarDays, DollarSign } from 'lucide-react'
+
+const WORK_AREAS = [
+  { href: '/dashboard/athletes', label: 'athletes' },
+  { href: '/dashboard/planning', label: 'planning' },
+  { href: '/dashboard/sessions', label: 'sessions' },
+  { href: '/dashboard/groups', label: 'groups' },
+  { href: '/dashboard/cohorts', label: 'cohorts' },
+  { href: '/dashboard/membership', label: 'membership' },
+] as const
 
 export default function DashboardPage() {
+  const t = useTranslations('CoachHome')
+  const visibleDestinations = useCoachHomeDestinations()
+  // H3/H4A layout projection determines discoverability. Each destination independently
+  // authorizes its data and mutations; this client-side allowlist is never authority.
+  const destinations = new Set(selectCoachSidebarDestinations(visibleDestinations))
+  const links = WORK_AREAS.filter((area) => destinations.has(area.href))
+
   return (
     <div className='space-y-6'>
-      <div>
-        <h2 className='text-3xl font-bold tracking-tight'>Resumen General</h2>
-        <p className='text-muted-foreground'>Vista general del equipo y las planificaciones activas.</p>
+      <div className='space-y-1'>
+        <h2 className='text-3xl font-bold tracking-tight'>{t('title')}</h2>
+        <p className='text-muted-foreground'>{t('description')}</p>
       </div>
-
-      {/* KPIs */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-4'>
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Atletas Activos</CardTitle>
-            <Users className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>24</div>
-            <p className='text-xs text-muted-foreground'>+2 desde el mes pasado</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Planificaciones Activas</CardTitle>
-            <CalendarDays className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>8</div>
-            <p className='text-xs text-muted-foreground'>Macrociclos en curso</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Ingresos del Mes</CardTitle>
-            <DollarSign className='h-4 w-4 text-muted-foreground' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold'>$1,250</div>
-            <p className='text-xs text-muted-foreground'>85% de membresías al día</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-            <CardTitle className='text-sm font-medium'>Alertas Fisiológicas</CardTitle>
-            <TrendingUp className='h-4 w-4 text-red-500' />
-          </CardHeader>
-          <CardContent>
-            <div className='text-2xl font-bold text-red-500'>3</div>
-            <p className='text-xs text-muted-foreground'>Atletas con sobrecarga reportada</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Aquí puedes añadir tablas recientes o gráficos */}
-      <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-7'>
-        <Card className='col-span-4'>
-          <CardHeader>
-            <CardTitle>Próximas Competencias del Equipo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className='text-sm text-muted-foreground'>Tabla de carreras asignadas (pendiente de implementar)</p>
-          </CardContent>
-        </Card>
-        <Card className='col-span-3'>
-          <CardHeader>
-            <CardTitle>Pagos Pendientes</CardTitle>
-            <CardDescription>3 atletas requieren seguimiento.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className='text-sm text-muted-foreground'>Lista resumida de morosos (pendiente de implementar)</p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Compass aria-hidden='true' className='size-5' /> {t('workflows')}
+          </CardTitle>
+          <CardDescription>{t('dataPending')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {links.length === 0 ? (
+            <p role='status' className='text-sm text-muted-foreground'>{t('unavailable')}</p>
+          ) : (
+            <nav aria-label={t('workflows')} className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+              {links.map((area) => (
+                <Link
+                  key={area.href}
+                  href={area.href}
+                  className='flex min-h-12 items-center justify-between gap-3 rounded-md border border-border p-3 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                >
+                  <span>{t(`navigation.${area.label}`)}</span>
+                  <ArrowRight aria-hidden='true' className='size-4 shrink-0' />
+                </Link>
+              ))}
+            </nav>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
