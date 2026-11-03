@@ -1,12 +1,15 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { ArrowRight, Compass } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Compass, Users } from 'lucide-react'
 
 import { Link } from '@/i18n/routing'
 import { useCoachHomeDestinations } from '@/features/coach-home/coach-home-destinations'
 import { selectCoachSidebarDestinations } from '@/components/dashboard/coach-sidebar-destinations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
+import { getCoachHomeActiveAthleteCount } from '@/app/actions/coach-home-actions'
+import type { CoachHomeAthleteCountResult } from '@/lib/coach-home/athlete-count-reader'
 
 const WORK_AREAS = [
   { href: '/dashboard/athletes', label: 'athletes' },
@@ -19,6 +22,14 @@ const WORK_AREAS = [
 
 export default function DashboardPage() {
   const t = useTranslations('CoachHome')
+  const [athletes, setAthletes] = useState<CoachHomeAthleteCountResult | { status: 'loading' }>({ status: 'loading' })
+  useEffect(() => {
+    let active = true
+    void getCoachHomeActiveAthleteCount()
+      .then((result) => { if (active) setAthletes(result) })
+      .catch(() => { if (active) setAthletes({ status: 'error' }) })
+    return () => { active = false }
+  }, [])
   const visibleDestinations = useCoachHomeDestinations()
   // H3/H4A layout projection determines discoverability. Each destination independently
   // authorizes its data and mutations; this client-side allowlist is never authority.
@@ -31,6 +42,23 @@ export default function DashboardPage() {
         <h2 className='text-3xl font-bold tracking-tight'>{t('title')}</h2>
         <p className='text-muted-foreground'>{t('description')}</p>
       </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Users aria-hidden='true' className='size-5' /> {t('activeAthletes')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {athletes.status === 'ready' ? (
+            <p className='text-2xl font-bold' aria-label={t('activeAthletes')}>{athletes.count}</p>
+          ) : (
+            <p role='status' className='text-sm text-muted-foreground'>
+              {athletes.status === 'loading' ? t('athleteStates.loading')
+                : t(`athleteStates.${athletes.status}`)}
+            </p>
+          )}
+        </CardContent>
+      </Card>
       <Card>
         <CardHeader>
           <CardTitle className='flex items-center gap-2'>
