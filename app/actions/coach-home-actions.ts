@@ -11,6 +11,8 @@ import { createCoachHomeActiveAthleteCountQuery } from '@/lib/coach-home/athlete
 import { db } from '@/db'
 import { getCoachPlanningListResult } from '@/app/actions/planning-actions'
 import { projectCoachHomePlanning } from '@/lib/coach-home/planning-summary'
+import { createCoachHomeNextCompetitionReader } from '@/lib/coach-home/next-competition-reader'
+import { createCoachHomeNextCompetitionQuery } from '@/lib/coach-home/next-competition-query'
 import { APPLICATION_REGIONAL_FALLBACKS } from '@/lib/regionalization/application-regional-context'
 
 export async function getCoachHomeActiveAthleteCount() {
@@ -53,4 +55,16 @@ export async function getCoachHomePlanningSummary() {
   }).format(new Date())
   const result = await getCoachPlanningListResult()
   return projectCoachHomePlanning(result, date)
+}
+
+/** Never accepts client-provided Plan IDs: H2/H3/H4A planning.list is authority. */
+export async function getCoachHomeNextCompetition() {
+  return createCoachHomeNextCompetitionReader({
+    loadAuthorizedPlans: getCoachPlanningListResult,
+    readCandidates: createCoachHomeNextCompetitionQuery(db),
+    today: () => new Intl.DateTimeFormat('en-CA', {
+      timeZone: APPLICATION_REGIONAL_FALLBACKS.timeZone,
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date()),
+  }).read()
 }
