@@ -1,6 +1,6 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 import { ArrowRight, CalendarRange, Compass, Trophy, Users } from 'lucide-react'
 
@@ -12,6 +12,7 @@ import { getCoachHomeActiveAthleteCount, getCoachHomePlanningSummary, getCoachHo
 import type { CoachHomeAthleteCountResult } from '@/lib/coach-home/athlete-count-reader'
 import type { CoachHomePlanningResult } from '@/lib/coach-home/planning-summary'
 import type { CoachHomeNextCompetitionResult } from '@/lib/coach-home/next-competition'
+import { formatCoachHomeDate } from '@/lib/coach-home/format-coach-home-date'
 
 const WORK_AREAS = [
   { href: '/dashboard/athletes', label: 'athletes' },
@@ -24,6 +25,7 @@ const WORK_AREAS = [
 
 export default function DashboardPage() {
   const t = useTranslations('CoachHome')
+  const locale = useLocale() === 'en' ? 'en' : 'es'
   const [athletes, setAthletes] = useState<CoachHomeAthleteCountResult | { status: 'loading' }>({ status: 'loading' })
   const [planning, setPlanning] = useState<CoachHomePlanningResult | { status: 'loading' }>({ status: 'loading' })
   const [competition, setCompetition] = useState<CoachHomeNextCompetitionResult | { status: 'loading' }>({ status: 'loading' })
@@ -98,7 +100,7 @@ export default function DashboardPage() {
                         {plan.weeks.map((week) => (
                           <li key={week.id} className='rounded-md bg-muted/40 p-2 text-sm'>
                             <span className='font-medium'>{t(`planning.${week.relative}`)} · {t('planning.week', { number: week.weekNumber })}</span>
-                            <p className='text-muted-foreground'>{t('planning.period', { start: week.startDate, end: week.endDate })}</p>
+                            <p className='text-muted-foreground'>{t('planning.period', { start: formatCoachHomeDate(week.startDate, locale), end: formatCoachHomeDate(week.endDate, locale) })}</p>
                             <p>{week.targetVolumeKm === null
                               ? t('planning.unknownTarget')
                               : t('planning.target', { volume: week.targetVolumeKm })}</p>
@@ -128,7 +130,7 @@ export default function DashboardPage() {
           {competition.status === 'ready' ? (
             <div className='space-y-2 text-sm'>
               <h3 className='font-semibold'>{competition.competition.name}</h3>
-              <p>{t('competition.date', { date: competition.competition.date })}</p>
+              <p>{t('competition.date', { date: formatCoachHomeDate(competition.competition.date, locale) })}</p>
               <p>{t('competition.distance', { distance: competition.competition.distanceKm })}</p>
               {destinations.has('/dashboard/planning') && (
                 <Link
