@@ -64,6 +64,20 @@
         "invalid_context": "La selección del equipo no es válida.",
         "error": "No se pudo cargar la planificación."
       }
+    },
+    "competition": {
+      "title": "Próxima competencia",
+      "date": "Fecha: {date}",
+      "distance": "Distancia: {distance} km",
+      "plan": "Ver planificación",
+      "states": {
+        "loading": "Consultando competencias autorizadas…",
+        "empty": "No hay competencias futuras en tus planificaciones.",
+        "denied": "No tenés acceso a las competencias de planificación.",
+        "selection_required": "Seleccioná un equipo para consultar competencias.",
+        "invalid_context": "La selección del equipo no es válida.",
+        "error": "No se pudo consultar la próxima competencia."
+      }
     }
   }
 }
