@@ -64,6 +64,20 @@
         "invalid_context": "The team selection is invalid.",
         "error": "Planning could not be loaded."
       }
+    },
+    "competition": {
+      "title": "Next competition",
+      "date": "Date: {date}",
+      "distance": "Distance: {distance} km",
+      "plan": "View plan",
+      "states": {
+        "loading": "Loading authorized competitions…",
+        "empty": "No upcoming competitions in your plans.",
+        "denied": "You cannot access planning competitions.",
+        "selection_required": "Select a team to view competitions.",
+        "invalid_context": "The team selection is invalid.",
+        "error": "Could not load the next competition."
+      }
     }
   }
 }
