@@ -89,12 +89,12 @@ test('KAN-866/T3 real SQLite Coach planning relation query is bounded in SQL sta
         },
       },
     })
-    const statements = trace.filter((sql) => /^select\\b/i.test(sql.trim()))
+    const statements = trace.filter((sql) => /^select\b/i.test(sql.trim()))
     assert.equal(plans.length, 24, 'the current full reader still hydrates all matching plans')
     assert.equal(plans.every((plan) => plan.macrocycles.length === 1 && plan.macrocycles[0]?.mesocycles[0]?.microcycles.length === 1), true)
     assert.ok(statements.length >= 1 && statements.length <= 4,
       `Expected a bounded number of SELECTs independent of Plan count; got ${statements.length}`)
-    assert.equal(trace.some((sql) => /^(insert|update|delete)\\b/i.test(sql.trim())), false)
+    assert.equal(trace.some((sql) => /^(insert|update|delete)\b/i.test(sql.trim())), false)
   } finally {
     sqlite.close()
   }
