@@ -2,15 +2,16 @@
 
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
-import { ArrowRight, CalendarRange, Compass, Users } from 'lucide-react'
+import { ArrowRight, CalendarRange, Compass, Trophy, Users } from 'lucide-react'
 
 import { Link } from '@/i18n/routing'
 import { useCoachHomeDestinations } from '@/features/coach-home/coach-home-destinations'
 import { selectCoachSidebarDestinations } from '@/components/dashboard/coach-sidebar-destinations'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
-import { getCoachHomeActiveAthleteCount, getCoachHomePlanningSummary } from '@/app/actions/coach-home-actions'
+import { getCoachHomeActiveAthleteCount, getCoachHomePlanningSummary, getCoachHomeNextCompetition } from '@/app/actions/coach-home-actions'
 import type { CoachHomeAthleteCountResult } from '@/lib/coach-home/athlete-count-reader'
 import type { CoachHomePlanningResult } from '@/lib/coach-home/planning-summary'
+import type { CoachHomeNextCompetitionResult } from '@/lib/coach-home/next-competition'
 
 const WORK_AREAS = [
   { href: '/dashboard/athletes', label: 'athletes' },
@@ -25,6 +26,7 @@ export default function DashboardPage() {
   const t = useTranslations('CoachHome')
   const [athletes, setAthletes] = useState<CoachHomeAthleteCountResult | { status: 'loading' }>({ status: 'loading' })
   const [planning, setPlanning] = useState<CoachHomePlanningResult | { status: 'loading' }>({ status: 'loading' })
+  const [competition, setCompetition] = useState<CoachHomeNextCompetitionResult | { status: 'loading' }>({ status: 'loading' })
   useEffect(() => {
     let active = true
     void getCoachHomeActiveAthleteCount()
@@ -33,6 +35,9 @@ export default function DashboardPage() {
     void getCoachHomePlanningSummary()
       .then((result) => { if (active) setPlanning(result) })
       .catch(() => { if (active) setPlanning({ status: 'error' }) })
+    void getCoachHomeNextCompetition()
+      .then((result) => { if (active) setCompetition(result) })
+      .catch(() => { if (active) setCompetition({ status: 'error' }) })
     return () => { active = false }
   }, [])
   const visibleDestinations = useCoachHomeDestinations()
@@ -109,6 +114,35 @@ export default function DashboardPage() {
             <p role='status' className='text-sm text-muted-foreground'>
               {planning.status === 'loading' ? t('planning.states.loading')
                 : t(`planning.states.${planning.status}`)}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle className='flex items-center gap-2'>
+            <Trophy aria-hidden='true' className='size-5' /> {t('competition.title')}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {competition.status === 'ready' ? (
+            <div className='space-y-2 text-sm'>
+              <h3 className='font-semibold'>{competition.competition.name}</h3>
+              <p>{t('competition.date', { date: competition.competition.date })}</p>
+              <p>{t('competition.distance', { distance: competition.competition.distanceKm })}</p>
+              {destinations.has('/dashboard/planning') && (
+                <Link
+                  href={`/dashboard/planning/${competition.competition.groupTrainingPlanId}`}
+                  className='inline-flex min-h-10 items-center underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                >
+                  {t('competition.plan')}
+                </Link>
+              )}
+            </div>
+          ) : (
+            <p role='status' className='text-sm text-muted-foreground'>
+              {competition.status === 'loading' ? t('competition.states.loading')
+                : t(`competition.states.${competition.status}`)}
             </p>
           )}
         </CardContent>
