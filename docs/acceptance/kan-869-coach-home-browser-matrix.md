@@ -80,3 +80,12 @@ For every row: PASS/FAIL/BLOCKED, environment, exact observed behavior and (if a
 **ACCEPTED FOR T6 ONLY:** preserve authentic Team A and H3 `invalid_context` browser PASS; maintain Team A→B→A BLOCKED, H3 `selection_required` browser PENDING, partial H4A browser PENDING, future CompetitionEntry browser BLOCKED; accept narrowly the absence of controlled visual-error injection while preserving reader-contract tests. Do not reinterpret any of these deferred states as PASS.
 
 The explicit acceptance authorizes **controlled administrative closure of KAN-869/T6 once** this document and Jira are reconciled and active follow-up is logged. Then KAN-870/T7 may begin AC-by-AC audit, full gates, docs/handoff, PR, CI, merge and postmerge under its own contract. **KAN-644 is not Beta Coach ready merely because T6/T7 close.** No full `pn verify --db` gate has been run during this disposition.
+
+
+### Administrative reconciliation — 2026-11-06
+
+**KAN-869/T6: Finalizada in Jira**, under accepted narrow contractual exception, recorded in closure comment `14700` and the accepted description addendum. This is an **administrative closure with deferred requirements**, not overall UX E2E PASS and not Beta Coach readiness.
+
+**Active follow-up registered:** KAN-566 comment `14697`, KAN-298 comment `14698`, KAN-567 comment `14699`; historical Closed issues do not serve as open implementation tasks. The global Race Catalog CRUD writer authorization remains an unimplemented **proposed corrective issue** with a real-data beta gate, not a repaired defect. No fixture mutation, browser re-run, or integration gate was performed for the closure.
+
+**KAN-870/T7 now authorized to start** its independent AC1–AC14, evidence/RED→GREEN, full `pn verify --db` gate, docs/handoff, PR/CI, normal merge and postmerge process. It must independently verify branch/dev/CI facts. Its eventual PASS does **not** waive KAN-567 or any of the explicitly deferred browser cases.
