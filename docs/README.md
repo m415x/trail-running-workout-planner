@@ -2,9 +2,9 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
-## Premerge candidate — KAN-644 Coach Operational Home (KAN-870/T7)
+## Latest integrated baseline — KAN-644 Coach Operational Home (KAN-870/T7)
 
-- [KAN-644 Coach Home story handoff](handoffs/kan-644.md) — operational Coach Home with authenticated H2/H3/H4A readers, bounded Plans/microcycles, Plan-owned upcoming CompetitionEntry query and ES/EN. Candidate functional/acceptance SHA `ecdc9381fbbb9c31b9128e47fedfb8cd108fd79b`; operator `pn verify --db` PASS 6/6 (303520 ms) at this exact SHA, Jira KAN-870 comment `14703`. Documentation changes after that SHA do not establish a fresh test execution. [T6 browser acceptance and contractual exceptions](acceptance/kan-869-coach-home-browser-matrix.md) (KAN-869 Finalizada via exceptional disposition, Jira 14700). Team A/invalid_context real browser PASS, multi-Team/partial role/future Competition/error visual not PASS. KAN-566/KAN-298/KAN-567 retain pre-beta gates. **PR, merge, postmerge and final handoff checker remain pending; KAN-644 is not beta-ready.**
+- [KAN-644 Coach Home story handoff](handoffs/kan-644.md) — [PR #81](https://github.com/m415x/trail-running-workout-planner/pull/81), ordinary merge `a6dae557e2bbeb101780b0e53a83ac62524c86e8` into `dev`, candidate `pn verify --db` PASS 6/6 at functional SHA `ecdc9381fbbb9c31b9128e47fedfb8cd108fd79b`, operator `HANDOFF DOCS: PASS` on documentary PR head `b1b09c41e72d9928c03cee96fefe68b8bdc5c4e4`; Vercel success, postmerge local gate and final documentation checker **pending**. [T6 acceptance and contractual exceptions](acceptance/kan-869-coach-home-browser-matrix.md): Team A/invalid_context real browser PASS; A→B→A/partial roles/Competition positive/visual error remain unaccredited, narrowly deferred for T6 only. KAN-566/KAN-298/KAN-567 preserve pre-beta gates, including unresolved global `saveRaceCatalog` authorization risk. **Not beta-ready.** [Current integrated handoff](handoffs/current.md).
 
 ## Handoffs
 
