@@ -9,6 +9,7 @@ import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptSession } from '@/lib/auth/require-authenticated-session'
 import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createCoachNavigationNextServerProjection } from '@/lib/authorization/h4a-next-server-authorization'
+import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 
 export default async function DashboardLayout({
   children,
@@ -47,5 +48,14 @@ export default async function DashboardLayout({
   const projectNavigation = createCoachNavigationNextServerProjection()
   const visibleDestinations = await projectNavigation({ status: 'authenticated', userId: access.userId })
 
-  return <DashboardShell visibleDestinations={visibleDestinations}>{children}</DashboardShell>
+  // The resolved Team is server-owned H3 evidence. React remounts the client shell
+  // when that Team changes, discarding stale Home state from the previous Team.
+  // This key controls presentation lifecycle only; each Server Action still
+  // independently enforces H2/H3/H4A before reading any data.
+  const activeTeam = await createActiveTeamNextServerContext().resolve(access.userId)
+  const teamKey = activeTeam.status === 'resolved'
+    ? `${access.userId}:${activeTeam.teamId}`
+    : `${access.userId}:${activeTeam.status}`
+
+  return <DashboardShell key={teamKey} visibleDestinations={visibleDestinations}>{children}</DashboardShell>
 }

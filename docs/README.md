@@ -2,6 +2,10 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
+## Premerge candidate — KAN-644 Coach Operational Home (KAN-870/T7)
+
+- [KAN-644 Coach Home story handoff](handoffs/kan-644.md) — operational Coach Home with authenticated H2/H3/H4A readers, bounded Plans/microcycles, Plan-owned upcoming CompetitionEntry query and ES/EN. Candidate functional/acceptance SHA `ecdc9381fbbb9c31b9128e47fedfb8cd108fd79b`; operator `pn verify --db` PASS 6/6 (303520 ms) at this exact SHA, Jira KAN-870 comment `14703`. Documentation changes after that SHA do not establish a fresh test execution. [T6 browser acceptance and contractual exceptions](acceptance/kan-869-coach-home-browser-matrix.md) (KAN-869 Finalizada via exceptional disposition, Jira 14700). Team A/invalid_context real browser PASS, multi-Team/partial role/future Competition/error visual not PASS. KAN-566/KAN-298/KAN-567 retain pre-beta gates. **PR, merge, postmerge and final handoff checker remain pending; KAN-644 is not beta-ready.**
+
 ## Handoffs
 
 - [KAN-858/T5 — Team H3 prescription-scope correctivo integrado](handoffs/kan-858.md) — [PR #80](https://github.com/m415x/trail-running-workout-planner/pull/80), merge `a933f332b27c43004b6845753ded4a1ce8463f61`. RED Team B causal, GREEN usando Team server-owned, regresiones focales de edición, cross-Team y rollback con límites explícitos; `pn verify --db` PASS 6/6 candidato y PASS postmerge informado por operador. [Current integrated handoff](handoffs/current.md); checker documental final y disposición de worktree pendientes.

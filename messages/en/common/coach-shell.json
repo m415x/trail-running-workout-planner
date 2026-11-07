@@ -17,6 +17,67 @@
     "profile": "Profile",
     "settings": "Settings",
     "signOut": "Sign out",
-    "footer": "Phase 3 · Individual monitoring, training load and competition catalog"
+    "footer": "Phase 3 · Individual monitoring, training load and competition catalog",
+    "accountMenu": "Account menu",
+    "signOutError": "Could not sign out."
+  },
+  "CoachHome": {
+    "title": "Coach Home",
+    "description": "Access the work areas available to your team.",
+    "workflows": "Available work areas",
+    "unavailable": "No other work areas are available with your current permissions.",
+    "dataPending": "Operational summaries will appear when authorized reads are available.",
+    "navigation": {
+      "athletes": "Athletes",
+      "planning": "Planning",
+      "sessions": "Sessions",
+      "groups": "Sporting groups",
+      "cohorts": "Planning subgroups",
+      "membership": "Membership"
+    },
+    "activeAthletes": "Active athletes",
+    "athleteStates": {
+      "loading": "Loading authorized athletes…",
+      "empty": "There are no active athletes in this team.",
+      "denied": "You cannot access the athlete summary.",
+      "selection_required": "Select a team to view athletes.",
+      "invalid_context": "The team selection is invalid.",
+      "error": "The athlete summary could not be loaded."
+    },
+    "planning": {
+      "title": "Planning and microcycles",
+      "count": "Authorized plans: {count}",
+      "noWeeks": "No nearby microcycles are recorded.",
+      "target": "Target: {volume} km",
+      "unknownTarget": "Volume target not defined",
+      "week": "Week {number}",
+      "period": "{start} to {end}",
+      "past": "Previous",
+      "current": "Current",
+      "future": "Upcoming",
+      "showPlan": "View plan",
+      "states": {
+        "loading": "Loading authorized planning…",
+        "empty": "No plans are available for your access.",
+        "denied": "You cannot access planning.",
+        "selection_required": "Select a team to view planning.",
+        "invalid_context": "The team selection is invalid.",
+        "error": "Planning could not be loaded."
+      }
+    },
+    "competition": {
+      "title": "Next competition",
+      "date": "Date: {date}",
+      "distance": "Distance: {distance} km",
+      "plan": "View plan",
+      "states": {
+        "loading": "Loading authorized competitions…",
+        "empty": "No upcoming competitions in your plans.",
+        "denied": "You cannot access planning competitions.",
+        "selection_required": "Select a team to view competitions.",
+        "invalid_context": "The team selection is invalid.",
+        "error": "Could not load the next competition."
+      }
+    }
   }
 }

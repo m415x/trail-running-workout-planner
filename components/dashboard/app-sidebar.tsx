@@ -95,7 +95,7 @@ export function AppSidebar({ visibleDestinations }: { visibleDestinations: reado
             <Mountain className='size-4' />
           </div>
           <div className='min-w-0 group-data-[collapsible=icon]:hidden'>
-            <p className='truncate text-sm font-semibold'>El Parque Team</p>
+            <p className='truncate text-sm font-semibold'>{t('title')}</p>
             <p className='truncate text-xs text-muted-foreground'>{t('subtitle')}</p>
           </div>
         </div>
