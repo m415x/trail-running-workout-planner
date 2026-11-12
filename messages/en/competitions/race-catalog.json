@@ -11,6 +11,7 @@
     "search": "Search",
     "searching": "Searching…",
     "emptyEvents": "No events match this search. You can create the first one.",
+    "emptyEventsReadOnly": "No events match this search.",
     "emptyEditions": "This event has no editions yet.",
     "emptyCourses": "This edition has no courses yet.",
     "editions": "Editions",
@@ -83,6 +84,7 @@
       "changeCourseConfirmKeep": "Keep current course"
     },
     "errors": {
+      "forbidden": "You are not authorized to manage the race catalog.",
       "invalid": "Check the marked fields: names, dates, URLs and numeric values must be valid.",
       "unavailable": "The record is no longer available or cannot be selected.",
       "saveFailed": "The operation could not be completed. Please try again.",

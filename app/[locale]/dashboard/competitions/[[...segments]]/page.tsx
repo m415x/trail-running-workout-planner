@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { db } from '@/db'
+import { canMaintainGlobalRaceCatalog } from '@/lib/race-catalog/global-catalog-maintainer-next-server'
 import { CatalogForm } from '@/features/race-catalog/components/CatalogForm'
 import { CourseRegistration } from '@/features/race-registration/components/CourseRegistration'
 import { EditionRegistrations } from '@/features/race-registration/components/EditionRegistrations'
@@ -48,6 +49,13 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   const query = await searchParams
   const t = await getTranslations({ locale, namespace: 'RaceCatalog' })
   const base = '/dashboard/competitions'
+  const canMaintain = await canMaintainGlobalRaceCatalog()
+  const maintenanceDenied = (
+    <div className='space-y-4'>
+      <p role='alert' className='rounded-lg border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive'>{t('errors.forbidden')}</p>
+      <Link href={base} className={buttonVariants({ variant: 'outline' })}>{t('navigation')}</Link>
+    </div>
+  )
 
   const date = (value: string) => new Intl.DateTimeFormat(locale, { timeZone: 'UTC' })
     .format(new Date(`${value.slice(0, 10)}T00:00:00Z`))
@@ -80,9 +88,11 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
             <h2 className='text-3xl font-bold tracking-tight'>{t('navigation')}</h2>
             <p className='text-muted-foreground'>{t('intro')}</p>
           </div>
-          <Link href={`${base}/new`} className={buttonVariants()}>
-            <Plus /> {t('newEvent')}
-          </Link>
+          {canMaintain && (
+            <Link href={`${base}/new`} className={buttonVariants()}>
+              <Plus /> {t('newEvent')}
+            </Link>
+          )}
         </div>
 
         <Card>
@@ -115,7 +125,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
         {events.length === 0 ? (
           <Card>
             <CardHeader>
-              <CardTitle>{t('emptyEvents')}</CardTitle>
+              <CardTitle>{t(canMaintain ? 'emptyEvents' : 'emptyEventsReadOnly')}</CardTitle>
               <CardDescription>{t('intro')}</CardDescription>
             </CardHeader>
           </Card>
@@ -149,6 +159,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   }
 
   if (segments.length === 1 && segments[0] === 'new') {
+    if (!canMaintain) return maintenanceDenied
     return <FormPage title={t('newEvent')} backPath={base} backLabel={t('navigation')}>
       <CatalogForm kind='event' locale={locale} backPath={base} />
     </FormPage>
@@ -159,6 +170,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   const eventPath = `${base}/${event.id}`
 
   if (segments.length === 2 && ['edit', 'archive'].includes(segments[1])) {
+    if (!canMaintain) return maintenanceDenied
     const archive = segments[1] === 'archive'
     return <FormPage title={`${t(archive ? 'archive' : 'edit')}: ${event.name}`} backPath={eventPath} backLabel={event.name}>
       <CatalogForm kind='event' locale={locale} event={event} backPath={eventPath} archive={archive} />
@@ -181,10 +193,12 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
                 <CardDescription>{event.description || `${t('source')}: ${sourceLabel(event)}`}</CardDescription>
               </div>
               <div className='flex flex-wrap gap-2'>
-                <Link href={`${eventPath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                  <Pencil /> {t('edit')}
-                </Link>
-                {event.status !== 'archived' && (
+                {canMaintain && (
+                  <Link href={`${eventPath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <Pencil /> {t('edit')}
+                  </Link>
+                )}
+                {canMaintain && event.status !== 'archived' && (
                   <Link href={`${eventPath}/archive`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
                     <Archive /> {t('archive')}
                   </Link>
@@ -203,9 +217,11 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
             <h3 className='text-xl font-semibold'>{t('editions')}</h3>
             <p className='text-sm text-muted-foreground'>{t('intro')}</p>
           </div>
-          <Link href={`${eventPath}/editions/new`} className={buttonVariants()}>
-            <Plus /> {t('newEdition')}
-          </Link>
+          {canMaintain && (
+            <Link href={`${eventPath}/editions/new`} className={buttonVariants()}>
+              <Plus /> {t('newEdition')}
+            </Link>
+          )}
         </div>
 
         {editions.length === 0 ? (
@@ -236,6 +252,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
 
   if (segments[1] !== 'editions') notFound()
   if (segments.length === 3 && segments[2] === 'new') {
+    if (!canMaintain) return maintenanceDenied
     return <FormPage title={t('newEdition')} backPath={eventPath} backLabel={event.name}>
       <CatalogForm kind='edition' locale={locale} event={event} backPath={eventPath} />
     </FormPage>
@@ -247,6 +264,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   const editionPath = `${eventPath}/editions/${edition.id}`
 
   if (segments.length === 4 && ['edit', 'archive'].includes(segments[3])) {
+    if (!canMaintain) return maintenanceDenied
     const archive = segments[3] === 'archive'
     return <FormPage title={`${t(archive ? 'archive' : 'edit')}: ${edition.label}`} backPath={editionPath} backLabel={edition.label}>
       <CatalogForm kind='edition' locale={locale} event={event} edition={edition} backPath={editionPath} archive={archive} />
@@ -276,12 +294,16 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
                 <CardDescription>{date(edition.startDate)}{edition.endDate ? ` – ${date(edition.endDate)}` : ''}</CardDescription>
               </div>
               <div className='flex flex-wrap gap-2'>
-                <Link href={`${editionPath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                  <Pencil /> {t('edit')}
-                </Link>
-                <Link href={`${editionPath}/archive`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-                  <Archive /> {t('archive')}
-                </Link>
+                {canMaintain && (
+                  <Link href={`${editionPath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <Pencil /> {t('edit')}
+                  </Link>
+                )}
+                {canMaintain && (
+                  <Link href={`${editionPath}/archive`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+                    <Archive /> {t('archive')}
+                  </Link>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -301,9 +323,11 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
             <h3 className='text-xl font-semibold'>{t('courses')}</h3>
             <p className='text-sm text-muted-foreground'>{event.name} · {edition.label}</p>
           </div>
-          <Link href={`${editionPath}/courses/new`} className={buttonVariants()}>
-            <Plus /> {t('newCourse')}
-          </Link>
+          {canMaintain && (
+            <Link href={`${editionPath}/courses/new`} className={buttonVariants()}>
+              <Plus /> {t('newCourse')}
+            </Link>
+          )}
         </div>
 
         {courses.length === 0 ? (
@@ -334,6 +358,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
 
   if (segments[3] !== 'courses') notFound()
   if (segments.length === 5 && segments[4] === 'new') {
+    if (!canMaintain) return maintenanceDenied
     return <FormPage title={t('newCourse')} backPath={editionPath} backLabel={`${event.name} / ${edition.label}`}>
       <CatalogForm kind='course' locale={locale} event={event} edition={edition} backPath={editionPath} />
     </FormPage>
@@ -345,6 +370,7 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
   const coursePath = `${editionPath}/courses/${course.id}`
 
   if (segments.length === 6 && ['edit', 'archive'].includes(segments[5])) {
+    if (!canMaintain) return maintenanceDenied
     const archive = segments[5] === 'archive'
     return <FormPage title={`${t(archive ? 'archive' : 'edit')}: ${course.label}`} backPath={coursePath} backLabel={course.label}>
       <CatalogForm
@@ -385,12 +411,16 @@ export default async function CompetitionsPage({ params, searchParams }: Props) 
       </DetailHeader>
 
       <div className='flex flex-wrap justify-end gap-2'>
-        <Link href={`${coursePath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-          <Pencil /> {t('edit')}
-        </Link>
-        <Link href={`${coursePath}/archive`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
-          <Archive /> {t('archive')}
-        </Link>
+        {canMaintain && (
+          <Link href={`${coursePath}/edit`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Pencil /> {t('edit')}
+          </Link>
+        )}
+        {canMaintain && (
+          <Link href={`${coursePath}/archive`} className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Archive /> {t('archive')}
+          </Link>
+        )}
       </div>
 
       <Card>
