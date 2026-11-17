@@ -47,6 +47,6 @@ export const courseFormSchema = z.object({
 }).refine(value => value.modalityCode !== 'other' || Boolean(value.modalityLabel), { path: ['modalityLabel'] })
 
 export interface CatalogFormState {
-  error?: 'invalid' | 'unavailable' | 'saveFailed' | 'stale'
+  error?: 'invalid' | 'unavailable' | 'saveFailed' | 'stale' | 'forbidden'
   fields?: string[]
 }

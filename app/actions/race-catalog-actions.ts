@@ -14,6 +14,7 @@ import {
   eventFormSchema, editionFormSchema, courseFormSchema,
   type CatalogFormState,
 } from '@/lib/race-catalog/catalog-form'
+import { canMaintainGlobalRaceCatalog } from '@/lib/race-catalog/global-catalog-maintainer-next-server'
 import { validateRaceCourseSelection } from '@/lib/race-catalog/race-course-selection-policy'
 
 /** Searches shared product data. Consumers authorize their own team/athlete writes. */
@@ -31,6 +32,8 @@ export async function saveRaceCatalog(
   _state: CatalogFormState,
   formData: FormData,
 ): Promise<CatalogFormState> {
+  if (!await canMaintainGlobalRaceCatalog()) return { error: 'forbidden' }
+
   const value = (key: string) => String(formData.get(key) ?? '')
   const kind = value('kind')
   const operation = value('operation')

@@ -11,6 +11,7 @@
     "search": "Buscar",
     "searching": "Buscando…",
     "emptyEvents": "No hay eventos para esta búsqueda. Podés crear el primero.",
+    "emptyEventsReadOnly": "No hay eventos para esta búsqueda.",
     "emptyEditions": "Este evento todavía no tiene ediciones.",
     "emptyCourses": "Esta edición todavía no tiene recorridos.",
     "editions": "Ediciones",
@@ -83,6 +84,7 @@
       "changeCourseConfirmKeep": "Mantener recorrido actual"
     },
     "errors": {
+      "forbidden": "No tenés autorización para administrar el catálogo de competencias.",
       "invalid": "Revisá los campos marcados: nombres, fechas, URLs y valores numéricos deben ser válidos.",
       "unavailable": "El registro ya no está disponible o no puede seleccionarse.",
       "saveFailed": "No se pudo completar la operación. Intentá nuevamente.",
