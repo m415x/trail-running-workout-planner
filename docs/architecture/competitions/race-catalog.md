@@ -29,6 +29,17 @@ Patagonia Run                     RaceEvent
 
 The catalog must not persist `Patagonia Run 21K` and `Patagonia Run 42K` as unrelated event identities.
 
+## Global maintenance authorization — KAN-871 (2026-11-17)
+
+KAN-871 supersedes only the historical KAN-280 Coach maintenance authority. RaceEvent, RaceEdition and RaceCourse remain a shared global product catalog without Team ownership or team_id. Existing consultation and selection contracts are unchanged; H3 TEAM competition.manage/H4C govern Plan-owned CompetitionEntry, not global catalog maintenance.
+
+- Every create/update/archive goes through saveRaceCatalog and its first guard, canMaintainGlobalRaceCatalog, before parsing FormData or reading/writing catalog repositories or invoking navigation effects. Fresh verified Supabase H2 resolves a unique active EPT User using deployment-selected identity evidence; only the exact EPT userId in the private server-side allowlist authorizes maintenance. Identity/config errors deny uniformly as forbidden. No TeamMembership, preset, users.role, capability, email, Supabase subject, cookie, request payload or service_role grants this authority.
+- RACE_CATALOG_GLOBAL_MAINTAINER_USER_IDS is private deployment authorization configuration (not an identity provider or standalone secret), a nonempty JSON array of distinct canonical EPT userId strings. Each string has length 1–256 UTF-16 code units, no leading/trailing trim whitespace or C0/C1 control characters. Missing, empty, malformed, duplicate or non-string entries deny the entire configuration. Exact comparison; no normalization or partial matching. Never expose via NEXT_PUBLIC_* or log configured identities/credentials.
+- Provision and verify a legitimate H2 EPT User through the approved identity lifecycle, then designate its stable EPT ID privately. Limit configuration access to authorized deployment operators. Revoke by removing the ID (empty list denies all), restart/roll out every relevant instance, verify denial and no mutation; recovery requires authorized re-designation and verification. No instant multi-instance revocation guarantee. No schema, global role or grant migration.
+- UI uses the same server policy for nine maintenance links and direct routes, with localized denied state; the action independently rechecks authority at invocation. Existing lifecycle, ancestry, optimistic updatedAt, transactional rollback, provenance, FK RESTRICT, consumer selection and accepted snapshots remain unchanged.
+
+Evidence and limits: [KAN-871 story handoff](../../handoffs/kan-871.md). Deterministic real disposable SQLite with test-only provider/navigation seams covers actor and operation matrices; authentic Supabase browser acceptance uses the SQLite identity backend, not PostgreSQL deployment acceptance. KAN-298, KAN-566 and KAN-567 retain independent pre-beta obligations; createTrainingGoal fixed-Team risk is separate.
+
 ## Identity and lifecycle
 
 All three catalog entities use opaque immutable technical IDs (`BaseEntity.id`). Names, labels/years, nominal distance and URL slugs are not stable identity.
