@@ -6,12 +6,11 @@ const read = (path: string) => readFileSync(path, 'utf8')
 
 test('KAN-854/T0 preserves the historical 16.3.8 experimental baseline after S3 upgrade', () => {
   const manifest = JSON.parse(read('package.json')) as {
-    packageManager: string
     dependencies: Record<string, string>
     devDependencies: Record<string, string>
   }
-  assert.equal(manifest.packageManager, 'pnpm@12.4.1')
   const historical = read('docs/security/kan-853-dependency-audit-baseline.md')
+  assert.match(historical, /PASS with pnpm 12\.4\.1\b/)
   assert.match(historical, /`next@16\.3\.8`/)
   assert.match(historical, /16\.4\.3 without private 16\.3\.8 patch/)
   assert.equal(manifest.dependencies.next, manifest.devDependencies['eslint-config-next'])
