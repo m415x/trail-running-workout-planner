@@ -164,3 +164,42 @@ test('KAN-878 RED-3 serializes only valid optional v1 JSON within 4096 UTF-8 byt
     'Writing must reject unknown keys instead of silently stripping them',
   )
 })
+
+test('KAN-878 RED-8 rejects oversized v1 JSON on read without confusing UTF-8 bytes with string length', async () => {
+  const { readVerticalBlockJson } = await import('../../lib/sessions/vertical-prescription-json')
+
+  const block = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 2,
+    coverage: 'partial',
+    elevationGainPerRep: {
+      meters: 200,
+      provenance: { kind: 'track_adopted', trackReference: 'ñ'.repeat(2000) },
+    },
+    elevationLossPerRep: { meters: null, provenance: { kind: 'unknown' } },
+  }
+  const oversized = JSON.stringify(block)
+
+  assert.ok(oversized.length < 4096, 'Fixture must remain under the JS code-unit count')
+  assert.ok(Buffer.byteLength(oversized, 'utf8') > 4096, 'Fixture must exceed the UTF-8 byte limit')
+
+  assert.deepEqual(
+    readVerticalBlockJson(oversized),
+    { status: 'corrupt' },
+    'A persisted oversized v1 record must not be exposed as valid at read time',
+  )
+
+  const compact = JSON.stringify({
+    ...block,
+    elevationGainPerRep: {
+      meters: 200,
+      provenance: { kind: 'track_adopted', trackReference: 'short-track' },
+    },
+  })
+  assert.deepEqual(
+    readVerticalBlockJson(compact),
+    { status: 'valid', block: JSON.parse(compact) },
+    'Within-limit v1 records remain readable',
+  )
+})
