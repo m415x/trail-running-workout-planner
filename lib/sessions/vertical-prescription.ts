@@ -74,6 +74,14 @@ function totalForMetric(metric: VerticalMetricPerRepetition, repetitions: number
  * Unknown remains unknown; coverage does not change the block subtotal.
  */
 export function calculateVerticalBlockTotals(block: VerticalBlockV1): VerticalBlockTotals {
+  if (block.schemaVersion !== 1) {
+    throw new RangeError('Unsupported vertical block schema version')
+  }
+
+  if (block.coverage !== 'complete' && block.coverage !== 'partial') {
+    throw new RangeError('Unsupported vertical block coverage')
+  }
+
   if (block.direction !== 'ascent' && block.direction !== 'descent' && block.direction !== 'circuit') {
     throw new RangeError('Unsupported vertical repetition direction')
   }
