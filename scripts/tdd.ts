@@ -45,7 +45,7 @@ export function assertKan878FocusedAcceptanceLane(
   env: Record<string, string | undefined>,
 ): boolean {
   const dedicated = tests.some(file =>
-    file.replaceAll('\\\\', '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts'))
+    file.replace(/\\+/g, '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts'))
   if (dedicated) assertSafeKan878PostgresTarget(env)
   return dedicated
 }
@@ -121,7 +121,7 @@ function main(): void {
   if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
   const kan878Postgres = assertKan878FocusedAcceptanceLane(tests, process.env)
   if (tests.some(file => {
-    if (file.replaceAll('\\\\', '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')) return false
+    if (file.replace(/\\+/g, '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')) return false
     if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
     return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
       isPostgresIntegrationSource(readFocusedTestSource(file))
