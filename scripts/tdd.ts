@@ -5,6 +5,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { assertSafeKan646BiometricPostgresTarget, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
+import { assertSafeKan878PostgresTarget } from './kan-878-postgres-acceptance-target'
 
 const require = createRequire(import.meta.url)
 
@@ -33,6 +34,20 @@ export function readFocusedTestSource(file: string): string {
     const detail = error instanceof Error ? error.message : String(error)
     throw new TddPreparationError(formatPreparationFailure('input', detail))
   }
+}
+
+/**
+ * Select the exact dedicated real-PG KAN-878 acceptance file, never a SQL-double
+ * unit test. The connection target is validated before launching that lane.
+ */
+export function assertKan878FocusedAcceptanceLane(
+  tests: readonly string[],
+  env: Record<string, string | undefined>,
+): boolean {
+  const dedicated = tests.some(file =>
+    file.replaceAll('\\\\', '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts'))
+  if (dedicated) assertSafeKan878PostgresTarget(env)
+  return dedicated
 }
 
 type RunResult = { ok: boolean; output: string }
@@ -104,7 +119,9 @@ function main(): void {
   const kan646Postgres = tests.some(file =>
     /kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')))
   if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
+  const kan878Postgres = assertKan878FocusedAcceptanceLane(tests, process.env)
   if (tests.some(file => {
+    if (file.replaceAll('\\\\', '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')) return false
     if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
     return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
       isPostgresIntegrationSource(readFocusedTestSource(file))
@@ -119,7 +136,7 @@ function main(): void {
     if (/[*?\\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file)
     return isPostgresIntegrationSource(readFocusedTestSource(file))
   })
-  testOptions = postgresFocused ? ['--test-concurrency=1'] : []
+  testOptions = (postgresFocused || kan878Postgres) ? ['--test-concurrency=1'] : []
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
     process.stderr.write(`${detail}\n`)
