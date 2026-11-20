@@ -151,3 +151,57 @@ test('KAN-877 RED-3 validates independent D+ and D- provenance without fabricati
     },
   }), RangeError, 'Adopted track provenance requires a non-blank technical reference')
 })
+
+test('KAN-877 RED-4 reconciles complete coverage with whole-session D+ without treating unknown as zero', async () => {
+  const moduleExports = await import('../../lib/sessions/vertical-prescription')
+  const resolveSessionElevationGain = Reflect.get(moduleExports, 'resolveVerticalSessionElevationGain')
+
+  assert.equal(
+    typeof resolveSessionElevationGain,
+    'function',
+    'KAN-877 RED-4: pure complete-coverage elevation reconciliation is missing',
+  )
+
+  const completeBlock = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 3,
+    coverage: 'complete',
+    elevationGainPerRep: {
+      meters: 850,
+      provenance: { kind: 'coach_manual' },
+    },
+    elevationLossPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.equal(resolveSessionElevationGain({
+    block: completeBlock,
+    proposedSessionElevationGainM: 2550,
+  }), 2550, 'Complete quantified D+ must equal the derived whole-session aggregate')
+
+  assert.throws(() => resolveSessionElevationGain({
+    block: completeBlock,
+    proposedSessionElevationGainM: 2400,
+  }), RangeError, 'A contradictory complete-session aggregate must be rejected')
+
+  assert.throws(() => resolveSessionElevationGain({
+    block: completeBlock,
+    proposedSessionElevationGainM: null,
+  }), RangeError, 'A known complete-session aggregate cannot silently become unknown')
+
+  const unknownCompleteBlock = {
+    ...completeBlock,
+    elevationGainPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.equal(resolveSessionElevationGain({
+    block: unknownCompleteBlock,
+    proposedSessionElevationGainM: null,
+  }), null, 'Unknown complete D+ must remain null, not zero')
+})
