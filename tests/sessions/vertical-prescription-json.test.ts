@@ -136,7 +136,7 @@ test('KAN-878 RED-3 serializes only valid optional v1 JSON within 4096 UTF-8 byt
 
   assert.equal(writeVerticalBlockJson(null), null, 'An absent optional block stays SQL NULL')
   const encoded = writeVerticalBlockJson(block)
-  assert.equal(typeof encoded, 'string')
+  assert.ok(typeof encoded === 'string', 'A present v1 block must serialize to a string')
   assert.deepEqual(codec.readVerticalBlockJson(encoded), { status: 'valid', block })
   assert.ok(Buffer.byteLength(encoded, 'utf8') <= 4096)
 
