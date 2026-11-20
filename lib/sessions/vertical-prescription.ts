@@ -57,6 +57,10 @@ function totalForMetric(metric: VerticalMetricPerRepetition, repetitions: number
  * Unknown remains unknown; coverage does not change the block subtotal.
  */
 export function calculateVerticalBlockTotals(block: VerticalBlockV1): VerticalBlockTotals {
+  if (block.direction !== 'ascent' && block.direction !== 'descent' && block.direction !== 'circuit') {
+    throw new RangeError('Unsupported vertical repetition direction')
+  }
+
   if (!Number.isSafeInteger(block.repetitions) || block.repetitions <= 0) {
     throw new RangeError('Vertical repetitions must be a positive safe integer')
   }
