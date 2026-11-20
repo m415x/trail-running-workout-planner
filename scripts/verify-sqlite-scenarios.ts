@@ -384,6 +384,39 @@ export function runUpgradeScenario(projectRoot = process.cwd()): void {
   }
 }
 
+/**
+ * Verifies a pre-vertical legacy prescription after the canonical SQLite upgrade.
+ * Never infer a primary objective, fabricate a vertical block, or alter D+.
+ */
+export function assertPreservedLegacyVerticalFields(
+  sqlite: Database.Database,
+  prescriptionId: string,
+  expectedElevationGain: number | null,
+): void {
+  const record = sqlite.prepare(`
+    SELECT elevation_gain, primary_objective, vertical_block_json
+    FROM group_session_prescriptions
+    WHERE id = ?
+  `).get(prescriptionId) as {
+    elevation_gain: number | null
+    primary_objective: string | null
+    vertical_block_json: string | null
+  } | undefined
+
+  if (!record) {
+    throw new Error('Legacy vertical prescription row is missing after upgrade')
+  }
+  if (record.elevation_gain !== expectedElevationGain) {
+    throw new Error('Legacy prescription elevation_gain changed during vertical upgrade')
+  }
+  if (record.primary_objective !== null) {
+    throw new Error('Legacy prescription primary objective must remain NULL')
+  }
+  if (record.vertical_block_json !== null) {
+    throw new Error('Legacy prescription vertical block must remain NULL')
+  }
+}
+
 export function runPreservationScenario(projectRoot = process.cwd()): void {
   const workspace = createScenarioWorkspace('preservation')
   try {
@@ -581,6 +614,12 @@ export function runPreservationScenario(projectRoot = process.cwd()): void {
       ) {
         throw new Error('Supported SQLite upgrade did not preserve the representative group session prescription')
       }
+
+      assertPreservedLegacyVerticalFields(
+        upgraded,
+        'preservation-prescription',
+        650,
+      )
 
       const preservedGenerationAudit = upgraded.prepare(`
         SELECT id, group_training_plan_id, session_id, prescription_id, action, ownership,
