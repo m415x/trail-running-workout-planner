@@ -302,6 +302,13 @@
       "when": 1792252230002,
       "tag": "0042_team_biometric_time_zone",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792252230004,
+      "tag": "0043_group_session_vertical_prescription",
+      "breakpoints": true
     }
   ]
 }
