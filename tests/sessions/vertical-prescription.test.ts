@@ -206,3 +206,56 @@ test('KAN-877 RED-4 reconciles complete coverage with whole-session D+ without t
     proposedSessionElevationGainM: null,
   }), null, 'Unknown complete D+ must remain null, not zero')
 })
+
+test('KAN-877 RED-5 keeps partial block D+ separate from the whole-session aggregate', async () => {
+  const { resolveVerticalSessionElevationGain } = await import('../../lib/sessions/vertical-prescription')
+  type VerticalBlock = Parameters<typeof resolveVerticalSessionElevationGain>[0]['block']
+
+  const partialBlock: VerticalBlock = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 2,
+    coverage: 'partial',
+    elevationGainPerRep: {
+      meters: 900,
+      provenance: { kind: 'coach_manual' },
+    },
+    elevationLossPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.equal(resolveVerticalSessionElevationGain({
+    block: partialBlock,
+    proposedSessionElevationGainM: 2200,
+  }), 2200, 'The 1800 m block subtotal is already included in the 2200 m whole-session D+')
+
+  assert.throws(() => resolveVerticalSessionElevationGain({
+    block: partialBlock,
+    proposedSessionElevationGainM: 1500,
+  }), RangeError, 'Known whole-session D+ cannot be smaller than its known block subtotal')
+
+  assert.equal(resolveVerticalSessionElevationGain({
+    block: partialBlock,
+    proposedSessionElevationGainM: null,
+  }), null, 'A known partial subtotal cannot stand in for an unknown complete-session D+')
+
+  const unknownSubtotalBlock: VerticalBlock = {
+    ...partialBlock,
+    elevationGainPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.equal(resolveVerticalSessionElevationGain({
+    block: unknownSubtotalBlock,
+    proposedSessionElevationGainM: 2200,
+  }), 2200, 'A Coach-confirmed complete D+ is permitted when the partial subtotal is unknown')
+
+  assert.equal(resolveVerticalSessionElevationGain({
+    block: unknownSubtotalBlock,
+    proposedSessionElevationGainM: null,
+  }), null, 'Unknown subtotal and unknown complete-session D+ must remain unknown')
+})
