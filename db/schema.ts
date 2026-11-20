@@ -31,6 +31,7 @@ import type {
   SessionGenerationOwnership,
 } from '@/types/training/session-generation.types'
 import type { GenerationExplanation } from '@/lib/session-generation/generation-explanation'
+import type { VerticalPrimaryObjective } from '@/lib/sessions/vertical-prescription'
 
 /* -------------------------------------------------------------------------- */
 /* BASE COLUMNS                                                               */
@@ -662,6 +663,8 @@ export const groupSessionPrescriptions = sqliteTable(
     distanceKm: real('distance_km'),
     durationMin: integer('duration_min'),
     elevationGain: integer('elevation_gain'),
+    primaryObjective: text('primary_objective').$type<VerticalPrimaryObjective>(),
+    verticalBlockJson: text('vertical_block_json'),
 
     intensityMethod: text('intensity_method').$type<IntensityMethod>(),
     zone: text('zone').$type<IntensityZone>(),
