@@ -312,3 +312,71 @@ test('KAN-877 RED-6 preserves explicit primary objective and legacy null without
     elevationLossTotalM: null,
   }, 'Explicitly known zero D+ remains 0, while unknown D- remains null')
 })
+
+test('KAN-877 RED-7 enforces safe PostgreSQL/SQLite integer boundaries and distinguishes absent session totals', async () => {
+  const { calculateVerticalBlockTotals, resolveVerticalSessionElevationGain } = await import('../../lib/sessions/vertical-prescription')
+  type Block = Parameters<typeof calculateVerticalBlockTotals>[0]
+  const max = 2_147_483_647
+  const block: Block = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 1,
+    coverage: 'partial',
+    elevationGainPerRep: {
+      meters: max,
+      provenance: { kind: 'coach_manual' },
+    },
+    elevationLossPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.deepEqual(calculateVerticalBlockTotals(block), {
+    elevationGainTotalM: max,
+    elevationLossTotalM: null,
+  }, 'The shared PG/SQLite integer ceiling is valid')
+
+  assert.equal(resolveVerticalSessionElevationGain({
+    block,
+    proposedSessionElevationGainM: max,
+  }), max)
+
+  for (const invalidMeters of [-1, 0.5, NaN, Infinity, -Infinity, max + 1]) {
+    assert.throws(() => calculateVerticalBlockTotals({
+      ...block,
+      elevationGainPerRep: {
+        meters: invalidMeters,
+        provenance: { kind: 'coach_manual' },
+      },
+    }), RangeError, 'Invalid numeric D+ units must fail closed')
+  }
+
+  for (const repetitions of [0, -1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.throws(() => calculateVerticalBlockTotals({
+      ...block,
+      repetitions,
+    }), RangeError, 'Repetitions must be a positive safe integer')
+  }
+
+  assert.throws(() => calculateVerticalBlockTotals({
+    ...block,
+    repetitions: 2,
+    elevationGainPerRep: {
+      meters: max,
+      provenance: { kind: 'coach_manual' },
+    },
+  }), RangeError, 'Multiplication overflow must not persist an out-of-range total')
+
+  for (const invalidAggregate of [-1, 1.5, NaN, Infinity, max + 1]) {
+    assert.throws(() => resolveVerticalSessionElevationGain({
+      block,
+      proposedSessionElevationGainM: invalidAggregate,
+    }), RangeError, 'Invalid whole-session D+ must be rejected')
+  }
+
+  assert.throws(() => resolveVerticalSessionElevationGain({
+    block,
+    proposedSessionElevationGainM: undefined as unknown as number | null,
+  }), RangeError, 'Absent aggregate is invalid: explicit null is required for unknown whole-session D+')
+})
