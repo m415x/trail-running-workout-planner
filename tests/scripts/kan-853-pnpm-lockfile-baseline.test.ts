@@ -14,7 +14,12 @@ function getApplicationDocument(): string {
   const documents = lockfile.split(/^---\s*$/m).filter((doc) => doc.trim().length > 0)
   assert.equal(documents.length, 2, 'pnpm 12 must retain manager and application YAML documents')
   assert.match(documents[0], /^\s*packageManagerDependencies:/m)
-  assert.match(documents[0], /pnpm:\s*\n\s+specifier: 12\.4\.1/)
+  const managerVersion = packageJson.packageManager.match(/^pnpm@(12\.\d+\.\d+)$/)?.[1]
+  assert.ok(managerVersion, 'An exact pnpm 12 version is required')
+  const manager = documents[0].match(/^      pnpm:\n        specifier: (.+)\n        version: (.+)$/m)
+  assert.ok(manager, 'pnpm manager importer missing specifier or version')
+  assert.equal(manager[1], managerVersion, 'pnpm manager specifier drift')
+  assert.equal(manager[2], managerVersion, 'pnpm manager resolved version drift')
   assert.match(documents[1], /^importers:/m)
   assert.match(documents[1], /^packages:/m)
   assert.match(documents[1], /^snapshots:/m)
@@ -22,7 +27,6 @@ function getApplicationDocument(): string {
 }
 
 test('KAN-853/S1 dual-document pnpm lockfile and workspace are present', () => {
-  assert.equal(packageJson.packageManager, 'pnpm@12.4.1')
   assert.match(workspace, /^packages:\s*\n\s+- '\.'$/m)
   assert.match(getApplicationDocument(), /^lockfileVersion: '9\.0'$/m)
 })
