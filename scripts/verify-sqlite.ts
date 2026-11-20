@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import { auditH7aPhysicalSchema } from './h7a-physical-schema'
 import { inspectH7aMigrationGuard } from './h7a-metadata-drift-guard'
+import { auditVerticalPrescriptionSqliteSchema } from './vertical-prescription-sqlite-schema-guard'
 
 const sqlite = new Database(process.env.SQLITE_SCENARIO_MODE === '1' ? (process.env.SQLITE_DATABASE_PATH ?? (() => { throw new Error('SQLITE_DATABASE_PATH is required for SQLite scenario verification') })()) : 'sqlite.db', { fileMustExist: true })
 try {
@@ -113,6 +114,11 @@ try {
 
   if (!tables.has('group_session_prescriptions')) {
     throw new Error('SQLite schema is not at HEAD: missing table group_session_prescriptions')
+  }
+
+  const verticalSchemaFailures = auditVerticalPrescriptionSqliteSchema(sqlite)
+  if (verticalSchemaFailures.length > 0) {
+    throw new Error('SQLite vertical prescription schema drift: ' + verticalSchemaFailures.join('; '))
   }
 
   const prescriptionIndexes = sqlite.pragma('index_list(group_session_prescriptions)') as Array<{
