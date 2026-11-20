@@ -57,7 +57,7 @@ function isValidV1Shape(value: Record<string, unknown>): boolean {
  * Read-only classification of an optional vertical prescription JSON record.
  * Never coerce malformed or future-version records into absent v1 data.
  *
- * Strict v1 shape is enforced here. Writes must additionally enforce the UTF-8 size limit.
+ * Strict v1 shape and the UTF-8 size limit are enforced for supported records.
  */
 export function readVerticalBlockJson(raw: string | null): VerticalBlockJsonReadResult {
   if (raw === null) {
@@ -84,6 +84,12 @@ export function readVerticalBlockJson(raw: string | null): VerticalBlockJsonRead
   }
 
   if (parsed.schemaVersion !== 1) {
+    return { status: 'corrupt' }
+  }
+
+  // Future schema versions remain distinguishable, but supported v1 data
+  // must never be exposed as valid if its encoded representation is too large.
+  if (new TextEncoder().encode(raw).byteLength > 4096) {
     return { status: 'corrupt' }
   }
 
