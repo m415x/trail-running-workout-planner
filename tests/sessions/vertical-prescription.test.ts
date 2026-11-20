@@ -273,7 +273,7 @@ test('KAN-877 RED-6 preserves explicit primary objective and legacy null without
   assert.equal(resolvePrimaryObjective({}), null, 'Missing legacy objective remains null')
   assert.equal(resolvePrimaryObjective({ primaryObjective: null }), null, 'Explicit legacy null remains null')
 
-  for (const primaryObjective of ['distance', 'elevation_gain', 'duration']) {
+  for (const primaryObjective of ['distance', 'elevation_gain', 'duration'] as const) {
     assert.equal(resolvePrimaryObjective({ primaryObjective }), primaryObjective)
   }
 
@@ -288,7 +288,7 @@ test('KAN-877 RED-6 preserves explicit primary objective and legacy null without
   }), null, 'A known positive D+ never creates an implicit objective')
 
   assert.throws(() => resolvePrimaryObjective({
-    primaryObjective: 'vertical_distance',
+    primaryObjective: 'vertical_distance' as unknown as NonNullable<Parameters<typeof moduleExports.resolveVerticalPrimaryObjective>[0]['primaryObjective']>,
   }), RangeError, 'Unsupported objectives cannot be silently normalized')
 
   type Block = Parameters<typeof moduleExports.calculateVerticalBlockTotals>[0]
