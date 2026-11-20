@@ -35,8 +35,26 @@ export interface VerticalBlockTotals {
 const MAX_PERSISTABLE_ELEVATION_M = 2_147_483_647
 
 function totalForMetric(metric: VerticalMetricPerRepetition, repetitions: number): number | null {
+  const provenance = metric.provenance
   if (metric.meters === null) {
+    if (provenance?.kind !== 'unknown') {
+      throw new RangeError('Unknown vertical elevation requires unknown provenance')
+    }
     return null
+  }
+
+  if (
+    provenance?.kind !== 'coach_manual'
+    && provenance?.kind !== 'track_adopted'
+  ) {
+    throw new RangeError('Known vertical elevation requires confirmed provenance')
+  }
+
+  if (
+    provenance.kind === 'track_adopted'
+    && (typeof provenance.trackReference !== 'string' || !provenance.trackReference.trim())
+  ) {
+    throw new RangeError('Adopted vertical track requires a non-blank reference')
   }
 
   const total = metric.meters * repetitions
@@ -51,7 +69,6 @@ function totalForMetric(metric: VerticalMetricPerRepetition, repetitions: number
 
   return total
 }
-
 /**
  * Derives only explicitly quantified metrics from one homogeneous block.
  * Unknown remains unknown; coverage does not change the block subtotal.
