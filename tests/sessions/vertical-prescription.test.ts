@@ -97,7 +97,7 @@ test('KAN-877 RED-2 respects directed ascent, descent and circuit metrics and re
   }
 
   assert.throws(
-    () => calculateVerticalBlockTotals(unsupportedDirection as Parameters<typeof calculateVerticalBlockTotals>[0]),
+    () => calculateVerticalBlockTotals(unsupportedDirection as unknown as Parameters<typeof calculateVerticalBlockTotals>[0]),
     RangeError,
     'A runtime-invalid direction must not be silently accepted as a valid directed repetition',
   )
