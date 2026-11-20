@@ -2,7 +2,11 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
-## Latest integrated baseline — KAN-871 Global Race Catalog authorization
+## Latest integrated maintenance baseline — Next.js 16.4.6 / pnpm 12.21.0
+
+- [PR #83](https://github.com/m415x/trail-running-workout-planner/pull/83) — ordinary merge `3559370983087d4158d6e71c159d7164d6134aa2` into `dev`, candidate `153b6092b7f4c60631c287db9b9c93124732dae2`. Next.js and eslint-config-next 16.4.6, pnpm 12.21.0, historical KAN-853/KAN-854 tests reconciled without altering their evidence. Operator candidate `pn verify --db` PASS 6/6 (730656ms), KAN-855 isolated authenticated smoke PASS 8/8; Vercel pre/postmerge success; no GitHub Actions runs reported. Postmerge local gate and final documentary checker pending. [Current handoff](handoffs/current.md). No new Jira issue or beta authorization.
+
+## Previous integrated product baseline — KAN-871 Global Race Catalog authorization
 
 - [KAN-871 story handoff](handoffs/kan-871.md) — PR #82 ordinary merge `a75d8db7ea9580ed12dfb30af2548e4ccb87a3fa` into `dev`; premerge functional gate at `9d39f4b200b5acc963098ba8bdb2a255b64c9863`, documentary PR head `175b0c6c15baf8385054932e6fd4c11219044b32`, HANDOFF DOCS PASS reported (14788). Exact-SHA postmerge `pn verify --db` PASS 6/6 (293741ms, Jira 14791); Vercel pre/postmerge success, no PR GitHub Actions runs reported or formal human review. [Current integrated handoff](handoffs/current.md); Operator final handoff checker PASS at expected documentary HEAD `0ef9b9dcb84f94272b2c313c8e8ee44d2a2b997a` (Jira 14793, shorthand); KAN-876 and KAN-871 Finalizada (14794–14795). Operator inventory 14796–14797: no registered KAN-871 worktree, no matching sibling directory or local branch reported; no removal needed. Historical retirement command and preservation of unique local resources not independently verified; OS-temp fixture and ignored resources not deleted by agent. Preserve dev, verify/KAN-853-s1 and unrelated historical directories. Final reconciliation-only checker applies to this later documentary HEAD. No beta authorization.
 
