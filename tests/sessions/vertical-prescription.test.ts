@@ -102,3 +102,52 @@ test('KAN-877 RED-2 respects directed ascent, descent and circuit metrics and re
     'A runtime-invalid direction must not be silently accepted as a valid directed repetition',
   )
 })
+
+test('KAN-877 RED-3 validates independent D+ and D- provenance without fabricating unknown values', async () => {
+  const { calculateVerticalBlockTotals } = await import('../../lib/sessions/vertical-prescription')
+  type Block = Parameters<typeof calculateVerticalBlockTotals>[0]
+
+  const block: Block = {
+    schemaVersion: 1,
+    direction: 'circuit',
+    repetitions: 2,
+    coverage: 'partial',
+    elevationGainPerRep: {
+      meters: 500,
+      provenance: { kind: 'coach_manual' },
+    },
+    elevationLossPerRep: {
+      meters: 430,
+      provenance: { kind: 'track_adopted', trackReference: 'track-team-1' },
+    },
+  }
+
+  assert.deepEqual(calculateVerticalBlockTotals(block), {
+    elevationGainTotalM: 1000,
+    elevationLossTotalM: 860,
+  }, 'D+ and D- retain independently supplied values, regardless of origin')
+
+  assert.throws(() => calculateVerticalBlockTotals({
+    ...block,
+    elevationGainPerRep: {
+      meters: 500,
+      provenance: { kind: 'unknown' },
+    },
+  }), RangeError, 'An unknown D+ origin cannot describe a known D+ value')
+
+  assert.throws(() => calculateVerticalBlockTotals({
+    ...block,
+    elevationLossPerRep: {
+      meters: null,
+      provenance: { kind: 'track_adopted', trackReference: 'track-team-1' },
+    },
+  }), RangeError, 'A null metric must have unknown provenance')
+
+  assert.throws(() => calculateVerticalBlockTotals({
+    ...block,
+    elevationLossPerRep: {
+      meters: 430,
+      provenance: { kind: 'track_adopted', trackReference: '   ' },
+    },
+  }), RangeError, 'Adopted track provenance requires a non-blank technical reference')
+})
