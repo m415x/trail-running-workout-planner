@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import Database from 'better-sqlite3'
 
 test('KAN-878 RED-11 reads vertical prescription by Session + microcycle without normalizing legacy or invalid JSON', async () => {
   const reader = await import('../../lib/sessions/vertical-prescription-json')
-  const storage = await import('../../lib/sessions/vertical-prescription-sqlite-reader').catch(() => ({}))
+  const modulePath = fileURLToPath(new URL('../../lib/sessions/vertical-prescription-sqlite-reader.ts', import.meta.url))
+  const storage = await import(pathToFileURL(modulePath).href).catch(() => ({}))
   const read = Reflect.get(storage, 'readVerticalPrescriptionSqlite')
 
   assert.equal(typeof read, 'function', 'KAN-878 RED-11: a scoped SQLite vertical prescription reader is missing')
