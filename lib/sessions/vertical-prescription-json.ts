@@ -57,7 +57,7 @@ function isValidV1Shape(value: Record<string, unknown>): boolean {
  * Read-only classification of an optional vertical prescription JSON record.
  * Never coerce malformed or future-version records into absent v1 data.
  *
- * Strict v1 shape is enforced here; the 4096-byte write boundary is a separate T2 cut.
+ * Strict v1 shape is enforced here. Writes must additionally enforce the UTF-8 size limit.
  */
 export function readVerticalBlockJson(raw: string | null): VerticalBlockJsonReadResult {
   if (raw === null) {
@@ -97,4 +97,35 @@ export function readVerticalBlockJson(raw: string | null): VerticalBlockJsonRead
   } catch {
     return { status: 'corrupt' }
   }
+}
+
+/**
+ * Serializes only an explicitly valid v1 block, preserving SQL NULL for absence.
+ * The byte limit is enforced before any caller can persist the resulting JSON.
+ */
+export function writeVerticalBlockJson(block: VerticalBlockV1 | null): string | null {
+  if (block === null) {
+    return null
+  }
+
+  let serialized: string
+  try {
+    serialized = JSON.stringify(block)
+  } catch {
+    throw new RangeError('Vertical block must be serializable JSON')
+  }
+
+  if (typeof serialized !== 'string') {
+    throw new RangeError('Vertical block must be serializable JSON')
+  }
+
+  if (new TextEncoder().encode(serialized).byteLength > 4096) {
+    throw new RangeError('Vertical block JSON exceeds the 4096-byte UTF-8 limit')
+  }
+
+  if (readVerticalBlockJson(serialized).status !== 'valid') {
+    throw new RangeError('Vertical block must match the supported v1 schema')
+  }
+
+  return serialized
 }
