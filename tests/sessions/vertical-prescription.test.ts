@@ -380,3 +380,44 @@ test('KAN-877 RED-7 enforces safe PostgreSQL/SQLite integer boundaries and disti
     proposedSessionElevationGainM: undefined as unknown as number | null,
   }), RangeError, 'Absent aggregate is invalid: explicit null is required for unknown whole-session D+')
 })
+
+test('KAN-877 RED-8 rejects unsupported block schema versions and coverage values at runtime', async () => {
+  const { calculateVerticalBlockTotals, resolveVerticalSessionElevationGain } = await import('../../lib/sessions/vertical-prescription')
+  type Block = Parameters<typeof calculateVerticalBlockTotals>[0]
+  const validBlock: Block = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 2,
+    coverage: 'partial',
+    elevationGainPerRep: { meters: 100, provenance: { kind: 'coach_manual' } },
+    elevationLossPerRep: { meters: null, provenance: { kind: 'unknown' } },
+  }
+
+  assert.deepEqual(calculateVerticalBlockTotals(validBlock), {
+    elevationGainTotalM: 200,
+    elevationLossTotalM: null,
+  }, 'Supported v1 block remains valid')
+
+  const unsupportedVersion = { ...validBlock, schemaVersion: 2 } as unknown as Block
+  assert.throws(
+    () => calculateVerticalBlockTotals(unsupportedVersion),
+    RangeError,
+    'A schemaVersion other than 1 must not be silently accepted',
+  )
+
+  const unsupportedCoverage = { ...validBlock, coverage: 'mixed' } as unknown as Block
+  assert.throws(
+    () => calculateVerticalBlockTotals(unsupportedCoverage),
+    RangeError,
+    'An unsupported coverage value must not pass through the calculator',
+  )
+
+  assert.throws(
+    () => resolveVerticalSessionElevationGain({
+      block: unsupportedCoverage,
+      proposedSessionElevationGainM: 250,
+    }),
+    RangeError,
+    'Invalid coverage must not be treated as partial during session reconciliation',
+  )
+})
