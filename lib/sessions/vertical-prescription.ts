@@ -87,3 +87,36 @@ export function calculateVerticalBlockTotals(block: VerticalBlockV1): VerticalBl
     elevationLossTotalM: totalForMetric(block.elevationLossPerRep, block.repetitions),
   }
 }
+
+/**
+ * Reconciles the prescribed D+ for the whole session with the vertical block.
+ * A complete block is the entire quantified D+ dose, never an extra amount.
+ * Partial-coverage consistency is verified in a subsequent domain contract.
+ */
+export function resolveVerticalSessionElevationGain(input: {
+  block: VerticalBlockV1
+  proposedSessionElevationGainM: number | null
+}): number | null {
+  const { block, proposedSessionElevationGainM } = input
+  const { elevationGainTotalM } = calculateVerticalBlockTotals(block)
+
+  if (
+    proposedSessionElevationGainM !== null
+    && (
+      !Number.isSafeInteger(proposedSessionElevationGainM)
+      || proposedSessionElevationGainM < 0
+      || proposedSessionElevationGainM > MAX_PERSISTABLE_ELEVATION_M
+    )
+  ) {
+    throw new RangeError('Whole-session elevation must be a persistable non-negative integer or null')
+  }
+
+  if (block.coverage === 'complete') {
+    if (proposedSessionElevationGainM !== elevationGainTotalM) {
+      throw new RangeError('Complete vertical block must equal whole-session elevation gain')
+    }
+    return elevationGainTotalM
+  }
+
+  return proposedSessionElevationGainM
+}
