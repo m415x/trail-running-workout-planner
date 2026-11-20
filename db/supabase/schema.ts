@@ -30,6 +30,7 @@ import type {
   PlanningCohortStatus,
 } from '@/types'
 import type { SessionStructure } from '@/types/training/session.types'
+import type { VerticalPrimaryObjective } from '@/lib/sessions/vertical-prescription'
 import type {
   SessionGenerationModificationAction,
   SessionGenerationOwnership,
@@ -697,6 +698,8 @@ export const groupSessionPrescriptions = pgTable(
     distanceKm: doublePrecision('distance_km'),
     durationMin: integer('duration_min'),
     elevationGain: integer('elevation_gain'),
+    primaryObjective: text('primary_objective').$type<VerticalPrimaryObjective>(),
+    verticalBlockJson: text('vertical_block_json'),
 
     intensityMethod: text('intensity_method').$type<IntensityMethod>(),
     zone: text('zone').$type<IntensityZone>(),
