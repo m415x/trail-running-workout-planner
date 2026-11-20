@@ -91,7 +91,7 @@ export function calculateVerticalBlockTotals(block: VerticalBlockV1): VerticalBl
 /**
  * Reconciles the prescribed D+ for the whole session with the vertical block.
  * A complete block is the entire quantified D+ dose, never an extra amount.
- * Partial-coverage consistency is verified in a subsequent domain contract.
+ * A partial block contributes a subtotal already included in the whole-session D+.
  */
 export function resolveVerticalSessionElevationGain(input: {
   block: VerticalBlockV1
@@ -116,6 +116,15 @@ export function resolveVerticalSessionElevationGain(input: {
       throw new RangeError('Complete vertical block must equal whole-session elevation gain')
     }
     return elevationGainTotalM
+  }
+
+  if (
+    block.coverage === 'partial'
+    && elevationGainTotalM !== null
+    && proposedSessionElevationGainM !== null
+    && proposedSessionElevationGainM < elevationGainTotalM
+  ) {
+    throw new RangeError('Whole-session elevation cannot be below the known vertical subtotal')
   }
 
   return proposedSessionElevationGainM
