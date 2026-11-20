@@ -259,3 +259,56 @@ test('KAN-877 RED-5 keeps partial block D+ separate from the whole-session aggre
     proposedSessionElevationGainM: null,
   }), null, 'Unknown subtotal and unknown complete-session D+ must remain unknown')
 })
+
+test('KAN-877 RED-6 preserves explicit primary objective and legacy null without inferring distance', async () => {
+  const moduleExports = await import('../../lib/sessions/vertical-prescription')
+  const resolvePrimaryObjective = Reflect.get(moduleExports, 'resolveVerticalPrimaryObjective')
+
+  assert.equal(
+    typeof resolvePrimaryObjective,
+    'function',
+    'KAN-877 RED-6: an explicit/legacy primary-objective domain resolver is missing',
+  )
+
+  assert.equal(resolvePrimaryObjective({}), null, 'Missing legacy objective remains null')
+  assert.equal(resolvePrimaryObjective({ primaryObjective: null }), null, 'Explicit legacy null remains null')
+
+  for (const primaryObjective of ['distance', 'elevation_gain', 'duration']) {
+    assert.equal(resolvePrimaryObjective({ primaryObjective }), primaryObjective)
+  }
+
+  assert.equal(resolvePrimaryObjective({
+    verticalBlockPresent: true,
+    elevationGainM: 0,
+  }), null, 'A known zero elevation and a vertical block do not imply a distance objective')
+
+  assert.equal(resolvePrimaryObjective({
+    verticalBlockPresent: true,
+    elevationGainM: 2550,
+  }), null, 'A known positive D+ never creates an implicit objective')
+
+  assert.throws(() => resolvePrimaryObjective({
+    primaryObjective: 'vertical_distance',
+  }), RangeError, 'Unsupported objectives cannot be silently normalized')
+
+  type Block = Parameters<typeof moduleExports.calculateVerticalBlockTotals>[0]
+  const zeroBlock: Block = {
+    schemaVersion: 1,
+    direction: 'ascent',
+    repetitions: 2,
+    coverage: 'complete',
+    elevationGainPerRep: {
+      meters: 0,
+      provenance: { kind: 'coach_manual' },
+    },
+    elevationLossPerRep: {
+      meters: null,
+      provenance: { kind: 'unknown' },
+    },
+  }
+
+  assert.deepEqual(moduleExports.calculateVerticalBlockTotals(zeroBlock), {
+    elevationGainTotalM: 0,
+    elevationLossTotalM: null,
+  }, 'Explicitly known zero D+ remains 0, while unknown D- remains null')
+})
