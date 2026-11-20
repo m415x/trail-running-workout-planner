@@ -93,10 +93,10 @@ test('KAN-878 RED-12 atomically persists authorized vertical values and before/a
     })
 
     assert.equal(persist(sqlite, command), 'unchanged', 'Identical replay must be idempotent')
-    assert.equal(sqlite.prepare('SELECT count(*) AS n FROM session_generation_modification_records').get().n, 1)
+    assert.equal((sqlite.prepare('SELECT count(*) AS n FROM session_generation_modification_records').get() as { n: number }).n, 1)
 
     assert.throws(() => persist(sqlite, { ...command, authorized: false, elevationGain: 900 }), /authoriz|denied|forbidden/i)
-    assert.equal(sqlite.prepare('SELECT elevation_gain FROM group_session_prescriptions').get().elevation_gain, 800)
+    assert.equal((sqlite.prepare('SELECT elevation_gain FROM group_session_prescriptions').get() as { elevation_gain: number }).elevation_gain, 800)
 
     sqlite.exec(`
       CREATE TRIGGER reject_vertical_audit BEFORE INSERT ON session_generation_modification_records
@@ -106,7 +106,7 @@ test('KAN-878 RED-12 atomically persists authorized vertical values and before/a
       ...block,
       coverage: 'partial',
     } }), /audit injection failure/)
-    assert.equal(sqlite.prepare('SELECT elevation_gain FROM group_session_prescriptions').get().elevation_gain, 800,
+    assert.equal((sqlite.prepare('SELECT elevation_gain FROM group_session_prescriptions').get() as { elevation_gain: number }).elevation_gain, 800,
       'Audit failure must rollback prescription mutation')
   } finally {
     sqlite.close()
