@@ -110,3 +110,57 @@ test('KAN-878 RED-2 rejects extra keys and malformed nested fields in v1 JSON', 
     'A genuinely unknown metric remains valid and distinct from zero',
   )
 })
+
+test('KAN-878 RED-3 serializes only valid optional v1 JSON within 4096 UTF-8 bytes', async () => {
+  const codec = await import('../../lib/sessions/vertical-prescription-json')
+  const writeVerticalBlockJson = Reflect.get(codec, 'writeVerticalBlockJson')
+
+  assert.equal(
+    typeof writeVerticalBlockJson,
+    'function',
+    'KAN-878 RED-3: the guarded v1 JSON writer is missing',
+  )
+
+  type Block = NonNullable<Extract<ReturnType<typeof codec.readVerticalBlockJson>, { status: 'valid' }>['block']>
+  const block: Block = {
+    schemaVersion: 1,
+    direction: 'circuit',
+    repetitions: 2,
+    coverage: 'partial',
+    elevationGainPerRep: { meters: 400, provenance: { kind: 'coach_manual' } },
+    elevationLossPerRep: {
+      meters: 350,
+      provenance: { kind: 'track_adopted', trackReference: 'track-team-1' },
+    },
+  }
+
+  assert.equal(writeVerticalBlockJson(null), null, 'An absent optional block stays SQL NULL')
+  const encoded = writeVerticalBlockJson(block)
+  assert.equal(typeof encoded, 'string')
+  assert.deepEqual(codec.readVerticalBlockJson(encoded), { status: 'valid', block })
+  assert.ok(Buffer.byteLength(encoded, 'utf8') <= 4096)
+
+  const largeTrackRef = 'ñ'.repeat(2000)
+  const oversized: Block = {
+    ...block,
+    elevationLossPerRep: {
+      meters: 350,
+      provenance: { kind: 'track_adopted', trackReference: largeTrackRef },
+    },
+  }
+  const largeJson = JSON.stringify(oversized)
+  assert.ok(largeJson.length < 4096, 'The fixture must fit under 4096 JS code units')
+  assert.ok(Buffer.byteLength(largeJson, 'utf8') > 4096, 'The fixture must exceed 4096 UTF-8 bytes')
+
+  assert.throws(
+    () => writeVerticalBlockJson(oversized),
+    RangeError,
+    'The writer must enforce UTF-8 bytes rather than JavaScript string length',
+  )
+
+  assert.throws(
+    () => writeVerticalBlockJson({ ...block, unexpected: true } as unknown as Block),
+    RangeError,
+    'Writing must reject unknown keys instead of silently stripping them',
+  )
+})
