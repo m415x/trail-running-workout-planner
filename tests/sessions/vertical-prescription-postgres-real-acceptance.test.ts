@@ -170,7 +170,7 @@ test('KAN-878 real PostgreSQL 0043 TEMP migration, round-trip, audit, idempotenc
     // ROLLBACK the preceding UPDATE, leaving both tables unchanged.
     await sql`
       ALTER TABLE session_generation_modification_records
-        ADD CONSTRAINT reject_vertical_audit CHECK (false)
+        ADD CONSTRAINT reject_vertical_audit CHECK (false) NOT VALID
     `
     await assert.rejects(
       () => sql.begin(async tx => {
