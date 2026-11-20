@@ -129,3 +129,27 @@ export function resolveVerticalSessionElevationGain(input: {
 
   return proposedSessionElevationGainM
 }
+
+/** Explicit main workout objective. A missing legacy objective stays unknown. */
+export type VerticalPrimaryObjective = 'distance' | 'elevation_gain' | 'duration'
+
+/**
+ * Resolves the chosen objective without deriving one from an optional vertical
+ * block, the elevation subtotal, or any other session measurement.
+ */
+export function resolveVerticalPrimaryObjective(input: {
+  primaryObjective?: VerticalPrimaryObjective | null
+  verticalBlockPresent?: boolean
+  elevationGainM?: number | null
+}): VerticalPrimaryObjective | null {
+  const objective = input.primaryObjective
+  if (objective === undefined || objective === null) {
+    return null
+  }
+
+  if (objective === 'distance' || objective === 'elevation_gain' || objective === 'duration') {
+    return objective
+  }
+
+  throw new RangeError('Unsupported vertical session primary objective')
+}
