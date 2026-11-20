@@ -155,6 +155,7 @@ test('KAN-877 RED-3 validates independent D+ and D- provenance without fabricati
 test('KAN-877 RED-4 reconciles complete coverage with whole-session D+ without treating unknown as zero', async () => {
   const moduleExports = await import('../../lib/sessions/vertical-prescription')
   const resolveSessionElevationGain = Reflect.get(moduleExports, 'resolveVerticalSessionElevationGain')
+  type VerticalBlock = Parameters<typeof moduleExports.calculateVerticalBlockTotals>[0]
 
   assert.equal(
     typeof resolveSessionElevationGain,
@@ -162,7 +163,7 @@ test('KAN-877 RED-4 reconciles complete coverage with whole-session D+ without t
     'KAN-877 RED-4: pure complete-coverage elevation reconciliation is missing',
   )
 
-  const completeBlock = {
+  const completeBlock: VerticalBlock = {
     schemaVersion: 1,
     direction: 'ascent',
     repetitions: 3,
@@ -192,7 +193,7 @@ test('KAN-877 RED-4 reconciles complete coverage with whole-session D+ without t
     proposedSessionElevationGainM: null,
   }), RangeError, 'A known complete-session aggregate cannot silently become unknown')
 
-  const unknownCompleteBlock = {
+  const unknownCompleteBlock: VerticalBlock = {
     ...completeBlock,
     elevationGainPerRep: {
       meters: null,
