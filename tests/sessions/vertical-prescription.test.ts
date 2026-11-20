@@ -46,3 +46,59 @@ test('KAN-877 RED-1 calculates three ascents without inferring unknown descent o
     'Three 850 m ascents produce 2550 m D+; unknown D- stays null and distance is not inferred',
   )
 })
+
+test('KAN-877 RED-2 respects directed ascent, descent and circuit metrics and rejects unsupported directions', async () => {
+  const { calculateVerticalBlockTotals } = await import('../../lib/sessions/vertical-prescription')
+
+  const base = {
+    schemaVersion: 1 as const,
+    repetitions: 2,
+    coverage: 'complete' as const,
+  }
+  const knownGain = {
+    meters: 500,
+    provenance: { kind: 'coach_manual' as const },
+  }
+  const knownLoss = {
+    meters: 430,
+    provenance: { kind: 'coach_manual' as const },
+  }
+  const unknown = {
+    meters: null,
+    provenance: { kind: 'unknown' as const },
+  }
+
+  assert.deepEqual(calculateVerticalBlockTotals({
+    ...base,
+    direction: 'ascent',
+    elevationGainPerRep: knownGain,
+    elevationLossPerRep: unknown,
+  }), { elevationGainTotalM: 1000, elevationLossTotalM: null })
+
+  assert.deepEqual(calculateVerticalBlockTotals({
+    ...base,
+    direction: 'descent',
+    elevationGainPerRep: unknown,
+    elevationLossPerRep: knownLoss,
+  }), { elevationGainTotalM: null, elevationLossTotalM: 860 })
+
+  assert.deepEqual(calculateVerticalBlockTotals({
+    ...base,
+    direction: 'circuit',
+    elevationGainPerRep: knownGain,
+    elevationLossPerRep: knownLoss,
+  }), { elevationGainTotalM: 1000, elevationLossTotalM: 860 })
+
+  const unsupportedDirection = {
+    ...base,
+    direction: 'reverse',
+    elevationGainPerRep: knownGain,
+    elevationLossPerRep: knownLoss,
+  }
+
+  assert.throws(
+    () => calculateVerticalBlockTotals(unsupportedDirection as Parameters<typeof calculateVerticalBlockTotals>[0]),
+    RangeError,
+    'A runtime-invalid direction must not be silently accepted as a valid directed repetition',
+  )
+})
