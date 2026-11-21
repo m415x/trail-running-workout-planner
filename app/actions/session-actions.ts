@@ -15,6 +15,7 @@ import { createActiveTeamNextServerContext } from '@/lib/authorization/active-te
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import { writeVerticalBlockJson } from '@/lib/sessions/vertical-prescription-json'
+import { resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-vertical-edit-fields'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -515,14 +516,32 @@ export async function updateSession(_previousState: SessionFormState, formData: 
         const previousPrescription = existingPrescriptions.find(
           (existing) => existing.microcycleId === prescription.microcycleId,
         )
+        const verticalFields = resolveVerticalPrescriptionEditFields({
+          previous: previousPrescription ?? null,
+          primaryObjective: prescription.primaryObjective,
+          verticalBlock: prescription.verticalBlock,
+        })
+        const effectivePrescription = {
+          groupId: prescription.groupId,
+          microcycleId: prescription.microcycleId,
+          distanceKm: prescription.distanceKm,
+          durationMin: prescription.durationMin,
+          elevationGain: prescription.elevationGain,
+          intensityMethod: prescription.intensityMethod,
+          zone: prescription.zone,
+          referencePercentage: prescription.referencePercentage,
+          notes: prescription.notes,
+          ...verticalFields,
+        }
         tx.insert(groupSessionPrescriptions).values({
-          id: randomUUID(), sessionId, ...prescription,
+          id: randomUUID(), sessionId, ...effectivePrescription,
           generationOwnership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
           createdAt: now, updatedAt: now,
         }).onConflictDoUpdate({
           target: [groupSessionPrescriptions.sessionId, groupSessionPrescriptions.microcycleId],
           set: {
-            ...prescription,
+            ...effectivePrescription,
+            ...verticalFields,
             generationOwnership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             isDeleted: false,
             updatedAt: now,
@@ -536,7 +555,10 @@ export async function updateSession(_previousState: SessionFormState, formData: 
             ownership: prescriptionOwnership.get(prescription.microcycleId) ?? 'manual',
             generationKey: previousPrescription.generationKey,
             previousValue: JSON.stringify(previousPrescription),
-            newValue: JSON.stringify(prescription), changedByUserId: planningAccess.userId,
+            newValue: JSON.stringify({
+              ...effectivePrescription,
+              ...verticalFields,
+            }), changedByUserId: planningAccess.userId,
             createdAt: now, updatedAt: now,
           }).run()
         }
