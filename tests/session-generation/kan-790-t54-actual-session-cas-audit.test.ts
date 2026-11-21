@@ -58,7 +58,7 @@ function fixture() {
       id TEXT PRIMARY KEY, is_deleted INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
       session_id TEXT NOT NULL, group_id TEXT NOT NULL, microcycle_id TEXT NOT NULL,
-      distance_km REAL, duration_min INTEGER, elevation_gain INTEGER,
+      distance_km REAL, duration_min INTEGER, elevation_gain INTEGER, primary_objective TEXT, vertical_block_json TEXT,
       intensity_method TEXT, zone TEXT, reference_percentage REAL,
       notes TEXT, generation_ownership TEXT NOT NULL DEFAULT 'manual',
       generation_key TEXT UNIQUE, UNIQUE(session_id, microcycle_id)
