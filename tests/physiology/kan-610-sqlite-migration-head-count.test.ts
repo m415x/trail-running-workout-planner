@@ -7,7 +7,8 @@ test('KAN-732 SQLite migrator expects the full journal through current HEAD', ()
     entries: Array<{ tag: string }>
   }
   assert.ok(journal.entries.some(entry => entry.tag === '0026_session_generation_review_snapshots'), 'canonical review snapshot migration remains in history')
-  assert.ok(journal.entries.at(-1)?.tag.startsWith('0028_'), 'journal must retain KAN-646 Team regional head')
+  assert.ok(journal.entries.some(entry => entry.tag.startsWith('0028_')), 'journal must retain KAN-646 Team regional migration')
+  assert.equal(journal.entries.at(-1)?.tag, '0029_group_session_vertical_prescription', 'current SQLite head must include KAN-878 vertical persistence')
   const migratorTest = readFileSync('tests/athletes/kan-620-post-0016-orm-migrator.test.ts', 'utf8')
   assert.ok(
     migratorTest.includes('assert.equal(migrationCount, journal.entries.length)'),
