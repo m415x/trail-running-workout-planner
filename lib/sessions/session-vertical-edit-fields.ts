@@ -6,7 +6,7 @@ import {
 } from './vertical-prescription'
 
 export interface ExistingVerticalPrescriptionFields {
-  primaryObjective: string | null
+  primaryObjective: VerticalPrimaryObjective | null
   verticalBlockJson: string | null
 }
 
