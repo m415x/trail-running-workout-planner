@@ -33,7 +33,7 @@ test('KAN-885/T2 integrity preflight rejects existing foreign-key violations wit
     sqlite.exec("INSERT INTO children(id, parent_id) VALUES ('orphan', 'not-present')")
     sqlite.pragma('query_only = ON')
     const before = sqlite.prepare('SELECT * FROM children').all()
-    assert.ok(sqlite.pragma('foreign_key_check').length > 0)
+    assert.ok((sqlite.pragma('foreign_key_check') as unknown[]).length > 0)
     assert.throws(
       () => assertAcceptanceSqliteIntegrity(sqlite),
       /foreign.key|referential|integrity|integridad|FK/i,
