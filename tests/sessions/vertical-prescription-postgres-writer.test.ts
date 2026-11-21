@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 test('KAN-878 RED-14 PostgreSQL vertical manual writer uses caller transaction, before/after audit, no mutation on DENY and idempotence', async () => {
   const modulePath = fileURLToPath(new URL('../../lib/sessions/vertical-prescription-postgres-writer.ts', import.meta.url))
-  const module = await import(pathToFileURL(modulePath).href).catch(() => ({}))
-  const persist = Reflect.get(module, 'persistVerticalPrescriptionPostgres')
+  const importedModule = await import(pathToFileURL(modulePath).href).catch(() => ({}))
+  const persist = Reflect.get(importedModule, 'persistVerticalPrescriptionPostgres')
   assert.equal(typeof persist, 'function', 'KAN-878 RED-14: caller-transaction PostgreSQL writer missing')
 
   const block = {
