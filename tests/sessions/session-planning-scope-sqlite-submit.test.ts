@@ -49,6 +49,8 @@ it('persists and updates Base and Variant as independent Session + microcycle ro
         distance_km REAL,
         duration_min INTEGER,
         elevation_gain INTEGER,
+        primary_objective TEXT,
+        vertical_block_json TEXT,
         intensity_method TEXT,
         zone TEXT,
         reference_percentage REAL,
