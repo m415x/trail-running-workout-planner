@@ -352,11 +352,6 @@ export async function createSession(_previousState: SessionFormState, formData: 
 
     const requestedGroups = [...new Set(prescriptions.data.map((prescription) => prescription.groupId))]
     if (requestedGroups.length === 0) return { errorCode: 'groupNotFound' }
-    const groupDecisions = await Promise.all(requestedGroups.map((groupId) =>
-      planningAccess.authorizeGroup(groupId),
-    ))
-    if (!groupDecisions.every(Boolean)) return { errorCode: 'groupNotFound' }
-
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
         where: and(
@@ -388,7 +383,11 @@ export async function createSession(_previousState: SessionFormState, formData: 
 
     const now = new Date().toISOString()
     const sessionId = randomUUID()
-    db.transaction((tx) => {
+    const authorized = await executeAuthorizedSessionMutation({
+      existingGroupIds: [],
+      resultingGroupIds: requestedGroups,
+      authorizeGroup: planningAccess.authorizeGroup,
+      mutate: () => db.transaction((tx) => {
       // Validate every submitted vertical dose before any Session or prescription write.
       preflightVerticalSessionEdits({
         previous: [],
@@ -415,7 +414,9 @@ export async function createSession(_previousState: SessionFormState, formData: 
         verticalBlockJson: writeVerticalBlockJson(prescription.verticalBlock ?? null),
         createdAt: now, updatedAt: now,
       }))).run()
+      }),
     })
+    if (!authorized) return { errorCode: 'groupNotFound' }
   } catch (error) {
     console.error('Error creating session:', error)
     return { errorCode: 'createFailed' }
