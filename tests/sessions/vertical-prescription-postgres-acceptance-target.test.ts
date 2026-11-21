@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 test('KAN-878 RED-15 dedicated PostgreSQL acceptance target is strictly isolated and fail-closed', async () => {
   const path = fileURLToPath(new URL('../../scripts/kan-878-postgres-acceptance-target.ts', import.meta.url))
-  const module = await import(pathToFileURL(path).href).catch(() => ({}))
-  const assertTarget = Reflect.get(module, 'assertSafeKan878PostgresTarget')
+  const importedModule = await import(pathToFileURL(path).href).catch(() => ({}))
+  const assertTarget = Reflect.get(importedModule, 'assertSafeKan878PostgresTarget')
   assert.equal(typeof assertTarget, 'function', 'KAN-878 RED-15: dedicated PG acceptance target guard missing')
 
   const valid = 'postgresql://fixture:fixture@127.0.0.1:55478/kan878_vertical_disposable'
