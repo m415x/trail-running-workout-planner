@@ -14,6 +14,7 @@ import { createSupabaseServerClient } from '@/lib/auth/supabase-server'
 import { createActiveTeamNextServerContext } from '@/lib/authorization/active-team-next-server'
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
+import { writeVerticalBlockJson } from '@/lib/sessions/vertical-prescription-json'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -380,7 +381,19 @@ export async function createSession(_previousState: SessionFormState, formData: 
       }).run()
 
       tx.insert(groupSessionPrescriptions).values(prescriptions.data.map((prescription) => ({
-        id: randomUUID(), sessionId, ...prescription, createdAt: now, updatedAt: now,
+        id: randomUUID(), sessionId,
+        groupId: prescription.groupId,
+        microcycleId: prescription.microcycleId,
+        distanceKm: prescription.distanceKm,
+        durationMin: prescription.durationMin,
+        elevationGain: prescription.elevationGain,
+        intensityMethod: prescription.intensityMethod,
+        zone: prescription.zone,
+        referencePercentage: prescription.referencePercentage,
+        notes: prescription.notes,
+        primaryObjective: prescription.primaryObjective ?? null,
+        verticalBlockJson: writeVerticalBlockJson(prescription.verticalBlock ?? null),
+        createdAt: now, updatedAt: now,
       }))).run()
     })
   } catch (error) {
