@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { test } from 'node:test'
 
 import { writeVerticalBlockJson } from '../../lib/sessions/vertical-prescription-json'
@@ -15,7 +16,8 @@ const valid: VerticalBlockV1 = {
 }
 
 test('KAN-879 RED-9 read projection differentiates valid, absent, future and corrupt vertical data without rewriting bytes', async () => {
-  const imported = await import('../../lib/sessions/session-vertical-read-projection').catch(() => ({}))
+  const modulePath = fileURLToPath(new URL('../../lib/sessions/session-vertical-read-projection.ts', import.meta.url))
+  const imported = await import(pathToFileURL(modulePath).href).catch(() => ({}))
   const project = Reflect.get(imported, 'projectVerticalPrescriptionRead') as
     | ((input: { primaryObjective: string | null; verticalBlockJson: string | null }) => {
       primaryObjective: string | null
