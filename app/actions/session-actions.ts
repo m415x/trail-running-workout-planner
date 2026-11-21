@@ -377,6 +377,11 @@ export async function createSession(_previousState: SessionFormState, formData: 
     const now = new Date().toISOString()
     const sessionId = randomUUID()
     db.transaction((tx) => {
+      // Validate every submitted vertical dose before any Session or prescription write.
+      preflightVerticalSessionEdits({
+        previous: [],
+        edits: prescriptions.data,
+      })
       tx.insert(sessions).values({
         id: sessionId, teamId: planningAccess.teamId, workoutId: data.workoutId,
         date: data.date, title: data.title, type: data.type, locationKey: data.locationKey,
