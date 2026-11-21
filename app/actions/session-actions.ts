@@ -19,6 +19,7 @@ import { resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-ve
 import { assertVerticalEditElevationConsistency } from '@/lib/sessions/session-vertical-edit-fields'
 import { preflightVerticalSessionEdits } from '@/lib/sessions/session-vertical-edit-preflight'
 import { projectVerticalPrescriptionRead } from '@/lib/sessions/session-vertical-read-projection'
+import { authorizeSessionReadScope } from '@/lib/sessions/authorized-session-read-scope'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -159,18 +160,24 @@ async function planningReadAccess() {
 }
 
 async function authorizeSessionRead(sessionId: string, planningAccess: NonNullable<Awaited<ReturnType<typeof planningReadAccess>>>) {
-  const session = await db.query.sessions.findFirst({
-    where: and(eq(sessions.id, sessionId), eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
+  return authorizeSessionReadScope({
+    sessionId,
+    teamId: planningAccess.teamId,
+    findSessionTeam: async (id) => {
+      const session = await db.query.sessions.findFirst({
+        where: and(eq(sessions.id, id), eq(sessions.teamId, planningAccess.teamId), eq(sessions.isDeleted, false)),
+      })
+      return session?.teamId ?? null
+    },
+    findPrescriptionGroups: async (id) => {
+      const prescriptions = await db.query.groupSessionPrescriptions.findMany({
+        where: and(eq(groupSessionPrescriptions.sessionId, id), eq(groupSessionPrescriptions.isDeleted, false)),
+        columns: { groupId: true },
+      })
+      return prescriptions.map((item) => item.groupId)
+    },
+    authorizeGroup: planningAccess.authorizeGroup,
   })
-  if (!session) return false
-  const prescriptions = await db.query.groupSessionPrescriptions.findMany({
-    where: and(eq(groupSessionPrescriptions.sessionId, sessionId), eq(groupSessionPrescriptions.isDeleted, false)),
-    columns: { groupId: true },
-  })
-  const groups = [...new Set(prescriptions.map((item) => item.groupId))]
-  if (!groups.length) return false
-  const decisions = await Promise.all(groups.map((groupId) => planningAccess.authorizeGroup(groupId)))
-  return decisions.every(Boolean)
 }
 
 export async function getSessionsByTeam(_teamId?: string) {
