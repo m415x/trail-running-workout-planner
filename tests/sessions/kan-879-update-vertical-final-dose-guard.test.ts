@@ -14,7 +14,10 @@ const complete = JSON.stringify({
 })
 
 test('KAN-879 RED-6 explicit vertical block changes are checked even when the session D+ is unchanged', () => {
-  assert.throws(() => assertVerticalEditElevationConsistency({
+  const guard = assertVerticalEditElevationConsistency as (
+    input: Parameters<typeof assertVerticalEditElevationConsistency>[0] & { verticalBlockExplicitlyChanged?: boolean }
+  ) => void
+  assert.throws(() => guard({
     previousElevationGain: 900,
     nextElevationGain: 900,
     verticalBlockJson: complete,
@@ -22,7 +25,7 @@ test('KAN-879 RED-6 explicit vertical block changes are checked even when the se
   }), /complete|elevation|vertical/i,
   'Changing a complete block to 2×400 while retaining D+=900 must fail closed')
 
-  assert.doesNotThrow(() => assertVerticalEditElevationConsistency({
+  assert.doesNotThrow(() => guard({
     previousElevationGain: 900,
     nextElevationGain: 900,
     verticalBlockJson: complete,
