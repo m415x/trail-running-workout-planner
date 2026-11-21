@@ -17,6 +17,7 @@ import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/
 import { writeVerticalBlockJson } from '@/lib/sessions/vertical-prescription-json'
 import { resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-vertical-edit-fields'
 import { assertVerticalEditElevationConsistency } from '@/lib/sessions/session-vertical-edit-fields'
+import { preflightVerticalSessionEdits } from '@/lib/sessions/session-vertical-edit-preflight'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -482,6 +483,17 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       resultingGroupIds,
       authorizeGroup: planningAccess.authorizeGroup,
       mutate: () => db.transaction((tx) => {
+      preflightVerticalSessionEdits({
+        previous: existingPrescriptions.map((prescription) => ({
+          microcycleId: prescription.microcycleId,
+          elevationGain: prescription.elevationGain,
+          primaryObjective: prescription.primaryObjective,
+          verticalBlockJson: prescription.verticalBlockJson,
+        })),
+        edits: prescriptions.data,
+      })
+      // Preserve the direct per-scope guard required by the prior RED-6
+      // contract; both validations happen before the first durable write.
       // Preflight every effective vertical prescription before the first write.
       // A later scope cannot invalidate an earlier durable mutation.
       for (const prescription of prescriptions.data) {
