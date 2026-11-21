@@ -18,6 +18,7 @@ import { writeVerticalBlockJson } from '@/lib/sessions/vertical-prescription-jso
 import { resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-vertical-edit-fields'
 import { assertVerticalEditElevationConsistency } from '@/lib/sessions/session-vertical-edit-fields'
 import { preflightVerticalSessionEdits } from '@/lib/sessions/session-vertical-edit-preflight'
+import { projectVerticalPrescriptionRead } from '@/lib/sessions/session-vertical-read-projection'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -196,7 +197,7 @@ export async function getSessionsByTeam(_teamId?: string) {
 export async function getSessionById(sessionId: string) {
   const planningAccess = await planningReadAccess()
   if (!planningAccess || !await authorizeSessionRead(sessionId, planningAccess)) return undefined
-  return db.query.sessions.findFirst({
+  const session = await db.query.sessions.findFirst({
     where: and(
       eq(sessions.id, sessionId),
       eq(sessions.teamId, planningAccess.teamId),
@@ -210,6 +211,17 @@ export async function getSessionById(sessionId: string) {
       },
     },
   })
+  if (!session) return undefined
+  return {
+    ...session,
+    sessionPrescriptions: session.sessionPrescriptions.map((prescription) => ({
+      ...prescription,
+      ...projectVerticalPrescriptionRead({
+        primaryObjective: prescription.primaryObjective,
+        verticalBlockJson: prescription.verticalBlockJson,
+      }),
+    })),
+  }
 }
 
 export async function getSessionGenerationExplanationReview(sessionId: string) {
