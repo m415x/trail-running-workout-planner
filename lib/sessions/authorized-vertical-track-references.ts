@@ -1,4 +1,5 @@
 import type { VerticalBlockV1 } from './vertical-prescription'
+import { readVerticalBlockJson } from './vertical-prescription-json'
 
 interface VerticalTrackReferenceScope {
   groupId: string
@@ -49,4 +50,39 @@ export async function denyUnverifiableVerticalTrackReference(
   _scope: VerticalTrackReferenceScope,
 ): Promise<boolean> {
   return false
+}
+
+/**
+ * Authorize the effective v1 provenance written by an edit, not only submitted
+ * fields. Omission retains the active prescription's original JSON. Explicit
+ * replacement or clear supersedes that prior value.
+ *
+ * Opaque unsupported/corrupt JSON is not interpreted as a v1 track; separate
+ * consistency guards retain or reject those records according to edit scope.
+ */
+export async function assertAuthorizedEffectiveVerticalTrackReferences(input: {
+  prescriptions: readonly (VerticalTrackReferencePrescription & {
+    microcycleId: string
+  })[]
+  previous: readonly { microcycleId: string; verticalBlockJson: string | null }[]
+  authorizeTrack(scope: VerticalTrackReferenceScope): Promise<boolean>
+}): Promise<void> {
+  const previousByMicrocycle = new Map(input.previous.map(row => [row.microcycleId, row]))
+  const effective: VerticalTrackReferencePrescription[] = input.prescriptions.map(prescription => {
+    if (prescription.verticalBlock !== undefined) {
+      return { groupId: prescription.groupId, verticalBlock: prescription.verticalBlock }
+    }
+
+    const raw = previousByMicrocycle.get(prescription.microcycleId)?.verticalBlockJson ?? null
+    const read = readVerticalBlockJson(raw)
+    return {
+      groupId: prescription.groupId,
+      verticalBlock: read.status === 'valid' ? read.block : null,
+    }
+  })
+
+  await assertAuthorizedVerticalTrackReferences({
+    prescriptions: effective,
+    authorizeTrack: input.authorizeTrack,
+  })
 }
