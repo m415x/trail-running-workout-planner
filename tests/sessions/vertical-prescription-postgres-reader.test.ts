@@ -4,8 +4,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 test('KAN-878 RED-13 PostgreSQL reader keeps Session + microcycle identity and vertical JSON states', async () => {
   const modulePath = fileURLToPath(new URL('../../lib/sessions/vertical-prescription-postgres-reader.ts', import.meta.url))
-  const module = await import(pathToFileURL(modulePath).href).catch(() => ({}))
-  const read = Reflect.get(module, 'readVerticalPrescriptionPostgres')
+  const importedModule = await import(pathToFileURL(modulePath).href).catch(() => ({}))
+  const read = Reflect.get(importedModule, 'readVerticalPrescriptionPostgres')
   assert.equal(typeof read, 'function', 'KAN-878 RED-13: scoped PostgreSQL vertical prescription reader is missing')
 
   const block = {
