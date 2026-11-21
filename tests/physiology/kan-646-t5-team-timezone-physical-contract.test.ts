@@ -30,12 +30,12 @@ test('KAN-646 T5 regional contract: new observations capture immutable zone prov
 test('KAN-646 T5 regional contract: Drizzle migration journals append canonical numbers without rewriting old migrations', () => {
   const sqlite = JSON.parse(read('drizzle/sqlite/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }
   const pg = JSON.parse(read('drizzle/supabase/meta/_journal.json')) as { entries: { idx: number; tag: string }[] }
-  const latestSqlite = sqlite.entries.at(-1)
-  const latestPg = pg.entries.at(-1)
-  assert.equal(latestSqlite?.idx, 28)
-  assert.match(latestSqlite?.tag ?? '', /^0028_/)
-  assert.equal(latestPg?.idx, 42)
-  assert.match(latestPg?.tag ?? '', /^0042_/)
-  assert.match(read('drizzle/sqlite/' + latestSqlite?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
-  assert.match(read('drizzle/supabase/' + latestPg?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
+  const regionalSqlite = sqlite.entries.find(entry => entry.idx === 28)
+  const regionalPg = pg.entries.find(entry => entry.idx === 42)
+  assert.match(regionalSqlite?.tag ?? '', /^0028_/)
+  assert.match(regionalPg?.tag ?? '', /^0042_/)
+  assert.equal(sqlite.entries.at(-1)?.idx, 29, 'KAN-878 appends after KAN-646 SQLite')
+  assert.equal(pg.entries.at(-1)?.idx, 43, 'KAN-878 appends after KAN-646 PostgreSQL')
+  assert.match(read('drizzle/sqlite/' + regionalSqlite?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
+  assert.match(read('drizzle/supabase/' + regionalPg?.tag + '.sql'), /ALTER TABLE ["`]?teams["`]? ADD (?:COLUMN )?["`]?time_zone["`]?/i)
 })
