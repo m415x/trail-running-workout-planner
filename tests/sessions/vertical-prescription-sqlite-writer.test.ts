@@ -5,8 +5,8 @@ import Database from 'better-sqlite3'
 
 test('KAN-878 RED-12 atomically persists authorized vertical values and before/after audit in SQLite', async () => {
   const modulePath = fileURLToPath(new URL('../../lib/sessions/vertical-prescription-sqlite-writer.ts', import.meta.url))
-  const module = await import(pathToFileURL(modulePath).href).catch(() => ({}))
-  const persist = Reflect.get(module, 'persistVerticalPrescriptionSqlite')
+  const importedModule = await import(pathToFileURL(modulePath).href).catch(() => ({}))
+  const persist = Reflect.get(importedModule, 'persistVerticalPrescriptionSqlite')
   assert.equal(typeof persist, 'function', 'KAN-878 RED-12: transactional vertical prescription writer is missing')
 
   const sqlite = new Database(':memory:')
