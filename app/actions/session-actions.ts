@@ -485,7 +485,7 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       : null
     const now = new Date().toISOString()
     const existingPrescriptions = db.select().from(groupSessionPrescriptions)
-      .where(eq(groupSessionPrescriptions.sessionId, sessionId)).all()
+      .where(and(eq(groupSessionPrescriptions.sessionId, sessionId), eq(groupSessionPrescriptions.isDeleted, false))).all()
     const prescriptionOwnership = new Map(existingPrescriptions.map((prescription) => [
       prescription.microcycleId,
       prescription.generationOwnership === 'generated'
