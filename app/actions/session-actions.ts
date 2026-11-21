@@ -15,7 +15,7 @@ import { createActiveTeamNextServerContext } from '@/lib/authorization/active-te
 import { createH4aNextServerAuthorizationBoundary } from '@/lib/authorization/h4a-next-server-authorization'
 import { parseSessionPrescriptions, type SessionPrescriptionInput } from '@/lib/sessions/session-prescription-parser'
 import { writeVerticalBlockJson } from '@/lib/sessions/vertical-prescription-json'
-import { resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-vertical-edit-fields'
+import { assertVerticalEditElevationConsistency, resolveVerticalPrescriptionEditFields } from '@/lib/sessions/session-vertical-edit-fields'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -481,6 +481,25 @@ export async function updateSession(_previousState: SessionFormState, formData: 
       resultingGroupIds,
       authorizeGroup: planningAccess.authorizeGroup,
       mutate: () => db.transaction((tx) => {
+      // Preflight every effective vertical prescription before the first write.
+      // A later scope cannot invalidate an earlier durable mutation.
+      for (const prescription of prescriptions.data) {
+        const previousPrescription = existingPrescriptions.find(
+          (existing) => existing.microcycleId === prescription.microcycleId,
+        )
+        const verticalFields = resolveVerticalPrescriptionEditFields({
+          previous: previousPrescription ?? null,
+          primaryObjective: prescription.primaryObjective,
+          verticalBlock: prescription.verticalBlock,
+        })
+        assertVerticalEditElevationConsistency({
+          previousElevationGain: previousPrescription?.elevationGain ?? null,
+          nextElevationGain: prescription.elevationGain,
+          verticalBlockJson: verticalFields.verticalBlockJson,
+          verticalBlockExplicitlyChanged: prescription.verticalBlock !== undefined,
+        })
+      }
+
       tx.update(sessions).set({
         workoutId: data.workoutId, date: data.date, title: data.title, type: data.type,
         locationKey: data.locationKey, trackPath: data.trackPath, structure, notes: data.notes,
