@@ -21,6 +21,7 @@ import { preflightVerticalSessionEdits } from '@/lib/sessions/session-vertical-e
 import { projectVerticalPrescriptionRead } from '@/lib/sessions/session-vertical-read-projection'
 import { authorizeSessionReadScope } from '@/lib/sessions/authorized-session-read-scope'
 import { assertAuthorizedVerticalTrackReferences } from '@/lib/sessions/authorized-vertical-track-references'
+import { assertAuthorizedEffectiveVerticalTrackReferences } from '@/lib/sessions/authorized-vertical-track-references'
 import { denyUnverifiableVerticalTrackReference } from '@/lib/sessions/authorized-vertical-track-references'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
@@ -502,6 +503,16 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     const now = new Date().toISOString()
     const existingPrescriptions = db.select().from(groupSessionPrescriptions)
       .where(and(eq(groupSessionPrescriptions.sessionId, sessionId), eq(groupSessionPrescriptions.isDeleted, false))).all()
+    // Legacy omission retains the prior vertical block: reauthorize the effective
+    // track provenance before any Session, prescription or audit write.
+    await assertAuthorizedEffectiveVerticalTrackReferences({
+      previous: existingPrescriptions.map((prescription) => ({
+        microcycleId: prescription.microcycleId,
+        verticalBlockJson: prescription.verticalBlockJson,
+      })),
+      prescriptions: prescriptions.data,
+      authorizeTrack: denyUnverifiableVerticalTrackReference,
+    })
     const prescriptionOwnership = new Map(existingPrescriptions.map((prescription) => [
       prescription.microcycleId,
       prescription.generationOwnership === 'generated'
