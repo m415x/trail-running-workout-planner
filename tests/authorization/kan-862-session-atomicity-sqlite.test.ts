@@ -32,7 +32,6 @@ test('KAN-862 T4 actual createSession transaction rolls back session if prescrip
     const source = readFileSync('app/actions/session-actions.ts', 'utf8')
     const actionStart = source.indexOf('export async function createSession(')
     const actionEnd = source.indexOf('export async function updateSession(', actionStart)
-    const createAction = source.slice(actionStart, actionEnd)
     // Locate the production Drizzle transaction by syntax tree, not indentation:
     // createSession now wraps it in executeAuthorizedSessionMutation.
     const parsedSource = ts.createSourceFile('session-actions.ts', source, ts.ScriptTarget.Latest, true)
