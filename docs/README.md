@@ -2,6 +2,10 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
+## Worktree SSR authentication preflight — KAN-879 (rama no integrada)
+
+- [Runbook: SQLite de worktree y login SSR `invalid`](acceptance/worktree-sqlite-ssr-login-preflight.md) — prevenir el error recurrente por `SQLITE_SCENARIO_MODE` ausente: `SQLITE_DATABASE_PATH` por sí sola **no** cambia la SQLite runtime del servidor Next. Diagnóstico real: SQLite worktree 0 bytes / 0 tablas frente a fixture KAN-855 55 tablas; reinicio desde la misma terminal con escenario habilitado → login Assistant confirmado por operador. No reseed, no permisos nuevos ni DENY HTTP acreditado. [Handoff KAN-593/T3](handoffs/kan-593.md), Jira KAN-879 14990–14991. **Este material pertenece a la rama KAN-593 y no reemplaza el baseline integrado de `dev`.**
+
 ## Latest integrated maintenance baseline — Next.js 16.4.6 / pnpm 12.21.0
 
 - [PR #83](https://github.com/m415x/trail-running-workout-planner/pull/83) — ordinary merge `3559370983087d4158d6e71c159d7164d6134aa2` into `dev`, candidate `153b6092b7f4c60631c287db9b9c93124732dae2`. Next.js and eslint-config-next 16.4.6, pnpm 12.21.0, historical KAN-853/KAN-854 tests reconciled without altering their evidence. Operator candidate `pn verify --db` PASS 6/6 (730656ms), KAN-855 isolated authenticated smoke PASS 8/8; Vercel pre/postmerge success; no GitHub Actions runs reported. Postmerge local gate and final documentary checker pending. [Current handoff](handoffs/current.md). No new Jira issue or beta authorization.
