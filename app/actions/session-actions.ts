@@ -20,6 +20,8 @@ import { assertVerticalEditElevationConsistency } from '@/lib/sessions/session-v
 import { preflightVerticalSessionEdits } from '@/lib/sessions/session-vertical-edit-preflight'
 import { projectVerticalPrescriptionRead } from '@/lib/sessions/session-vertical-read-projection'
 import { authorizeSessionReadScope } from '@/lib/sessions/authorized-session-read-scope'
+import { assertAuthorizedVerticalTrackReferences } from '@/lib/sessions/authorized-vertical-track-references'
+import { denyUnverifiableVerticalTrackReference } from '@/lib/sessions/authorized-vertical-track-references'
 import { validateSessionMicrocyclePrescriptions } from '@/lib/sessions/session-microcycle-integration'
 import { executeAuthorizedSessionMutation } from '@/lib/sessions/authorized-session-mutation'
 import { createWorkoutTemplateSnapshot } from '@/lib/workout-templates/workout-template-snapshot'
@@ -388,6 +390,13 @@ export async function createSession(_previousState: SessionFormState, formData: 
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date, planningAccess.teamId)
     if (referenceError) return referenceError
 
+    // Track-adopted provenance requires a verified server-owned Team/Group track registry.
+    // No such authority exists yet: reject adoption rather than trusting client paths.
+    await assertAuthorizedVerticalTrackReferences({
+      prescriptions: prescriptions.data,
+      authorizeTrack: denyUnverifiableVerticalTrackReference,
+    })
+
     const now = new Date().toISOString()
     const sessionId = randomUUID()
     const authorized = await executeAuthorizedSessionMutation({
@@ -462,6 +471,13 @@ export async function updateSession(_previousState: SessionFormState, formData: 
     const resultingGroupIds = [...new Set(prescriptions.data.map(({ groupId }) => groupId))]
     const referenceError = validatePrescriptionReferences(prescriptions.data, data.date, planningAccess.teamId)
     if (referenceError) return referenceError
+
+    // Track-adopted provenance requires a verified server-owned Team/Group track registry.
+    // No such authority exists yet: reject adoption rather than trusting client paths.
+    await assertAuthorizedVerticalTrackReferences({
+      prescriptions: prescriptions.data,
+      authorizeTrack: denyUnverifiableVerticalTrackReference,
+    })
 
     if (data.workoutId) {
       const workout = db.query.workouts.findFirst({
