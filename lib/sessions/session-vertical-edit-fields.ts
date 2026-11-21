@@ -61,8 +61,10 @@ export function assertVerticalEditElevationConsistency(input: {
   previousElevationGain: number | null
   nextElevationGain: number | null
   verticalBlockJson: string | null
+  verticalBlockExplicitlyChanged?: boolean
 }): void {
-  if (input.nextElevationGain === input.previousElevationGain) return
+  if (input.nextElevationGain === input.previousElevationGain
+    && input.verticalBlockExplicitlyChanged !== true) return
 
   const parsed = readVerticalBlockJson(input.verticalBlockJson)
   if (parsed.status === 'absent') return
