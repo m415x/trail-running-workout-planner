@@ -27,6 +27,17 @@ async function awaitMarker(path: string): Promise<{ parentPid: number; childPid:
   throw new Error('KAN-885 test fixture did not become ready')
 }
 
+function isPidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0)
+    return true
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ESRCH') return false
+    // Permission failures do not prove the process has disappeared.
+    return true
+  }
+}
+
 async function canBind(port: number): Promise<boolean> {
   const server = createServer()
   return await new Promise<boolean>(resolve => {
@@ -45,7 +56,7 @@ function stopTestOwnedPid(pid: number | undefined): void {
   })
 }
 
-test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan', {
+test('KAN-885/T3 L6 Windows SIGINT event terminates both owned PIDs and frees descendant port', {
   skip: process.platform !== 'win32' ? 'requires native Windows taskkill' : false,
   timeout: 20000,
 }, async () => {
@@ -100,7 +111,19 @@ test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan
       }
       await delay(50)
     }
-    assert.equal(released, true, 'Ctrl+C must release the descendant loopback port')
+    assert.equal(released, true, 'SIGINT must release the descendant loopback port')
+
+    // A free socket alone is insufficient: another orphan could remain alive
+    // without holding a listener. Verify both exact PIDs disappear before
+    // marking cleanup as successful.
+    const pidDeadline = Date.now() + 5000
+    while (Date.now() < pidDeadline && (
+      isPidAlive(marker.parentPid) || isPidAlive(marker.childPid)
+    )) {
+      await delay(50)
+    }
+    assert.equal(isPidAlive(marker.parentPid), false, 'owned parent PID must be absent')
+    assert.equal(isPidAlive(marker.childPid), false, 'owned descendant PID must be absent')
     assert.equal(signals.listenerCount('SIGINT'), 0)
     assert.equal(signals.listenerCount('SIGTERM'), 0)
     fixtureFinished = true
