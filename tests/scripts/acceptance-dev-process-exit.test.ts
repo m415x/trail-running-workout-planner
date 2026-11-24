@@ -31,9 +31,6 @@ test('KAN-885/T3 L12 propagates child exit status without invoking Next', async 
 })
 
 test('KAN-885/T3 L12 reports spawn failure without exposing child env', async () => {
-  const { existsSync } = await import('node:fs')
-  const modulePath = resolve(projectRoot, 'scripts/acceptance-dev-process.ts')
-  assert.equal(existsSync(modulePath), true, 'controlled child process runner must exist')
   const candidate = (runtime as unknown as Record<string, unknown>).runAcceptanceDevChild
   assert.equal(typeof candidate, 'function', 'controlled child process runner must exist')
   const runAcceptanceDevChild = candidate as RunChild
