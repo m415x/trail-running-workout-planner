@@ -221,3 +221,41 @@ export function registerAcceptanceDevSignalForwarding(
   child.once('close', cleanup)
   return cleanup
 }
+
+export interface AcceptanceDevWindowsTreeTerminationInput {
+  childPid: number
+  launcherPid: number
+}
+
+export interface AcceptanceDevWindowsTreeTerminationPlan {
+  command: string
+  args: string[]
+  shell: false
+}
+
+/**
+ * KAN-885/L6: pure Windows process-tree termination command specification.
+ * The caller must obtain childPid from a child it spawned and still owns.
+ * This function neither establishes ownership nor executes taskkill; PID
+ * reuse and child exit races require checks at the real lifecycle boundary.
+ */
+export function buildAcceptanceDevWindowsTreeTerminationPlan(
+  input: AcceptanceDevWindowsTreeTerminationInput,
+): AcceptanceDevWindowsTreeTerminationPlan {
+  const { childPid, launcherPid } = input
+  if (
+    !Number.isSafeInteger(childPid)
+    || childPid <= 0
+    || !Number.isSafeInteger(launcherPid)
+    || launcherPid <= 0
+    || childPid === launcherPid
+  ) {
+    throw new Error('KAN-885: invalid child or launcher PID for termination')
+  }
+
+  return {
+    command: 'taskkill.exe',
+    args: ['/PID', String(childPid), '/T', '/F'],
+    shell: false,
+  }
+}
