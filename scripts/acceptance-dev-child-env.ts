@@ -1,4 +1,5 @@
 import { resolve } from 'node:path'
+import { createServer } from 'node:net'
 
 export interface AcceptanceDevChildEnvInput {
   inheritedEnv: Readonly<Record<string, string | undefined>>
@@ -101,4 +102,41 @@ export function buildAcceptanceDevNextLaunchPlan(
     cwd,
     env,
   }
+}
+
+/**
+ * KAN-885/L5: non-destructively probe whether loopback can bind the port.
+ *
+ * A successful probe releases only its own listener. This is not a lock:
+ * Next.js must still handle EADDRINUSE if another process binds afterward.
+ */
+export async function assertAcceptanceDevPortAvailable(port: number): Promise<void> {
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    throw new Error('KAN-885: invalid Next.js dev port')
+  }
+
+  const server = createServer()
+  await new Promise<void>((resolveProbe, rejectProbe) => {
+    const onError = (error: NodeJS.ErrnoException) => {
+      server.off('listening', onListening)
+      if (error.code === 'EADDRINUSE') {
+        rejectProbe(new Error('KAN-885: loopback port is occupied (EADDRINUSE)'))
+      } else {
+        rejectProbe(new Error('KAN-885: loopback port availability check failed'))
+      }
+    }
+    const onListening = () => {
+      server.off('error', onError)
+      server.close(error => {
+        if (error) {
+          rejectProbe(new Error('KAN-885: port probe cleanup failed'))
+        } else {
+          resolveProbe()
+        }
+      })
+    }
+    server.once('error', onError)
+    server.once('listening', onListening)
+    server.listen(port, '127.0.0.1')
+  })
 }
