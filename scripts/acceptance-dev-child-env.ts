@@ -483,3 +483,54 @@ export function executeAcceptanceDevWindowsTreeTermination(
     termination.once('error', onError)
   })
 }
+
+export interface AcceptanceDevWindowsManagedSpawnOptions {
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+  shell: false
+  stdio: 'ignore'
+  windowsHide: true
+}
+
+export interface AcceptanceDevWindowsManagedChildInput {
+  plan: AcceptanceDevNextLaunchPlan
+  signalSource: EventEmitter
+  launcherPid: number
+  spawnProcess: (
+    command: string,
+    args: string[],
+    options: AcceptanceDevWindowsManagedSpawnOptions,
+  ) => EventEmitter & { pid?: number }
+  terminationTimeoutMs?: number
+}
+
+/**
+ * KAN-885/L6: compose the managed child lifecycle with the Windows taskkill
+ * executor using one explicit process-spawn boundary. The child handle/PID is
+ * obtained from the launch call, never from a separate termination argument.
+ *
+ * This boundary remains dependency-injected and is not wired to the CLI.
+ * Real Windows/Git Bash process-tree and port-release acceptance is pending.
+ */
+export function runAcceptanceDevWindowsManagedChild(
+  input: AcceptanceDevWindowsManagedChildInput,
+): Promise<number> {
+  return runAcceptanceDevManagedChild({
+    plan: input.plan,
+    signalSource: input.signalSource,
+    launcherPid: input.launcherPid,
+    terminationTimeoutMs: input.terminationTimeoutMs,
+    spawnChild: plan => input.spawnProcess(plan.command, plan.args, {
+      cwd: plan.cwd,
+      env: plan.env,
+      shell: false,
+      stdio: 'ignore',
+      windowsHide: true,
+    }),
+    terminateTree: plan => executeAcceptanceDevWindowsTreeTermination({
+      plan,
+      spawnTermination: (command, args, options) =>
+        input.spawnProcess(command, args, options),
+    }),
+  })
+}
