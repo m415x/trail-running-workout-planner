@@ -259,3 +259,51 @@ export function buildAcceptanceDevWindowsTreeTerminationPlan(
     shell: false,
   }
 }
+
+export interface AcceptanceDevOwnedChildTerminationInput {
+  child: EventEmitter & { pid?: number }
+  launcherPid: number
+}
+
+export interface AcceptanceDevOwnedChildTerminationGuard {
+  planTermination(): AcceptanceDevWindowsTreeTerminationPlan
+  dispose(): void
+}
+
+/**
+ * KAN-885/L6: bind termination planning to one live child handle, not to a
+ * caller-supplied PID on each request. The caller must pass the actual
+ * ChildProcess returned by its own spawn; an EventEmitter alone does not prove
+ * OS-level ownership. Do not execute taskkill from this boundary.
+ */
+export function createAcceptanceDevOwnedChildTerminationGuard(
+  input: AcceptanceDevOwnedChildTerminationInput,
+): AcceptanceDevOwnedChildTerminationGuard {
+  const { child, launcherPid } = input
+  const childPid = child.pid
+  // Reject invalid/missing PIDs before installing handlers.
+  const plan = buildAcceptanceDevWindowsTreeTerminationPlan({
+    childPid: childPid ?? 0,
+    launcherPid,
+  })
+  let active = true
+
+  const dispose = () => {
+    if (!active) {
+      return
+    }
+    active = false
+    child.off('close', dispose)
+  }
+  child.once('close', dispose)
+
+  return {
+    planTermination() {
+      if (!active) {
+        throw new Error('KAN-885: owned child is closed or disposed')
+      }
+      return { command: plan.command, args: [...plan.args], shell: false }
+    },
+    dispose,
+  }
+}
