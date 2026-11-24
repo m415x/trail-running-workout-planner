@@ -113,6 +113,19 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
     )
   }
 
+  // One monthly charge per athlete and calendar month is enforced physically.
+  const monthlyChargeIndexes = sqlite.pragma(
+    'index_list(monthly_charges)',
+  ) as Array<{ name: string; unique: number }>
+  const monthlyChargeUniqueIndex = monthlyChargeIndexes.find(
+    index => index.name === 'monthly_charges_athlete_year_month_unique',
+  )
+  if (monthlyChargeUniqueIndex?.unique !== 1) {
+    throw new Error(
+      'KAN-885: physical SQLite monthly_charges missing unique athlete-year-month index',
+    )
+  }
+
   // The original recorder must remain nullable when the user is deleted.
   const recordedByForeignKey = performanceForeignKeys.find(
     foreignKey => foreignKey.from === 'recorded_by_user_id',
