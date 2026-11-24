@@ -62,4 +62,36 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
       )
     }
   }
+
+  // Canonical planning-scope uniqueness is required by scripts/verify-sqlite.ts.
+  const prescriptionIndexes = sqlite.pragma(
+    'index_list(group_session_prescriptions)',
+  ) as Array<{ name: string; unique: number }>
+  const planningIndex = prescriptionIndexes.find(
+    index => index.name === 'group_session_prescriptions_session_microcycle_unique',
+  )
+  if (planningIndex?.unique !== 1) {
+    throw new Error(
+      'KAN-885: physical SQLite schema missing unique prescription Session + microcycle index',
+    )
+  }
+  if (prescriptionIndexes.some(
+    index => index.name === 'group_session_prescriptions_session_group_unique',
+  )) {
+    throw new Error('KAN-885: physical SQLite schema retains legacy prescription scope index')
+  }
+
+  const indexedColumns = (sqlite.pragma(
+    'index_info(group_session_prescriptions_session_microcycle_unique)',
+  ) as Array<{ seqno: number; name: string }>)
+    .sort((left, right) => left.seqno - right.seqno)
+    .map(column => column.name)
+
+  if (
+    indexedColumns.length !== 2
+    || indexedColumns[0] !== 'session_id'
+    || indexedColumns[1] !== 'microcycle_id'
+  ) {
+    throw new Error('KAN-885: physical SQLite prescription scope index has incompatible columns')
+  }
 }
