@@ -13,6 +13,11 @@ const args = process.argv.slice(2)
 
 if (args.length === 1 && args[0] === '--help') {
   console.log(usage)
+} else if (args.length === 0) {
+  // No implicit fallback to sqlite.db, OS temp search, or new fixture creation.
+  // Persisted selection loading is implemented only after its own safety contract.
+  console.error('KAN-885: saved SQLite selection is missing; ' + usage)
+  process.exitCode = 2
 } else if (args.length === 2 && args[0] === '--db' && args[1]?.trim()) {
   try {
     assertAccreditedAcceptanceDatabasePath({
