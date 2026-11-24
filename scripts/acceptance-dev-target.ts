@@ -1,4 +1,5 @@
-import { readFileSync, realpathSync, statSync } from 'node:fs'
+import { closeSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
+import { randomUUID } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { basename, dirname, isAbsolute, resolve, sep } from 'node:path'
 
@@ -152,4 +153,34 @@ export function resolveAcceptanceCliSelection(input: AcceptanceCliSelectionInput
   }
 
   throw new Error('KAN-885: invalid acceptance launcher arguments')
+}
+
+export interface SaveAcceptanceDatabaseSelectionInput extends AcceptanceDatabasePathInput {
+  configPath: string
+}
+
+/**
+ * Writes a non-sensitive locator by atomic rename within its config directory.
+ * Only path accreditation is performed here: call sites MUST pass full
+ * SQLite/H1/H2 gates before using this writer in a runtime launcher.
+ * Does not create, seed, upgrade or otherwise open the SQLite database.
+ */
+export function saveAcceptanceDatabaseSelection(input: SaveAcceptanceDatabaseSelectionInput): void {
+  const databasePath = assertAccreditedAcceptanceDatabasePath(input)
+  const stagingPath = input.configPath + '.' + randomUUID() + '.tmp'
+  const json = JSON.stringify({ version: 1, databasePath })
+  let descriptor: number | undefined
+
+  try {
+    descriptor = openSync(stagingPath, 'wx', 0o600)
+    writeFileSync(descriptor, json, { encoding: 'utf8' })
+    closeSync(descriptor)
+    descriptor = undefined
+    renameSync(stagingPath, input.configPath)
+  } finally {
+    if (descriptor !== undefined) {
+      closeSync(descriptor)
+    }
+    rmSync(stagingPath, { force: true })
+  }
 }
