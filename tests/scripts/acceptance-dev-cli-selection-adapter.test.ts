@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import test from 'node:test'
 
-import * as cliSelection from '@/scripts/acceptance-dev-cli-selection'
+import * as cliSelection from '@/scripts/acceptance-dev-target'
 
 type CliSelectionInput = {
   args: readonly string[]
