@@ -23,6 +23,18 @@ const requiredColumns: Readonly<Record<string, readonly string[]>> = {
     'generation_ownership',
   ],
   microcycles: ['id', 'is_deleted', 'mesocycle_id'],
+  // Tables also required by the checkout's existing scripts/verify-sqlite.ts.
+  authorization_grants: [],
+  field_performance_tests: ['reviewed_by_user_id', 'recorded_by_user_id'],
+  team_economic_policies: [],
+  athlete_billing_terms: [],
+  monthly_charges: [],
+  global_monthly_due_date_exceptions: [],
+  monthly_charge_reductions: [],
+  monthly_charge_extensions: [],
+  payment_revisions: [],
+  microcycle_intensity_targets: ['reference_percentage_target'],
+  session_generation_modification_records: ['generation_explanation'],
 }
 
 /**
