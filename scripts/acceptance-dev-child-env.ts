@@ -421,10 +421,13 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
   })
 }
 
-export interface AcceptanceDevWindowsTerminationProcess extends EventEmitter {}
+export interface AcceptanceDevWindowsTerminationProcess extends EventEmitter {
+  kill?: (signal?: NodeJS.Signals) => boolean
+}
 
 export interface AcceptanceDevWindowsTreeExecutionInput {
   plan: AcceptanceDevWindowsTreeTerminationPlan
+  terminationTimeoutMs?: number
   spawnTermination: (
     command: string,
     args: string[],
@@ -442,6 +445,10 @@ export function executeAcceptanceDevWindowsTreeTermination(
   input: AcceptanceDevWindowsTreeExecutionInput,
 ): Promise<void> {
   const { plan, spawnTermination } = input
+  const terminationTimeoutMs = input.terminationTimeoutMs ?? 5000
+  if (!Number.isSafeInteger(terminationTimeoutMs) || terminationTimeoutMs < 1 || terminationTimeoutMs > 60000) {
+    return Promise.reject(new Error('KAN-885: invalid Windows tree termination timeout'))
+  }
   const args = plan?.args
   const pidText = Array.isArray(args) && args.length === 4 ? args[1] : undefined
   const pid = typeof pidText === 'string' && /^[1-9][0-9]*$/.test(pidText)
@@ -476,21 +483,39 @@ export function executeAcceptanceDevWindowsTreeTermination(
     }
 
     let settled = false
+    let timeout: ReturnType<typeof setTimeout> | undefined
     const cleanup = () => {
+      if (timeout !== undefined) {
+        clearTimeout(timeout)
+        timeout = undefined
+      }
       termination.off('close', onClose)
       termination.off('error', onError)
     }
-    const finish = (success: boolean) => {
+    const finish = (error: string | null) => {
       if (settled) return
       settled = true
       cleanup()
-      if (success) resolveDone()
-      else rejectDone(new Error('KAN-885: Windows tree termination failed'))
+      if (error) rejectDone(new Error(error))
+      else resolveDone()
     }
-    const onClose = (code: number | null) => finish(code === 0)
-    const onError = () => finish(false)
+    const onClose = (code: number | null) => finish(code === 0
+      ? null
+      : 'KAN-885: Windows tree termination failed')
+    const onError = () => finish('KAN-885: Windows tree termination failed')
     termination.once('close', onClose)
     termination.once('error', onError)
+    timeout = setTimeout(() => {
+      finish('KAN-885: Windows tree termination helper timed out')
+      // Only target the helper handle returned by spawnTermination, never
+      // the child PID in the taskkill arguments. A timeout is not proof that
+      // either OS process has terminated.
+      try {
+        termination.kill?.('SIGTERM')
+      } catch {
+        // The failure is already reported; do not expose system diagnostics.
+      }
+    }, terminationTimeoutMs)
   })
 }
 
