@@ -410,3 +410,76 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
     input.signalSource.on('SIGTERM', onSigterm)
   })
 }
+
+export interface AcceptanceDevWindowsTerminationProcess extends EventEmitter {}
+
+export interface AcceptanceDevWindowsTreeExecutionInput {
+  plan: AcceptanceDevWindowsTreeTerminationPlan
+  spawnTermination: (
+    command: string,
+    args: string[],
+    options: { shell: false; stdio: 'ignore'; windowsHide: true },
+  ) => AcceptanceDevWindowsTerminationProcess
+}
+
+/**
+ * KAN-885/L6: execute an already-approved Windows tree-kill plan via an
+ * injected process boundary. Do not accept arbitrary commands or shell text.
+ * Success means taskkill exited zero, not that all descendants were
+ * independently verified absent. The caller must establish owned PID provenance.
+ */
+export function executeAcceptanceDevWindowsTreeTermination(
+  input: AcceptanceDevWindowsTreeExecutionInput,
+): Promise<void> {
+  const { plan, spawnTermination } = input
+  const args = plan?.args
+  const pidText = Array.isArray(args) && args.length === 4 ? args[1] : undefined
+  const pid = typeof pidText === 'string' && /^[1-9][0-9]*$/.test(pidText)
+    ? Number(pidText)
+    : Number.NaN
+
+  if (
+    plan?.command !== 'taskkill.exe'
+    || plan.shell !== false
+    || !Array.isArray(args)
+    || args.length !== 4
+    || args[0] !== '/PID'
+    || args[2] !== '/T'
+    || args[3] !== '/F'
+    || !Number.isSafeInteger(pid)
+    || pid <= 0
+  ) {
+    return Promise.reject(new Error('KAN-885: invalid Windows tree termination plan'))
+  }
+
+  return new Promise<void>((resolveDone, rejectDone) => {
+    let termination: AcceptanceDevWindowsTerminationProcess
+    try {
+      termination = spawnTermination('taskkill.exe', ['/PID', String(pid), '/T', '/F'], {
+        shell: false,
+        stdio: 'ignore',
+        windowsHide: true,
+      })
+    } catch {
+      rejectDone(new Error('KAN-885: unable to start Windows tree termination'))
+      return
+    }
+
+    let settled = false
+    const cleanup = () => {
+      termination.off('close', onClose)
+      termination.off('error', onError)
+    }
+    const finish = (success: boolean) => {
+      if (settled) return
+      settled = true
+      cleanup()
+      if (success) resolveDone()
+      else rejectDone(new Error('KAN-885: Windows tree termination failed'))
+    }
+    const onClose = (code: number | null) => finish(code === 0)
+    const onError = () => finish(false)
+    termination.once('close', onClose)
+    termination.once('error', onError)
+  })
+}
