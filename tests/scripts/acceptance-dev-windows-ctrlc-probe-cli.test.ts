@@ -19,7 +19,7 @@ function invoke(args: string[]) {
 
 test('KAN-885/T3 L6 standalone Windows Ctrl+C probe documents explicit manual run/verify workflow', () => {
   const result = invoke(['--help'])
-  assert.equal(result.status, 0, result.stderr || result.error?.message)
+  assert.equal(result.status, 0, result.stderr || result.error?.message || 'KAN-885: unexpected probe exit status')
   assert.match(result.stdout, /KAN-885.*Ctrl\+C/i)
   assert.match(result.stdout, /--run/)
   assert.match(result.stdout, /--verify/)
@@ -29,14 +29,14 @@ test('KAN-885/T3 L6 standalone Windows Ctrl+C probe documents explicit manual ru
 
 test('KAN-885/T3 L6 probe rejects an unqualified invocation without spawning a process tree', () => {
   const result = invoke([])
-  assert.equal(result.status, 2, result.stderr || result.error?.message)
+  assert.equal(result.status, 2, result.stderr || result.error?.message || 'KAN-885: unexpected probe exit status')
   assert.match(result.stderr, /KAN-885.*(?:usage|explicit|mode)/i)
   assert.doesNotMatch(result.stdout, /ready|listening|port/i)
 })
 
 test('KAN-885/T3 L6 probe refuses unsupported mode and never launches Next', () => {
   const result = invoke(['--run', '--verify'])
-  assert.equal(result.status, 2, result.stderr || result.error?.message)
+  assert.equal(result.status, 2, result.stderr || result.error?.message || 'KAN-885: unexpected probe exit status')
   assert.match(result.stderr, /KAN-885/i)
   assert.doesNotMatch(result.stdout, /ready|listening|port/i)
 })
