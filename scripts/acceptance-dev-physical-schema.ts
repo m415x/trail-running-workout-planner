@@ -57,6 +57,11 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
         .map(column => column.name),
     )
     const missing = columns.filter(column => !actual.has(column))
+    if (table === 'microcycle_intensity_targets' && actual.has('pam_percentage_target')) {
+      throw new Error(
+        'KAN-885: physical SQLite legacy microcycle_intensity_targets.pam_percentage_target must not remain',
+      )
+    }
     if (missing.length > 0) {
       throw new Error(
         `KAN-885: physical SQLite schema missing columns in ${table}: ${missing.join(', ')}`,
