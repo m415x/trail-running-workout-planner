@@ -592,3 +592,24 @@ export function runAcceptanceDevWindowsOwnedProcess(
     terminationTimeoutMs: input.terminationTimeoutMs,
   })
 }
+
+export interface AcceptanceDevWindowsTerminalProcessInput {
+  plan: AcceptanceDevNextLaunchPlan
+  terminationTimeoutMs?: number
+}
+
+/**
+ * KAN-885/L6: connect the real launcher process signals to the owned child
+ * lifecycle. The managed runner installs and removes SIGINT/SIGTERM listeners
+ * for the duration of this run. Not yet integrated with the acceptance CLI;
+ * interactive Ctrl+C from Git Bash still requires separate accreditation.
+ */
+export function runAcceptanceDevWindowsTerminalProcess(
+  input: AcceptanceDevWindowsTerminalProcessInput,
+): Promise<number> {
+  return runAcceptanceDevWindowsOwnedProcess({
+    plan: input.plan,
+    signalSource: process,
+    terminationTimeoutMs: input.terminationTimeoutMs,
+  })
+}
