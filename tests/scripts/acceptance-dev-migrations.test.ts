@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { tmpdir } from 'node:os'
 import test from 'node:test'
 
 import { assertCanonicalAcceptanceMigrationHistory } from '@/scripts/acceptance-dev-migrations'
@@ -51,4 +52,43 @@ test('KAN-885/T2 rejects a corrupted hash for the last canonical migration', () 
     () => assertCanonicalAcceptanceMigrationHistory({ projectRoot, appliedRows }),
     /migration|hash|drift|canonical|mismatch|inconsisten/i,
   )
+})
+
+test('KAN-885/T2 accepts only the upgrader-authorized 0016 normalized-CRLF hash', () => {
+  const tempRoot = mkdtempSync(join(tmpdir(), 'kan885-migration-hash-'))
+  try {
+    const migrationDir = resolve(tempRoot, 'drizzle/sqlite')
+    mkdirSync(resolve(migrationDir, 'meta'), { recursive: true })
+    const entries = journal.entries.slice(0, 17)
+    assert.equal(entries[16]?.tag, '0016_athlete_profile_identity')
+    writeFileSync(resolve(migrationDir, 'meta/_journal.json'), JSON.stringify({ entries }))
+    const rows = entries.map(entry => {
+      const sql = entry.idx === 16 ? 'SELECT 1;\r\nSELECT 2;\r\n' : 'SELECT 1;\n'
+      writeFileSync(resolve(migrationDir, entry.tag + '.sql'), sql)
+      return {
+        hash: createHash('sha256')
+          .update(entry.idx === 16 ? sql.replace(/\r\n/g, '\n') : sql)
+          .digest('hex'),
+        created_at: entry.when,
+      }
+    })
+    assert.doesNotThrow(() => assertCanonicalAcceptanceMigrationHistory({
+      projectRoot: tempRoot, appliedRows: rows,
+    }))
+    const raw0016 = createHash('sha256')
+      .update(readFileSync(resolve(migrationDir, entries[16].tag + '.sql')))
+      .digest('hex')
+    assert.doesNotThrow(() => assertCanonicalAcceptanceMigrationHistory({
+      projectRoot: tempRoot,
+      appliedRows: rows.map((row, index) => index === 16 ? { ...row, hash: raw0016 } : row),
+    }))
+    assert.throws(() => assertCanonicalAcceptanceMigrationHistory({
+      projectRoot: tempRoot,
+      appliedRows: rows.map((row, index) => index === 15
+        ? { ...row, hash: createHash('sha256').update('SELECT 1;\r\n').digest('hex') }
+        : row),
+    }), /hash mismatch|unknown migration/i)
+  } finally {
+    rmSync(tempRoot, { recursive: true, force: true })
+  }
 })
