@@ -4,14 +4,15 @@ import {
 } from '@/scripts/acceptance-dev-target'
 import { openAcceptanceSqliteReadonly } from '@/scripts/acceptance-dev-readonly'
 import { assertAcceptancePhysicalSchema } from '@/scripts/acceptance-dev-physical-schema'
+import { assertAcceptanceMigrationMetadata } from '@/scripts/acceptance-dev-migration-metadata'
 import { assertAcceptanceSqliteIntegrity } from '@/scripts/acceptance-dev-integrity'
 
 /**
- * KAN-885/T2 RED-8: fail-closed composition of the existing read-only guards.
+ * KAN-885/T2: fail-closed composition of existing read-only SQLite guards.
  *
- * This preflight only confirms path accreditation, the minimal physical schema,
- * and SQLite integrity. Migration journal/hash compatibility and authentic H2
- * identity remain separate mandatory checks before launching Next.js.
+ * Checks accredited path, minimal physical schema, canonical applied migration
+ * history from the current checkout, and SQLite integrity. Authentic H2 and
+ * full product-schema compatibility remain separate mandatory acceptance gates.
  *
  * No seeding, provisioning, migrations or repairs. Always close the connection.
  */
@@ -21,6 +22,7 @@ export function preflightAcceptanceSqlite(input: AcceptanceDatabasePathInput): s
 
   try {
     assertAcceptancePhysicalSchema(sqlite)
+    assertAcceptanceMigrationMetadata({ sqlite, projectRoot: input.projectRoot })
     assertAcceptanceSqliteIntegrity(sqlite)
     return canonicalPath
   } finally {
