@@ -1,5 +1,6 @@
 import {
   assertAccreditedAcceptanceDatabasePath,
+  saveAcceptanceDatabaseSelection,
   type AcceptanceDatabasePathInput,
 } from '@/scripts/acceptance-dev-target'
 import { openAcceptanceSqliteReadonly } from '@/scripts/acceptance-dev-readonly'
@@ -42,4 +43,28 @@ export function preflightAcceptanceSqlite(input: AcceptanceSqlitePreflightInput)
   } finally {
     sqlite.close()
   }
+}
+
+export interface AcceptancePreflightAndSaveInput extends AcceptanceSqlitePreflightInput {
+  configPath: string
+}
+
+/**
+ * KAN-885/T3: persist the non-sensitive selection only after EVERY read-only
+ * preflight guard succeeds, including the existing H1 actor check.
+ *
+ * This helper does not authenticate H2 or obtain runtime identity. Callers must
+ * supply H2-derived identity via the authorized runtime boundary, never from
+ * user-controlled CLI arguments or saved local configuration.
+ */
+export function preflightAndSaveAcceptanceSelection(
+  input: AcceptancePreflightAndSaveInput,
+): string {
+  const canonicalPath = preflightAcceptanceSqlite(input)
+  saveAcceptanceDatabaseSelection({
+    databasePath: canonicalPath,
+    projectRoot: input.projectRoot,
+    configPath: input.configPath,
+  })
+  return canonicalPath
 }
