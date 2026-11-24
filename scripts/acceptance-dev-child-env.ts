@@ -1,5 +1,6 @@
 import { resolve } from 'node:path'
 import { createServer } from 'node:net'
+import { spawn } from 'node:child_process'
 
 export interface AcceptanceDevChildEnvInput {
   inheritedEnv: Readonly<Record<string, string | undefined>>
@@ -138,5 +139,38 @@ export async function assertAcceptanceDevPortAvailable(port: number): Promise<vo
     server.once('error', onError)
     server.once('listening', onListening)
     server.listen(port, '127.0.0.1')
+  })
+}
+
+/**
+ * KAN-885/L12: run an explicitly supplied child process and preserve its exit
+ * status. Do not use a shell, echo its command/env, or start Next from the CLI.
+ *
+ * This primitive does NOT yet implement signal forwarding / process-tree cleanup
+ * (L6), startup readiness or H2 authentication. Do not wire it to the launcher
+ * until those requirements are fulfilled.
+ */
+export function runAcceptanceDevChild(plan: AcceptanceDevNextLaunchPlan): Promise<number> {
+  return new Promise<number>((resolveExit, rejectExit) => {
+    const child = spawn(plan.command, plan.args, {
+      cwd: plan.cwd,
+      env: plan.env,
+      shell: false,
+      stdio: 'ignore',
+      windowsHide: true,
+    })
+
+    child.once('error', () => {
+      rejectExit(new Error('KAN-885: unable to start child process'))
+    })
+    child.once('close', (code, signal) => {
+      if (code !== null) {
+        resolveExit(code)
+      } else {
+        rejectExit(new Error(signal
+          ? 'KAN-885: child process terminated by signal'
+          : 'KAN-885: child process closed without exit status'))
+      }
+    })
   })
 }
