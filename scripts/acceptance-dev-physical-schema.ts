@@ -94,4 +94,22 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
   ) {
     throw new Error('KAN-885: physical SQLite prescription scope index has incompatible columns')
   }
+
+  // Reviewed field-performance results must retain the canonical restrictive
+  // reference to an existing user; column presence alone cannot prove this.
+  const performanceForeignKeys = sqlite.pragma(
+    'foreign_key_list(field_performance_tests)',
+  ) as Array<{ table: string; from: string; to: string; on_delete: string }>
+  const reviewedByForeignKey = performanceForeignKeys.find(
+    foreignKey => foreignKey.from === 'reviewed_by_user_id',
+  )
+  if (
+    reviewedByForeignKey?.table !== 'users'
+    || reviewedByForeignKey.to !== 'id'
+    || reviewedByForeignKey.on_delete.toUpperCase() !== 'RESTRICT'
+  ) {
+    throw new Error(
+      'KAN-885: physical SQLite field_performance_tests.reviewed_by_user_id must reference users(id) ON DELETE RESTRICT',
+    )
+  }
 }
