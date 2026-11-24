@@ -61,3 +61,44 @@ export function buildAcceptanceDevChildEnv(input: AcceptanceDevChildEnvInput): N
   child.TSX_TSCONFIG_PATH = resolve(input.projectRoot, 'tsconfig.json')
   return child
 }
+
+export interface AcceptanceDevNextLaunchPlanInput extends AcceptanceDevChildEnvInput {
+  port?: number
+}
+
+export interface AcceptanceDevNextLaunchPlan {
+  command: string
+  args: string[]
+  cwd: string
+  env: NodeJS.ProcessEnv
+}
+
+/**
+ * Pure Next.js launch plan for the current checkout, restricted to loopback.
+ * Caller must complete accredited SQLite and legitimate H2/H1 preflight before
+ * using this plan to spawn a process. No ports are inspected or bound here.
+ */
+export function buildAcceptanceDevNextLaunchPlan(
+  input: AcceptanceDevNextLaunchPlanInput,
+): AcceptanceDevNextLaunchPlan {
+  const port = input.port ?? 3000
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    throw new Error('KAN-885: invalid Next.js dev port; expected integer 1024–65535')
+  }
+
+  const env = buildAcceptanceDevChildEnv(input)
+  const cwd = resolve(input.projectRoot)
+  return {
+    command: process.execPath,
+    args: [
+      resolve(cwd, 'node_modules/next/dist/bin/next'),
+      'dev',
+      '--hostname',
+      '127.0.0.1',
+      '--port',
+      String(port),
+    ],
+    cwd,
+    env,
+  }
+}
