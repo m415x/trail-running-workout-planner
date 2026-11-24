@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3'
+import { auditH7aPhysicalSchema } from '@/scripts/h7a-physical-schema'
 
 /**
  * KAN-885/T2 RED-6: read-only physical-shape guard for the acceptance runtime.
@@ -155,5 +156,12 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
     throw new Error(
       'KAN-885: physical SQLite field_performance_tests.recorded_by_user_id must reference users(id) ON DELETE SET NULL',
     )
+  }
+
+  // Reuse the established read-only H7A 0020–0025 physical audit rather
+  // than reproducing its author, constraint, index and event-table rules.
+  const h7aFailures = auditH7aPhysicalSchema(sqlite)
+  if (h7aFailures.length > 0) {
+    throw new Error('KAN-885: physical SQLite H7A drift: ' + h7aFailures.join('; '))
   }
 }
