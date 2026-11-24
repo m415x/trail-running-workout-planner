@@ -345,6 +345,10 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
         launcherPid: input.launcherPid,
       })
     } catch {
+      // Node may return a ChildProcess without a PID before emitting its
+      // asynchronous spawn 'error' (e.g. ENOENT). Consume that event to avoid
+      // an unhandled EventEmitter error after the caller receives rejection.
+      child.once('error', () => {})
       rejectExit(new Error('KAN-885: invalid managed child PID'))
       return
     }
@@ -532,5 +536,28 @@ export function runAcceptanceDevWindowsManagedChild(
       spawnTermination: (command, args, options) =>
         input.spawnProcess(command, args, options),
     }),
+  })
+}
+
+export interface AcceptanceDevWindowsOwnedProcessInput {
+  plan: AcceptanceDevNextLaunchPlan
+  signalSource: EventEmitter
+  terminationTimeoutMs?: number
+}
+
+/**
+ * KAN-885/L6: the real Node spawn adapter for the managed Windows lifecycle.
+ * The caller must complete accreditation before passing a Next launch plan.
+ * This does not start anything unless explicitly invoked.
+ */
+export function runAcceptanceDevWindowsOwnedProcess(
+  input: AcceptanceDevWindowsOwnedProcessInput,
+): Promise<number> {
+  return runAcceptanceDevWindowsManagedChild({
+    plan: input.plan,
+    signalSource: input.signalSource,
+    launcherPid: process.pid,
+    spawnProcess: (command, args, options) => spawn(command, args, options),
+    terminationTimeoutMs: input.terminationTimeoutMs,
   })
 }
