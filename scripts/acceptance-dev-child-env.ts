@@ -307,3 +307,92 @@ export function createAcceptanceDevOwnedChildTerminationGuard(
     dispose,
   }
 }
+
+export interface AcceptanceDevManagedChildInput {
+  plan: AcceptanceDevNextLaunchPlan
+  signalSource: EventEmitter
+  spawnChild: (plan: AcceptanceDevNextLaunchPlan) => EventEmitter & { pid?: number }
+  terminateTree: (plan: AcceptanceDevWindowsTreeTerminationPlan) => Promise<void>
+  launcherPid: number
+}
+
+/**
+ * KAN-885/L6: compose owned-child planning, signal delivery, and completion.
+ * Dependencies are injected to test state transitions without OS termination.
+ * Production integration must use the actual ChildProcess returned from spawn;
+ * this helper is NOT wired to the CLI or a real taskkill invocation yet.
+ */
+export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInput): Promise<number> {
+  return new Promise<number>((resolveExit, rejectExit) => {
+    let child: ReturnType<AcceptanceDevManagedChildInput['spawnChild']>
+    try {
+      child = input.spawnChild(input.plan)
+    } catch {
+      rejectExit(new Error('KAN-885: unable to start managed child'))
+      return
+    }
+
+    let guard: AcceptanceDevOwnedChildTerminationGuard
+    try {
+      guard = createAcceptanceDevOwnedChildTerminationGuard({
+        child,
+        launcherPid: input.launcherPid,
+      })
+    } catch {
+      rejectExit(new Error('KAN-885: invalid managed child PID'))
+      return
+    }
+
+    let finished = false
+    let terminating = false
+    const cleanup = () => {
+      input.signalSource.off('SIGINT', onSigint)
+      input.signalSource.off('SIGTERM', onSigterm)
+      child.off('close', onClose)
+      child.off('error', onError)
+      guard.dispose()
+    }
+    const finish = (error: Error | null, code?: number) => {
+      if (finished) return
+      finished = true
+      cleanup()
+      if (error) rejectExit(error)
+      else resolveExit(code ?? 0)
+    }
+    const onClose = (code: number | null, signal: string | null) => {
+      if (code !== null) {
+        finish(null, code)
+      } else {
+        finish(new Error(signal
+          ? 'KAN-885: managed child terminated by signal'
+          : 'KAN-885: managed child closed without exit status'))
+      }
+    }
+    const onError = () => finish(new Error('KAN-885: managed child process failed'))
+    const onSignal = () => {
+      if (finished || terminating) return
+      terminating = true
+      let terminationPlan: AcceptanceDevWindowsTreeTerminationPlan
+      try {
+        terminationPlan = guard.planTermination()
+      } catch {
+        finish(new Error('KAN-885: managed child is no longer available'))
+        return
+      }
+      try {
+        void Promise.resolve(input.terminateTree(terminationPlan)).catch(() => {
+          finish(new Error('KAN-885: managed child tree termination failed'))
+        })
+      } catch {
+        finish(new Error('KAN-885: managed child tree termination failed'))
+      }
+    }
+    const onSigint = () => onSignal()
+    const onSigterm = () => onSignal()
+
+    child.once('close', onClose)
+    child.once('error', onError)
+    input.signalSource.on('SIGINT', onSigint)
+    input.signalSource.on('SIGTERM', onSigterm)
+  })
+}
