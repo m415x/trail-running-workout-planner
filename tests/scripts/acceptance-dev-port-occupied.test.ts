@@ -42,7 +42,9 @@ test('KAN-885/T3 L5 rejects occupied loopback port without disrupting its owner'
         'the original process must still own the port',
       )
     } finally {
-      secondProbe.close()
+      if (secondProbe.listening) {
+        secondProbe.close()
+      }
     }
   } finally {
     await new Promise<void>((resolve, reject) => {
