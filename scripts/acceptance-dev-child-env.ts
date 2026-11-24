@@ -1,7 +1,7 @@
 import { resolve } from 'node:path'
 
 export interface AcceptanceDevChildEnvInput {
-  inheritedEnv: NodeJS.ProcessEnv
+  inheritedEnv: Readonly<Record<string, string | undefined>>
   databasePath: string
   projectRoot: string
 }
@@ -45,7 +45,9 @@ export function buildAcceptanceDevChildEnv(input: AcceptanceDevChildEnvInput): N
     'TERM',
   ] as const
 
-  const child: NodeJS.ProcessEnv = {}
+  // Next 16 augments ProcessEnv with a required, readonly NODE_ENV.
+  // A development-only launcher must set it explicitly, not inherit production.
+  const child: NodeJS.ProcessEnv = { NODE_ENV: 'development' }
   for (const name of allowed) {
     const value = input.inheritedEnv[name]
     if (value !== undefined) {
