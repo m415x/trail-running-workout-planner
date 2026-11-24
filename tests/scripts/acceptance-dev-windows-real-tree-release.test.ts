@@ -51,8 +51,10 @@ test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan
 }, async () => {
   const dir = await mkdtemp(join(tmpdir(), 'kan-885-l6-'))
   const markerFile = join(dir, 'owned-socket.json')
+  const parentFile = join(dir, 'owned-parent.json')
   const signals = new EventEmitter()
   let marker: { parentPid: number; childPid: number; port: number } | undefined
+  let fixtureFinished = false
 
   const grandchild = [
     "const net = require('node:net')",
@@ -62,10 +64,11 @@ test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan
     " const data = { parentPid: process.ppid, childPid: process.pid, port: server.address().port }",
     " fs.writeFileSync(process.argv[1], JSON.stringify(data))",
     "})",
-  ].join(';').replace('};', '}')
+  ].join('\n')
   const parent = [
     "const { spawn } = require('node:child_process')",
-    "spawn(process.execPath, ['-e', process.argv[2], process.argv[1]], { stdio: 'ignore', windowsHide: true })",
+    "require('node:fs').writeFileSync(process.argv[2], JSON.stringify({ parentPid: process.pid }))",
+    "spawn(process.execPath, ['-e', process.argv[3], process.argv[1]], { stdio: 'ignore', windowsHide: true })",
     "setInterval(() => {}, 1000)",
   ].join(';')
 
@@ -74,7 +77,7 @@ test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan
     run = runAcceptanceDevWindowsOwnedProcess({
       plan: {
         command: process.execPath,
-        args: ['-e', parent, markerFile, grandchild],
+        args: ['-e', parent, markerFile, parentFile, grandchild],
         cwd: process.cwd(),
         env: { NODE_ENV: 'test', PATH: process.env.PATH, SystemRoot: process.env.SystemRoot },
       },
@@ -100,13 +103,21 @@ test('KAN-885/T3 L6 Windows Ctrl+C releases descendant-owned port without orphan
     assert.equal(released, true, 'Ctrl+C must release the descendant loopback port')
     assert.equal(signals.listenerCount('SIGINT'), 0)
     assert.equal(signals.listenerCount('SIGTERM'), 0)
+    fixtureFinished = true
   } finally {
     // Never allow a failed acceptance assertion to leave test workers alive.
     try {
       marker ??= JSON.parse(await readFile(markerFile, 'utf8')) as typeof marker
     } catch { /* marker may never have been created */ }
-    stopTestOwnedPid(marker?.parentPid)
-    stopTestOwnedPid(marker?.childPid)
+    let parentPid: number | undefined = marker?.parentPid
+    try {
+      parentPid ??= (JSON.parse(await readFile(parentFile, 'utf8')) as { parentPid: number }).parentPid
+    } catch { /* parent may never have started */ }
+    // Skip cleanup after a verified release to minimize PID-reuse risk.
+    if (!fixtureFinished) {
+      stopTestOwnedPid(parentPid)
+      stopTestOwnedPid(marker?.childPid)
+    }
     if (run) void run.catch(() => {})
     await rm(dir, { recursive: true, force: true })
   }
