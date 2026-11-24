@@ -1,11 +1,11 @@
 import { resolve } from 'node:path'
+import { resolveAcceptanceCliSelection } from '@/scripts/acceptance-dev-target'
 import { preflightAcceptanceSqlite } from '@/scripts/acceptance-dev-preflight'
 
 /**
- * KAN-885/T3: CLI argument, accredited target and read-only SQLite preflight.
+ * KAN-885/T3: selection and read-only SQLite preflight only.
  *
- * The launcher remains deliberately disabled after path accreditation until
- * config, runtime actor, child environment and lifecycle checks are complete.
+ * Missing H2-derived runtime actor always fails closed at the H1 boundary.
  * Never starts Next.js, creates SQLite, provisions or mutates data in this cut.
  */
 const usage = 'Usage: pn acceptance:dev --db <absolute-accredited-sqlite-path>'
@@ -13,19 +13,18 @@ const args = process.argv.slice(2)
 
 if (args.length === 1 && args[0] === '--help') {
   console.log(usage)
-} else if (args.length === 0) {
-  // No implicit fallback to sqlite.db, OS temp search, or new fixture creation.
-  // Persisted selection loading is implemented only after its own safety contract.
-  console.error('KAN-885: saved SQLite selection is missing; ' + usage)
-  process.exitCode = 2
-} else if (args.length === 2 && args[0] === '--db' && args[1]?.trim()) {
+} else {
   try {
-    // A missing authenticated actor must fail closed at the H1 boundary.
-    // The CLI cannot invent a Supabase subject or Team membership.
-    preflightAcceptanceSqlite({
-      databasePath: args[1],
-      projectRoot: resolve(import.meta.dirname, '..'),
+    const projectRoot = resolve(import.meta.dirname, '..')
+    const databasePath = resolveAcceptanceCliSelection({
+      args,
+      projectRoot,
+      configPath: resolve(projectRoot, '.acceptance-dev.local.json'),
     })
+
+    // Mandatory full readonly preflight after either selection route.
+    // No subject or Team may be fabricated by the CLI.
+    preflightAcceptanceSqlite({ databasePath, projectRoot })
     console.error('KAN-885: acceptance launcher is not yet enabled; ' + usage)
     process.exitCode = 2
   } catch (error) {
@@ -39,7 +38,4 @@ if (args.length === 1 && args[0] === '--help') {
     }
     process.exitCode = 2
   }
-} else {
-  console.error('KAN-885: invalid launcher arguments; ' + usage)
-  process.exitCode = 2
 }
