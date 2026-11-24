@@ -126,6 +126,23 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
     )
   }
 
+  // Charges must retain their original billing terms until explicit reconciliation.
+  const monthlyChargeForeignKeys = sqlite.pragma(
+    'foreign_key_list(monthly_charges)',
+  ) as Array<{ table: string; from: string; to: string; on_delete: string }>
+  const billingTermsForeignKey = monthlyChargeForeignKeys.find(
+    foreignKey => foreignKey.from === 'billing_terms_id',
+  )
+  if (
+    billingTermsForeignKey?.table !== 'athlete_billing_terms'
+    || billingTermsForeignKey.to !== 'id'
+    || billingTermsForeignKey.on_delete.toUpperCase() !== 'RESTRICT'
+  ) {
+    throw new Error(
+      'KAN-885: physical SQLite monthly_charges.billing_terms_id must reference athlete_billing_terms(id) ON DELETE RESTRICT',
+    )
+  }
+
   // The original recorder must remain nullable when the user is deleted.
   const recordedByForeignKey = performanceForeignKeys.find(
     foreignKey => foreignKey.from === 'recorded_by_user_id',
