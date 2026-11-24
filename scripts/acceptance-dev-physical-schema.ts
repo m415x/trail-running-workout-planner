@@ -112,4 +112,18 @@ export function assertAcceptancePhysicalSchema(sqlite: Database.Database): void 
       'KAN-885: physical SQLite field_performance_tests.reviewed_by_user_id must reference users(id) ON DELETE RESTRICT',
     )
   }
+
+  // The original recorder must remain nullable when the user is deleted.
+  const recordedByForeignKey = performanceForeignKeys.find(
+    foreignKey => foreignKey.from === 'recorded_by_user_id',
+  )
+  if (
+    recordedByForeignKey?.table !== 'users'
+    || recordedByForeignKey.to !== 'id'
+    || recordedByForeignKey.on_delete.toUpperCase() !== 'SET NULL'
+  ) {
+    throw new Error(
+      'KAN-885: physical SQLite field_performance_tests.recorded_by_user_id must reference users(id) ON DELETE SET NULL',
+    )
+  }
 }
