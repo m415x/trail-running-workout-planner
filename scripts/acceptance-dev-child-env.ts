@@ -1,6 +1,7 @@
 import { resolve } from 'node:path'
 import { createServer } from 'node:net'
 import { spawn } from 'node:child_process'
+import { EventEmitter } from 'node:events'
 
 export interface AcceptanceDevChildEnvInput {
   inheritedEnv: Readonly<Record<string, string | undefined>>
@@ -173,4 +174,50 @@ export function runAcceptanceDevChild(plan: AcceptanceDevNextLaunchPlan): Promis
       }
     })
   })
+}
+
+type AcceptanceDevTerminationSignal = 'SIGINT' | 'SIGTERM'
+
+export interface AcceptanceDevSignalForwardingInput {
+  signalSource: EventEmitter
+  child: EventEmitter & { kill(signal: AcceptanceDevTerminationSignal): boolean }
+}
+
+/**
+ * KAN-885/L6 (handler contract only): forward the first termination signal to
+ * this specific child and detach listeners when it exits or during cleanup.
+ *
+ * It does not establish process-tree cleanup on Windows/Git Bash. Do not wire
+ * into the launcher until descendant termination is separately accredited.
+ */
+export function registerAcceptanceDevSignalForwarding(
+  input: AcceptanceDevSignalForwardingInput,
+): () => void {
+  const { signalSource, child } = input
+  let forwarded = false
+  let disposed = false
+
+  const onSignal = (signal: AcceptanceDevTerminationSignal) => {
+    if (disposed || forwarded) {
+      return
+    }
+    forwarded = true
+    child.kill(signal)
+  }
+  const onSigint = () => onSignal('SIGINT')
+  const onSigterm = () => onSignal('SIGTERM')
+  const cleanup = () => {
+    if (disposed) {
+      return
+    }
+    disposed = true
+    signalSource.off('SIGINT', onSigint)
+    signalSource.off('SIGTERM', onSigterm)
+    child.off('close', cleanup)
+  }
+
+  signalSource.on('SIGINT', onSigint)
+  signalSource.on('SIGTERM', onSigterm)
+  child.once('close', cleanup)
+  return cleanup
 }
