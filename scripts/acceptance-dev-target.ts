@@ -125,3 +125,31 @@ export function resolveAcceptanceDatabaseSelection(
     throw new Error('KAN-885: saved SQLite selection is invalid or no longer accredited')
   }
 }
+
+export interface AcceptanceCliSelectionInput {
+  args: readonly string[]
+  projectRoot: string
+  configPath: string
+}
+
+/**
+ * Parses the narrow acceptance CLI selection syntax and resolves only an
+ * explicitly selected or previously saved accredited path. No writes.
+ */
+export function resolveAcceptanceCliSelection(input: AcceptanceCliSelectionInput): string {
+  const { args, projectRoot, configPath } = input
+
+  if (args.length === 0) {
+    return resolveAcceptanceDatabaseSelection({ projectRoot, configPath })
+  }
+
+  if (args.length === 2 && args[0] === '--db' && args[1]?.trim()) {
+    return resolveAcceptanceDatabaseSelection({
+      projectRoot,
+      configPath,
+      explicitDatabasePath: args[1],
+    })
+  }
+
+  throw new Error('KAN-885: invalid acceptance launcher arguments')
+}
