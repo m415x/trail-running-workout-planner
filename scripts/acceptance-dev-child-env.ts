@@ -314,6 +314,7 @@ export interface AcceptanceDevManagedChildInput {
   spawnChild: (plan: AcceptanceDevNextLaunchPlan) => EventEmitter & { pid?: number }
   terminateTree: (plan: AcceptanceDevWindowsTreeTerminationPlan) => Promise<void>
   launcherPid: number
+  terminationTimeoutMs?: number
 }
 
 /**
@@ -323,6 +324,11 @@ export interface AcceptanceDevManagedChildInput {
  * this helper is NOT wired to the CLI or a real taskkill invocation yet.
  */
 export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInput): Promise<number> {
+  const terminationTimeoutMs = input.terminationTimeoutMs ?? 5000
+  if (!Number.isSafeInteger(terminationTimeoutMs) || terminationTimeoutMs < 1 || terminationTimeoutMs > 60000) {
+    return Promise.reject(new Error('KAN-885: invalid managed child termination timeout'))
+  }
+
   return new Promise<number>((resolveExit, rejectExit) => {
     let child: ReturnType<AcceptanceDevManagedChildInput['spawnChild']>
     try {
@@ -345,7 +351,12 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
 
     let finished = false
     let terminating = false
+    let terminationTimer: ReturnType<typeof setTimeout> | undefined
     const cleanup = () => {
+      if (terminationTimer !== undefined) {
+        clearTimeout(terminationTimer)
+        terminationTimer = undefined
+      }
       input.signalSource.off('SIGINT', onSigint)
       input.signalSource.off('SIGTERM', onSigterm)
       child.off('close', onClose)
@@ -372,6 +383,9 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
     const onSignal = () => {
       if (finished || terminating) return
       terminating = true
+      terminationTimer = setTimeout(() => {
+        finish(new Error('KAN-885: managed child close timed out after termination'))
+      }, terminationTimeoutMs)
       let terminationPlan: AcceptanceDevWindowsTreeTerminationPlan
       try {
         terminationPlan = guard.planTermination()
