@@ -1,8 +1,8 @@
 import { resolve } from 'node:path'
-import { assertAccreditedAcceptanceDatabasePath } from '@/scripts/acceptance-dev-target'
+import { preflightAcceptanceSqlite } from '@/scripts/acceptance-dev-preflight'
 
 /**
- * KAN-885/T3: CLI argument and target-path guard only.
+ * KAN-885/T3: CLI argument, accredited target and read-only SQLite preflight.
  *
  * The launcher remains deliberately disabled after path accreditation until
  * config, runtime actor, child environment and lifecycle checks are complete.
@@ -20,7 +20,9 @@ if (args.length === 1 && args[0] === '--help') {
   process.exitCode = 2
 } else if (args.length === 2 && args[0] === '--db' && args[1]?.trim()) {
   try {
-    assertAccreditedAcceptanceDatabasePath({
+    // A missing authenticated actor must fail closed at the H1 boundary.
+    // The CLI cannot invent a Supabase subject or Team membership.
+    preflightAcceptanceSqlite({
       databasePath: args[1],
       projectRoot: resolve(import.meta.dirname, '..'),
     })
