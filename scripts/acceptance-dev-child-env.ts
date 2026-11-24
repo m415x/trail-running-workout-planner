@@ -375,7 +375,13 @@ export function runAcceptanceDevManagedChild(input: AcceptanceDevManagedChildInp
       else resolveExit(code ?? 0)
     }
     const onClose = (code: number | null, signal: string | null) => {
-      if (code !== null) {
+      // A cancellation is a terminal failure regardless of the child's exit
+      // code: even close(0) must never override SIGINT/SIGTERM or its tree-kill
+      // request. This also prevents a pending failed termination from being
+      // misreported as a clean launcher exit.
+      if (terminating) {
+        finish(new Error('KAN-885: managed child terminated after interruption signal'))
+      } else if (code !== null) {
         finish(null, code)
       } else {
         finish(new Error(signal
