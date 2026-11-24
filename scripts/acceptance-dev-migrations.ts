@@ -27,7 +27,7 @@ export function assertCanonicalAcceptanceMigrationHistory(
     throw new Error('KAN-885: canonical SQLite migration journal is empty or missing')
   }
 
-  const expected = new Map<number, string>()
+  const expected = new Map<number, readonly string[]>()
   for (const [index, entry] of entries.entries()) {
     if (
       !entry
@@ -41,7 +41,13 @@ export function assertCanonicalAcceptanceMigrationHistory(
     }
 
     const sql = readFileSync(resolve(migrationsDirectory, entry.tag + '.sql'), 'utf8')
-    expected.set(entry.when, createHash('sha256').update(sql).digest('hex'))
+    const rawHash = createHash('sha256').update(sql).digest('hex')
+    // Match the existing upgrade-sqlite.ts 0016-only CRLF compatibility rule.
+    // No other migration accepts normalized or alternative digests.
+    const allowedHashes = entry.tag === '0016_athlete_profile_identity'
+      ? [rawHash, createHash('sha256').update(sql.replace(/\r\n/g, '\n')).digest('hex')]
+      : [rawHash]
+    expected.set(entry.when, allowedHashes)
   }
 
   if (input.appliedRows.length !== expected.size) {
@@ -54,8 +60,8 @@ export function assertCanonicalAcceptanceMigrationHistory(
       throw new Error('KAN-885: duplicate or invalid applied migration metadata')
     }
     seen.add(row.created_at)
-    const canonicalHash = expected.get(row.created_at)
-    if (!canonicalHash || row.hash !== canonicalHash) {
+    const allowedHashes = expected.get(row.created_at)
+    if (!allowedHashes || !allowedHashes.includes(row.hash)) {
       throw new Error('KAN-885: applied migration hash mismatch or unknown migration')
     }
   }
