@@ -31,7 +31,7 @@ test('KAN-885/T3 L6 --run fails closed on existing evidence without overwriting 
     assert.match(result.stderr, /KAN-885.*(?:existing|exists|exclusive|occupied)/i)
     assert.equal(readFileSync(statePath, 'utf8'), original)
     assert.equal(result.stdout, '')
-    assert.doesNotMatch(result.stderr, /existing\\.json|preserve-existing-evidence/)
+    assert.doesNotMatch(result.stderr, /existing\.json|preserve-existing-evidence/)
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
@@ -51,7 +51,7 @@ test('KAN-885/T3 L6 --run validates exact invocation before creating a disposabl
       assert.equal(result.status, 2, result.stderr || result.error?.message || 'unexpected status')
       assert.match(result.stderr, /KAN-885.*(?:invalid|arguments)/i)
       assert.equal(result.stdout, '')
-      assert.doesNotMatch(result.stderr, /never-created\\.json/)
+      assert.doesNotMatch(result.stderr, /never-created\.json/)
     }
     assert.throws(() => readFileSync(statePath), { code: 'ENOENT' })
   } finally {
