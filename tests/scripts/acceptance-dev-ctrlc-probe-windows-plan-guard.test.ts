@@ -57,7 +57,9 @@ test('KAN-885/T3 L6 rejects forged worker launch plans before spawning or instal
         launcherPid: 58301,
         spawnProcess: () => {
           spawned = true
-          return Object.assign(new EventEmitter(), { pid: 58302 })
+          // Fail synchronously instead of returning a mock child that never
+          // closes: the previous RED fixture could hang indefinitely.
+          throw new Error('KAN-885: forbidden worker spawn reached')
         },
       }),
       /KAN-885/i,
