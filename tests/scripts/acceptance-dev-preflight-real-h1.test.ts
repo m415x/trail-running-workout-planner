@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, realpathSync } from 'node:fs'
 import { resolve } from 'node:path'
 import test from 'node:test'
 
@@ -45,7 +45,7 @@ test('KAN-885/T2 real disposable SQLite refuses missing H1 actor without provisi
     assert.equal(preflightAcceptanceSqlite({
       databasePath: workspace.sqlitePath,
       projectRoot,
-    }), workspace.sqlitePath)
+    }), realpathSync(workspace.sqlitePath))
     assert.deepEqual(readFileSync(workspace.sqlitePath), before)
 
     // The existing actor-specific check remains fail-closed when an actual
