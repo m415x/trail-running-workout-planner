@@ -14,6 +14,7 @@ import {
   isAcceptanceDevCtrlcProbePortAvailable,
 } from '@/scripts/acceptance-dev-windows-ctrlc-probe-os'
 import * as probe from '@/scripts/acceptance-dev-windows-ctrlc-probe-run'
+import type { AcceptanceDevCtrlcProbeWindowsRealWorkerInput } from '@/scripts/acceptance-dev-windows-ctrlc-probe-run'
 
 const root = resolve(import.meta.dirname, '../..')
 const nonce = 'adf8188a8e81f031b5f87e12ad1b0c32'
@@ -52,11 +53,7 @@ test('KAN-885/T3 L6 real Windows worker releases its exact PID and port after ow
     const candidate = (probe as unknown as Record<string, unknown>)
       .runAcceptanceDevCtrlcProbeWindowsRealWorker
     assert.equal(typeof candidate, 'function', 'real owned Windows worker adapter must exist')
-    const start = candidate as (input: {
-      plan: typeof workerPlan
-      signalSource: EventEmitter
-      spawnProcess: typeof spawn
-    }) => Promise<number>
+    const start = candidate as (input: AcceptanceDevCtrlcProbeWindowsRealWorkerInput) => Promise<number>
 
     run = start({
       plan: workerPlan,
