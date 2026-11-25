@@ -52,3 +52,48 @@ export function parseAcceptanceDevCtrlcProbeState(raw: string): AcceptanceDevCtr
     nonce: nonce as string,
   }
 }
+
+export interface AcceptanceDevCtrlcProbeVerificationInput {
+  raw: string
+  expectedNonce: string
+  isPidAlive: (pid: number) => boolean | Promise<boolean>
+  isPortAvailable: (port: number) => boolean | Promise<boolean>
+}
+
+/**
+ * KAN-885/T3 L6: read-only post-interruption verification. Match the run
+ * nonce before any injected OS inspection. No process termination or writes.
+ *
+ * A matching nonce and absent PIDs still require trusted provenance of the
+ * record and independent Windows acceptance before claiming real Ctrl+C.
+ */
+export async function verifyAcceptanceDevCtrlcProbeState(
+  input: AcceptanceDevCtrlcProbeVerificationInput,
+): Promise<void> {
+  const state = parseAcceptanceDevCtrlcProbeState(input.raw)
+  if (
+    typeof input.expectedNonce !== 'string'
+    || !/^[a-f0-9]{32}$/.test(input.expectedNonce)
+    || state.nonce !== input.expectedNonce
+  ) {
+    throw new Error('KAN-885: Ctrl+C diagnostic run nonce mismatch')
+  }
+
+  try {
+    const parentAlive = await input.isPidAlive(state.parentPid)
+    if (typeof parentAlive !== 'boolean' || parentAlive) {
+      throw new Error('KAN-885: Ctrl+C diagnostic parent process is not confirmed absent')
+    }
+    const childAlive = await input.isPidAlive(state.childPid)
+    if (typeof childAlive !== 'boolean' || childAlive) {
+      throw new Error('KAN-885: Ctrl+C diagnostic descendant process is not confirmed absent')
+    }
+    const available = await input.isPortAvailable(state.port)
+    if (available !== true) {
+      throw new Error('KAN-885: Ctrl+C diagnostic loopback port is not confirmed released')
+    }
+  } catch {
+    // Never expose OS/probe exception details, including user file paths.
+    throw new Error('KAN-885: Ctrl+C diagnostic process or port verification failed')
+  }
+}
