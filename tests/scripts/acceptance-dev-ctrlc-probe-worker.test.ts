@@ -31,6 +31,21 @@ async function until<T>(read: () => Promise<T | undefined>, durationMs = 5000): 
   throw new Error('KAN-885: disposable worker did not become ready')
 }
 
+async function awaitExit(child: ChildProcessWithoutNullStreams): Promise<number | null> {
+  if (child.exitCode !== null || child.signalCode !== null) return child.exitCode
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      child.off('exit', onExit)
+      reject(new Error('KAN-885: disposable worker exit timed out'))
+    }, 5000)
+    const onExit = (code: number | null) => {
+      clearTimeout(timeout)
+      resolve(code)
+    }
+    child.once('exit', onExit)
+  })
+}
+
 async function canConnect(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const socket = connect({ host: '127.0.0.1', port })
@@ -59,10 +74,7 @@ test('KAN-885/T3 L6 isolated worker records own PID and binds only disposable lo
     assert.equal(await canConnect(record.port), true)
   } finally {
     if (child.exitCode === null && child.pid) child.kill('SIGTERM')
-    await Promise.race([
-      new Promise<void>(resolve => child.once('exit', () => resolve())),
-      new Promise<void>((_, reject) => setTimeout(() => reject(new Error('KAN-885: worker cleanup timed out')), 5000)),
-    ]).catch(error => { if (child.exitCode === null && child.pid) child.kill(); throw error })
+    await awaitExit(child)
     await rm(dir, { recursive: true, force: true })
   }
 })
@@ -72,10 +84,7 @@ test('KAN-885/T3 L6 worker rejects malformed invocation without writing a record
   const path = join(dir, 'not-created.json')
   const child = start(['--state', path, '--nonce', 'bad'])
   try {
-    const code = await Promise.race([
-      new Promise<number | null>(resolve => child.once('exit', code => resolve(code))),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('KAN-885: invalid worker args hung')), 5000)),
-    ])
+    const code = await awaitExit(child)
     assert.equal(code, 2)
     await assert.rejects(readFile(path, 'utf8'), { code: 'ENOENT' })
   } finally {
