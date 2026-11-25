@@ -111,3 +111,31 @@ export async function runAcceptanceDevCtrlcProbeWindowsManagedWorker(
     terminationTimeoutMs: input.terminationTimeoutMs,
   })
 }
+
+export interface AcceptanceDevCtrlcProbeWindowsRealWorkerInput {
+  plan: AcceptanceDevCtrlcProbeRunPlan
+  signalSource: EventEmitter
+  spawnProcess: AcceptanceDevCtrlcProbeWindowsManagedWorkerInput['spawnProcess']
+  terminationTimeoutMs?: number
+}
+
+/**
+ * KAN-885/T3 L6: real-child test boundary; uses the actual calling process
+ * as the launcher PID and the provided spawn adapter's returned ChildProcess
+ * for worker ownership. Delegates plan authorization and Windows cleanup
+ * unchanged. This does not wire or enable the interactive --run CLI.
+ */
+export function runAcceptanceDevCtrlcProbeWindowsRealWorker(
+  input: AcceptanceDevCtrlcProbeWindowsRealWorkerInput,
+): Promise<number> {
+  if (process.platform !== 'win32') {
+    return Promise.reject(new Error('KAN-885: Windows diagnostic requires win32'))
+  }
+  return runAcceptanceDevCtrlcProbeWindowsManagedWorker({
+    plan: input.plan,
+    signalSource: input.signalSource,
+    launcherPid: process.pid,
+    spawnProcess: input.spawnProcess,
+    terminationTimeoutMs: input.terminationTimeoutMs,
+  })
+}
