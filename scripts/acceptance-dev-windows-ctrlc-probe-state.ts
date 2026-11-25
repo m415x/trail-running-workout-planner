@@ -1,3 +1,6 @@
+import { open } from 'node:fs/promises'
+import { isAbsolute } from 'node:path'
+
 /**
  * KAN-885/T3 L6: validate the untrusted serialized record of a standalone
  * disposable Ctrl+C probe. No filesystem, network or process operations.
@@ -95,5 +98,48 @@ export async function verifyAcceptanceDevCtrlcProbeState(
   } catch {
     // Never expose OS/probe exception details, including user file paths.
     throw new Error('KAN-885: Ctrl+C diagnostic process or port verification failed')
+  }
+}
+
+export interface AcceptanceDevCtrlcProbeWriteInput {
+  statePath: string
+  state: AcceptanceDevCtrlcProbeState
+}
+
+/**
+ * KAN-885/T3 L6: write an accredited diagnostic record to a new file only.
+ * The parent directory must already exist; this function never overwrites an
+ * existing file or provisions any directory, process, port or SQLite state.
+ */
+export async function writeAcceptanceDevCtrlcProbeState(
+  input: AcceptanceDevCtrlcProbeWriteInput,
+): Promise<void> {
+  if (typeof input.statePath !== 'string' || !isAbsolute(input.statePath)) {
+    throw new Error('KAN-885: Ctrl+C diagnostic state path must be absolute')
+  }
+
+  let serialized: string
+  try {
+    serialized = JSON.stringify(input.state)
+    parseAcceptanceDevCtrlcProbeState(serialized)
+  } catch {
+    throw new Error('KAN-885: invalid Ctrl+C diagnostic state for writing')
+  }
+  if (Buffer.byteLength(serialized, 'utf8') > 4096) {
+    throw new Error('KAN-885: Ctrl+C diagnostic state exceeds size limit')
+  }
+
+  try {
+    // wx is exclusive (O_EXCL|O_CREAT): pre-existing files and symlinks are
+    // rejected atomically. Restrict POSIX mode; Windows ACLs need separate
+    // accreditation before trusting records as authoritative.
+    const handle = await open(input.statePath, 'wx', 0o600)
+    try {
+      await handle.writeFile(serialized, { encoding: 'utf8' })
+    } finally {
+      await handle.close()
+    }
+  } catch {
+    throw new Error('KAN-885: unable to create exclusive Ctrl+C diagnostic state')
   }
 }
