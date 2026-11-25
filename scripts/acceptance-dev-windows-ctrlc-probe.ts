@@ -81,11 +81,36 @@ async function main(): Promise<void> {
     }
     return
   }
-  if (args.length === 1 && args[0] === '--run') {
-    console.error('KAN-885: diagnostic mode is not enabled; explicit run accreditation is pending')
-  } else {
-    console.error('KAN-885: explicit diagnostic mode required; usage: --help | --run | --verify --state <absolute-path> --nonce <hex32>')
+  if (args[0] === '--run') {
+    if (
+      args.length !== 5
+      || args[1] !== '--state'
+      || args[3] !== '--nonce'
+      || !isAbsolute(args[2])
+      || !/^[a-f0-9]{32}$/.test(args[4])
+    ) {
+      console.error('KAN-885: invalid disposable Ctrl+C run arguments')
+      process.exitCode = 2
+      return
+    }
+
+    // Preflight only. No process is created, and the destination is not
+    // reserved or written until a separate positive --run contract passes.
+    try {
+      await lstat(args[2])
+      console.error('KAN-885: existing Ctrl+C diagnostic state cannot be overwritten')
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+        console.error('KAN-885: disposable Ctrl+C run is not enabled yet')
+      } else {
+        console.error('KAN-885: unable to inspect Ctrl+C diagnostic state')
+      }
+    }
+    process.exitCode = 2
+    return
   }
+
+  console.error('KAN-885: invalid diagnostic arguments; usage: --help | --run --state <absolute-path> --nonce <hex32> | --verify --state <absolute-path> --nonce <hex32>')
   process.exitCode = 2
 }
 
