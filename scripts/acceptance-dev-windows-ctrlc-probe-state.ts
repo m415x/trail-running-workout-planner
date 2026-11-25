@@ -1,5 +1,5 @@
 import { open } from 'node:fs/promises'
-import { isAbsolute } from 'node:path'
+import { isAbsolute, join, relative } from 'node:path'
 
 /**
  * KAN-885/T3 L6: validate the untrusted serialized record of a standalone
@@ -141,5 +141,70 @@ export async function writeAcceptanceDevCtrlcProbeState(
     }
   } catch {
     throw new Error('KAN-885: unable to create exclusive Ctrl+C diagnostic state')
+  }
+}
+
+export interface AcceptanceDevCtrlcProbeRunPlanInput {
+  projectRoot: string
+  statePath: string
+  nonce: string
+  inheritedEnv: NodeJS.ProcessEnv
+}
+
+export interface AcceptanceDevCtrlcProbeRunPlan {
+  command: string
+  args: string[]
+  cwd: string
+  env: NodeJS.ProcessEnv
+}
+
+/**
+ * KAN-885/T3 L6: pure, shell-free launch description for a test-only worker.
+ * Does not start the worker, access files or enable the CLI --run command.
+ */
+export function buildAcceptanceDevCtrlcProbeRunPlan(
+  input: AcceptanceDevCtrlcProbeRunPlanInput,
+): AcceptanceDevCtrlcProbeRunPlan {
+  if (
+    typeof input.projectRoot !== 'string' || !isAbsolute(input.projectRoot)
+    || typeof input.statePath !== 'string' || !isAbsolute(input.statePath)
+    || typeof input.nonce !== 'string' || !/^[a-f0-9]{32}$/.test(input.nonce)
+  ) {
+    throw new Error('KAN-885: invalid disposable Ctrl+C probe launch arguments')
+  }
+
+  // The state must live beneath, not at or outside, the project root.
+  const stateRelative = relative(input.projectRoot, input.statePath)
+  if (
+    stateRelative.length === 0
+    || stateRelative === '..'
+    || stateRelative.startsWith('..\\')
+    || stateRelative.startsWith('../')
+    || isAbsolute(stateRelative)
+  ) {
+    throw new Error('KAN-885: disposable Ctrl+C state must be a project-local file')
+  }
+
+  const env: NodeJS.ProcessEnv = { NODE_ENV: 'test' }
+  // Permit only the OS-level variables needed to launch Node on Windows.
+  // Never spread the inherited environment into the worker.
+  for (const key of ['PATH', 'Path', 'SystemRoot', 'WINDIR', 'PATHEXT', 'TEMP', 'TMP']) {
+    const value = input.inheritedEnv[key]
+    if (typeof value === 'string') env[key] = value
+  }
+
+  return {
+    command: process.execPath,
+    args: [
+      '--import',
+      'tsx',
+      join(input.projectRoot, 'scripts', 'acceptance-dev-windows-ctrlc-probe-worker.ts'),
+      '--state',
+      input.statePath,
+      '--nonce',
+      input.nonce,
+    ],
+    cwd: input.projectRoot,
+    env,
   }
 }
