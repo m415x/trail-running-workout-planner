@@ -47,12 +47,6 @@ async function main(): Promise<void> {
       configPath,
     })
 
-    // Windows/Git Bash is the accredited managed termination target. Refuse
-    // unsupported platforms before saving any selected fixture.
-    if (process.platform !== 'win32') {
-      throw new Error('KAN-885: managed acceptance launcher currently requires Windows')
-    }
-
     // Full structural/integrity preflight on EVERY invocation. Do not demand
     // subject/teamId at launch: SSR authenticates inside the real application.
     const accredited = preflightAcceptanceSqlite({ databasePath, projectRoot })
@@ -63,6 +57,12 @@ async function main(): Promise<void> {
       port,
     })
     await assertAcceptanceDevPortAvailable(port)
+
+    // Preserve platform-independent negative preflight behavior (including
+    // Linux CI); refuse unsupported process management before saving config.
+    if (process.platform !== 'win32') {
+      throw new Error('KAN-885: managed acceptance launcher currently requires Windows')
+    }
 
     // Saved selection is a non-sensitive locator only. Write it after all
     // preflight checks, never on failed or unaccredited --db attempts.
