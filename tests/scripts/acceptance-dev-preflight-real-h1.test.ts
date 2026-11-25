@@ -40,6 +40,16 @@ test('KAN-885/T2 real disposable SQLite refuses missing H1 actor without provisi
     }
 
     const before = readFileSync(workspace.sqlitePath)
+    // Launcher startup accredits structure only: the operator does not yet
+    // have an authenticated H2 session, nor may it manufacture one.
+    assert.equal(preflightAcceptanceSqlite({
+      databasePath: workspace.sqlitePath,
+      projectRoot,
+    }), workspace.sqlitePath)
+    assert.deepEqual(readFileSync(workspace.sqlitePath), before)
+
+    // The existing actor-specific check remains fail-closed when an actual
+    // authenticated caller explicitly requests H1 membership validation.
     const input = {
       databasePath: workspace.sqlitePath,
       projectRoot,
