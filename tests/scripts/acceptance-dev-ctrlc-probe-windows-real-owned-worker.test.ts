@@ -67,6 +67,8 @@ test('KAN-885/T3 L6 real Windows worker releases its exact PID and port after ow
         return child
       },
     })
+    // Avoid an unhandled rejection if startup fails before the record exists.
+    void run.catch(() => {})
     const record = await waitFor(async () => {
       try { return parseAcceptanceDevCtrlcProbeState(await readFile(statePath, 'utf8')) }
       catch { return undefined }
