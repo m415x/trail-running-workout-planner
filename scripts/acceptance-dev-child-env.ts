@@ -523,7 +523,7 @@ export interface AcceptanceDevWindowsManagedSpawnOptions {
   cwd?: string
   env?: NodeJS.ProcessEnv
   shell: false
-  stdio: 'ignore'
+  stdio: 'ignore' | 'inherit'
   windowsHide: true
 }
 
@@ -537,6 +537,7 @@ export interface AcceptanceDevWindowsManagedChildInput {
     options: AcceptanceDevWindowsManagedSpawnOptions,
   ) => EventEmitter & { pid?: number }
   terminationTimeoutMs?: number
+  stdio?: 'ignore' | 'inherit'
 }
 
 /**
@@ -559,7 +560,7 @@ export function runAcceptanceDevWindowsManagedChild(
       cwd: plan.cwd,
       env: plan.env,
       shell: false,
-      stdio: 'ignore',
+      stdio: input.stdio ?? 'ignore',
       windowsHide: true,
     }),
     terminateTree: plan => executeAcceptanceDevWindowsTreeTermination({
@@ -574,6 +575,7 @@ export interface AcceptanceDevWindowsOwnedProcessInput {
   plan: AcceptanceDevNextLaunchPlan
   signalSource: EventEmitter
   terminationTimeoutMs?: number
+  stdio?: 'ignore' | 'inherit'
 }
 
 /**
@@ -590,6 +592,7 @@ export function runAcceptanceDevWindowsOwnedProcess(
     launcherPid: process.pid,
     spawnProcess: (command, args, options) => spawn(command, args, options),
     terminationTimeoutMs: input.terminationTimeoutMs,
+    stdio: input.stdio,
   })
 }
 
@@ -611,5 +614,6 @@ export function runAcceptanceDevWindowsTerminalProcess(
     plan: input.plan,
     signalSource: process,
     terminationTimeoutMs: input.terminationTimeoutMs,
+    stdio: 'inherit',
   })
 }
