@@ -1,4 +1,5 @@
 import type { EventEmitter } from 'node:events'
+import { isDeepStrictEqual } from 'node:util'
 
 import {
   runAcceptanceDevWindowsManagedChild,
@@ -70,11 +71,40 @@ export interface AcceptanceDevCtrlcProbeWindowsManagedWorkerInput {
  *
  * This adapter does not spawn itself or enable the interactive --run CLI.
  */
-export function runAcceptanceDevCtrlcProbeWindowsManagedWorker(
+export async function runAcceptanceDevCtrlcProbeWindowsManagedWorker(
   input: AcceptanceDevCtrlcProbeWindowsManagedWorkerInput,
 ): Promise<number> {
+  // A caller-provided plan must not become an arbitrary process execution
+  // capability. Reconstruct the canonical Node worker command, arguments,
+  // state path and allowlisted environment before installing signal handlers
+  // or touching the injected spawn boundary.
+  const candidate = input.plan
+  let canonical: AcceptanceDevCtrlcProbeRunPlan
+  try {
+    if (
+      !candidate
+      || !Array.isArray(candidate.args)
+      || candidate.args.length !== 7
+      || !candidate.env
+      || typeof candidate.env !== 'object'
+    ) {
+      throw new Error('Invalid worker plan')
+    }
+    canonical = buildAcceptanceDevCtrlcProbeRunPlan({
+      projectRoot: candidate.cwd,
+      statePath: candidate.args[4],
+      nonce: candidate.args[6],
+      inheritedEnv: candidate.env,
+    })
+    if (!isDeepStrictEqual(candidate, canonical)) {
+      throw new Error('Noncanonical worker plan')
+    }
+  } catch {
+    throw new Error('KAN-885: unauthorized disposable worker launch plan')
+  }
+
   return runAcceptanceDevWindowsManagedChild({
-    plan: input.plan,
+    plan: canonical,
     signalSource: input.signalSource,
     launcherPid: input.launcherPid,
     spawnProcess: input.spawnProcess,
