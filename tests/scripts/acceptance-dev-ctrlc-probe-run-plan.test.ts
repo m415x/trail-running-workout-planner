@@ -64,7 +64,7 @@ test('KAN-885/T3 L6 rejects nonabsolute paths and malformed nonce before worker 
     projectRoot,
     statePath,
     nonce,
-    inheritedEnv: { NODE_ENV: 'test', PATH: process.env.PATH },
+    inheritedEnv: { NODE_ENV: 'test' as const, PATH: process.env.PATH },
   }
   for (const changes of [
     { statePath: 'relative.json' },
