@@ -38,7 +38,7 @@ test('KAN-885/T3 plans a Next dev launch bound to loopback in the current checko
   assert.equal(plan.cwd, projectRoot)
   assert.deepEqual(plan.args, [
     resolve(projectRoot, 'node_modules/next/dist/bin/next'),
-    'dev', '--hostname', '127.0.0.1', '--port', '4173',
+    'dev', '--hostname', 'localhost', '--port', '4173',
   ])
   assert.equal(plan.env.SQLITE_DATABASE_PATH, databasePath)
   assert.equal(plan.env.SQLITE_SCENARIO_MODE, '1')
