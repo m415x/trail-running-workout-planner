@@ -78,6 +78,8 @@ export interface AcceptanceDevNextLaunchPlan {
 
 /**
  * Pure Next.js launch plan for the current checkout, restricted to loopback.
+ * Use localhost (not explicit 127.0.0.1) to keep next-intl rewrites
+ * same-origin under Next 16; an explicit numeric bind causes a 307 self-loop.
  * Caller must complete accredited SQLite and legitimate H2/H1 preflight before
  * using this plan to spawn a process. No ports are inspected or bound here.
  */
@@ -97,7 +99,7 @@ export function buildAcceptanceDevNextLaunchPlan(
       resolve(cwd, 'node_modules/next/dist/bin/next'),
       'dev',
       '--hostname',
-      '127.0.0.1',
+      'localhost',
       '--port',
       String(port),
     ],
