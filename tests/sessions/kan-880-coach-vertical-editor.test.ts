@@ -27,8 +27,7 @@ const block: VerticalBlockV1 = {
 const previous: Previous = { primaryObjective: 'elevation_gain', verticalBlockJson: JSON.stringify(block), elevationGain: 2550 }
 
 function fields(result: Submission) {
-  assert.equal(result.ok, true)
-  if (!result.ok) throw new Error(result.error)
+  if (!result.ok) assert.fail('Expected successful vertical submission: ' + result.error)
   return result.fields
 }
 
