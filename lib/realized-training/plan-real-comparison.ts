@@ -74,11 +74,23 @@ function notEvaluatedMetric(
   }
 }
 
+function validOperand(name: TrainingComparisonMetricName, operand: PlanRealMetricOperand): PlanRealMetricOperand {
+  if (operand.state === 'unknown') return operand
+  const expected = name === 'distanceKm' ? 'km' : name === 'durationMin' ? 'min' : name === 'elevationGainM' ? 'm' : null
+  if ((typeof operand.value === 'number' && (!Number.isFinite(operand.value) || operand.value < 0))
+    || (expected !== null && typeof operand.value !== 'number')) {
+    return { state: 'unknown', reason: 'invalid_value', unit: operand.unit }
+  }
+  return operand
+}
+
 function compareMetric(
   name: TrainingComparisonMetricName,
   planned: PlanRealMetricOperand,
   realized: PlanRealMetricOperand,
 ): PlanRealMetricComparison {
+  planned = validOperand(name, planned)
+  realized = validOperand(name, realized)
   if (planned.state === 'unknown') {
     return notEvaluatedMetric(name, planned, realized, planned.reason)
   }
@@ -127,7 +139,7 @@ function unavailableMetrics(
   reason: 'not_observed' | 'no_authoritative_session_link' | 'known_not_completed',
 ): readonly PlanRealMetricComparison[] {
   return (Object.keys(planned) as TrainingComparisonMetricName[]).map(name => {
-    const operand = planned[name]
+    const operand = validOperand(name, planned[name])
     return notEvaluatedMetric(
       name,
       operand,
@@ -177,7 +189,7 @@ export function comparePlannedSession(
       sessionId: planned.sessionId,
       sessionTitle: planned.sessionTitle,
       planning: planned.planning,
-      realized: realizedContext(record),
+      realized: null,
       metrics: unavailableMetrics(planned.metrics, 'no_authoritative_session_link'),
       limitations: ['invalid_or_cross_scope_session_link'],
     }

@@ -23,6 +23,7 @@ async function load(): Promise<Reader> {
 }
 
 const sqlite = db.$client
+assert.equal(sqlite.name, ':memory:', 'KAN-883 requires an isolated in-memory SQLite test database')
 const tables = ['athlete_profiles','athlete_groups','group_training_plans','macrocycles','mesocycles','microcycles','sessions','group_session_prescriptions','athlete_session_adjustments','athlete_session_adjustment_revisions','workout_logs','workout_log_evidence']
 const common = 'id TEXT PRIMARY KEY, is_deleted INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT \'now\', updated_at TEXT NOT NULL DEFAULT \'now\''
 const block = JSON.stringify({ schemaVersion: 1, direction: 'ascent', repetitions: 3, coverage: 'complete', elevationGainPerRep: { meters: 850, provenance: { kind: 'coach_manual' } }, elevationLossPerRep: { meters: null, provenance: { kind: 'unknown' } } })
@@ -57,6 +58,7 @@ function fixture() {
   const a=sqlite.prepare('INSERT INTO athlete_session_adjustments(id,team_id,athlete_id,source_prescription_id) VALUES (?,?,?,?)')
   a.run('av','team-a','a','pv'); a.run('ab','team-a','a','pb'); a.run('am','team-a','a','pm'); a.run('ao','team-a','a','po'); a.run('ax','team-a','other','pv')
   setRevision('av',1800); setRevision('ab',100); setRevision('am',900,{kind:'rescheduled',date:'2026-11-24'}); setRevision('ao',1000,{kind:'omitted'}); setRevision('ax',555)
+  sqlite.exec("INSERT INTO athlete_session_adjustment_revisions(id,adjustment_id,state,payload,reason,is_current) SELECT 'old-av',adjustment_id,state,payload,reason,0 FROM athlete_session_adjustment_revisions WHERE id='r-av'")
   const log=sqlite.prepare("INSERT INTO workout_logs(id,athlete_id,session_id,date,status,distance_km,duration_min,elevation_gain,logged_at) VALUES (?,?,?,?,?,?,?,?, 'now')")
   log.run('log-a','a','s','2026-11-25','partial',10,100,2000)
   log.run('log-m','a','moved','2026-11-24','completed',12,120,900)
@@ -149,7 +151,11 @@ test('KAN-883 authority conflicts, duplicate revisions, and unavailable planning
   assert.ok(result.planningLimitations.some(x=>x.status==='conflict'))
   assert.doesNotMatch(JSON.stringify(result),/log-a|private-log-a/)
   const before=snapshot()
-  const denied=await reader({athleteId:'a',teamId:'team-a',window,resolvePlanning:async()=>null})
+  sqlite.pragma('query_only = ON')
+  let denied: Awaited<ReturnType<Reader>>
+  try {
+    denied=await reader({athleteId:'a',teamId:'team-a',window,resolvePlanning:async()=>null})
+  } finally { sqlite.pragma('query_only = OFF') }
   assert.equal(denied.success,false)
   assert.equal(denied.data,null)
   assert.deepEqual(snapshot(),before)

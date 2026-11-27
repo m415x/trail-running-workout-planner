@@ -134,6 +134,9 @@ export type PlanRealPlanningResolutionLimitation =
         | 'overlapping-cohorts'
         | 'invalid-cohort-membership'
         | 'multiple-base-plans'
+        | 'multiple-prescriptions-for-applicable-plan'
+        | 'invalid-prescription-lineage'
+        | 'invalid-athlete-adjustment'
       readonly conflictingIds: readonly string[]
     }
 
