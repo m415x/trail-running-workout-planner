@@ -11,6 +11,7 @@ import {
 } from '@/app/actions/session-actions'
 import { GenerationExplanationView } from '@/features/planning/components/GenerationExplanationView'
 import { AthleteSessionAdjustmentReview } from '@/features/sessions/components/AthleteSessionAdjustmentReview'
+import { VerticalPrescriptionSummary } from '@/features/sessions/components/VerticalPrescriptionSummary'
 import { Badge } from '@ui/badge'
 import { buttonVariants } from '@ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@ui/card'
@@ -24,7 +25,7 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
   const session = await getSessionById(sessionId)
   const generationExplanationReview = await getSessionGenerationExplanationReview(sessionId)
   const athleteAdjustmentReview = await getSessionAthleteAdjustmentReview(sessionId)
-  const { workouts } = await getSessionFormOptions(session?.workoutId ?? null)
+  const { workouts, groups } = await getSessionFormOptions(session?.workoutId ?? null)
   const t = await getTranslations('Sessions')
   const workoutTypeT = await getTranslations('Workouts')
 
@@ -82,6 +83,26 @@ export default async function SessionDetailPage({ params }: SessionDetailPagePro
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('form.prescriptions.vertical.summaryTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent className='space-y-3'>
+          {session.sessionPrescriptions.length === 0 && <p className='text-sm text-muted-foreground'>{t('form.prescriptions.vertical.noPrescriptions')}</p>}
+          {session.sessionPrescriptions.map(prescription => {
+            const group = groups.find(item => item.id === prescription.groupId)
+            const microcycle = group?.microcycles.find(item => item.id === prescription.microcycleId)
+            return (
+              <section key={prescription.id} className='min-w-0 space-y-2 rounded-md border p-3'>
+                <h3 className='break-words text-sm font-medium'>{t('form.prescriptions.group')} {group?.code ?? prescription.groupId}</h3>
+                <p className='break-words text-xs text-muted-foreground'>{microcycle ? t('form.prescriptions.microcycleOption', { plan: microcycle.planTitle, week: microcycle.weekNumber, start: microcycle.startDate, end: microcycle.endDate }) : prescription.microcycleId}</p>
+                <VerticalPrescriptionSummary primaryObjective={prescription.primaryObjective} elevationGain={prescription.elevationGain} verticalBlock={prescription.verticalBlock} />
+              </section>
+            )
+          })}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

@@ -11,6 +11,9 @@ import { formatPersistedRegionalDecimal } from '@/lib/numeric/regional-persisted
 import { WORKOUT_TYPES, type WorkoutTemplateSnapshot, type WorkoutType } from '@/types'
 import { Button, buttonVariants } from '@ui/button'
 import { Input } from '@ui/input'
+import { VerticalPrescriptionEditor } from './VerticalPrescriptionEditor'
+import { hasVerticalDecision, prepareVerticalPrescriptionSubmission, resolveVerticalTemplateElevation, type PreviousVerticalPrescription, type VerticalPrescriptionDraft } from '@/lib/sessions/vertical-prescription-editor'
+import type { VerticalPrimaryObjective } from '@/lib/sessions/vertical-prescription'
 
 interface SessionFormProps {
   locale: string
@@ -42,6 +45,8 @@ interface SessionFormProps {
       distanceKm: number | null
       durationMin: number | null
       elevationGain: number | null
+      primaryObjective?: VerticalPrimaryObjective | null
+      verticalBlockJson?: string | null
       intensityMethod: 'hr_zone' | 'reference_percentage' | null
       zone: string | null
       referencePercentage: number | null
@@ -90,6 +95,8 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   const [selectedMicrocycleIds, setSelectedMicrocycleIds] = useState<string[]>(() =>
     session ? session.sessionPrescriptions.map((item) => item.microcycleId) : [],
   )
+  const [verticalDrafts, setVerticalDrafts] = useState<Record<string, VerticalPrescriptionDraft>>({})
+  const [pendingTemplateId, setPendingTemplateId] = useState<string | null>(null)
   const [sessionDate, setSessionDate] = useState(session?.date ?? '')
   const [clientError, setClientError] = useState<string>()
   const [selectedWorkoutId, setSelectedWorkoutId] = useState(session?.workoutId ?? '')
@@ -123,8 +130,37 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     }
   }
 
+  function previousVertical(microcycleId: string): PreviousVerticalPrescription | null {
+    const row = session?.sessionPrescriptions.find(item => item.microcycleId === microcycleId)
+    return row ? { primaryObjective: row.primaryObjective ?? null, verticalBlockJson: row.verticalBlockJson ?? null, elevationGain: row.elevationGain } : null
+  }
+
+  function verticalDecision(microcycleId: string) {
+    return { previous: previousVertical(microcycleId), ...verticalDrafts[microcycleId] }
+  }
+
   function applyWorkoutTemplate(event: ChangeEvent<HTMLSelectElement>) {
     const workoutId = event.target.value
+    const form = event.currentTarget.form
+    if (!form) return
+    applyTemplate(workoutId, form, false)
+  }
+
+  function applyTemplate(workoutId: string, form: HTMLFormElement, preserveVertical: boolean) {
+    const candidate = workouts.find(workout => workout.id === workoutId)
+    const protectedIds = new Set(selectedMicrocycleIds.filter(id => hasVerticalDecision(verticalDecision(id))))
+    const elevationConflict = candidate && selectedMicrocycleIds.some(id => resolveVerticalTemplateElevation({
+      ...verticalDecision(id), currentElevationGain: prescriptionValues[id]?.elevationGain ?? '',
+      templateElevationGain: formValue(candidate.snapshot.prescription.elevationGain),
+    }).conflict)
+    // Other prescription metrics and instructions can also express a Coach's
+    // explicit objective. Require acknowledgement before applying any template
+    // to a selection with vertical decisions, and retain those rows wholesale.
+    if (candidate && !preserveVertical && (elevationConflict || protectedIds.size > 0)) {
+      setPendingTemplateId(workoutId)
+      return
+    }
+    setPendingTemplateId(null)
     setSelectedWorkoutId(workoutId)
     const template = workouts.find((workout) => workout.id === workoutId)
     if (!template) {
@@ -132,8 +168,6 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       return
     }
 
-    const form = event.currentTarget.form
-    if (!form) return
     const snapshot = template.snapshot
 
     setFormValue(form, 'title', snapshot.session.title)
@@ -160,11 +194,11 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
     setAppliedPrescriptionDefaults(defaults)
     setIntensityMethods((current) => ({
       ...current,
-      ...Object.fromEntries(selectedMicrocycleIds.map((microcycleId) => [microcycleId, defaults.intensityMethod ?? ''])),
+      ...Object.fromEntries(selectedMicrocycleIds.filter(id => !protectedIds.has(id)).map((microcycleId) => [microcycleId, defaults.intensityMethod ?? ''])),
     }))
     setPrescriptionValues((current) => ({
       ...current,
-      ...Object.fromEntries(selectedMicrocycleIds.map((microcycleId) => [microcycleId, valuesFromDefaults(defaults)])),
+      ...Object.fromEntries(selectedMicrocycleIds.filter(id => !protectedIds.has(id)).map((microcycleId) => [microcycleId, valuesFromDefaults(defaults)])),
     }))
   }
 
@@ -202,7 +236,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       ? [...current.filter((id) => id !== microcycleId), microcycleId]
       : current.filter((id) => id !== microcycleId))
     setClientError(undefined)
-    if (checked && appliedPrescriptionDefaults) {
+    if (checked && appliedPrescriptionDefaults && !hasVerticalDecision(verticalDecision(microcycleId))) {
       setIntensityMethods((current) => ({
         ...current, [microcycleId]: current[microcycleId] ?? appliedPrescriptionDefaults.intensityMethod ?? '',
       }))
@@ -226,6 +260,10 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
   }
 
   function handleValidatedAction(formData: FormData) {
+    if (pendingTemplateId) {
+      setClientError(t('form.prescriptions.vertical.templateConflict'))
+      return
+    }
     for (const { microcycle } of selectedScopes) {
       const microcycleId = microcycle.id
       for (const kind of ['distanceKm', 'durationMin', 'elevationGain'] as const) {
@@ -233,10 +271,23 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
         const raw = String(formData.get(key) ?? '')
         const normalized = normalizeSessionPrescriptionMetricDraft(raw, kind)
         if (normalized.status === 'invalid') {
-          setClientError(locale === 'es' ? 'Ingresá valores numéricos válidos en las prescripciones.' : 'Enter valid numeric prescription values.')
+          setClientError(t('form.errors.invalidNumeric'))
           return
         }
         formData.set(key, normalized.status === 'valid' ? normalized.value : '')
+      }
+      const prepared = prepareVerticalPrescriptionSubmission({
+        ...verticalDecision(microcycleId), elevationGain: prescriptionValues[microcycleId]?.elevationGain ?? String(formData.get('elevationGain:' + microcycleId) ?? ''),
+      })
+      if (!prepared.ok) {
+        setClientError(t('form.prescriptions.vertical.' + prepared.error))
+        return
+      }
+      formData.set('elevationGain:' + microcycleId, prepared.fields.elevationGain)
+      for (const key of ['primaryObjective', 'verticalBlockJson'] as const) {
+        const value = prepared.fields[key]
+        if (value === undefined) formData.delete(key + ':' + microcycleId)
+        else formData.set(key + ':' + microcycleId, value)
       }
     }
     setClientError(undefined)
@@ -275,6 +326,18 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
             {workouts.map((workout) => <option key={workout.id} value={workout.id}>{workout.title} · {workoutTypeT(`types.${workout.type}`)}{workout.archivedAt ? ` · ${templateText('archive.archived')}` : ''}</option>)}
           </SelectField>
           <p className='text-xs text-muted-foreground'>{templateText('applicationHelp')}</p>
+          {pendingTemplateId && (
+            <div className='space-y-2 rounded-md border p-3 text-sm' role='group' aria-label={t('form.prescriptions.vertical.templateConflict')}>
+              <p role='alert'>{t('form.prescriptions.vertical.templateConflict')}</p>
+              <div className='flex flex-wrap gap-2'>
+                <Button type='button' variant='outline' className='h-auto min-h-10 max-w-full whitespace-normal text-center' onClick={event => {
+                  const form = event.currentTarget.closest('form')
+                  if (form) applyTemplate(pendingTemplateId, form, true)
+                }}>{t('form.prescriptions.vertical.applyPreserving')}</Button>
+                <Button type='button' variant='outline' onClick={() => { setPendingTemplateId(null); setClientError(undefined) }}>{t('form.actions.cancel')}</Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -339,11 +402,21 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
                       <>
                         <input type='hidden' name='prescriptionMicrocycleId' value={microcycleId} />
                         <input type='hidden' name={`prescriptionGroupId:${microcycleId}`} value={group.id} />
-                        <div className='grid gap-4 sm:grid-cols-3'>
+                        <div className='grid gap-4 sm:grid-cols-2'>
                           <Field label={t('form.prescriptions.distance')} name={`distanceKm:${microcycleId}`} type='text' inputMode='decimal' value={values.distanceKm} onChange={(event) => updatePrescriptionValue(microcycleId, 'distanceKm', event.target.value)} />
                           <Field label={t('form.prescriptions.duration')} name={`durationMin:${microcycleId}`} type='text' inputMode='numeric' value={values.durationMin} onChange={(event) => updatePrescriptionValue(microcycleId, 'durationMin', event.target.value)} />
-                          <Field label={t('form.prescriptions.elevationGain')} name={`elevationGain:${microcycleId}`} type='text' inputMode='numeric' value={values.elevationGain} onChange={(event) => updatePrescriptionValue(microcycleId, 'elevationGain', event.target.value)} />
                         </div>
+                        <VerticalPrescriptionEditor
+                          microcycleId={microcycleId}
+                          previous={previousVertical(microcycleId)}
+                          draft={verticalDrafts[microcycleId] ?? {}}
+                          elevationGain={values.elevationGain}
+                          onDraftChange={draft => {
+                            setVerticalDrafts(current => ({ ...current, [microcycleId]: draft }))
+                            setClientError(undefined)
+                          }}
+                          onElevationGainChange={value => updatePrescriptionValue(microcycleId, 'elevationGain', value)}
+                        />
                         <SelectField
                           label={t('form.prescriptions.intensityMethod')}
                           name={`intensityMethod:${microcycleId}`}
@@ -380,7 +453,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
 
       <div className='flex justify-end gap-2'>
         <Link href={sessionsPath} className={buttonVariants({ variant: 'outline' })}>{t('form.actions.cancel')}</Link>
-        <Button type='submit' disabled={pending}>{pending ? t('form.actions.saving') : session ? t('form.actions.saveChanges') : t('form.actions.create')}</Button>
+        <Button type='submit' disabled={pending || pendingTemplateId !== null}>{pending ? t('form.actions.saving') : session ? t('form.actions.saveChanges') : t('form.actions.create')}</Button>
       </div>
     </form>
   )

@@ -94,12 +94,15 @@ test('KAN-880 unchanged vertical data is omitted, explicit clear is distinct, an
   assert.deepEqual(fields(prepare({ previous, elevationGain: '2550' })), { elevationGain: '2550' })
   assert.deepEqual(fields(prepare({ previous, block: null, primaryObjective: null, elevationGain: '2550' })), { elevationGain: '2550', primaryObjective: '', verticalBlockJson: '' })
   assert.deepEqual(fields(prepare({ previous: null, elevationGain: '0' })), { elevationGain: '0' })
+  assert.equal(prepare({ previous, elevationGain: '2549' }).ok, false, 'A retained complete block cannot have contradictory D+')
+  assert.equal(fields(prepare({ previous, primaryObjective: 'duration', elevationGain: '2550' })).verticalBlockJson, undefined)
   for (const raw of ['{"schemaVersion":2,"opaque":true}', '{broken']) {
     const opaque = { ...previous, verticalBlockJson: raw }
     assert.deepEqual(fields(prepare({ previous: opaque, elevationGain: '2550' })), { elevationGain: '2550' })
     assert.equal(prepare({ previous: opaque, elevationGain: '2500' }).ok, false)
     assert.equal(prepare({ previous: opaque, block: complete, elevationGain: '2550' }).ok, false)
     assert.equal(prepare({ previous: opaque, block: null, elevationGain: '2550' }).ok, false)
+    assert.equal(prepare({ previous: opaque, primaryObjective: 'duration', elevationGain: '2550' }).ok, false)
   }
 })
 
@@ -109,8 +112,9 @@ test('KAN-880 historical adopted track remains historical; omission never emits 
   const result = prepare({ previous: historic, elevationGain: '2550' })
   // A retained adopted block may be rejected by the existing T3 server guard;
   // the UI must not silently recast it as coach_manual to evade that guard.
-  if (result.ok) assert.equal(result.fields.verticalBlockJson, undefined)
-  else assert.ok(result.error)
+  assert.equal(result.ok, false, 'T3 fail-closed retained track must not be silently bypassed')
+  assert.equal(prepare({ previous: historic, block: complete, elevationGain: '2550' }).ok, false, 'Editing a historical adopted block must not recast it as manual')
+  assert.deepEqual(fields(prepare({ previous: historic, block: null, elevationGain: '2550' })), { elevationGain: '2550', verticalBlockJson: '' }, 'Explicit removal is distinct from reinterpretation')
   const manual = fields(prepare({ previous: null, block: complete, elevationGain: '' }))
   assert.equal(JSON.parse(manual.verticalBlockJson!).elevationGainPerRep.provenance.kind, 'coach_manual')
 })
@@ -121,6 +125,8 @@ test('KAN-880 template application preserves vertical decisions and flags confli
   assert.deepEqual(resolve({ previous: null, block: complete, currentElevationGain: '2550', templateElevationGain: '100' }), { elevationGain: '2550', conflict: true })
   assert.deepEqual(resolve({ previous, currentElevationGain: '2550', templateElevationGain: '2550' }), { elevationGain: '2550', conflict: false })
   assert.deepEqual(resolve({ previous: null, currentElevationGain: '50', templateElevationGain: '100' }), { elevationGain: '100', conflict: false })
+  assert.deepEqual(resolve({ previous: null, primaryObjective: 'duration', currentElevationGain: '', templateElevationGain: '100' }), { elevationGain: '', conflict: true })
+  assert.deepEqual(resolve({ previous: null, block: null, currentElevationGain: '0', templateElevationGain: '100' }), { elevationGain: '0', conflict: true })
 })
 
 test('KAN-880 production Coach form calls the draft boundary, handles template conflicts and renders vertical controls for selected scopes', () => {
