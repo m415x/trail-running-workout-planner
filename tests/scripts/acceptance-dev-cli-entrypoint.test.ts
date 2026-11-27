@@ -27,6 +27,6 @@ test('KAN-885/T3 exposes pn acceptance:dev with a local launcher and safe help e
   })
   assert.equal(help.error, undefined)
   assert.equal(help.status, 0, 'help must not start Next.js or access SQLite')
-  assert.match(help.stdout, /pn acceptance:dev --db/i)
+  assert.match(help.stdout, /pn acceptance:dev \[--db <absolute-accredited-sqlite-path>\]/i)
   assert.doesNotMatch(help.stdout + help.stderr, /SQLITE_SEED_DISPOSABLE_ACK=1/)
 })
