@@ -17,10 +17,11 @@ test('athlete planning week composes individual planning only after the effectiv
   )
 
   const prescriptionResolution = functionSource.indexOf('resolveAthleteSessionPrescription')
-  const plannedSessionResolution = functionSource.indexOf('resolveAthletePlanningSession')
+  const plannedSessionResolution = functionSource.indexOf('resolveAthleteEffectiveVerticalSession')
 
   assert.ok(prescriptionResolution >= 0)
   assert.ok(plannedSessionResolution > prescriptionResolution)
+  assert.match(fs.readFileSync('lib/athlete-planning/effective-vertical-session.ts', 'utf8'), /resolveAthletePlanningSession\(/)
 })
 
 test('athlete planning week loads adjustments by athlete and exact effective source prescription ids', () => {

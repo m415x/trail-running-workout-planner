@@ -46,6 +46,8 @@ export default async function MobileHomePage({ params }: { params: Promise<{ loc
     return <AthletePageState message={tPlan('unauthorized')} />
   }
 
+  if (!scheduleRes.success && scheduleRes.status === 'conflict') return <AthletePageState message={tPlan('resolutionConflict')} />
+
   if (!athleteRes.success || !scheduleRes.success || !realizedRes.success || !athleteRes.data || !scheduleRes.data) {
     return <AthletePageState message={t('errors.saveFailed')} />
   }

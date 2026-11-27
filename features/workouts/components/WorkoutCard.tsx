@@ -13,6 +13,7 @@ import { StatPill, ZonePill } from '@ui/custom/pills'
 import { PrimaryFilledButton, GlassFilledButton } from '@ui/custom/buttons'
 import { LogWorkoutDialog } from '@workouts/components/LogWorkoutDialog'
 import { WeatherPillStrip } from '@workouts/components/WeatherPillStrip'
+import { AthleteVerticalPrescription } from '@/features/athlete-planning/components/AthleteVerticalPrescription'
 import { useWorkoutCard } from '@workouts/hooks/useWorkoutCard'
 
 interface BaseWorkoutCardProps extends WorkoutCardProps {
@@ -96,6 +97,8 @@ export function BaseWorkoutCard({
             <p className='text-muted-foreground'>{executionGuidance.quality.averageSpeedKmh} km/h</p>
           </CustomCardInside>
         )}
+
+        {workout.vertical && <AthleteVerticalPrescription vertical={workout.vertical} />}
 
         {workout.notes && (
           <CustomCardInside className='bg-linear-to-t from-secondary/10 to-secondary/1 border-secondary/20'>

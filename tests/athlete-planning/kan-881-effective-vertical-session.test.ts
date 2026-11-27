@@ -230,6 +230,11 @@ test('KAN-881 Home and Plan production readers call the same effective resolver;
   assert.match(card, /AthleteVerticalPrescription/)
   const home = readFileSync('app/[locale]/(mobile)/page.tsx', 'utf8')
   assert.match(home, /getCurrentAthletePlanningWeek/)
+  assert.match(home, /resolutionConflict/)
+  const hook = readFileSync('features/workouts/hooks/useHomeTab.ts', 'utf8')
+  assert.match(hook, /vertical:\s*prescription\.vertical/)
+  assert.match(readFileSync('features/workouts/components/WorkoutCard.tsx', 'utf8'), /AthleteVerticalPrescription vertical=\{workout\.vertical\}/)
+  assert.match(readFileSync('features/workouts/HomeTab.tsx', 'utf8'), /resolutionConflict/)
   const component = 'features/athlete-planning/components/AthleteVerticalPrescription.tsx'
   assert.ok(existsSync(component))
   assert.match(readFileSync(component, 'utf8'), /referenceBlock/)

@@ -31,6 +31,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     const result = await getCurrentAthletePlanningWeek(startDateIso)
     if (result.success && result.data) return { status: 'loaded' as const, data: result.data.sessions }
     if (result.status === 'unauthorized') return { status: 'denied' as const }
+    if (result.status === 'conflict') return { status: 'conflict' as const }
     return { status: 'error' as const }
   }
 
@@ -102,6 +103,7 @@ export function HomeTab({ initialAthlete, initialSchedule, initialRealizedTraini
     isDeleted: false,
   }
 
+  if (weekLoadState === 'conflict') return <AthletePageState message={tPlan('resolutionConflict')} />
   if (weekLoadState === 'denied' || weekLoadState === 'error') {
     return <AthletePageState message={weekLoadState === 'denied' ? tPlan('unauthorized') : tPlan('loadError')} />
   }

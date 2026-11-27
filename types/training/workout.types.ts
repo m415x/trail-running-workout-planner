@@ -33,6 +33,7 @@ export interface WorkoutProps {
   runningReference?: RunningReference
   time: number
   gain: number
+  vertical?: import('@/lib/athlete-planning/effective-vertical-session').AthleteVerticalProjection
   pace: number
   notes: string
   targetGroups?: AthleteGroupCode[]

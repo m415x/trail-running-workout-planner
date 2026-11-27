@@ -20,7 +20,8 @@ test('KAN-700 a session locator is not authorization: a same-Team session must b
 test('KAN-700 weekly Athlete projection retains effective plan, selected prescription and individual adjustment', () => {
   assert.match(planning, /resolveAthletePlanningOnDate/)
   assert.match(planning, /resolveAthleteSessionPrescription/)
-  assert.match(planning, /resolveAthletePlanningSession/)
+  assert.match(planning, /resolveAthleteEffectiveVerticalSession/)
+  assert.match(readFileSync('lib/athlete-planning/effective-vertical-session.ts', 'utf8'), /resolveAthletePlanningSession\(/)
   assert.match(planning, /athleteSessionAdjustmentRevisions/)
 })
 

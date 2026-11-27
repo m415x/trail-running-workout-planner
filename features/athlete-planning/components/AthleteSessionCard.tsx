@@ -6,6 +6,8 @@ import { useTranslations } from 'next-intl'
 import type { IntensityMethod, IntensityZone } from '@/types/training/intensity.types'
 import type { ExecutionGuidance } from '@/lib/physiology/execution-guidance'
 import type { WorkoutType } from '@/types/training/workout.types'
+import type { AthleteVerticalProjection } from '@/lib/athlete-planning/effective-vertical-session'
+import { AthleteVerticalPrescription } from './AthleteVerticalPrescription'
 import { Badge } from '@ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@ui/card'
 
@@ -28,6 +30,7 @@ interface AthleteSessionCardProps {
     distanceKm: number | null
     durationMin: number | null
     elevationGain: number | null
+    vertical?: AthleteVerticalProjection
     intensityMethod: IntensityMethod | null
     zone: IntensityZone | null
     referencePercentage: number | null
@@ -72,6 +75,8 @@ export function AthleteSessionCard({ session, prescription, executionGuidance }:
             <p>{t('session.loadPending')}</p>
           )}
         </div>
+
+        {prescription.vertical && <AthleteVerticalPrescription vertical={prescription.vertical} />}
 
         <div className='rounded-lg border px-2.5 py-2'>
           <p className='mb-1 font-medium text-foreground'>{t('session.location')}</p>

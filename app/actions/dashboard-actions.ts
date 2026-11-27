@@ -5,6 +5,7 @@ import { and, asc, eq, gte, inArray, lte } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   athleteProfiles,
+  athleteGroups,
   athleteSessionAdjustmentRevisions,
   athleteSessionAdjustments,
   groupHistoryRecords,
@@ -19,7 +20,7 @@ import {
   users,
 } from '@/db/schema'
 import { createH5aSelfNextServerContext } from '@/lib/authorization/h5a-self-next-server'
-import { resolveAthletePlanningSession } from '@/lib/planning-cohorts/athlete-planning-session-resolution'
+import { resolveAthleteEffectiveVerticalSession } from '@/lib/athlete-planning/effective-vertical-session'
 import { createExternalIdentityLookup } from '@/lib/auth/external-identity-lookup'
 import { readEptSessionAccessState } from '@/lib/auth/ept-session-access'
 import { requireAuthenticatedEptAction } from '@/lib/auth/require-authenticated-action'
@@ -194,15 +195,9 @@ export async function getCurrentAthletePlanningWeek(
     const startDate = startDateIso
     const endDate = shiftISODate(startDate, 6)
 
-    if (!athlete.groupId) {
-      return { success: true, data: { athlete, today, startDate, endDate, sessions: [] } }
-    }
-
     const weekSessions = await db.query.sessions.findMany({
       where: and(
         eq(sessions.teamId, athlete.teamId),
-        gte(sessions.date, startDate),
-        lte(sessions.date, endDate),
         eq(sessions.isDeleted, false),
       ),
       orderBy: asc(sessions.date),
@@ -263,23 +258,31 @@ export async function getCurrentAthletePlanningWeek(
       : await db.select({
         microcycleId: microcycles.id,
         groupTrainingPlanId: groupTrainingPlans.id,
+        lineageGroupId: groupTrainingPlans.groupId,
+        lineageTeamId: athleteGroups.teamId,
+        groupDeleted: athleteGroups.isDeleted,
+        planDeleted: groupTrainingPlans.isDeleted,
+        macroDeleted: macrocycles.isDeleted,
+        mesoDeleted: mesocycles.isDeleted,
+        microDeleted: microcycles.isDeleted,
+        microStart: microcycles.startDate,
+        microEnd: microcycles.endDate,
       })
         .from(microcycles)
         .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
         .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
         .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+        .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
         .where(inArray(microcycles.id, prescriptionMicrocycleIds))
-    const groupTrainingPlanIdByMicrocycle = new Map(
-      prescriptionLineages.map(({ microcycleId, groupTrainingPlanId }) => (
-        [microcycleId, groupTrainingPlanId]
-      )),
-    )
+    const lineageByMicrocycle = new Map(prescriptionLineages.map(row => [row.microcycleId, row]))
 
     const weeklyPrescriptionIds = [...new Set(
       weekSessions.flatMap((session) => (
         session.sessionPrescriptions.map((prescription) => prescription.id)
       )),
     )]
+    // Query own exact-source rows even if their stored Team is inconsistent;
+    // the effective resolver rejects that corruption instead of inheriting silently.
     const athleteAdjustments = weeklyPrescriptionIds.length === 0
       ? []
       : await db.select()
@@ -299,9 +302,12 @@ export async function getCurrentAthletePlanningWeek(
           eq(athleteSessionAdjustmentRevisions.isCurrent, true),
           eq(athleteSessionAdjustmentRevisions.isDeleted, false),
         ))
-    const adjustmentBySourcePrescriptionId = new Map(
-      athleteAdjustments.map((adjustment) => [adjustment.sourcePrescriptionId, adjustment]),
-    )
+    const adjustmentBySourcePrescriptionId = new Map<string, typeof athleteAdjustments>()
+    for (const adjustment of athleteAdjustments) {
+      const candidates = adjustmentBySourcePrescriptionId.get(adjustment.sourcePrescriptionId) ?? []
+      candidates.push(adjustment)
+      adjustmentBySourcePrescriptionId.set(adjustment.sourcePrescriptionId, candidates)
+    }
     const revisionsByAdjustmentId = new Map<string, typeof currentAdjustmentRevisions>()
     for (const revision of currentAdjustmentRevisions) {
       const revisions = revisionsByAdjustmentId.get(revision.adjustmentId) ?? []
@@ -309,7 +315,10 @@ export async function getCurrentAthletePlanningWeek(
       revisionsByAdjustmentId.set(revision.adjustmentId, revisions)
     }
 
+    let conflictReason: string | null = null
     const resolvedSessions = weekSessions.flatMap((session) => {
+      const hasAthleteAdjustment = session.sessionPrescriptions.some(p => adjustmentBySourcePrescriptionId.has(p.id))
+      if (!shouldEvaluateAthletePeriodSession({ originalDate: session.date, startDate, endDate, hasAthleteAdjustment })) return []
       const planning = resolveAthletePlanningOnDate({
         athleteTeamId: athlete.teamId,
         currentGroupId: athlete.groupId,
@@ -350,7 +359,8 @@ export async function getCurrentAthletePlanningWeek(
       const prescriptionResolution = resolveAthleteSessionPrescription({
         planning,
         prescriptions: session.sessionPrescriptions.flatMap((prescription) => {
-          const groupTrainingPlanId = groupTrainingPlanIdByMicrocycle.get(prescription.microcycleId)
+          const lineage = lineageByMicrocycle.get(prescription.microcycleId)
+          const groupTrainingPlanId = lineage?.groupTrainingPlanId
           return groupTrainingPlanId
             ? [{
                 id: prescription.id,
@@ -362,18 +372,25 @@ export async function getCurrentAthletePlanningWeek(
         }),
       })
 
-      if (prescriptionResolution.status !== 'resolved') return []
+      const decision = decideAthletePeriodPrescription(planning, prescriptionResolution)
+      if (decision.kind === 'conflict') { conflictReason = decision.reason; return [] }
+      if (decision.kind === 'omit' || prescriptionResolution.status !== 'resolved') return []
 
       const sourcePrescription = session.sessionPrescriptions.find(
         ({ id }) => id === prescriptionResolution.prescriptionId,
       )
-      if (!sourcePrescription) return []
+      if (!sourcePrescription) { conflictReason = 'missing-source-prescription'; return [] }
+      const lineage = lineageByMicrocycle.get(sourcePrescription.microcycleId)
+      if (!lineage || lineage.lineageTeamId !== athlete.teamId || lineage.lineageGroupId !== sourcePrescription.groupId
+        || lineage.groupDeleted || lineage.planDeleted || lineage.macroDeleted || lineage.mesoDeleted || lineage.microDeleted
+        || session.date < lineage.microStart || session.date > lineage.microEnd) {
+        conflictReason = 'invalid-prescription-lineage'; return []
+      }
 
-      const adjustment = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? null
-      const currentRevisions = adjustment
-        ? revisionsByAdjustmentId.get(adjustment.id) ?? []
-        : []
-      const plannedSession = resolveAthletePlanningSession({
+      const adjustments = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? []
+      const currentRevisions = adjustments.flatMap(adjustment => revisionsByAdjustmentId.get(adjustment.id) ?? [])
+      const plannedSession = resolveAthleteEffectiveVerticalSession({
+        teamId: athlete.teamId,
         athleteId: athlete.id,
         session: {
           id: session.id,
@@ -390,15 +407,10 @@ export async function getCurrentAthletePlanningWeek(
           zone: sourcePrescription.zone,
           referencePercentage: sourcePrescription.referencePercentage,
           notes: sourcePrescription.notes,
+          primaryObjective: sourcePrescription.primaryObjective,
+          verticalBlockJson: sourcePrescription.verticalBlockJson,
         },
-        adjustment: adjustment
-          ? {
-              id: adjustment.id,
-              teamId: adjustment.teamId,
-              athleteId: adjustment.athleteId,
-              sourcePrescriptionId: adjustment.sourcePrescriptionId,
-            }
-          : null,
+        adjustments,
         revisions: currentRevisions.map(currentRevision => ({
           id: currentRevision.id,
           adjustmentId: currentRevision.adjustmentId,
@@ -411,7 +423,7 @@ export async function getCurrentAthletePlanningWeek(
       })
 
       if (plannedSession.status === 'omitted') return []
-      if (plannedSession.status !== 'resolved') return []
+      if (plannedSession.status !== 'resolved') { conflictReason = 'invalid-athlete-adjustment'; return [] }
 
       return [{
         ...session,
@@ -419,26 +431,26 @@ export async function getCurrentAthletePlanningWeek(
         workoutId: plannedSession.session.workoutId,
         type: plannedSession.session.type,
         sessionPrescriptions: [{
-          ...sourcePrescription,
-          distanceKm: plannedSession.prescription.distanceKm,
-          durationMin: plannedSession.prescription.durationMin,
-          elevationGain: plannedSession.prescription.elevationGain,
-          intensityMethod: plannedSession.prescription.intensityMethod,
-          zone: plannedSession.prescription.zone,
-          referencePercentage: plannedSession.prescription.referencePercentage,
-          notes: plannedSession.prescription.notes,
+          ...plannedSession.prescription,
+          sessionId: session.id,
+          microcycleId: sourcePrescription.microcycleId,
+          groupId: sourcePrescription.groupId,
+          vertical: plannedSession.vertical,
         }],
       }]
     })
 
+    if (conflictReason !== null) return { success: false as const, status: 'conflict' as const }
+    const effective = resolvedSessions.filter(session => session.date >= startDate && session.date <= endDate)
+    if (new Set(effective.map(session => session.id)).size !== effective.length) return { success: false as const, status: 'conflict' as const }
     return {
-      success: true,
+      success: true as const,
       data: {
         athlete,
         today,
         startDate,
         endDate,
-        sessions: resolvedSessions,
+        sessions: effective,
       },
     }
   } catch (error) {
@@ -540,23 +552,31 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
       : await db.select({
         microcycleId: microcycles.id,
         groupTrainingPlanId: groupTrainingPlans.id,
+        lineageGroupId: groupTrainingPlans.groupId,
+        lineageTeamId: athleteGroups.teamId,
+        groupDeleted: athleteGroups.isDeleted,
+        planDeleted: groupTrainingPlans.isDeleted,
+        macroDeleted: macrocycles.isDeleted,
+        mesoDeleted: mesocycles.isDeleted,
+        microDeleted: microcycles.isDeleted,
+        microStart: microcycles.startDate,
+        microEnd: microcycles.endDate,
       })
         .from(microcycles)
         .innerJoin(mesocycles, eq(microcycles.mesocycleId, mesocycles.id))
         .innerJoin(macrocycles, eq(mesocycles.macrocycleId, macrocycles.id))
         .innerJoin(groupTrainingPlans, eq(macrocycles.groupTrainingPlanId, groupTrainingPlans.id))
+        .innerJoin(athleteGroups, eq(groupTrainingPlans.groupId, athleteGroups.id))
         .where(inArray(microcycles.id, prescriptionMicrocycleIds))
-    const groupTrainingPlanIdByMicrocycle = new Map(
-      prescriptionLineages.map(({ microcycleId, groupTrainingPlanId }) => (
-        [microcycleId, groupTrainingPlanId]
-      )),
-    )
+    const lineageByMicrocycle = new Map(prescriptionLineages.map(row => [row.microcycleId, row]))
 
     const weeklyPrescriptionIds = [...new Set(
       weekSessions.flatMap((session) => (
         session.sessionPrescriptions.map((prescription) => prescription.id)
       )),
     )]
+    // Query own exact-source rows even if their stored Team is inconsistent;
+    // the effective resolver rejects that corruption instead of inheriting silently.
     const athleteAdjustments = weeklyPrescriptionIds.length === 0
       ? []
       : await db.select()
@@ -576,9 +596,12 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
           eq(athleteSessionAdjustmentRevisions.isCurrent, true),
           eq(athleteSessionAdjustmentRevisions.isDeleted, false),
         ))
-    const adjustmentBySourcePrescriptionId = new Map(
-      athleteAdjustments.map((adjustment) => [adjustment.sourcePrescriptionId, adjustment]),
-    )
+    const adjustmentBySourcePrescriptionId = new Map<string, typeof athleteAdjustments>()
+    for (const adjustment of athleteAdjustments) {
+      const candidates = adjustmentBySourcePrescriptionId.get(adjustment.sourcePrescriptionId) ?? []
+      candidates.push(adjustment)
+      adjustmentBySourcePrescriptionId.set(adjustment.sourcePrescriptionId, candidates)
+    }
     const revisionsByAdjustmentId = new Map<string, typeof currentAdjustmentRevisions>()
     for (const revision of currentAdjustmentRevisions) {
       const revisions = revisionsByAdjustmentId.get(revision.adjustmentId) ?? []
@@ -637,7 +660,8 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
       const prescriptionResolution = resolveAthleteSessionPrescription({
         planning,
         prescriptions: session.sessionPrescriptions.flatMap((prescription) => {
-          const groupTrainingPlanId = groupTrainingPlanIdByMicrocycle.get(prescription.microcycleId)
+          const lineage = lineageByMicrocycle.get(prescription.microcycleId)
+          const groupTrainingPlanId = lineage?.groupTrainingPlanId
           return groupTrainingPlanId
             ? [{
                 id: prescription.id,
@@ -659,12 +683,17 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
         ({ id }) => id === prescriptionResolution.prescriptionId,
       )
       if (!sourcePrescription) { conflictReason = 'missing-source-prescription'; return [] }
+      const lineage = lineageByMicrocycle.get(sourcePrescription.microcycleId)
+      if (!lineage || lineage.lineageTeamId !== athlete.teamId || lineage.lineageGroupId !== sourcePrescription.groupId
+        || lineage.groupDeleted || lineage.planDeleted || lineage.macroDeleted || lineage.mesoDeleted || lineage.microDeleted
+        || session.date < lineage.microStart || session.date > lineage.microEnd) {
+        conflictReason = 'invalid-prescription-lineage'; return []
+      }
 
-      const adjustment = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? null
-      const currentRevisions = adjustment
-        ? revisionsByAdjustmentId.get(adjustment.id) ?? []
-        : []
-      const plannedSession = resolveAthletePlanningSession({
+      const adjustments = adjustmentBySourcePrescriptionId.get(sourcePrescription.id) ?? []
+      const currentRevisions = adjustments.flatMap(adjustment => revisionsByAdjustmentId.get(adjustment.id) ?? [])
+      const plannedSession = resolveAthleteEffectiveVerticalSession({
+        teamId: athlete.teamId,
         athleteId: athlete.id,
         session: {
           id: session.id,
@@ -681,15 +710,10 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
           zone: sourcePrescription.zone,
           referencePercentage: sourcePrescription.referencePercentage,
           notes: sourcePrescription.notes,
+          primaryObjective: sourcePrescription.primaryObjective,
+          verticalBlockJson: sourcePrescription.verticalBlockJson,
         },
-        adjustment: adjustment
-          ? {
-              id: adjustment.id,
-              teamId: adjustment.teamId,
-              athleteId: adjustment.athleteId,
-              sourcePrescriptionId: adjustment.sourcePrescriptionId,
-            }
-          : null,
+        adjustments,
         revisions: currentRevisions.map(currentRevision => ({
           id: currentRevision.id,
           adjustmentId: currentRevision.adjustmentId,
@@ -710,14 +734,11 @@ export async function getCurrentAthletePlanningPeriod(startDate: string, endDate
         workoutId: plannedSession.session.workoutId,
         type: plannedSession.session.type,
         sessionPrescriptions: [{
-          ...sourcePrescription,
-          distanceKm: plannedSession.prescription.distanceKm,
-          durationMin: plannedSession.prescription.durationMin,
-          elevationGain: plannedSession.prescription.elevationGain,
-          intensityMethod: plannedSession.prescription.intensityMethod,
-          zone: plannedSession.prescription.zone,
-          referencePercentage: plannedSession.prescription.referencePercentage,
-          notes: plannedSession.prescription.notes,
+          ...plannedSession.prescription,
+          sessionId: session.id,
+          microcycleId: sourcePrescription.microcycleId,
+          groupId: sourcePrescription.groupId,
+          vertical: plannedSession.vertical,
         }],
       }]
     })

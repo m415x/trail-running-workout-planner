@@ -11,6 +11,7 @@ import type {
   WeeklyCycle,
   WorkoutType,
 } from '@/types'
+import type { AthleteVerticalProjection } from '@/lib/athlete-planning/effective-vertical-session'
 import type { CurrentAthleteData } from '@/app/actions/dashboard-actions'
 import type { ElevationChartProps } from '@workouts/components/ElevationProfileCard'
 
@@ -56,6 +57,7 @@ export interface SessionWithWorkout {
     distanceKm: number | null
     durationMin: number | null
     elevationGain: number | null
+    vertical?: AthleteVerticalProjection
     intensityMethod: 'hr_zone' | 'reference_percentage' | null
     zone: IntensityZone | null
     referencePercentage: number | null
@@ -70,6 +72,7 @@ export interface SessionWithWorkout {
 export type HomeWeekResult<T> =
   | { status: 'loaded'; data: T[] }
   | { status: 'denied' }
+  | { status: 'conflict' }
   | { status: 'error' }
 
 export interface UseHomeTabProps {
@@ -132,9 +135,11 @@ function resolveGroupWorkout(session: SessionWithWorkout) {
         : undefined,
     time,
     gain: prescription.elevationGain ?? 0,
+    vertical: prescription.vertical,
     pace: time > 0 && distance > 0 ? (time * 60) / distance : 0,
     notes: instructionBlocks.join(' | '),
-    trackPath: session.trackPath ?? session.workout?.trackPath ?? undefined,
+    // A non-effective group block must not be represented as an executable route.
+    trackPath: prescription.vertical && (prescription.vertical.state === 'override_incompatible' || prescription.vertical.state === 'effective_unknown') ? undefined : session.trackPath ?? session.workout?.trackPath ?? undefined,
     locationKey: session.locationKey ?? session.workout?.locationKey ?? undefined,
   }
 }
@@ -172,7 +177,7 @@ export function useHomeTab({
   const [schedule, setSchedule] = useState<SessionWithWorkout[]>(initialSchedule)
   const [realizedTraining, setRealizedTraining] = useState<RealizedTrainingRecord[]>(initialRealizedTraining)
   const [isLoadingWeek, setIsLoadingWeek] = useState(false)
-  const [weekLoadState, setWeekLoadState] = useState<'loaded' | 'loading' | 'denied' | 'error'>('loaded')
+  const [weekLoadState, setWeekLoadState] = useState<'loaded' | 'loading' | 'denied' | 'conflict' | 'error'>('loaded')
   const requestSequence = useRef(0)
   const [trackData, setTrackData] = useState<TrackData | null>(null)
 
@@ -353,6 +358,10 @@ export function useHomeTab({
 
         if (newSchedule.status === 'denied' || newRealizedTraining.status === 'denied') {
           setWeekLoadState('denied')
+          return
+        }
+        if (newSchedule.status === 'conflict' || newRealizedTraining.status === 'conflict') {
+          setWeekLoadState('conflict')
           return
         }
         if (newSchedule.status === 'error' || newRealizedTraining.status === 'error') {

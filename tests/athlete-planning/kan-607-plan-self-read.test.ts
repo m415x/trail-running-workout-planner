@@ -27,5 +27,6 @@ test('KAN-699 effective calendar continues to use persisted group history and co
   assert.match(planning, /groupTrainingPlans/)
   assert.match(planning, /resolveAthletePlanningOnDate/)
   assert.match(planning, /resolveAthleteSessionPrescription/)
-  assert.match(planning, /resolveAthletePlanningSession/)
+  assert.match(planning, /resolveAthleteEffectiveVerticalSession/)
+  assert.match(readFileSync('lib/athlete-planning/effective-vertical-session.ts', 'utf8'), /resolveAthletePlanningSession\(/)
 })
