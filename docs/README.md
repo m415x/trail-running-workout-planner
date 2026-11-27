@@ -16,7 +16,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-885 — Windows/Git Bash local acceptance launcher runbook](acceptance/kan-885-local-launcher.md) — existing disposable SQLite preflight, persistent ignored selection, real Supabase/EPT acceptance, Ctrl+C ownership and safety boundaries; functional candidate gate operator-reported PASS 6/6, integration pending. Bootstrap of new worktrees is separate deferred work.
+- [KAN-885 — local acceptance launcher candidate handoff](handoffs/kan-885.md) — **current candidate, NOT integrated**; Windows/Git Bash acceptance, SQLite preservation, genuine Supabase/EPT login, operator-reported functional gate PASS 6/6, documentary/PR/postmerge evidence pending. [Operations runbook](acceptance/kan-885-local-launcher.md). Worktree bootstrap is a separate discovery.
 
 
 - [KAN-871 — Global Race Catalog maintenance authorization (integrated)](handoffs/kan-871.md) — functional candidate `9d39f4b200b5acc963098ba8bdb2a255b64c9863`, operator full gate PASS 6/6 (383025ms), real Supabase H2 browser CREATE ALLOW and revoked UPDATE POST DENY with identical logical SQLite snapshot. [Security contract](architecture/competitions/race-catalog.md). Integrated PR #82, exact-SHA postmerge gate PASS 6/6; final documentary checker PASS reported (14793); Jira Finalizada; worktree absence recorded (14796–14797), preservation limitation explicit.
