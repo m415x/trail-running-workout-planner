@@ -4,7 +4,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Latest integrated operational baseline — KAN-885 local acceptance launcher
 
-- [KAN-885 handoff](handoffs/kan-885.md) — [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84) ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge six-gate `pn verify --db` PASS (454674 ms, operator-reported), Vercel SUCCESS. [Local runbook](acceptance/kan-885-local-launcher.md). Premerge `HANDOFF DOCS: PASS`; final postmerge checker and administrative/worktree reconciliation pending. No automatic fixture/identity bootstrap, no beta authorization.
+- [KAN-885 handoff](handoffs/kan-885.md) — [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84) ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge six-gate `pn verify --db` PASS (454674 ms, operator-reported), Vercel SUCCESS. [Local runbook](acceptance/kan-885-local-launcher.md). Final postmerge `HANDOFF DOCS: PASS` operator-reported on `dev@4077a499380019380b499056d3aacca3ee2ea62b`; KAN-885 worktree retired with cleanup PASS, other three worktrees and feature branch retained. Jira administrative disposition recorded separately. No automatic fixture/identity bootstrap, no beta authorization.
 
 ## Latest integrated maintenance baseline — Next.js 16.4.6 / pnpm 12.21.0
 
@@ -20,7 +20,7 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
-- [KAN-885 — local acceptance launcher integrated handoff](handoffs/kan-885.md) — **current integrated baseline**: [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84), ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge operator `pn verify --db` PASS 6/6 (454674 ms), Vercel SUCCESS. Final documentary checker, Jira closure and worktree disposition pending. [Runbook](acceptance/kan-885-local-launcher.md). Bootstrap simplification remains a separate discovery.
+- [KAN-885 — local acceptance launcher integrated handoff](handoffs/kan-885.md) — **current integrated baseline**: [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84), ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge operator `pn verify --db` PASS 6/6 (454674 ms), Vercel SUCCESS. Final documentary checker PASS; worktree KAN-885 retired (3 remaining worktrees preserved), feature branch retained; Jira status reconciled separately. [Runbook](acceptance/kan-885-local-launcher.md). Bootstrap simplification remains a separate discovery.
 
 
 - [KAN-871 — Global Race Catalog maintenance authorization (integrated)](handoffs/kan-871.md) — functional candidate `9d39f4b200b5acc963098ba8bdb2a255b64c9863`, operator full gate PASS 6/6 (383025ms), real Supabase H2 browser CREATE ALLOW and revoked UPDATE POST DENY with identical logical SQLite snapshot. [Security contract](architecture/competitions/race-catalog.md). Integrated PR #82, exact-SHA postmerge gate PASS 6/6; final documentary checker PASS reported (14793); Jira Finalizada; worktree absence recorded (14796–14797), preservation limitation explicit.
