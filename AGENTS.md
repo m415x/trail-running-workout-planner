@@ -87,25 +87,23 @@ These rules override generic coding-agent habits for this repository.
 
 ### Focused TDD command authority
 
-- `pn test` is full-suite only. Never pass a test path to `pn test`; the CLI rejects positional arguments. Use `pn tdd:red <test-file> [...]` for focused RED and `pn tdd <test-file> [...]` for focused GREEN.
-- Never request `git pull` separately when the next local command is `pn tdd:red` or `pn tdd`; both runners already execute `git pull --ff-only -q`.
-- Never request `pn tsc` separately after `pn tdd`; the GREEN runner already performs the canonical typecheck.
-- Do not substitute raw `tsx --test`, `node --test`, `pn test <file>` or another ad-hoc command for the focused runner unless diagnosing an unexpected runner/tooling failure. Diagnostic commands do not replace the canonical RED/GREEN evidence.
+- `pn test` is full-suite only. Never pass a test path to `pn test`; the CLI rejects positional arguments. For one **functional increment**, pass the related test files together to `pn tdd:red <test-file> [...]` for the causal RED and `pn tdd <test-file> [...]` for GREEN.
+- `pn tdd:red` and `pn tdd` already perform `git pull --ff-only -q`; do not request a separate pull immediately before them. `pn tdd` runs the canonical typecheck; do not separately request `pn tsc` after it.
+- Keep using these runners for operator-executed focused tests. The operator may repeat the same focused suite for ordinary diagnosis and repair; repeats are **not** new functional TDD cycles. Use verbose diagnostics only for unexpected output.
+- Do not substitute raw `tsx --test`, `node --test`, or `pn test <file>` for the canonical runner except to diagnose a demonstrated runner/tooling failure. Neither a command invocation nor an individual assertion defines an increment.
 
 ### Continuous approved execution
 
-**Normative operator-mediated RED/GREEN loop after approved decomposition**
+**Normative unit: one complete, verifiable functional increment.** An increment may cross domain, database persistence, services, Server Actions, authorization, UI, and relevant regression tests when those layers jointly deliver one usable capability. Do **not** split work merely by helper, assertion, field, condition, file, or implementation layer.
 
-- Once subtasks and acceptance criteria are approved, immediately activate the first approved Jira subtask (`En curso`) and remotely materialize and commit/push its failing test. Do not ask the human how to proceed or seek another routine approval. The next expected assistant action is to activate T1 and materialize its RED test.
-- Give the human only the canonical Git Bash command `pn tdd:red <test-file> [...]` for the RED phase, then await reported RED evidence. Do not implement ahead of that RED confirmation.
-- After RED confirmation, implement and commit/push the minimum GREEN remotely. Give the human `pn tdd <test-file> [...]` and await GREEN evidence. Record the exact recoverable commit/SHA and evidence, then complete that Jira subtask and activate the next approved subtask without asking for permission.
-- Repeat Jira Tn `En curso` → remote RED commit → human `pn tdd:red` → confirmed RED → remote implementation commit → human `pn tdd` → confirmed GREEN → checkpoint/evidence/Jira done → next Tn. Do not claim a gate result without execution evidence.
-- Remote editing, Jira, commit/push, PR review, merge, and pre/post-merge documentation reconciliation are the agent's responsibilities. The human operates only the canonical local RED/GREEN/full gates and acceptance walkthroughs. Never request a separate `git pull` before either focused runner or `pn tsc` after `pn tdd`.
-- Interrupt this continuous execution only for a material product/security choice, an unexpected failure invalidating the decomposition, a nontrivial integration conflict, an external blocker, or a change in scope.
-
-- Approval of a story/task decomposition authorizes continuous RED → GREEN → recoverable checkpoint → next approved cut. Do not ask for routine confirmation between those steps.
-- Approval of the final story-closure task authorizes the routine closure sequence: documentation reconciliation → PR creation/update → PR review and required checks → merge to `dev` → post-merge reconciliation → Jira closure evidence. Do not ask the human to approve documentation edits, PR review, readiness, merge, or routine post-merge bookkeeping separately.
-- Stop and request a human decision only for a material product/security decision, unexpected in-scope defect that invalidates the approved decomposition, required check/gate failure that cannot be classified mechanically, non-trivial merge/integration conflict, external blocker, or scope change.
+- After approval of a task or its functional-increment decomposition, execute autonomously: **related causal RED (positive/DENY/invariants/regressions as needed) → complete implementation → ordinary fixes/retests → GREEN → recoverable logical checkpoint → next approved increment**. Do not seek routine approval between RED, implementation, repair, GREEN, commits, or approved increments.
+- A RED may contain several related tests. Do not fabricate RED for already-working behavior. One increment can require multiple test invocations and corrections; these do **not** constitute extra functional cycles. Fix ordinary TypeScript, ESLint, fixtures, and test failures without a new authorization.
+- If the operator must run tests locally, provide the canonical Git Bash command for the next required evidence and continue after receiving its result. This is a tool limitation, **not** a new approval point or an excuse to fragment the increment.
+- Target functional cycles, not test files: small correction **usually 1**; medium functionality **usually 1–3**; complex vertical **usually 3–6**. These are initial planning guides, not coverage caps. **After three cycles without a usable capability, stop fragmenting and reassess the approach** before adding more cuts; keep the approved safety and test coverage.
+- Create commits by **recoverable logical change**, not by assertion. Report and reconcile Jira evidence at meaningful **completed-capability checkpoints**, including exact RED/GREEN commands, observed results, SHAs, risks and acceptance limits. No routine Jira comments/transitions for every minor correction.
+- Agent ownership includes remote edits, Jira, commits, PR review/merge and pre/postmerge reconciliation under the approved scope. The human operates tests and walkthroughs requiring the local environment.
+- Interrupt only for a material product, safety, architecture or security decision, destructive operation, significant merge/integration conflict, external blocker, or scope change. Classify unexpected failures first: ordinary in-scope errors do not automatically require another authorization; a failed mandatory gate remains a gate and must be diagnosed.
+- Approval of the closure task authorizes the normal documentation → checks/review → PR → ordinary merge to `dev` → postmerge verification → Jira/handoff sequence without repetitive confirmations, provided no material decision or failure intervenes. Do not claim gates or acceptance without actually observed evidence.
 
 ### Fresh-chat-safe closure
 
@@ -156,18 +154,14 @@ Treat each Jira story as a natural context-compaction boundary: its final durabl
 
 ### Task sizing and decomposition
 
-Tasks/subtasks are execution units, not containers for an entire story. Design them so each can be implemented, verified and reconciled independently within a bounded working context.
+Decompose by **usable functional capabilities** with a coherent acceptance outcome and related positive/negative invariants, not by separately testable helpers or repository layers. A single increment may span domain, persistence, services, authorization, actions and UI where needed to deliver that capability.
 
-- Prefer small **vertical slices with one coherent responsibility and focused evidence** over broad tasks spanning multiple independent behaviors.
-- Before task creation, estimate the boundaries involved: domain/contracts, persistence, application/actions, UI integration, hardening/migration and documentation. A task may cross layers when that is necessary for one vertical behavior, but it must not accumulate several independently verifiable behaviors merely to reduce the Jira task count.
-- If a proposed task contains multiple acceptance outcomes that can fail, ship or be verified independently, split it before implementation.
-- If implementation reveals substantially more scope than the approved task — additional independent contracts, multiple unrelated UI flows, a migration plus broad integration, or repeated TDD cycles across distinct boundaries — **stop and re-scope the task in Jira before continuing**. Do not wait for chat/context exhaustion.
-- A task that effectively becomes a mini-story is a decomposition failure. KAN-360 is the explicit historical regression case to avoid.
-- Each implementation task should end with its own focused verification and concise Jira evidence. Reserve aggregate/full gates for story closure unless an earlier full gate is needed to diagnose a cross-cutting failure.
-- Context pressure is a workflow signal: compact completed task findings into commits/Jira/durable docs and move to the next approved task. Restarting a chat should be naturally safe at story boundaries and possible at task boundaries, but should not be required repeatedly to finish one oversized task.
-- Do not create speculative microtasks for trivial edits. Split by independently meaningful behavior/evidence, not by file count or arbitrary line count.
-- The final approved task is the story-closure task, not a generic documentation task. Its description and acceptance criteria must encode the closure evidence implied by that story: applicable full technical gates, persistence/security verification, manual walkthrough, acceptance-criteria audit, durable documentation/handoff and index reconciliation, known limitations/deferred work, Jira closure evidence, and the integration sequence back to `dev`.
-- Keep the parent story `En curso` while the closure task is being executed. Complete and record the closure task's technical/documentation evidence first; then execute the approved closure sequence continuously through PR review, merge, post-merge documentation/Jira reconciliation and fresh-chat-safe publication. Do not create a circular requirement that the parent already be closed.
+- Use the initial functional-cycle budget: small correction normally **1**, medium feature **1–3**, complex vertical **3–6**. Ranges guide planning and **never justify reducing safety, coverage or acceptance**.
+- A related DENY, rollback, migration, or UI regression belongs to the same functional increment when it protects that capability; do not create standalone microtasks merely because it can fail independently. Split only for **meaningfully deliverable independent capabilities**, genuine external dependencies, or a material architecture/operations decision.
+- If three functional cycles produce no usable capability, **reassess decomposition and approach** before creating more cuts. Unexpected material scope is reconciled in Jira; normal corrections and repeat test runs are not new cycles.
+- Make commits recoverable per coherent logical change; consolidate Jira status/evidence and operator reports per **completed capability**, not per assertion, RED commit or helper. Keep the worktree recoverable during ongoing repair and checkpoint after a stable capability GREEN.
+- A bounded task may encompass an entire small feature; large capabilities may be broken down without sacrificing acceptance. Context pressure should trigger concise durable checkpointing, not arbitrary fragmentation or repeated fresh chats.
+- Maintain an explicit approved **story-closure task** with the applicable full gates, manual acceptance, AC audit, documentation/handoff/index reconciliation, deferred limitations, PR integration and postmerge evidence. The parent remains `En curso` until closure is genuinely reconciled; no circular prerequisite that the parent already be done.
 
 ## Architecture and directory map
 
@@ -246,15 +240,15 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 - Merge completed story branches into `dev`, not `main` and not the legacy `dashboard` branch.
 - Default to **remote-first** inspection/versioning and focused validation during implementation.
 - Prefer **resolution/delivery micro-sprints** when reconciling blocked or partially delivered work: one primary objective at a time, closed scope, and an explicit exit condition.
-- After a stable GREEN for an independently deliverable task/cut, create a recoverable commit before moving to the next cut. An uncommitted working tree must never be the sole carrier of accepted work.
+- After a stable GREEN for a completed functional capability, create a recoverable logical commit/checkpoint before the next approved capability. An uncommitted working tree must never be the sole carrier of accepted work.
 - Bind test, CI and manual-acceptance evidence to an exact commit SHA or otherwise recoverable tree. Reuse evidence only while that exact tree still exists and has not materially changed; if the tree is lost or materially changed, rerun the affected evidence.
 - When blocked, record the cause, affected scope, criticality, objective unblock condition, and any independent work that remains enabled. Do not automatically promote unrelated failures or technical debt into global story blockers.
 - A dependency-specific gate may close a bounded dependent correction even when the global gate fails for work outside that correction, but only when the dependency, remaining failures and explicit exception are documented.
 - Micro-sprint pressure never justifies sacrificing historical integrity, isolation, security or authorization boundaries.
-- Before each task, inspect only the related contracts, implementation and tests needed to understand the boundary; check whether part of the task already exists before adding abstractions.
-- Keep Jira synchronized with real implementation/evidence and use small coherent commits aligned with the active task.
+- Before each functional increment, inspect the relevant contracts, implementation and tests; confirm what already works before adding abstractions or fabricating RED.
+- Keep Jira synchronized with real implementation/evidence and use recoverable commits plus consolidated reports per completed functional capability, not each assertion or routine fix.
 - Use local execution before story end only when required to unblock progress or prove an environment-specific boundary (for example Drizzle migration generation/application or real Supabase verification).
-- Do not repeat the full gate after every task. Use focused tests/type/lint/build evidence appropriate to the changed boundary.
+- Do not repeat the full gate after every test, repair or increment. Use a related focused test set during the increment; run the full gate at closure or when cross-cutting impact justifies it.
 - Never claim a command/test/CI/manual check passed unless it actually ran; distinguish local, remote, CI and manual evidence.
 - Current lint baseline is 0 errors / 0 warnings after KAN-417. New warnings are regressions unless explicitly accepted.
 - Before story merge/closure run the complete gate: `pn test`, `pn lint`, `pn tsc`, `pn build`, plus relevant DB verifiers.
@@ -265,42 +259,31 @@ Tasks/subtasks are execution units, not containers for an entire story. Design t
 
 ### Jira execution state and evidence
 
-Jira status must represent actual execution state, not intended state.
+Jira status reflects actual execution, not intention. Activate the approved task/capability when work begins, and keep its parent story `En curso` during implementation. Do not proliferate one subtask or administrative transition per test, helper or routine correction.
 
-- Before implementation begins on a task/subtask, transition it to **En curso**. Ensure its parent story is also **En curso** while story implementation is active.
-- Never leave actively implemented work in **Por hacer**.
-- Before completing a task, run the focused verification required by its scope and reconcile the result against the original Jira intent.
-- Add a concise task-closing Jira comment recording relevant commits, tests/checks that actually ran and their results, delivered invariants, and material limitations/deferred work.
-- Only after the required task evidence exists, transition the task to **Finalizada**. Never use **Finalizada** as an intention or optimistic state.
-- Keep the parent story **En curso** while any approved implementation task remains incomplete.
-- Before completing a story, require all approved story tasks to be **Finalizada**, run the complete story gate, perform the acceptance-criteria review and applicable manual walkthrough, reconcile durable docs/handoff, and record story-level closure evidence in Jira.
-- Transition the story to **Finalizada** only after those closure requirements are satisfied.
+- At each **completed functional capability**, reconcile the approved acceptance outcome and record one concise consolidated Jira report: related causal RED/GREEN commands and results, exact recoverable SHA/tree, security/persistence invariants actually verified, limitations and deferred work.
+- Keep normal TypeScript/ESLint/fixture/test repairs inside the active capability; no Jira comment or renewed approval per correction.
+- Mark the task `Finalizada` only with its required evidence. Close the parent only after approved tasks, full applicable gate, AC audit, real walkthrough where needed, durable docs/index and postmerge reconciliation are satisfied.
+- A material blocker is recorded with cause, scope, exit condition and ownership; do not silently absorb unrelated debt or invent results.
 
 ### TDD and compact human-run verification
 
-Use RED/GREEN TDD for new or changed behavior whenever a focused automated test can express the contract economically.
+Use RED/GREEN TDD **per complete functional increment** whenever a focused automated test can establish the changed contract economically.
 
-1. Add or modify the smallest focused test that demonstrates the intended behavior.
-2. Run it and establish **RED** for the expected reason before implementing the behavior. An unrelated compile/environment failure is not valid RED evidence.
-3. Implement the smallest coherent production change that satisfies the contract.
-4. Re-run the focused test and establish **GREEN**.
-5. Refactor only while preserving GREEN, then reconcile against task scope.
-6. Record meaningful RED/GREEN evidence in Jira when closing the task; do not claim executions that did not run.
+1. Establish a **causal RED** with a related set of tests for the capability, which may include ALLOW/positive behavior, DENY, isolation, rollback, invariants and relevant regressions. Do **not** manufacture RED for existing working behavior.
+2. Implement the **whole coherent increment** and repair ordinary compile, lint, fixture and test failures autonomously.
+3. Rerun the same appropriate focused suite until **GREEN**. Retesting during repair is not another functional cycle; reserve refactoring for work that preserves the contract.
+4. Create a recoverable logical checkpoint for the finished capability and report RED/GREEN evidence, scope and SHA **once per meaningful completion**, not per assertion.
+5. Continue the next approved increment without routine new permission. Stop only for material decisions, blockers or unapproved scope; complete gate and AC review remain mandatory at closure.
 
-When asking the human to execute focused tests in the local terminal, use the repository TDD runner by default so routine runs remain portable and do not flood conversational context:
+Operator-managed tests use canonical grouped commands (the tests shown are illustrative):
 
 ```bash
-pn tdd:red tests/field-performance-test-history.test.ts
-pn tdd tests/field-performance-test-history.test.ts
+pn tdd:red tests/one-capability-allow.test.ts tests/one-capability-deny.test.ts
+pn tdd tests/one-capability-allow.test.ts tests/one-capability-deny.test.ts
 ```
 
-`pn tdd:red` performs `git pull --ff-only -q` and the supplied focused tests. `pn tdd` performs the same sync/test run and then the canonical `pn tsc` typecheck. Both print only `GREEN` or `RED` by default. Add `--verbose` to either command when diagnostics are required. Keep `pn tsc` as the single typecheck script; do not add duplicate aliases for `tsc --noEmit`.
-
-- If the compact result is the expected `RED` during the RED phase, continue without requesting full output unless the failure reason is ambiguous.
-- If a result is unexpected — RED when GREEN is expected, GREEN when RED is expected, or an environment/compile failure is suspected — request or run the narrowest diagnostic command needed to expose failure details.
-- Do not request verbose test output preemptively. Escalate from compact result to detailed diagnostics only when necessary.
-- Compact output is a context-preservation mechanism, not weaker evidence: record the exact command/scope and observed GREEN/RED result, and obtain detailed output whenever correctness cannot be established from the compact result alone.
-- Full-suite/story-gate commands may also suppress routine output when only pass/fail is needed, but failures must be diagnosed before closure and quantitative evidence must not be invented from suppressed output.
+`pn tdd:red` performs `git pull --ff-only -q` and focused RED; `pn tdd` syncs, runs focused GREEN and canonical `pn tsc`. Both default to concise RED/GREEN; add `--verbose` only for unexpected/ambiguous failures. Do not request an extra pull before runners or `pn tsc` after GREEN. A compact result is evidence only for the tests actually run on its exact SHA/tree; never invent subtest counts or claim unrun checks. Full suite/integration gates belong at closure or materially cross-cutting changes, not every ordinary fix.
 
 ### Tool and retry discipline
 
@@ -312,9 +295,9 @@ pn tdd tests/field-performance-test-history.test.ts
 
 ### Verification loop
 
-For each task use the lightweight loop **inspect → implement → statically verify → focused evidence when informative → reconcile with task scope**. Do not substitute repeated full-suite execution for reasoning.
+For each functional increment use the lightweight loop **inspect → related causal RED → complete implementation and repairs → focused GREEN → recoverable checkpoint and one consolidated report**. Do not substitute repeated full-suite execution for reasoning.
 
-Before marking a task complete, compare the result against the original Jira task/acceptance intent, not merely against the implementation just written. At story closure perform the complete project gate and an acceptance-criteria-by-acceptance-criteria review.
+Before marking a capability complete, compare its result against the approved Jira acceptance outcome, not merely against tests written during implementation. At story closure perform the complete project gate and an acceptance-criteria-by-acceptance-criteria review.
 
 ## Documentation policy
 
