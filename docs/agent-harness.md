@@ -44,32 +44,31 @@ Harness v2 is the current execution model. `AGENTS.md` remains the normative aut
 ### Execution state machine
 
 ```text
-bootstrap / discovery
+bootstrap / discovery and exact-source reconciliation
         ↓
-approved decomposition
+approved decomposition by complete functional capabilities
         ↓
-focused RED → GREEN → recoverable checkpoint
+for each approved functional increment:
+   related causal RED (ALLOW, DENY, invariants as needed)
+   → implement the entire coherent capability
+   → autonomous corrections and focused retests
+   → GREEN → recoverable logical checkpoint
+   → one consolidated capability report / Jira evidence
         ↓
-candidate
+candidate: full applicable gate + real walkthrough + AC audit
         ↓
-full applicable gate + walkthrough + AC audit
+docs pre-merge reconciliation + PR review / required checks
         ↓
-docs pre-merge reconciliation
+ordinary merge to dev + exact-SHA postmerge verification
         ↓
-PR creation/update + review + required checks
+current handoff + story handoff + index + Jira reconciliation
         ↓
-merge to dev
-        ↓
-post-merge reconciliation
-        ↓
-verify dev + current handoff + story handoff + indexes + Jira
-        ↓
-Post-merge Worktree Cleanup (operator-mediated or blocker documented)
+operator-mediated worktree cleanup (or documented blocker)
         ↓
 fresh-chat-safe
 ```
 
-The approved decomposition authorizes continuous execution of its routine RED/GREEN cuts. The approved closure task likewise authorizes the routine closure sequence through merge and post-merge publication; repeated human approvals for documentation updates, PR review, merge or Jira bookkeeping are not part of the workflow. Human intervention is reserved for a material product/security decision, unexpected failure, non-trivial integration conflict, external blocker or scope change.
+A task/decomposition approval authorizes this end-to-end sequence through the approved increments. A test rerun or ordinary TypeScript/ESLint/fixture fix is not another functional TDD cycle or approval event. Approval of the closure task also authorizes normal PR/checks/merge/postmerge work. Pause only for material product, security, architecture, destructive operations, major integration conflict, external blocker or unapproved scope. Preserve explicit human-run local evidence: lack of local execution tooling requires the canonical operator command, **not** renewed authorization.
 
 ### Worktree lifecycle and local hygiene
 
@@ -121,37 +120,41 @@ Do not expand this prompt with durable workflow rules, current SHAs, branch name
 
 ### Focused TDD workflow
 
-The following is the **normative operator-mediated execution protocol**, not an optional illustration. Once subtasks and their acceptance criteria are approved, the agent starts T1 immediately; it must **not** ask the human “how to proceed” after an approved decomposition. The next expected assistant action is to set Jira T1 to `En curso` and materialize/commit/push its RED test.
+`AGENTS.md` is the normative operational authority. This section explains execution of **complete functional-increment TDD**, not a per-helper/per-assertion Jira state machine.
+
+A functional increment delivers a coherent, usable capability and may cross domain, schema/persistence, application services, Server Actions, H2/H3/H4A authorization, and UI. ALLOW, DENY, no-mutation-on-DENY, isolation, atomicity and regression tests **belong to the same increment** when jointly protecting that capability. Split only independently usable capabilities or genuine material dependencies; never split merely by field, test, helper or file.
+
+**Initial planning budget** (guidance, not a test/coverage cap):
+
+| Scope | Typical functional cycles |
+| --- | --- |
+| Small correction | Usually 1 |
+| Medium feature | Usually 1–3 |
+| Complex vertical | Usually 3–6 |
+
+If **three functional cycles** produce no usable capability, stop adding slices and reassess the approach/decomposition first. Test retries and normal fixes inside an increment do **not** count as new functional cycles.
 
 ```text
-decomposition approved
-→ Jira T1 En curso
-→ remote RED test commit/push
-→ HUMAN (Git Bash): pn tdd:red <test-file> [...]
-→ RED confirmed against recoverable SHA
-→ remote implementation commit/push
-→ HUMAN (Git Bash): pn tdd <test-file> [...]
-→ GREEN confirmed against recoverable SHA
-→ checkpoint + evidence + Jira T1 done
-→ Jira T2 En curso
-→ remote RED test commit/push
-→ ... until approved closure
+approved task / functional decomposition
+→ activate Jira task or capability (not one task per assertion)
+→ publish one recoverable related RED test set
+→ operator, if needed: pn tdd:red <related-test-1> [...]
+→ confirm causal RED at exact SHA/tree; do not manufacture RED
+→ implement complete behavior and repair normal TS/ESLint/fixture/test issues
+→ operator, if needed: pn tdd <related-test-1> [...]
+→ confirm focused GREEN; repeat diagnostics/tests as needed inside same increment
+→ recoverable logical commit(s), one completed-capability report and Jira evidence
+→ continue next approved functional increment without routine authorization
+→ full gate, real acceptance, docs/PR/merge/postmerge at closure
 ```
 
-The human runs only local canonical RED/GREEN/gates or requested manual acceptance. The agent owns all remote file edits, Jira transitions/evidence, recoverable commits/pushes, PR review/checks/merge, and pre/post-merge documentation reconciliation, unless a material blocker makes an action unavailable. Do not request `git pull` separately before `pn tdd:red`/`pn tdd`, or `pn tsc` after `pn tdd`. Record results against the actual tested SHA/tree; GREEN is not presumed from a commit alone. Advance to the next approved task automatically, with no routine intermediate confirmation. Pause only on a material product/security decision, an unexpected failure invalidating decomposition, a nontrivial integration conflict, an external blocker, or scope change.
+A RED can contain several related tests (positive/ALLOW, DENY, persistence and regressions). A failed compilation or environment problem is not causal RED. A GREEN is evidenced by executed tests, never assumed merely because code was committed. Keep an exact SHA/tree for every acceptance/gate result, report limitations and deferred coverage honestly, and do not repeat historical gates valid for unchanged trees.
 
-After the story/task decomposition or TDD cycle has been approved, execution is continuous: advance RED → GREEN → next independently meaningful RED without requesting routine intermediate confirmation. Stop only for an unexpected result, a material source-of-truth discrepancy, a real product/security decision, a blocker that changes the approved scope, or evidence that the decomposition itself is no longer valid.
+The agent owns remote editing/versioning, Jira evidence, PR/checks/ordinary merge, handoff and postmerge reconciliation. When local tests require the operator's Windows/Git Bash environment, give **one canonical focused command with the related test set**, await its actual output, diagnose unexpected failures, and then continue the **same** approved increment. Do not turn each operator execution into an approval request. `pn tdd:red` and `pn tdd` already sync; `pn tdd` includes typecheck. No extra `git pull` or `pn tsc` after these runners.
 
-The default hybrid loop is:
+One concise report/Jira evidence packet per **completed functional capability** should include scope, causal RED/GREEN commands and observed results, recoverable SHA, ALLOW/DENY/security/persistence acceptance and remaining limits. Use recoverable commits by **logical change**, not each assertion or minor repair; no administrative Jira comment per repeated test/commit. Reserve full gates for story closure or meaningful cross-cutting impact.
 
-1. Inspect/edit/version work remote-first through GitHub on the active story branch.
-2. Give the human the exact Bash command for the focused phase: `pn tdd:red <test-file> [...]` for RED or `pn tdd <test-file> [...]` for GREEN.
-3. The human runs that command locally in Git Bash and returns the output/evidence.
-4. Bind that evidence to the exact tested SHA/recoverable tree. Do not describe local output as evidence for a different commit.
-5. After stable GREEN for an independently verifiable cut, create/confirm a recoverable checkpoint before beginning the next cut.
-6. Do not trigger GitHub Actions for each TDD microcommit. Reserve Actions for story/integration closure or a verification that specifically requires the remote runner.
-
-When a focused command fails outside the expected RED, classify it before changing product scope: in-scope defect, independent defect, technical debt, integration blocker or transient infrastructure failure. Do not create a new story, absorb unrelated debt or broaden the current task automatically.
+Pause for material product/security/architectural decisions, destructive actions, important integration conflicts, external blockers or changes in approved scope. Classify unexpected failures before acting: ordinary fixable in-scope test/TS/lint/fixture failures are handled autonomously. Do not widen scope or weaken guarantees merely to reach GREEN.
 
 ## Micro-sprints and recovery harness
 
@@ -168,7 +171,7 @@ Evidence remains reusable when the exact verified tree still exists and subseque
 
 ### Recoverable checkpoint after GREEN
 
-After a stable GREEN for an independently meaningful task/cut, create a recoverable commit before beginning the next cut. A dirty working tree may be used during TDD, but must not be the only durable carrier of accepted implementation or acceptance evidence. Keep commits coherent enough that the verified cut can be recovered, reviewed and integrated independently.
+After stable GREEN for a **complete functional capability**, create a recoverable logical checkpoint before the next approved capability. Ordinary fixes/retests inside that increment are not separate functional cycles. A dirty working tree may be used during TDD, but must not be the only durable carrier of accepted implementation or acceptance evidence. Keep commits coherent enough that the verified **functional change** can be recovered, reviewed and integrated; do not commit each assertion as an independent delivery.
 
 ### Lost unpublished working tree protocol
 
@@ -197,7 +200,7 @@ A blocker record must state cause, affected scope, criticality, objective unbloc
 
 When a correction depends on a feature branch that is not yet in `dev`, integrate the correction into that dependency branch first rather than forcing an isolated merge to `dev`. Preserve branch/history integrity and document the dependency chain. A bounded dependency-specific gate may be accepted even if a wider gate is RED for unrelated incomplete consumers or independent infrastructure, provided the scoped gate is sufficient for the correction and the exception is explicit.
 
-Run focused verification during each cut. Run the full gate when the current integration candidate can invalidate cross-cutting behavior, at story/parent closure, or after material post-gate code changes. Do **not** rerun a full gate when an exact recoverable tree already has valid evidence and no relevant code/integration change occurred; preserve and reference that evidence instead.
+Run a focused related test set for each functional increment; repeat as necessary inside that increment without counting new cycles. Run the full gate when the current integration candidate can invalidate cross-cutting behavior, at story/parent closure, or after material post-gate code changes. Do **not** rerun a full gate after normal repairs or when an exact recoverable tree already has valid evidence and no relevant code/integration change occurred; preserve and reference that evidence instead.
 
 Stop expanding the micro-sprint and request a human decision when completing the bounded objective would require changing an approved product/security contract, absorbing an independent story, fabricating authority/identity, rewriting historical migration state, weakening isolation/security, or choosing between materially different product semantics. Exit B is valid only when the remaining blocker is external, singular and objectively demonstrated.
 
