@@ -5,7 +5,7 @@ import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 import { assertSafeKan646BiometricPostgresTarget, assertSafePostgresRegressionTarget, isPostgresIntegrationSource } from './test-runner'
-import { assertSafeKan878PostgresTarget } from './kan-878-postgres-acceptance-target'
+import { assertSafeKan878PostgresTarget, isKan878AcceptanceFile, isKan878AcceptanceGlob } from './kan-878-postgres-acceptance-target'
 
 const require = createRequire(import.meta.url)
 
@@ -40,16 +40,11 @@ export function readFocusedTestSource(file: string): string {
  * Select the exact dedicated real-PG KAN-878 acceptance file, never a SQL-double
  * unit test. The connection target is validated before launching that lane.
  */
-function isKan878AcceptanceFile(file: string): boolean {
-  const normalized = file.replace(/\\+/g, '/')
-  return normalized.endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')
-    || normalized.endsWith('/kan-882-vertical-regeneration-postgres.test.ts')
-}
-
 export function assertKan878FocusedAcceptanceLane(
   tests: readonly string[],
   env: Record<string, string | undefined>,
 ): boolean {
+  if (tests.some(isKan878AcceptanceGlob)) throw new Error('BLOCKED: use explicit KAN-878/KAN-882 acceptance file paths, not globs')
   const dedicated = tests.some(isKan878AcceptanceFile)
   if (dedicated) assertSafeKan878PostgresTarget(env)
   return dedicated

@@ -2,9 +2,13 @@
 
 Durable project documentation is organized by purpose. Start here rather than relying on chat history or an old implementation branch.
 
-## Worktree SSR authentication preflight — KAN-879 (rama no integrada)
+## Latest integrated operational baseline — KAN-885 local acceptance launcher
 
-- [Runbook: SQLite de worktree y login SSR `invalid`](acceptance/worktree-sqlite-ssr-login-preflight.md) — prevenir el error recurrente por `SQLITE_SCENARIO_MODE` ausente: `SQLITE_DATABASE_PATH` por sí sola **no** cambia la SQLite runtime del servidor Next. Diagnóstico real: SQLite worktree 0 bytes / 0 tablas frente a fixture KAN-855 55 tablas; reinicio desde la misma terminal con escenario habilitado → login Assistant confirmado por operador. No reseed, no permisos nuevos ni DENY HTTP acreditado. [Handoff KAN-593/T3](handoffs/kan-593.md), Jira KAN-879 14990–14991. **Este material pertenece a la rama KAN-593 y no reemplaza el baseline integrado de `dev`.**
+- [KAN-885 handoff](handoffs/kan-885.md) — [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84) ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge six-gate `pn verify --db` PASS (454674 ms, operator-reported), Vercel SUCCESS. [Local runbook](acceptance/kan-885-local-launcher.md). Final postmerge `HANDOFF DOCS: PASS` operator-reported on `dev@4077a499380019380b499056d3aacca3ee2ea62b`; KAN-885 worktree retired with cleanup PASS, other three worktrees and feature branch retained. Jira KAN-885 **Finalizada** (cleanup comment `15143`); feature branch retained. No automatic fixture/identity bootstrap, no beta authorization.
+
+## Worktree SSR authentication preflight — KAN-879 (candidato KAN-593)
+
+- [Runbook: SQLite de worktree y login SSR `invalid`](acceptance/worktree-sqlite-ssr-login-preflight.md) — prevenir el error recurrente por `SQLITE_SCENARIO_MODE` ausente: `SQLITE_DATABASE_PATH` por sí sola **no** cambia la SQLite runtime del servidor Next. Diagnóstico real: SQLite worktree 0 bytes / 0 tablas frente a fixture KAN-855 55 tablas; reinicio desde la misma terminal con escenario habilitado → login Assistant confirmado por operador. No reseed, no permisos nuevos ni DENY HTTP acreditado. [Handoff KAN-593/T3](handoffs/kan-593.md), Jira KAN-879 14990–14991. **Este material documenta el diagnóstico histórico de KAN-879; el launcher KAN-885 es el preflight operativo integrado.**
 
 ## Latest integrated maintenance baseline — Next.js 16.4.6 / pnpm 12.21.0
 
@@ -19,6 +23,11 @@ Durable project documentation is organized by purpose. Start here rather than re
 - [KAN-644 Coach Home story handoff](handoffs/kan-644.md) — [PR #81](https://github.com/m415x/trail-running-workout-planner/pull/81), ordinary merge `a6dae557e2bbeb101780b0e53a83ac62524c86e8` into `dev`, candidate `pn verify --db` PASS 6/6 at functional SHA `ecdc9381fbbb9c31b9128e47fedfb8cd108fd79b`, operator `HANDOFF DOCS: PASS` on documentary PR head `b1b09c41e72d9928c03cee96fefe68b8bdc5c4e4`; Vercel success; postmerge local `pn verify --db` **PASS 6/6** at `aa05c16b70a4803e643628823fb86c1838fb4036` (operator, 380218ms); final documentation checker PASS reported at `fac54723bcc159ece25f91e85ac3feb47c9a7dd3` (Jira KAN-870 14737). [T6 acceptance and contractual exceptions](acceptance/kan-869-coach-home-browser-matrix.md): Team A/invalid_context real browser PASS; A→B→A/partial roles/Competition positive/visual error remain unaccredited, narrowly deferred for T6 only. KAN-566/KAN-298/KAN-567 preserve pre-beta gates, including global `saveRaceCatalog` authorization corrected and integrated in KAN-871. **Not beta-ready.** [Current integrated handoff](handoffs/current.md).
 
 ## Handoffs
+
+- [KAN-593 — prescripción vertical (candidato)](handoffs/kan-593.md) — [contrato vertical v1](architecture/planning/vertical-prescription.md); T1–T7 finalizadas, integración T8 pendiente. No beta-ready.
+
+- [KAN-885 — local acceptance launcher integrated handoff](handoffs/kan-885.md) — **current integrated baseline**: [PR #84](https://github.com/m415x/trail-running-workout-planner/pull/84), ordinary merge `556c5092017bfda628c9dd8af9038a8ef9be4316` into `dev`, exact-SHA postmerge operator `pn verify --db` PASS 6/6 (454674 ms), Vercel SUCCESS. Final documentary checker PASS; worktree KAN-885 retired (3 remaining worktrees preserved), feature branch retained; Jira **Finalizada** (comment `15143`). [Runbook](acceptance/kan-885-local-launcher.md). Bootstrap simplification remains a separate discovery.
+
 
 - [KAN-871 — Global Race Catalog maintenance authorization (integrated)](handoffs/kan-871.md) — functional candidate `9d39f4b200b5acc963098ba8bdb2a255b64c9863`, operator full gate PASS 6/6 (383025ms), real Supabase H2 browser CREATE ALLOW and revoked UPDATE POST DENY with identical logical SQLite snapshot. [Security contract](architecture/competitions/race-catalog.md). Integrated PR #82, exact-SHA postmerge gate PASS 6/6; final documentary checker PASS reported (14793); Jira Finalizada; worktree absence recorded (14796–14797), preservation limitation explicit.
 

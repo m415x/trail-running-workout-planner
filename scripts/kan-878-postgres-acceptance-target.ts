@@ -1,3 +1,5 @@
+import { matchesGlob, resolve } from 'node:path'
+
 /**
  * Isolated PostgreSQL acceptance lane for KAN-878 only.
  *
@@ -32,4 +34,23 @@ export function assertSafeKan878PostgresTarget(
   ) {
     throw new Error('BLOCKED: unauthorized KAN-878 PostgreSQL acceptance target')
   }
+}
+
+/** Only these two checked-in files use the dedicated TEMP acceptance lane. */
+const kan878AcceptanceFiles = [
+  'tests/sessions/vertical-prescription-postgres-real-acceptance.test.ts',
+  'tests/session-generation/kan-882-vertical-regeneration-postgres.test.ts',
+] as const
+
+const normalizedPath = (file: string) => resolve(file.replace(/\\+/g, '/')).replace(/\\+/g, '/')
+
+export function isKan878AcceptanceFile(file: string): boolean {
+  return kan878AcceptanceFiles.some(candidate => normalizedPath(candidate) === normalizedPath(file))
+}
+
+/** Quoted globs that could select real acceptance must be explicit paths.
+ * Otherwise an unconfigured test could SKIP and the focused runner say GREEN. */
+export function isKan878AcceptanceGlob(file: string): boolean {
+  return /[*?\[{}]/.test(file) && kan878AcceptanceFiles.some(candidate =>
+    matchesGlob(normalizedPath(candidate), normalizedPath(file)))
 }

@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { readFile, readdir } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { isKan878AcceptanceFile } from './kan-878-postgres-acceptance-target'
 
 export async function discoverTestFiles(root: string): Promise<string[]> {
   const files: string[] = []
@@ -63,7 +64,7 @@ export async function partitionTestFiles(files: string[]): Promise<{
   const postgres: string[] = []
   for (const file of files) {
     const source = await readFile(file, 'utf8')
-    ;(isPostgresIntegrationSource(source) ? postgres : ordinary).push(file)
+    ;(isKan878AcceptanceFile(file) || isPostgresIntegrationSource(source) ? postgres : ordinary).push(file)
   }
   return { ordinary, postgres }
 }
@@ -426,6 +427,11 @@ export function runTestFiles(testFiles: string[]): number {
   )
 }
 
+/** The KAN-878/T6 dedicated TEMP tests are executed only via explicit focused paths. */
+export function selectMutablePostgresRegressionFiles(files: readonly string[]): string[] {
+  return files.filter(file => !isAnnualPostgresAcceptanceFile(file) && !isKan878AcceptanceFile(file))
+}
+
 async function main(): Promise<void> {
   const pgMode = process.argv[2] === '--postgres'
   const annualMode = process.argv[2] === '--postgres-annual'
@@ -433,7 +439,7 @@ async function main(): Promise<void> {
   const all = await discoverTestFiles(resolve(process.cwd(), 'tests'))
   const lanes = await partitionTestFiles(all)
   const annual = lanes.postgres.filter(isAnnualPostgresAcceptanceFile)
-  const mutable = lanes.postgres.filter(file => !isAnnualPostgresAcceptanceFile(file))
+  const mutable = selectMutablePostgresRegressionFiles(lanes.postgres)
   const selected = annualMode ? annual : pgMode ? mutable : lanes.ordinary
   if (annualMode) {
     assertSafeAnnualPostgresTarget(process.env)
@@ -445,6 +451,7 @@ async function main(): Promise<void> {
   }
   console.log(`Discovered ${all.length} test files; selected ${selected.length} ${annualMode ? 'annual read-only' : pgMode ? 'disposable PostgreSQL regression' : 'ordinary'} files; PostgreSQL integration files: ${lanes.postgres.length}`)
   if (!pgMode) console.log('PostgreSQL integration NOT executed in ordinary gate: run pn test:pg and pn test:pg:annual separately (no PASS implied)')
+  console.log('KAN-878/KAN-882 TEMP acceptance is a separate explicit pn tdd lane (no PASS implied)')
   process.exitCode = runTestFiles(selected)
 }
 

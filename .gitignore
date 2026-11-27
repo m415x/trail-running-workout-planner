@@ -56,6 +56,9 @@ public/sweetalert2.js
 # sqlite
 sqlite.db
 
+# KAN-885 worktree-local non-sensitive acceptance DB selection
+/.acceptance-dev.local.json
+
 # MapLibre generated worker assets
 public/maplibre/
 
