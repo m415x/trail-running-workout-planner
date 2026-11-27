@@ -16,6 +16,9 @@ Durable project documentation is organized by purpose. Start here rather than re
 
 ## Handoffs
 
+- [KAN-885 — local acceptance launcher candidate handoff](handoffs/kan-885.md) — **current candidate, NOT integrated**; Windows/Git Bash acceptance, SQLite preservation, genuine Supabase/EPT login, operator-reported functional gate PASS 6/6, documentary/PR/postmerge evidence pending. [Operations runbook](acceptance/kan-885-local-launcher.md). Worktree bootstrap is a separate discovery.
+
+
 - [KAN-871 — Global Race Catalog maintenance authorization (integrated)](handoffs/kan-871.md) — functional candidate `9d39f4b200b5acc963098ba8bdb2a255b64c9863`, operator full gate PASS 6/6 (383025ms), real Supabase H2 browser CREATE ALLOW and revoked UPDATE POST DENY with identical logical SQLite snapshot. [Security contract](architecture/competitions/race-catalog.md). Integrated PR #82, exact-SHA postmerge gate PASS 6/6; final documentary checker PASS reported (14793); Jira Finalizada; worktree absence recorded (14796–14797), preservation limitation explicit.
 
 - [KAN-644 — Current integrated Coach Operational Home](handoffs/kan-644.md) — **previous integrated handoff baseline**, [PR #81](https://github.com/m415x/trail-running-workout-planner/pull/81), ordinary merge `a6dae557e2bbeb101780b0e53a83ac62524c86e8` into `dev`; operator `pn verify --db` PASS 6/6 on postmerge integrated documentary baseline `aa05c16b70a4803e643628823fb86c1838fb4036` (380218ms), final documentation checker PASS reported at `fac54723...` (Jira KAN-870 14737). [Current handoff](handoffs/current.md). T6 contractual browser deferrals and KAN-567 pre-beta gates remain open; not beta-ready.
