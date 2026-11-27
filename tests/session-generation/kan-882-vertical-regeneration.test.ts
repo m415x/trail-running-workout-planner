@@ -142,7 +142,9 @@ test('KAN-882 SQLite protected prescriptions preserve opaque bytes; independent 
       assert.equal(audit.length,1)
       assert.equal(JSON.parse(audit[0].new_value).primaryObjective,null)
       assert.equal(JSON.parse(audit[0].new_value).verticalBlockJson,null)
+      const after = snapshot(sqlite)
       write(sqlite,independent)
+      assert.deepEqual(snapshot(sqlite), after)
       assert.equal((sqlite.prepare('SELECT COUNT(*) AS n FROM session_generation_modification_records').get() as {n:number}).n,2)
     } finally { sqlite.close() }
   }
@@ -159,5 +161,19 @@ test('KAN-882 SQLite shared Session survives retirement of generated sibling and
     assert.equal((sqlite.prepare("SELECT is_deleted FROM sessions WHERE id='session-a'").get() as {is_deleted:number}).is_deleted,0)
     assert.deepEqual(sqlite.prepare("SELECT * FROM group_session_prescriptions WHERE id='variant-p'").get(),sibling)
     assert.equal((sqlite.prepare("SELECT is_deleted FROM group_session_prescriptions WHERE id='prescription-a'").get() as {is_deleted:number}).is_deleted,1)
+  } finally { sqlite.close() }
+})
+
+// Reconciliation may update a healthy Base row without touching an unrelated
+// soft-deleted corrupt vertical row in a different Session.
+test('KAN-882 unrelated soft-deleted vertical row does not block independent generation', () => {
+  const sqlite=fixture()
+  try {
+    seed(sqlite,'generated',1,'old-key','{corrupt',null)
+    const before=sqlite.prepare("SELECT * FROM group_session_prescriptions WHERE id='prescription-a'").get()
+    const independent = { ...proposal, events: proposal.events.map(e=>({...e,sharedEventKey:'other-event',prescriptions:e.prescriptions.map(p=>({...p,generationKey:'other-key'}))})) }
+    write(sqlite,independent)
+    assert.deepEqual(sqlite.prepare("SELECT * FROM group_session_prescriptions WHERE id='prescription-a'").get(),before)
+    assert.equal((sqlite.prepare("SELECT count(*) AS n FROM group_session_prescriptions WHERE generation_key='other-key' AND is_deleted=0").get() as {n:number}).n,1)
   } finally { sqlite.close() }
 })

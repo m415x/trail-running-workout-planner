@@ -97,6 +97,10 @@ test('KAN-882 real PG writer: vertical conflict rollback, protected scope, stabl
       await write(independent)
       assert.deepEqual(await snapshot(),after)
     }
+    await seed('generated',true,'old-key','{corrupt',null)
+    const retired = (await sql`SELECT * FROM group_session_prescriptions WHERE id='prescription-a'`)[0]
+    await write(independent)
+    assert.deepEqual((await sql`SELECT * FROM group_session_prescriptions WHERE id='prescription-a'`)[0],retired)
     await seed('generated',false,'generation-a',null,null)
     await sql`INSERT INTO group_session_prescriptions(id,session_id,group_id,microcycle_id,elevation_gain,primary_objective,vertical_block_json,generation_ownership,generation_key,created_at,updated_at) VALUES ('variant-p','session-a','group-a','week-v',900,'elevation_gain',${raw},'generated_modified','variant-key',${now},${now})`
     const sibling=(await sql`SELECT * FROM group_session_prescriptions WHERE id='variant-p'`)[0]

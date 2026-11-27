@@ -33,3 +33,9 @@ test('KAN-878 RED-16 focused runner routes dedicated real PG acceptance to its i
     'tests/sessions/vertical-prescription-postgres-writer.test.ts',
   ], safeEnv), true)
 })
+
+test('KAN-882 reuses the exact KAN-878 disposable focused lane', () => {
+  const file = 'tests/session-generation/kan-882-vertical-regeneration-postgres.test.ts'
+  assert.equal(assertKan878FocusedAcceptanceLane([file], safeEnv), true)
+  assert.throws(() => assertKan878FocusedAcceptanceLane([file], {}), /BLOCKED/)
+})

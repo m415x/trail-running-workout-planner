@@ -40,12 +40,17 @@ export function readFocusedTestSource(file: string): string {
  * Select the exact dedicated real-PG KAN-878 acceptance file, never a SQL-double
  * unit test. The connection target is validated before launching that lane.
  */
+function isKan878AcceptanceFile(file: string): boolean {
+  const normalized = file.replace(/\\+/g, '/')
+  return normalized.endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')
+    || normalized.endsWith('/kan-882-vertical-regeneration-postgres.test.ts')
+}
+
 export function assertKan878FocusedAcceptanceLane(
   tests: readonly string[],
   env: Record<string, string | undefined>,
 ): boolean {
-  const dedicated = tests.some(file =>
-    file.replace(/\\+/g, '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts'))
+  const dedicated = tests.some(isKan878AcceptanceFile)
   if (dedicated) assertSafeKan878PostgresTarget(env)
   return dedicated
 }
@@ -121,7 +126,7 @@ function main(): void {
   if (kan646Postgres) assertSafeKan646BiometricPostgresTarget(process.env)
   const kan878Postgres = assertKan878FocusedAcceptanceLane(tests, process.env)
   if (tests.some(file => {
-    if (file.replace(/\\+/g, '/').endsWith('/vertical-prescription-postgres-real-acceptance.test.ts')) return false
+    if (isKan878AcceptanceFile(file)) return false
     if (/[*?\[]/.test(file)) return /postgres|pg[0-9]|kan-791/i.test(file) && !kan646Postgres
     return !/kan-646-(?:pg[0-9]+-|t5-.*postgres).*\.test\.ts$/.test(file.replaceAll('\\', '/')) &&
       isPostgresIntegrationSource(readFocusedTestSource(file))

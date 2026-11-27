@@ -8,6 +8,7 @@ import {
   macrocycles, mesocycles, microcycles, sessions,
   sessionGenerationModificationRecords,
 } from '@/db/schema'
+import { assertGeneratedVerticalMutation, hasExplicitVerticalData } from './vertical-regeneration-guard'
 import { reconcileSessionGeneration } from './session-regeneration'
 import { resolveGenerationExplanationSnapshot } from './generation-explanation-persistence'
 import type { GenerationExplanation } from './generation-explanation'
@@ -102,6 +103,10 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
     const affectedSessionIds = [...new Set(persistedEvents.map((event) => event.id))]
     const allCurrentPrescriptions = affectedSessionIds.length === 0 ? [] : tx.select({
       groupId: groupSessionPrescriptions.groupId,
+      sessionId: groupSessionPrescriptions.sessionId,
+      generationOwnership: groupSessionPrescriptions.generationOwnership,
+      primaryObjective: groupSessionPrescriptions.primaryObjective,
+      verticalBlockJson: groupSessionPrescriptions.verticalBlockJson,
     }).from(groupSessionPrescriptions)
       .where(and(
         inArray(groupSessionPrescriptions.sessionId, affectedSessionIds),
@@ -136,6 +141,11 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
       })),
     })
 
+    const mutationIds = new Set([...reconciliation.obsoletePrescriptionIds, ...reconciliation.prescriptions.flatMap(op => op.existingId ? [op.existingId] : [])])
+    for (const row of persistedPrescriptions) {
+      if (mutationIds.has(row.id)) assertGeneratedVerticalMutation(row)
+    }
+
     const eventIdByKey = new Map(
       persistedEvents.flatMap((event) => event.sharedEventKey ? [[event.sharedEventKey, event.id]] : []),
     )
@@ -164,7 +174,12 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
             createdAt: now, updatedAt: now,
           }).run()
         } else {
-          tx.update(sessions).set({
+          if (previousEvent && !sameAuditValue(sessionAuditValue(previousEvent), sessionAuditValue(values)) &&
+            allCurrentPrescriptions.some(row => row.sessionId === id && hasExplicitVerticalData(row))) {
+            throw new Error('reconciliation_conflict: protected vertical shared event header')
+          }
+          if (!previousEvent) throw new Error('reconciliation_conflict: missing generated event')
+          if (previousEvent.isDeleted || !sameAuditValue(sessionAuditValue(previousEvent), sessionAuditValue(values))) tx.update(sessions).set({
             workoutId: values.sourceTemplateId, date: values.date, title: values.title,
             type: values.type, locationKey: values.locationKey, trackPath: values.trackPath,
             structure: values.structure, notes: values.notes, isDeleted: false, updatedAt: now,
@@ -236,6 +251,8 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
               generationExplanation, now, changedByUserId: userId,
             })
           } else if (samePlanningScopePrescription.generationOwnership === 'generated') {
+            assertGeneratedVerticalMutation(samePlanningScopePrescription)
+            if (!samePlanningScopePrescription.isDeleted && samePlanningScopePrescription.generationKey !== operation.proposal.generationKey) throw new Error('reconciliation_conflict: prescription stable key differs')
             tx.update(groupSessionPrescriptions).set(record)
               .where(eq(groupSessionPrescriptions.id, samePlanningScopePrescription.id)).run()
             insertPrescriptionAudit(tx, {
@@ -249,7 +266,8 @@ export function reconcileAndPersistGeneratedSessionsSqlite(input: WriteInput): n
           const previousPrescription = persistedPrescriptions.find(
             (item) => item.id === operation.existingId,
           )
-          tx.update(groupSessionPrescriptions).set(record)
+          if (!previousPrescription || previousPrescription.sessionId !== sessionId || previousPrescription.microcycleId !== values.microcycleId || previousPrescription.groupId !== values.groupId) throw new Error('reconciliation_conflict: prescription stable scope differs')
+          if (!sameAuditValue(prescriptionAuditValue(previousPrescription), prescriptionAuditValue(values))) tx.update(groupSessionPrescriptions).set(record)
             .where(eq(groupSessionPrescriptions.id, operation.existingId!)).run()
           insertPrescriptionAudit(tx, {
             id: operation.existingId!, planId, sessionId,
@@ -375,6 +393,8 @@ function prescriptionAuditValue(value: unknown) {
     distanceKm: record.distanceKm,
     durationMin: record.durationMin,
     elevationGain: record.elevationGain,
+    primaryObjective: record.primaryObjective ?? null,
+    verticalBlockJson: record.verticalBlockJson ?? null,
     intensityMethod: record.intensityMethod,
     zone: record.zone,
     referencePercentage: record.referencePercentage,
@@ -399,6 +419,7 @@ function validateProposalScope(
       throw new Error('La propuesta contiene un evento incompleto.')
     }
     for (const item of event.prescriptions ?? []) {
+      assertGeneratedVerticalMutation(item.prescription as { primaryObjective?: unknown; verticalBlockJson?: unknown })
       if (item.prescription.groupId !== groupId || !microcycleIds.has(item.prescription.microcycleId)) {
         throw new Error('La propuesta contiene una prescripción fuera de la planificación.')
       }

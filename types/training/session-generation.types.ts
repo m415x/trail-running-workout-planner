@@ -131,14 +131,15 @@ export interface WeeklyVolumeDistribution {
 export interface WeeklyElevationAllocation {
   slotKey: string
   flexibility: SessionLoadFlexibility
-  elevationGain: number
+  elevationGain: number | null
 }
 
 /** Result of distributing the microcycle positive elevation across sessions. */
 export interface WeeklyElevationDistribution {
   allocations: WeeklyElevationAllocation[]
   targetElevationGain: number | null
-  allocatedElevationGain: number
+  allocatedElevationGain: number | null
+  knownElevationGain: number
   remainingElevationGain: number | null
   isExceeded: boolean
   warnings: string[]

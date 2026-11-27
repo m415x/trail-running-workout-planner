@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type postgres from 'postgres'
 
+import { assertGeneratedVerticalMutation, hasExplicitVerticalData } from './vertical-regeneration-guard'
 import type { GenerationExplanation } from './generation-explanation'
 import { parseGenerationExplanationSnapshots, resolveGenerationExplanationSnapshot } from './generation-explanation-persistence'
 import type { SnapshotRow } from './review-snapshot-postgres-repository'
@@ -100,6 +101,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       throw new Error('La propuesta contiene un evento incompleto.')
     }
     for (const item of event.prescriptions) {
+      assertGeneratedVerticalMutation(item.prescription as { primaryObjective?: unknown; verticalBlockJson?: unknown })
       if (item.prescription.groupId !== plan.groupId ||
         !validMicrocycleIds.has(item.prescription.microcycleId)) {
         throw new Error('La propuesta contiene una prescripción fuera de la planificación.')
@@ -117,13 +119,15 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     sessionOwnership: string
     sessionTeamId: string
     generationKey: string | null
+    primaryObjective: string | null
+    verticalBlockJson: string | null
   }[]>`
     SELECT gp.id, gp.session_id AS "sessionId",
       gp.group_id AS "groupId",
       gp.generation_ownership AS ownership,
       s.generation_ownership AS "sessionOwnership",
       s.team_id AS "sessionTeamId",
-      gp.generation_key AS "generationKey"
+      gp.generation_key AS "generationKey", gp.primary_objective AS "primaryObjective", gp.vertical_block_json AS "verticalBlockJson"
     FROM group_session_prescriptions AS gp
     INNER JOIN sessions AS s ON s.id = gp.session_id
     INNER JOIN microcycles AS mi ON mi.id = gp.microcycle_id
@@ -143,6 +147,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     if (!authorizedGroupIds.has(row.groupId)) {
       throw new Error('reconciliation_conflict: affected group authorization changed')
     }
+    if (row.ownership === 'generated') assertGeneratedVerticalMutation(row)
     if (row.ownership === 'generated' && row.sessionOwnership === 'generated') {
       if (!row.generationKey || generatedByKey.has(row.generationKey)) {
         throw new Error('reconciliation_conflict: PostgreSQL writer not yet implemented')
@@ -150,7 +155,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       generatedByKey.set(row.generationKey, row)
     } else if (
       ['manual', 'generated_modified'].includes(row.ownership) &&
-      ['manual', 'generated_modified'].includes(row.sessionOwnership)
+      ['generated', 'manual', 'generated_modified'].includes(row.sessionOwnership)
     ) {
       if (row.generationKey && proposalPrescriptionKeys.has(row.generationKey)) {
         throw new Error('reconciliation_conflict: protected generation key collision')
@@ -195,11 +200,12 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
   // claimed outside this Plan, even if the target Session is authorized.
   const freshKeys = [...seenPrescriptions].filter(key => !generatedByKey.has(key))
   if (freshKeys.length > 0) {
-    const claimed = await tx<{generationKey:string}[]>`
-      SELECT generation_key AS "generationKey"
+    const claimed = await tx<{generationKey:string; ownership:string; primaryObjective:string|null; verticalBlockJson:string|null}[]>`
+      SELECT generation_key AS "generationKey", generation_ownership AS ownership, primary_objective AS "primaryObjective", vertical_block_json AS "verticalBlockJson"
       FROM group_session_prescriptions
       WHERE generation_key IN ${tx(freshKeys)}
     `
+    for (const row of claimed) if (row.ownership === 'generated') assertGeneratedVerticalMutation(row)
     if (claimed.length > 0) {
       throw new Error('reconciliation_conflict: generation key already claimed')
     }
@@ -234,6 +240,14 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       throw new Error('reconciliation_conflict: protected shared event collision')
     }
     const related = [...generatedByKey.values()].filter(p => p.sessionId === row.id)
+    const proposed = proposal.events.find(event => event.sharedEventKey === row.sharedEventKey)!
+    for (const item of proposed.prescriptions) {
+      const scopeRows = await tx<{ownership:string; primaryObjective:string|null; verticalBlockJson:string|null}[]>`
+        SELECT generation_ownership AS ownership, primary_objective AS "primaryObjective", vertical_block_json AS "verticalBlockJson"
+        FROM group_session_prescriptions WHERE session_id = ${row.id} AND microcycle_id = ${item.prescription.microcycleId}
+      `
+      for (const scoped of scopeRows) if (scoped.ownership === 'generated') assertGeneratedVerticalMutation(scoped)
+    }
     // A distinct Plan may attach its own prescription to a generated shared
     // Session. Existing prescriptions remain outside this Plan's write set.
     // Authorization and ownership checks below cover the complete audience.
@@ -243,10 +257,12 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       teamId: string
       groupActive: boolean
       ownership: string
+      primaryObjective: string | null
+      verticalBlockJson: string | null
     }[]>`
       SELECT gp.id, gp.group_id AS "groupId", g.team_id AS "teamId",
         (NOT g.is_deleted) AS "groupActive",
-        gp.generation_ownership AS ownership
+        gp.generation_ownership AS ownership, gp.primary_objective AS "primaryObjective", gp.vertical_block_json AS "verticalBlockJson"
       FROM group_session_prescriptions AS gp
       INNER JOIN athlete_groups AS g ON g.id = gp.group_id
       WHERE gp.session_id = ${row.id} AND gp.is_deleted = false
@@ -265,8 +281,9 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     // This slice can update the common generated Session only if other
     // Plans' prescriptions remain generated and untouched. Never silently
     // overwrite the shared header of an athlete/coach-protected prescription.
+    const headerChanged = canonicalAuditValue({ date: row.date, title: row.title, type: row.type, sourceTemplateId: row.workoutId, locationKey: row.locationKey, trackPath: row.trackPath, structure: row.structure, notes: row.notes }) !== canonicalAuditValue({ date: proposed.session.date, title: proposed.session.title, type: proposed.session.type, sourceTemplateId: proposed.session.sourceTemplateId, locationKey: proposed.session.locationKey, trackPath: proposed.session.trackPath, structure: proposed.session.structure, notes: proposed.session.notes })
     if (audience.some(p => !related.some(r => r.id === p.id) &&
-      p.ownership !== 'generated')) {
+      (p.ownership !== 'generated' || (headerChanged && hasExplicitVerticalData(p))))) {
       throw new Error('reconciliation_conflict: protected shared event collision')
     }
   }
@@ -420,6 +437,8 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
         distanceKm: number | null
         durationMin: number | null
         elevationGain: number | null
+        primaryObjective: string | null
+        verticalBlockJson: string | null
         intensityMethod: string | null
         zone: string | null
         referencePercentage: number | null
@@ -427,16 +446,20 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
       }[]>`
         SELECT group_id AS "groupId", microcycle_id AS "microcycleId",
           distance_km AS "distanceKm", duration_min AS "durationMin",
-          elevation_gain AS "elevationGain", intensity_method AS "intensityMethod",
+          elevation_gain AS "elevationGain", primary_objective AS "primaryObjective", vertical_block_json AS "verticalBlockJson", intensity_method AS "intensityMethod",
           zone, reference_percentage AS "referencePercentage", notes
         FROM group_session_prescriptions WHERE id = ${prescriptionId}
       ` : []
       const prescriptionAudit = {
         groupId: data.groupId, microcycleId: data.microcycleId,
         distanceKm: data.distanceKm ?? null, durationMin: data.durationMin ?? null,
-        elevationGain: data.elevationGain ?? null, intensityMethod: data.intensityMethod,
+        elevationGain: data.elevationGain ?? null, primaryObjective: null, verticalBlockJson: null, intensityMethod: data.intensityMethod,
         zone: data.zone, referencePercentage: data.referencePercentage ?? null,
         notes: data.notes,
+      }
+      if (priorPrescription[0]) {
+        assertGeneratedVerticalMutation(priorPrescription[0])
+        if (priorPrescription[0].microcycleId !== data.microcycleId || priorPrescription[0].groupId !== data.groupId) throw new Error('reconciliation_conflict: prescription stable scope differs')
       }
       const prescriptionChanged = !existingPrescription ||
         !priorPrescription[0] ||
@@ -496,12 +519,13 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     const before = await tx<{
       groupId: string; microcycleId: string; distanceKm: number | null
       durationMin: number | null; elevationGain: number | null
+      primaryObjective: string | null; verticalBlockJson: string | null
       intensityMethod: string | null; zone: string | null
       referencePercentage: number | null; notes: string | null
     }[]>`
       SELECT group_id AS "groupId",microcycle_id AS "microcycleId",
         distance_km AS "distanceKm",duration_min AS "durationMin",
-        elevation_gain AS "elevationGain",intensity_method AS "intensityMethod",
+        elevation_gain AS "elevationGain",primary_objective AS "primaryObjective",vertical_block_json AS "verticalBlockJson",intensity_method AS "intensityMethod",
         zone,reference_percentage AS "referencePercentage",notes
       FROM group_session_prescriptions
       WHERE id = ${old.id} AND generation_ownership = 'generated'
@@ -510,6 +534,7 @@ export async function reconcileAndPersistGeneratedSessionsPostgres(
     if (before.length !== 1) {
       throw new Error('reconciliation_conflict: obsolete prescription changed')
     }
+    assertGeneratedVerticalMutation(before[0])
     await tx`
       UPDATE group_session_prescriptions SET is_deleted = true, updated_at = ${input.now}
       WHERE id = ${old.id} AND generation_ownership = 'generated'

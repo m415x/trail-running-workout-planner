@@ -70,10 +70,14 @@ describe('distribución semanal de desnivel', () => {
       elevationGain: 500,
     }])
 
-    assert.deepEqual(withoutFixed.allocations.map(({ elevationGain }) => elevationGain), [0, 0, 0])
+    assert.deepEqual(withoutFixed.allocations.map(({ elevationGain }) => elevationGain), [null, null, null])
+    assert.equal(withoutFixed.allocatedElevationGain, null)
+    assert.equal(withoutFixed.knownElevationGain, 0)
+    assert.deepEqual(distributeWeeklyElevation(slots, 0).allocations.map(row => row.elevationGain), [0, 0, 0])
     assert.equal(withoutFixed.remainingElevationGain, null)
     assert.deepEqual(withoutFixed.warnings, [])
-    assert.equal(withFixed.allocatedElevationGain, 500)
+    assert.equal(withFixed.allocatedElevationGain, null)
+    assert.equal(withFixed.knownElevationGain, 500)
     assert.equal(withFixed.remainingElevationGain, null)
     assert.match(withFixed.warnings[0], /no tiene un objetivo de desnivel/)
   })
@@ -100,9 +104,9 @@ describe('distribución semanal de desnivel', () => {
 
     assert.equal(result.allocatedElevationGain, 1215)
     assert.equal(result.remainingElevationGain, 0)
-    assert.equal(result.allocations.filter(({ elevationGain }) => elevationGain % 10 !== 0).length, 1)
+    assert.equal(result.allocations.filter(({ elevationGain }) => elevationGain !== null && elevationGain % 10 !== 0).length, 1)
     assert.equal((result.allocations.at(-1)?.elevationGain ?? 0) % 10, 0)
-    assert.equal(result.allocations[1].elevationGain % 10, 5)
+    assert.equal((result.allocations[1].elevationGain ?? 0) % 10, 5)
   })
 
   it('rechaza objetivos, slots y desniveles fijos inconsistentes', () => {

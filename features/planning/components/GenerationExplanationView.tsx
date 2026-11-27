@@ -125,7 +125,7 @@ function formatFact(
   locale: string,
   planningSubgroupLabel: string,
 ) {
-  return `${formatGenerationExplanationLabel(fact.code, locale, planningSubgroupLabel)}: ${String(fact.value ?? '—')}`
+  return `${formatGenerationExplanationLabel(fact.code, locale, planningSubgroupLabel)}: ${String(fact.value ?? '—').replace(/::null$/, locale.startsWith('es') ? ' · Desconocido' : ' · Unknown')}`
 }
 
 function formatGenerationExplanationLabel(
@@ -202,6 +202,7 @@ function formatGenerationExplanationLabel(
     preserved_record_count: { es: 'Registros preservados', en: 'Preserved records' },
     preserved_records: { es: 'Detalle de preservación', en: 'Preservation detail' },
     allocated_training_volume_km: { es: 'Volumen de entrenamiento asignado', en: 'Allocated training volume' },
+    known_elevation_gain: { es: 'Contribución de desnivel conocida (no total)', en: 'Known elevation contribution (not total)' },
     allocated_training_elevation_gain: { es: 'Desnivel de entrenamiento asignado', en: 'Allocated training elevation gain' },
     remaining_training_volume_km: { es: 'Volumen de entrenamiento restante', en: 'Remaining training volume' },
     remaining_training_elevation_gain: { es: 'Desnivel de entrenamiento restante', en: 'Remaining training elevation gain' },

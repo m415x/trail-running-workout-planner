@@ -159,7 +159,7 @@ export function SessionGenerationPreview({
                                 </span>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <Mountain className='size-4 text-muted-foreground' />
-                                  {formatNumber(prescription.elevationGain, regionalContext.presentationLocale)} m D+
+                                  {prescription.elevationGain == null ? '—' : formatNumber(prescription.elevationGain, regionalContext.presentationLocale)} m D+
                                 </span>
                                 <span className='inline-flex items-center gap-1.5'>
                                   <CalendarClock className='size-4 text-muted-foreground' />

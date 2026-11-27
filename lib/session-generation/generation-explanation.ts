@@ -230,10 +230,11 @@ export function buildGenerationExplanation(
       0,
     ),
   )
-  const allocatedElevationGain = trainingProposals.reduce(
+  const knownElevationGain = trainingProposals.reduce(
     (sum, item) => sum + (item.prescription.elevationGain ?? 0),
     0,
   )
+  const allocatedElevationGain = trainingProposals.some(item => item.prescription.elevationGain === null) ? null : knownElevationGain
   const weeklyBudget: GenerationExplanationStageEvidence = {
     stage: 'weekly_budget',
     inputs: [
@@ -259,6 +260,7 @@ export function buildGenerationExplanation(
         code: 'allocated_training_elevation_gain',
         value: allocatedElevationGain,
       },
+      ...(allocatedElevationGain === null ? [{ code: 'known_elevation_gain', value: knownElevationGain }] : []),
     ],
     consequence: [
       {
@@ -269,7 +271,7 @@ export function buildGenerationExplanation(
       },
       {
         code: 'remaining_training_elevation_gain',
-        value: context.load.targetElevationGain === null
+        value: context.load.targetElevationGain === null || allocatedElevationGain === null
           ? null
           : context.load.targetElevationGain - allocatedElevationGain,
       },
@@ -621,7 +623,7 @@ export function explainTemplatesAndLoad(
 
   const fixedVolumeKm = fixedVolume.reduce((sum, allocation) => sum + allocation.distanceKm, 0)
   const fixedElevationGain = fixedElevation.reduce((sum, allocation) => (
-    sum + allocation.elevationGain
+    sum + (allocation.elevationGain ?? 0)
   ), 0)
   const remainingVolumeKm = roundExplanationNumber(
     input.targetVolumeKm - fixedVolumeKm,
@@ -709,6 +711,7 @@ export function explainTemplatesAndLoad(
       consequence: [
         { code: 'allocated_volume_km', value: volume.allocatedVolumeKm },
         { code: 'allocated_elevation_gain', value: elevation.allocatedElevationGain },
+        ...(elevation.allocatedElevationGain === null ? [{ code: 'known_elevation_gain', value: elevation.knownElevationGain }] : []),
       ],
       warnings: [],
     },

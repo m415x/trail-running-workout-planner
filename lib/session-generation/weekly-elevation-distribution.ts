@@ -60,11 +60,12 @@ export function distributeWeeklyElevation(
     return {
       slotKey: slot.key,
       flexibility: 'flexible',
-      elevationGain: flexibleElevation.get(slot.key) ?? 0,
+      elevationGain: targetElevationGain === null ? null : flexibleElevation.get(slot.key) ?? 0,
     }
   })
-  const allocatedElevationGain = sumElevation(allocations)
-  const remainingElevationGain = targetElevationGain === null
+  const knownElevationGain = sumElevation(allocations)
+  const allocatedElevationGain = allocations.some(row => row.elevationGain === null) ? null : knownElevationGain
+  const remainingElevationGain = targetElevationGain === null || allocatedElevationGain === null
     ? null
     : targetElevationGain - allocatedElevationGain
   const warnings: string[] = []
@@ -87,8 +88,9 @@ export function distributeWeeklyElevation(
     allocations,
     targetElevationGain,
     allocatedElevationGain,
+    knownElevationGain,
     remainingElevationGain,
-    isExceeded: targetElevationGain !== null && allocatedElevationGain > targetElevationGain,
+    isExceeded: targetElevationGain !== null && knownElevationGain > targetElevationGain,
     warnings,
   }
 }
@@ -168,6 +170,7 @@ function assertValidFixedAllocations(
     }
     if (
       allocation.flexibility !== 'fixed' ||
+      allocation.elevationGain === null ||
       !Number.isInteger(allocation.elevationGain) ||
       allocation.elevationGain < 0
     ) {
@@ -178,5 +181,5 @@ function assertValidFixedAllocations(
 }
 
 function sumElevation(allocations: WeeklyElevationAllocation[]) {
-  return allocations.reduce((sum, allocation) => sum + allocation.elevationGain, 0)
+  return allocations.reduce((sum, allocation) => sum + (allocation.elevationGain ?? 0), 0)
 }
