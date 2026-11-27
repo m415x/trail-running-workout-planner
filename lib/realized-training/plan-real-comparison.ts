@@ -106,10 +106,13 @@ function compareMetric(
     )
   }
 
-  const bothNumeric = typeof planned.value === 'number' && typeof realized.value === 'number'
-  const absoluteDelta = bothNumeric ? realized.value - planned.value : null
-  const relativeDeltaPercent = bothNumeric && planned.value !== 0
-    ? (absoluteDelta! / planned.value) * 100
+  const plannedValue = planned.value
+  const realizedValue = realized.value
+  const absoluteDelta = typeof plannedValue === 'number' && typeof realizedValue === 'number'
+    ? realizedValue - plannedValue
+    : null
+  const relativeDeltaPercent = absoluteDelta !== null && typeof plannedValue === 'number' && plannedValue !== 0
+    ? (absoluteDelta / plannedValue) * 100
     : null
   const matches = planned.value === realized.value
 
