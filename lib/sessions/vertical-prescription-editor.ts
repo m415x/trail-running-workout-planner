@@ -27,10 +27,10 @@ export type VerticalEditorError = 'invalidBlock' | 'invalidTotal' | 'opaqueHisto
 const MAX_METERS = 2_147_483_647
 const toInput = (value: number | null) => value === null ? '' : String(value)
 
-function optionalInteger(raw: string): number | null {
+function optionalInteger(raw: string, max = MAX_METERS): number | null {
   const parsed = parseRegionalNumericInput(raw, { kind: 'integer' })
   if (parsed.status === 'empty') return null
-  if (parsed.status !== 'valid' || parsed.value < 0 || parsed.value > MAX_METERS) {
+  if (parsed.status !== 'valid' || parsed.value < 0 || parsed.value > max) {
     throw new RangeError('Invalid vertical integer')
   }
   return parsed.value
@@ -42,7 +42,7 @@ function manualMetric(raw: string): VerticalMetricPerRepetition {
 }
 
 export function parseManualVerticalBlock(draft: ManualVerticalBlockDraft): VerticalBlockV1 {
-  const repetitions = optionalInteger(draft.repetitions)
+  const repetitions = optionalInteger(draft.repetitions, Number.MAX_SAFE_INTEGER)
   if (repetitions === null || repetitions === 0) throw new RangeError('Invalid repetitions')
   const block: VerticalBlockV1 = {
     schemaVersion: 1,

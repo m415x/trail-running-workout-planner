@@ -128,7 +128,7 @@ export function VerticalPrescriptionEditor({ microcycleId, previous, draft, elev
       )}
       <div className='space-y-1'>
         <label htmlFor={id('total')} className='text-sm font-medium'>{t('wholeGain')}</label>
-        <Input id={id('total')} name={'elevationGain:' + microcycleId} type='text' inputMode='numeric' readOnly={complete || opaque || historicalTrack} value={effectiveGain} placeholder={t('unknown')} onChange={e => onElevationGainChange(e.target.value)} aria-describedby={id('totalHelp') + ' ' + errorId} aria-invalid={!prepared.ok && prepared.error === 'invalidTotal'} />
+        <Input id={id('total')} name={`elevationGain:${microcycleId}`} type='text' inputMode='numeric' readOnly={complete || opaque || historicalTrack} value={effectiveGain} placeholder={t('unknown')} onChange={e => onElevationGainChange(e.target.value)} aria-describedby={id('totalHelp') + ' ' + errorId} aria-invalid={!prepared.ok && prepared.error === 'invalidTotal'} />
         <p id={id('totalHelp')} className='text-xs text-muted-foreground'>{complete ? t('completeHelp') : active ? t('partialHelp') : t('wholeHelp')}</p>
       </div>
       <p id={errorId} className='text-sm text-destructive' aria-live='polite'>{!prepared.ok && prepared.error !== 'historicalTrack' ? t(prepared.error) : ''}</p>

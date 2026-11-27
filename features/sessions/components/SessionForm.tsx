@@ -161,6 +161,7 @@ export function SessionForm({ locale, workouts, locations, groups, session }: Se
       return
     }
     setPendingTemplateId(null)
+    setClientError(undefined)
     setSelectedWorkoutId(workoutId)
     const template = workouts.find((workout) => workout.id === workoutId)
     if (!template) {

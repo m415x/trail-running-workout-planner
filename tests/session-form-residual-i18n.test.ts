@@ -34,7 +34,6 @@ test('SessionForm localizes residual notes, prescription fields and actions', ()
     'form.prescriptions.group',
     'form.prescriptions.distance',
     'form.prescriptions.duration',
-    'form.prescriptions.elevationGain',
     'form.prescriptions.zone',
     'form.actions.cancel',
     'form.actions.saving',
@@ -46,4 +45,16 @@ test('SessionForm localizes residual notes, prescription fields and actions', ()
 
   // The microcycle option is interpolated with plan, week, start and end.
   assert.match(source, /t\('form\.prescriptions\.microcycleOption',\s*\{/)
+})
+
+test('The delegated vertical editor localizes the whole-session elevation label in both languages', () => {
+  const editor = fs.readFileSync(path.join(process.cwd(), 'features/sessions/components/VerticalPrescriptionEditor.tsx'), 'utf8')
+  assert.match(source, /<VerticalPrescriptionEditor/)
+  assert.match(editor, /useTranslations\('Sessions\.form\.prescriptions\.vertical'\)/)
+  assert.match(editor, /t\('wholeGain'\)/)
+  assert.equal(editor.includes('Desnivel (m+)'), false)
+  for (const locale of ['es', 'en']) {
+    const messages = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'messages', locale, 'planning/sessions.json'), 'utf8'))
+    assert.ok(messages.Sessions.form.prescriptions.vertical.wholeGain)
+  }
 })
