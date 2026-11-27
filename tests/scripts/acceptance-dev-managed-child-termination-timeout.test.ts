@@ -64,7 +64,7 @@ test('KAN-885/T3 L6 times out when tree termination returns but child never clos
   }
 })
 
-test('KAN-885/T3 L6 successful close before timeout retains exit code', async () => {
+test('KAN-885/T3 L6 interrupted close before timeout remains a failure', async () => {
   const run = (runtime as unknown as Record<string, unknown>)
     .runAcceptanceDevManagedChild as RunManaged
   const signals = new EventEmitter()
@@ -79,7 +79,7 @@ test('KAN-885/T3 L6 successful close before timeout retains exit code', async ()
     terminationTimeoutMs: 100,
   })
   signals.emit('SIGTERM')
-  assert.equal(await result, 0)
+  await assert.rejects(result, /KAN-885: managed child terminated after interruption signal/)
   assert.equal(signals.listenerCount('SIGINT'), 0)
   assert.equal(child.listenerCount('close'), 0)
 })
