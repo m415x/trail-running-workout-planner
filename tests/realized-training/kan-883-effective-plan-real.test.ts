@@ -18,8 +18,8 @@ type Reader = (input: { athleteId: string; teamId: string; window: PlanRealCompa
 async function load(): Promise<Reader> {
   const path = '../../lib/realized-training/effective-plan-real-reader'
   assert.ok(existsSync('lib/realized-training/effective-plan-real-reader.ts'), 'H12 needs a shared scoped reader of effective T5 operands')
-  const module = await import(path) as { readEffectivePlanRealComparison: Reader }
-  return module.readEffectivePlanRealComparison
+  const readerModule = await import(path) as { readEffectivePlanRealComparison: Reader }
+  return readerModule.readEffectivePlanRealComparison
 }
 
 const sqlite = db.$client

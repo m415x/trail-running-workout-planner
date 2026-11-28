@@ -37,7 +37,12 @@ test('Athlete loader preserves all current revisions so conflict resolution can 
 
   assert.doesNotMatch(loader, /currentRevisionByAdjustmentId\s*=\s*new Map/)
   assert.match(loader, /filter\([^)]*adjustmentId|revisionsByAdjustmentId|currentRevisions/)
-  assert.match(loader, /resolveAthletePlanningSession/)
+  assert.match(loader, /resolveAthleteEffectiveVerticalSession\(/)
+  assert.match(loader, /revisions:\s*currentRevisions\.map\(/)
+  const effective = read('lib/athlete-planning/effective-vertical-session.ts')
+  assert.match(effective, /resolveEffectiveAthleteAdjustment\([\s\S]*?revisions:\s*input\.revisions/)
+  assert.match(effective, /selected\.status === 'conflict'\) return conflict\(\)/)
+  assert.match(effective, /resolveAthletePlanningSession\([\s\S]*?revisions:\s*input\.revisions/)
 })
 
 test('regeneration hardening keeps adjustment lifecycle outside generated Session and prescription mutation', () => {

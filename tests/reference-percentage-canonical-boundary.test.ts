@@ -29,8 +29,11 @@ test('KAN-412 plan-real comparison exposes reference percentage without PAM unit
   assert.match(presentation, /reference_percent: '% of reference'/)
   assert.match(presentation, /reference_percent: '% de referencia'/)
   assert.doesNotMatch(presentation, /pam_percent|% PAM/)
-  assert.match(actions, /unit: 'reference_percent'/)
-  assert.doesNotMatch(actions, /unit: 'pam_percent'/)
+  const reader = source('lib/realized-training/effective-plan-real-reader.ts')
+  assert.match(actions, /readEffectivePlanRealComparison\(/)
+  assert.match(reader, /unit: 'reference_percent'/)
+  assert.match(reader, /intensity:\s*intensity\(p\)/)
+  assert.doesNotMatch(actions + reader, /unit: 'pam_percent'/)
 })
 
 test('KAN-412 removes the temporary legacy percentage classifier', () => {

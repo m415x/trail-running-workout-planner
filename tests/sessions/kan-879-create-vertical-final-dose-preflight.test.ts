@@ -33,9 +33,11 @@ test('KAN-879 RED-8 createSession validates ALL vertical prescriptions before fi
   assert.ok(start >= 0 && end > start)
   const create = source.slice(start, end)
 
-  assert.match(create,
-    /planningAccess\.authorizeGroup\(groupId\)/,
-    'Server-owned H2/H3/H4A planning.manage group guard must remain')
+  assert.match(create, /executeAuthorizedSessionMutation\(\{[\s\S]*?resultingGroupIds:\s*requestedGroups,[\s\S]*?authorizeGroup:\s*planningAccess\.authorizeGroup,[\s\S]*?mutate:\s*\(\) => db\.transaction/,
+    'Server-owned H2/H3/H4A planning.manage group guard must wrap the transaction')
+  const boundary = readFileSync('lib/sessions/authorized-session-mutation.ts', 'utf8')
+  assert.match(boundary, /Promise\.all\(groupIds\.map\(id => input\.authorizeGroup\(id\)\)\)/)
+  assert.match(boundary, /if \(!decisions\.every\(Boolean\)\) return false[\s\S]*?await input\.mutate\(\)/)
   assert.match(create, /validatePrescriptionReferences\(prescriptions\.data, data\.date, planningAccess\.teamId\)/,
     'Team/Group/Plan/Microcycle reference checks must remain')
   const check = create.indexOf('preflightVerticalSessionEdits(')

@@ -7,7 +7,11 @@ const harness = readFileSync('docs/agent-harness.md', 'utf8')
 
 test('Harness v2 makes guarded Post-merge Worktree Cleanup a closure phase', () => {
   assert.match(agents, /Post-merge Worktree Cleanup/)
-  assert.match(harness, /post-merge reconciliation[\s\S]*Post-merge Worktree Cleanup[\s\S]*fresh-chat-safe/i)
+  const stateMachine = harness.split('### Execution state machine')[1]?.split('### Worktree lifecycle')[0] ?? ''
+  assert.match(stateMachine, /ordinary merge to dev[\s\S]*exact-SHA postmerge verification[\s\S]*Jira reconciliation[\s\S]*operator-mediated worktree cleanup \(or documented blocker\)[\s\S]*fresh-chat-safe/i)
+  const cleanup = harness.split('### Post-merge Worktree Cleanup')[1]?.split('### Runner invariants')[0] ?? ''
+  assert.match(cleanup, /mandatory[\s\S]*after merge, post-merge gate and docs\/Jira reconciliation/i)
+  assert.match(cleanup, /worktree retired or operational blocker documented/i)
   assert.match(agents, /worktree retired or operational blocker documented/i)
 })
 

@@ -9,11 +9,10 @@ async function read(path: string): Promise<string> {
 test('KAN-725 AGENTS defines non-negotiable focused TDD and continuous closure invariants', async () => {
   const agents = await read('AGENTS.md')
 
-  assert.match(agents, /Never request `git pull` separately when the next local command is `pn tdd:red` or `pn tdd`/)
-  assert.match(agents, /Never request `pn tsc` separately after `pn tdd`/)
+  assert.match(agents, /`pn tdd:red` and `pn tdd` already perform `git pull --ff-only -q`; do not request a separate pull immediately before them/)
+  assert.match(agents, /`pn tdd` runs the canonical typecheck; do not separately request `pn tsc` after it/)
   assert.match(agents, /`pn test` is full-suite only/)
-  assert.match(agents, /Approval of the final story-closure task authorizes the routine closure sequence/i)
-  assert.match(agents, /documentation[\s\S]*PR[\s\S]*review[\s\S]*merge[\s\S]*post-merge reconciliation[\s\S]*Jira/i)
+  assert.match(agents, /Approval of the closure task authorizes the normal documentation → checks\/review → PR → ordinary merge to `dev` → postmerge verification → Jira\/handoff sequence without repetitive confirmations/i)
   assert.match(agents, /fresh-chat-safe/i)
 })
 
@@ -21,7 +20,8 @@ test('KAN-725 harness v2 is the current operational workflow and v1 is historica
   const harness = await read('docs/agent-harness.md')
 
   assert.match(harness, /## Harness v2 — current operational workflow/)
-  assert.match(harness, /candidate[\s\S]*gate[\s\S]*walkthrough[\s\S]*docs pre-merge[\s\S]*PR[\s\S]*merge[\s\S]*post-merge reconciliation[\s\S]*fresh-chat-safe/i)
+  const stateMachine = harness.split('### Execution state machine')[1]?.split('### Worktree lifecycle')[0] ?? ''
+  assert.match(stateMachine, /candidate: full applicable gate \+ real walkthrough \+ AC audit[\s\S]*docs pre-merge reconciliation \+ PR review \/ required checks[\s\S]*ordinary merge to dev \+ exact-SHA postmerge verification[\s\S]*current handoff \+ story handoff \+ index \+ Jira reconciliation[\s\S]*operator-mediated worktree cleanup[\s\S]*fresh-chat-safe/i)
   assert.match(harness, /harness-eval-v1.*historical/i)
   assert.doesNotMatch(harness, /do not change v1 yet/i)
 })
