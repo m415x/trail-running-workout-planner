@@ -49,6 +49,8 @@ export async function assertAuthorizedVerticalTrackReferences(input: {
 export async function denyUnverifiableVerticalTrackReference(
   _scope: VerticalTrackReferenceScope,
 ): Promise<boolean> {
+  // The scope is intentionally ignored until a trusted registry exists.
+  void _scope
   return false
 }
 
